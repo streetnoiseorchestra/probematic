@@ -132,6 +132,7 @@
   (reset)
   (halt)
   (go)
+  (clojure.repl.deps/sync-deps)
   (restart) ;; rcf
   ;;
   )

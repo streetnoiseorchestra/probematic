@@ -38,7 +38,7 @@
         luminus-transit/luminus-transit      {:mvn/version "0.1.6" :exclusions [com.cognitect/transit-clj]}
         metosin/muuntaja                     {:mvn/version "0.6.10"}
         org.babashka/sci                     {:mvn/version "0.8.41"}
-        com.taoensso/nippy                   {:mvn/version "3.3.0"}
+        com.taoensso/nippy                   {:mvn/version "3.4.2"}
         dk.ative/docjure                     {:mvn/version "1.19.0"}
         mvxcvi/blocks                        {:mvn/version "2.1.0"}
         org.im4java/im4java                  {:git/tag "1.4.0-penpot-2" :git/sha "e2b3e16" :git/url "https://github.com/penpot/im4java"}
@@ -60,9 +60,11 @@
         ;; Database
         com.datomic/local                    {:mvn/version "1.0.277"}
         com.datomic/peer                     {:mvn/version "1.0.7260"}
+        dev.gethop/stork                     {:mvn/version "0.1.7"}
+        com.fulcrologic/guardrails           {:mvn/version "1.2.9"}
         com.yetanalytics/colossal-squuid     {:mvn/version "0.1.5"
                                               :exclusions  [org.clojure/clojure org.clojure/clojurescript]}
-        com.taoensso/carmine                 {:mvn/version "3.3.2"}
+        com.taoensso/carmine                 {:mvn/version "3.4.1"}
         ;; Authorization and Authentication
         buddy/buddy-core                     {:mvn/version "1.11.423"}
         buddy/buddy-sign                     {:mvn/version "3.5.351"}
