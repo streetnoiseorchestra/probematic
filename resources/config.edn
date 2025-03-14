@@ -45,92 +45,95 @@
                    :mailgun-domain         #ref [:secrets :mailgun :mailgun-domain]}
  :redis           {:conn-spec #ref [:secrets :redis :conn-spec]}
  :max-header-size 12000
- :ig/system       {:app.ig/profile          #profile {:prod :prod
-                                                      :dev  :dev
-                                                      :demo :demo
-                                                      :test :test}
-                   :app.ig/console-logging  {:pretty? #profile {:prod false
-                                                                :dev  true
-                                                                :test true
-                                                                :demo true}}
-                   :app.ig/openobserve      #merge [#ref [:secrets :openobserve]
-                                                    {:enabled? #profile {:prod true
-                                                                         :dev  false
-                                                                         :test false
-                                                                         :demo false}
-                                                     :data-stream #profile {:prod "snorga_prod_logs"
-                                                                            :dev  "snorga_dev_logs"
-                                                                            :test "snorga_test_logs"}}]
+ :ig/system       {:app.ig/profile         #profile {:prod :prod
+                                                     :dev  :dev
+                                                     :demo :demo
+                                                     :test :test}
+                   :app.ig/console-logging {:pretty? #profile {:prod false
+                                                               :dev  true
+                                                               :test true
+                                                               :demo true}}
+                   :app.ig/openobserve     #merge [#ref [:secrets :openobserve]
+                                                   {:enabled?    #profile {:prod true
+                                                                           :dev  false
+                                                                           :test false
+                                                                           :demo false}
+                                                    :data-stream #profile {:prod "snorga_prod_logs"
+                                                                           :dev  "snorga_dev_logs"
+                                                                           :test "snorga_test_logs"}}]
 
-                   :app.ig/env              {:profile         #ig/ref :app.ig/profile
-                                             :console-logging #ig/ref :app.ig/console-logging
-                                             :openobserve     #ig/ref :app.ig/openobserve}
-                   :app.ig/nrepl-server     {:port #long #or [#env NREPL_PORT
-                                                              #profile {:prod 7000
-                                                                        :dev  -1
-                                                                        :test -1
-                                                                        :demo -1}]
-                                             :bind #or [#env NREPL_HOST "127.0.0.1"]}
-                   :app.ig/pedestal         {:service-map {:io.pedestal.http/type   :jetty
-                                                           :io.pedestal.http/routes []
-                                                           :io.pedestal.http/port   #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
-                                                           :io.pedestal.http/host   #or [#env HTTP_BIND_HOST "localhost"]
-                                                           ;; :io.pedestal.http/resource-path "/static"
-                                                           :io.pedestal.http/join?  false}
-                                             :datomic     #ig/ref :app.ig/datomic-db
-                                             :env         #ig/ref :app.ig/env
-                                             :handler     #ig/ref :app.ig/handler
-                                             :i18n-langs  #ig/ref :app.ig/i18n-langs
-                                             :keycloak    #ig/ref :app.ig/keycloak
-                                             :profile     #ig/ref :app.ig/profile
-                                             :redis       #ig/ref :app.ig/redis
-                                             :routes      #ig/ref :app.ig.router/routes
-                                             :webdav      #ig/ref :app.ig/webdav-sardine}
-                   :app.ig/handler          {:env #ig/ref :app.ig/env}
-                   :app.ig.router/routes    {:routes     #ig/refset :app.ig/routes
-                                             :i18n-langs #ig/ref :app.ig/i18n-langs
-                                             :env        #ig/ref :app.ig/env
-                                             :oauth2     #ig/ref :app.ig/oauth2
-                                             :datomic    #ig/ref :app.ig/datomic-db
-                                             :webdav     #ig/ref :app.ig/webdav-sardine
-                                             :keycloak   #ig/ref :app.ig/keycloak
-                                             :redis      #ig/ref :app.ig/redis
-                                             :calendar   #ig/ref :app.ig/calendar
-                                             :filestore  #ig/ref :app.ig/filestore}
-                   :app.ig/oauth2           {:env #ig/ref :app.ig/env}
-                   :ol.ig/jobs              {:job-defs #ig/ref :app.ig.jobs/definitions
-                                             :env      #ig/ref :app.ig/env}
-                   :app.ig/gigo-client      {:env #ig/ref :app.ig/env}
-                   :app.ig/datomic-db       {:server-type :datomic-local
-                                             :system      "app"
-                                             :db-name     "probematic"
-                                             :env         #ig/ref :app.ig/env
-                                             :storage-dir #or [#env DATOMIC_DB_STORAGE_DIR
-                                                               #profile {:dev  #envf ["%s/datomic.data" PWD]
-                                                                         :test #envf ["%s/datomic.test.data" PWD]
-                                                                         :demo #envf ["%s/datomic.demo.data" PWD]}]}
-                   :app.ig/i18n-langs       {}
-                   :app.ig/mailgun          {:env #ig/ref :app.ig/env}
-                   :app.ig/redis            {:env #ig/ref :app.ig/env}
-                   :app.ig/email-worker     {:env     #ig/ref :app.ig/env
-                                             :redis   #ig/ref :app.ig/redis
-                                             :mailgun #ig/ref :app.ig/mailgun}
-                   :app.ig/webdav-sardine   {:env #ig/ref :app.ig/env}
-                   :app.ig/keycloak         {:env #ig/ref :app.ig/env}
-                   :app.ig/calendar         {:env #ig/ref :app.ig/env}
-                   :app.ig/filestore        {:env #ig/ref :app.ig/env}
-                   :app.ig.jobs/definitions {:env        #ig/ref :app.ig/env
-                                             :gigo       #ig/ref :app.ig/gigo-client
-                                             :datomic    #ig/ref :app.ig/datomic-db
-                                             :i18n-langs #ig/ref :app.ig/i18n-langs
-                                             :redis      #ig/ref :app.ig/redis
-                                             :calendar   #ig/ref :app.ig/calendar
-                                             :filestore  #ig/ref :app.ig/filestore}}
- :jobs            {#_#_:job/sync-songs     {:job/frequency     [60 :minutes]
-                                            :job/initial-delay [2 :minutes]}
-                   :job/probe-housekeeping {:job/frequency     [10 :minutes]
-                                            :job/initial-delay [2 :minutes]}
-                   :job/poll-housekeeping  {:job/frequency     [3 :minutes]
-                                            :job/initial-delay [2 :minutes]}
-                   :job/reminders          {:job/frequency     [1 :hours]
-                                            :job/initial-delay [2 :minutes]}}}
+                   :app.ig/env                     {:profile         #ig/ref :app.ig/profile
+                                                    :console-logging #ig/ref :app.ig/console-logging
+                                                    :openobserve     #ig/ref :app.ig/openobserve}
+                   :app.ig/nrepl-server            {:port #long #or [#env NREPL_PORT
+                                                                     #profile {:prod 7000
+                                                                               :dev  -1
+                                                                               :test -1
+                                                                               :demo -1}]
+                                                    :bind #or [#env NREPL_HOST "127.0.0.1"]}
+                   :app.ig/pedestal                {:service-map {:io.pedestal.http/type   :jetty
+                                                                  :io.pedestal.http/routes []
+                                                                  :io.pedestal.http/port   #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
+                                                                  :io.pedestal.http/host   #or [#env HTTP_BIND_HOST "localhost"]
+                                                                  ;; :io.pedestal.http/resource-path "/static"
+                                                                  :io.pedestal.http/join?  false}
+                                                    :datomic     #ig/ref :app.ig/datomic-db
+                                                    :env         #ig/ref :app.ig/env
+                                                    :handler     #ig/ref :app.ig/handler
+                                                    :i18n-langs  #ig/ref :app.ig/i18n-langs
+                                                    :keycloak    #ig/ref :app.ig/keycloak
+                                                    :profile     #ig/ref :app.ig/profile
+                                                    :redis       #ig/ref :app.ig/redis
+                                                    :routes      #ig/ref :app.ig.router/routes
+                                                    :webdav      #ig/ref :app.ig/webdav-sardine}
+                   :app.ig/handler                 {:env #ig/ref :app.ig/env}
+                   :app.ig.router/routes           {:routes     #ig/refset :app.ig/routes
+                                                    :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                    :env        #ig/ref :app.ig/env
+                                                    :oauth2     #ig/ref :app.ig/oauth2
+                                                    :datomic    #ig/ref :app.ig/datomic-db
+                                                    :webdav     #ig/ref :app.ig/webdav-sardine
+                                                    :keycloak   #ig/ref :app.ig/keycloak
+                                                    :redis      #ig/ref :app.ig/redis
+                                                    :calendar   #ig/ref :app.ig/calendar
+                                                    :filestore  #ig/ref :app.ig/filestore}
+                   :app.ig/oauth2                  {:env #ig/ref :app.ig/env}
+                   :ol.ig/jobs                     {:job-defs #ig/ref :app.ig.jobs/definitions
+                                                    :env      #ig/ref :app.ig/env}
+                   :app.ig/gigo-client             {:env #ig/ref :app.ig/env}
+                   :app.ig/datomic-db              {:server-type :datomic-local
+                                                    :system      "app"
+                                                    :db-name     "probematic"
+                                                    :env         #ig/ref :app.ig/env
+                                                    :storage-dir #or [#env DATOMIC_DB_STORAGE_DIR
+                                                                      #profile {:dev  #envf ["%s/datomic.data" PWD]
+                                                                                :test #envf ["%s/datomic.test.data" PWD]
+                                                                                :demo #envf ["%s/datomic.demo.data" PWD]}]}
+                   :app.datomic.system/datomic-pro {:db-uri     #or [#env DATOMIC_URI
+                                                                     #profile {:dev "datomic:sql://app?jdbc:sqlite:data/datomic-sqlite.db"}]
+                                                    :migrations {}}
+                   :app.ig/i18n-langs              {}
+                   :app.ig/mailgun                 {:env #ig/ref :app.ig/env}
+                   :app.ig/redis                   {:env #ig/ref :app.ig/env}
+                   :app.ig/email-worker            {:env     #ig/ref :app.ig/env
+                                                    :redis   #ig/ref :app.ig/redis
+                                                    :mailgun #ig/ref :app.ig/mailgun}
+                   :app.ig/webdav-sardine          {:env #ig/ref :app.ig/env}
+                   :app.ig/keycloak                {:env #ig/ref :app.ig/env}
+                   :app.ig/calendar                {:env #ig/ref :app.ig/env}
+                   :app.ig/filestore               {:env #ig/ref :app.ig/env}
+                   :app.ig.jobs/definitions        {:env        #ig/ref :app.ig/env
+                                                    :gigo       #ig/ref :app.ig/gigo-client
+                                                    :datomic    #ig/ref :app.ig/datomic-db
+                                                    :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                    :redis      #ig/ref :app.ig/redis
+                                                    :calendar   #ig/ref :app.ig/calendar
+                                                    :filestore  #ig/ref :app.ig/filestore}}
+ :jobs {#_#_:job/sync-songs     {:job/frequency     [60 :minutes]
+                                 :job/initial-delay [2 :minutes]}
+        :job/probe-housekeeping {:job/frequency     [10 :minutes]
+                                 :job/initial-delay [2 :minutes]}
+        :job/poll-housekeeping  {:job/frequency     [3 :minutes]
+                                 :job/initial-delay [2 :minutes]}
+        :job/reminders          {:job/frequency     [1 :hours]
+                                 :job/initial-delay [2 :minutes]}}}

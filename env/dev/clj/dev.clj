@@ -134,5 +134,7 @@
   (go)
   (clojure.repl.deps/sync-deps)
   (restart) ;; rcf
+
+  (def pro-conn (-> state/system :app.datomic.system/datomic-pro))
   ;;
   )

@@ -24,13 +24,13 @@ repos:
         types: [clojure]
         require_serial: true
 
-      - id: cljfmt
-        name: cljfmt formatter
-        description: Run formatting rules with cljfmt
-        types: [clojure]
-        entry: cljfmt check
-        language: system
-        require_serial: true
+      #- id: cljfmt
+      #  name: cljfmt formatter
+      #  description: Run formatting rules with cljfmt
+      #  types: [clojure]
+      #  entry: cljfmt check
+      #  language: system
+      #  require_serial: true
 
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.33.0

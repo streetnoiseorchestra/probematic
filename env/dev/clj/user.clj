@@ -27,6 +27,8 @@
   (in-ns 'dev)
   :loaded)
 
+(prn "user loaded")
+
 (comment
 
   ;; Clear all values in the portal inspector window
