@@ -226,20 +226,22 @@
   (stop-pub))
 
 (defmethod ig/init-key ::openobserve
-  [_ {:keys [url user password data-stream]}]
-  (μ/log ::openobserve-publisher :data-stream data-stream)
-  (assert url "url is required")
-  (assert user "user is required")
-  (assert password "password is required")
-  (assert data-stream "data-stream is required")
-  (μ/start-publisher!
-   {:type :elasticsearch
-    :url url
-    :els-version :v7.x
-    :data-stream data-stream
-    :http-opts {:basic-auth [user password]}
-    :transform error/redact-mulog-events}))
+  [_ {:keys [url user password data-stream enabled?]}]
+  (when enabled?
+    (μ/log ::openobserve-publisher :data-stream data-stream)
+    (assert url "url is required")
+    (assert user "user is required")
+    (assert password "password is required")
+    (assert data-stream "data-stream is required")
+    (μ/start-publisher!
+     {:type :elasticsearch
+      :url url
+      :els-version :v7.x
+      :data-stream data-stream
+      :http-opts {:basic-auth [user password]}
+      :transform error/redact-mulog-events})))
 
 (defmethod ig/halt-key! ::openobserve
   [_ stop-pub]
-  (stop-pub))
+  (when stop-pub
+    (stop-pub)))

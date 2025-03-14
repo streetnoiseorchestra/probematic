@@ -54,7 +54,11 @@
                                                                 :test true
                                                                 :demo true}}
                    :app.ig/openobserve      #merge [#ref [:secrets :openobserve]
-                                                    {:data-stream #profile {:prod "snorga_prod_logs"
+                                                    {:enabled? #profile {:prod true
+                                                                         :dev  false
+                                                                         :test false
+                                                                         :demo false}
+                                                     :data-stream #profile {:prod "snorga_prod_logs"
                                                                             :dev  "snorga_dev_logs"
                                                                             :test "snorga_test_logs"}}]
 
