@@ -3,7 +3,7 @@
    [java.util.concurrent TimeUnit]
    [com.github.javafaker Faker])
   (:require [clojure.string :as str]
-            [datomic.client.api :as d]
+            [app.datomic.shim :as d]
             [tick.core :as t]
             [app.gigs.domain :as domain]
             [com.yetanalytics.squuid :as sq]))

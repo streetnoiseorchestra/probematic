@@ -8,7 +8,7 @@
    [app.urls :as url]
    [app.util :as util]
    [com.yetanalytics.squuid :as sq]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [tick.core :as t]))
 
 (defn queue-email! [sys email]

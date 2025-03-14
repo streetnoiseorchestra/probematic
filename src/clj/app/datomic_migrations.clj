@@ -3,7 +3,7 @@
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [com.brunobonacci.mulog :as μ]
-   [datomic.client.api :as d]))
+   [app.datomic.shim :as d]))
 
 (defn ident-has-attr?
   [db ident attr]

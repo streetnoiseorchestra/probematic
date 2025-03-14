@@ -4,7 +4,7 @@
    [app.probeplan.domain :as domain]
    [app.queries :as q]
    [app.util :as util]
-   [datomic.client.api :as datomic]))
+   [app.datomic.shim :as datomic]))
 
 (defn generate-probeplan! [db]
   (let [play-stats (q/load-play-stats db)]

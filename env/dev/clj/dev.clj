@@ -105,7 +105,7 @@
   (do
     (require '[integrant.repl.state :as state])
     (require '[keycloak.admin :as admin])
-    (require '[datomic.client.api :as datomic])
+    (require '[app.datomic.shim :as datomic])
     (def env (-> state/system :app.ig/env))
     (def kc (-> state/system :app.ig/keycloak))
     (def conn (-> state/system :app.ig/datomic-db :conn))

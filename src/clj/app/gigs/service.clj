@@ -20,7 +20,7 @@
    [clojure.string :as str]
    [com.yetanalytics.squuid :as sq]
    [ctmx.rt :as rt]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [medley.core :as m]
    [tick.core :as t]))
 

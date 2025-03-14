@@ -4,7 +4,7 @@
    [app.ledger.domain :as ledger.domain]
    [app.queries :as q]
    [com.yetanalytics.squuid :as sq]
-   [datomic.client.api :as datomic]))
+   [app.datomic.shim :as datomic]))
 
 (defn all-members [db]
   (->> (d/find-all db :member/member-id q/member-pattern)

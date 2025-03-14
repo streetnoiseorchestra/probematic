@@ -3,7 +3,7 @@
   (:require
    [app.auth :as auth]
    [com.yetanalytics.squuid :as sq]
-   [datomic.client.api :as d]
+   [app.datomic.shim :as d]
    [medley.core :as m])
   (:import
    [java.util UUID]))
@@ -201,7 +201,7 @@
 (comment
   (do
     (require '[integrant.repl.state :as state])
-    (require  '[datomic.client.api :as datomic])
+    (require  '[app.datomic.shim :as datomic])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def db (datomic/db conn))) ;; rcf
 

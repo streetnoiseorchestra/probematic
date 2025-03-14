@@ -28,7 +28,7 @@
   (tap> main/system)
 
   (require '[app.queries :as q])
-  (require '[datomic.client.api :as datomic])
+  (require '[app.datomic.shim :as datomic])
   (require '[app.jobs.reminders :as reminders])
 
   (let [db (datomic/db (-> main/system :app.ig/datomic-db :conn))

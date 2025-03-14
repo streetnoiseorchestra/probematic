@@ -16,7 +16,7 @@
             [app.sardine :as sardine]
             [com.brunobonacci.mulog :as μ]
             [ctmx.render :as ctmx.render]
-            [datomic.client.api :as d]
+            [app.datomic.shim :as d]
             [datomic.local :as dl]
             [hiccup2.core :as hiccup2]
             [integrant.core :as ig]

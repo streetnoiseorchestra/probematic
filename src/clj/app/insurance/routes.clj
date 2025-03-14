@@ -4,7 +4,7 @@
    [app.layout :as layout]
    [app.queries :as q]
    [ctmx.core :as ctmx]
-   [datomic.client.api :as d]
+   [app.datomic.shim :as d]
    [reitit.ring.malli :as reitit.ring.malli]))
 
 (defn insurance-detail []

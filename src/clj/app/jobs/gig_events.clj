@@ -8,7 +8,7 @@
    [app.errors :as errors]
    [chime.core :as chime]
    [clojure.data]
-   [datomic.client.api :as datomic])
+   [app.datomic.shim :as datomic])
   (:import
    (java.time Instant)))
 

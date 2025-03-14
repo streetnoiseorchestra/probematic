@@ -129,7 +129,7 @@
 
   (do
     (require '[integrant.repl.state :as state])
-    (require '[datomic.client.api :as datomic])
+    (require '[app.datomic.shim :as datomic])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def db (datomic/db conn))
     (let [{:insurance.policy/keys [covered-instruments]} (q/retrieve-policy db #uuid "018bf625-1a68-8327-b386-fbb9e80dc987")

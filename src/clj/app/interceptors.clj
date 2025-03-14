@@ -13,7 +13,7 @@
    [clojure.string :as str]
    [co.deps.ring-etag-middleware :as etag]
    [com.brunobonacci.mulog :as μ]
-   [datomic.client.api :as d]
+   [app.datomic.shim :as d]
    [io.pedestal.http :as http]
    [io.pedestal.http.ring-middlewares :as middlewares]
    [io.pedestal.interceptor :as interceptor]

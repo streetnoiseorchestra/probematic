@@ -8,7 +8,7 @@
    [app.queries :as q]
    [app.util :as util]
    [com.yetanalytics.squuid :as sq]
-   [datomic.client.api :as datomic]))
+   [app.datomic.shim :as datomic]))
 
 "
 We rarely want to add a file to the store without also adding some reference to it in another identity.
@@ -111,7 +111,7 @@ So here we provide functions to store the content and generate datoms for use in
 (comment
   (do
     (require '[integrant.repl.state :as state])
-    (require '[datomic.client.api :as datomic])
+    (require '[app.datomic.shim :as datomic])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def filestore (:app.ig/filestore state/system))
     (def full-opts (-> state/system :app.ig/env :insurance :images  :full-opts))

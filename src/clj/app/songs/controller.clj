@@ -9,7 +9,7 @@
    [app.util :as util]
    [com.yetanalytics.squuid :as sq]
    [ctmx.rt :as rt]
-   [datomic.client.api :as datomic]))
+   [app.datomic.shim :as datomic]))
 
 (defn create-song! [req]
   (let [{:keys [title active?]} (-> req util/unwrap-params)
@@ -82,7 +82,7 @@
   (do
     (require '[integrant.repl.state :as state])
 
-    (require  '[datomic.client.api :as datomic])
+    (require  '[app.datomic.shim :as datomic])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def req {:datomic-conn conn
               :db (datomic/db conn)

@@ -6,7 +6,7 @@
    [clojure.string :as str]
    [clojure.walk :as walk]
    [ctmx.form :as form]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [medley.core :as m]
    [ring.util.codec :as codec]
    [tick.core :as t])

@@ -4,7 +4,7 @@
    [app.probeplan.domain :as domain]
    [app.datomic :as d]
    [app.util :as util]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [tick.core :as t]
    [chime.core :as chime]))
 

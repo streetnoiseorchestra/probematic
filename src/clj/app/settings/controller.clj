@@ -7,7 +7,7 @@
    [com.yetanalytics.squuid :as sq]
    [app.util.http :as common]
    [app.datomic :as d]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [app.settings.domain :as domain]
    [app.util :as util]))
 

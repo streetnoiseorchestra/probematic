@@ -17,7 +17,7 @@
    [clojure.string :as str]
    [com.yetanalytics.squuid :as sq]
    [ctmx.rt :as rt]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [taoensso.carmine :as redis]
    [tick.core :as t]))
 
@@ -275,7 +275,7 @@
 (comment
   (do
     (require '[integrant.repl.state :as state])
-    (require  '[datomic.client.api :as datomic])
+    (require  '[app.datomic.shim :as datomic])
     (def env (-> state/system :app.ig/env))
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def redis (-> state/system :app.ig/redis))

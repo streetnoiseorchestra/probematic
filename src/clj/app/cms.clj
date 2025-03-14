@@ -2,7 +2,7 @@
   (:require
    [app.errors :as errors]
    [app.queries :as q]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [jsonista.core :as j]
    [org.httpkit.client :as client]
    [tick.core :as t]))

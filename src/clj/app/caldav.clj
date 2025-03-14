@@ -92,7 +92,7 @@
 
   (do
     (require '[integrant.repl.state :as state])
-    (require '[datomic.client.api :as datomic])
+    (require '[app.datomic.shim :as datomic])
     (require '[app.queries :as q])
     (def env (:app.ig/env state/system))
     (def conn (-> state/system :app.ig/datomic-db :conn))

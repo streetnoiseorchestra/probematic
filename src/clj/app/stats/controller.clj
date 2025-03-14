@@ -5,7 +5,7 @@
    [app.util :as util]
    [app.util.http :as http.util]
    [clojure.core.cache.wrapped :as cache]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [tick.core :as t]))
 
 (defn active-members-in-period [db from to]

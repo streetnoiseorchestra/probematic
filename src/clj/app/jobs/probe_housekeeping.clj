@@ -8,7 +8,7 @@
    [app.queries :as q]
    [chime.core :as chime]
    [com.yetanalytics.squuid :as sq]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [ol.jobs-util :as jobs]
    [tick.core :as t])
   (:import

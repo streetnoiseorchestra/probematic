@@ -5,7 +5,7 @@
    [app.queries :as q]
    [app.util.http :as http.util]
    [ctmx.core :as ctmx]
-   [datomic.client.api :as d]))
+   [app.datomic.shim :as d]))
 
 (defn member-vcard-download []
   ["/member-vcard/{member-id}" {:app.route/name :app/member-vcard

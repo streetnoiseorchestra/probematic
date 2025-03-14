@@ -5,7 +5,7 @@
    [app.queries :as q]
    [app.util.http :as http.util]
    [ctmx.core :as ctmx]
-   [datomic.client.api :as d]))
+   [app.datomic.shim :as d]))
 
 (defn polls-detail []
   (ctmx/make-routes

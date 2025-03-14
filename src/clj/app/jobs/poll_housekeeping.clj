@@ -4,7 +4,7 @@
    [app.datomic :as d]
    [app.errors :as errors]
    [app.queries :as q]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [app.poll.domain :as domain]
    [ol.jobs-util :as jobs]
    [tick.core :as t]))

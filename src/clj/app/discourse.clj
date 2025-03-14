@@ -8,7 +8,7 @@
    [app.urls :as url]
    [clojure.set :as set]
    [clojure.string :as str]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [jsonista.core :as j]
    [martian.core :as martian]
    [martian.httpkit :as martian-http]

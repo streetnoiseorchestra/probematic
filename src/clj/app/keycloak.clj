@@ -4,7 +4,7 @@
    [app.queries :as q]
    [app.util :as util]
    [clojure.string :as str]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [jsonista.core :as j]
    [keycloak.admin :as admin]
    [keycloak.deployment :as keycloak]
@@ -179,7 +179,7 @@
 
   (do
     (require '[integrant.repl.state :as state])
-    (require '[datomic.client.api :as datomic])
+    (require '[app.datomic.shim :as datomic])
     (require '[keycloak.admin :as admin])
     (def env (-> state/system :app.ig/env))
     (def kc (-> state/system :app.ig/keycloak))

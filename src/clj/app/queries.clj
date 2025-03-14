@@ -9,7 +9,7 @@
    [app.settings.domain :as settings.domain]
    [app.util :as util]
    [clojure.java.io :as io]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [medley.core :as m]
    [tick.core :as t]))
 
@@ -1130,7 +1130,7 @@
 (comment
   (do
     (require '[integrant.repl.state :as state])
-    (require  '[datomic.client.api :as datomic])
+    (require  '[app.datomic.shim :as datomic])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def db (datomic/db conn))) ;; rcf
 

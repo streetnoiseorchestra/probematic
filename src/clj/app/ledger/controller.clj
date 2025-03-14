@@ -9,7 +9,7 @@
    [app.util :as util]
    [app.util.http :as util.http]
    [com.yetanalytics.squuid :as sq]
-   [datomic.client.api :as datomic]
+   [app.datomic.shim :as datomic]
    [tick.core :as t]))
 
 (defn new-member-ledger! [conn {:member/keys [member-id] :as member}]
@@ -91,7 +91,7 @@
 (comment
   (do
     (require '[integrant.repl.state :as state])
-    (require '[datomic.client.api :as datomic])
+    (require '[app.datomic.shim :as datomic])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def db (datomic/db conn))) ;; rcf
 
