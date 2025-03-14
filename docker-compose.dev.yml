@@ -1,5 +1,4 @@
 ---
-version: "3.8"
 services:
   redis:
     image: docker.io/library/redis:7
@@ -29,3 +28,43 @@ services:
     volumes:
       - ./data-smtp4dev:/smtp4dev
     restart: unless-stopped
+
+  datomic-console:
+    image: ghcr.io/ramblurr/datomic-pro:1.0.7260
+    command: console
+    environment:
+      DB_URI: "datomic:sql://?jdbc:sqlite:/data/datomic-sqlite.db"
+    volumes:
+      - "./data:/data:z"
+    ports:
+      - 127.0.0.1:8081:8080
+
+  datomic-transactor:
+    image: ghcr.io/ramblurr/datomic-pro:1.0.7260
+    environment:
+      DATOMIC_PROTOCOL: sql
+      DATOMIC_SQL_DRIVER_CLASS: org.sqlite.JDBC
+      DATOMIC_SQL_URL: jdbc:sqlite:/data/datomic-sqlite.db
+      DATOMIC_HEALTHCHECK_HOST: 127.0.0.1
+      DATOMIC_HEALTHCHECK_PORT: 9999
+      # this one is for the containers
+      DATOMIC_HOST: datomic-transactor
+      # this one is for the host machine
+      DATOMIC_ALT_HOST: "127.0.0.1"
+      DATOMIC_STORAGE_ADMIN_PASSWORD: admin
+      DATOMIC_STORAGE_DATOMIC_PASSWORD: dev
+    ports:
+      - 127.0.0.1:4334:4334
+    volumes:
+      - "./data:/data:z"
+      - "./config:/config:z"
+    restart: always
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'if [[ $(curl -s -o /dev/null -w "%{http_code}" -X GET http://127.0.0.1:9999/health)  = "200" ]]; then echo 0; else echo 1; fi',
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 30

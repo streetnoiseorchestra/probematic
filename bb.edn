@@ -3,8 +3,8 @@
  {lint (shell "clj-kondo --lint src --fail-level error")
   repl  (shell "clojure -A:dev")
   compile (shell "clojure -T:build compile-java-dev")
-  repl-portal  (shell "clojure -A:dev -M:inspect/portal-cli-cider")
-  repl-term  (shell "clojure -A:test -A:dev -M:repl/cider-refactor")
+  repl-portal  (shell "clojure -A:dev -M:repl/cider")
+  repl-term  (shell "clojure -A:test -A:dev -M:repl/cider")
 
   npm-install (shell {:dir "./"} "npm" "install")
   repl-ui {:depends [npm-install]
