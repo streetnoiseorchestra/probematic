@@ -75,7 +75,7 @@
      :height height}))
 
 (comment
-  (def store (start! {:store-path "/home/ramblurr/src/sno/probematic/data.filestore"}))
+  (def store (start! {:store-path "/home/ramblurr/src/sno/probematic/data.dev/filestore"}))
   (def hello (block/read! "hello world"))
   (str (:id hello))
 

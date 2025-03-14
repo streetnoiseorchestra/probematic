@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "Creating SQLite database and schema..."
-sqlite3 ./data/datomic-sqlite.db "
+sqlite3 ./data.dev/datomic/data/datomic-sqlite.db "
       CREATE TABLE IF NOT EXISTS datomic_kvs (
         id TEXT NOT NULL PRIMARY KEY,
         rev INTEGER,

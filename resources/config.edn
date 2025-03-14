@@ -11,7 +11,7 @@
                                    :path      "/"}
                    :session-ttl-s 1210000 ; 14 days
                    }
- :filestore       {:store-path #profile {:dev  "/home/ramblurr/src/sno/probematic/data.filestore"
+ :filestore       {:store-path #profile {:dev  "/home/ramblurr/src/sno/probematic/data.dev/filestore"
                                          :prod #or [#env APP_FILESTORE_DIR "/data/filestore"]}}
  :oauth2          {:well-known-uri #ref [:secrets :oauth2 :well-known-uri]
                    :client-id      #ref [:secrets :oauth2 :client-id]
@@ -106,11 +106,12 @@
                                                     :db-name     "probematic"
                                                     :env         #ig/ref :app.ig/env
                                                     :storage-dir #or [#env DATOMIC_DB_STORAGE_DIR
-                                                                      #profile {:dev  #envf ["%s/datomic.data" PWD]
+                                                                      #profile {;; :dev  #envf ["%s/datomic.data" PWD]
+                                                                                :dev  #envf ["%s/datomic.data.restored" PWD]
                                                                                 :test #envf ["%s/datomic.test.data" PWD]
                                                                                 :demo #envf ["%s/datomic.demo.data" PWD]}]}
                    :app.datomic.system/datomic-pro {:db-uri     #or [#env DATOMIC_URI
-                                                                     #profile {:dev "datomic:sql://app?jdbc:sqlite:data/datomic-sqlite.db"}]
+                                                                     #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]
                                                     :migrations {}}
                    :app.ig/i18n-langs              {}
                    :app.ig/mailgun                 {:env #ig/ref :app.ig/env}

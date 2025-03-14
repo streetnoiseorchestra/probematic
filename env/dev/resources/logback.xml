@@ -105,6 +105,7 @@
     <logger name="com.walmartlabs.lacinia.pedestal.subscriptions" level="WARN" />
     <logger name="io.pedestal.http.cors" level="error" />
     <logger name="migratus" level="INFO" />
+    <logger name="datomic" level="WARN"/>
 
     <!-- Enable some verbose logs for our namespaces -->
     <logger name="ol.system" level="DEBUG"/>

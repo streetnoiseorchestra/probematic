@@ -42,11 +42,12 @@
     conn))
 
 (defmethod ig/halt-key! ::datomic-pro
-  [_ server]
-  (μ/log ::db-stop))
+  [_ conn]
+  (μ/log ::db-stop)
+  (d/release conn))
 
 (comment
-  (def uri "datomic:sql://app?jdbc:sqlite:data/datomic-sqlite.db")
+  (def uri "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db")
   (d/create-database uri)
   (def conn (d/connect uri))
   ;; rcf

@@ -113,6 +113,8 @@
   ;; rcf
   (q/find-all-gigs db)
 
+  (last (datomic.client.api/tx-range conn nil))
+
   (def user0 (second))
 
   (do
@@ -134,6 +136,9 @@
   (go)
   (clojure.repl.deps/sync-deps)
   (restart) ;; rcf
+
+  (def local-conn (-> state/system :app.ig/datomic-db :conn))
+  (last (datomic.client.api/tx-range local-conn {:start #inst "2023-01-01T00:00:00.000-00:00" :end nil :limit -1}))
 
   (def pro-conn (-> state/system :app.datomic.system/datomic-pro))
   ;;

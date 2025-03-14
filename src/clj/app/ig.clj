@@ -129,16 +129,17 @@
   [_ config]
   (μ/log ::init-datomic)
   (let [db-name (select-keys config [:db-name])
-        client (d/client (select-keys config [:server-type :system :storage-dir]))
-        _ (d/create-database client db-name)
-        conn (d/connect client db-name)]
+        _       (tap> [:connect-map (select-keys config [:server-type :system :storage-dir]) db-name])
+        client  (d/client (select-keys config [:server-type :system :storage-dir]))
+        _       (d/create-database client db-name)
+        conn    (d/connect client db-name)]
     (datomic.migrations/migrate! (:env config) conn migrations/migration-fns)
     (assoc config :conn conn)))
 
 (defmethod ig/halt-key! ::datomic-db
   [_ config]
   (μ/log ::halt-datomic)
-  (dl/release-db (select-keys config [:system :db-name])))
+  (dl/release-db (select-keys config [:storage-dir :system :db-name])))
 
 (defmethod ig/init-key ::i18n-langs
   [_ _]
