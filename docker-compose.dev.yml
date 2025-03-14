@@ -4,15 +4,11 @@ services:
     image: docker.io/valkey/valkey:8
     restart: always
     command:
-      [
-        bash,
-        -c,
-        "docker-entrypoint.sh --appendonly yes --save 60 1 --notify-keyspace-events AKE --requirepass devpassword123",
-      ]
+      - bash
+      - "-c"
+      - "docker-entrypoint.sh  --notify-keyspace-events AKE --requirepass devpassword123"
     ports:
       - "6379:6379"
-    volumes:
-      - "./data.dev/redis:/data:z"
     labels:
       io.containers.autoupdate: registry
   smtp4dev:
@@ -44,7 +40,7 @@ services:
       DATOMIC_PROTOCOL: sql
       DATOMIC_SQL_DRIVER_CLASS: org.sqlite.JDBC
       DATOMIC_SQL_URL: jdbc:sqlite:/data/datomic-sqlite.db
-      DATOMIC_JAVA_OPTS: -Xmx4g -Xms4g
+      DATOMIC_JAVA_OPTS: -Xmx4g -Xms4g -Dlogback.configurationFile=/config/logback.xml
       DATOMIC_HEALTHCHECK_HOST: 127.0.0.1
       DATOMIC_HEALTHCHECK_PORT: 9999
       # this one is for the containers

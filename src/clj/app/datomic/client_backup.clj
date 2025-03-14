@@ -11,7 +11,7 @@
    [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.set :as set]
-   [datomic.client.api :as d-client]))
+   [app.datomic.shim :as datomic]))
 
 (defn progress-fn
   "Return a function to be called during iteration. It will log progress
@@ -39,14 +39,14 @@
   "Returns all tx identifiers in time order.
   Skips the initial transactions empty databases have."
   [backup-start conn]
-  (d-client/tx-range conn {:start backup-start :limit -1}))
+  (datomic/tx-range conn {:start backup-start :limit -1}))
 
 (defn- attr-info [db attr-info-cache a]
   (get (swap! attr-info-cache
               (fn [attrs]
                 (if (contains? attrs a)
                   attrs
-                  (assoc attrs a (d-client/pull @db '[:db/ident :db/valueType] a)))))
+                  (assoc attrs a (datomic/pull @db '[:db/ident :db/valueType] a)))))
        a))
 
 (defn- output-tx [db-ref attr-info-cache {:keys [data]} ignore-attributes]
@@ -74,24 +74,24 @@
                         datoms))}))
 
 (defn- output-all-tx [backup-start conn out]
-  (let [db                (d-client/db conn)
+  (let [db                (datomic/db conn)
         attr-ident-cache  (atom {})
         out!              #(binding [*out* out] (prn %))
         ref-attrs         (into old-ref-attrs
                                 (comp
                                  (map first)
                                  (remove #(str/starts-with? (str %) ":db")))
-                                (d-client/q '[:find ?id
-                                              :where
-                                              [?attr :db/ident ?id]
-                                              [?attr :db/valueType :db.type/ref]]
-                                            db))
+                                (datomic/q '[:find ?id
+                                             :where
+                                             [?attr :db/ident ?id]
+                                             [?attr :db/valueType :db.type/ref]]
+                                           db))
         tuple-attrs       (into old-tuple-attrs
-                                (d-client/q '[:find ?id ?ta
-                                              :where
-                                              [?attr :db/ident ?id]
-                                              [?attr :db/tupleAttrs ?ta]]
-                                            db))
+                                (datomic/q '[:find ?id ?ta
+                                             :where
+                                             [?attr :db/ident ?id]
+                                             [?attr :db/tupleAttrs ?ta]]
+                                           db))
         ignore-attributes (into ignore-attributes
                                 (keys tuple-attrs))
         progress!         (progress-fn "backup transactions written")]
@@ -100,7 +100,7 @@
            :tuple-attrs      tuple-attrs
            :backup-timestamp (java.util.Date.)})
     (doseq [tx    (all-transactions backup-start conn)
-            :let  [tx-map (output-tx (delay (d-client/as-of db (:t tx))) attr-ident-cache tx
+            :let  [tx-map (output-tx (delay (datomic/as-of db (:t tx))) attr-ident-cache tx
                                      ignore-attributes)]
             :when (and (seq (:data tx-map))
                        (.after (get-in tx-map [:tx :db/txInstant]) backup-start))]
@@ -180,8 +180,8 @@
     (when (seq card-many)
       (swap! set-atom set/union card-many))))
 
-(def retry-timeout-ms 60000)
-(def retry-wait-ms 2000)
+(def retry-timeout-ms 120000)
+(def retry-wait-ms 5000)
 (def retryable-anomaly-categories #{:cognitect.anomalies/unavailable
                                     :cognitect.anomalies/interrupted
                                     :cognitect.anomalies/busy})
@@ -201,8 +201,7 @@
          res
          (cond
            (> (System/currentTimeMillis) give-up-at)
-           (throw (ex-info "Giving up after retry timed out"
-                           {:exception e}))
+           (throw (ex-info "Giving up after retry timed out" {:exception e}))
 
            (some-> e ex-data
                    :cognitect.anomalies/category
@@ -212,54 +211,79 @@
              (recur))
 
            :else
-           (throw (ex-info "Unretryable exception thrown"
-                           {:exception e}))))))))
+           (do
+             (tap> [:fatal-ex e (ex-data e)])
+             (throw (ex-info "Unretryable exception thrown" {:exception e})))))))))
 
-(defn- restore-tx-file
+(defn make-tx-data [{:keys [old->new ref-attrs cardinality-many-attrs txs] :as ctx} tx]
+  (into [(merge (:tx tx) {:db/id "datomic.tx"})]
+        (prepare-restore-tx (:data tx)
+                            old->new
+                            ref-attrs
+                            @cardinality-many-attrs)))
+
+(defn do-step [{:keys [conn progress! old->new ref-attrs cardinality-many-attrs txs] :as ctx} tx]
+  (let [tx-data            (make-tx-data ctx tx)
+        {tempids :tempids} (with-retry #(datomic/transact conn {:tx-data tx-data}))]
+    (add-cardinality-many-attrs! cardinality-many-attrs tx-data)
+    (progress!)
+    (-> ctx
+        (update :tx-data conj tx-data)
+        (update :tx-data-result conj tempids)
+        (update :step inc)
+        (assoc :old->new (merge old->new tempids))
+        (assoc :txs (rest txs)))))
+
+(defn restore-ctx [conn rdr]
+  (merge
+   (select-keys (read rdr) [:backup-timestamp :ref-attrs :tuple-attrs])
+   {:progress!              (progress-fn "transactions restored")
+    :conn                   conn
+    :max-steps              ##Inf
+    :step                   0
+    :tx-data-result         []
+    :tx-data                []
+    :cardinality-many-attrs (atom (into #{}
+                                        (map first)
+                                        (datomic/q '[:find ?ident
+                                                     :where
+                                                     [?a :db/cardinality :db.cardinality/many]
+                                                     [?a :db/ident ?ident]]
+                                                   (datomic/db conn))))
+    :txs                    (read-seq rdr)
+    :old->new               {}}))
+
+(defn sanity-check [{:keys [ref-attrs tuple-attrs backup-timestamp] :as ctx}]
+  (assert (set? ref-attrs) "Expected set of :ref-attrs in 1st backup form")
+  (assert (map? tuple-attrs) "Expected map of :tuple-attrs in 1st backup form")
+  (assert (inst? backup-timestamp) "Expected :backup-timestamp in 1st backup form")
+  ctx)
+
+(defonce ^:dynamic *abort?* (atom false))
+
+(defn should-return? [{:keys [step max-steps txs]}]
+  (or @*abort?*
+      (> step max-steps)
+      (nil? (first txs))))
+
+(defn restore-loop [o-ctx]
+  (loop [{:keys [step max-steps txs] :as ctx} o-ctx]
+    (if (should-return? ctx)
+      ctx
+      (recur (do-step ctx (first txs))))))
+
+(defn restore-tx-file
+
   "Restore a backup by running the transactions in from the reader
   to the database pointed to by `conn`. It is assumed that
   the given database is empty.
 
   Returns the old->new id mapping."
   [conn rdr]
-  ;; Read first form which is the mapping containing info about the backup
-  (let [{:keys [backup-timestamp ref-attrs tuple-attrs]} (read rdr)
-
-        ;; Initial set of card many attributes, tx processing will add any new ones here
-        cardinality-many-attrs (atom (into #{}
-                                           (map first)
-                                           (d-client/q '[:find ?ident
-                                                         :where
-                                                         [?a :db/cardinality :db.cardinality/many]
-                                                         [?a :db/ident ?ident]]
-                                                       (d-client/db conn))))
-        progress!              (progress-fn "transactions restored")]
-    (assert (set? ref-attrs) "Expected set of :ref-attrs in 1st backup form")
-    (assert (map? tuple-attrs) "Expected map of :tuple-attrs in 1st backup form")
-    (assert (inst? backup-timestamp) "Expected :backup-timestamp in 1st backup form")
-    (loop [old->new {}
-
-           ;; Read rest of the forms (tx data) without retaining head
-           txs (read-seq rdr)]
-      (if-let [tx (first txs)]
-        (let [tx-data (into [(merge (:tx tx)
-                                    {:db/id "datomic.tx"})]
-                            (prepare-restore-tx (:data tx)
-                                                old->new
-                                                ref-attrs
-                                                @cardinality-many-attrs))
-              {tempids :tempids}
-              (with-retry
-                #(d-client/transact
-                  conn
-                  {:tx-data tx-data}))]
-          (add-cardinality-many-attrs! cardinality-many-attrs tx-data)
-          (progress!)
-          ;; Update old->new mapping with entity ids created in this tx
-          (recur (merge old->new tempids)
-                 (rest txs)))
-        ;; old->new
-        :restored))))
+  (reset! *abort?* false)
+  (-> (restore-ctx conn rdr)
+      (sanity-check)
+      (restore-loop)))
 ;; --------------------------------------------------
 ;; Public API
 

@@ -4,7 +4,21 @@
    [datomic.client.api :as dc]
    [datomic.api :as d]))
 
-(def ^:dynamic *DATOMIC-MODE* :client)
+"Plan:
+
+1. Find replace all uses of datomic.client.api to this shim's ns
+2. Perform export of datomic dev local data txs
+3. Import txs into datomic on prem
+4. Switch to :peer mode
+5. Make everything work
+6. Find/replace all uses of shim ns with datomic.api
+
+"
+
+(def ^:dynamic *DATOMIC-MODE* :peer)
+
+(defn current-mode []
+  *DATOMIC-MODE*)
 
 (defmacro with-datomic-mode [mode & body]
   `(binding [*DATOMIC-MODE* ~mode]
@@ -40,12 +54,11 @@
     :peer   (d/db conn)
     :client (dc/db conn)))
 
-(defn transact! [conn tx-map]
+(defn transact [conn tx-map]
+  (assert (:tx-data tx-map) "transact must be called with :tx-data")
   (case *DATOMIC-MODE*
     :peer   @(d/transact conn (:tx-data tx-map))
     :client (dc/transact conn tx-map)))
-
-(def transact transact!)
 
 (defn history [db]
   (case *DATOMIC-MODE*
@@ -95,3 +108,8 @@
 
 (defn attr-is-ref? [db attr-name]
   (= (attr-type db attr-name) :db.type/ref))
+
+(defn tx-range [conn arg-map]
+  (case *DATOMIC-MODE*
+    :peer   (d/tx-range (d/log) (:start arg-map) (or (:end arg-map) (:limit arg-map)))
+    :client (dc/tx-range conn arg-map)))

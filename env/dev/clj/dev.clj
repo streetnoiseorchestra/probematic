@@ -136,7 +136,9 @@
   (go)
   (clojure.repl.deps/sync-deps)
   (restart) ;; rcf
+  (refresh)
 
+  (-> state/system :app.ig/datomic-db)
   (def local-conn (-> state/system :app.ig/datomic-db :conn))
   (last (datomic.client.api/tx-range local-conn {:start #inst "2023-01-01T00:00:00.000-00:00" :end nil :limit -1}))
 

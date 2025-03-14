@@ -3,7 +3,7 @@
   (:require [app.auth :as auth]
             [app.caldav :as caldav]
             [app.config :as config]
-            [app.datomic-migrations :as datomic.migrations]
+            [app.datomic.system :as datomic]
             [app.email.email-worker :as email-worker]
             [app.errors :as error]
             [app.filestore :as filestore]
@@ -11,21 +11,18 @@
             [app.interceptors :as interceptors]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
-            [app.migrations.core :as migrations]
             [app.routes :as routes]
             [app.sardine :as sardine]
             [com.brunobonacci.mulog :as μ]
             [ctmx.render :as ctmx.render]
-            [app.datomic.shim :as d]
-            [datomic.local :as dl]
             [hiccup2.core :as hiccup2]
             [integrant.core :as ig]
             [io.pedestal.http :as server]
             [nrepl.server :as nrepl]
+            [ol.jobs.ig]
             [ol.system :as system]
             [reitit.http :as http]
             [taoensso.carmine :as car]))
-
 ;; Ensure ctmx is using the XSS safe hiccup render function
 (alter-var-root #'ctmx.render/html (constantly
                                     #(-> % ctmx.render/walk-attrs hiccup2/html str)))
@@ -128,18 +125,12 @@
 (defmethod ig/init-key ::datomic-db
   [_ config]
   (μ/log ::init-datomic)
-  (let [db-name (select-keys config [:db-name])
-        _       (tap> [:connect-map (select-keys config [:server-type :system :storage-dir]) db-name])
-        client  (d/client (select-keys config [:server-type :system :storage-dir]))
-        _       (d/create-database client db-name)
-        conn    (d/connect client db-name)]
-    (datomic.migrations/migrate! (:env config) conn migrations/migration-fns)
-    (assoc config :conn conn)))
+  (datomic/start config))
 
 (defmethod ig/halt-key! ::datomic-db
   [_ config]
   (μ/log ::halt-datomic)
-  (dl/release-db (select-keys config [:storage-dir :system :db-name])))
+  (datomic/stop config))
 
 (defmethod ig/init-key ::i18n-langs
   [_ _]

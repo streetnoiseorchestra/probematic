@@ -59,7 +59,7 @@
         com.taoensso/tempura                 {:mvn/version "1.5.3"}
         ;; Database
         com.datomic/local                    {:mvn/version "1.0.277"}
-        com.datomic/peer                     {:mvn/version "1.0.7260"}
+        com.datomic/peer                     {:mvn/version "1.0.7277"}
         org.xerial/sqlite-jdbc               {:mvn/version "3.49.1.0"}
         dev.gethop/stork                     {:mvn/version "0.1.7"}
         com.fulcrologic/guardrails           {:mvn/version "1.2.9"}

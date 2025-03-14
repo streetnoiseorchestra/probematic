@@ -1,10 +1,13 @@
 (ns app.datomic.system
   (:require
+
+   [app.datomic.shim :as shim]
+   [datomic.local :as dl]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [com.brunobonacci.mulog :as μ]
-   [integrant.core :as ig]
    [com.fulcrologic.guardrails.malli.core :refer [>defn-]]
+   [datomic.client.api :as dc]
    [datomic.api :as d]
    [app.datomic.migrations :as migrations]))
 
@@ -30,21 +33,42 @@
 (defn transact-schema [conn]
   (d/transact conn (-> (io/resource "schema.edn") slurp edn/read-string)))
 
-(defmethod ig/init-key ::datomic-pro
-  [_ config]
-  (let [conn       (ensure-and-connect (:db-uri config))
-        migrations (gather-migrations (:migration-components config))]
+(defn start-peer [{:keys [peer]}]
+  (assert (:db-uri peer))
+  (let [conn           (ensure-and-connect (:db-uri peer))
+        #_#_migrations (gather-migrations (:migration-components peer))]
     (transact-schema conn)
-    (when migrations
-      (μ/log ::db-migrations :msg "Datomic installing schema migrations")
-      (migrations/install-schema conn migrations))
+    #_(when migrations
+        (μ/log ::db-migrations :msg "Datomic installing schema migrations")
+        (migrations/install-schema conn migrations))
     (μ/log ::db-connected :msg "Datomic database started successfully")
-    conn))
 
-(defmethod ig/halt-key! ::datomic-pro
-  [_ conn]
-  (μ/log ::db-stop)
-  (d/release conn))
+    (assoc peer :conn conn)))
+
+(defn stop-peer [config]
+  (d/release (:conn config)))
+
+(defn start-client [{:keys [client]}]
+  (let [db-name (select-keys client [:db-name])
+        _       (tap> [:connect-map (select-keys client [:server-type :system :storage-dir]) db-name])
+        c       (dc/client (select-keys client [:server-type :system :storage-dir]))
+        _       (dc/create-database c db-name)
+        conn    (dc/connect c db-name)]
+    #_(datomic.migrations/migrate! (:env client) conn migrations/migration-fns)
+    (assoc client :conn conn)))
+
+(defn stop-client [{:keys [client]}]
+  (dl/release-db (select-keys client [:storage-dir :system :db-name])))
+
+(defn start [config]
+  (case (shim/current-mode)
+    :peer   (start-peer config)
+    :client (start-client config)))
+
+(defn stop [config]
+  (case (shim/current-mode)
+    :peer   (stop-peer config)
+    :client (stop-client config)))
 
 (comment
   (def uri "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db")
