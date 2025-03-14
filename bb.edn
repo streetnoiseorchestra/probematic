@@ -1,21 +1,42 @@
 {:paths ["scripts"]
- :tasks
- {lint (shell "clj-kondo --lint src --fail-level error")
-  repl  (shell "clojure -A:dev")
-  compile (shell "clojure -T:build compile-java-dev")
-  repl-portal  (shell "clojure -A:dev -M:repl/cider")
-  repl-term  (shell "clojure -A:test -A:dev -M:repl/cider")
+ :deps  {io.aviso/pretty {:mvn/version "1.3"}}
+ :tasks {:requires   ([clojure.string :as str]
+                      [io.aviso.ansi :as ansi]
+                      [babashka.tasks :refer [shell]])
+         :init       (do
+                       (def lib (first *command-line-args*))
+                       (defn classpath-test-dev []
+                         (-> (shell {:out :string} "clj" "-A:test:dev" "-Spath") :out str/trim))
+                       (defn clj [& args]
+                         (println (str
+                                   ansi/bold-font "+ clojure " (str/join " " args)
+                                   ansi/reset-font))
+                         (apply clojure args))
+                       (defn shell+ [& args]
+                         (println (str
+                                   ansi/bold-font "+ " (str/join " " args)
+                                   ansi/reset-font))
+                         (apply shell args)))
+         lint        (shell "clj-kondo --lint src --fail-level error")
+         repl        (shell "clojure -A:dev")
+         compile     (shell "clojure -T:build compile-java-dev")
+         repl-portal (shell "clojure -A:dev -M:repl/cider")
+         repl-term   (shell "clojure -A:test -A:dev -M:repl/cider")
 
-  npm-install (shell {:dir "./"} "npm" "install")
-  repl-ui {:depends [npm-install]
-           :task  (shell {:dir "./"} "npx shadow-cljs -A dev watch app")}
-  tailwind-css (shell {:dir "./"} "npx" "tailwindcss"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
-  watch-css    (shell {:dir "./"} "npx" "tailwindcss" "-w" "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
-  prod-css     (shell {:dir "./"} "npx" "tailwindcss"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css" "--minify")
+         npm-install  (shell {:dir "./"} "npm" "install")
+         repl-ui      {:depends [npm-install]
+                       :task    (shell {:dir "./"} "npx shadow-cljs -A dev watch app")}
+         tailwind-css (shell {:dir "./"} "npx" "tailwindcss"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
+         watch-css    (shell {:dir "./"} "npx" "tailwindcss" "-w" "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
+         prod-css     (shell {:dir "./"} "npx" "tailwindcss"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css" "--minify")
 
-  clean (shell "clojure -T:build clean")
-  uberjar (shell "clojure -T:build uberjar")
-  test (shell "./bin/kaocha")
-  container-build {:task (exec 'container/build)}
-  container-publish {:task (exec 'container/publish)}
-  container-publish-latest {:task (exec 'container/publish-latest)}}}
+         sync-clj-kondo           (do
+                                    (let [cp (classpath-test-dev)]
+                                      (shell+ (str "clj-kondo --lint " cp " --copy-configs --skip-lint"))
+                                      (shell+ (str "clj-kondo --lint " cp "  --dependencies --parallel"))))
+         clean                    (shell "clojure -T:build clean")
+         uberjar                  (shell "clojure -T:build uberjar")
+         test                     (shell "./bin/kaocha")
+         container-build          {:task (exec 'container/build)}
+         container-publish        {:task (exec 'container/publish)}
+         container-publish-latest {:task (exec 'container/publish-latest)}}}
