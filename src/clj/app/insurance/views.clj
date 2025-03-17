@@ -44,13 +44,13 @@
 (defn coverage-status-icon [status]
   (let [{:keys [icon class]} (get coverage-status-data status)]
     (when icon
-      (icon {:class (ui/cs class "mr-1.5 h-5 w-5 flex-shrink-0")}))))
+      (icon {:class (ui/cs class "mr-1.5 h-5 w-5 shrink-0")}))))
 
 (defn coverage-change-icon [change]
   (let [change (or change :instrument.coverage.change/none)
         {:keys [icon class]} (get coverage-change-data change)]
     (when icon
-      (icon {:class (ui/cs class "mr-1.5 h-5 w-5 flex-shrink-0")}))))
+      (icon {:class (ui/cs class "mr-1.5 h-5 w-5 shrink-0")}))))
 
 (defn coverage-status-icon-span [tr status]
   [:span {:title (tr [status])}
@@ -63,7 +63,7 @@
 (defn policy-status-icon [status]
   (let [{:keys [icon class]} (get policy-status-data status)]
     (when icon
-      (icon {:class (ui/cs class "inline mr-1.5 h-5 w-5 flex-shrink-0")}))))
+      (icon {:class (ui/cs class "inline mr-1.5 h-5 w-5 shrink-0")}))))
 
 (defn breadcrumb-index [tr]
   (ui/breadcrumb-contained {:class "mt-6 sm:px-6 lg:px-8"}
@@ -87,7 +87,7 @@
                            {:label (-> coverage :instrument.coverage/instrument :instrument/name) :href nil}))
 
 (defn instrument-row [{:instrument/keys [name instrument-id category owner]}]
-  (let [style-icon "mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"]
+  (let [style-icon "mr-1.5 h-5 w-5 shrink-0 text-gray-400"]
     [:a {:href  (urls/link-instrument instrument-id) , :class "block hover:bg-gray-50"}
      [:div {:class "px-4 py-4 sm:px-6"}
       [:div {:class "flex items-center justify-between"}
@@ -119,7 +119,7 @@
       (response/hx-redirect (urls/link-policy new-policy-id)))))
 
 (defn policy-row [tr {:insurance.policy/keys [policy-id name status] :as policy}]
-  (let [style-icon "mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"
+  (let [style-icon "mr-1.5 h-5 w-5 shrink-0 text-gray-400"
         p-class "flex items-center text-sm text-gray-500 mr-6 tooltip"
         {:keys [total-needs-review total-changed total-removed total-new]} (controller/policy-totals policy)]
     [:div {:class "block"}
@@ -145,7 +145,7 @@
                                         ;(icon/calendar {:class style-icon})
                                         ;; [:p "Last Played "]
         ]
-       [:div {:class "ml-2 flex flex-shrink-0 gap-4"}
+       [:div {:class "ml-2 flex shrink-0 gap-4"}
         (ui/button :label (tr [:action/delete])  :priority :white-destructive :size :small
                    :hx-delete (util/comp-name #'insurance-policy-delete)
                    :hx-vals {:policy-id (str policy-id)}
@@ -166,7 +166,7 @@
      [:h1 {:class "text-2xl font-bold text-gray-900"}]]))
 
 (defn coverage-type-row [{:insurance.coverage.type/keys [name type-id premium-factor]}]
-  (let [style-icon "mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"]
+  (let [style-icon "mr-1.5 h-5 w-5 shrink-0 text-gray-400"]
     [:div {:class "block hover:bg-gray-50"}
      [:div {:class "px-4 py-4 sm:px-6"}
       [:div {:class "flex items-center justify-between"}
@@ -223,7 +223,7 @@
 
   ;; (excel/generate-excel-changeset! policy nil)
 
-    [:div {:class "bg-white shadow py-4 px-6 space-y-12"}
+    [:div {:class "bg-white shadow-sm py-4 px-6 space-y-12"}
      [:form {:action (urls/link-policy-changes-confirm policy) :method :post}
       [:div {:class "border-b border-gray-900/10 pb-12"}
        [:h2 {:class "text-lg font-semibold leading-7 text-gray-900"} "Benachrichtigung über Änderungen"]
@@ -233,21 +233,21 @@
         [:div {:class "sm:col-span-4"}
          [:label {:for "recipient", :class "block text-sm font-medium leading-6 text-gray-900"} "Empfänger"]
          [:div {:class "mt-2"}
-          [:div {:class "flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
+          [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
 
            [:input {:type :text :name "recipient" :value (format "%s <%s>" recipient-name recipient-email)
                     :id "recipient" :class "block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"}]]]]
         [:div {:class "sm:col-span-4"}
          [:label {:for "subject", :class "block text-sm font-medium leading-6 text-gray-900"} "Betreff"]
          [:div {:class "mt-2"}
-          [:div {:class "flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
+          [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
 
            [:input {:type :text :name "subject" :value subject
                     :id "subject" :class "block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"}]]]]
         [:div {:class "col-span-full"}
          [:label {:for "about", :class "block text-sm font-medium leading-6 text-gray-900"} "About"]
          [:div {:class "mt-2"}
-          [:textarea {:id "body", :name "body", :rows "9", :class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sno-orange-600 sm:text-sm sm:leading-6"}
+          [:textarea {:id "body", :name "body", :rows "9", :class "block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sno-orange-600 sm:text-sm sm:leading-6"}
            (format "Sehr geehrter %s %s,
 
 Anbei finden Sie die neuesten Änderungen unserer Versicherungspolice für die Instrumente unserer Band. Bitte nehmen Sie sich einen Moment Zeit, um die Aktualisierungen durchzugehen.
@@ -268,9 +268,9 @@ Mit freundlichen Grüßen,
                         [:div {:class "mt-2 flex items-center gap-x-3"}
                          (icon/file-excel-outline {:class "h-12 w-12 text-gray-300"})
                          [:div {:class "mt-2 w-full space-y-2"}
-                          [:div {:class "flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-lg"}
+                          [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-lg"}
                            [:input {:type :text :name (str "attachment-filename-" type) :value filename :class "attachment-filename block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"}]]
-                          [:button {:type :button :class "rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                          [:button {:type :button :class "rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                                     :name "action"
                                     :hx-post (urls/link-policy-changes-confirm policy)
                                     :hx-include "input.attachment-filename"
@@ -365,14 +365,14 @@ Mit freundlichen Grüßen,
                                   [:input {:type "date" :name "effective-at" :id "effective-at"
                                            :value (t/date effective-at)
                                            :required true
-                                           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]
+                                           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]
                                   (ui/datetime effective-at)))
                     (ui/dl-item (tr [:insurance/effective-until])
                                 (if edit?
                                   [:input {:type "date" :name "effective-until" :id "effective-until"
                                            :value (t/date effective-until)
                                            :required true
-                                           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]
+                                           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]
                                   (ui/datetime effective-until)))
                     (ui/dl-item (tr [:insurance/premium-base-factor])
                                 (if edit?
@@ -380,7 +380,7 @@ Mit freundlichen Grüßen,
                                            :value premium-factor
                                            :step "0.00000001" :min "0" :max "2.0"
                                            :required true
-                                           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]
+                                           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]
                                   premium-factor))])]))))
 
 (ctmx/defcomponent  insurance-coverage-types-item-ro [{:keys [db] :as req} idx {:insurance.coverage.type/keys [name premium-factor type-id]}]
@@ -398,7 +398,7 @@ Mit freundlichen Grüßen,
         [:div {:class "mt-2 relative flex items-start"}
          [:input {:type "hidden" :value type-id :name (path "type-id")}]
          [:div {:class "flex h-5 items-center"}
-          [:input {:name delete-id :id delete-id :type "checkbox" :class "h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]
+          [:input {:name delete-id :id delete-id :type "checkbox" :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]
          [:div {:class "ml-3 text-sm"}
           [:label {:for delete-id :class "font-medium text-gray-700"} (tr [:action/delete])]]])])))
 
@@ -484,7 +484,7 @@ Mit freundlichen Grüßen,
         [:div {:class "mt-2 relative flex items-start"}
          [:input {:type "hidden" :value category-factor-id :name (path "category-id")}]
          [:div {:class "flex h-5 items-center"}
-          [:input {:name delete-id :id delete-id :type "checkbox" :class "h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]
+          [:input {:name delete-id :id delete-id :type "checkbox" :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]
          [:div {:class "ml-3 text-sm"}
           [:label {:for delete-id :class "font-medium text-gray-700"} (tr [:action/delete])]]])])))
 
@@ -907,7 +907,7 @@ Mit freundlichen Grüßen,
         {:id inputId :type "file" :name "files" :class "hidden" :multiple true
          :accept (str/join "," filestore.image/supported-mime-types)
          :_ "on change trigger submit on the closest parent <form/>"}]]
-      [:progress {:class "hidden progress-filled:transition-all progress-unfilled:duration-500 progress-filled:rounded-sm progress-unfilled:rounded-md progress-unfilled:bg-[#F2F2F2] progress-filled:bg-sno-green-500" :value "50" :max "100"}]
+      [:progress {:class "hidden progress-filled:transition-all progress-unfilled:duration-500 progress-filled:rounded-xs progress-unfilled:rounded-md progress-unfilled:bg-[#F2F2F2] progress-filled:bg-sno-green-500" :value "50" :max "100"}]
       (when error
         [:p {:class "text-red-500"} error])])))
 
@@ -980,7 +980,7 @@ Mit freundlichen Grüßen,
                             end
                        then trigger checkboxChanged on me" (tr [:selected]))
 
-                   :class "h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]]
+                   :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]]
 
         [:td {:class "actions-selected hidden flex" :colspan 2}
          [:div {:class (ui/cs col-all "flex gap-4  ml-4 pb-4 sm:pb-1")}
@@ -1027,7 +1027,7 @@ Mit freundlichen Grüßen,
                                          [:div {:class (ui/cs col-all center-all)}
                                           [:div {:class (ui/cs (when-not (controller/policy-editable? policy) "hidden"))}
                                            [:input {:type "checkbox" :id id :name "coverage-ids"
-                                                    :class "mark-coverage-as-data h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"
+                                                    :class "mark-coverage-as-data h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"
                                                     :value (str coverage-id)
                                                     :_ "on click trigger checkboxChanged on #instr-select-all"}]]]
                                          [:div {:class (ui/cs col-all)}
@@ -1114,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', function() {
        [:svg {:class "mx-auto h-12 w-12 text-gray-400", :stroke "currentColor", :fill "none", :viewbox "0 0 48 48", :aria-hidden "true"}
         [:path {:d "M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02", :stroke-width "2", :stroke-linecap "round", :stroke-linejoin "round"}]]
        [:div {:class "flex text-sm text-gray-600 justify-center"}
-        [:label {:for "file-upload" :class "relative rounded-md bg-white font-medium text-sno-orange-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-sno-orange-500 focus-within:ring-offset-2 hover:text-sno-orange-500"}
+        [:label {:for "file-upload" :class "relative rounded-md bg-white font-medium text-sno-orange-600 focus-within:outline-hidden focus-within:ring-2 focus-within:ring-sno-orange-500 focus-within:ring-offset-2 hover:text-sno-orange-500"}
          [:span "Upload a file"]]
         [:p {:class "pl-1 hidden md:block"} "or drag and drop"]]
        [:p {:class "text-xs text-gray-500"} "PNG, JPG, GIF up to 10MB"]]]]
@@ -1558,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', function() {
        [:div {:class "mt-8 grid w-full grid-cols-1 gap-6  lg:grid-flow-col-dense lg:grid-cols-3" :id id}
         [:div {:class "space-y-6 lg:col-span-3 lg:col-start-1"}
          [:section
-          [:div {:class "bg-white shadow"}
+          [:div {:class "bg-white shadow-sm"}
            [:div {:class "px-4 py-5 px-6  flex items-center justify-between "}
             [:div
              [:h2 {:class "text-lg font-medium leading-6 text-gray-900"} (tr [:insurance/covered-instruments])]]
@@ -1616,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', function() {
                        [:input {:type "text" :name "name" :id "name"
                                 :value (str "Band Instruments " this-year " - " next-year)
                                 :required true
-                                :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]]]
+                                :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]]]
                      [:div {:class "sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5"}
                       [:label {:for "first-name" :class "block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"}
                        (tr [:insurance/effective-at])]
@@ -1624,7 +1624,7 @@ document.addEventListener('DOMContentLoaded', function() {
                        [:input {:type "date" :name "effective-at" :id "effective-at"
                                 :value (str this-year "-05-01")
                                 :required true
-                                :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]]]
+                                :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]]]
                      [:div {:class "sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5"}
                       [:label {:for "first-name" :class "block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"}
                        (tr [:insurance/effective-until])]
@@ -1632,7 +1632,7 @@ document.addEventListener('DOMContentLoaded', function() {
                        [:input {:type "date" :name "effective-until" :id "effective-until"
                                 :value (str next-year "-04-30")
                                 :required true
-                                :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]]]
+                                :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"}]]]
                      [:div {:class "sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5"}
                       [:label {:for "first-name" :class "block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2"}
                        (tr [:insurance/premium-base-factor])]
@@ -1640,9 +1640,9 @@ document.addEventListener('DOMContentLoaded', function() {
                        (ui/factor-input :name "base-factor" :value (* (bigdec 1.07) (bigdec 0.00447)))]]]]]
                   [:div {:class "pt-5"}
                    [:div {:class "flex justify-end"}
-                    [:a {:href "/insurance" :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                    [:a {:href "/insurance" :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                      (tr [:action/cancel])]
-                    [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-sno-orange-700 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                    [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-xs hover:bg-sno-orange-700 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                      (tr [:action/create])]]]])])))
 
 (ctmx/defcomponent ^:endpoint instrument-create-page [{:keys [tr db] :as req}]
@@ -1672,9 +1672,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                   [:div {:class "pt-5"}
                    [:div {:class "flex justify-end"}
-                    [:a {:href "/insurance" :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                    [:a {:href "/insurance" :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                      (tr [:action/cancel])]
-                    [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-sno-orange-700 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                    [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-xs hover:bg-sno-orange-700 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                      (tr [:action/create])]]]])]))
 
 (ctmx/defcomponent ^:endpoint instrument-detail-page [{:keys [db] :as req} ^:boolean edit?]
@@ -1925,7 +1925,7 @@ document.addEventListener('DOMContentLoaded', function() {
      (breadcrumb-index tr)
      [:div {:class "mt-6 sm:px-6 lg:px-8"}
       #_(ui/divider-left (tr [:insurance/policies]))
-      [:div {:class "overflow-hidden bg-white shadow sm:rounded-md mb-8"}
+      [:div {:class "overflow-hidden bg-white shadow-sm sm:rounded-md mb-8"}
        (insurance-faq req active-policy)]]
      [:div {:class "mt-6 sm:px-6 lg:px-8"}
       (ui/divider-left (tr [:insurance/policies])
@@ -1933,7 +1933,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                        :priority :white-rounded
                                        :centered? true
                                        :attr {:href "/insurance-new/"} :icon icon/plus))
-      [:div {:class "overflow-hidden bg-white shadow sm:rounded-md mb-8"}
+      [:div {:class "overflow-hidden bg-white shadow-sm sm:rounded-md mb-8"}
        (if (empty? policies)
          "No Policies"
          [:ul {:role "list", :class "divide-y divide-gray-200"}
@@ -1987,7 +1987,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             set my.checked to true
                             end
                        then trigger checkboxChanged on me")
-                            :class "h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]
+                            :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]
 
                   [:th {:class "text-left px-2"} "Member"]
                   [:th {:class "text-right px-2 max-w-32 text-pretty"} (str "# " (tr [:private-instruments]))]
@@ -1997,7 +1997,7 @@ document.addEventListener('DOMContentLoaded', function() {
                          (let [{:member/keys [name member-id]} member]
                            [:tr {:class "odd:bg-gray-200 even:bg-white"}
                             [:td {:class "px-2"}
-                             [:input {:type "checkbox" :id "foo" :name "member-ids" :class "h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"
+                             [:input {:type "checkbox" :id "foo" :name "member-ids" :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"
                                       :value (str member-id)
                                       :checked "true"
                                       :_ "on click trigger checkboxChanged on #instr-select-all"}]]

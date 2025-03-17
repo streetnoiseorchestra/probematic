@@ -64,13 +64,13 @@
      [:main {:class "sm:flex"}
       [:div {:class ""}
        [:div {:class "mt-10 flex space-x-3 sm:border-l sm:border-transparent sm:pl-6"}
-        [:a {:href "/", :class "inline-flex items-center rounded-md border border-transparent bg-sno-orange-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sno-orange-700 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+        [:a {:href "/", :class "inline-flex items-center rounded-md border border-transparent bg-sno-orange-600 px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-sno-orange-700 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
          (tr [:error/go-home])]
         [:a {:href "#"
              :hx-post "/notify-admin"
              :hx-vals {:human-id human-id}
              :hx-target "#notification-confirmation"
-             :class "inline-flex items-center rounded-md border border-transparent bg-sno-orange-100 px-4 py-2 text-sm font-medium text-sno-orange-700 hover:bg-sno-orange-200 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+             :class "inline-flex items-center rounded-md border border-transparent bg-sno-orange-100 px-4 py-2 text-sm font-medium text-sno-orange-700 hover:bg-sno-orange-200 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
          (tr [:error/notify])]]
        [:div {:class "mt-10 flex space-x-3 sm:border-l sm:border-transparent sm:pl-6 text-sno-orange-600"
               :id "notification-confirmation"}]]]]]
@@ -175,7 +175,7 @@
      [:label {:for id :class (cs (get select-label-size size) "block font-medium text-gray-700")} label]
      [:select (merge {:name id :class
                       (cs  (get select-size size)
-                           "block w-full rounded-md border-gray-300 focus:border-sno-orange-500 focus:outline-none focus:ring-sno-orange-500")
+                           "block w-full rounded-md border-gray-300 focus:border-sno-orange-500 focus:outline-hidden focus:ring-sno-orange-500")
                       :required required?}
 
                      extra-attrs)
@@ -211,7 +211,7 @@
        [:select {:id id :name id
                  :required required?
                  :class (cs
-                         "block w-full rounded-md  shadow-sm sm:text-sm"
+                         "block w-full rounded-md  shadow-xs sm:text-sm"
                          (if has-error?
                            "border-red-300 focus:border-red-500 focus:ring-red-500 "
                            "border-gray-300 focus:border-sno-orange-500 focus:ring-sno-orange-500 "))}
@@ -290,7 +290,7 @@
                   :required required?
                   :data-auto-size (when  fit-height? "true")
                   :class (cs
-                          "block w-full max-w-lg rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:py-1.5 sm:text-sm sm:leading-6"
+                          "block w-full max-w-lg rounded-md border-0 text-gray-900 shadow-xs ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:py-1.5 sm:text-sm sm:leading-6"
                           (if has-error?
                             "ring-red-300 focus:ring-red-500 placeholder:text-red-300"
                             "ring-gray-300 focus:ring-sno-orange-600 "))}
@@ -311,7 +311,7 @@
                 :data-image-upload-endpoint (when markdown? markdown-upload-endpoint)
                 :class
                 (cs (if markdown? "markdown-editor hidden"
-                        "block w-full rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"))}
+                        "block w-full rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"))}
      (when value value)]]
    (when hint
      [:p {:class "mt-2 text-sm text-gray-500"}
@@ -329,7 +329,7 @@
                      required? true} :as opts}]
   [:div {:class (cs class (get input-label-size size)
                     (get input-container-size size)
-                    "flex-grow relative rounded-md border border-gray-300 shadow-sm focus-within:border-sno-orange-600 focus-within:ring-1 focus-within:ring-sno-orange-600")}
+                    "grow relative rounded-md border border-gray-300 shadow-xs focus-within:border-sno-orange-600 focus-within:ring-1 focus-within:ring-sno-orange-600")}
    (when label
      [:label {:for name :class "absolute -top-2 left-2 -mt-px inline-block bg-white font-medium text-gray-900"}
       label])
@@ -357,7 +357,7 @@
            :value (when value
                     (t/truncate (t/date-time value) :minutes))
            :required required?
-           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"}])
+           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"}])
 
 (defn input-datetime2 [& {:keys [value] :as opts}]
   (input (-> opts
@@ -370,14 +370,14 @@
            :required required?
            :min min
            :max max
-           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"}])
+           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"}])
 
 (defn date2 [& {:keys [value name required? min max label size]
                 :or {size :normal
                      required? true}}]
   [:div {:class (cs class (get input-label-size size)
                     (get input-container-size size)
-                    "flex-grow relative rounded-md border border-gray-300 shadow-sm focus-within:border-sno-orange-600 focus-within:ring-1 focus-within:ring-sno-orange-600")}
+                    "grow relative rounded-md border border-gray-300 shadow-xs focus-within:border-sno-orange-600 focus-within:ring-1 focus-within:ring-sno-orange-600")}
    (when label
      [:label {:for name :class "absolute -top-2 left-2 -mt-px inline-block bg-white font-medium text-gray-900"}
       label])
@@ -392,22 +392,22 @@
   [:input {:type "time" :name name
            :value (when value (t/time value))
            :required required?
-           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"}])
+           :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"}])
 
 (def button-priority-classes {:link "font-semibold text-sno-orange-600 hover:text-sno-orange-500"
                               :success
-                              "border-transparent bg-sno-green-600 text-white shadow-sm hover:bg-sno-green-700 focus:outline-none focus:ring-2 focus:ring-sno-green-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+                              "border-transparent bg-sno-green-600 text-white shadow-xs hover:bg-sno-green-700 focus:outline-hidden focus:ring-2 focus:ring-sno-green-500 focus:ring-offset-2 focus:ring-offset-gray-100"
                               :secondary
-                              "border-transparent bg-sno-orange-100 px-4 py-2  text-sno-orange-700 hover:bg-sno-orange-200 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"
+                              "border-transparent bg-sno-orange-100 px-4 py-2  text-sno-orange-700 hover:bg-sno-orange-200 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"
                               :white
-                              "border-gray-300 bg-white px-4 py-2 text-sm  text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sno-green-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+                              "border-gray-300 bg-white px-4 py-2 text-sm  text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-sno-green-500 focus:ring-offset-2 focus:ring-offset-gray-100"
                               :white-destructive
-                              "border-red-300 bg-white px-4 py-2 text-sm  text-red-600 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+                              "border-red-300 bg-white px-4 py-2 text-sm  text-red-600 shadow-xs hover:bg-red-50 focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-100"
                               :primary
-                              "border-transparent bg-sno-orange-600 text-white shadow-sm hover:bg-sno-orange-700 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+                              "border-transparent bg-sno-orange-600 text-white shadow-xs hover:bg-sno-orange-700 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100"
                               :primary-orange
-                              "border-transparent bg-orange-600 text-white shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100"
-                              :white-rounded "rounded-full border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50"})
+                              "border-transparent bg-orange-600 text-white shadow-xs hover:bg-orange-700 focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+                              :white-rounded "rounded-full border border-gray-300 bg-white text-gray-700 shadow-xs hover:bg-gray-50"})
 
 (def spinner-priority-classes {:secondary  "text-sno-orange-900"
                                :success "text-sno-green-700"
@@ -481,8 +481,8 @@
    [:div {;; :class "mt-4 flex sm:mt-0 sm:ml-4"
           :class "justify-stretch mt-6 flex flex-col-reverse space-y-4 space-y-reverse sm:flex-row-reverse sm:justify-end sm:space-y-0 sm:space-x-3 sm:space-x-reverse md:mt-0 md:flex-row md:space-x-3"}
     buttons
-    ;; [:button {:type "button" :class "sm:order-0 order-1 ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 sm:ml-0"} "Share"]
-    ;; [:button {:type "button" :class "order-0 inline-flex items-center rounded-md border border-transparent bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 sm:order-1 sm:ml-3"} "Create"]
+    ;; [:button {:type "button" :class "sm:order-0 order-1 ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 sm:ml-0"} "Share"]
+    ;; [:button {:type "button" :class "order-0 inline-flex items-center rounded-md border border-transparent bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-purple-700 focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 sm:order-1 sm:ml-3"} "Create"]
     ]])
 
 (defn page-header2 [& {:keys [title subtitle buttons] :as args}]
@@ -661,7 +661,7 @@
                           :placeholder placeholder
                           :required required?
                           :class (cs
-                                  "block w-full rounded-md shadow-sm sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
+                                  "block w-full rounded-md shadow-xs sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
                                   (if has-error?
                                     "ring-red-300 focus:ring-red-500 placeholder:text-red-300"
                                     "ring-gray-300 focus:border-sno-orange-500  focus:ring-sno-orange-500"))}
@@ -691,7 +691,7 @@
                         :placeholder placeholder
                         :required required?
                         :class (cs
-                                "block w-full rounded-md shadow-sm sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
+                                "block w-full rounded-md shadow-xs sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
                                 (if has-error?
                                   "ring-red-300 focus:ring-red-500 placeholder:text-red-300"
                                   "ring-gray-300 focus:border-sno-orange-500  focus:ring-sno-orange-500"))}
@@ -717,7 +717,7 @@
      [:p {:class "mt-2 text-sm text-gray-700"} description]]
     [:div {:class "mt-4 sm:mt-0 sm:ml-16 sm:flex-none"}
      buttons]]
-   [:div {:class "-mx-4 mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg"}
+   [:div {:class "-mx-4 mt-8 overflow-hidden shadow-sm ring-1 ring-black/5 sm:-mx-6 md:mx-0 md:rounded-lg"}
     (into [] (concat
               [:table {:class "min-w-full divide-y divide-gray-300"}]
               more))]])
@@ -766,7 +766,7 @@
 (defn table-body-old [headers data]
   (let [column-keys (->> headers (map :key) (filter some?))
         grouped-cols (->> headers (group-by :key) (m/map-vals first))]
-    [:div {:class "-mx-4 mt-8 overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:-mx-6 md:mx-0 md:rounded-lg"}
+    [:div {:class "-mx-4 mt-8 overflow-hidden shadow-sm ring-1 ring-black/5 sm:-mx-6 md:mx-0 md:rounded-lg"}
      [:table {:class "min-w-full divide-y divide-gray-300"}
       (table-row-head headers)
 
@@ -822,7 +822,7 @@
       (when hint
         [:p {:class "mt-2 text-sm text-gray-500 font-normal"}
          hint])]
-     [:div {:class "mt-1 rounded-md shadow-sm"}
+     [:div {:class "mt-1 rounded-md shadow-xs"}
       [:div {:class "relative max-w-lg sm:max-w-xs"}
        [:div {:class "pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"}
         [:span {:class "text-gray-500 sm:text-sm"} (:EUR currency-symbols)]]
@@ -832,7 +832,7 @@
                 :placeholder "0" :value value :required required? :name id :id id
                 :class (cs
                         "text-right pl-7 pr-12"
-                        "block w-full rounded-md shadow-sm sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
+                        "block w-full rounded-md shadow-xs sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
                         (if has-error?
                           "ring-red-300 focus:ring-red-500 placeholder:text-red-300"
                           "ring-gray-300 focus:border-sno-orange-500  focus:ring-sno-orange-500"))}]
@@ -854,13 +854,13 @@
       (when hint
         [:p {:class "mt-2 text-sm text-gray-500 font-normal"}
          hint])]
-     [:div {:class "mt-1 rounded-md shadow-sm"}
+     [:div {:class "mt-1 rounded-md shadow-xs"}
       [:div {:class "relative max-w-lg sm:max-w-xs"}
 
        [:input {:type "number" :min min :max max :step step :value value :required required? :name id :id id
                 :class (cs
                         "text-right pl-7"
-                        "block w-full rounded-md shadow-sm sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
+                        "block w-full rounded-md shadow-xs sm:text-sm border-0 ring-1 ring-inset focus:ring-2 focus:ring-inset"
                         (if has-error?
                           "ring-red-300 focus:ring-red-500 placeholder:text-red-300"
                           "ring-gray-300 focus:border-sno-orange-500  focus:ring-sno-orange-500"))}]
@@ -880,7 +880,7 @@
 
   [:div {:class "mt-2 relative flex items-start"}
    [:div {:class "flex h-5 items-center"}
-    [:input {:type "checkbox" :id id :name id :class "h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"
+    [:input {:type "checkbox" :id id :name id :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"
              :checked checked?}]]
    [:div {:class "ml-3 text-sm"}
     [:label {:for id :class "font-medium text-gray-700"} label]]])
@@ -893,7 +893,7 @@
              :checked checked?
              :value value
              :disabled disabled?
-             :class "h-4 w-4 rounded border-gray-300 text-sno-orange-600 focus:ring-sno-orange-600 disabled:text-sno-orange-400 "}]]
+             :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-600 disabled:text-sno-orange-400 "}]]
    [:div {:class "ml-3"}
     [:label {:for id :class "text-sm font-medium leading-6 text-gray-700"} label]
     (when hint
@@ -937,12 +937,12 @@
 (defn toggle [& {:keys [label hx-target hx-post hx-get hx-vals active? id]}]
   [:div {:class "flex items-center"}
    [:button {:type "button" :hx-target hx-target :hx-post hx-post :hx-get hx-get :hx-vals hx-vals
-             :class (cs (if active? "bg-sno-orange-600" "bg-gray-200") "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2")
+             :class (cs (if active? "bg-sno-orange-600" "bg-gray-200") "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2")
              :_ "on click toggle between .bg-gray-200 and .bg-sno-orange-600 end
                  on click toggle between .translate-x-5 and .translate-x-0 on <span/> in me end "
              :role "switch"}
     [:span {:aria-hidden "true"
-            :class (cs (if active? "translate-x-5" "translate-x-0") "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out")}]]
+            :class (cs (if active? "translate-x-5" "translate-x-0") "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out")}]]
    [:span {:class "ml-3"}
     [:span {:class "text-sm font-medium text-gray-900"} label]]])
 
@@ -951,7 +951,7 @@
    [:input {:type "checkbox" :checked checked? :class "sr-only peer" :name name :id (or id name)}]
    [:div {:class  (cs
                    ;; dark:peer-focus:ring-sno-orange-800 dark:bg-gray-700 dark:border-gray-600
-                   "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sno-orange-300  rounded-full peer"
+                   "w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-sno-orange-300  rounded-full peer"
                    " peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]"
                    "after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
                    " peer-checked:bg-sno-orange-600")}]
@@ -970,12 +970,12 @@
      [:input {:type "checkbox" :checked checked? :class "sr-only peer" :name name :id id}]
      [:div {:class  (cs
                      ;; dark:peer-focus:ring-sno-orange-800 dark:bg-gray-700 dark:border-gray-600
-                     "w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-sno-orange-300  rounded-full peer"
+                     "w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-sno-orange-300  rounded-full peer"
                      " peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]"
                      "after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
                      " peer-checked:bg-sno-orange-600")}]
 
-             ;; :class "block w-full max-w-lg rounded-md border-gray-300 shadow-sm focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"
+             ;; :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:max-w-xs sm:text-sm"
      [:span {:class "ml-3 text-sm font-medium text-gray-900 "
              ;; dark:text-gray-300
              }]]]])
@@ -992,7 +992,7 @@
    (member m nil))
   ([{:member/keys [name nick] :as m} link]
    [:div {:class "flex items-center"}
-    [:div {:class "h-11 w-11 flex-shrink-0"}
+    [:div {:class "h-11 w-11 shrink-0"}
      (if link
        [:a {:href link} (avatar-img m :class "h-10 w-10 rounded-full")]
        (avatar-img m :class "h-10 w-10 rounded-full"))]
@@ -1210,7 +1210,7 @@
   [:div {:class "mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-6 sm:px-6 lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-3" :id id}
    [:div {:class "space-y-6 lg:col-span-3 lg:col-start-1"}
     [:section
-     [:div {:class "bg-white shadow sm:rounded-lg"}
+     [:div {:class "bg-white shadow-sm sm:rounded-lg"}
       (when (or title buttons)
         [:div {:class "px-4 py-5 px-6  flex items-center justify-between "}
          (when (or title subtitle)
@@ -1225,10 +1225,10 @@
        body]]]]])
 
 (defn rich-li-action [body]
-  [:div {:class "ml-4 flex-shrink-0"} body])
+  [:div {:class "ml-4 shrink-0"} body])
 
 (defn rich-li-action-a [& {:keys [href label attrs]}]
-  [:div {:class "ml-4 flex-shrink-0"} [:a
+  [:div {:class "ml-4 shrink-0"} [:a
                                        (merge
                                         {:href href :class "font-medium text-blue-600 hover:text-blue-500"}
                                         attrs) label]])
@@ -1239,7 +1239,7 @@
   [:li {:class "flex items-center justify-between py-3 pl-3 pr-4 text-sm"}
    [:div {:class "flex w-0 flex-1 items-center"}
     (when icon
-      (icon {:class "h-5 w-5 flex-shrink-0 text-gray-400"}))
+      (icon {:class "h-5 w-5 shrink-0 text-gray-400"}))
     items]])
 
 (defn rich-ul [_ & items]
@@ -1259,7 +1259,7 @@
          [:div {:class "flex items-start justify-between"}
           [:h2 {:class "text-lg font-medium text-gray-900", :id "slide-over-title"} title]
           [:div {:class "ml-3 flex h-7 items-center" :data-flyout-close-button true}
-           [:button {:type "button", :class "rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+           [:button {:type "button", :class "rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
             [:span {:class "sr-only"} "Close panel"]
             (icon/xmark-thin {:class "h-6 w-6"})]]]]
         [:div {:class "relative mt-6 flex-1 px-4 sm:px-6"}
@@ -1284,7 +1284,7 @@
           [:div {:class "flex items-center justify-between"}
            [:h2 {:class "text-lg font-medium text-white", :id (str id "slide-over-title")} title]
            [:div {:class "ml-3 flex h-7 items-center"  :data-flyout-close-button true}
-            [:button {:type "button", :class "rounded-md bg-orange-700 text-orange-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"}
+            [:button {:type "button", :class "rounded-md bg-orange-700 text-orange-200 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-white"}
              [:span {:class "sr-only"} "Close panel"]
              (icon/xmark-thin {:class "h-6 w-6"})]]]
           [:div {:class "mt-1"}
@@ -1293,7 +1293,7 @@
          body]
 
         (when buttons
-          [:div {:class "flex flex-shrink-0 justify-end px-4 py-4 space-x-3"}
+          [:div {:class "flex shrink-0 justify-end px-4 py-4 space-x-3"}
            buttons])]]]]]])
 
 (defn action-menu-item [id idx {:keys [label href attr active? icon tag spinner?]
@@ -1317,7 +1317,7 @@
          ;; maybe add w-48 to make it wider and more clickable?
          ;; mt-2
          (cs (if (zero? idx) "rounded-t-md" "rounded-b-md")
-             "z-10 py-1 divide-y divide-gray-200  bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none")
+             "z-10 py-1 divide-y divide-gray-200  bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden")
          :role "none"}
    (when (:label section)
      [:div {:class "px-4 py-3", :role "none"}
@@ -1341,7 +1341,7 @@
                (cs
                 ;; "dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
                 (when-not minimal?
-                  "inline-flex items-center text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-md text-sm px-3 py-1.5"))
+                  "inline-flex items-center text-gray-900 bg-white border border-gray-300 focus:outline-hidden hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-md text-sm px-3 py-1.5"))
                :type "button"
                :data-action-menu2-trigger (str "#" id)}
       (when button-icon
@@ -1455,14 +1455,14 @@
     {:class "flex", :aria-label "Breadcrumb"}
     [:ol
      {:role "list",
-      :class "flex space-x-0 sm:space-x-4 rounded-md bg-white px-2 sm:px-6 shadow"}
+      :class "flex space-x-0 sm:space-x-4 rounded-md bg-white px-2 sm:px-6 shadow-sm"}
      [:li
       {:class "flex"}
       [:div
        {:class "flex items-center"}
        [:a
         {:href "/", :class "text-gray-400 hover:text-gray-500"}
-        (icon/home-solid {:class "h-5 w-5 flex-shrink-0 text-gray-400"})
+        (icon/home-solid {:class "h-5 w-5 shrink-0 text-gray-400"})
         [:span {:class "sr-only"} "Home"]]]]
      (map (fn [{:keys [href label icon]}]
             [:li
@@ -1470,7 +1470,7 @@
              [:div
               {:class "flex items-center"}
               [:svg
-               {:class "h-full w-4 sm:w-6 flex-shrink-0 text-gray-200",
+               {:class "h-full w-4 sm:w-6 shrink-0 text-gray-200",
                 :viewBox "0 0 24 44",
                 :preserveaspectratio "none",
                 :fill "currentColor",
@@ -1480,7 +1480,7 @@
                {:href href,
                 :class (cs "flex ml-2 sm:ml-4 text-sm font-medium text-gray-500" (when href  "hover:text-gray-700"))}
                (when icon
-                 (icon {:class "h-5 w-5 flex-shrink-0 mr-2 text-gray-400"}))
+                 (icon {:class "h-5 w-5 shrink-0 mr-2 text-gray-400"}))
                label]]]) items)]]])
 
 (defn iban [iban]

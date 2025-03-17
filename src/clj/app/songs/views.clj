@@ -268,19 +268,19 @@
 
                   [:div {:class "pt-5"}
                    [:div {:class "flex justify-end"}
-                    [:a {:href "/songs" :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                    [:a {:href "/songs" :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                      (tr [:action/cancel])]
-                    [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-sno-orange-700 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                    [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-xs hover:bg-sno-orange-700 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                      (tr [:action/create])]]]])])))
 
 (defn song-row [tr {:song/keys [title last-played-on score total-plays] :as song}]
-  (let [style-icon "mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"]
+  (let [style-icon "mr-1.5 h-5 w-5 shrink-0 text-gray-400"]
     [:a {:href (url/link-song song) :class "block hover:bg-gray-50"}
      [:div {:class "px-4 py-4 sm:px-6"}
       [:div {:class "flex items-center justify-between"}
        [:p {:class "truncate text-sm font-medium text-sno-orange-600"}
         title]
-       [:div {:class "ml-2 flex flex-shrink-0"}
+       [:div {:class "ml-2 flex shrink-0"}
         (ui/song-active-bubble song)]]
       [:div {:class "mt-2 sm:flex sm:justify-between"}
        [:div {:class "flex"}
@@ -409,14 +409,14 @@
 (defn song-toggler [{:song/keys [title selected]}]
   [:li (comment {:class
                  (ui/cs
-                  "rounded border-4 mx-0 my-1 p-2 block basis-1/2 "
+                  "rounded-sm border-4 mx-0 my-1 p-2 block basis-1/2 "
                   (if  selected "border-green-200" "border-gray-200"))
                  :_ "on click toggle between .border-gray-200 and .border-green-200"})
    [:label {:for title}
     [:input {:type "checkbox"
              :id title
              :class "sr-only peer"}]
-    [:span {:class "rounded border-4 mx-0 my-1 p-2 block basis-1/2 border-gray-200 peer-checked:border-green-200"}  title]]])
+    [:span {:class "rounded-sm border-4 mx-0 my-1 p-2 block basis-1/2 border-gray-200 peer-checked:border-green-200"}  title]]])
 
 (defn song-toggle-list [all-songs]
   [:ul {:class "p-0 m-0 flex flex-wrap"}

@@ -11,7 +11,7 @@
         minmax(75px, 1fr) /* total */;
 }
 
-@media screen(sm) {
+@media (width >= theme(--breakpoint-sm)) {
     .instrgrid--grid {
         grid-template-columns:
             22px /* checkbox */
@@ -27,7 +27,7 @@
     }
 }
 
-@media screen(md) {
+@media (width >= theme(--breakpoint-md)) {
     .instrgrid--grid {
         grid-template-columns:
             22px /* checkbox */

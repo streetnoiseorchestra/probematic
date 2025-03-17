@@ -215,7 +215,7 @@
         {:id id})
       [:div {:class "mx-auto max-w-3xl px-4 sm:px-6 md:flex md:items-center md:justify-between md:space-x-5 lg:max-w-7xl lg:px-8"}
        [:div {:class "flex items-center space-x-5"}
-        [:div {:class "flex-shrink-0"}
+        [:div {:class "shrink-0"}
          [:div {:class "relative"}
           (ui/avatar-img member :class "h-16 w-16 rounded-full")
           [:span {:class "absolute inset-0 rounded-full shadow-inner" :aria-hidden "true"}]]]
@@ -566,16 +566,16 @@
                               [:div
                                [:label {:for "email" :class "block text-sm font-medium text-gray-700"} (tr [:member/email])]
                                [:div {:class "mt-1"}
-                                [:input {:disabled true :value (:member/email member) :id "email" :name "email" :type "email" :autocomplete "email" :required true :class "block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-sno-orange-500 focus:outline-none focus:ring-sno-orange-500 sm:text-sm  disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"}]]]
+                                [:input {:disabled true :value (:member/email member) :id "email" :name "email" :type "email" :autocomplete "email" :required true :class "block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-xs focus:border-sno-orange-500 focus:outline-hidden focus:ring-sno-orange-500 sm:text-sm  disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"}]]]
                               [:div
                                [:label {:for "password" :class "block text-sm font-medium text-gray-700"} (tr [:account/password])]
                                [:div {:class "mt-1"}
-                                [:input {:id "password" :name "password" :type "password" :autocomplete "new-password" :required true :class "block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-sno-orange-500 focus:outline-none focus:ring-sno-orange-500 sm:text-sm"}]]
+                                [:input {:id "password" :name "password" :type "password" :autocomplete "new-password" :required true :class "block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-xs focus:border-sno-orange-500 focus:outline-hidden focus:ring-sno-orange-500 sm:text-sm"}]]
                                [:p {:class "text-xs text-gray-700"} (tr [:account/password-instructions])]]
                               [:div
                                [:label {:for "password-confirm" :class "block text-sm font-medium text-gray-700"} (tr [:account/password-confirm])]
                                [:div {:class "mt-1"}
-                                [:input {:id "password-confirm" :name "password-confirm" :autocomplete "new-password" :type "password" :required true :class "block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-sno-orange-500 focus:outline-none focus:ring-sno-orange-500 sm:text-sm"}]]
+                                [:input {:id "password-confirm" :name "password-confirm" :autocomplete "new-password" :type "password" :required true :class "block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-xs focus:border-sno-orange-500 focus:outline-hidden focus:ring-sno-orange-500 sm:text-sm"}]]
                                [:p {:class "text-xs text-gray-700"} (tr [:account/password-confirm-instructions])]]
                               (when error-msg
                                 [:div

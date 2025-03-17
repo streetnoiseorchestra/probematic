@@ -154,9 +154,9 @@ set its @name to optName
                 [:div {:class "pt-5"}
                  [:div {:class "flex justify-end"}
                   [:a {:href (if existing-poll (url/link-poll existing-poll) (url/link-polls-home))
-                       :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                       :class "rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                    (tr [:action/cancel])]
-                  [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-sno-orange-700 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
+                  [:button {:type "submit" :class "ml-3 inline-flex justify-center rounded-md border border-transparent bg-sno-orange-600 py-2 px-4 text-sm font-medium text-white shadow-xs hover:bg-sno-orange-700 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2"}
                    (if existing-poll
                      (tr [:action/save])
                      (tr [:action/create]))]]]]])))
@@ -362,7 +362,7 @@ on change from .poll-checkbox
                  (poll-vote req poll))])))
 
 (defn poll-row [{:poll/keys [title closes-at votes-count voter-count] :as poll}]
-  (let [style-icon "mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"]
+  (let [style-icon "mr-1.5 h-5 w-5 shrink-0 text-gray-400"]
     [:a {:href (url/link-poll poll) :class "block hover:bg-gray-50"}
      [:div {:class "px-4 py-4 sm:px-6"}
       [:div {:class "flex items-center justify-between"}
@@ -392,7 +392,7 @@ on change from .poll-checkbox
      [:div {:class "mt-6 px-4 sm:px-6 md:px-8 md:flex md:flex-row md:space-x-4"}
       [:div {:class "max-w-lg"}
        (ui/divider-left (tr [:polls/running]))
-       [:div {:class "overflow-hidden bg-white shadow sm:rounded-md mb-8"}
+       [:div {:class "overflow-hidden bg-white shadow-sm sm:rounded-md mb-8"}
         (if (empty? running-polls)
           [:div {:class "px-4 py-5 sm:p-6"}
            [:p {:class "text-sm text-gray-500"}
@@ -404,7 +404,7 @@ on change from .poll-checkbox
                    (poll-row poll)]) running-polls)])]]
       [:div {:class "max-w-lg mb-8"}
        (ui/divider-left (tr [:polls/past]))
-       [:div {:class "overflow-hidden bg-white shadow sm:rounded-md"}
+       [:div {:class "overflow-hidden bg-white shadow-sm sm:rounded-md"}
         (if (empty? past-polls)
 
           [:div {:class "px-4 py-5 sm:p-6"}

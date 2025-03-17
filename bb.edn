@@ -27,9 +27,9 @@
          npm-install  (shell {:dir "./"} "npm" "install")
          repl-ui      {:depends [npm-install]
                        :task    (shell {:dir "./"} "npx shadow-cljs -A dev watch app")}
-         tailwind-css (shell {:dir "./"} "npx" "tailwindcss"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
-         watch-css    (shell {:dir "./"} "npx" "tailwindcss" "-w" "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
-         prod-css     (shell {:dir "./"} "npx" "tailwindcss"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css" "--minify")
+         tailwind-css (shell {:dir "./"} "npx" "@tailwindcss/cli"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
+         watch-css    (shell {:dir "./"} "npx" "@tailwindcss/cli" "-w" "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
+         prod-css     (shell {:dir "./"} "npx" "@tailwindcss/cli"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css" "--minify")
 
          sync-clj-kondo           (do
                                     (let [cp (classpath-test-dev)]

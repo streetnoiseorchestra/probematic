@@ -37,7 +37,7 @@
      [:label {:for "team-name" :class "block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5"}
       (tr [:team/name])]
      [:div {:class "sm:col-span-2"}
-      [:div {:class "flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
+      [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
        (ui/text  :placeholder "" :id "team-name" :name "team-name")]]
      (ui/button :class "grid-cols-1 mt-4 sm:mt-0"
                 :priority :primary
@@ -80,7 +80,7 @@
                                        (->> members
                                             (map (fn [{:member/keys [name member-id] :as member}]
                                                    [:div {:class "flex space-x-1"}
-                                                    [:input {:type :checkbox :value (str member-id) :name "remove-members" :checked nil :class "h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"}]
+                                                    [:input {:type :checkbox :value (str member-id) :name "remove-members" :checked nil :class "h-4 w-4 rounded-sm border-gray-300 text-red-600 focus:ring-red-500"}]
                                                     [:div name]])))]
 
                                       "No members in this team yet.")]
@@ -176,7 +176,7 @@
                    [:label {:for "discount-type-name" :class "block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5"}
                     (tr [:travel-discounts/discount-type-name])]
                    [:div {:class "sm:col-span-2"}
-                    [:div {:class "flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
+                    [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
                      (ui/text  :placeholder "Klimaticket Mond" :id "discount-type-name" :name "discount-type-name")]]
                    (ui/button :class "grid-cols-1 mt-4 sm:mt-0"
                               :priority :primary
@@ -245,7 +245,7 @@
                      [:label {:for "section-name" :class "block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5"}
                       (tr [:section])]
                      [:div {:class "sm:col-span-2"}
-                      [:div {:class "flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
+                      [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
                        (ui/text  :placeholder "Bass" :id "section-name" :name "section-name")]]
                      (ui/button :class "grid-cols-1 mt-4 sm:mt-0"
                                 :priority :primary

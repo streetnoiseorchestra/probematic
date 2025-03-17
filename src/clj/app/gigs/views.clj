@@ -169,7 +169,7 @@
            (ui/button :label (tr [:action/save]) :priority :primary)]]]))))
 
 (defn gig-row [{:gig/keys [status title location date end-date] :as gig}]
-  (let [style-icon "mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"]
+  (let [style-icon "mr-1.5 h-5 w-5 shrink-0 text-gray-400"]
     [:a {:href (url/link-gig gig) :class "block hover:bg-gray-50"}
      [:div {:class "px-4 py-4 sm:px-6"}
       [:div {:class "flex items-center justify-between"}
@@ -230,7 +230,7 @@
      [:div
       [:button {:type "button"
                 :class (ui/cs button-size-class-small
-                              "dropdown-button inline-flex w-full justify-center rounded-md border border-gray-300 bg-white font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100 min-h-[25px]")
+                              "dropdown-button inline-flex w-full justify-center rounded-md border border-gray-300 bg-white font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100 min-h-[25px]")
                 :aria-expanded "true" :aria-haspopup "true"}
        [:input {:type "hidden" :name "member-id" :value member-id}]
        [:input {:type "hidden" :name "gig-id" :value gig-id}]
@@ -242,7 +242,7 @@
       [:div {:class (ui/cs
                      "dropdown-choices"
                      (when false "absolute right-0 ")
-                     "z-10 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none")
+                     "z-10 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden")
              :role "menu" :aria-orientation "vertical" :aria-labelledby "menu-button" :tabindex "-1"}
        [:div {:class "py-1" :role "none"}
         (map attendance-dropdown-opt  opts)]]]]))
@@ -423,7 +423,7 @@
   (let [{:comment/keys [body author created-at]} comment]
     [:li
      [:div {:class "flex space-x-3"}
-      [:div {:class "flex-shrink-0"}
+      [:div {:class "shrink-0"}
        [:a {:href (url/link-member author)}
         (ui/avatar-img author :class "h-10 w-10 rounded-full")]]
       [:div
@@ -451,16 +451,16 @@
 (defn comment-input [member target endpoint tr]
   [:div {:class "bg-gray-50 px-4 py-6 sm:px-6"}
    [:div {:class "flex space-x-3"}
-    [:div {:class "flex-shrink-0"}
+    [:div {:class "shrink-0"}
      (ui/avatar-img member :class "h-10 w-10 rounded-full")]
     [:div {:class "min-w-0 flex-1"}
      [:form {:hx-target target :hx-post endpoint}
       [:div
        [:label {:for "comment-body", :class "sr-only"} "Comment"]
-       [:textarea {:id "comment-body", :name "body", :rows "3", :class "block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+       [:textarea {:id "comment-body", :name "body", :rows "3", :class "block w-full rounded-md border-gray-300 shadow-xs focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                    :placeholder (tr [:gig/comment-placeholder])}]]
       [:div {:class "mt-3 flex items-center justify-between"}
-       [:button {:type "submit", :class "inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"}
+       [:button {:type "submit", :class "inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"}
         (tr [:action/comment])]]]]]])
 
 (defn comment-section [member archived? id endpoint tr comments]
@@ -484,7 +484,7 @@
   (let [this-song-id (str (:song/song-id song))
         {:keys [song-order]} (m/find-first #(= (:song-id %) this-song-id) selected-songs)]
     [:li
-     [:label {:for this-song-id :class "rounded border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between"}
+     [:label {:for this-song-id :class "rounded-sm border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between"}
       [:span {:class "truncate"} (:song/title song)]
       [:input {:type :hidden :name (str idx "_songs_song-order")  :value (or song-order "9999")}]
       [:input {:type :checkbox :id this-song-id  :name (str idx "_songs_song-id") :value this-song-id
@@ -523,7 +523,7 @@
                [:div {:class "htmx-indicator pulsate"} (tr [:updating])]
                [:ul {:class "sortable p-0 m-0 grid grid-cols-1 gap-y-0 md:gap-x-2 max-w-sm"}
                 (map (fn [{:song/keys [song-id title]}]
-                       [:li {:class "rounded border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between"}
+                       [:li {:class "rounded-sm border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between"}
                         [:div {:class "drag-handle cursor-pointer"} (icon/bars {:class "h-5 w-5"})]
                         [:input {:type :hidden :name "song-ids" :value song-id}]
                         title]) songs)]])))
@@ -586,7 +586,7 @@
   (let [this-song-id (str (:song/song-id song))
         {:keys [position emphasis] :as d} (m/find-first #(= (:song-id %) this-song-id) selected-songs)]
     [:li
-     [:label {:for this-song-id :class "rounded border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between"}
+     [:label {:for this-song-id :class "rounded-sm border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between"}
       [:span {:class "truncate"} (:song/title song)]
       [:input {:type :hidden :name (str idx "_songs_position")  :value (or position "9999")}]
       [:input {:type :hidden :name (str idx "_songs_emphasis")  :value emphasis}]
@@ -611,7 +611,7 @@
 
 (ctmx/defcomponent  gig-probeplan-sort-item [req idx {:song/keys [song-id title] :keys [position emphasis] :as arg}]
   (let [checked? (= :probeplan.emphasis/intensive (probeplan.domain/str->play-emphasis emphasis))]
-    [:li {:class "rounded border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between items-center"}
+    [:li {:class "rounded-sm border-4 mx-0 my-1 p-2  basis-1/2 grid grid-flow-col grid-cols-auto justify-between items-center"}
      [:div {:class "drag-handle cursor-pointer"} (icon/bars {:class "h-5 w-5"})]
      [:input {:type :hidden :name (path "song-id") :value song-id}]
      [:input {:type :hidden :name (path "position") :value idx :data-sort-order true}]
@@ -657,13 +657,13 @@ on change if I match <:checked/>
           (let [intensive? (= emphasis :probeplan.emphasis/intensive)]
             [:div {:class
                    (ui/cs
-                    "relative flex items-center space-x-3 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-pink-500 focus-within:ring-offset-2 hover:border-gray-400"
+                    "relative flex items-center space-x-3 rounded-lg px-3 py-2 shadow-xs focus-within:ring-2 focus-within:ring-pink-500 focus-within:ring-offset-2 hover:border-gray-400"
                     (if intensive? "bg-purple-200 border border-purple-500" "bg-white border border-gray-300 "))}
              (when intensive?
-               [:div {:class "flex-shrink-0"}
+               [:div {:class "shrink-0"}
                 (icon/fist-punch {:class "h-10 w-10 text-purple-600"})])
              [:div {:class "min-w-0 flex-1"}
-              [:a {:href (url/link-song song) :class "focus:outline-none"  :hx-boost "true"}
+              [:a {:href (url/link-song song) :class "focus:outline-hidden"  :hx-boost "true"}
                [:span {:class "absolute inset-0" :aria-hidden "true"}]
                [:p {:class "text-sm font-medium text-gray-900"} title]
                [:p {:class "truncate text-sm text-gray-500"}
@@ -725,7 +725,7 @@ on change if I match <:checked/>
     [:div {:class "mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-6 sm:px-6 lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-3"}
      [:div {:class "space-y-6 lg:col-span-3 lg:col-start-1"}
       [:section
-       [:div {:class "bg-white shadow sm:rounded-lg "}
+       [:div {:class "bg-white shadow-sm sm:rounded-lg "}
         [:div {:class "px-4 py-5 sm:px-6"}
          [:h2 {:class "text-lg font-medium leading-6 text-gray-900"}
           (tr [:gig/create-title])]]
@@ -819,7 +819,7 @@ on change if I match <:checked/>
      [:div {:class "mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-6 sm:px-6 lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-3"}
       [:div {:class "space-y-6 lg:col-span-3 lg:col-start-1"}
        [:section
-        [:div {:class "bg-white shadow sm:rounded-lg"}
+        [:div {:class "bg-white shadow-sm sm:rounded-lg"}
          [:div {:class "px-4 py-5 sm:px-6"}
           [:h2 {:class "text-lg font-medium leading-6 text-gray-900"}
            (tr [:gig/gig-info])]]
@@ -925,7 +925,7 @@ on change if I match <:checked/>
       [:div {:class "mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-6 sm:px-6 lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-3"}
        [:div {:class "space-y-6 lg:col-span-3 lg:col-start-1"}
         [:section
-         [:div {:class "bg-white shadow sm:rounded-lg"}
+         [:div {:class "bg-white shadow-sm sm:rounded-lg"}
           [:div {:class "px-4 py-5 sm:px-6"}
            [:h2 {:class "text-lg font-medium leading-6 text-gray-900"}
             (tr [:gig/gig-info])]]
@@ -981,7 +981,7 @@ on change if I match <:checked/>
              ;; (:id  (discourse/topic-for-gig system gig))
              ]
     [:section {:aria-labelledby "notes-title"}
-     [:div {:class "bg-white shadow sm:overflow-hidden sm:rounded-lg mb-6"}
+     [:div {:class "bg-white shadow-sm sm:overflow-hidden sm:rounded-lg mb-6"}
       [:div {:class "px-4 py-5 sm:px-6 "}
        [:div {:class "divide-y divide-gray-200"}
         (comment-header tr)
@@ -1057,7 +1057,7 @@ on change if I match <:checked/>
       [:div {:class "space-y-6 lg:col-span-3 lg:col-start-1"}
 ;;;; Attendance Section
        [:section
-        [:div {:class "bg-white shadow sm:rounded-lg"}
+        [:div {:class "bg-white shadow-sm sm:rounded-lg"}
          [:div {:class "px-4 py-5 sm:px-6 flex flex-row flex-items-center justify-between"}
           [:h2 {:class "text-lg font-medium leading-6 text-gray-900"}
            (tr [:gig/attendance])]
@@ -1116,7 +1116,7 @@ on change if I match <:checked/>
      [:div {:class "mt-6 px-4 sm:px-6 md:px-8 md:flex md:flex-row md:space-x-4"}
       [:div {:class "max-w-lg"}
        (ui/divider-left (tr [:gigs/upcoming]))
-       [:div {:class "overflow-hidden bg-white shadow sm:rounded-md mb-8"}
+       [:div {:class "overflow-hidden bg-white shadow-sm sm:rounded-md mb-8"}
         (if (empty? future-gigs)
           (tr [:gigs/no-future])
           [:ul {:role "list" :class "divide-y divide-gray-200"}
@@ -1125,7 +1125,7 @@ on change if I match <:checked/>
                    (gig-row gig)]) future-gigs)])]]
       [:div {:class "max-w-lg mb-8"}
        (ui/divider-left (tr [:gigs/past]))
-       [:div {:class "overflow-hidden bg-white shadow sm:rounded-md"}
+       [:div {:class "overflow-hidden bg-white shadow-sm sm:rounded-md"}
         (if (empty? past-gigs)
           (tr [:gigs/no-past])
           [:div
@@ -1167,7 +1167,7 @@ on change if I match <:checked/>
        (fn [idx {:keys  [year gigs]}]
          [:div {:class "max-w-lg mb-8" :id (str year)}
           (ui/divider-left year)
-          [:div {:class "overflow-hidden bg-white shadow sm:rounded-md"}
+          [:div {:class "overflow-hidden bg-white shadow-sm sm:rounded-md"}
            [:div
             [:div {:class "mt-6 flow-root"}
              [:ul {:role "list", :class "divide-y divide-gray-200"}

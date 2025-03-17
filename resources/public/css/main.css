@@ -1,25 +1,45 @@
-@import "tailwindcss/base";
+@import "tailwindcss";
 /*@import "./custom-base-styles.css";*/
-
-@import "tailwindcss/components";
 /*@import "./custom-components.css";*/
-
-@import "tailwindcss/utilities";
 /*@import "./custom-utilities.css";*/
 
-@import "./nprogress.css";
+@import "./nprogress.css" layer(utilities);
 /*
 @import "./choices@10.1.0.css";
  **/
 
-@import "./tablegrid.css";
+@import "./tablegrid.css" layer(utilities);
 
 /*@import "./dropzone@6.0.0-beta.2.css";*/
-@import "./dropzone@6.0.0-beta.2.css";
+@import "./dropzone@6.0.0-beta.2.css" layer(utilities);
 
-@import "./sweetalert2@11.7.5.css";
+@import "./sweetalert2@11.7.5.css" layer(utilities);
 
-@import "./thumb-animation.css";
+@import "./thumb-animation.css" layer(utilities);
+
+@config '../../../tailwind.config.js';
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+@utility cloak {
+    display: none;
+}
 
 .dropzone {
     /*@apply sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5;
@@ -27,7 +47,7 @@
     @apply border-2 border-dashed border-gray-300;
 }
 .dropzone .dz-preview .dz-image {
-    @apply rounded;
+    @apply rounded-sm;
     overflow: hidden;
     width: 120px;
     height: 120px;
@@ -36,7 +56,7 @@
     z-index: 10;
 }
 .dz-remove {
-    @apply relative rounded-md bg-white font-medium text-sno-orange-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-sno-orange-500 focus-within:ring-offset-2 hover:text-sno-orange-500;
+    @apply relative rounded-md bg-white font-medium text-sno-orange-600 focus-within:outline-hidden focus-within:ring-2 focus-within:ring-sno-orange-500 focus-within:ring-offset-2 hover:text-sno-orange-500;
 }
 
 :root {
@@ -59,7 +79,7 @@ body {
 }
 
 .btn {
-    @apply inline-flex items-center border border-transparent font-medium rounded transition ease-in-out duration-150;
+    @apply inline-flex items-center border border-transparent font-medium rounded-sm transition ease-in-out duration-150;
 }
 .btn-xs {
     @apply px-2.5 py-1.5 text-xs leading-4;
@@ -87,7 +107,7 @@ body {
     @apply bg-indigo-500;
 }
 .btn-indigo-high:focus {
-    @apply outline-none border-indigo-700 ring-indigo-500;
+    @apply outline-hidden border-indigo-700 ring-indigo-500;
 }
 .btn-indigo-high:active {
     @apply bg-indigo-700;
@@ -99,7 +119,7 @@ body {
     @apply bg-indigo-50;
 }
 .btn-indigo-normal:focus {
-    @apply outline-none border-indigo-300 ring-indigo-500;
+    @apply outline-hidden border-indigo-300 ring-indigo-500;
 }
 .btn-indigo-normal:active {
     @apply bg-indigo-200;
@@ -111,7 +131,7 @@ body {
     @apply text-indigo-500;
 }
 .btn-indigo-low:focus {
-    @apply outline-none border-indigo-300 ring-indigo-500;
+    @apply outline-hidden border-indigo-300 ring-indigo-500;
 }
 .btn-indigo-low:active {
     @apply text-indigo-200;
@@ -124,7 +144,7 @@ body {
     @apply bg-purple-500;
 }
 .btn-purple-high:focus {
-    @apply outline-none border-purple-700 ring-purple-500;
+    @apply outline-hidden border-purple-700 ring-purple-500;
 }
 .btn-purple-high:active {
     @apply bg-purple-700;
@@ -136,7 +156,7 @@ body {
     @apply bg-purple-50;
 }
 .btn-purple-normal:focus {
-    @apply outline-none border-purple-300 ring-purple-500;
+    @apply outline-hidden border-purple-300 ring-purple-500;
 }
 .btn-purple-normal:active {
     @apply bg-purple-200;
@@ -148,7 +168,7 @@ body {
     @apply text-purple-500;
 }
 .btn-purple-low:focus {
-    @apply outline-none border-purple-300 ring-purple-500;
+    @apply outline-hidden border-purple-300 ring-purple-500;
 }
 .btn-purple-low:active {
     @apply text-purple-200;
@@ -161,7 +181,7 @@ body {
     @apply bg-red-500;
 }
 .btn-red-high:focus {
-    @apply outline-none border-red-700 ring-red-500;
+    @apply outline-hidden border-red-700 ring-red-500;
 }
 .btn-red-high:active {
     @apply bg-red-700;
@@ -173,7 +193,7 @@ body {
     @apply bg-red-50;
 }
 .btn-red-normal:focus {
-    @apply outline-none border-red-300 ring-red-500;
+    @apply outline-hidden border-red-300 ring-red-500;
 }
 .btn-red-normal:active {
     @apply bg-red-200;
@@ -185,7 +205,7 @@ body {
     @apply text-red-500;
 }
 .btn-red-low:focus {
-    @apply outline-none border-red-300 ring-red-500;
+    @apply outline-hidden border-red-300 ring-red-500;
 }
 .btn-red-low:active {
     @apply text-red-200;
@@ -198,7 +218,7 @@ body {
     @apply bg-gray-500;
 }
 .btn-gray-high:focus {
-    @apply outline-none border-gray-700 ring-gray-500;
+    @apply outline-hidden border-gray-700 ring-gray-500;
 }
 .btn-gray-high:active {
     @apply bg-gray-700;
@@ -210,7 +230,7 @@ body {
     @apply bg-gray-50;
 }
 .btn-gray-normal:focus {
-    @apply outline-none border-gray-300 ring-gray-500;
+    @apply outline-hidden border-gray-300 ring-gray-500;
 }
 .btn-gray-normal:active {
     @apply bg-gray-200;
@@ -222,7 +242,7 @@ body {
     @apply text-gray-500;
 }
 .btn-gray-low:focus {
-    @apply outline-none border-gray-300 ring-gray-500;
+    @apply outline-hidden border-gray-300 ring-gray-500;
 }
 .btn-gray-low:active {
     @apply text-gray-200;
@@ -235,7 +255,7 @@ body {
     @apply bg-gray-50;
 }
 .btn-clear-normal:focus {
-    @apply outline-none ring-2 ring-indigo-500 ring-offset-2;
+    @apply outline-hidden ring-2 ring-indigo-500 ring-offset-2;
 }
 .btn-clear-normal:active {
     @apply bg-white;
@@ -249,7 +269,7 @@ body {
 }
 
 .radio-button {
-    @apply border rounded-md py-3 px-3 flex items-center justify-center text-sm font-medium sm:flex-1 cursor-pointer focus:outline-none;
+    @apply border rounded-md py-3 px-3 flex items-center justify-center text-sm font-medium sm:flex-1 cursor-pointer focus:outline-hidden;
     @apply transition-all;
 }
 
@@ -326,7 +346,7 @@ body {
     @apply p-0 m-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-0 md:gap-x-2;
 }
 .toggler {
-    @apply rounded border-4 mx-0 my-1 p-2  basis-1/2 flex justify-between items-center;
+    @apply rounded-sm border-4 mx-0 my-1 p-2  basis-1/2 flex justify-between items-center;
 }
 .toggler .icon {
 }
@@ -410,7 +430,7 @@ body {
 }
 
 .choices__list.choices__list--dropdown {
-    @apply z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
+    @apply z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-hidden sm:text-sm;
     @apply hidden;
 }
 .choices__list.choices__list--dropdown.is-active {
@@ -835,8 +855,4 @@ body {
 }
 #app-container.app_container_wide {
     @apply pl-12;
-}
-
-@utility cloak {
-    display: none;
 }

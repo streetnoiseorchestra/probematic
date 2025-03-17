@@ -50,7 +50,7 @@
                    (let [name (fu/basename path)]
                      [:li
                       [:div {:class "flex items-center"}
-                       [:svg {:class "h-5 w-5 flex-shrink-0 text-gray-300", :xmlns "http://www.w3.org/2000/svg", :fill "currentColor", :viewbox "0 0 20 20", :aria-hidden "true"}
+                       [:svg {:class "h-5 w-5 shrink-0 text-gray-300", :xmlns "http://www.w3.org/2000/svg", :fill "currentColor", :viewbox "0 0 20 20", :aria-hidden "true"}
                         [:path {:d "M5.555 17.776l8-16 .894.448-8 16-.894-.448z"}]]
                        [:button {:hx-get "/choose-file/traverse-dir" :hx-target "#file-picker"
                                  :hx-vals {:current-dir current-dir :root-dir root-dir :target-dir path :target-params (pr-str target-params)}

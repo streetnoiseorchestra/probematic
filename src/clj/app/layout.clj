@@ -48,8 +48,8 @@
   [:div {:id                            "app-container"
          :data-class-app_container_wide "!$_sidebar.expanded"
          :class                         "flex flex-col lg:pl-64 transition-all"}
-   [:div {:class "sticky top-0 z-10 flex h-16 flex-shrink-0 border-b border-gray-200 bg-white lg:hidden"}
-    [:button {:type                "button" :class "border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500 lg:hidden"
+   [:div {:class "sticky top-0 z-10 flex h-16 shrink-0 border-b border-gray-200 bg-white lg:hidden"}
+    [:button {:type                "button" :class "border-r border-gray-200 px-4 text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-purple-500 lg:hidden"
               :data-flyout-trigger "#mobile-flyout-menu"}
      [:span {:class "sr-only"} "Open sidebar"]
      ;; "<!-- Heroicon name: outline/bars-3-center-left -->"
@@ -62,11 +62,11 @@
        [:div
         [:button {:type                     "button"
                   :data-action-menu-trigger "#user-menu"
-                  :class                    "flex max-w-xs items-center rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" :id "user-menu-button" :aria-expanded "false" :aria-haspopup "true"}
+                  :class                    "flex max-w-xs items-center rounded-full bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" :id "user-menu-button" :aria-expanded "false" :aria-haspopup "true"}
          [:span {:class "sr-only"} "Open user menu"]
          (ui/avatar-img member :class "h-8 w-8 rounded-full")]]
-       [:div {:id    "user-menu"                                                                                                                                                          :data-action-menu true
-              :class "hidden absolute right-0 z-10 mt-2 w-48 origin-top-right divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" :role             "menu" :aria-orientation "vertical" :aria-labelledby "user-menu-button" :tabindex "-1"}
+       [:div {:id    "user-menu"                                                                                                                                                            :data-action-menu true
+              :class "hidden absolute right-0 z-10 mt-2 w-48 origin-top-right divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden" :role             "menu" :aria-orientation "vertical" :aria-labelledby "user-menu-button" :tabindex "-1"}
         (map user-menu-section (user-menu-sections req member))]]]]]
    [:main {:class "flex-1" :id "main"}
     body]])
@@ -76,24 +76,24 @@
   [:div {:class "relative inline-block px-2 text-left"}
    (ui/avatar-img member :class "h-8 w-8 mt-2 rounded-full bg-gray-300 lg:hidden sidebar-collapse")
    [:div {:class "sidebar-collapse opacity-1 transition-opacity duration-100"}
-    [:button {:type "button"
+    [:button {:type                     "button"
               :data-action-menu-trigger "#desktop-user-menu"
-              :class (ui/cs
-                      "group w-full rounded-md bg-gray-100 px-3.5 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-100")
-              :id "options-menu-button" :aria-expanded "false" :aria-haspopup "true"}
+              :class                    (ui/cs
+                                         "group w-full rounded-md bg-gray-100 px-3.5 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-100")
+              :id                       "options-menu-button" :aria-expanded "false" :aria-haspopup "true"}
      [:span {:class "flex w-full items-center justify-between"}
       [:span {:class "flex min-w-0 items-center justify-between space-x-3"}
-       (ui/avatar-img member :class "h-10 w-10 flex-shrink-0 rounded-full bg-gray-300")
+       (ui/avatar-img member :class "h-10 w-10 shrink-0 rounded-full bg-gray-300")
        [:span {:class "flex min-w-0 flex-1 flex-col"}
         [:span {:class "truncate text-sm font-medium text-gray-900"}
          (ui/member-nick member)]
         [:span {:class "truncate text-sm text-gray-500"}
          (ui/member-section member)]]]
-      (icon/chevron-up-down {:class "h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-gray-500"})]]]
-   [:div {:id "desktop-user-menu" :data-action-menu true
-          :class "hidden absolute right-0 left-0 z-10 mx-3 mt-1 origin-top divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-          ;; :class "hidden absolute right-0 left-0 z-10 mx-3 mt-1 origin-top divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-          :role "menu" :aria-orientation "vertical" :aria-labelledby "options-menu-button" :tabindex "-1"}
+      (icon/chevron-up-down {:class "h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-500"})]]]
+   [:div {:id    "desktop-user-menu" :data-action-menu true
+          :class "hidden absolute right-0 left-0 z-10 mx-3 mt-1 origin-top divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden"
+          ;; :class "hidden absolute right-0 left-0 z-10 mx-3 mt-1 origin-top divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden"
+          :role  "menu"              :aria-orientation "vertical" :aria-labelledby "options-menu-button" :tabindex "-1"}
     (map user-menu-section (user-menu-sections req member))]])
 
 (defn secondary-navigation
@@ -123,7 +123,7 @@
                   "text-gray-700 hover:text-gray-900 hover:bg-gray-50"))}
 
      (icon {:class
-            (ui/cs "mr-3 flex-shrink-0 h-6 w-6"
+            (ui/cs "mr-3 shrink-0 h-6 w-6"
                    (if active?
                      "text-gray-500"
                      "text-gray-400 group-hover:text-gray-500"))})
@@ -164,7 +164,7 @@ then trigger appSidebarToggled on <body/>
              "no-scrollbar"
              "shrink-0 border-r border-gray-200 sm:translate-x-0 transition-all duration-200")}
 
-      [:div {:class "flex flex-shrink-0 items-center px-6 sidebar-logo-container"}
+      [:div {:class "flex shrink-0 items-center px-6 sidebar-logo-container"}
        [:a {:href "/" :class ""}
         (icon/snoman {:data-class "{'lg:hidden': $_sidebar.expanded}"
                       :class      "h-8 w-auto text-green-500 logotype-dark lg:cloak"})
@@ -191,10 +191,10 @@ then trigger appSidebarToggled on <body/>
     [:div {:data-flyout-menu true :class "relative flex w-full max-w-xs flex-1 flex-col bg-white pt-5 pb-4"}
      [:div {:data-flyout-close-button true :class "absolute top-0 right-0 -mr-12 pt-2"}
       [:button {:type "button"
-                :class "ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"}
+                :class "ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-white"}
        [:span {:class "sr-only"} "Close sidebar"]
        (icon/xmark {:class "h-6 w-6 text-white"})]]
-     [:div {:class "flex flex-shrink-0 items-center px-4"}
+     [:div {:class "flex shrink-0 items-center px-4"}
       [:a {:href "/"}
        (icon/logotype {:class "h-8 w-auto text-green-500 logotype-dark"})]]
      [:div {:class "mt-5 h-0 flex-1 overflow-y-auto"}
@@ -204,7 +204,7 @@ then trigger appSidebarToggled on <body/>
        ;; (secondary-navigation)
        ]]]
     ;; Dummy element to force sidebar to shrink to fit close icon
-    [:div {:class "w-14 flex-shrink-0" :aria-hidden "true"}]]])
+    [:div {:class "w-14 shrink-0" :aria-hidden "true"}]]])
 
 (defn from-tw-shell
   []
@@ -213,24 +213,24 @@ then trigger appSidebarToggled on <body/>
    [:div {:class "mt-6 px-4 sm:px-6 lg:px-8"}
     [:h2 {:class "text-sm font-medium text-gray-900"} "Pinned Projects"]
     [:ul {:role "list" :class "mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4"}
-     [:li {:class "relative col-span-1 flex rounded-md shadow-sm"}
-      [:div {:class "flex-shrink-0 flex items-center justify-center w-16 bg-pink-600 text-white text-sm font-medium rounded-l-md"} "GA"]
+     [:li {:class "relative col-span-1 flex rounded-md shadow-xs"}
+      [:div {:class "shrink-0 flex items-center justify-center w-16 bg-pink-600 text-white text-sm font-medium rounded-l-md"} "GA"]
       [:div {:class "flex flex-1 items-center justify-between truncate rounded-r-md border-t border-r border-b border-gray-200 bg-white"}
        [:div {:class "flex-1 truncate px-4 py-2 text-sm"}
         [:a {:href "#" :class "font-medium text-gray-900 hover:text-gray-600"} "GraphQL API"]
         [:p {:class "text-gray-500"} "12 Members"]]
-       [:div {:class "flex-shrink-0 pr-2"}
-        [:button {:type "button"
+       [:div {:class "shrink-0 pr-2"}
+        [:button {:type                     "button"
                   :data-action-menu-trigger "#test-thing"
-                  :class "inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" :id "pinned-project-options-menu-0-button" :aria-expanded "false" :aria-haspopup "true"}
+                  :class                    "inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-400 hover:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" :id "pinned-project-options-menu-0-button" :aria-expanded "false" :aria-haspopup "true"}
          [:span {:class "sr-only"} "Open options"]
          ;; "<!-- Heroicon name: mini/ellipsis-vertical -->"
          [:svg {:class "h-5 w-5" :xmlns "http://www.w3.org/2000/svg" :viewbox "0 0 20 20" :fill "currentColor" :aria-hidden "true"}
           [:path {:d "M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM11.5 15.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z"}]]]
         ;; "<!--\n                  Dropdown menu, show/hide based on menu state.\n\n                  Entering: \"transition ease-out duration-100\"From: \"transform opacity-0 scale-95\"To: \"transform opacity-100 scale-100\"Leaving: \"transition ease-in duration-75\"From: \"transform opacity-100 scale-100\"To: \"transform opacity-0 scale-95\"-->"
-        [:div {:id "test-thing"
+        [:div {:id               "test-thing"
                :data-action-menu true
-               :class "hidden absolute right-10 top-3 z-10 mx-3 mt-1 w-48 origin-top-right divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" :role "menu" :aria-orientation "vertical" :aria-labelledby "pinned-project-options-menu-0-button" :tabindex "-1"}
+               :class            "hidden absolute right-10 top-3 z-10 mx-3 mt-1 w-48 origin-top-right divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden" :role "menu" :aria-orientation "vertical" :aria-labelledby "pinned-project-options-menu-0-button" :tabindex "-1"}
          [:div {:class "py-1" :role "none"}
           ;; "<!-- Active: \"bg-gray-100 text-gray-900\" Not Active: \"text-gray-700\" -->"
           [:a {:href "#" :class "text-gray-700 block px-4 py-2 text-sm" :role "menuitem" :tabindex "-1" :id "pinned-project-options-menu-0-item-0"} "View"]]
@@ -247,7 +247,7 @@ then trigger appSidebarToggled on <body/>
      [:li
       [:a {:href "#" :class "group flex items-center justify-between px-4 py-4 hover:bg-gray-50 sm:px-6"}
        [:span {:class "flex items-center space-x-3 truncate"}
-        [:span {:class "w-2.5 h-2.5 flex-shrink-0 rounded-full bg-pink-600" :aria-hidden "true"}]
+        [:span {:class "w-2.5 h-2.5 shrink-0 rounded-full bg-pink-600" :aria-hidden "true"}]
         [:span {:class "truncate text-sm font-medium leading-6"} "GraphQL API"
          [:span {:class "truncate font-normal text-gray-500"} "in Engineering"]]]
        ;; "<!-- Heroicon name: mini/chevron-right -->"
@@ -270,18 +270,18 @@ then trigger appSidebarToggled on <body/>
        [:tr
         [:td {:class "w-full max-w-0 whitespace-nowrap px-6 py-3 text-sm font-medium text-gray-900"}
          [:div {:class "flex items-center space-x-3 lg:pl-2"}
-          [:div {:class "flex-shrink-0 w-2.5 h-2.5 rounded-full bg-pink-600" :aria-hidden "true"}]
+          [:div {:class "shrink-0 w-2.5 h-2.5 rounded-full bg-pink-600" :aria-hidden "true"}]
           [:a {:href "#" :class "truncate hover:text-gray-600"}
            [:span "GraphQL API"
             [:span {:class "font-normal text-gray-500"} "in Engineering"]]]]]
         [:td {:class "px-6 py-3 text-sm font-medium text-gray-500"}
          [:div {:class "flex items-center space-x-2"}
-          [:div {:class "flex flex-shrink-0 -space-x-1"}
+          [:div {:class "flex shrink-0 -space-x-1"}
            [:img {:class "h-6 w-6 max-w-none rounded-full ring-2 ring-white" :src "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}]
            [:img {:class "h-6 w-6 max-w-none rounded-full ring-2 ring-white" :src "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}]
            [:img {:class "h-6 w-6 max-w-none rounded-full ring-2 ring-white" :src "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}]
            [:img {:class "h-6 w-6 max-w-none rounded-full ring-2 ring-white" :src "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}]]
-          [:span {:class "flex-shrink-0 text-xs font-medium leading-5"} "+8"]]]
+          [:span {:class "shrink-0 text-xs font-medium leading-5"} "+8"]]]
         [:td {:class "hidden whitespace-nowrap px-6 py-3 text-right text-sm text-gray-500 md:table-cell"} "March 17, 2020"]
         [:td {:class "whitespace-nowrap px-6 py-3 text-right text-sm font-medium"}
          [:a {:href "#" :class "text-sno-orange-600 hover:text-sno-orange-900"} "Edit"]]]
@@ -316,7 +316,7 @@ then trigger appSidebarToggled on <body/>
                                       [:div {:class "sm:mx-auto sm:w-full sm:max-w-md"}
                                        (icon/logotype {:class "h-8 mx-auto h-12 w-auto text-green-500 logotype-dark"})]
                                       [:div {:class "mt-8 sm:mx-auto sm:w-full sm:max-w-md"}
-                                       [:div {:class "bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"}
+                                       [:div {:class "bg-white py-8 px-4 shadow-sm sm:rounded-lg sm:px-10"}
                                         body]]]])))
 (defn centered-content-lg
   [req body]
@@ -328,7 +328,7 @@ then trigger appSidebarToggled on <body/>
                                       [:div {:class "sm:mx-auto sm:w-full sm:max-w-5xl"}
                                        (icon/logotype {:class "h-8 mx-auto h-12 w-auto text-green-500 logotype-dark"})]
                                       [:div {:class "mt-8 sm:mx-auto sm:w-full sm:max-w-5xl"}
-                                       [:div {:class "bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"}
+                                       [:div {:class "bg-white py-8 px-4 shadow-sm sm:rounded-lg sm:px-10"}
                                         body]]]])))
 
 (defn sidebar-search
@@ -336,7 +336,7 @@ then trigger appSidebarToggled on <body/>
   ;; "<!-- Sidebar Search -->"
   [:div {:class "mt-5 px-3"}
    [:label {:for "search" :class "sr-only"} "Search"]
-   [:div {:class "relative mt-1 rounded-md shadow-sm"}
+   [:div {:class "relative mt-1 rounded-md shadow-xs"}
     [:div {:class "pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3" :aria-hidden "true"}
      ;; "<!-- Heroicon name: mini/magnifying-glass -->"
      [:svg {:class "mr-3 h-4 w-4 text-gray-400" :xmlns "http://www.w3.org/2000/svg" :viewbox "0 0 20 20" :fill "currentColor" :aria-hidden "true"}

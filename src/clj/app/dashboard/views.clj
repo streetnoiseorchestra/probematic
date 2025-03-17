@@ -100,7 +100,7 @@
   (gig-attendance-endpoint req id idx gig))
 
 (ctmx/defcomponent ^:endpoint open-polls [req idx {:poll/keys [title voter-count votes-count] :as poll}]
-  (let [style-icon "mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400"]
+  (let [style-icon "mr-1.5 h-5 w-5 shrink-0 text-gray-400"]
     [:a {:href (url/link-poll poll)}
      [:div {:id id :class (ui/cs "flex flex-col md:grid md:grid-cols-4 gap-x-0 md:gap-y-8 px-4 py-2 sm:px-6 last:rounded-b-md border-b border-gray-200"
                                  (when (= 0 idx) "sm:rounded-t-md")
@@ -167,7 +167,7 @@
      :id "subscribe-calendar"
      :sections [{:label (tr [:choose-calendar-app])
                  :items [{:label [:span {:class "copy-link"} (tr [:action/copy-link])] :tag :button
-                          :icon (icon/copy {:class (ui/cs class "mr-1.5 h-5 w-5 flex-shrink-0 text-pink-600")})
+                          :icon (icon/copy {:class (ui/cs class "mr-1.5 h-5 w-5 shrink-0 text-pink-600")})
                           :attr {:data-href https
                                  :_ (format "
 on click writeText(@data-href) on navigator.clipboard
@@ -180,16 +180,16 @@ put '%s' into .copy-link in me"
                                             (tr [:action/copy-link]))}}
 
                          {:label "Microsoft 365" :tag :a
-                          :icon (icon/microsoft-365 {:class (ui/cs class "mr-1.5 h-5 w-5 flex-shrink-0")})
+                          :icon (icon/microsoft-365 {:class (ui/cs class "mr-1.5 h-5 w-5 shrink-0")})
                           :attr {:href outlook-365}}
                          {:label "Outlook Live" :tag :a
-                          :icon (icon/outlook {:class (ui/cs class "mr-1.5 h-5 w-5 flex-shrink-0")})
+                          :icon (icon/outlook {:class (ui/cs class "mr-1.5 h-5 w-5 shrink-0")})
                           :attr {:href outlook-live}}
                          {:label "Google Calendar" :tag :a
-                          :icon (icon/google-calendar {:class (ui/cs class "mr-1.5 h-5 w-5 flex-shrink-0")})
+                          :icon (icon/google-calendar {:class (ui/cs class "mr-1.5 h-5 w-5 shrink-0")})
                           :attr {:href google}}
                          {:label "Apple Calendar" :tag :a
-                          :icon (icon/apple-calendar {:class (ui/cs class "mr-1.5 h-5 w-5 flex-shrink-0 border border-gray-500 rounded")})
+                          :icon (icon/apple-calendar {:class (ui/cs class "mr-1.5 h-5 w-5 shrink-0 border border-gray-500 rounded-sm")})
                           :attr {:href webcal}}]}])))
 
 (declare dashboard-page)
