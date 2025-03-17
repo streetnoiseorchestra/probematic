@@ -1,5 +1,6 @@
 (ns app.routes
   (:require
+   [app.interceptors.diff :as diff]
    [app.auth :as auth]
    [app.dashboard.routes :as dashboard]
    [app.file-browser.routes :as file-browser]
@@ -11,15 +12,17 @@
    [app.poll.routes :as polls]
    [app.probeplan.routes :as probeplan]
    [app.routes.errors :as errors]
-   [app.routes.pedestal-reitit :as pedestal-reitit]
    [app.settings.routes :as settings]
    [app.songs.routes :as songs]
    [app.stats.routes :as stats]
+   [reitit.http :as http]
+   [reitit.http.interceptors.dev :as reitit.http.interceptors.dev]
+   [reitit.interceptor.sieppari :as sieppari]
+   [reitit.interceptor :as reitit.interceptor]
    [reitit.ring :as ring]))
 
-(pedestal-reitit/nop)
-
 (defn routes [system]
+  (tap> [:routes (keys system)])
   ["" {:coercion     interceptors/default-coercion
        :muuntaja     interceptors/formats-instance
        :interceptors (into [] (concat (interceptors/default-reitit-interceptors system)
@@ -54,9 +57,13 @@
     (errors/routes)]])
 
 (defn default-handler [{:keys [] :as system}]
-  (ring/routes
-   (ring/create-resource-handler {:path "/"})
-   (ring/create-default-handler)))
+  (http/ring-handler
+   (http/router (routes system) {:reitit.interceptor/transform diff/print-context-diffs})
+   (ring/routes
+    (ring/create-resource-handler {:path "/"})
+    (ring/create-default-handler))
+   {:executor     sieppari/executor
+    :interceptors []}))
 
 (comment
   (do

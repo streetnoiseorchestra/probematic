@@ -1,6 +1,4 @@
 (ns app.interceptors
-   ;; [clojure.data :as diff]
-   ;; [io.pedestal.interceptor.chain :as chain]
   (:require
    [app.auth :as auth]
    [app.config :as config]
@@ -8,25 +6,21 @@
    [app.queries :as q]
    [app.rand-human-id :as human-id]
    [app.routes.errors :as errors]
-   [app.routes.pedestal-prone :as pedestal-prone]
    [app.schemas :as schemas]
-   [clojure.string :as str]
-   [co.deps.ring-etag-middleware :as etag]
+   ;; [clojure.string :as str]
+   ;; [co.deps.ring-etag-middleware :as etag]
    [com.brunobonacci.mulog :as μ]
    [app.datomic.shim :as d]
-   [io.pedestal.http :as http]
-   [io.pedestal.http.ring-middlewares :as middlewares]
-   [io.pedestal.interceptor :as interceptor]
-   [io.pedestal.interceptor.error :as error-int]
    [luminus-transit.time :as time]
    [muuntaja.core :as m]
+   [app.interceptors.errors :as error-int]
    [reitit.coercion.malli :as rcm]
    [reitit.http.coercion :as coercion]
    [reitit.http.interceptors.multipart :as multipart]
    [reitit.http.interceptors.muuntaja :as muuntaja]
    [reitit.http.interceptors.parameters :as parameters]
-   [reitit.pedestal :as pedestal]
-   [ring.middleware.keyword-params :as keyword-params])
+   [ring.middleware.keyword-params :as keyword-params]
+   [app.errors :as error])
   (:import
    (org.eclipse.jetty.server HttpConfiguration)))
 
@@ -36,7 +30,7 @@
   If there is no authed member, then does nothing."
   [system]
   (assert system)
-  {:name ::current-user-interceptor
+  {:name  ::current-user-interceptor
    :enter (fn [ctx]
             (if-let [member-email (-> ctx :request :session :session/email)]
               (if-let [member (q/member-by-email (d/db (-> system :datomic :conn)) member-email)]
@@ -69,39 +63,57 @@
   [system]
   (assert system)
   (assert (:filestore system) "Filestore not available")
-  {:name ::filestore--interceptor
+  {:name  ::filestore--interceptor
    :enter (fn [ctx]
             (let [filestore (:filestore system)]
               (-> ctx
                   (assoc-in  [:request :filestore] filestore))))})
 
-(def service-error-handler
-  (error-int/error-dispatch [ctx ex]
+(defn error-interceptor []
+  (error-int/exception-interceptor
 
-                            [{:exception-type :java.lang.ArithmeticException :interceptor ::another-bad-one}]
-                            (assoc ctx :response {:status 400 :body "Another bad one"})
+   {:debug-errors?  true
+    :error-handlers {{:cognitect.anomalies/category [:= :cognitect.anomalies/incorrect]}
+                     errors/not-found-error
 
-                            [{:exception-type :java.lang.ArithmeticException}]
-                            (assoc ctx :response {:status 400 :body "A bad one"})
+                     {:app/error-type [:= :app.error.type/not-found]}
+                     errors/not-found-error
 
-                            [{:exception-type :clojure.lang.ExceptionInfo :cognitect.anomalies/category :cognitect.anomalies/incorrect}]
-                            (assoc ctx :response (errors/not-found-error (:request ctx) ex))
+                     {:app/error-type [:= :app.error.type/validation]}
+                     errors/validation-error
 
-                            [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/not-found}]
-                            (assoc ctx :response (errors/not-found-error (:request ctx) ex))
+                     {:app/error-type [:= :app.error.type/authentication-failure]}
+                     errors/unauthorized-error
 
-                            [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/validation}]
-                            (assoc ctx :response (errors/validation-error (:request ctx) ex))
+                     :app.interceptors.errors/default errors/unknown-error}}))
 
-                            [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/authentication-failure}]
-                            (assoc ctx :response (errors/unauthorized-error (:request ctx) ex))
+#_(def service-error-handler
+    (error-int/error-dispatch [ctx ex]
 
-                            :else
-                            (assoc ctx :response (errors/unknown-error (:request ctx) ex))))
+                              [{:exception-type :java.lang.ArithmeticException :interceptor ::another-bad-one}]
+                              (assoc ctx :response {:status 400 :body "Another bad one"})
+
+                              [{:exception-type :java.lang.ArithmeticException}]
+                              (assoc ctx :response {:status 400 :body "A bad one"})
+
+                              [{:exception-type :clojure.lang.ExceptionInfo :cognitect.anomalies/category :cognitect.anomalies/incorrect}]
+                              (assoc ctx :response (errors/not-found-error (:request ctx) ex))
+
+                              [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/not-found}]
+                              (assoc ctx :response (errors/not-found-error (:request ctx) ex))
+
+                              [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/validation}]
+                              (assoc ctx :response (errors/validation-error (:request ctx) ex))
+
+                              [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/authentication-failure}]
+                              (assoc ctx :response (errors/unauthorized-error (:request ctx) ex))
+
+                              :else
+                              (assoc ctx :response (errors/unknown-error (:request ctx) ex))))
 
 (def htmx-interceptor
   "Sets :htmx? to true if the request originates from htmx"
-  {:name ::htmx
+  {:name  ::htmx
    :enter (fn [ctx]
             (let [request (:request ctx)
                   headers (:headers request)]
@@ -118,14 +130,14 @@
 (defn system-interceptor
   "Install the integrant system map into the request under the :system key"
   [system]
-  {:name ::system-interceptor
+  {:name  ::system-interceptor
    :enter (fn [ctx]
             (assoc-in ctx [:request :system] system))})
 
 (defn dev-mode-interceptor
   "Tell the request if we are in dev mode or not"
   [system]
-  {:name ::dev-mode-interceptor
+  {:name  ::dev-mode-interceptor
    :enter (fn [ctx]
             (assoc-in ctx [:request :dev?] (config/dev-mode? (-> system :env))))})
 
@@ -243,11 +255,6 @@
        (assoc-in [:formats "application/json" :decoder-opts]
                  {:decode-key-fn keyword}))))
 
-(defn prone-exception-interceptor
-  "Pretty prints exceptions in the browser"
-  [service]
-  (update-in service [:io.pedestal.http/interceptors] #(vec (cons (pedestal-prone/exceptions {:app-namespaces ["app"]}) %))))
-
 (defn http-configuration
   [max-size]
   (doto (HttpConfiguration.)
@@ -255,7 +262,8 @@
 
 (defn default-reitit-interceptors [system]
   (into [] (remove nil?
-                   [;; inject-debug-interceptor
+                   [(error-int/exception-backstop-interceptor)
+                    ;; inject-debug-interceptor
                     human-id-interceptor
                     (i18n-interceptor system)
                     log-request-interceptor
@@ -274,6 +282,7 @@
                     ;; encoding response body
                     (muuntaja/format-response-interceptor)
                     ;; exception handling
+                    (error-interceptor)
                     ;; exception-interceptor
                     ;; decoding request body
                     (muuntaja/format-request-interceptor)
@@ -287,12 +296,12 @@
                     ;; multipart
                     (multipart/multipart-interceptor)])))
 
-(def etag-interceptor
-  (interceptor/interceptor
-   {:name ::etag
-    :leave (middlewares/response-fn-adapter
-            (fn [request _opts]
-              (etag/add-file-etag request false)))}))
+#_(def etag-interceptor
+    (interceptor/interceptor
+     {:name  ::etag
+      :leave (middlewares/response-fn-adapter
+              (fn [request _opts]
+                (etag/add-file-etag request false)))}))
 
 (def hash-prefix-len (count "hash-"))
 (def hash-len 8)
@@ -326,39 +335,23 @@
      {:name  ::cache-control
       :enter (fn [ctx] (asset-hash-rewrite-interceptor-enter ctx))}))
 
-(def cache-control-interceptor
-  (interceptor/interceptor
-   {:name  ::cache-control
-    :leave (fn [ctx]
-             (if-not (get-in ctx [:response :headers "Cache-Control"])
-               (if-let [content-type (get-in ctx [:response :headers "Content-Type"])]
-                 (let [cacheable-content-type? (fn [content-type]
-                                                 (some
-                                                  #(contains? #{"text/css" "text/javascript" "image/svg+xml"
-                                                                "image/png" "image/x-icon" "text/xml"} %)
-                                                  (str/split content-type #";")))]
-                   (assoc-in ctx [:response :headers "Cache-Control"]
-                             (if (cacheable-content-type? content-type) "max-age=31536000,immutable,public" "no-cache")))
-                 ctx)
-               ctx))}))
+#_(def cache-control-interceptor
+    (interceptor/interceptor
+     {:name  ::cache-control
+      :leave (fn [ctx]
+               (if-not (get-in ctx [:response :headers "Cache-Control"])
+                 (if-let [content-type (get-in ctx [:response :headers "Content-Type"])]
+                   (let [cacheable-content-type? (fn [content-type]
+                                                   (some
+                                                    #(contains? #{"text/css" "text/javascript" "image/svg+xml"
+                                                                  "image/png" "image/x-icon" "text/xml"} %)
+                                                    (str/split content-type #";")))]
+                     (assoc-in ctx [:response :headers "Cache-Control"]
+                               (if (cacheable-content-type? content-type) "max-age=31536000,immutable,public" "no-cache")))
+                   ctx)
+                 ctx))}))
 
-(def to-remove #{:io.pedestal.http.route/query-params
-                 :io.pedestal.http.route/path-params-decoder
-                 :io.pedestal.http/log-request
-                 :io.pedestal.http.route/router})
-
-(defn with-our-pedestal-interceptors [service system router handler]
-  (-> service
-      (update ::http/interceptors conj
-              service-error-handler
-              middlewares/cookies
-              etag-interceptor
-              cache-control-interceptor
-              #_asset-hash-rewrite-interceptor
-              ;; this should be last!
-              (pedestal/routing-interceptor router handler))
-      ;; remove the pedestal default handler, because now we use the reitit one
-      (update ::http/interceptors
-              (fn [interceptors]
-                (into []
-                      (remove #(contains? to-remove (:name %)) interceptors))))))
+;; TODO after removing p edestal
+;;  - add etag interceptor
+;;  - exceptions
+;;  - cache control

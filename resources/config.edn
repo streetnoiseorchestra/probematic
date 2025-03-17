@@ -71,25 +71,13 @@
                                                                         :test -1
                                                                         :demo -1}]
                                              :bind #or [#env NREPL_HOST "127.0.0.1"]}
-                   :app.ig/pedestal         {:service-map {:io.pedestal.http/type   :jetty
-                                                           :io.pedestal.http/routes []
-                                                           :io.pedestal.http/port   #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
-                                                           :io.pedestal.http/host   #or [#env HTTP_BIND_HOST "localhost"]
-                                                           ;; :io.pedestal.http/resource-path "/static"
-                                                           :io.pedestal.http/join?  false}
-                                             :datomic     #ig/ref :app.ig/datomic-db
-                                             :env         #ig/ref :app.ig/env
-                                             :handler     #ig/ref :app.ig/handler
-                                             :i18n-langs  #ig/ref :app.ig/i18n-langs
-                                             :keycloak    #ig/ref :app.ig/keycloak
-                                             :profile     #ig/ref :app.ig/profile
-                                             :redis       #ig/ref :app.ig/redis
-                                             :routes      #ig/ref :app.ig.router/routes
-                                             :webdav      #ig/ref :app.ig/webdav-sardine}
-                   :app.ig/handler          {:env #ig/ref :app.ig/env}
-                   :app.ig.router/routes    {:routes     #ig/refset :app.ig/routes
+                   :app.server/http-kit     {:options {:port #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
+                                                       :ip   #or [#env HTTP_BIND_HOST "127.0.0.1"]}
+                                             :env     #ig/ref :app.ig/env
+                                             :handler #ig/ref :app.ig/handler}
+                   :app.ig/handler          {:env        #ig/ref :app.ig/env
                                              :i18n-langs #ig/ref :app.ig/i18n-langs
-                                             :env        #ig/ref :app.ig/env
+                                             :profile    #ig/ref :app.ig/profile ;needed?
                                              :oauth2     #ig/ref :app.ig/oauth2
                                              :datomic    #ig/ref :app.ig/datomic-db
                                              :webdav     #ig/ref :app.ig/webdav-sardine

@@ -5,28 +5,33 @@
    [app.render :as render]
    [app.ui :as ui]))
 
-(defn unauthorized-error [req ex]
+(defn unauthorized-error [ex req]
+  (tap> [:hello "unauthorized-error"])
+  (assert (map? req))
   (error.util/log-error! req ex)
   (error.util/send-event! req ex)
   (if (:htmx? req)
     (ui/error-page-response-fragment ex req 401)
     (ui/error-page-response ex req 401)))
 
-(defn validation-error [req ex]
+(defn validation-error [ex req]
+  (assert (map? req))
   (error.util/log-error! req ex)
   (error.util/send-event! req ex)
   (if (:htmx? req)
     (ui/error-page-response-fragment ex req 400)
     (ui/error-page-response ex req 400)))
 
-(defn not-found-error [req ex]
+(defn not-found-error [ex req]
+  (assert (map? req))
   (error.util/log-error! req ex)
   (error.util/send-event! req ex)
   (if (:htmx? req)
     (ui/error-page-response-fragment ex req 404)
     (ui/error-page-response ex req 404)))
 
-(defn unknown-error [req ex]
+(defn unknown-error [ex req]
+  (assert (map? req))
   (error.util/log-error! req ex)
   (error.util/send-event! req ex)
   (if (:htmx? req)

@@ -1,5 +1,6 @@
 (ns app.auth
   (:require
+   [app.interceptors.session :as session]
    [app.config :as config]
    [app.render :as render]
    [app.errors :as errors]
@@ -11,7 +12,6 @@
    [buddy.sign.jwt :as jwt]
    [clojure.set :as set]
    [clojure.string :as str]
-   [io.pedestal.http.ring-middlewares :as ring-middlewares]
    [jsonista.core :as j]
    [medley.core :as m]
    [org.httpkit.client :as http]))
@@ -176,26 +176,26 @@
 
 (defn session-interceptor
   [{:keys [env redis]}]
-  (let [{:keys [session-ttl-s cookie-attrs]} (config/session-config env)]
-    (ring-middlewares/session {:store (redis-store redis {:expire-secs session-ttl-s})
-                               :cookie-attrs cookie-attrs})))
+  (let [{:keys [cookie-attrs]} (config/session-config env)]
+    (session/session-interceptor {:cookie-attrs cookie-attrs})))
 
 (def roles-authorization-interceptor
   "Reitit route interceptor that mounts itself if route has `:app.auth/roles` data. Expects `:app.auth/roles`
   to be a set of keyword and the context to have `[:session :app.auth/identity :app.auth/roles]` with user roles.
   responds with HTTP 403 if user doesn't have the roles defined, otherwise no-op."
-  {:name ::auth
+  {:name    ::auth
    :compile (fn [{::keys [roles]} _]
               (when (seq roles)
-                {:description (str "requires roles " roles)
-                 :spec {::roles #{keyword?}}
+                {:description  (str "requires roles " roles)
+                 :spec         {::roles #{keyword?}}
                  :context-spec {:user {::roles #{keyword}}}
-                 :enter (fn [{:keys [request] :as ctx}]
-                          (if (not (set/subset? roles
-                                                (get-in request [:session :session/roles])))
-                            (throw-unauthorized "Current users lacks required roles" {:permitted-roles roles})
-                            ctx)
-                          ctx)}))})
+                 :enter        (fn [{:keys [request] :as ctx}]
+                                 (tap> [:auth-req request])
+                                 (if (not (set/subset? roles
+                                                       (get-in request [:session :session/roles])))
+                                   (throw-unauthorized "Current users lacks required roles" {:permitted-roles roles})
+                                   ctx)
+                                 ctx)}))})
 (defn has-roles?
   "Given a role set and a request, returns true if the current user has all the roles."
   [roles req]

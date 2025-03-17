@@ -2,6 +2,7 @@
   "This namespace contains our application's integrant system implementations"
   (:require [app.auth :as auth]
             [app.caldav :as caldav]
+            [app.server]
             [app.config :as config]
             [app.datomic.system :as datomic]
             [app.email.email-worker :as email-worker]
@@ -17,11 +18,9 @@
             [ctmx.render :as ctmx.render]
             [hiccup2.core :as hiccup2]
             [integrant.core :as ig]
-            [io.pedestal.http :as server]
             [nrepl.server :as nrepl]
             [ol.jobs.ig]
             [ol.system :as system]
-            [reitit.http :as http]
             [taoensso.carmine :as car]))
 ;; Ensure ctmx is using the XSS safe hiccup render function
 (alter-var-root #'ctmx.render/html (constantly
@@ -43,9 +42,7 @@
 
 (defmethod ig/init-key :app.ig.router/routes
   [_ system]
-  (let [routes (routes/routes system)]
-    {:routes  routes
-     :router  (http/router routes)}))
+  (routes/routes system))
 
 (defmethod ig/init-key :app.ig.jobs/definitions
   [_ {:keys [env] :as system}]
@@ -55,9 +52,9 @@
 
 (defn csp-settings
   [env]
-  (let [base-uri (config/app-base-url env)
-        id-uri (config/keycloak-auth-server-url env)
-        forum-uri (config/discourse-forum-url env)
+  (let [base-uri      (config/app-base-url env)
+        id-uri        (config/keycloak-auth-server-url env)
+        forum-uri     (config/discourse-forum-url env)
         nextcloud-uri (config/nextcloud-url env)]
     (assert base-uri)
     (assert id-uri)
@@ -69,57 +66,22 @@
                                         :script-src  (format  "%s %s 'self' 'unsafe-inline' 'unsafe-eval' blob:" base-uri forum-uri)
                                         :style-src   (format "%s 'self' 'unsafe-inline'" base-uri)
                                         :connect-src "'self'"
-                                        :frame-src (format  "%s %s 'self'" nextcloud-uri forum-uri)}}))
+                                        :frame-src   (format  "%s %s 'self'" nextcloud-uri forum-uri)}}))
 
-(defn with-csp
-  [service-map env]
-  (assoc service-map :io.pedestal.http/secure-headers (csp-settings env)))
-(defn with-cors
-  [service-map env]
-  (assoc service-map :io.pedestal.http/allowed-origins
-         {:creds true
-          :allowed-origins
-          ["" (config/app-base-url env) (config/keycloak-auth-server-url env)]
-          ;; (constantly true)
-          }))
-(defn with-container-opts
-  [service-map env]
-  ;; interceptors/prone-exception-interceptor
-  (assoc service-map :io.pedestal.http/container-options {:io.pedestal.http.jetty/http-configuration (interceptors/http-configuration
-                                                                                                      (-> env :max-header-size))}))
-(defn maybe-with-dev-interceptors
-  [service-map env]
-  (if (config/dev-mode? env)
-    (server/dev-interceptors service-map)
-    service-map))
-(defmethod ig/init-key ::pedestal
-  [_ {:keys [service-map routes handler env] :as system}]
-  (let [port      (-> service-map :io.pedestal.http/port)
-        host      (-> service-map :io.pedestal.http/host)
-        start-msg (format "Starting %s on %s:%d" (str (:name env "app") (when (config/dev-mode? env) " [DEV]")) host port)]
+(comment
+  ;; CORS
 
-    (assert port)
-    (assert host)
-    (μ/log ::init-http :msg start-msg)
-    (-> service-map
-        (with-container-opts env)
-        (with-cors env)
-        (with-csp env)
-        (server/default-interceptors)
-        (interceptors/with-our-pedestal-interceptors system (:router routes) handler)
-        (maybe-with-dev-interceptors env)
-        (server/create-server)
-        (server/start))))
-
-(defmethod ig/halt-key! ::pedestal
-  [_ server]
-  (server/stop server))
+  {:creds true
+   :allowed-origins
+   ["" (config/app-base-url env) (config/keycloak-auth-server-url env)]
+   ;; (constantly true)
+   })
 
 (defmethod ig/init-key ::gigo-client
   [_ {:keys [env]}]
   (when-not (config/demo-mode? env)
-    {:username (get-in env [:gigo :username])
-     :password (get-in env [:gigo :password])
+    {:username    (get-in env [:gigo :username])
+     :password    (get-in env [:gigo :password])
      :cookie-atom (atom nil)}))
 
 (defmethod ig/init-key ::datomic-db

@@ -56,7 +56,7 @@
      ex)))
 
 (defn prepare-req
-  "Given a pedestal request map, returns a smaller sanitized map designed for event logging consumption"
+  "Given a request map, returns a smaller sanitized map designed for event logging consumption"
   [req]
   (-> req
       (update :params (fn [params]
