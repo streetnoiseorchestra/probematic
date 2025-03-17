@@ -124,9 +124,8 @@
                                  (if (= 0 (mod idx 2))
                                    "bg-white"
                                    "bg-white"))}
-      [:div {:class "md:order-none md:col-span-1 text-sm whitespace-nowrap font-medium"}
-       [:div {:class "flex gap-x-2 md:grid md:grid-flow-col md:auto-cols-min"}
-        [:span {:class "link-blue"} name]]]
+      [:div {:class "md:order-none md:col-span-2 text-sm font-medium"}
+       [:span {:class "link-blue"} name]]
       [:div {:class "md:order-none md:font-normal flex"}
        (when (> total-needs-review 0)
          [:p {:class p-class :data-tooltip (tr [:insurance/total-needs-review-tooltip])} (insurance.view/coverage-status-icon-span tr :instrument.coverage.status/needs-review) total-needs-review])
