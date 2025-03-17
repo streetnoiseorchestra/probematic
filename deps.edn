@@ -24,6 +24,15 @@
                                                                                 ;; exclude these fat cljs deps
                                                                                 ;; org.clojure/clojurescript
                                                                                 machhiato/hiccups]}
+        datastar/sdk                         {:git/url   "https://github.com/starfederation/datastar/"
+                                              :git/sha   "c35b85ce4e9e1ea64ee8457f80f7a4d59955919d"
+                                              :deps/root "sdk/clojure/sdk"}
+        datastar/malli-schemas               {:git/url   "https://github.com/starfederation/datastar/"
+                                              :git/sha   "c35b85ce4e9e1ea64ee8457f80f7a4d59955919d"
+                                              :deps/root "sdk/clojure/malli-schemas"}
+        datastar/http-kit                    {:git/url   "https://github.com/starfederation/datastar/"
+                                              :git/sha   "c35b85ce4e9e1ea64ee8457f80f7a4d59955919d"
+                                              :deps/root "sdk/clojure/adapter-http-kit"}
         ;; for Discourse integration
         clj-commons/clj-yaml                 {:mvn/version "1.0.27"}
         com.github.oliyh/martian-httpkit     {:mvn/version "0.1.26"}

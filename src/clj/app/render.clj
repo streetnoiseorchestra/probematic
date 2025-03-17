@@ -80,8 +80,8 @@
 (defn body-end [req relative-prefix]
   (list
    (script req relative-prefix "hyperscript.org@0.9.12.js")
+   (script req relative-prefix "datastar@1.0.0-beta.9.js" :type :module)
    (script req relative-prefix "htmx.org@1.9.12.js")
-   ;; (script req relative-prefix "htmx.org.dev@1.9.12.js")
    (script req relative-prefix "class-tools@1.9.12.js")
    (script req relative-prefix "nprogress.js")
    (script req relative-prefix "popperjs@2-dev.js")
