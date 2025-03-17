@@ -32,9 +32,6 @@
     <logger name="org.xnio.nio" level="WARN" />
     <logger name="io.undertow" level="WARN" />
     <logger name="org.eclipse.jetty" level="WARN" />
-    <logger name="io.pedestal" level="WARN" />
-    <logger name="com.walmartlabs.lacinia" level="WARN" />
-    <logger name="com.walmartlabs.lacinia.pedestal.subscriptions" level="WARN" />
     <logger name="migratus" level="INFO" />
 
     <!-- Enable some verbose logs for our namespaces -->

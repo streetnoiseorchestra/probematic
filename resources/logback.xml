@@ -10,7 +10,6 @@
     <logger name="org.apache.http" level="error" />
     <logger name="org.xnio.nio" level="error" />
     <logger name="io.undertow" level="error" />
-    <logger name="io.pedestal.http.cors" level="error" />
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

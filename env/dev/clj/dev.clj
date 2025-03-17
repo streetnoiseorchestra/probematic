@@ -85,7 +85,6 @@
 
   (set-prep! {:profile :dev})
   (keys state/system)
-  (-> state/system :app.ig/pedestal)
   (-> state/system :app.ig/env)
   (-> state/system :app.ig/profile)
 

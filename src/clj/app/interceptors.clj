@@ -19,8 +19,7 @@
    [reitit.http.interceptors.multipart :as multipart]
    [reitit.http.interceptors.muuntaja :as muuntaja]
    [reitit.http.interceptors.parameters :as parameters]
-   [ring.middleware.keyword-params :as keyword-params]
-   [app.errors :as error])
+   [ring.middleware.keyword-params :as keyword-params])
   (:import
    (org.eclipse.jetty.server HttpConfiguration)))
 
@@ -86,30 +85,6 @@
                      errors/unauthorized-error
 
                      :app.interceptors.errors/default errors/unknown-error}}))
-
-#_(def service-error-handler
-    (error-int/error-dispatch [ctx ex]
-
-                              [{:exception-type :java.lang.ArithmeticException :interceptor ::another-bad-one}]
-                              (assoc ctx :response {:status 400 :body "Another bad one"})
-
-                              [{:exception-type :java.lang.ArithmeticException}]
-                              (assoc ctx :response {:status 400 :body "A bad one"})
-
-                              [{:exception-type :clojure.lang.ExceptionInfo :cognitect.anomalies/category :cognitect.anomalies/incorrect}]
-                              (assoc ctx :response (errors/not-found-error (:request ctx) ex))
-
-                              [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/not-found}]
-                              (assoc ctx :response (errors/not-found-error (:request ctx) ex))
-
-                              [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/validation}]
-                              (assoc ctx :response (errors/validation-error (:request ctx) ex))
-
-                              [{:exception-type :clojure.lang.ExceptionInfo :app/error-type :app.error.type/authentication-failure}]
-                              (assoc ctx :response (errors/unauthorized-error (:request ctx) ex))
-
-                              :else
-                              (assoc ctx :response (errors/unknown-error (:request ctx) ex))))
 
 (def htmx-interceptor
   "Sets :htmx? to true if the request originates from htmx"
