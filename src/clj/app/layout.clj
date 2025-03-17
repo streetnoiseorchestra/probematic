@@ -45,9 +45,11 @@
 
 (defn app-container
   [req member body]
-  [:div {:id "app-container" :class "flex flex-col lg:pl-64 transition-all"}
+  [:div {:id                            "app-container"
+         :data-class-app_container_wide "!$_sidebar.expanded"
+         :class                         "flex flex-col lg:pl-64 transition-all"}
    [:div {:class "sticky top-0 z-10 flex h-16 flex-shrink-0 border-b border-gray-200 bg-white lg:hidden"}
-    [:button {:type "button" :class "border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500 lg:hidden"
+    [:button {:type                "button" :class "border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500 lg:hidden"
               :data-flyout-trigger "#mobile-flyout-menu"}
      [:span {:class "sr-only"} "Open sidebar"]
      ;; "<!-- Heroicon name: outline/bars-3-center-left -->"
@@ -58,13 +60,13 @@
      [:div {:class "flex items-center"}
       [:div {:class "relative ml-3"}
        [:div
-        [:button {:type "button"
+        [:button {:type                     "button"
                   :data-action-menu-trigger "#user-menu"
-                  :class "flex max-w-xs items-center rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" :id "user-menu-button" :aria-expanded "false" :aria-haspopup "true"}
+                  :class                    "flex max-w-xs items-center rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" :id "user-menu-button" :aria-expanded "false" :aria-haspopup "true"}
          [:span {:class "sr-only"} "Open user menu"]
          (ui/avatar-img member :class "h-8 w-8 rounded-full")]]
-       [:div {:id "user-menu" :data-action-menu true
-              :class "hidden absolute right-0 z-10 mt-2 w-48 origin-top-right divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" :role "menu" :aria-orientation "vertical" :aria-labelledby "user-menu-button" :tabindex "-1"}
+       [:div {:id    "user-menu"                                                                                                                                                          :data-action-menu true
+              :class "hidden absolute right-0 z-10 mt-2 w-48 origin-top-right divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" :role             "menu" :aria-orientation "vertical" :aria-labelledby "user-menu-button" :tabindex "-1"}
         (map user-menu-section (user-menu-sections req member))]]]]]
    [:main {:class "flex-1" :id "main"}
     body]])
@@ -129,8 +131,8 @@
 
 (defn desktop-menu
   [req member]
-;; then toggle .translate-x-0 on #desktop-sidebar-menu
-;; then toggle .-translate-x-40 on #desktop-sidebar-menu
+  ;; then toggle .translate-x-0 on #desktop-sidebar-menu
+  ;; then toggle .-translate-x-40 on #desktop-sidebar-menu
   (let [script
         "
 on click toggle .sidebar-expanded on <body/>
@@ -151,30 +153,35 @@ then toggle .lg:pl-12 on #app-container
 then trigger appSidebarToggled on <body/>
 "]
 
-;;
-    [:div {:id "desktop-sidebar-menu"
-           :class
-           (ui/cs
-            "hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-gray-100 lg:pt-5 lg:pb-4"
-            "lg:translate-x-0"
-            "no-scrollbar"
-            "shrink-0 border-r border-gray-200 sm:translate-x-0 transition-all duration-200")}
+    ;;
+    [:div {:data-signals-_sidebar.expanded "true"}
+     [:div {:id                   "desktop-sidebar-menu"
+            :data-class-collapsed "!$_sidebar.expanded"
+            :class
+            (ui/cs
+             "hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-gray-100 lg:pt-5 lg:pb-4"
+             "lg:translate-x-0"
+             "no-scrollbar"
+             "shrink-0 border-r border-gray-200 sm:translate-x-0 transition-all duration-200")}
 
-     [:div {:class "flex flex-shrink-0 items-center px-6 sidebar-logo-container"}
-      [:a {:href "/" :class ""}
-       (icon/snoman {:class "h-8 w-auto text-green-500 logotype-dark lg:hidden sidebar-collapse"})
-       (icon/logotype {:class "h-8 w-auto text-green-500 logotype-dark  sidebar-collapse"})]]
+      [:div {:class "flex flex-shrink-0 items-center px-6 sidebar-logo-container"}
+       [:a {:href "/" :class ""}
+        (icon/snoman {:data-class "{'lg:hidden': $_sidebar.expanded}"
+                      :class      "h-8 w-auto text-green-500 logotype-dark lg:cloak"})
+        (icon/logotype {:data-class "{'lg:hidden': !$_sidebar.expanded}"
+                        :class      "h-8 w-auto text-green-500 logotype-dark"})]]
 
-     [:div {:class "mt-5 flex h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pt-1 sidebar-scroll-container"}
-      (user-account-actions req member)
-      [:nav {:class "mt-6 px-3 text-nowrap"}
-       [:div {:class "space-y-1" :hx-boost "true"}
-        (map (partial nav-item req) (navigation (i18n/tr-from-req req)))]
-       ;; (secondary-navigation)
-       ]
-      [:div {:class "flex items-end justify-end"}
-       [:button {:class "px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md sidebar-open-close-button rotate-0 " :_ script}
-        (icon/arrow-small-left {:class "w-6 h-6 hidden lg:block"})]]]]))
+      [:div {:class "mt-5 flex h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pt-1 sidebar-scroll-container"}
+       (user-account-actions req member)
+       [:nav {:class "mt-6 px-3 text-nowrap"}
+        [:div {:class "space-y-1" :hx-boost "true"}
+         (map (partial nav-item req) (navigation (i18n/tr-from-req req)))]
+        ;; (secondary-navigation)
+        ]
+       [:div {:class "flex items-end justify-end"}
+        [:button {:class         "px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md sidebar-open-close-button rotate-0 "
+                  :data-on-click "$_sidebar.expanded = !$_sidebar.expanded"}
+         (icon/arrow-small-left {:class "w-6 h-6 hidden lg:block"})]]]]]))
 
 (defn mobile-menu
   [req]

@@ -817,3 +817,26 @@ body {
     opacity: 0;
     transition: opacity 200ms ease-in;
 }
+
+/*--------- Sidebar Expand/Collapse ---------*/
+#desktop-sidebar-menu.collapsed {
+    @apply lg:w-12;
+}
+
+#desktop-sidebar-menu.collapsed nav {
+    @apply px-3 mt-10 mt-6;
+}
+
+#desktop-sidebar-menu.collapsed .sidebar-open-close-button {
+    @apply rotate-180;
+}
+#desktop-sidebar-menu.collapsed .sidebar-logo-container {
+    @apply px-6 pl-2;
+}
+#app-container.app_container_wide {
+    @apply pl-12;
+}
+
+@utility cloak {
+    display: none;
+}
