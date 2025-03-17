@@ -19,9 +19,7 @@
    [reitit.http.interceptors.multipart :as multipart]
    [reitit.http.interceptors.muuntaja :as muuntaja]
    [reitit.http.interceptors.parameters :as parameters]
-   [ring.middleware.keyword-params :as keyword-params])
-  (:import
-   (org.eclipse.jetty.server HttpConfiguration)))
+   [ring.middleware.keyword-params :as keyword-params]))
 
 (defn current-user-interceptor
   "Fetches the current user from the request (see app.auth/auth-interceptor),
@@ -229,11 +227,6 @@
                  {:encode-key-fn name})
        (assoc-in [:formats "application/json" :decoder-opts]
                  {:decode-key-fn keyword}))))
-
-(defn http-configuration
-  [max-size]
-  (doto (HttpConfiguration.)
-    (.setRequestHeaderSize max-size)))
 
 (defn default-reitit-interceptors [system]
   (into [] (remove nil?
