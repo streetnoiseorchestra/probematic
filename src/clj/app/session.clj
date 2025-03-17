@@ -3,58 +3,38 @@
 ;; Copyright © 2016-2018 Clojure-Aided Enrichment Center
 ;; Distributed under the Eclipse Public License, the same as Clojure.
 (ns app.session (:require
-                 [ring.middleware.session.store :as api]
+                 [ring.middleware.session.store :refer [SessionStore]]
                  [taoensso.carmine :as redis])
     (:import
      [java.util UUID]))
 
 (defn new-session-key [prefix]
-  (str prefix ":" (str (UUID/randomUUID))))
+  (str prefix ":" (UUID/randomUUID)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;   Method implementations   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(deftype RedisStore [redis-conn prefix expiration reset-on-read read-handler write-handler]
+  SessionStore
 
-(defn read-redis-session
-  "Read a session from a Redis store."
-  [this session-key]
-  (let [conn (:redis-conn this)]
+  (read-session [_ session-key]
     (when session-key
-      (when-let [data (redis/wcar conn (redis/get session-key))]
-        (let [read-handler (:read-handler this)]
-          (when (and (:expiration this) (:reset-on-read this))
-            (redis/wcar conn (redis/expire session-key (:expiration this))))
-          (read-handler data))))))
+      (when-let [data (redis/wcar redis-conn (redis/get session-key))]
+        (let [read-handler read-handler]
+          (when (and expiration reset-on-read)
+            (redis/wcar redis-conn (redis/expire session-key expiration)))
+          (read-handler data)))))
 
-(defn write-redis-session
-  "Write a session to a Redis store."
-  [this old-session-key data]
-  (let [conn (:redis-conn this)
-        session-key (or old-session-key (new-session-key (:prefix this)))
-        expiri (:expiration this)]
-    (let [write-handler (:write-handler this)]
-      (if expiri
-        (redis/wcar conn (redis/setex session-key expiri (write-handler data)))
-        (redis/wcar conn (redis/set session-key (write-handler data)))))
-    session-key))
+  (write-session
+    [_ old-session-key data]
+    (let [session-key (or old-session-key (new-session-key prefix))]
+      (let [write-handler write-handler]
+        (if expiration
+          (redis/wcar redis-conn (redis/setex session-key expiration (write-handler data)))
+          (redis/wcar redis-conn (redis/set session-key (write-handler data)))))
+      session-key))
 
-(defn delete-redis-session
-  "Delete a session in a Redis store."
-  [this session-key]
-  (redis/wcar (:redis-conn this) (redis/del session-key))
-  nil)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;   Protocol Implementation   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrecord RedisStore [redis-conn prefix expiration reset-on-read read-handler write-handler])
-
-(def store-behaviour {:read-session read-redis-session
-                      :write-session write-redis-session
-                      :delete-session delete-redis-session})
-
-(extend RedisStore api/SessionStore store-behaviour)
+  (delete-session
+    [_ session-key]
+    (redis/wcar redis-conn (redis/del session-key))
+    nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;   Constructor   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,8 +45,8 @@
   ([redis-conn]
    (redis-store redis-conn {}))
   ([redis-conn {:keys [prefix expire-secs reset-on-read read-handler write-handler]
-                :or {prefix "session"
-                     read-handler identity
-                     write-handler identity
-                     reset-on-read false}}]
-   (->RedisStore redis-conn prefix expire-secs reset-on-read read-handler write-handler)))
+                :or   {prefix        "session"
+                       read-handler  identity
+                       write-handler identity
+                       reset-on-read false}}]
+   (RedisStore. redis-conn prefix expire-secs reset-on-read read-handler write-handler)))

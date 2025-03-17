@@ -177,8 +177,9 @@
 
 (defn session-interceptor
   [{:keys [env redis]}]
-  (let [{:keys [cookie-attrs]} (config/session-config env)]
-    (session/session-interceptor {:cookie-attrs cookie-attrs})))
+  (let [{:keys [session-ttl-s cookie-attrs]} (config/session-config env)]
+    (session/session-interceptor {:cookie-attrs cookie-attrs
+                                  :store        (redis-store redis {:expire-secs session-ttl-s})})))
 
 (def roles-authorization-interceptor
   "Reitit route interceptor that mounts itself if route has `:app.auth/roles` data. Expects `:app.auth/roles`
