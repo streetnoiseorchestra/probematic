@@ -74,8 +74,8 @@
 (defn user-account-actions
   [req member]
   [:div {:class "relative inline-block px-2 text-left"}
-   (ui/avatar-img member :class "h-8 w-8 mt-2 rounded-full bg-gray-300 lg:hidden sidebar-collapse")
-   [:div {:class "sidebar-collapse opacity-1 transition-opacity duration-100"}
+   (ui/avatar-img member :class "h-8 w-8 mt-2 rounded-full bg-gray-300 only-collapsed")
+   [:div {:class "only-expanded duration-100"}
     [:button {:type                     "button"
               :data-action-menu-trigger "#desktop-user-menu"
               :class                    (ui/cs
@@ -127,7 +127,7 @@
                    (if active?
                      "text-gray-500"
                      "text-gray-400 group-hover:text-gray-500"))})
-     [:span {:class "sidebar-collapse"} label]]))
+     [:span {:class "only-expanded"} label]]))
 
 (defn desktop-menu
   [req member]
@@ -166,14 +166,14 @@ then trigger appSidebarToggled on <body/>
 
       [:div {:class "flex shrink-0 items-center px-6 sidebar-logo-container"}
        [:a {:href "/" :class ""}
-        (icon/snoman {:data-class "{'lg:hidden': $_sidebar.expanded}"
+        (icon/snoman {:data-class "{'lg:hidden': $_sidebar.expanded, 'lg:cloak': false}"
                       :class      "h-8 w-auto text-green-500 logotype-dark lg:cloak"})
         (icon/logotype {:data-class "{'lg:hidden': !$_sidebar.expanded}"
                         :class      "h-8 w-auto text-green-500 logotype-dark"})]]
 
       [:div {:class "mt-5 flex h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pt-1 sidebar-scroll-container"}
        (user-account-actions req member)
-       [:nav {:class "mt-6 px-3 text-nowrap"}
+       [:nav
         [:div {:class "space-y-1" :hx-boost "true"}
          (map (partial nav-item req) (navigation (i18n/tr-from-req req)))]
         ;; (secondary-navigation)

@@ -843,16 +843,37 @@ body {
     @apply lg:w-12;
 }
 
+#desktop-sidebar-menu .only-collapsed {
+    @apply lg:hidden;
+}
+#desktop-sidebar-menu.collapsed .only-collapsed {
+    display: unset;
+}
+
+#desktop-sidebar-menu .only-expanded {
+    display: unset;
+}
+
+#desktop-sidebar-menu.collapsed .only-expanded {
+    @apply lg:hidden;
+}
+
+#desktop-sidebar-menu nav {
+    @apply mt-6 px-3 text-nowrap;
+}
+
 #desktop-sidebar-menu.collapsed nav {
-    @apply px-3 mt-10 mt-6;
+    @apply px-0 mt-10;
 }
 
 #desktop-sidebar-menu.collapsed .sidebar-open-close-button {
     @apply rotate-180;
 }
+
 #desktop-sidebar-menu.collapsed .sidebar-logo-container {
     @apply px-6 pl-2;
 }
+
 #app-container.app_container_wide {
     @apply pl-12;
 }
