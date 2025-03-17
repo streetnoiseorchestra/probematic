@@ -1,5 +1,6 @@
 (ns app.auth
   (:require
+   [app.interceptors.util :as int]
    [app.interceptors.session :as session]
    [app.config :as config]
    [app.render :as render]
@@ -190,10 +191,9 @@
                  :spec         {::roles #{keyword?}}
                  :context-spec {:user {::roles #{keyword}}}
                  :enter        (fn [{:keys [request] :as ctx}]
-                                 (tap> [:auth-req request])
                                  (if (not (set/subset? roles
                                                        (get-in request [:session :session/roles])))
-                                   (throw-unauthorized "Current users lacks required roles" {:permitted-roles roles})
+                                   (throw-unauthorized "Current user lacks required roles" {:permitted-roles roles})
                                    ctx)
                                  ctx)}))})
 (defn has-roles?
@@ -222,21 +222,23 @@
   (has-roles? #{:admin} req))
 
 (def require-authenticated-user
-  "Throws an unauthorized exception if the request map does not contain session information for the current user"
-  {:name ::require-authenticated-user
+  "Redirects to the login page when there is no authenticated user"
+  {:name  ::require-authenticated-user
    :enter (fn [ctx]
             (let [{:keys [uri query-string] :as req} (:request ctx)]
               (if (get-current-email req)
                 ctx
-                (assoc ctx :response {:status 302 :headers {"location"
-                                                            (str "/login?next=" (util/url-encode (str uri "?" query-string)))} :body ""}))))})
+                (int/terminate ctx
+                               {:status  302
+                                :headers {"location" (str "/login?next=" (util/url-encode (str uri "?" query-string)))}
+                                :body    ""}))))})
 
 (def demo-auth-interceptor
-  {:name ::demo-auth-interceptor
+  {:name  ::demo-auth-interceptor
    :enter #(-> % (assoc-in [:request :session] {:session/username "admin"
-                                                :session/email "admin@example.com"
-                                                :session/groups #{"/Mitglieder" "/admin"}
-                                                :session/roles #{:Mitglieder :admin}}))})
+                                                :session/email    "admin@example.com"
+                                                :session/groups   #{"/Mitglieder" "/admin"}
+                                                :session/roles    #{:Mitglieder :admin}}))})
 (defn dev-auth-interceptor [dev-session]
   {:name ::dev-auth-interceptor
    :enter #(-> % (assoc-in [:request :session] dev-session))})

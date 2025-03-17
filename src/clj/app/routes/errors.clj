@@ -6,7 +6,6 @@
    [app.ui :as ui]))
 
 (defn unauthorized-error [ex req]
-  (tap> [:hello "unauthorized-error"])
   (assert (map? req))
   (error.util/log-error! req ex)
   (error.util/send-event! req ex)

@@ -116,12 +116,10 @@
       :enter          (fn [ctx]
                         ctx)
       :error          (fn [{:keys [request] :as ctx}]
-                        (tap> [:debug? debug-errors?])
                         (try
-                          (do
-                            (when debug-errors?
-                              (debug-error! ctx))
-                            (handle-exceptions prepared-handlers ctx))
+                          (when debug-errors?
+                            (debug-error! ctx))
+                          (handle-exceptions prepared-handlers ctx)
                           (catch Throwable t
                             (tap> [:error-handler-threw t :orig-error (:error ctx)])
                             (assoc ctx :response

@@ -72,7 +72,7 @@
 (defn error-interceptor []
   (error-int/exception-interceptor
 
-   {:debug-errors?  true
+   {:debug-errors?  false
     :error-handlers {{:cognitect.anomalies/category [:= :cognitect.anomalies/incorrect]}
                      errors/not-found-error
 

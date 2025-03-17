@@ -22,7 +22,6 @@
    [reitit.ring :as ring]))
 
 (defn routes [system]
-  (tap> [:routes (keys system)])
   ["" {:coercion     interceptors/default-coercion
        :muuntaja     interceptors/formats-instance
        :interceptors (into [] (concat (interceptors/default-reitit-interceptors system)
