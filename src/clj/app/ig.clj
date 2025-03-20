@@ -21,6 +21,7 @@
             [nrepl.server :as nrepl]
             [ol.jobs.ig]
             [ol.system :as system]
+            [app.datastar]
             [taoensso.carmine :as car]))
 ;; Ensure ctmx is using the XSS safe hiccup render function
 (alter-var-root #'ctmx.render/html (constantly

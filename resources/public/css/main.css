@@ -16,6 +16,7 @@
 @import "./sweetalert2@11.7.5.css" layer(utilities);
 
 @import "./thumb-animation.css" layer(utilities);
+@import "./modal-dialog.css" layer(components);
 
 @config '../../../tailwind.config.js';
 
@@ -34,6 +35,10 @@
     ::backdrop,
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
+    }
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
     }
 }
 
@@ -568,6 +573,23 @@ body {
 
 /* ANIMATIONS */
 
+button.btn-new > .spinner {
+    opacity: 0;
+    display: none;
+    transition: all 200ms ease-in;
+}
+
+button.btn-new.spinning > .spinner {
+    opacity: 1;
+    display: inline-block;
+}
+
+/* all other children except the .spinner should be hidden */
+button.btn-new.spinning > :not(:first-child) {
+    opacity: 0;
+    display: none;
+}
+
 .htmx-request.pulsate,
 .htmx-request .pulsate {
     animation: pulsate 1s ease-out;
@@ -583,18 +605,25 @@ body {
     display: none;
     /*transition: all 1000ms ease-in;*/
 }
+
+.button-spinner.spinning svg.spinner {
+    opacity: 1;
+    display: inline-block;
+}
 .htmx-request.button-spinner svg.spinner,
 .htmx-request .button-spinner svg.spinner {
     opacity: 1;
     display: inline-block;
 }
 
+.button-spinner.spinning > .button-label,
 .htmx-request.button-spinner > .button-label,
 .htmx-request .button-spinner > .button-label {
     opacity: 0;
     display: none;
 }
 
+.button-spinner.spinning > .button-icon,
 .htmx-request.button-spinner > .button-icon,
 .htmx-request .button-spinner > .button-icon {
     opacity: 0;
@@ -876,4 +905,33 @@ body {
 
 #app-container.app_container_wide {
     @apply pl-12;
+}
+
+/*
+:where(:root),
+:host,
+.wa-theme-default,
+.wa-light,
+.wa-dark .wa-invert {
+    --spacing: 0.25rem;
+}
+
+:where(:root),
+:host {
+    --spacing: 0.25rem;
+}*/
+
+wa-dialog {
+    --spacing: 0.25rem;
+    @apply rounded-lg px-4 pt-5 pb-5 sm:my-8 sm:p-6;
+    /* padding: var(--wa-space-xl) !important; */
+}
+
+wa-dialog::part(base) {
+    /* This is here because wa and tailwind clash on the --spacing var */
+    --spacing: 0.25rem;
+}
+
+#my-btn.loading {
+    color: red;
 }

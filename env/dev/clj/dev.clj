@@ -1,6 +1,9 @@
 (ns dev
   (:require
+   [app.ui.core :as ui-core]
+   [com.fulcrologic.guardrails.malli.core]
    [app.ig]
+   [integrant.repl.state :as state]
    ;; [browser :as browser]
    [ol.app.dev.dev-extras :as dev-extra]))
 
@@ -8,6 +11,8 @@
 ;; (repl/disable-reload! *ns*)
 
 (set! *print-namespace-maps* false)
+
+(ui-core/enable-opts-validation!)
 
 ;; (mr/set-default-registry! schemas/registry)
 
@@ -139,8 +144,10 @@
 
   (-> state/system :app.ig/datomic-db)
   (def local-conn (-> state/system :app.ig/datomic-db :conn))
-  (last (datomic.client.api/tx-range local-conn {:start #inst "2023-01-01T00:00:00.000-00:00" :end nil :limit -1}))
+  (Last (datomic.client.api/tx-range local-conn {:start #inst "2023-01-01T00:00:00.000-00:00" :end nil :limit -1}))
+  1
 
   (def pro-conn (-> state/system :app.datomic.system/datomic-pro))
+  state/system
   ;;
   )

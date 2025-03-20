@@ -1,5 +1,7 @@
 (ns app.routes
   (:require
+   [reitit.coercion :as coercion]
+   [app.datastar :as ds]
    [app.interceptors.diff :as diff]
    [app.auth :as auth]
    [app.dashboard.routes :as dashboard]
@@ -12,7 +14,7 @@
    [app.poll.routes :as polls]
    [app.probeplan.routes :as probeplan]
    [app.routes.errors :as errors]
-   [app.settings.routes :as settings]
+   [app.settings.core :as settings]
    [app.songs.routes :as songs]
    [app.stats.routes :as stats]
    [reitit.http :as http]
@@ -29,7 +31,8 @@
                                        (interceptors/system-interceptor system)
                                        (interceptors/datomic-interceptor system)
                                        (interceptors/filestore-interceptor system)
-                                       (interceptors/current-user-interceptor system)]))}
+                                       (interceptors/current-user-interceptor system)
+                                       (ds/datastar-refresh-interceptor system)]))}
 
    (auth/routes system)
    (gigs/unauthenticated-routes)
@@ -55,9 +58,19 @@
     (songs/routes)
     (errors/routes)]])
 
-(defn default-handler [{:keys [] :as system}]
+(def parameter-coercion
+  "This lets us do the following in our handlers
+               :get  {:handler    view/view-fn
+                      :parameters {:datastar {:team-id :uuid}}}
+  "
+  (assoc coercion/default-parameter-coercion
+         :datastar (coercion/->ParameterCoercion :datastar-params :string true true)))
+
+(defn default-handler [system]
   (http/ring-handler
-   (http/router (routes system) {:reitit.interceptor/transform diff/print-context-diffs})
+   (http/router (routes system) {::coercion/parameter-coercion parameter-coercion
+
+                                 #_#_:reitit.interceptor/transform diff/print-context-diffs})
    (ring/routes
     (ring/create-resource-handler {:path "/"})
     (ring/create-default-handler))

@@ -1,6 +1,7 @@
 (ns app.urls
   (:import [java.net URLEncoder])
   (:require [app.config :as config]
+            [reitit.core :as r]
             [ring.util.codec :as codec]
             [clojure.string :as str]))
 
@@ -163,6 +164,23 @@
 (defn link-login [] "/login")
 (defn absolute-link-login [env]
   (str (config/app-base-url env) "/login"))
+
+(defn url-for
+  "Return a url string given a route name and optional arg and query params. This
+  functions uses the router for the current request bound to *request*.
+
+  If you need to use a different router then temporary bind *router* before
+  calling this function."
+  ([req name-or-path]
+   (url-for req name-or-path nil nil))
+  ([req name-or-path args]
+   (url-for req name-or-path args nil))
+  ([req name-or-path args query-params]
+   (if (string? name-or-path)
+     name-or-path
+     (-> (::r/router req)
+         (r/match-by-name name-or-path args)
+         (r/match->path query-params)))))
 
 (comment
   ;;

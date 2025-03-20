@@ -715,11 +715,7 @@ on change if I match <:checked/>
 (declare gig-detail-page)
 
 (defn gig-create-form [{:keys [hash path tr member-select-vals post-endpoint]}
-                       {:gig/keys [title date end-date status gig-type
-                                   contact pay-deal call-time set-time end-time
-                                   outfit description location setlist leader post-gig-plans
-                                   more-details] :as gig}]
-
+                       {:gig/keys [title date end-date status gig-type contact pay-deal call-time set-time end-time outfit description location setlist leader post-gig-plans more-details] :as gig}]
   [:form {:hx-post post-endpoint :class "space-y-8 divide-y divide-gray-200"}
    [:div {:class "mb-8"}
     [:div {:class "mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-6 sm:px-6 lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-3"}
@@ -730,7 +726,7 @@ on change if I match <:checked/>
          [:h2 {:class "text-lg font-medium leading-6 text-gray-900"}
           (tr [:gig/create-title])]]
         [:div {:class "border-t border-gray-200 px-4 py-5 sm:px-6"}
-         [:dl {:class "grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3"}
+         (ui/dl
           (list
            (ui/dl-item (tr [:gig/title])
                        (ui/text  :name (path "title") :value title) "sm:col-span-2")
@@ -772,7 +768,7 @@ on change if I match <:checked/>
                         (ui/checkbox :label (tr [:gig/email-about-new?]) :id (path "notify?"))
                         (ui/checkbox :label (tr [:gig/create-a-forum-thread?]) :checked? true :id (path "thread?"))] "sm:col-span-3")
            ;;
-           )]]
+           ))]
         [:div {:class "px-4 py-5 sm:px-6"}
          [:div {:class "flex justify-end space-x-4"}
           (ui/link-button :label (tr [:action/cancel])

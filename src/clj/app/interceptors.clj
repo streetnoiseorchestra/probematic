@@ -1,5 +1,6 @@
 (ns app.interceptors
   (:require
+   [app.datastar :as d*]
    [app.auth :as auth]
    [app.config :as config]
    [app.i18n :as i18n]
@@ -72,6 +73,9 @@
    {:debug-errors?  false
     :error-handlers {{:cognitect.anomalies/category [:= :cognitect.anomalies/incorrect]}
                      errors/not-found-error
+
+                     {:cognitect.anomalies/category [:= :cognitect.anomalies/conflict]}
+                     errors/validation-error
 
                      {:app/error-type [:= :app.error.type/not-found]}
                      errors/not-found-error
@@ -245,6 +249,7 @@
                     ;; dev-mode-interceptor
                     ;; query-params & form-params
                     (parameters/parameters-interceptor)
+                    (d*/datastar-params-interceptor)
                     ;; content-negotiation
                     (muuntaja/format-negotiate-interceptor)
                     ;; encoding response body

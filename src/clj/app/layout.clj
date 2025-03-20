@@ -65,11 +65,13 @@
                   :class                    "flex max-w-xs items-center rounded-full bg-white text-sm focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2" :id "user-menu-button" :aria-expanded "false" :aria-haspopup "true"}
          [:span {:class "sr-only"} "Open user menu"]
          (ui/avatar-img member :class "h-8 w-8 rounded-full")]]
-       [:div {:id    "user-menu"                                                                                                                                                            :data-action-menu true
+       [:div {:id    "user-menu"                                                                                                                                               :data-action-menu true
               :class "hidden absolute right-0 z-10 mt-2 w-48 origin-top-right divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden" :role             "menu" :aria-orientation "vertical" :aria-labelledby "user-menu-button" :tabindex "-1"}
         (map user-menu-section (user-menu-sections req member))]]]]]
-   [:main {:class "flex-1" :id "main"}
-    body]])
+   (if (= :main (first body))
+     body
+     [:main {:class "flex-1" :id "main"}
+      body])])
 
 (defn user-account-actions
   [req member]
@@ -294,10 +296,12 @@ then trigger appSidebarToggled on <body/>
   ([req body opts]
    (let [member (auth/get-current-member req)]
      (render/html5-response req (merge {:title "SNOrga"} opts)
-                            [:div {:class "min-h-full"}
-                             (mobile-menu req)
-                             (desktop-menu req member)
-                             (app-container req member body)]))))
+                            [:div
+                             [:div {:data-on-load "@post(window.location.pathname + window.location.search)"}]
+                             [:div {:class "min-h-full"}
+                              (mobile-menu req)
+                              (desktop-menu req member)
+                              (app-container req member body)]]))))
 
 (defn maybe-app-shell
   "Will wrap the response in the app shell if it is not an HTMX request"

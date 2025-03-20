@@ -338,3 +338,15 @@
 
   ;;
   )
+
+(defmacro thread [& body]
+  `(Thread/startVirtualThread
+    (fn [] ~@body)))
+
+(defmacro while-some
+  {:clj-kondo/lint-as 'clojure.core/let}
+  [bindings & body]
+  `(loop []
+     (when-some ~bindings
+       ~@body
+       (recur))))

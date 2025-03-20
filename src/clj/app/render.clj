@@ -1,5 +1,6 @@
 (ns app.render
   (:require
+   [jsonista.core :as j]
    [app.config :as config]
    [app.secret-box :as secret-box]
    [app.util :as util]
@@ -79,8 +80,23 @@
 
 (defn body-end [req relative-prefix]
   (list
-   (script req relative-prefix "hyperscript.org@0.9.12.js")
+   #_[:script {:type :importmap}
+      (hiccup.util/raw-string
+       (j/write-value-as-string
+        :imports {"wa-dialog" "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/components/dialog/dialog.js"}))]
+
+   [:svg {:style "display: none"}
+    [:symbol {:id "svg-sprite-spinner" :fill "none", :viewbox "0 0 24 24"}
+     [:circle {:class "opacity-25", :cx "12", :cy "12", :r "10", :stroke "currentColor", :stroke-width "4"}]
+     [:path {:class "opacity-75", :fill "currentColor", :d "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"}]]]
+   [:link {:rel "stylesheet", :href "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/styles/utilities/fouce.css"}]
+   [:link {:rel "stylesheet" :href "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/styles/themes/default.css"}]
+   [:script {:type "module" :src "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/components/dialog/dialog.js"}]
+   ;; [:link {:rel "stylesheet" :href "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/styles/webawesome.css"}]
+   ;; [:script {:type "module" :src "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/webawesome.loader.js"}]
    (script req relative-prefix "datastar@1.0.0-beta.9.js" :type :module)
+   ;; (script req relative-prefix "datastar@develop.js" :type :module)
+   (script req relative-prefix "hyperscript.org@0.9.12.js")
    (script req relative-prefix "htmx.org@1.9.12.js")
    (script req relative-prefix "class-tools@1.9.12.js")
    (script req relative-prefix "nprogress.js")
@@ -114,23 +130,24 @@
   ([req {:keys [js extra-scripts title]} body]
    (html-response
     (html5-safe
-     (head req title nil)
-     [:body (ctmx.render/walk-attrs body)
-      (conj
-       (body-end req nil)
-       (when extra-scripts
-         (map #(apply script %) extra-scripts))
-       (when js (map (partial script nil) js)))]))))
+        (head req title nil)
+      [:body
+       (ctmx.render/walk-attrs body)
+       (conj
+        (body-end req nil)
+        (when extra-scripts
+          (map #(apply script %) extra-scripts))
+        (when js (map (partial script nil) js)))]))))
 
 (defn html5-response-absolute
   ([req {:keys [js title
                 uri-prefix]} body]
    (html-response
     (html5-safe
-     (head req title uri-prefix)
-     [:body (ctmx.render/walk-attrs body)
-      (body-end req uri-prefix)]
-     (when js [:script {:src (str uri-prefix "/js" js)}])))))
+        (head req title uri-prefix)
+      [:body (ctmx.render/walk-attrs body)
+       (body-end req uri-prefix)]
+      (when js [:script {:src (str uri-prefix "/js" js)}])))))
 
 (defn snippet-response [body]
   (ctmx.render/snippet-response body))

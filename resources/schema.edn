@@ -1,1153 +1,1157 @@
-  [{:db/ident :member/name
-    :db/doc "A member's name"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+[{:db/ident       :member/name
+  :db/doc         "A member's name"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/nick
-    :db/doc "A member's nickname"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/nick
+  :db/doc         "A member's nickname"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/active?
-    :db/doc "Whether or not the member is active in the band"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/active?
+  :db/doc         "Whether or not the member is active in the band"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/member-id
-    :db/doc "Our UUID for the member"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/member-id
+  :db/doc         "Our UUID for the member"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/gigo-key
-    :db/doc "The gigo member key, a unique identifier"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/gigo-key
+  :db/doc         "The gigo member key, a unique identifier"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/nudge-permission-granted?
-    :db/doc "Whether or not we have permission to nudge the user"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/nudge-permission-granted?
+  :db/doc         "Whether or not we have permission to nudge the user"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/phone
-    :db/doc "The phone number of the member"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/value
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/phone
+  :db/doc         "The phone number of the member"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/value
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/email
-    :db/doc "The email address of the member"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/email
+  :db/doc         "The email address of the member"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/username
-    :db/doc "The username of the member"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/username
+  :db/doc         "The username of the member"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/keycloak-id
-    :db/doc "The id of the member's keycloak user"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/keycloak-id
+  :db/doc         "The id of the member's keycloak user"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/avatar-template
-    :db/doc "The url path to the member's avatar with a {size} parameter "
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/avatar-template
+  :db/doc         "The url path to the member's avatar with a {size} parameter "
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/discourse-id
-    :db/doc "The member's id in discourse"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/discourse-id
+  :db/doc         "The member's id in discourse"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/section
-    :db/doc "The primary section of the member"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :member/section
+  :db/doc         "The primary section of the member"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :member/travel-discounts
-    :db/doc "The travel discounts that this member has"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :member/travel-discounts
+  :db/doc         "The travel discounts that this member has"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 
 ;;;; Sections
 
-   {:db/ident :section/name
-    :db/doc "The name of the section"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :section/name
+  :db/doc         "The name of the section"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :section/active?
-    :db/doc "If a section is active or not"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :section/active?
+  :db/doc         "If a section is active or not"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :section/position
-    :db/doc "The sort order of the section"
-    :db/valueType :db.type/long
-    :db/unique :db.unique/value
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :section/position
+  :db/doc         "The sort order of the section"
+  :db/valueType   :db.type/long
+  :db/unique      :db.unique/value
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :section/default?
-    :db/doc "If this section is the default section"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :section/default?
+  :db/doc         "If this section is the default section"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Gigs
-   {:db/ident :gig/gig-id
-    :db/doc "Our UUID id"
-    :db/valueType :db.type/uuid
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/gig-id
+  :db/doc         "Our UUID id"
+  :db/valueType   :db.type/uuid
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/gigo-id
-    :db/doc "The gig id from gig-o-matic."
-    :db/valueType :db.type/string
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/gigo-id
+  :db/doc         "The gig id from gig-o-matic."
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/title
-    :db/doc "The title of the gig"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/title
+  :db/doc         "The title of the gig"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/gig-type
-    :db/doc "The type of the gig"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/gig-type
+  :db/doc         "The type of the gig"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/date
-    :db/doc "The date the gig takes place. Stored as an instant. Disregard the time portion"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/date
+  :db/doc         "The date the gig takes place. Stored as an instant. Disregard the time portion"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/end-date
-    :db/doc "The date the gig ends if multiday."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/end-date
+  :db/doc         "The date the gig ends if multiday."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/location
-    :db/doc "Where the gig takes place"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/location
+  :db/doc         "Where the gig takes place"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/outfit
-    :db/doc "What to wear"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/outfit
+  :db/doc         "What to wear"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/leader
-    :db/doc "DEPRECATED. Who is in charge (this is an old gigo-matic free form field)"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/leader
+  :db/doc         "DEPRECATED. Who is in charge (this is an old gigo-matic free form field)"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/rehearsal-leader1
-    :db/doc "The first rehearsal leader"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/rehearsal-leader1
+  :db/doc         "The first rehearsal leader"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/rehearsal-leader2
-    :db/doc "The second rehearsal leader"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/rehearsal-leader2
+  :db/doc         "The second rehearsal leader"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/post-gig-plans
-    :db/doc "What's happening afterwards"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/post-gig-plans
+  :db/doc         "What's happening afterwards"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/more-details
-    :db/doc "who? what? where? when? why?"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/more-details
+  :db/doc         "who? what? where? when? why?"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/setlist
-    :db/doc "The songs being played"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/setlist
+  :db/doc         "The songs being played"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/description
-    :db/doc "A public facing description"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/description
+  :db/doc         "A public facing description"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/status
-    :db/doc "The scheduled status of the gig"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/status
+  :db/doc         "The scheduled status of the gig"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/comments
-    :db/doc "Comments added to the gig"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :gig/comments
+  :db/doc         "Comments added to the gig"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 
-   {:db/ident :gig/call-time
-    :db/doc "The time the band should be present and ready"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/call-time
+  :db/doc         "The time the band should be present and ready"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/set-time
-    :db/doc "The time the band starts playing"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/set-time
+  :db/doc         "The time the band starts playing"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/end-time
-    :db/doc "The time the gig ends"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/end-time
+  :db/doc         "The time the gig ends"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/pay-deal
-    :db/doc "The compensation the band is receiving"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/pay-deal
+  :db/doc         "The compensation the band is receiving"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/contact
-    :db/doc "Who is in charge of the gig"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/contact
+  :db/doc         "Who is in charge of the gig"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :gig/gigo-plan-archive
-    :db/doc "The textual representation of the plans from archived gigs imported from gigo"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :gig/gigo-plan-archive
+  :db/doc         "The textual representation of the plans from archived gigs imported from gigo"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Setlist
 
-   {:db/ident :setlist/version
-    :db/doc "The version of the setlist entity (future versions might have different attributes)"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :setlist/version
+  :db/doc         "The version of the setlist entity (future versions might have different attributes)"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :setlist/gig
-    :db/doc "The gig this setlist belongs to."
-    :db/valueType :db.type/ref
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :setlist/gig
+  :db/doc         "The gig this setlist belongs to."
+  :db/valueType   :db.type/ref
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :setlist.v1/ordered-songs
-    :db/doc "The ordered songs in this setlist. A tuple of song-entity and order."
-    :db/valueType :db.type/tuple
-    :db/tupleTypes [:db.type/ref :db.type/long]
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :setlist.v1/ordered-songs
+  :db/doc         "The ordered songs in this setlist. A tuple of song-entity and order."
+  :db/valueType   :db.type/tuple
+  :db/tupleTypes  [:db.type/ref :db.type/long]
+  :db/cardinality :db.cardinality/many}
 
 ;;;; Probeplan
-   {:db/ident :probeplan/gig
-    :db/doc "The gig this probeplan belongs to"
-    :db/valueType :db.type/ref
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :probeplan/gig
+  :db/doc         "The gig this probeplan belongs to"
+  :db/valueType   :db.type/ref
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :probeplan/version
-    :db/doc "The version of the probeplan entity (different versions store different attributes)"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one
-    ;; :db.attr/preds 'app.probeplan.domain/probeplan-version?
-    }
-   {:db/ident :probeplan.classic/ordered-songs
-    :db/doc "The other songs to be 'durchgespielt'. A tuple of [song-entity order emphasis]"
-    :db/valueType :db.type/tuple
-    :db/tupleTypes [:db.type/ref :db.type/long :db.type/keyword]
-    :db/cardinality :db.cardinality/many
-    ;; :db.attr/preds 'app.probeplan.domain/probeplan-classic-ordered-song?
-    }
+ {:db/ident       :probeplan/version
+  :db/doc         "The version of the probeplan entity (different versions store different attributes)"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one
+  ;; :db.attr/preds 'app.probeplan.domain/probeplan-version?
+  }
+ {:db/ident       :probeplan.classic/ordered-songs
+  :db/doc         "The other songs to be 'durchgespielt'. A tuple of [song-entity order emphasis]"
+  :db/valueType   :db.type/tuple
+  :db/tupleTypes  [:db.type/ref :db.type/long :db.type/keyword]
+  :db/cardinality :db.cardinality/many
+  ;; :db.attr/preds 'app.probeplan.domain/probeplan-classic-ordered-song?
+  }
 
 ;;;; Comments
 
-   {:db/ident :comment/comment-id
-    :db/doc "The id of the comment"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :comment/comment-id
+  :db/doc         "The id of the comment"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :comment/body
-    :db/doc "The message of the comment"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :comment/body
+  :db/doc         "The message of the comment"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :comment/author
-    :db/doc "The author of the comment"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :comment/author
+  :db/doc         "The author of the comment"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :comment/created-at
-    :db/doc "The time the comment was created."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :comment/created-at
+  :db/doc         "The time the comment was created."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Songs
-   {:db/ident :song/title
-    :db/doc "The title of the song"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/value
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/title
+  :db/doc         "The title of the song"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/value
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/song-id
-    :db/doc "The id of the song"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/song-id
+  :db/doc         "The id of the song"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/total-plays
-    :db/doc "The total number of times the song has been played"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/total-performances
-    :db/doc "The total number of times the song has been played at a gig"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/total-plays
+  :db/doc         "The total number of times the song has been played"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/total-performances
+  :db/doc         "The total number of times the song has been played at a gig"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/total-rehearsals
-    :db/doc "The total number of times the song has been played at a probe"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/total-rating-good
-    :db/doc "The total number of times the song has been rated good"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/total-rating-bad
-    :db/doc "The total number of times the song has been rated bad"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/total-rating-ok
-    :db/doc "The total number of times the song has been rated ok"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/total-rehearsals
+  :db/doc         "The total number of times the song has been played at a probe"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/total-rating-good
+  :db/doc         "The total number of times the song has been rated good"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/total-rating-bad
+  :db/doc         "The total number of times the song has been rated bad"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/total-rating-ok
+  :db/doc         "The total number of times the song has been rated ok"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/six-month-total-rating-good
-    :db/doc "The total number of times the song has been rated good"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/six-month-total-rating-bad
-    :db/doc "The total number of times the song has been rated bad"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/six-month-total-rating-ok
-    :db/doc "The total number of times the song has been rated ok"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/six-month-total-rating-good
+  :db/doc         "The total number of times the song has been rated good"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/six-month-total-rating-bad
+  :db/doc         "The total number of times the song has been rated bad"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/six-month-total-rating-ok
+  :db/doc         "The total number of times the song has been rated ok"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/days-since-performed
-    :db/doc "The number of days since the song was last performed"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/days-since-performed
+  :db/doc         "The number of days since the song was last performed"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/days-since-rehearsed
-    :db/doc "The number of days since the song was last rehearsed"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/days-since-rehearsed
+  :db/doc         "The number of days since the song was last rehearsed"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/days-since-intensive
-    :db/doc "The number of days since the song was last rehearsed intensively"
-    :db/noHistory true
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/days-since-intensive
+  :db/doc         "The number of days since the song was last rehearsed intensively"
+  :db/noHistory   true
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/last-played-on
-    :db/doc "The time the song was last played"
-    :db/noHistory true
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/last-performance
-    :db/doc "The gig at which this song was last performed"
-    :db/noHistory true
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/last-rehearsal
-    :db/doc "The gig at which this song was last rehearsed"
-    :db/noHistory true
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/last-intensive
-    :db/doc "The gig at which this song was last intensively rehearsed"
-    :db/noHistory true
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/last-played-on
+  :db/doc         "The time the song was last played"
+  :db/noHistory   true
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/last-performance
+  :db/doc         "The gig at which this song was last performed"
+  :db/noHistory   true
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/last-rehearsal
+  :db/doc         "The gig at which this song was last rehearsed"
+  :db/noHistory   true
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/last-intensive
+  :db/doc         "The gig at which this song was last intensively rehearsed"
+  :db/noHistory   true
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/first-performance
-    :db/doc "The gig at which this song was first performed"
-    :db/noHistory true
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :song/first-rehearsal
-    :db/noHistory true
-    :db/doc "The gig at which this song was first rehearsed"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/first-performance
+  :db/doc         "The gig at which this song was first performed"
+  :db/noHistory   true
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/first-rehearsal
+  :db/noHistory   true
+  :db/doc         "The gig at which this song was first rehearsed"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/active?
-    :db/doc "Whether or not the song is part of the active repertoire"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/active?
+  :db/doc         "Whether or not the song is part of the active repertoire"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/composition-credits
-    :db/doc "Attribution for the composition"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/composition-credits
+  :db/doc         "Attribution for the composition"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/arrangement-credits
-    :db/doc "Attribution for the arrangement"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/arrangement-credits
+  :db/doc         "Attribution for the arrangement"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/arrangement-notes
-    :db/doc "Notes for the arrangement"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/arrangement-notes
+  :db/doc         "Notes for the arrangement"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/origin
-    :db/doc "Where this song was obtained from"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/origin
+  :db/doc         "Where this song was obtained from"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/solo-count
-    :db/doc "The number of solos in this song"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/solo-count
+  :db/doc         "The number of solos in this song"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/solo-info
-    :db/doc "Info about the solos in this song"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/solo-info
+  :db/doc         "Info about the solos in this song"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :song/lyrics
-    :db/doc "Lyrics for the song"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :song/lyrics
+  :db/doc         "Lyrics for the song"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Sheet Music
 
-   {:db/ident :sheet-music/sheet-id
-    :db/doc "The id of the sheet music"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :sheet-music/sheet-id
+  :db/doc         "The id of the sheet music"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :sheet-music/song
-    :db/doc "The song this sheet music is for"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :sheet-music/song
+  :db/doc         "The song this sheet music is for"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :sheet-music/section
-    :db/doc "The section this sheet music is for"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :sheet-music/section
+  :db/doc         "The section this sheet music is for"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :sheet-music/title
-    :db/doc "The name of this sheet music"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :sheet-music/title
+  :db/doc         "The name of this sheet music"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :file/webdav-path
-    :db/doc "The canonical webdav path for the file"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :file/webdav-path
+  :db/doc         "The canonical webdav path for the file"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Play Log
 
-   {:db/ident :played/play-id
-    :db/doc "The id of this play record"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :played/play-id
+  :db/doc         "The id of this play record"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :played/song
-    :db/doc "The song that was played"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :played/song
+  :db/doc         "The song that was played"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :played/gig
-    :db/doc "The gig/probe that the song was played at"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :played/gig
+  :db/doc         "The gig/probe that the song was played at"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :played/rating
-    :db/doc "The impression of how well the song was played"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :played/rating
+  :db/doc         "The impression of how well the song was played"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :played/emphasis
-    :db/doc "Intensiv or normal when played at a probe"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :played/emphasis
+  :db/doc         "Intensiv or normal when played at a probe"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :played/gig+song
-    :db/unique :db.unique/value
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :played/gig+song
+  :db/unique      :db.unique/value
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Attendance
 
-   {:db/ident :attendance/gig
-    :db/doc "The gig/probe that was attended"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/gig
+  :db/doc         "The gig/probe that was attended"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :attendance/member
-    :db/doc "The member that attended"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/member
+  :db/doc         "The member that attended"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :attendance/section
-    :db/doc "The section the member is playing in for this gig"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/section
+  :db/doc         "The section the member is playing in for this gig"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :attendance/gig+member
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/gig+member
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :attendance/plan
-    :db/doc "The member's planned attendance state"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/plan
+  :db/doc         "The member's planned attendance state"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :attendance/updated
-    :db/doc "The instant when this attendance plan was last updated"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/updated
+  :db/doc         "The instant when this attendance plan was last updated"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :attendance/comment
-    :db/doc "The member-added comment"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/comment
+  :db/doc         "The member-added comment"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :attendance/motivation
-    :db/doc "The member-added motivation statement"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :attendance/motivation
+  :db/doc         "The member-added motivation statement"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Insurance - Item Category
 ;;;;
-   {:db/ident :instrument.category/category-id
-    :db/doc "The id of the category"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.category/category-id
+  :db/doc         "The id of the category"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.category/name
-    :db/doc "The name of the category"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.category/name
+  :db/doc         "The name of the category"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.category/code
-    :db/doc "The category code"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.category/code
+  :db/doc         "The category code"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Insurance - Instruments
 ;;;;
-   {:db/ident :instrument/owner
-    :db/doc "The owner of the instrument"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/owner
+  :db/doc         "The owner of the instrument"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/category
-    :db/doc "The category of the instrument"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/category
+  :db/doc         "The category of the instrument"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/name
-    :db/doc "A short description of the instrument"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/name
+  :db/doc         "A short description of the instrument"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/description
-    :db/doc "A longer description of the instrument"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/description
+  :db/doc         "A longer description of the instrument"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/instrument-id
-    :db/doc "The id of the instrument"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/instrument-id
+  :db/doc         "The id of the instrument"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/make
-    :db/doc "The manufacturer of the instrument"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/make
+  :db/doc         "The manufacturer of the instrument"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/model
-    :db/doc "The model of the instrument"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/model
+  :db/doc         "The model of the instrument"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/build-year
-    :db/doc "The year in which the item was manufactured"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/build-year
+  :db/doc         "The year in which the item was manufactured"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/serial-number
-    :db/doc "The serial number of the instrument"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/serial-number
+  :db/doc         "The serial number of the instrument"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/images-share-url
-    :db/doc "The URL to the publicly shared images"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument/images-share-url
+  :db/doc         "The URL to the publicly shared images"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument/images
-    :db/doc "Images of the instrument"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/many
-    :db/isComponent true}
+ {:db/ident       :instrument/images
+  :db/doc         "Images of the instrument"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/isComponent true}
 
 ;;;; Insurance - Coverage Type
 
-   {:db/ident :insurance.coverage.type/type-id
-    :db/doc "The id of the coverage type"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.coverage.type/type-id
+  :db/doc         "The id of the coverage type"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.coverage.type/name
-    :db/doc "Name of the coverage type"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.coverage.type/name
+  :db/doc         "Name of the coverage type"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.coverage.type/description
-    :db/doc "A description of the coverage type"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.coverage.type/description
+  :db/doc         "A description of the coverage type"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.coverage.type/premium-factor
-    :db/doc "The factor multiplied against the base premium to determine the cost of this coverage type"
-    :db/valueType :db.type/bigdec
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.coverage.type/premium-factor
+  :db/doc         "The factor multiplied against the base premium to determine the cost of this coverage type"
+  :db/valueType   :db.type/bigdec
+  :db/cardinality :db.cardinality/one}
 
 ;;;;  Insurance - Instrument Coverage
 
-   {:db/ident :instrument.coverage/coverage-id
-    :db/doc "The id of the coverage"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/coverage-id
+  :db/doc         "The id of the coverage"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.coverage/status
-    :db/doc "The workflow status of this coverage."
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/status
+  :db/doc         "The workflow status of this coverage."
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.coverage/change
-    :db/doc "The type of change that has occured to this coverage"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/change
+  :db/doc         "The type of change that has occured to this coverage"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.coverage/instrument
-    :db/doc "The instrument that is covered"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/instrument
+  :db/doc         "The instrument that is covered"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.coverage/item-count
-    :db/doc "The number of items this entity represents"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/item-count
+  :db/doc         "The number of items this entity represents"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.coverage/types
-    :db/doc "The types of coverage this instrument has"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :instrument.coverage/types
+  :db/doc         "The types of coverage this instrument has"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/many}
 
-   {:db/ident :instrument.coverage/private?
-    :db/doc "Whether or not the instrument is insured at the owner's expense"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/private?
+  :db/doc         "Whether or not the instrument is insured at the owner's expense"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.coverage/value
-    :db/doc "The value of the instrument"
-    :db/valueType :db.type/bigdec
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/value
+  :db/doc         "The value of the instrument"
+  :db/valueType   :db.type/bigdec
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :instrument.coverage/insurer-id
-    :db/doc "The ID used by the insurance provider"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :instrument.coverage/insurer-id
+  :db/doc         "The ID used by the insurance provider"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Insurance - Policy
-   {:db/ident :insurance.policy/policy-id
-    :db/doc "The id of the policy"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.policy/policy-id
+  :db/doc         "The id of the policy"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.policy/status
-    :db/doc "The workflow status of this policy."
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.policy/status
+  :db/doc         "The workflow status of this policy."
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.policy/currency
-    :db/doc "The currency that he policy is denominated in"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.policy/currency
+  :db/doc         "The currency that he policy is denominated in"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.policy/name
-    :db/doc "A human readable name for the policy"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.policy/name
+  :db/doc         "A human readable name for the policy"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.policy/effective-at
-    :db/doc "The instant at which this policy takes effect"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.policy/effective-at
+  :db/doc         "The instant at which this policy takes effect"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.policy/effective-until
-    :db/doc "The instant at which this policy ends"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.policy/effective-until
+  :db/doc         "The instant at which this policy ends"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.policy/covered-instruments
-    :db/doc "The instrument coverages for this policy"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :insurance.policy/covered-instruments
+  :db/doc         "The instrument coverages for this policy"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 
-   {:db/ident :insurance.policy/coverage-types
-    :db/doc "The allowed coverage types for this policy"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :insurance.policy/coverage-types
+  :db/doc         "The allowed coverage types for this policy"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 
-   {:db/ident :insurance.policy/premium-factor
-    :db/doc "The factor used to determine the premium price per instrument"
-    :db/valueType :db.type/bigdec
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.policy/premium-factor
+  :db/doc         "The factor used to determine the premium price per instrument"
+  :db/valueType   :db.type/bigdec
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.policy/category-factors
-    :db/doc "The valid category factors for this policy"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :insurance.policy/category-factors
+  :db/doc         "The valid category factors for this policy"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 
-   {:db/ident :insurance.category.factor/category-factor-id
-    :db/doc "The id of this category factor"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.category.factor/category-factor-id
+  :db/doc         "The id of this category factor"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.category.factor/category
-    :db/doc "The category this price belongs to"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.category.factor/category
+  :db/doc         "The category this price belongs to"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :insurance.category.factor/factor
-    :db/doc "The pricing factory for the category"
-    :db/valueType :db.type/bigdec
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.category.factor/factor
+  :db/doc         "The pricing factory for the category"
+  :db/valueType   :db.type/bigdec
+  :db/cardinality :db.cardinality/one}
 
 ;;;;  Forum Linkage
 
-   {:db/ident :forum.topic/topic-id
-    :db/doc "The topic id of the associated forum topic"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :forum.topic/topic-id
+  :db/doc         "The topic id of the associated forum topic"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Audit Schema
-   {:db/ident       :audit/user
-    :db/cardinality :db.cardinality/one
-    :db/valueType   :db.type/ref}
+ {:db/ident       :audit/user
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/ref}
 
-   {:db/ident       :audit/comment
-    :db/cardinality :db.cardinality/one
-    :db/valueType   :db.type/string}
+ {:db/ident       :audit/comment
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/string}
 ;;;; Reminder Schema
-   {:db/ident :reminder/reminder-id
-    :db/doc "The id of this reminder"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :reminder/reminder-id
+  :db/doc         "The id of this reminder"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :reminder/member
-    :db/doc "The member to be reminded"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :reminder/member
+  :db/doc         "The member to be reminded"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :reminder/gig
-    :db/doc "The gig to be reminded about"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :reminder/gig
+  :db/doc         "The gig to be reminded about"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :reminder/remind-at
-    :db/doc "The datetime at which we should try to remind the member"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :reminder/remind-at
+  :db/doc         "The datetime at which we should try to remind the member"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :reminder/reminder-type
-    :db/doc "The type of the reminder"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :reminder/reminder-type
+  :db/doc         "The type of the reminder"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :reminder/reminder-status
-    :db/doc "The status of the reminder, whether its pending, sent, errored, or cancelled"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :reminder/reminder-status
+  :db/doc         "The status of the reminder, whether its pending, sent, errored, or cancelled"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Travel (OEBB) Discounts
-   {:db/ident :travel.discount.type/discount-type-id
-    :db/doc "The id of this discount type"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :travel.discount.type/discount-type-id
+  :db/doc         "The id of this discount type"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :travel.discount.type/discount-type-name
-    :db/doc "The name of this discount type"
-    :db/unique :db.unique/value
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :travel.discount.type/discount-type-name
+  :db/doc         "The name of this discount type"
+  :db/unique      :db.unique/value
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :travel.discount.type/enabled?
-    :db/doc "Whether or not the discount is enabled"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :travel.discount.type/enabled?
+  :db/doc         "Whether or not the discount is enabled"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :travel.discount/discount-id
-    :db/doc "The id of this discount"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :travel.discount/discount-id
+  :db/doc         "The id of this discount"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :travel.discount/discount-type
-    :db/doc "The type of the discount"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :travel.discount/discount-type
+  :db/doc         "The type of the discount"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :travel.discount/expiry-date
-    :db/doc "The date the discount expires"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :travel.discount/expiry-date
+  :db/doc         "The date the discount expires"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
 ;;; Polls
-   {:db/ident :poll/poll-id
-    :db/doc "The id of this poll"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/poll-id
+  :db/doc         "The id of this poll"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/title
-    :db/doc "The title of this poll"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/title
+  :db/doc         "The title of this poll"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/description
-    :db/doc "The description of this poll"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/description
+  :db/doc         "The description of this poll"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/poll-type
-    :db/doc "The type of poll: single or multiple choice"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/poll-type
+  :db/doc         "The type of poll: single or multiple choice"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/poll-status
-    :db/doc "The status of the poll: draft, open, closed"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/poll-status
+  :db/doc         "The status of the poll: draft, open, closed"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/chart-type
-    :db/doc "The chart type for the poll: pie or bar"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/chart-type
+  :db/doc         "The chart type for the poll: pie or bar"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/min-choice
-    :db/doc "The minimum number of choices a user can choose"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/min-choice
+  :db/doc         "The minimum number of choices a user can choose"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/max-choice
-    :db/doc "The maximum number of choices a user can choose"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/max-choice
+  :db/doc         "The maximum number of choices a user can choose"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/votes
-    :db/doc "The votes for the poll"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :poll/votes
+  :db/doc         "The votes for the poll"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 
-   {:db/ident :poll/options
-    :db/doc "The options for the poll"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :poll/options
+  :db/doc         "The options for the poll"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 
-   {:db/ident :poll/author
-    :db/doc "The author of the poll"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/author
+  :db/doc         "The author of the poll"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/created-at
-    :db/doc "The time the poll was created."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/created-at
+  :db/doc         "The time the poll was created."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/closes-at
-    :db/doc "The time the poll will be automatically closed."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/closes-at
+  :db/doc         "The time the poll will be automatically closed."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll/autoremind?
-    :db/doc "Whether or not members should be reminded to vote"
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll/autoremind?
+  :db/doc         "Whether or not members should be reminded to vote"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll.option/poll-option-id
-    :db/doc "The id of this poll option"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll.option/poll-option-id
+  :db/doc         "The id of this poll option"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll.option/value
-    :db/doc "The value of this poll option"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll.option/value
+  :db/doc         "The value of this poll option"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll.option/position
-    :db/doc "The sort order of the option"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll.option/position
+  :db/doc         "The sort order of the option"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll.vote/poll-vote-id
-    :db/doc "The id of this poll vote"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll.vote/poll-vote-id
+  :db/doc         "The id of this poll vote"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll.vote/poll-option
-    :db/doc "The option of this vote"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll.vote/poll-option
+  :db/doc         "The option of this vote"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll.vote/author
-    :db/doc "The author of the poll.vote"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll.vote/author
+  :db/doc         "The author of the poll.vote"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
-   {:db/ident :poll.vote/created-at
-    :db/doc "The time the poll.vote was created."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :poll.vote/created-at
+  :db/doc         "The time the poll.vote was created."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
 ;;; Ledgers (Accounts) - for debt tracking
-   {:db/ident :ledger/ledger-id
-    :db/doc "The id of this ledger"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger/owner
-    :db/doc "The ledger owner"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger/entries
-    :db/doc "The ledger entries (transactions) in this ledger"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/many}
-   {:db/ident :ledger/balance
-    :db/doc "The current balance of this account"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger/ledger-id
+  :db/doc         "The id of this ledger"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger/owner
+  :db/doc         "The ledger owner"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger/entries
+  :db/doc         "The ledger entries (transactions) in this ledger"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/many}
+ {:db/ident       :ledger/balance
+  :db/doc         "The current balance of this account"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
 
 ;;; Ledger Entries (Transactions) - for debt tracking
-   {:db/ident :ledger.entry/entry-id
-    :db/doc "The id of this transaction"
-    :db/unique :db.unique/identity
-    :db/valueType :db.type/uuid
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger.entry/tx-date
-    :db/doc "The date on which the transaction ocurred"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger.entry/posting-date
-    :db/doc "The timestamp on which the transaction was posted"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger.entry/description
-    :db/doc "The user's description of the transaction"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger.entry/amount
-    :db/doc "The amount of currency in the transaction"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger.entry/metadata
-    :db/doc "Some meta data about the transaction"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry/entry-id
+  :db/doc         "The id of this transaction"
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry/tx-date
+  :db/doc         "The date on which the transaction ocurred"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry/posting-date
+  :db/doc         "The timestamp on which the transaction was posted"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry/description
+  :db/doc         "The user's description of the transaction"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry/amount
+  :db/doc         "The amount of currency in the transaction"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry/metadata
+  :db/doc         "Some meta data about the transaction"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/one}
 ;;; Ledger Entry Metadata
-   {:db/ident :ledger.entry.meta/meta-type
-    :db/doc "A keyword identifying the type of metadata"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :ledger.entry.meta.insurance/policy
-    :db/doc "For ledger entries that are about insurance, a ref to the policy"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry.meta/meta-type
+  :db/doc         "A keyword identifying the type of metadata"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :ledger.entry.meta.insurance/policy
+  :db/doc         "For ledger entries that are about insurance, a ref to the policy"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 ;;; Teams
-   {:db/ident :team/name
-    :db/doc "The name of the team"
-    :db/valueType :db.type/string
-    :db/unique :db.unique/value
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :team/team-id
-    :db/doc "The id of the team"
-    :db/valueType :db.type/uuid
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :team/members
-    :db/doc "The members of the team"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/many}
-   {:db/ident :team/team-type
-    :db/doc "The type of the team (if any"
-    :db/valueType :db.type/keyword
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :team/name
+  :db/doc         "The name of the team"
+  :db/valueType   :db.type/string
+  :db/unique      :db.unique/value
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :team/team-id
+  :db/doc         "The id of the team"
+  :db/valueType   :db.type/uuid
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :team/members
+  :db/doc         "The members of the team"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/many}
+ {:db/ident       :team/team-type
+  :db/doc         "The type of the team (if any"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
 ;;;; Insurance Survey
-   {:db/ident :insurance.survey/survey-id
-    :db/doc "The id of the survey"
-    :db/valueType :db.type/uuid
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey/survey-name
-    :db/doc "The name of the survey"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey/policy
-    :db/doc "The policy this survey is for"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey/created-at
-    :db/doc "The time the survey was created."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey/closes-at
-    :db/doc "The time the survey will be automatically closed."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey/closed-at
-    :db/doc "When the survey was closed"
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey/responses
-    :db/doc "The responses for the survey"
-    :db/valueType :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :insurance.survey/survey-id
+  :db/doc         "The id of the survey"
+  :db/valueType   :db.type/uuid
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey/survey-name
+  :db/doc         "The name of the survey"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey/policy
+  :db/doc         "The policy this survey is for"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey/created-at
+  :db/doc         "The time the survey was created."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey/closes-at
+  :db/doc         "The time the survey will be automatically closed."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey/closed-at
+  :db/doc         "When the survey was closed"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey/responses
+  :db/doc         "The responses for the survey"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 ;;;; Insurance Survey - Response
-   {:db/ident :insurance.survey.response/response-id
-    :db/doc "The id of this survey response"
-    :db/valueType :db.type/uuid
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey.response/member
-    :db/doc "The member who responded"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey.response/completed-at
-    :db/doc "The time the response was completed."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident       :insurance.survey.response/coverage-reports
-    :db/doc         "The reports for each coverage"
-    :db/valueType   :db.type/ref
-    :db/isComponent true
-    :db/cardinality :db.cardinality/many}
+ {:db/ident       :insurance.survey.response/response-id
+  :db/doc         "The id of this survey response"
+  :db/valueType   :db.type/uuid
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey.response/member
+  :db/doc         "The member who responded"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey.response/completed-at
+  :db/doc         "The time the response was completed."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey.response/coverage-reports
+  :db/doc         "The reports for each coverage"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
 ;;;; Insurance Survey - Coverage Report
-   {:db/ident :insurance.survey.report/report-id
-    :db/doc "The id of this coverage report"
-    :db/valueType :db.type/uuid
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey.report/completed-at
-    :db/doc "The time the report was completed."
-    :db/valueType :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :insurance.survey.report/coverage
-    :db/doc "The coverage this report is for"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey.report/report-id
+  :db/doc         "The id of this coverage report"
+  :db/valueType   :db.type/uuid
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey.report/completed-at
+  :db/doc         "The time the report was completed."
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :insurance.survey.report/coverage
+  :db/doc         "The coverage this report is for"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
 ;;;;  File Store
-   {:db/ident :filestore.file/file-id
-    :db/doc "The id of the file"
-    :db/valueType :db.type/uuid
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :filestore.file/file-name
-    :db/doc "The name of the file"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :filestore.file/hash
-    :db/doc "Hash of the file contents"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :filestore.file/mime-type
-    :db/doc "MIME type of a file"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :filestore.file/size
-    :db/doc "The number of bytes in the content"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident       :filestore.file/ctime
-    :db/doc         "Creation time"
-    :db/valueType   :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident       :filestore.file/mtime
-    :db/doc         "File last modification time"
-    :db/valueType   :db.type/instant
-    :db/cardinality :db.cardinality/one}
-   {:db/ident       :filestore.file/atime
-    :db/doc         "File last access time"
-    :db/valueType   :db.type/instant
-    :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/file-id
+  :db/doc         "The id of the file"
+  :db/valueType   :db.type/uuid
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/file-name
+  :db/doc         "The name of the file"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/hash
+  :db/doc         "Hash of the file contents"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/mime-type
+  :db/doc         "MIME type of a file"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/size
+  :db/doc         "The number of bytes in the content"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/ctime
+  :db/doc         "Creation time"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/mtime
+  :db/doc         "File last modification time"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :filestore.file/atime
+  :db/doc         "File last access time"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
 
 ;;;; Images
-   {:db/ident :image/image-id
-    :db/doc "The id of the image"
-    :db/valueType :db.type/uuid
-    :db/unique :db.unique/identity
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :image/source-file
-    :db/doc "The filestore ref"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :image/width
-    :db/doc "The width of the image"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :image/height
-    :db/doc "The height of the image"
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one}
-   {:db/ident :image/renditions
-    :db/doc "The renditions of the image (thumbnails, etc)"
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/many
-    :db/isComponent true}
-   {:db/ident :image/filter-spec
-    :db/doc "An opaque string that describes the filter used to generate the rendition"
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one}]
+ {:db/ident       :image/image-id
+  :db/doc         "The id of the image"
+  :db/valueType   :db.type/uuid
+  :db/unique      :db.unique/identity
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :image/source-file
+  :db/doc         "The filestore ref"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :image/width
+  :db/doc         "The width of the image"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :image/height
+  :db/doc         "The height of the image"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one}
+ {:db/ident       :image/renditions
+  :db/doc         "The renditions of the image (thumbnails, etc)"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/many
+  :db/isComponent true}
+ {:db/ident       :image/filter-spec
+  :db/doc         "An opaque string that describes the filter used to generate the rendition"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}]
+
+;;
+;;;;  Page State
+;; {:db/ident :page/state :db/noHistory true}
 
 ;;
 

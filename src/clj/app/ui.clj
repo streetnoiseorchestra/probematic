@@ -167,18 +167,19 @@
                         :small "text-xs"
                         :xsmall "text-xs"})
 
-(defn select [& {:keys [id label options value extra-attrs size required?]
-                 :or {extra-attrs {}
-                      size :normal}}]
+(defn select [& {:keys [id label options value extra-attrs size required? attr]
+                 :or   {extra-attrs {}
+                        size        :normal}}]
   (let [selected-value value]
     [:div
      [:label {:for id :class (cs (get select-label-size size) "block font-medium text-gray-700")} label]
-     [:select (merge {:name id :class
+     [:select (merge {:name     id :class
                       (cs  (get select-size size)
                            "block w-full rounded-md border-gray-300 focus:border-sno-orange-500 focus:outline-hidden focus:ring-sno-orange-500")
                       :required required?}
 
-                     extra-attrs)
+                     extra-attrs
+                     attr)
       (for [{:keys [value label selected?]} options]
         [:option {:selected (if (not (nil? selected?)) selected? (= value selected-value)) :value value} label])]]))
 
@@ -324,27 +325,27 @@
 (def input-size {:normal "sm:text-sm"
                  :small "text-xs"})
 
-(defn input [& {:keys [type label name placeholder value extra-attrs class pattern title size required? id minlength suffix]
-                :or {size :normal
-                     required? true} :as opts}]
+(defn input [& {:keys [attr type label name placeholder value extra-attrs class pattern title size required? id minlength suffix]
+                :or   {size :normal required? true} :as opts}]
   [:div {:class (cs class (get input-label-size size)
                     (get input-container-size size)
                     "grow relative rounded-md border border-gray-300 shadow-xs focus-within:border-sno-orange-600 focus-within:ring-1 focus-within:ring-sno-orange-600")}
    (when label
      [:label {:for name :class "absolute -top-2 left-2 -mt-px inline-block bg-white font-medium text-gray-900"}
       label])
-   [:input (util/remove-nils (merge (or extra-attrs {})
-                                    {:class (cs (get input-size size) "block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0"
-                                                (when suffix "text-right pl-7 pr-12"))
-                                     :type type
-                                     :id id
-                                     :pattern pattern
-                                     :title title
-                                     :minlength minlength
-                                     :name name
-                                     :value (if (= "null" value) nil value)
-                                     :required required?
-                                     :placeholder placeholder}))]
+   [:input (util/remove-nils (merge extra-attrs
+                                    {:class       (cs (get input-size size) "block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0"
+                                                      (when suffix "text-right pl-7 pr-12"))
+                                     :type        type
+                                     :id          id
+                                     :pattern     pattern
+                                     :title       title
+                                     :minlength   minlength
+                                     :name        name
+                                     :value       (if (= "null" value) nil value)
+                                     :required    required?
+                                     :placeholder placeholder}
+                                    attr))]
    (when suffix
      [:div {:class "pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"}
       [:span {:class "text-gray-500 sm:text-sm"} suffix]])])
@@ -394,7 +395,8 @@
            :required required?
            :class "block w-full max-w-lg rounded-md border-gray-300 shadow-xs focus:border-sno-orange-500 focus:ring-sno-orange-500 sm:text-sm"}])
 
-(def button-priority-classes {:link "font-semibold text-sno-orange-600 hover:text-sno-orange-500"
+(def button-priority-classes {:link             "font-semibold text-sno-orange-600 hover:text-sno-orange-500"
+                              :link-destructive "font-semibold text-red-600 hover:text-red-500"
                               :success
                               "border-transparent bg-sno-green-600 text-white shadow-xs hover:bg-sno-green-700 focus:outline-hidden focus:ring-2 focus:ring-sno-green-500 focus:ring-offset-2 focus:ring-offset-gray-100"
                               :secondary
@@ -407,7 +409,7 @@
                               "border-transparent bg-sno-orange-600 text-white shadow-xs hover:bg-sno-orange-700 focus:outline-hidden focus:ring-2 focus:ring-sno-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100"
                               :primary-orange
                               "border-transparent bg-orange-600 text-white shadow-xs hover:bg-orange-700 focus:outline-hidden focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-100"
-                              :white-rounded "rounded-full border border-gray-300 bg-white text-gray-700 shadow-xs hover:bg-gray-50"})
+                              :white-rounded    "rounded-full border border-gray-300 bg-white text-gray-700 shadow-xs hover:bg-gray-50"})
 
 (def spinner-priority-classes {:secondary  "text-sno-orange-900"
                                :success "text-sno-green-700"
@@ -431,23 +433,23 @@
                                 :xlarge "h-5 w-5"})
 
 (defn button [& {:keys [tag label disabled? class attr icon priority centered? size hx-target hx-get hx-put hx-post hx-delete hx-vals hx-confirm hx-boost hx-push-url hx-swap form tabindex href spinner? id title name value]
-                 :or   {class ""
-                        priority :white
-                        size  :normal
+                 :as   buttono
+                 :or   {class     ""
+                        priority  :white
+                        size      :normal
                         disabled? false
-                        tag :button}}]
-
+                        tag       :button}}]
   [tag (merge
         (util/remove-nils {:hx-target hx-target :hx-swap hx-swap :hx-get hx-get :hx-post hx-post :hx-put hx-put :hx-delete hx-delete :hx-vals hx-vals :hx-confirm hx-confirm :hx-push-url (when hx-push-url "true") :form form :tabindex tabindex
-                           :hx-boost (when hx-boost "true")
-                           :id id
-                           :name name
-                           :value value
-                           :title title
-                           :href (when-not disabled? href)})
+                           :hx-boost  (when hx-boost "true")
+                           :id        id
+                           :name      name
+                           :value     value
+                           :title     title
+                           :href      (when-not disabled? href)})
         {:class
          (cs
-          (when-not (= :link priority)
+          (when-not (#{:link :link-destructive} priority)
             "inline-flex items-center rounded-md border font-medium")
           ;; "inline-flex items-center border font-medium"
           ;; "inline-flex items-center rounded-md border"
@@ -466,8 +468,8 @@
                                             (priority spinner-priority-classes))}))
    [:span {:class "button-label"} label]])
 
-(defn link-button [& opts]
-  (apply button (conj opts :a :tag)))
+(defn link-button [& {:as opts}]
+  (button (assoc opts :tag :a)))
 
 (defn page-header [& {:keys [title subtitle buttons] :as args}]
   [:div {:class "border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8 bg-white"}
@@ -524,11 +526,11 @@
     (:section/name section)
     "No Section"))
 
-(defn member-select [& {:keys [id value label members variant with-empty-opt? error full-names?]
-                        :or {label "Member"
-                             full-names? false
-                             variant :inline
-                             with-empty-opt? false}}]
+(defn member-select [& {:keys [id value label members variant with-empty-opt? error full-names? size attr]
+                        :or   {label           "Member"
+                               full-names?     false
+                               variant         :inline
+                               with-empty-opt? false}}]
   (let [options
         (concat
          (if with-empty-opt?
@@ -544,18 +546,24 @@
                       :label label
                       :value value
                       :error error
+                      :size size
+                      :attr attr
                       :options options)
 
       :inline-no-label (select :id id
                                :label ""
                                :value value
                                :error error
+                               :size size
+                               :attr attr
                                :options options)
-      :left (select-left :id id
-                         :label label
-                         :value value
-                         :error error
-                         :options options))))
+      :left            (select-left :id id
+                                    :label label
+                                    :value value
+                                    :error error
+                                    :size size
+                                    :attr attr
+                                    :options options))))
 
 (defn section-select [& {:keys [id value label sections extra-attrs]}]
   (let [options (map (fn [{:section/keys [name]}]
@@ -1189,7 +1197,7 @@
 (defn humanize-dt [dt]
   (when dt
     (let [local-dt (cond (inst? dt) (t/date-time dt)
-                         :else dt)]
+                         :else      dt)]
       [:time {:datetime (str local-dt) :title (format-dt dt (t/formatter "yyyy-MM-dd HH:mm:ss" Locale/GERMAN))}
        (humanize/from local-dt)])))
 
@@ -1229,9 +1237,9 @@
 
 (defn rich-li-action-a [& {:keys [href label attrs]}]
   [:div {:class "ml-4 shrink-0"} [:a
-                                       (merge
-                                        {:href href :class "font-medium text-blue-600 hover:text-blue-500"}
-                                        attrs) label]])
+                                  (merge
+                                   {:href href :class "font-medium text-blue-600 hover:text-blue-500"}
+                                   attrs) label]])
 (defn rich-li-text [_ body]
   [:span {:class "ml-2 w-0 flex-1 truncate"} body])
 
