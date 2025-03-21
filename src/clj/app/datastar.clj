@@ -1,7 +1,8 @@
 (ns app.datastar
   (:refer-clojure :exclude [get])
+  (:import (java.time Instant Duration))
   (:require
-
+   [chime.core :as chime]
    [app.html :as html]
    [camel-snake-kebab.core :as csk]
    [com.fulcrologic.guardrails.malli.core :refer [>defn =>]]
@@ -25,19 +26,77 @@
         <out-ch (a/chan)]
     (util/thread
       (util/while-some [event (a/<!! <in-ch)]
-        (a/>!! <out-ch event)
-        (Thread/sleep ^long msec)))
+                       (a/>!! <out-ch event)
+                       (Thread/sleep ^long msec)))
     <out-ch))
 
-(defonce !page-state (atom {}))
+(def !page-state (atom {}))
+
+(defn state-transact! [req f]
+  (if-let [tab-id (-> req :body-params :tab-id)]
+    (swap! !page-state update tab-id (fn [state]
+                                       (-> state
+                                           (f)
+                                           (assoc ::modified (System/currentTimeMillis)))))
+
+    (throw (ex-info "No tab-id in request" {}))))
+
+(defn init-tab-state! [<ch tab-id]
+  (swap! !page-state assoc tab-id {::created (System/currentTimeMillis)})
+  (add-watch !page-state tab-id (fn [watch-key _ _ _]
+                                  (when-not (a/>!! <ch [])
+                                    (remove-watch !page-state watch-key)))))
+
+(defn remove-tab-state!
+  [tab-id]
+  (swap! !page-state dissoc tab-id)
+  (remove-watch !page-state tab-id))
+
+(def STALE-THRESHOLD-HOURS 1)
+
+(defn stale? [now created modified]
+  (> (- now (or modified created)) (* STALE-THRESHOLD-HOURS 3600000)))
+
+(defn clean-stale-page-state
+  "Removes tab-ids that are stale, where stale is defined as not having been modified or created in the last 24 hours."
+  [page-state]
+  (let [now (System/currentTimeMillis)]
+    (reduce-kv (fn [acc tab-id {:keys [::created ::modified]}]
+                 (if (stale? now created modified)
+                   (dissoc acc tab-id)
+                   acc))
+               page-state
+               page-state)))
+
+(defn clean-stale-watches!
+  "Removes watches for tab-ids that are no longer in the page state."
+  []
+  (let [watches       (-> !page-state .getWatches keys)
+        stale-watches (remove #(clojure.core/get @!page-state %) watches)]
+    (doseq [watch-key stale-watches]
+      (remove-watch !page-state watch-key))))
+
+(defn start-clean-page-state-job
+  "Starts a job that cleans stale page state every 10 seconds."
+  []
+  (chime/chime-at (chime/periodic-seq (Instant/now) (Duration/ofSeconds 60))
+                  (fn [_]
+                    (swap! !page-state clean-stale-page-state)
+                    (clean-stale-watches!))))
 
 (comment
   (reset! !page-state {})
+  (name (keyword (str (random-uuid))))
   @!page-state
-  (swap! !page-state update "1a874961-16c7-40d8-9b44-b83273a82afa" assoc :current-edit-id #uuid "0195ae6b-2983-8043-a50d-971e333c7364")
+  (swap! !page-state update "1a874961-16c7-40d8-9b44-b83273a82afa" assoc ::created 0)
   (swap! !page-state update "1a874961-16c7-40d8-9b44-b83273a82afa" dissoc :current-edit-id)
   (swap! !page-state dissoc "c9222db8-78ce-4919-9f2f-28bfc1aac41f")
+  (let [watch-key :fake]
+    (add-watch !page-state watch-key (fn [watch-key _ _ _])))
   (-> !page-state .getWatches keys)
+  (clean-stale-watches!)
+
+  (swap! !page-state clean-stale-page-state)
   ;;
   )
 
@@ -49,27 +108,22 @@
 (defn render-handler [render-fn & {:keys [on-close on-open wrap-req] :or {wrap-req wrap-req} :as _opts}]
   (fn handler [req]
     (assert (::refresh-mult req))
-    (let [tab-id    (str (random-uuid))
-          watch-key (keyword tab-id)
+    (let [tab-id  (str (random-uuid))
           ;; Dropping buffer is used here as we don't want a slow handler
           ;; blocking other handlers. Mult distributes each event to all
           ;; taps in parallel and synchronously, i.e. each tap must
           ;; accept before the next item is distributed.
-          <ch       (a/tap (::refresh-mult req) (a/chan (a/dropping-buffer 1)))
+          <ch     (a/tap (::refresh-mult req) (a/chan (a/dropping-buffer 1)))
           ;; Ensures at least one render on connect
-          _         (a/>!! <ch :refresh-event)
+          _       (a/>!! <ch :refresh-event)
           ;; poison pill for work cancelling
-          <cancel   (a/chan)]
+          <cancel (a/chan)]
       (hk-gen/->sse-response  req
                               {:headers {"X-Accel-Buffering" "no"
                                          "Cache-Control"     "no-cache"}
                                :on-open
                                (fn hk-on-open [sse-gen]
-                                 (swap! !page-state assoc tab-id {})
-                                 (add-watch !page-state watch-key (fn [watch-key _ _ _]
-                                                                    (tap> :trigger)
-                                                                    (when-not (a/>!! <ch [])
-                                                                      (remove-watch !page-state watch-key))))
+                                 (init-tab-state! <ch tab-id)
                                  (util/thread
                                    (try
                                      (d*/merge-signals! sse-gen (j/write-value-as-string {:tab-id tab-id}))
@@ -79,7 +133,7 @@
                                                        (a/close! <cancel))
                                          [<ch]     (let [new-view      (render-fn (wrap-req req tab-id))
                                                          new-view-hash (digest new-view)]
-                                                     (tap> [:render-change :new-view-hash new-view-hash  :last-view-hash last-view-hash new-view])
+                                                     ;; (tap> [:render-change :new-view-hash new-view-hash  :last-view-hash last-view-hash new-view])
                                                      ;; only send an event if the view has changed
                                                      (when (not= last-view-hash new-view-hash)
                                                        (d*/merge-fragment! sse-gen (html/->str new-view) {d*/id                  new-view-hash
@@ -92,8 +146,7 @@
 
                                  (when on-open (on-open req)))
                                :on-close (fn hk-on-close [_ _]
-                                           (swap! !page-state dissoc tab-id)
-                                           (remove-watch !page-state watch-key)
+                                           (remove-tab-state! tab-id)
                                            (try
                                              (a/>!! <cancel :cancel)
                                              (when on-close (on-close req))
@@ -160,11 +213,14 @@
         (refresh-all! tx)
         (recur ch)))
 
-    {::<refresh-ch  <refresh-ch
-     ::refresh-mult refresh-mult
-     ::datomic      datomic}))
+    {::<refresh-ch    <refresh-ch
+     ::chime-schedule (start-clean-page-state-job)
+     ::refresh-mult   refresh-mult
+     ::datomic        datomic}))
 
-(defn stop-refresh-mult [{::keys [datomic <refresh-ch]}]
+(defn stop-refresh-mult [{::keys [datomic <refresh-ch chime-schedule]}]
+  (when chime-schedule
+    (.close chime-schedule))
   (when datomic
     (stop-react-datomic-tx datomic))
   (when <refresh-ch
@@ -178,15 +234,20 @@
      :enter (fn [ctx]
               (assoc-in ctx [:request ::refresh-mult] refresh-mult))}))
 
-(defn respond [request frag]
+(defn respond-and-close [request on-open & {:keys [on-close]}]
   (hk-gen/->sse-response request
-                         {:on-open
-                          (fn [sse-gen]
-                            (d*/merge-fragment! sse-gen (html/->str frag))
-                            (d*/close-sse! sse-gen))}))
-(defn respond2 [request on-open]
-  (hk-gen/->sse-response request
-                         {:on-open on-open}))
+                         {hk-gen/on-open  (fn [sse-gen]
+                                            (on-open sse-gen)
+                                            (d*/close-sse! sse-gen))
+                          hk-gen/on-close on-close}))
+
+(defn respond-fragment [request fragment]
+  (respond-and-close request (fn [sse-gen]
+                               (d*/merge-fragment! sse-gen fragment))))
+
+(defn respond [request on-open  & {:keys [on-close]}]
+  (hk-gen/->sse-response request {hk-gen/on-open  on-open
+                                  hk-gen/on-close on-close}))
 
 (defmethod ig/init-key ::refresh-mult
   [_ sys]
@@ -239,14 +300,14 @@
 (def Actions [:enum :get :put :patch :post :delete])
 
 (>defn action
-  ([method url]
-   [:keyword :string => :string]
-   (action method url nil))
-  ([method url opts]
-   [:keyword :string [:maybe ActionOptsSchema] => :string]
-   (if opts
-     (str "@" (name method) "('" url "', " (j/write-value-as-string opts camelCaseMapper) ")")
-     (str "@" (name method) "('" url "')"))))
+       ([method url]
+        [:keyword :string => :string]
+        (action method url nil))
+       ([method url opts]
+        [:keyword :string [:maybe ActionOptsSchema] => :string]
+        (if opts
+          (str "@" (name method) "('" url "', " (j/write-value-as-string opts camelCaseMapper) ")")
+          (str "@" (name method) "('" url "')"))))
 
 (def get (partial action :get))
 (def put (partial action :put))
@@ -255,14 +316,14 @@
 (def delete (partial action :delete))
 
 (>defn expr [& stmts]
-  [[:* [:maybe :string]] => :string]
-  (str/join "; " (filter identity stmts)))
+       [[:* [:maybe :string]] => :string]
+       (str/join "; " (filter identity stmts)))
 
 (>defn assign [signal-name value]
-  [:string :any => :string]
-  (format "$%s=%s" signal-name (j/write-value-as-string value)))
+       [:string :any => :string]
+       (format "$%s=%s" signal-name (j/write-value-as-string value)))
 
-(defn signals [m]
+(defn ->signals [m]
   (j/write-value-as-string m))
 
 (def merge-fragments! d*/merge-fragments!)
