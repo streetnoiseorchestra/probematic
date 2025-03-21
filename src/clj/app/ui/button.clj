@@ -79,15 +79,3 @@
      (wrap-text-node children)
      (when icon-trailing
        (icon-trailing {:class (uic/cs "button-icon" (size button-icon-sizes-classes)  "-mr-0.5") :aria-hidden true}))]))
-
-(defn icon-button [& args])
-
-#_(second
-   (button (array-map :-size :large :data-signals "first" :data-on-click "wow" :class "wow" :a 1 :b 2 :c 3 :d 4 :e 5 :f 6 :g 7 :h 8 :i 9 :j 10 :k 11 :l 12 :m 13 :n 14 :o 15 :p 16 :q 17 :r 18 :s 19 :t 20 :u 21 :v 22 :w 23) "Foo"))
-
-#_(defn testing [& {:as opts}]
-    (type opts))
-#_(testing :much :wow :a 1 :b 2 :c 3 :d 4 :e 5 :f 6 :g 7 :h 8 :i 9 :j 10 :k 11 :l 12 :m 13 :n 14 :o 15 :p 16 :q 17 :r 18 :s 19 :t 20 :u 21 :v 22 :w 23)
-;; => clojure.lang.PersistentArrayMap
-
-#_(testing :a 1)

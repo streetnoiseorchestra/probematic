@@ -1,5 +1,7 @@
 (ns app.ui.core
   (:require
+   [app.util.error :as u.error]
+   [bling.core :refer [callout bling point-of-interest]]
    [malli.core :as m]
    [malli.experimental.lite :as l]
    [malli.error :as me]
@@ -11,27 +13,97 @@
 
 (defonce ^:dynamic *validate-opts* false)
 
+(defn bad-opt-value-callout
+
+  [{:keys [point-of-interest-opts callout-opts]}]
+  (let [message      (point-of-interest point-of-interest-opts)
+        callout-opts (merge callout-opts {:padding-top 1})]
+    (callout callout-opts message)))
+
+(defn fqns-sym
+  [m]
+  (symbol (str (:ns m)
+               "/"
+               (str/replace (name (:name m))
+                            #"\*$" ""))))
+
+(defn warning-header
+  [{:keys [m opt value]}]
+  (let [component                  (fqns-sym m)
+        {:keys [file line column]} m]
+    (apply bling
+           (concat
+            [[:italic "component: "] [:bold component]
+             "\n\n"
+             [:italic "option:    "] [:bold opt]
+             "\n\n"
+             [:italic "invalid:   "] [:bold value]]))))
+
+(defn strip-should-be [msg]
+  (if (re-find #"^(?i)should be" msg)
+    (subs msg 10)
+    msg))
+
+(defn warning-body
+  [{:keys [opt msg trace]}]
+  (let [short-trace (reverse (take 5 (drop 3 trace)))
+        w           (java.io.StringWriter.)]
+    (u.error/print-trace short-trace w)
+    (str
+     (bling
+      "Value for the "
+      [:bold opt]
+      " should be "
+      [:bold (strip-should-be msg)]
+      "\n\n"
+      [:italic "Stacktrace preview:"] "\n")
+     w)))
+
 (defn enable-opts-validation! []
   (alter-var-root #'*validate-opts* (constantly true)))
 
 (defn disable-opts-validation! []
   (alter-var-root #'*validate-opts* (constantly false)))
 
+(defn error->bling-opts [trace cvar explain]
+  (map (fn [[k error]]
+         (let [opt (str ":-" (name k))]
+           {:point-of-interest-opts {:header (warning-header {:opt   opt
+                                                              :value (get-in explain [:value k])
+                                                              :m     (meta cvar)})
+
+                                     :body (warning-body {:opt   opt
+                                                          :trace trace
+                                                          :msg   (str/join "; " error)})}
+
+            :callout-opts {:type  :warning
+                           :label "WARNING​ Invalid option value"}}))
+
+       (me/humanize explain)))
+
+(defn stack-traces []
+  (u.error/clean-trace (.getStackTrace (Thread/currentThread))))
+
 (defn validate-opts [cvar opts]
   (when *validate-opts*
     (when-let [opt-defs (:opts (meta cvar))]
       (let [s (l/schema opt-defs)]
         (when-let [problem (m/explain s opts)]
-          (throw (ex-info (str "Invalid options passed to" cvar) {:error problem
-                                                                  :human (me/humanize problem)})))))))
+          (let [trace (stack-traces)]
+            (doseq [bling-opts (error->bling-opts trace cvar problem)]
+              (bad-opt-value-callout bling-opts)))
+
+          #_(throw (ex-info (str "Invalid options passed to" cvar) {:error problem
+                                                                    :human (me/humanize problem)})))))))
 
 (defn warn-on-attr-collision [cvar attrs]
   (when *validate-opts*
     (when-let [opt-defs (:opts (meta cvar))]
-      (doseq [k  (set/intersection (set (keys opt-defs)) (set (keys attrs)))]
-        (let [opt-k (str ":-" (name k))]
-          (tap> (str "Warning: " cvar " called with html attribute " k " that is also an option, did you mean " opt-k " ?"))
-          (println (str "Warning: " cvar " called with html attribute " k " that is also an option, did you mean " opt-k " ?")))))))
+      (doseq [k (set/intersection (set (keys opt-defs)) (set (keys attrs)))]
+        (let [opt-k          (str ":-" (name k))
+              component-name (fqns-sym (meta cvar))
+              msg            (str component-name " called with html attribute " k " that is also an option, did you mean " opt-k " ?")]
+          (callout {:type :warning} msg))))))
 
 (defn attr+children [coll]
   (when (coll? coll)

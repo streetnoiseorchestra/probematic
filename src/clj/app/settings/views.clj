@@ -35,7 +35,7 @@
      [:div {:class "sm:col-span-2 flex space-x-2"}
       (button/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
                       :tabindex                      "-1"
-                      :priority                      :white
+                      :-priority                     :white
                       :data-on-click__viewtransition "$team-create-form-open=false"}
                      (tr [:action/cancel]))
       (button/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
@@ -174,7 +174,7 @@
             :data-signals__ifmissing (d*/->signals {:team-create-form-open false})
             :data-signals            (d*/->signals {:team-id         ""
                                                     :current-edit-id edit-id})}
-      (l/panel {:-title    "Teams1234567"
+      (l/panel {:-title   "Teams"
                 :subtitle "Because someone has to do the work"}
                [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
                 (map-indexed (fn [idx  {team-name :team/name :team/keys [team-id members team-type] :as team}]
