@@ -1,6 +1,27 @@
 {:skip-comments true
- :lint-as {io.pedestal.interceptor.error/error-dispatch clj-kondo.lint-as/def-catch-all}
- :linters {:unused-value {:level :off}
-           :unused-binding {:level :off}
-           :unused-import {:level :off}
-           :unresolved-var {:exclude [taoensso.carmine org.httpkit.client ol.app.dev.dev-extras]}}}
+ :lint-as       {io.pedestal.interceptor.error/error-dispatch      clj-kondo.lint-as/def-catch-all
+                 com.fulcrologic.guardrails.core/>def              clojure.spec.alpha/def
+                 com.fulcrologic.guardrails.core/>defn             clojure.core/defn
+                 com.fulcrologic.guardrails.malli.core/>def        clojure.spec.alpha/def
+                 com.fulcrologic.guardrails.malli.core/>defn       clojure.core/defn
+                 starfederation.datastar.clojure.utils/transient-> clojure.core/->
+                 starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
+ :linters       {:unused-value        {:level :off}
+                 :unused-binding      {:level :off}
+                 :unused-import       {:level :off}
+                 :invalid-arity       {:level :error}
+                 :unused-namespace    {:level   :warning
+                                       :exclude [com.fulcrologic.guardrails.core]}
+                 :consistent-alias    {:level   :warning
+                                       :aliases {clojure.test.check.generators gen
+                                                 clojure.test.check.properties prop}}
+                 :unused-referred-var {:level   :warning
+                                       :exclude {com.fulcrologic.guardrails.core       [>def >defn >fdef => | <- ?]
+                                                 com.fulcrologic.guardrails.malli.core [>def >defn >fdef => | <- ?]
+                                                 clojure.test                          [deftest is are run-tests testing]}}
+
+                 :unresolved-var {:exclude [taoensso.carmine
+                                            org.httpkit.client
+                                            ol.app.dev.dev-extras
+                                            starfederation.datastar.clojure.adapter.http-kit/on-close
+                                            starfederation.datastar.clojure.adapter.http-kit/on-open]}}}

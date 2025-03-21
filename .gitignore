@@ -18,7 +18,9 @@ archive
 *.iml
 log
 .lsp
-.clj-kondo
+.clj-kondo/.cache
+.clj-kondo/imports
+.clj-kondo/.lock
 .cpcache
 session.json
 secrets.edn
