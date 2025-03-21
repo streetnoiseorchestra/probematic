@@ -5,7 +5,7 @@
             [app.queries :as q]
             [app.settings.controller :as controller]
             [app.settings.domain :as domain]
-            [app.settings.routes :as routes]
+            [app.settings.routes :as settings]
             [app.ui :as ui]
             [app.ui.button :as button]
             [app.ui.dialog :as dialog]
@@ -15,14 +15,6 @@
             [app.util :as util]
             [ctmx.core :as ctmx]
             [ctmx.rt :as rt]))
-
-(defn redact-name [n]
-  #_(get
-     {"Felix, Christian Rauch" "John James"
-      "Christine Pichler"      "Carole Candy"
-      "Casey Link"             "Alice Anyone"
-      "Katharina Becker"       "Moe Mighty"} n "User Name")
-  n)
 
 (defn team-create-form [{:keys [tr] :as req}]
   [:div {:data-show "$team-create-form-open" :class "team-add-form"}
@@ -40,7 +32,7 @@
                      (tr [:action/cancel]))
       (button/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
                       :-priority                     :primary
-                      :data-on-click__viewtransition (d*/post (urls/url-for req routes/teams))
+                      :data-on-click__viewtransition (d*/dispatch req settings/command-create-team)
                       :-icon                         icon/plus}
                      (tr [:action/create]))]]]])
 
@@ -49,8 +41,8 @@
         signal      #(str "team." %)]
     [:div
      [:input {:type :hidden :name "team-id" :value (str team-id)}]
-     [:form {:on-submit                                      (d*/expr "console.log('submit')" (d*/post (urls/url-for req routes/command-delete-team-member)))
-             :data-signals                                   (d*/->signals {:team {:team-name team-name
+     [:form {:on-submit                                      (d*/dispatch req settings/command-delete-team-member)
+             :data-signals__ifmissing                        (d*/->signals {:team {:team-name team-name
                                                                                    :team-id   team-id
                                                                                    :team-type (when team-type (name team-type))}})
              :data-signals-team.remove-member-id__case.kebab "null"}
@@ -74,12 +66,12 @@
                      (->> members
                           (map (fn [{:member/keys [name member-id] :as member}]
                                  [:div {:class "grid grid-cols-3 items-center justify-between py-1 border-b border-gray-100"}
-                                  [:a {:class "col-span-2 link-blue" :href (urls/link-member member)} (redact-name name)]
+                                  [:a {:class "col-span-2 link-blue" :href (urls/link-member member)} name]
                                   (button/button {:-priority                     :link-destructive
                                                   :-size                         :xsmall
                                                   :type                          :button
                                                   :data-on-click__viewtransition (d*/expr (d*/assign "team.remove-member-id" member-id)
-                                                                                          (d*/post (urls/url-for req routes/command-delete-team-member)))}
+                                                                                          (d*/dispatch req settings/command-delete-team-member))}
                                                  (tr [:action/remove]))])))]
 
                     [:div {:class "text-gray-500 italic mb-4"} (tr [:team/no-members])])
@@ -95,8 +87,10 @@
                    (button/button {:-priority                     :white
                                    :-size                         :xsmall
                                    :type                          :button
-                                   :data-on-click__viewtransition (d*/post (urls/url-for req routes/command-add-team-member))}
-                                  (tr [:action/add]))]])))]
+                                   :data-on-click__viewtransition (d*/dispatch req settings/command-add-team-member)}
+                                  (tr [:action/add]))]])
+        (dl/item {:-span 3 :-label [:span {:class "text-red-700"} "Error"] :data-show "$team-update-error"}
+                 [:span {:class "text-red-700" :data-text "$team-update-error"}])))]
 
      [:div
       {:class "py-5 flex justify-between items-center"}
@@ -113,7 +107,7 @@
        (button/button {:-priority     :primary
                        :-centered?    true
                        :data-on-click (d*/expr (d*/assign "team-id" team-id)
-                                               (d*/post (urls/url-for req routes/command-update-team)))}
+                                               (d*/dispatch  req settings/command-update-team))}
                       (tr [:action/save]))]]]))
 
 (defn team-row [{:keys [tr] :as req} editing? edit-any-row? {team-name :team/name :team/keys [team-id members team-type] :as team}]
@@ -126,7 +120,7 @@
                             :confirm-text (tr [:action/confirm-delete])
                             :cancel-text (tr [:action/cancel])
                             :on-confirm (d*/expr (d*/assign "team-id" team-id)
-                                                 (d*/delete (urls/url-for req routes/teams)))
+                                                 (d*/dispatch req settings/command-delete-team))
                             :icon icon/triangle-exclamation))
    (when editing?
      (dialog/form-dialog {:id      (str "edit-team-" team-id)
@@ -134,7 +128,7 @@
                           :open    (format "$current-edit-id == '%s'" team-id)
                           :on-hide (d*/expr
                                     "console.log('on-hiding') "
-                                    (str "!!$current-edit-id &&" (d*/delete (urls/url-for req routes/teams-form))))}
+                                    (str "!!$current-edit-id &&" (d*/dispatch req settings/command-close-team-edit-form)))}
                          (team-edit-form req team)))
 
    [:dt {:class (ui/cs  "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
@@ -146,7 +140,7 @@
         (->> members
              (map (fn [{:member/keys [name] :as member}]
                     [:a {:class "link-blue" :href (urls/link-member member)}
-                     (redact-name name)]))
+                     name]))
              (interpose ", "))]
 
        [:span {:class "text-gray-500 italic"} (tr [:team/no-members])])]
@@ -160,37 +154,37 @@
                                  :data-indicator                  fetching-signal
                                  :data-attr-disabled              $fetching-signal
                                  :data-class                      (format "{'spinning': %s}" $fetching-signal)
-                                 :data-on-click                   (format "$current-edit-id='%s'; @post('%s')" team-id (urls/url-for req routes/teams-form)))
+                                 :data-on-click (d*/expr (d*/assign "current-edit-id" team-id)
+                                                         (d*/dispatch req settings/command-open-team-edit-form)))
                       (tr [:action/update])))]]))
 
 (defn teams-panel
-  ([req error]
-   (teams-panel req error nil))
-  ([{:keys [page-state db tr] :as req} error edit-id]
-   (let [edit-id      (:current-edit-id page-state)
-         teams        (q/retrieve-all-teams db)
-         editing-any? (some? edit-id)]
-     [:div {:id                      (util/id :comp/teams-panel)
-            :data-signals__ifmissing (d*/->signals {:team-create-form-open false})
-            :data-signals            (d*/->signals {:team-id         ""
-                                                    :current-edit-id edit-id})}
-      (l/panel {:-title   "Teams"
-                :subtitle "Because someone has to do the work"}
-               [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
-                (map-indexed (fn [idx  {team-name :team/name :team/keys [team-id members team-type] :as team}]
-                               (let [editing? (= edit-id team-id)]
-                                 [:div {:class "sm:flex" :id (str "team-container-" team-id)}
-                                  (team-row req editing? editing-any? team)]))
-                             teams)]
+  [{:keys [page-state db tr] :as req} error]
+  (let [edit-id      (:current-edit-id page-state)
+        teams        (q/retrieve-all-teams db)
+        editing-any? (some? edit-id)]
+    [:div {:id                      (util/id :comp/teams-panel)
+           :data-signals__ifmissing (d*/->signals {:team-create-form-open false
+                                                   :team-create-error     false
+                                                   :team-update-error     false})
+           :data-signals            (d*/->signals {:team-id         nil
+                                                   :current-edit-id edit-id})}
+     (l/panel {:-title   "Teams4"
+               :subtitle "Because someone has to do the work"}
+              [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
+               (map-indexed (fn [idx  {team-name :team/name :team/keys [team-id members team-type] :as team}]
+                              (let [editing? (= edit-id team-id)]
+                                [:div {:class "sm:flex" :id (str "team-container-" team-id)}
+                                 (team-row req editing? editing-any? team)]))
+                            teams)]
 
-               (button/button {:data-on-click__viewtransition "$team-create-form-open = !$team-create-form-open"
-                               :data-show                     "!$team-create-form-open"
-                               :-icon                         icon/plus}
-                              (tr [:team/create-team]))
-               (team-create-form req)
-               (when error
-                 [:div {:class "text-red-700 my-4"} "Error: " error])
-               #_[:pre {:data-text "ctx.signals.JSON()"}])])))
+              (button/button {:data-on-click__viewtransition "$team-create-form-open = !$team-create-form-open"
+                              :data-show                     "!$team-create-form-open"
+                              :-icon                         icon/plus}
+                             (tr [:team/create-team]))
+              (team-create-form req)
+              [:div {:class "text-red-700 my-4" :data-show "$team-create-error"} "Error: " [:span {:data-text "$team-create-error"}]]
+              #_[:pre {:data-text "ctx.signals.JSON()"}])]))
 
 (defn teams-edit-form-handler [{:keys [db tr] :as req}]
   (let [team-id (-> req :parameters :body :current-edit-id)]
@@ -200,21 +194,22 @@
 (defn close-teams-edit-form-handler [{:keys [db tr] :as req}]
   (let [team-id (-> req :parameters :body :current-edit-id)]
     (d*/state-transact! req #(dissoc % :current-edit-id))
+    (d*/respond-signals req :merge {:team-update-error false} :remove ["team"])
     {:status 204}))
 
 (defn teams-create-handler [{:keys [db tr] :as req}]
   (let [{:keys [error]} (controller/create-team! req)]
     (if error
-      (d*/respond-fragment req (teams-panel req error))
-      (d*/respond req #(d*/merge-signals! % (d*/->signals {:team-create-form-open false}))))))
+      (d*/respond-signals req :merge {:team-create-error error})
+      (d*/respond-signals req :merge {:team-create-form-open false}))))
 
 (defn teams-update-handler [{:keys [db tr] :as req}]
   (let [{:keys [error]} (controller/update-team! req)]
     (if error
-      (d*/respond-fragment req (teams-panel req error))
+      (d*/respond-signals req :merge {:team-update-error error})
       (do
         (d*/state-transact! req #(dissoc % :current-edit-id))
-        {:status 204}))))
+        (d*/respond-signals req :merge {:team-update-error false} :remove ["team"])))))
 
 (defn teams-remove-member-handler [{:keys [db tr] :as req}]
   (controller/remove-member! req)

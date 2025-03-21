@@ -62,7 +62,7 @@
         (d/transact-wrapper! req {:tx-data tx-data})
         (catch java.util.concurrent.ExecutionException e
           (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
-            {:error "Team name already exists."}
+            {:error (format "Team named '%s' already exists." team-name)}
             (throw e))))
 
       {:error "Team name is required."})))
@@ -98,7 +98,7 @@
         (d/transact-wrapper! req {:tx-data tx-data})
         (catch Exception e
           (if (= :db.error/unique-conflict (:db/error (ex-data e)))
-            {:error "Team name already exists."}
+            {:error (format "Team named '%s' already exists." team-name)}
             (throw e))))
 
       {:error "Team name is required."})))
@@ -138,11 +138,11 @@
     (if valid?
       (try
         (d/transact-wrapper! req {:tx-data tx-data})
-        (catch Exception e
-          (if (= :db.error/unique-conflict (:db/error (ex-data e)))
-            {:error "Team name already exists."}
-            (throw e))))
 
+        (catch Exception e
+          (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
+            {:error (format "Team named '%s' already exists." team-name)}
+            (throw e))))
       {:error "Team name is required."})))
 
 (defn delete-team! [{:keys [db datomic-conn] :as req}]

@@ -21,14 +21,13 @@
 (defn wrapper
   {:opts {:span (l/optional :int)}}
   [& args]
-
   (let [[opts attrs children]       (uic/extract #'wrapper args)
         {:keys [span] :or {span 1}} opts
         $span                       (case span
                                       1 "sm:col-span-1"
                                       2 "sm:col-span-2"
                                       3 "sm:col-span-3")]
-    [:div {:class (uic/cs $span)}
+    [:div (uic/merge-attrs attrs :class (uic/cs $span))
      children]))
 
 (defn item
@@ -37,6 +36,6 @@
   [& args]
   (let [[opts attrs children] (uic/extract #'item args)
         {:keys [span label]}  opts]
-    (wrapper {:-span span}
-             (dt label)
-             (dd children))))
+    (wrapper  (assoc attrs :-span span)
+              (dt label)
+              (dd children))))

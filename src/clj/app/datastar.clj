@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [get])
   (:import (java.time Instant Duration))
   (:require
+   [app.urls :as urls]
    [chime.core :as chime]
    [app.html :as html]
    [camel-snake-kebab.core :as csk]
@@ -15,6 +16,13 @@
    [starfederation.datastar.clojure.api :as d*]
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
    [clojure.string :as str]))
+
+(defn ->signals [m]
+  (j/write-value-as-string m))
+
+#_(def merge-fragments! d*/merge-fragments!)
+#_(def merge-fragment! d*/merge-fragment!)
+(def merge-signals! d*/merge-signals!)
 
 (defn digest
   "Digest function based on Clojure's hash."
@@ -102,6 +110,7 @@
 
 (defn wrap-req [req tab-id]
   (-> req
+      (assoc :request-method :get)
       (assoc :page-state (clojure.core/get @!page-state tab-id {}))
       (assoc :db (d/db (:datomic-conn req)))))
 
@@ -241,9 +250,18 @@
                                             (d*/close-sse! sse-gen))
                           hk-gen/on-close on-close}))
 
-(defn respond-fragment [request fragment]
-  (respond-and-close request (fn [sse-gen]
-                               (d*/merge-fragment! sse-gen fragment))))
+;; I must not fragment. Fragmentation is the simplicity-killer. ... LITANY.md
+#_(defn respond-fragment [request fragment]
+    (respond-and-close request (fn [sse-gen]
+                                 (d*/merge-fragment! sse-gen (html/->str fragment)))))
+
+(defn respond-signals
+  ([request & {:keys [merge remove]}]
+   (respond-and-close request (fn [sse-gen]
+                                (when merge
+                                  (d*/merge-signals! sse-gen (->signals merge)))
+                                (when remove
+                                  (d*/remove-signals! sse-gen remove))))))
 
 (defn respond [request on-open  & {:keys [on-close]}]
   (hk-gen/->sse-response request {hk-gen/on-open  on-open
@@ -323,9 +341,8 @@
        [:string :any => :string]
        (format "$%s=%s" signal-name (j/write-value-as-string value)))
 
-(defn ->signals [m]
-  (j/write-value-as-string m))
-
-(def merge-fragments! d*/merge-fragments!)
-(def merge-fragment! d*/merge-fragment!)
-(def merge-signals! d*/merge-signals!)
+(defn dispatch
+  ([req cmd]
+   (action :post (urls/url-for req cmd)))
+  ([req cmd opts]
+   (action :post (urls/url-for req cmd) opts)))

@@ -1,8 +1,10 @@
 (ns app.settings.routes)
 
 (def index ::band-settings)
-(def teams ::teams)
-(def teams-form ::teams-form)
 (def command-delete-team-member ::command-delete-team-member)
 (def command-add-team-member ::command-add-team-member)
+(def command-create-team ::command-create-team)
 (def command-update-team ::command-update-team)
+(def command-delete-team ::command-delete-team)
+(def command-open-team-edit-form ::command-open-team-edit-form)
+(def command-close-team-edit-form ::command-close-team-edit-form)
