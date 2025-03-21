@@ -14,17 +14,13 @@
   (if (or  (domain/cancelled? gig)
            (domain/in-past? gig))
     ;; gig not relevant anymore, cancel reminder
-    (do
-      (tap> "cancel reminder gig no longer relevant")
-      {:reminder/reminder-status :reminder-status/cancelled :reminder/reminder-id reminder-id})
+    {:reminder/reminder-status :reminder-status/cancelled :reminder/reminder-id reminder-id}
     (let [attendance (q/attendance-for-gig db (:gig/gig-id gig) (:member/member-id member))]
       (if (domain/no-response? (:attendance/plan attendance))
         ;; send reminder
         {:member member :gig gig :reminder-id reminder-id}
         ;; member already marked attendance, cancel reminder
-        (do
-          (tap> "cancel reminder, member responded")
-          {:reminder/reminder-status :reminder-status/cancelled :reminder/reminder-id reminder-id})))))
+        {:reminder/reminder-status :reminder-status/cancelled :reminder/reminder-id reminder-id}))))
 
 (defn- group-processed-reminders [acc processed-reminder]
   ;; (tap> processed-reminder)
@@ -35,8 +31,9 @@
                 :member (:member processed-reminder)})))
 
 (defn process-reminders [db reminders as-of]
-  (tap> {:reminders reminders :as-of as-of})
+  ;; (tap> {:reminders reminders :as-of as-of})
   (->> reminders
+       (remove #(nil? (:reminder/gig %)))
        (map (partial process-gig-reminder db))
        (reduce group-processed-reminders
                {:to-cancel #{} :to-send {}})))
@@ -70,7 +67,7 @@
                     (assoc system :db db :datomic-conn datomic-conn)
                     (:reminder-type/gig-attendance reminders)
                     as-of)]
-       (tap> {:send-reminder-result tx-data})
+       ;; (tap> {:send-reminder-result tx-data})
        (when (seq tx-data)
          (datomic/transact datomic-conn {:tx-data tx-data}))
        :done)
@@ -101,7 +98,7 @@
                             :reminder/reminder-status :reminder-status/pending
                             :reminder/remind-at (t/tomorrow)}]
                        (t/instant))
-
+  (q/overdue-reminders-by-type db (t/>> (t/instant) (t/new-period 100 :days)))
   (let [as-of (t/>> (t/instant) (t/new-period 2 :days))]
     (process-reminders db (:reminder-type/gig-attendance (q/overdue-reminders-by-type db as-of)) as-of))
   (q/active-reminders-by-type db)
