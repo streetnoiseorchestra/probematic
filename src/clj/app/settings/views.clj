@@ -169,7 +169,7 @@
                                                    :team-update-error     false})
            :data-signals            (d*/->signals {:team-id         nil
                                                    :current-edit-id edit-id})}
-     (l/panel {:-title   "Teams4"
+     (l/panel {:-title   "Teams"
                :subtitle "Because someone has to do the work"}
               [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
                (map-indexed (fn [idx  {team-name :team/name :team/keys [team-id members team-type] :as team}]
@@ -201,7 +201,7 @@
   (let [{:keys [error]} (controller/create-team! req)]
     (if error
       (d*/respond-signals req :merge {:team-create-error error})
-      (d*/respond-signals req :merge {:team-create-form-open false}))))
+      (d*/respond-signals req :merge {:team-create-form-open false :team-name ""}))))
 
 (defn teams-update-handler [{:keys [db tr] :as req}]
   (let [{:keys [error]} (controller/update-team! req)]
@@ -209,7 +209,9 @@
       (d*/respond-signals req :merge {:team-update-error error})
       (do
         (d*/state-transact! req #(dissoc % :current-edit-id))
-        (d*/respond-signals req :merge {:team-update-error false} :remove ["team"])))))
+        (d*/respond-signals req
+                            :merge {:team-update-error false}
+                            :remove ["team"])))))
 
 (defn teams-remove-member-handler [{:keys [db tr] :as req}]
   (controller/remove-member! req)
@@ -363,7 +365,7 @@
 (defn settings-page [{:keys [db tr] :as req}]
   (let [member (auth/get-current-member req)]
     [:main {:class "flex-1" :id "main"}
-     #(ui/page-header :title (tr [:nav/band-settings]))
+     (ui/page-header :title (tr [:nav/band-settings]))
      (teams-panel req nil)
      (travel-discount-types req)
      (sections req false)]))

@@ -899,7 +899,7 @@
    (d/find-all db :team/team-id team-pattern)
    (map first)
    (map settings.domain/db->team)
-   (sort-by :team/name)))
+   (util/isort-by :team/name)))
 
 (defn retrieve-team [db team-id]
   (d/find-by db :team/team-id team-id team-pattern))
