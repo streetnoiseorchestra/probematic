@@ -1,21 +1,20 @@
 (ns app.settings.views
-  (:require
-   [app.ui.dl :as dl]
-   [app.datastar :as d*]
-   [app.settings.routes :as routes]
-   [app.urls :as urls]
-   [app.auth :as auth]
-   [app.icons :as icon]
-   [app.queries :as q]
-   [app.settings.domain :as domain]
-   [app.settings.controller :as controller]
-   [app.ui :as ui]
-   [app.ui.button :as button]
-   [app.ui.dialog :as dialog]
-   [app.util :as util]
-   [ctmx.core :as ctmx]
-   [ctmx.rt :as rt]
-   [jsonista.core :as j]))
+  (:require [app.auth :as auth]
+            [app.datastar :as d*]
+            [app.icons :as icon]
+            [app.queries :as q]
+            [app.settings.controller :as controller]
+            [app.settings.domain :as domain]
+            [app.settings.routes :as routes]
+            [app.ui :as ui]
+            [app.ui.button :as button]
+            [app.ui.dialog :as dialog]
+            [app.ui.dl :as dl]
+            [app.ui.layout :as l]
+            [app.urls :as urls]
+            [app.util :as util]
+            [ctmx.core :as ctmx]
+            [ctmx.rt :as rt]))
 
 (defn redact-name [n]
   #_(get
@@ -51,15 +50,15 @@
     [:div
      [:input {:type :hidden :name "team-id" :value (str team-id)}]
      [:form {:on-submit                                      (d*/expr "console.log('submit')" (d*/post (urls/url-for req routes/command-delete-team-member)))
-             :data-signals                                   (d*/signals {:team {:team-name team-name
-                                                                                 :team-id   team-id
-                                                                                 :team-type (when team-type (name team-type))}})
+             :data-signals                                   (d*/->signals {:team {:team-name team-name
+                                                                                   :team-id   team-id
+                                                                                   :team-type (when team-type (name team-type))}})
              :data-signals-team.remove-member-id__case.kebab "null"}
       (dl/dl
        (list
-        (dl/item {:span 3} (tr [:team/name])
+        (dl/item {:-span 3 :-label (tr [:team/name])}
                  (ui/text :name "team-name" :value team-name :required? true :attr {:data-bind (signal "team-name")}))
-        (dl/item {:span 3} (tr [:team/team-type])
+        (dl/item {:-span 3 :-label (tr [:team/team-type])}
                  (ui/select
                   :id "team-type"
                   :name "team-type"
@@ -67,7 +66,7 @@
                   :value (when team-type (name team-type))
                   :options (concat [{:value "" :label " - "}] (map (fn [m] {:label (tr [m]) :value (name m)}) domain/team-types))))
 
-        (dl/item {:span 3} (tr [:team/members])
+        (dl/item {:-span 3 :-label (tr [:team/members])}
                  [:div {:class "flex flex-col space-y-2"}
                   ;; List of current members with remove buttons
                   (if (seq members)
@@ -172,59 +171,50 @@
          teams        (q/retrieve-all-teams db)
          editing-any? (some? edit-id)]
      [:div {:id                      (util/id :comp/teams-panel)
-            :data-signals__ifmissing (d*/signals {:team-create-form-open false})
-            :data-signals            (d*/signals {:team-id         ""
-                                                  :current-edit-id edit-id})}
-      (ui/panel {:title    "Teams1234567"
-                 :subtitle "Because someone has to do the work"}
-                [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
-                 (map-indexed (fn [idx  {team-name :team/name :team/keys [team-id members team-type] :as team}]
-                                (let [editing? (= edit-id team-id)]
-                                  [:div {:class "sm:flex" :id (str "team-container-" team-id)}
-                                   (team-row req editing? editing-any? team)]))
-                              teams)]
+            :data-signals__ifmissing (d*/->signals {:team-create-form-open false})
+            :data-signals            (d*/->signals {:team-id         ""
+                                                    :current-edit-id edit-id})}
+      (l/panel {:-title    "Teams1234567"
+                :subtitle "Because someone has to do the work"}
+               [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
+                (map-indexed (fn [idx  {team-name :team/name :team/keys [team-id members team-type] :as team}]
+                               (let [editing? (= edit-id team-id)]
+                                 [:div {:class "sm:flex" :id (str "team-container-" team-id)}
+                                  (team-row req editing? editing-any? team)]))
+                             teams)]
 
-                (button/button {:data-on-click__viewtransition "$team-create-form-open = !$team-create-form-open"
-                                :data-show                     "!$team-create-form-open"
-                                :-icon                         icon/plus}
-                               (tr [:team/create-team]))
-                (team-create-form req)
-                (when error
-                  [:div {:class "text-red-700 my-4"} "Error: " error])
-                #_[:pre {:data-text "ctx.signals.JSON()"}])])))
+               (button/button {:data-on-click__viewtransition "$team-create-form-open = !$team-create-form-open"
+                               :data-show                     "!$team-create-form-open"
+                               :-icon                         icon/plus}
+                              (tr [:team/create-team]))
+               (team-create-form req)
+               (when error
+                 [:div {:class "text-red-700 my-4"} "Error: " error])
+               #_[:pre {:data-text "ctx.signals.JSON()"}])])))
 
 (defn teams-edit-form-handler [{:keys [db tr] :as req}]
-  (let [team-id    (-> req :parameters :body :current-edit-id)
-        tab-id     (-> req :body-params :tab-id)
-        page-state (get @d*/!page-state tab-id)]
-    (swap! d*/!page-state update tab-id assoc :current-edit-id team-id)
+  (let [team-id (-> req :parameters :body :current-edit-id)]
+    (d*/state-transact! req #(assoc % :current-edit-id team-id))
     {:status 204}))
 
 (defn close-teams-edit-form-handler [{:keys [db tr] :as req}]
-  (let [team-id (-> req :parameters :body :current-edit-id)
-        tab-id  (-> req :body-params :tab-id)]
-    (swap! d*/!page-state update tab-id assoc :current-edit-id nil)
+  (let [team-id (-> req :parameters :body :current-edit-id)]
+    (d*/state-transact! req #(dissoc % :current-edit-id))
     {:status 204}))
 
 (defn teams-create-handler [{:keys [db tr] :as req}]
   (let [{:keys [error]} (controller/create-team! req)]
     (if error
-      (d*/respond req (teams-panel req error))
-      (d*/respond2 req
-                   (fn [sse-gen]
-                     (d*/merge-signals! sse-gen  (j/write-value-as-string {:team-create-form-open false})))))))
+      (d*/respond-fragment req (teams-panel req error))
+      (d*/respond req #(d*/merge-signals! % (d*/->signals {:team-create-form-open false}))))))
 
 (defn teams-update-handler [{:keys [db tr] :as req}]
-  (let [{:keys [error]} (controller/update-team! req)
-        tab-id          (-> req :body-params :tab-id)]
+  (let [{:keys [error]} (controller/update-team! req)]
     (if error
-      (d*/respond req (teams-panel req error))
+      (d*/respond-fragment req (teams-panel req error))
       (do
-        (swap! d*/!page-state update tab-id assoc :current-edit-id nil)
-        {:status 204}
-        #_(d*/respond2 req
-                       (fn [sse-gen]
-                         (d*/merge-signals! sse-gen  (j/write-value-as-string {:current-edit-id nil}))))))))
+        (d*/state-transact! req #(dissoc % :current-edit-id))
+        {:status 204}))))
 
 (defn teams-remove-member-handler [{:keys [db tr] :as req}]
   (controller/remove-member! req)
