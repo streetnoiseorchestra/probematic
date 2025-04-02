@@ -25,11 +25,10 @@
          fmt:fix      (shell "cljfmt fix .")
          lint         (shell "clj-kondo --lint src --fail-level error")
          npm-install  (shell {:dir "./"} "npm" "install")
-         repl-ui      {:depends [npm-install]
-                       :task    (shell {:dir "./"} "npx shadow-cljs -A dev watch app")}
-         tailwind-css (shell {:dir "./"} "npx" "@tailwindcss/cli"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
-         watch-css    (shell {:dir "./"} "npx" "@tailwindcss/cli" "-w" "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css")
-         prod-css     (shell {:dir "./"} "npx" "@tailwindcss/cli"      "-i" "resources/public/css/main.css" "-o" "resources/public/css/compiled/main.css" "--minify")
+         css          (shell {:dir "./"} "tailwindcss -i resources/public/css/main.css -o resources/public/css/compiled/main.css")
+         watch-css    (shell {:dir "./"} "tailwindcss --watch --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
+         prod-css     (shell {:dir "./"} "tailwindcss --minify --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
+         dev-services (shell {:dir "./"} "docker compose -f ./docker-compose.dev.yml up -d")
 
          sync-clj-kondo           (do
                                     (let [cp (classpath-test-dev)]
