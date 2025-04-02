@@ -8,3 +8,9 @@
 (def command-delete-team ::command-delete-team)
 (def command-open-team-edit-form ::command-open-team-edit-form)
 (def command-close-team-edit-form ::command-close-team-edit-form)
+
+(def command-add-discount-type ::command-add-discount-type)
+(def command-update-discount-type ::command-update-discount-type)
+(def command-delete-discount-type ::command-delete-discount-type)
+(def command-open-discount-type-edit-form ::command-open-discount-type-edit-form)
+(def command-close-discount-type-edit-form ::command-close-discount-type-edit-form)

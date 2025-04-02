@@ -1,6 +1,5 @@
 (ns app.render
   (:require
-   [jsonista.core :as j]
    [app.config :as config]
    [app.secret-box :as secret-box]
    [app.util :as util]
@@ -94,8 +93,7 @@
    [:script {:type "module" :src "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/components/dialog/dialog.js"}]
    ;; [:link {:rel "stylesheet" :href "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/styles/webawesome.css"}]
    ;; [:script {:type "module" :src "https://early.webawesome.com/webawesome@3.0.0-alpha.11/dist/webawesome.loader.js"}]
-   (script req relative-prefix "datastar@1.0.0-beta.9.js" :type :module)
-   ;; (script req relative-prefix "datastar@develop.js" :type :module)
+   (script req relative-prefix "datastar@1.0.0-beta.11.js" :type :module)
    (script req relative-prefix "hyperscript.org@0.9.12.js")
    (script req relative-prefix "htmx.org@1.9.12.js")
    (script req relative-prefix "class-tools@1.9.12.js")

@@ -130,7 +130,7 @@
       (hk-gen/->sse-response  req
                               {:headers {"X-Accel-Buffering" "no"
                                          "Cache-Control"     "no-cache"}
-                               :on-open
+                               hk-gen/on-open
                                (fn hk-on-open [sse-gen]
                                  (init-tab-state! <ch tab-id)
                                  (util/thread
@@ -154,14 +154,14 @@
                                        (tap> [:sse-resp-thread-ex e]))))
 
                                  (when on-open (on-open req)))
-                               :on-close (fn hk-on-close [_ _]
-                                           (remove-tab-state! tab-id)
-                                           (try
-                                             (a/>!! <cancel :cancel)
-                                             (when on-close (on-close req))
-                                             (catch Exception e
-                                               (tap> [:sse-response-on-close-ex e])
-                                               nil)))}))))
+                               hk-gen/on-close (fn hk-on-close [_ _]
+                                                 (remove-tab-state! tab-id)
+                                                 (try
+                                                   (a/>!! <cancel :cancel)
+                                                   (when on-close (on-close req))
+                                                   (catch Exception e
+                                                     (tap> [:sse-response-on-close-ex e])
+                                                     nil)))}))))
 (defonce ^:private refresh-ch_ (atom nil))
 
 (defn refresh-all! [& args]

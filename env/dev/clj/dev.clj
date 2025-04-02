@@ -1,4 +1,8 @@
 (ns dev
+  {:clj-kondo/config '{:linters       {:unused-namespace     {:level :off}
+                                       :unresolved-namespace {:level :off}
+                                       :unused-referred-var  {:level :off}}
+                       :skip-comments true}}
   (:require
    [app.ui.core :as ui-core]
    [com.fulcrologic.guardrails.malli.core]
@@ -127,7 +131,8 @@
     (def p (p/open {:theme :portal.colors/gruvbox}))
     (add-tap #'p/submit)
 
-    (def pub! (mu/start-publisher! {:type :custom, :fqn-function "user/tap-publisher"})))
+    ;; (def pub! (mu/start-publisher! {:type :custom, :fqn-function "user/tap-publisher"}))
+    )
 
   (mu/log ::my-event ::ns (ns-publics *ns*))
   (do

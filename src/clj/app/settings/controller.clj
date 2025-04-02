@@ -11,28 +11,35 @@
    [app.settings.domain :as domain]
    [app.util :as util]))
 
-(defn create-discount-type [{:keys [datomic-conn db] :as req}]
-  (let [discount-type-name (-> req :params :discount-type-name)
-        {:keys [db-after]} (datomic/transact datomic-conn {:tx-data [{:travel.discount.type/discount-type-id (sq/generate-squuid)
-                                                                      :travel.discount.type/enabled? true
-                                                                      :travel.discount.type/discount-type-name discount-type-name}]})]
+(defn create-discount-type! [{:keys [datomic-conn db] :as req}]
+  (let [discount-type-name (-> req :parameters :body :discount-type-name)
+        valid?             (and discount-type-name (not (str/blank? discount-type-name)))
+        tx-data            [{:travel.discount.type/discount-type-id   (sq/generate-squuid)
+                             :travel.discount.type/enabled?           true
+                             :travel.discount.type/discount-type-name discount-type-name}]]
 
-    db-after))
+    (if valid?
+      (try
+        (d/transact-wrapper! req {:tx-data tx-data})
+        (catch java.util.concurrent.ExecutionException e
+          (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
+            {:error (format "Discount type named '%s' already exists." discount-type-name)}
+            (throw e))))
+      {:error "Discount type name is required."})))
 
 (defn update-discount-type [{:keys [datomic-conn db] :as req}]
-  (let [{:keys [discount-type-name discount-type-id enabled?]} (:params req)
-        discount-type-id (util/ensure-uuid! discount-type-id)
-        tx-data [{:travel.discount.type/discount-type-id discount-type-id
-                  :travel.discount.type/enabled? (common/check->bool enabled?)
-                  :travel.discount.type/discount-type-name discount-type-name}]
-        {:keys [db-after]} (datomic/transact datomic-conn {:tx-data tx-data})]
+  (let [{:keys [discount-type-name discount-type-id discount-type-enabled]} (-> req :parameters :body :discount-type)
+        tx-data                                                             [{:travel.discount.type/discount-type-id   discount-type-id
+                                                                              :travel.discount.type/enabled?           discount-type-enabled
+                                                                              :travel.discount.type/discount-type-name discount-type-name}]
+        {:keys [db-after]}                                                  (datomic/transact datomic-conn {:tx-data tx-data})]
 
     (q/retrieve-discount-type db-after discount-type-id)))
 
 (defn create-section [{:keys [datomic-conn] :as req}]
-  (let [section-name (-> req :params :section-name)
+  (let [section-name       (-> req :params :section-name)
         {:keys [db-after]} (datomic/transact datomic-conn {:tx-data [{:section/active? true
-                                                                      :section/name section-name}]})]
+                                                                      :section/name    section-name}]})]
 
     db-after))
 
