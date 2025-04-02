@@ -43,7 +43,7 @@
     (if error
       (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
       (do
-        (swap! d*/!page-state update tab-id assoc :current-edit-id nil)
+        (d*/state-transact! req #(dissoc % :current-edit-id))
         {:status 204}))))
 
 ;; --------------------------------------------------------------------------------------------
@@ -86,10 +86,10 @@
   {:status 204})
 
 (defn discount-type-delete-handler [{:keys [db tr] :as req}]
-  (let [{:keys [error]} nil
+  (let [{:keys [error]} (controller/delete-discount-type! req)
         tab-id          (-> req :body-params :tab-id)]
     (if error
       (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
       (do
-        (swap! d*/!page-state update tab-id assoc :discount-current-edit-id nil)
+        (d*/state-transact! req #(dissoc % :discount-current-edit-id))
         {:status 204}))))

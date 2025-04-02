@@ -36,6 +36,11 @@
 
     (q/retrieve-discount-type db-after discount-type-id)))
 
+(defn delete-discount-type! [{:keys [db datomic-conn] :as req}]
+  (let [discount-type-id (util/ensure-uuid! (-> req :body-params :discount-type-id))
+        tx-data          [[:db/retractEntity [:travel.discount.type/discount-type-id discount-type-id]]]]
+    (d/transact-wrapper! req {:tx-data tx-data})))
+
 (defn create-section [{:keys [datomic-conn] :as req}]
   (let [section-name       (-> req :params :section-name)
         {:keys [db-after]} (datomic/transact datomic-conn {:tx-data [{:section/active? true

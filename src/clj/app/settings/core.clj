@@ -22,7 +22,8 @@
                                               :team-id   :uuid}})
 
                 (command settings/command-delete-team
-                         :handler command/teams-delete-handler)
+                         :handler command/teams-delete-handler
+                         :signal-spec {:team-id :uuid})
 
                 (command settings/command-delete-team-member
                          :handler command/teams-remove-member-handler
@@ -50,6 +51,7 @@
                                                        :discount-type-id      :uuid
                                                        :discount-type-enabled :boolean}})
                 (command settings/command-delete-discount-type
+                         :signal-spec {:discount-type-id :uuid}
                          :handler command/discount-type-delete-handler)
                 (command settings/command-open-discount-type-edit-form
                          :signal-spec {:discount-current-edit-id :uuid}
