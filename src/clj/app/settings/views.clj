@@ -309,46 +309,6 @@
 
               #_[:pre {:data-text "ctx.signals.JSON()"}]])))
 
-#_(defn _oldsection-single [{:keys [reorder? db tr] :as req}  idx section-name]
-    (let  [{:section/keys [name active? position]} (if (util/post? req)
-                                                     (controller/update-section req)
-                                                     (q/retrieve-section-by-name db section-name))
-           section-name                            name
-           form-class                              (str (path ".") "-form")
-           label-class                             (str (path ".") "-label")]
-      [(if reorder? :div :form) {:class     "sm:flex sm:items-center" :id (path ".")
-                                 :hx-target (hash ".")
-                                 :hx-post   (util/endpoint-path section-single)}
-       (when reorder?
-         [:div {:class "drag-handle cursor-pointer pr-3"} (icon/bars {:class "h-5 w-5"})])
-
-       [:input {:type :hidden :value section-name :name "old-section-name"}]
-       [:input {:type :hidden :value section-name :name (path "section-name")}]
-       [:input {:type :hidden :name (path "position") :value idx :data-sort-order true}]
-       ;; rw
-       [:dt {:class (uic/cs "hidden mb-2 text-gray-900 sm:w-64 sm:flex-none sm:pr-6" form-class)}
-        [:div {:class "mt-2"}]
-        (ui/text :name "section-name" :value section-name :required? true :label (tr [:section]))]
-       [:dd {:class (uic/cs "hidden mt-1 flex sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto" form-class)}
-        [:div {:class "mt-2"} (ui/toggle-checkbox :name "active?" :checked? active? :id (path "active"))]
-        (ui/button :priority :primary :label (tr [:action/save]) :size :xsmall)]
-
-       ;; ro
-       [:dt {:class (uic/cs "text-gray-900 sm:w-64 sm:flex-none sm:pr-6" label-class)}
-        [:div section-name]]
-       [:dd {:class (uic/cs "mt-1 flex sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto" label-class)}
-        [:div {:class "text-gray-900"} (ui/bool-bubble (true? active?))]
-        (ui/button :priority :link :label (tr [:action/update])
-                   :class (uic/cs (when reorder? "invisible"))
-                   :attr {:type :button
-                          :_    (format "on click remove .hidden from .%s then add .hidden to .%s" form-class label-class)})]]))
-
-(comment
-  db-after (cond
-             (util/put? req)  (controller/order-sections req)
-             (util/post? req) (controller/create-section req)
-             :else            db))
-
 (defn section-edit-form [{:keys [tr] :as req} {:section/keys [active? name]}]
   (assert name)
   (let [signal #(str "section." %)]
@@ -370,10 +330,10 @@
      [:div
       {:class "py-5 flex justify-between items-center"}
       [:div {:class "flex items-center space-x-3 space-x-4"}
-       (button/button {:-priority     :white-destructive
-                       :-size         :xsmall
-                       :data-on-click (format "$delete-confirm-%s=true" name)}
-                      (tr [:action/delete]))]
+       #_(button/button {:-priority     :white-destructive
+                         :-size         :xsmall
+                         :data-on-click (format "$delete-confirm-%s=true" name)}
+                        (tr [:action/delete]))]
       [:div {:class "flex justify-end space-x-4"}
        (button/button {:-priority   :white
                        :-centered?  true
@@ -389,16 +349,16 @@
   (assert section)
   (assert name)
   (list
-   (when editing?
-     (dialog/confirm-dialog :id (str "delete-confirm-" name)
-                            :title (tr [:action/confirm-generic])
-                            :text (tr [:action/confirm-delete-team] [(str "\"" name "\"")])
-                            :on-hide  (format "$delete-confirm-%s=false" name)
-                            :confirm-text (tr [:action/confirm-delete])
-                            :cancel-text (tr [:action/cancel])
-                            :on-confirm (d*/expr (d*/assign "section-id" name)
-                                                 (d*/dispatch req settings/command-delete-section))
-                            :icon icon/triangle-exclamation))
+   #_(when editing?
+       (dialog/confirm-dialog :id (str "delete-confirm-" name)
+                              :title (tr [:action/confirm-generic])
+                              :text (tr [:action/confirm-delete-team] [(str "\"" name "\"")])
+                              :on-hide  (format "$delete-confirm-%s=false" name)
+                              :confirm-text (tr [:action/confirm-delete])
+                              :cancel-text (tr [:action/cancel])
+                              :on-confirm (d*/expr (d*/assign "section-id" name)
+                                                   (d*/dispatch req settings/command-delete-section))
+                              :icon icon/triangle-exclamation))
    (when editing?
      (dialog/form-dialog {:id      (str "edit-section-" name)
                           :title   (tr [:section])
@@ -444,35 +404,68 @@
                       :-icon     icon/plus}
                      (tr [:action/create]))]]]])
 
+(defn sections-reordering [{:keys [tr] :as req} sections]
+  [:div
+   [:p "This is the order in which the sections appear on gig pages."]
+   [:dl {:class             "mt-2 divide-y divide-gray-100 text-sm leading-6" :id "sections-sort-container"
+         :data-on-reordered (d*/expr
+                             "$sections-order = event.detail.orderInfo"
+                             (d*/dispatch req settings/command-update-section-order))}
+    (map-indexed (fn [idx section]
+                   (let [section-name (:section/name section)]
+                     [:div {:class             "sm:flex sm:items-center cursor-pointer"
+                            :data-drag-item-id section-name
+                            :id                (str "section-container-" section-name)}
+                      [:div {:class "drag-handle cursor-pointer pr-3"} (icon/bars {:class "h-5 w-5"})]
+                      [:dt {:class (uic/cs  "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
+                       [:input {:type "hidden" :value idx :data-sort-order section-name}]
+                       [:div section-name]]]))
+                 sections)]
+   [:div {:class "flex border-t border-gray-100 pt-6"}
+    (button/button {:data-on-click__viewtransition (d*/expr (d*/dispatch req settings/command-close-section-reorder))
+                    :-priority                     :primary} (tr [:action/done]))]
+   [:div {:class "text-red-700 my-4" :data-show "$section-create-error"} "Error: " [:span {:data-text "$section-create-error"}]]
+   [:div {:data-on-load "initEventSortable('sections-sort-container')"}]])
+
+(defn sections-default  [{:keys [tr] :as req} sections edit-id editing-any?]
+  [:div
+   [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
+    (map-indexed (fn [_idx section]
+                   (let [section-name (:section/name section)
+                         editing?     (= edit-id section-name)]
+                     [:div {:class "sm:flex" :id (str "section-container-" section-name)}
+                      (section-row req editing? editing-any? section)]))
+                 sections)]
+   [:div {:class "flex border-t border-gray-100 pt-6"}
+    (section-create-form req)
+    (button/button {:data-on-click__viewtransition "$section-create-form-open = !$section-create-form-open"
+                    :data-show                     "!$section-create-form-open"
+                    :-icon                         icon/plus}
+                   (tr [:section-add]))]
+   [:div {:class "text-red-700 my-4" :data-show "$section-create-error"} "Error: " [:span {:data-text "$section-create-error"}]]
+
+   #_[:pre {:data-text "ctx.signals.JSON()"}]])
+
 (defn sections [{:keys [page-state db tr] :as req}]
   (let [edit-id      (:section-current-edit-id page-state)
+        reordering?  (:section-reorder-open page-state)
         editing-any? (some? edit-id)
         sections     (q/retrieve-sections db)]
     (l/panel {:-title                  (tr [:sections])
+              :-buttons                (when-not reordering?
+                                         (button/button {:data-on-click__viewtransition (d*/expr (d*/dispatch req settings/command-open-section-reorder))} (tr [:action/reorder])))
               :id                      "sections-panel"
               :data-signals__ifmissing (d*/->signals {:section-create-form-open false
+                                                      :section-reorder-open     false
                                                       :section-create-error     false
                                                       :section-update-error     false})
               :data-signals            (d*/->signals {:section-id              nil
+                                                      :sections-order          nil
                                                       :section-current-edit-id edit-id})}
 
-             [:div
-              [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
-               (map-indexed (fn [_idx section]
-                              (let [section-name (:section/name section)
-                                    editing?     (= edit-id section-name)]
-                                [:div {:class "sm:flex" :id (str "section-container-" section-name)}
-                                 (section-row req editing? editing-any? section)]))
-                            sections)]
-              [:div {:class "flex border-t border-gray-100 pt-6"}
-               (section-create-form req)
-               (button/button {:data-on-click__viewtransition "$section-create-form-open = !$section-create-form-open"
-                               :data-show                     "!$section-create-form-open"
-                               :-icon                         icon/plus}
-                              (tr [:section-add]))]
-              [:div {:class "text-red-700 my-4" :data-show "$section-create-error"} "Error: " [:span {:data-text "$section-create-error"}]]
-
-              #_[:pre {:data-text "ctx.signals.JSON()"}]])))
+             (if reordering?
+               (sections-reordering req sections)
+               (sections-default req sections edit-id editing-any?)))))
 
 (defn settings-page [{:keys [tr] :as req}]
   [:main {:class "flex-1" :id "main"}

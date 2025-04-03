@@ -144,7 +144,6 @@
   (go)
   (clojure.repl.deps/sync-deps)
   (restart) ;; rcf
-  (refresh)
 
   (-> state/system :app.ig/datomic-db)
   (def local-conn (-> state/system :app.ig/datomic-db :conn))

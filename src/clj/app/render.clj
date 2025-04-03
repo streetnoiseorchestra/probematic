@@ -104,6 +104,9 @@
    (script req relative-prefix "sweetalert2.all@11.7.5.js")
    (script req relative-prefix "dropzone@6.0.0-beta.2.min.js")
    (script req relative-prefix "easymde.min@2.18.0.js")
+
+   (script req nil "widgets/sortable.js")
+   (script req nil "sortable@1.14.0.js")
    (script req relative-prefix "app.js" :type :module)))
 
 (defn chart-poll-scripts [req]

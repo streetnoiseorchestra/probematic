@@ -4,7 +4,6 @@
             [app.queries :as q]
             [app.settings.domain :as domain]
             [app.util :as util]
-            [app.util.http :as common]
             [clojure.string :as str]
             [com.yetanalytics.squuid :as sq]))
 
@@ -53,13 +52,11 @@
 
     (q/retrieve-section-by-name db-after section-name)))
 
-(defn order-sections [{:keys [datomic-conn] :as req}]
-  (tap> {:p (:params req)
-         :u (common/unwrap-params req)})
-  (let [sections (-> req common/unwrap-params :settings-page :sections :section-single)
-        tx-data (map (fn [{:keys [section-name position]}]
-                       [:db/add [:section/name section-name] :section/position (common/parse-long position)]) sections)]
-    (:db-after (datomic/transact datomic-conn {:tx-data tx-data}))))
+(defn order-sections! [req]
+  (let [sections-order (-> req :parameters :body :sections-order)
+        tx-data        (map (fn [[section-name position]]
+                              [:db/add [:section/name section-name] :section/position position]) sections-order)]
+    (d/transact-wrapper! req {:tx-data tx-data})))
 
 (defn create-team! [req]
   (let [team-name (-> req :body-params :team-name)

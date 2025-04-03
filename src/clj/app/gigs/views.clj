@@ -1040,7 +1040,7 @@ on change if I match <:checked/>
         req]
 
     [:div {:id (util/id :comp/gig-detail-page)}
-     (render/sortable-scripts req)
+     ;; (render/sortable-scripts req)
      (gig-detail-info-section req (:gig req))
      (cond
        archived? nil

@@ -94,6 +94,20 @@
   (d*/respond-signals req :merge {:section-update-error false} :remove ["section"])
   {:status 204})
 
+(defn command-open-section-reorder [req]
+  (d*/state-transact! req #(assoc % :section-reorder-open true))
+  {:status 204})
+
+(defn command-close-section-reorder [req]
+  (d*/state-transact! req #(assoc % :section-reorder-open false))
+  (d*/respond-signals req :merge {:section-reorder-open false})
+  {:status 204})
+
+(defn command-update-section-order [req]
+  (controller/order-sections! req)
+  (d*/respond-signals req :merge {:sections-order false})
+  {:status 204})
+
 (defn command-add-section [req]
   (let [{:keys [error]} (controller/create-section! req)]
     (if error
@@ -110,10 +124,10 @@
                             :merge {:section-update-error false}
                             :remove ["section"])))))
 
-(defn command-delete-section [req]
-  (let [{:keys [error]} nil]
-    (if error
-      (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
-      (do
-        (d*/state-transact! req #(dissoc % :section-current-edit-id))
-        {:status 204}))))
+#_(defn command-delete-section [req]
+    (let [{:keys [error]} nil]
+      (if error
+        (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
+        (do
+          (d*/state-transact! req #(dissoc % :section-current-edit-id))
+          {:status 204}))))

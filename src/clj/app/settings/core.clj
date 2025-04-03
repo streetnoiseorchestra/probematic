@@ -71,11 +71,19 @@
                          :signal-spec {:section {:section-name     ::s/non-blank-string
                                                  :section-old-name ::s/non-blank-string
                                                  :section-active   :boolean}})
-                (command settings/command-delete-section
-                         :signal-spec {:section-id :string}
-                         :handler command/command-delete-section)
+                #_(command settings/command-delete-section
+                           :signal-spec {:section-id :string}
+                           :handler command/command-delete-section)
+
                 (command settings/command-open-section-edit-form
                          :signal-spec {:section-current-edit-id :string}
                          :handler command/command-open-section-edit-form)
                 (command settings/command-close-section-edit-form
-                         :handler command/command-close-section-edit-form))])
+                         :handler command/command-close-section-edit-form)
+                (command settings/command-open-section-reorder
+                         :handler command/command-open-section-reorder)
+                (command settings/command-close-section-reorder
+                         :handler command/command-close-section-reorder)
+                (command settings/command-update-section-order
+                         :handler command/command-update-section-order
+                         :signal-spec {:sections-order [:map-of :string :int]}))])
