@@ -297,7 +297,7 @@ then trigger appSidebarToggled on <body/>
    (let [member (auth/get-current-member req)]
      (render/html5-response req (merge {:title "SNOrga"} opts)
                             [:div
-                             [:div {:data-on-load "@post(window.location.pathname + window.location.search)"}]
+                             [:div {:data-on-load "@post(window.location.pathname + window.location.search)" :id "long-lived-sse"}]
                              [:div {:class "min-h-full"}
                               (mobile-menu req)
                               (desktop-menu req member)
