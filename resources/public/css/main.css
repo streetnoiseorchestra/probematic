@@ -56,6 +56,8 @@
   --color-sno-lime-green-700: #4d7c0f;
   --color-sno-lime-green-800: #3f6212;
   --color-sno-lime-green-900: #365314;
+
+  --nprogress-color: var(--color-sno-green-500);
 }
 
 /*@import "./custom-base-styles.css";*/
