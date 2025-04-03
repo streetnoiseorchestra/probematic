@@ -131,8 +131,7 @@
     (def p (p/open {:theme :portal.colors/gruvbox}))
     (add-tap #'p/submit)
 
-    ;; (def pub! (mu/start-publisher! {:type :custom, :fqn-function "user/tap-publisher"}))
-    )
+    (def pub! (mu/start-publisher! {:type :custom, :fqn-function "user/tap-publisher"})))
 
   (mu/log ::my-event ::ns (ns-publics *ns*))
   (do

@@ -146,18 +146,16 @@
 
        [:span {:class "text-gray-500 italic"} (tr [:team/no-members])])]
     [:div {:class "flex space-x-2 text-left"}
-     (let [fetching-signal  (str "fetching-" team-id)
-           $fetching-signal (str "$" fetching-signal)]
-       (button/button (array-map :-priority                       :link
-                                 :-disabled?                      edit-any-row?
-                                 :type                            :button
-                                 :id                              (str "update-btn-" team-id)
-                                 :data-indicator                  fetching-signal
-                                 :data-attr-disabled              $fetching-signal
-                                 :data-class                      (format "{'spinning': %s}" $fetching-signal)
-                                 :data-on-click (d*/expr (d*/assign "current-edit-id" team-id)
-                                                         (d*/dispatch req settings/command-open-team-edit-form)))
-                      (tr [:action/update])))]]))
+     (button/button (array-map :-priority                       :link
+                               :-disabled?                      edit-any-row?
+                               :type                            :button
+                               :id                              (str "update-btn-" team-id)
+                               :data-indicator                  "team-fetching"
+                               :data-attr-disabled              "$team-fetching"
+                               :data-class                      (format "{'spinning': $team-fetching && $current-edit-id == '%s'}" team-id)
+                               :data-on-click (d*/expr (d*/assign "current-edit-id" team-id)
+                                                       (d*/dispatch req settings/command-open-team-edit-form)))
+                    (tr [:action/update]))]]))
 
 (defn teams-panel
   [{:keys [page-state db tr] :as req} error]
@@ -190,26 +188,6 @@
 
 (defn discount-type-update-handler [req]
   (controller/update-discount-type req))
-
-(defn OLD_travel-discount-type-single [{:keys [db tr] :as req}  idx discount-type-id]
-  (let  [{:travel.discount.type/keys [discount-type-name enabled?]} (q/retrieve-discount-type db (util/ensure-uuid! discount-type-id))]
-    [:form {:class "sm:flex" :id "discount-type-ID"}
-     ;; rw
-     [:dt {:class (uic/cs  "hidden mb-2 text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
-      [:div {:class "mt-2"}]
-      (ui/text :name "discount-type-name" :value discount-type-name :required? true :label (tr [:travel-discounts/discount-type-name]))]
-     [:dd {:class (uic/cs "hidden mt-1 flex  sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto")}
-      [:div {:class "mt-2"} (input/toggle-checkbox {:-name "enabled?" :-checked? enabled? :-id "enabled"})]
-      (ui/button :priority :primary :label (tr [:action/save]) :size :xsmall)]
-
-     ;; ro
-     [:dt {:class (uic/cs  "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
-      [:div discount-type-name]]
-     [:dd {:class (uic/cs "mt-1 flex sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto")}
-      [:div {:class "text-gray-900"} (ui/bool-bubble enabled?)]
-      (ui/button :priority :link :label (tr [:action/update])
-                 :attr {:type :button
-                        :_    (format  "on click remove .hidden from .%s then add .hidden to .%s" "" "")})]]))
 
 (defn travel-discount-type-create-form [{:keys [tr] :as req}]
   [:div {:data-show "$discount-create-form-open"}
@@ -284,7 +262,7 @@
                             :icon icon/triangle-exclamation))
    (when editing?
      (dialog/form-dialog {:id      (str "edit-team-" discount-type-id)
-                          :title   "Edit Team"
+                          :title   (tr [:travel-discounts/discount-type-name])
                           :open    (format "$discount-current-edit-id == '%s'" discount-type-id)
                           :on-hide (d*/expr
                                     (str "!!$discount-current-edit-id &&" (d*/dispatch req settings/command-close-discount-type-edit-form)))}
@@ -295,18 +273,17 @@
    [:dd {:class (uic/cs "mt-1 flex sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto")}
     [:div {:class "text-gray-900"} (ui/bool-bubble enabled?)]
     [:div {:class "flex space-x-2 text-left"}
-     (let [fetching-signal  (str "dt-fetching-" discount-type-id)
-           $fetching-signal (str "$" fetching-signal)]
-       (button/button (array-map :-priority                       :link
-                                 :-disabled?                      edit-any-row?
-                                 :type                            :button
-                                 :id                              (str "dt-update-btn-" discount-type-id)
-                                 :data-indicator                  fetching-signal
-                                 :data-attr-disabled              $fetching-signal
-                                 :data-class                      (format "{'spinning': %s}" $fetching-signal)
-                                 :data-on-click (d*/expr (d*/assign "discount-current-edit-id" discount-type-id)
-                                                         (d*/dispatch req settings/command-open-discount-type-edit-form)))
-                      (tr [:action/update])))]]))
+     (button/button (array-map :-priority                       :link
+                               :-disabled?                      edit-any-row?
+                               :type                            :button
+                               :id                              (str "dt-update-btn-" discount-type-id)
+                               :data-indicator                  "dt-fetching"
+                               :data-attr-disabled              "$dt-fetching"
+                               :data-class                      (format "{'spinning': $dt-fetching && $discount-current-edit-id == '%s'}" discount-type-id)
+                               :data-on-click (d*/expr (d*/assign "discount-current-edit-id" discount-type-id)
+                                                       (d*/dispatch req settings/command-open-discount-type-edit-form)))
+                    (tr [:action/update]))]]))
+
 (defn travel-discount-types [{:keys [page-state db tr] :as req}]
   (let [edit-id        (:discount-current-edit-id page-state)
         editing-any?   (some? edit-id)
@@ -335,7 +312,7 @@
                               (tr [:travel-discounts/add-discount-type]))]
               [:div {:class "text-red-700 my-4" :data-show "$discount-create-error"} "Error: " [:span {:data-text "$discount-create-error"}]]
 
-              [:pre {:data-text "ctx.signals.JSON()"}]])))
+              #_[:pre {:data-text "ctx.signals.JSON()"}]])))
 
 (ctmx/defcomponent ^:endpoint section-single [{:keys [reorder? db tr] :as req}  idx section-name]
   (let  [{:section/keys [name active? position]} (if (util/post? req)
