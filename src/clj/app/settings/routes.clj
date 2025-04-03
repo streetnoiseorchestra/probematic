@@ -14,3 +14,12 @@
 (def command-delete-discount-type ::command-delete-discount-type)
 (def command-open-discount-type-edit-form ::command-open-discount-type-edit-form)
 (def command-close-discount-type-edit-form ::command-close-discount-type-edit-form)
+
+(def command-add-section ::command-add-section)
+(def command-update-section ::command-update-section)
+(def command-delete-section ::command-delete-section)
+(def command-open-section-edit-form ::command-open-section-edit-form)
+(def command-close-section-edit-form ::command-close-section-edit-form)
+(def command-open-section-reorder ::command-open-section-reorder)
+(def command-close-section-reorder ::command-close-section-reorder)
+(def command-update-section-order ::command-update-section-order)

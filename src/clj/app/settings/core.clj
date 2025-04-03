@@ -12,6 +12,7 @@
        :app.auth/roles #{:Mitglieder}
        :interceptors   [auth/roles-authorization-interceptor]}
    (page-routes settings/index view/settings-page
+                ;; Teams
                 (command settings/command-create-team
                          :handler command/teams-create-handler)
 
@@ -42,9 +43,10 @@
                 (command settings/command-close-team-edit-form
                          :handler command/close-teams-edit-form-handler)
 
+                ;; Travel Discount Types
                 (command settings/command-add-discount-type
                          :handler command/discount-type-create-handler
-                         :signal-spec {:discount-type-name :string})
+                         :signal-spec {:discount-type-name ::s/non-blank-string})
                 (command settings/command-update-discount-type
                          :handler command/discount-type-update-handler
                          :signal-spec {:discount-type {:discount-type-name    ::s/non-blank-string
@@ -57,4 +59,23 @@
                          :signal-spec {:discount-current-edit-id :uuid}
                          :handler command/discount-type-edit-form-handler)
                 (command settings/command-close-discount-type-edit-form
-                         :handler command/discount-type-close-edit-form-handler))])
+                         :handler command/discount-type-close-edit-form-handler)
+
+                ;; Sections
+
+                (command settings/command-add-section
+                         :handler command/command-add-section
+                         :signal-spec {:section-name ::s/non-blank-string})
+                (command settings/command-update-section
+                         :handler command/command-update-section
+                         :signal-spec {:section {:section-name     ::s/non-blank-string
+                                                 :section-old-name ::s/non-blank-string
+                                                 :section-active   :boolean}})
+                (command settings/command-delete-section
+                         :signal-spec {:section-id :string}
+                         :handler command/command-delete-section)
+                (command settings/command-open-section-edit-form
+                         :signal-spec {:section-current-edit-id :string}
+                         :handler command/command-open-section-edit-form)
+                (command settings/command-close-section-edit-form
+                         :handler command/command-close-section-edit-form))])

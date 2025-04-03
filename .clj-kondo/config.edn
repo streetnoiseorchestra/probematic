@@ -6,8 +6,8 @@
                  com.fulcrologic.guardrails.malli.core/>defn       clojure.core/defn
                  starfederation.datastar.clojure.utils/transient-> clojure.core/->
                  starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
- :linters       {:unused-value        {:level :off}
-                 :unused-binding      {:level :off}
+ :linters       {;; :unused-value        {:level :off}
+                 ;; :unused-binding      {:level :off}
                  :unused-import       {:level :off}
                  :invalid-arity       {:level :error}
                  :unused-namespace    {:level   :warning

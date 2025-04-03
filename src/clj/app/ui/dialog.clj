@@ -7,7 +7,8 @@
                          :data-on-wa-hide__case.kebab__debounce.300ms (when on-hide on-hide)
                          :with-header  (when title title)
                          :label title)
-   body])
+   [:div {:class "px-2"}
+    body]])
 
 (defn confirm-dialog [& {:keys [id title text confirm-text cancel-text icon on-confirm on-show on-hide]}]
   [:wa-dialog (array-map :id id
