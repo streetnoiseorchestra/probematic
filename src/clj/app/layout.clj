@@ -133,57 +133,34 @@
 
 (defn desktop-menu
   [req member]
-  ;; then toggle .translate-x-0 on #desktop-sidebar-menu
-  ;; then toggle .-translate-x-40 on #desktop-sidebar-menu
-  (let [script
-        "
-on click toggle .sidebar-expanded on <body/>
-then toggle .lg:hidden on .sidebar-collapse
-then toggle .opacity-0  on .sidebar-collapse-fade
-then toggle .opacity-1 on .sidebar-collapse-fade
-then toggle .lg:w-64 on #desktop-sidebar-menu
-then toggle .lg:w-12 on #desktop-sidebar-menu
-then toggle .px-3 on <#desktop-sidebar-menu nav />
-then toggle .mt-10 on <#desktop-sidebar-menu nav />
-then toggle .mt-6 on <#desktop-sidebar-menu nav />
-then toggle .rotate-180 on .sidebar-open-close-button
-then toggle .rotate-0 on .sidebar-open-close-button
-then toggle .px-6 on .sidebar-logo-container
-then toggle .pl-2 on .sidebar-logo-container
-then toggle .lg:pl-64 on #app-container
-then toggle .lg:pl-12 on #app-container
-then trigger appSidebarToggled on <body/>
-"]
+  [:div {:data-signals-_sidebar.expanded "true"}
+   [:div {:id                   "desktop-sidebar-menu"
+          :data-class-collapsed "!$_sidebar.expanded"
+          :class
+          (ui/cs
+           "hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-gray-100 lg:pt-5 lg:pb-4"
+           "lg:translate-x-0"
+           "no-scrollbar"
+           "shrink-0 border-r border-gray-200 sm:translate-x-0 transition-all duration-200")}
 
-    ;;
-    [:div {:data-signals-_sidebar.expanded "true"}
-     [:div {:id                   "desktop-sidebar-menu"
-            :data-class-collapsed "!$_sidebar.expanded"
-            :class
-            (ui/cs
-             "hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-gray-100 lg:pt-5 lg:pb-4"
-             "lg:translate-x-0"
-             "no-scrollbar"
-             "shrink-0 border-r border-gray-200 sm:translate-x-0 transition-all duration-200")}
+    [:div {:class "flex shrink-0 items-center px-6 sidebar-logo-container"}
+     [:a {:href "/" :class ""}
+      (icon/snoman {:data-class "{'lg:hidden': $_sidebar.expanded, 'lg:cloak': false}"
+                    :class      "h-8 w-auto text-green-500 logotype-dark lg:cloak"})
+      (icon/logotype {:data-class "{'lg:hidden': !$_sidebar.expanded}"
+                      :class      "h-8 w-auto text-green-500 logotype-dark"})]]
 
-      [:div {:class "flex shrink-0 items-center px-6 sidebar-logo-container"}
-       [:a {:href "/" :class ""}
-        (icon/snoman {:data-class "{'lg:hidden': $_sidebar.expanded, 'lg:cloak': false}"
-                      :class      "h-8 w-auto text-green-500 logotype-dark lg:cloak"})
-        (icon/logotype {:data-class "{'lg:hidden': !$_sidebar.expanded}"
-                        :class      "h-8 w-auto text-green-500 logotype-dark"})]]
-
-      [:div {:class "mt-5 flex h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pt-1 sidebar-scroll-container"}
-       (user-account-actions req member)
-       [:nav
-        [:div {:class "space-y-1" :hx-boost "true"}
-         (map (partial nav-item req) (navigation (i18n/tr-from-req req)))]
-        ;; (secondary-navigation)
-        ]
-       [:div {:class "flex items-end justify-end"}
-        [:button {:class         "px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md sidebar-open-close-button rotate-0 "
-                  :data-on-click "$_sidebar.expanded = !$_sidebar.expanded"}
-         (icon/arrow-small-left {:class "w-6 h-6 hidden lg:block"})]]]]]))
+    [:div {:class "mt-5 flex h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pt-1 sidebar-scroll-container"}
+     (user-account-actions req member)
+     [:nav
+      [:div {:class "space-y-1"}
+       (map (partial nav-item req) (navigation (i18n/tr-from-req req)))]
+      ;; (secondary-navigation)
+      ]
+     [:div {:class "flex items-end justify-end"}
+      [:button {:class         "px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md sidebar-open-close-button rotate-0 "
+                :data-on-click "$_sidebar.expanded = !$_sidebar.expanded"}
+       (icon/arrow-small-left {:class "w-6 h-6 hidden lg:block"})]]]]])
 
 (defn mobile-menu
   [req]
@@ -192,7 +169,7 @@ then trigger appSidebarToggled on <body/>
    [:div {:class "fixed inset-0 z-40 flex"}
     [:div {:data-flyout-menu true :class "relative flex w-full max-w-xs flex-1 flex-col bg-white pt-5 pb-4"}
      [:div {:data-flyout-close-button true :class "absolute top-0 right-0 -mr-12 pt-2"}
-      [:button {:type "button"
+      [:button {:type  "button"
                 :class "ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-white"}
        [:span {:class "sr-only"} "Close sidebar"]
        (icon/xmark {:class "h-6 w-6 text-white"})]]
