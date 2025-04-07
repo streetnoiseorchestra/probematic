@@ -89,5 +89,5 @@
     [:div (uic/merge-attrs attrs :class "sm:flex sm:items-center")
      [:div {:class "w-full sm:max-w-xs"}
       (first children)]
-     [:div {:class "sm:flex sm:flex-row-reverse"}
-      (map #(uic/add-class % "sm:ml-3 sm:w-auto") (rest children))]]))
+     [:div {:class "mt-2 gap-2 flex justify-end sm:justify-normal sm:mt-0 sm:flex-row-reverse"}
+      (map #(uic/add-class % "w-full sm:w-auto") (rest children))]]))
