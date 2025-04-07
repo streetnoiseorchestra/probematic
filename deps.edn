@@ -90,7 +90,6 @@
         cider/cider-nrepl                    {:mvn/version "0.52.1"}
         djblue/portal                        {:mvn/version "0.58.5"}
         ;; Shared Outskirts Labs libs
-        ol/app.dev                           {:git/url "https://github.com/ramblurr/ol-system.git" :git/sha "a7094d0431b5502603db5cfa202b4b69f53eb822" :deps/root "lib/ol.app.dev"}
         ol/system                            {:git/url "https://github.com/ramblurr/ol-system.git" :git/sha "a7094d0431b5502603db5cfa202b4b69f53eb822" :deps/root "lib/ol.system"}
         ol/jobs                              {:git/url "https://github.com/ramblurr/ol-system.git" :git/sha "a7094d0431b5502603db5cfa202b4b69f53eb822" :deps/root "lib/ol.jobs"}}
  :aliases
@@ -98,7 +97,9 @@
   {:extra-paths ["env/dev/clj"
                  "env/dev/resources"
                  "test"]
-   :extra-deps  {mvxcvi/puget {:mvn/version "1.3.4"}
+   :extra-deps  {mvxcvi/puget                {:mvn/version "1.3.4"}
+                 lambdaisland/ansi           {:mvn/version "0.2.37"}
+                 io.github.tonsky/clj-reload {:mvn/version "0.7.1"}
                  ;; browser driving
                  ;; etaoin/etaoin                        {:mvn/version "1.0.40"}
                  ;; testing

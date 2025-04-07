@@ -58,21 +58,6 @@
                               [:db/add [:section/name section-name] :section/position position]) sections-order)]
     (d/transact-wrapper! req {:tx-data tx-data})))
 
-(defn create-team! [req]
-  (let [team-name (-> req :body-params :team-name)
-        valid?    (and team-name (not (str/blank? team-name)))
-        tx-data   [{:team/team-id (sq/generate-squuid)
-                    :team/name    team-name}]]
-    (if valid?
-      (try
-        (d/transact-wrapper! req {:tx-data tx-data})
-        (catch java.util.concurrent.ExecutionException e
-          (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
-            {:error (format "Team named '%s' already exists." team-name)}
-            (throw e))))
-
-      {:error "Team name is required."})))
-
 #_(defn reconcile-team-members [eid before-members after-members]
     (let [[removed added] (clojure.data/diff (set before-members) (set after-members))
           ;; _ (tap> {:added added :removed removed})
@@ -98,6 +83,21 @@
         tx-data                     [[:db/add team-ref :team/members [:member/member-id member-id]]]]
     (d/transact-wrapper! req {:tx-data tx-data})))
 
+(defn create-team! [req]
+  (tap> [:create-team (-> req :parameters)])
+  (let [team-name (-> req :parameters :body :team-create :team-name)
+        valid?    (and team-name (not (str/blank? team-name)))
+        tx-data   [{:team/team-id (sq/generate-squuid)
+                    :team/name    team-name}]]
+    (if valid?
+      (try
+        (d/transact-wrapper! req {:tx-data tx-data})
+        (catch java.util.concurrent.ExecutionException e
+          (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
+            {:error {:team-name (format "Team named '%s' already exists." team-name)}}
+            (throw e))))
+      {:error {:team-name "Team name is required."}})))
+
 (defn update-team! [{:keys [db] :as req}]
   (let [{:keys [team-name team-id team-type]} (-> req :parameters :body :team)
         team-name                             (str/trim team-name)
@@ -118,11 +118,11 @@
 
         (catch Exception e
           (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
-            {:error (format "Team named '%s' already exists." team-name)}
+            {:error {:team-name (format "Team named '%s' already exists." team-name)}}
             (throw e))))
-      {:error "Team name is required."})))
+      {:error {:team-name "Team name is required."}})))
 
 (defn delete-team! [req]
-  (let [team-id (util/ensure-uuid! (-> req :body-params :team-id))
+  (let [team-id (-> req :parameters :body :team :team-id)
         tx-data [[:db/retractEntity [:team/team-id team-id]]]]
     (d/transact-wrapper! req {:tx-data tx-data})))

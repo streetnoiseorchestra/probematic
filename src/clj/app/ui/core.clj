@@ -18,6 +18,7 @@
   [{:keys [point-of-interest-opts callout-opts]}]
   (let [message      (point-of-interest point-of-interest-opts)
         callout-opts (merge callout-opts {:padding-top 1})]
+    (tap> (with-meta  [(str (:label callout-opts) "\n" message)] {:ansi/color true}))
     (callout callout-opts message)))
 
 (defn fqns-sym
@@ -29,8 +30,8 @@
 
 (defn warning-header
   [{:keys [m opt value]}]
-  (let [component                  (fqns-sym m)
-        {:keys [file line column]} m]
+  (let [component                     (fqns-sym m)
+        {:keys [_file _line _column]} m]
     (apply bling
            (concat
             [[:italic "component: "] [:bold component]
@@ -46,15 +47,15 @@
 
 (defn warning-body
   [{:keys [opt msg trace]}]
-  (let [short-trace (reverse (take 5 (drop 3 trace)))
+  (let [short-trace (reverse (take 10 (drop 3 trace)))
         w           (java.io.StringWriter.)]
     (u.error/print-trace short-trace w)
     (str
      (bling
       "Value for the "
       [:bold opt]
-      " should be "
-      [:bold (strip-should-be msg)]
+      " "
+      msg
       "\n\n"
       [:italic "Stacktrace preview:"] "\n")
      w)))
@@ -166,3 +167,35 @@
   (let [[opts attrs children] (extract comp args)]
     [opts
      (merge-attrs attrs :class class) children]))
+
+(defn norm
+  "Normalizes the hiccup element to a vector of [tag attrs & children]"
+  [hiccup]
+  (let [[tag & [attrs & _ch :as children]] hiccup]
+    (if (map? attrs)
+      hiccup
+      [tag nil children])))
+
+(defn assoc-attr
+  "Assoc attributes to the hiccup element"
+  [hiccup & {:as args}]
+  (update-in (norm hiccup) [1]
+             merge-attrs
+             args))
+
+(assoc-attr [:input "Coolbeans"] :class "mt-3" :type :text)
+(assoc-attr [:input {:placeholder "Legume"} "Coolbeans"] :class "mt-3" :type :text)
+(assoc-attr [:input {:type :datetime} "Coolbeans"] :class "mt-3" :type :text)
+
+(defn add-class
+  "Appends a class to the hiccup element"
+  [hiccup cls]
+  (update-in (norm hiccup) [1 :class]
+             #(cs % cls)))
+
+(add-class [:input "Much nice"] "nice")
+(assert (= clojure.lang.PersistentArrayMap
+           (type
+            (second (add-class [:input (array-map :class "wut"
+                                                  :a     "a" :b "b" :c "c" :d "d" :e "e" :f "f"
+                                                  :g     "g" :h "h" :i "i" :j "j" :k "k" :l "l" :m "m") "Much nice"] "cool")))))

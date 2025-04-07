@@ -4,30 +4,29 @@
    [app.settings.controller :as controller]))
 
 (defn teams-edit-form-handler [req]
-  (let [team-id (-> req :parameters :body :current-edit-id)]
-    (d*/state-transact! req #(assoc % :current-edit-id team-id))
+  (let [team-id (-> req :parameters :body :team :team-id)]
+    (d*/state-transact! req #(assoc % :current-team-id team-id))
+    (d*/respond-signals req :merge {:team {:open true}})
     {:status 204}))
 
 (defn close-teams-edit-form-handler [req]
-  (d*/state-transact! req #(dissoc % :current-edit-id))
-  (d*/respond-signals req :merge {:team-update-error false} :remove ["team"])
+  (d*/state-transact! req #(dissoc % :current-team-id))
+  (d*/respond-signals req :remove ["team"])
   {:status 204})
 
 (defn teams-create-handler [req]
   (let [{:keys [error]} (controller/create-team! req)]
     (if error
-      (d*/respond-signals req :merge {:team-create-error error})
-      (d*/respond-signals req :merge {:team-create-form-open false :team-name ""}))))
+      (d*/respond-signals req :merge {:team-create {:error error}})
+      (d*/respond-signals req :remove ["team-create"]))))
 
 (defn teams-update-handler [req]
   (let [{:keys [error]} (controller/update-team! req)]
     (if error
-      (d*/respond-signals req :merge {:team-update-error error})
+      (d*/respond-signals req :merge {:team {:error error}})
       (do
-        (d*/state-transact! req #(dissoc % :current-edit-id))
-        (d*/respond-signals req
-                            :merge {:team-update-error false}
-                            :remove ["team"])))))
+        (d*/state-transact! req #(dissoc % :current-team-id))
+        (d*/respond-signals req :remove ["team"])))))
 
 (defn teams-remove-member-handler [req]
   (controller/remove-member! req)
@@ -35,6 +34,7 @@
 
 (defn teams-add-member-handler [req]
   (controller/add-member! req)
+  (d*/respond-signals req :merge {:team {:member-id ""}})
   {:status 204})
 
 (defn teams-delete-handler [req]
@@ -42,7 +42,8 @@
     (if error
       (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
       (do
-        (d*/state-transact! req #(dissoc % :current-edit-id))
+        (d*/state-transact! req #(dissoc % :current-team-id))
+        (d*/respond-signals req :remove ["team"])
         {:status 204}))))
 
 ;; --------------------------------------------------------------------------------------------

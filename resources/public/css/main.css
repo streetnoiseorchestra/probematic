@@ -4,7 +4,13 @@
 @source "../js/widgets";
 @source "../js/app.js";
 @plugin "@tailwindcss/typography";
-@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/forms" {
+  strategy: "class";
+}
+/* this makes dark only active when html has .dark class */
+/* we need to fully support dark mode everywhere before removing this */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @plugin "@tailwindcss/aspect-ratio";
 @custom-variant progress-unfilled {
   &::-webkit-progress-bar {
@@ -103,6 +109,10 @@
 
 @utility cloak {
   display: none;
+}
+
+@view-transition {
+  navigation: auto;
 }
 
 .dropzone {

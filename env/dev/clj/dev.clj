@@ -4,153 +4,62 @@
                                        :unused-referred-var  {:level :off}}
                        :skip-comments true}}
   (:require
+   [com.brunobonacci.mulog :as mu]
+   [clj-reload.core :as clj-reload]
+   [portal-helpers :as portal-repl]
    [app.ui.core :as ui-core]
    [com.fulcrologic.guardrails.malli.core]
+   [ol.system :as system]
    [app.ig]
    [integrant.repl.state :as state]
-   ;; [browser :as browser]
-   [ol.app.dev.dev-extras :as dev-extra]))
+   [integrant.repl :as integrant.repl]))
 
-;; (repl/disable-reload! (find-ns 'browser))
-;; (repl/disable-reload! *ns*)
+;; --------------------------------------------------------------------------------------------
+;; Toggle Dev-time flags
 
 (set! *print-namespace-maps* false)
-
 (ui-core/enable-opts-validation!)
 
-;; (mr/set-default-registry! schemas/registry)
+;; --------------------------------------------------------------------------------------------
+;; Portal & Logging
 
-#_(defn go-with-browser
-    []
-    (dev-extra/go)
-    (browser/open-browser "http://localhost:4180/")
-    :done)
+(add-tap portal-repl/submit)
+(defonce pub! (mu/start-publisher! {:type :custom, :fqn-function "user/tap-publisher"}))
 
-(defn go
-  []
-  (dev-extra/go)
-  :done)
+;; --------------------------------------------------------------------------------------------
+;; System Control
 
-(defn halt
-  []
-  (dev-extra/halt)
-  :done)
+(integrant.repl/set-prep! #(system/system-config {:profile :dev}))
 
-(defn restart
-  []
-  (dev-extra/halt)
-  (dev-extra/go))
+(defn start []
+  (integrant.repl/go)
+  :started)
 
-(defn reset
-  []
-  (dev-extra/reset)
-  #_(browser/refresh))
+(defn stop []
+  (integrant.repl/halt)
+  :halted)
+
+(defn restart []
+  (stop)
+  (start))
+
+(defn reset []
+  (clj-reload/reload))
+
+(defn reload-all []
+  (clj-reload/reload {:only :all}))
+
+;; --------------------------------------------------------------------------------------------
+;; Code Reloading
+
+(clj-reload/init {:dirs        ["src" "dev" "test"]
+                  :unload-hook 'stop
+                  :reload-hook 'start})
 
 (comment
-
-  (repl/clear)
-
-  ;; Run go to start the system
-  (dev-extra/go)
-  ;; Run halt to shutdown the system
-  (dev-extra/halt)
-  ;; Run reset to reload all code and restart the system
-  ;; if the browser is connected it will refresh the page
-  (refresh)
-
-  ;; If you have chromium  and chromium driver installed
-  ;; you can get code reloading by using this version of go
-  ;; see readme for more info
-  #_(go-with-browser)
-
-;;;; Setup Integrant Repl State
-;;; Run this before running either of the seeds below
-  (do
-    (require '[integrant.repl.state :as state])
-    (def kc (-> state/system :app.ig/keycloak))
-    (def env (:app.ig/env state/system))
-    (def conn (-> state/system :app.ig/datomic-db :conn))) ;; rcf
-
-;;;; DEMO SEEDS
-;;;  Run this to seed the instance with demo data
-  (do
-    (require '[app.demo :as demo])
-    (demo/seed-random-members! conn))
-
-;;; REAL  SEEDS
-;;; only run this if you have access to the external systems
-;;; DO NOT run this in demo mode
-
-;;;; Scratch pad
-  ;;  everything below is notes/scratch
-
-  (require '[clojure.tools.namespace.repl :refer [refresh]])
-  (refresh)
-
-  (require '[datomic.local :as dl])
-  (dl/release-db {:system "app" :db-name "probematic"})
-  (md/start! schemas/malli-opts)
-  (md/stop!)
-
-  (set-prep! {:profile :dev})
-  (keys state/system)
-  (-> state/system :app.ig/env)
-  (-> state/system :app.ig/profile)
-
-  (system/config {:profile :dev})
-
-  (system/system-config {:profile :dev})
-
-  (d/transact conn {:tx-data [{:db/ident       :song/arrangement-notes
-                               :db/doc         "Notes for the arrangement"
-                               :db/valueType   :db.type/string
-                               :db/cardinality :db.cardinality/one}]})
-
-  (def datomic (-> state/system :app.ig/datomic-db))
-  (def conn (:conn datomic))
-  (def app (-> state/system :app.ig.router/routes))
-
-  (do
-    (require '[integrant.repl.state :as state])
-    (require '[keycloak.admin :as admin])
-    (require '[app.datomic.shim :as datomic])
-    (def env (-> state/system :app.ig/env))
-    (def kc (-> state/system :app.ig/keycloak))
-    (def conn (-> state/system :app.ig/datomic-db :conn))
-    (def db (datomic/db conn)))
-  ;; rcf
-  (q/find-all-gigs db)
-
-  (last (datomic.client.api/tx-range conn nil))
-
-  (def user0 (second))
-
-  (do
-    (require '[portal.api :as p])
-    (require '[com.brunobonacci.mulog :as mu])
-    (def p (p/open {:theme :portal.colors/gruvbox}))
-    (add-tap #'p/submit)
-
-    (def pub! (mu/start-publisher! {:type :custom, :fqn-function "user/tap-publisher"})))
-
-  (mu/log ::my-event ::ns (ns-publics *ns*))
-  (do
-    (remove-tap #'p/submit)
-    (p/close))
-  (p/clear)
-  (tap> 1)
-  (reset)
-  (halt)
-  (go)
-  (clojure.repl.deps/sync-deps)
   (restart) ;; rcf
+  ;; much
 
-  (-> state/system :app.ig/datomic-db)
-  (def local-conn (-> state/system :app.ig/datomic-db :conn))
-  (Last (datomic.client.api/tx-range local-conn {:start #inst "2023-01-01T00:00:00.000-00:00" :end nil :limit -1}))
-  1
-
-  (def pro-conn (-> state/system :app.datomic.system/datomic-pro))
-  state/system
+  (clojure.repl.deps/sync-deps)
   ;;
   )

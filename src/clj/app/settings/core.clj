@@ -14,6 +14,7 @@
    (page-routes settings/index view/settings-page
                 ;; Teams
                 (command settings/command-create-team
+                         :signal-spec {:team-create {:team-name ::s/non-blank-string}}
                          :handler command/teams-create-handler)
 
                 (command settings/command-update-team
@@ -24,7 +25,7 @@
 
                 (command settings/command-delete-team
                          :handler command/teams-delete-handler
-                         :signal-spec {:team-id :uuid})
+                         :signal-spec {:team {:team-id :uuid}})
 
                 (command settings/command-delete-team-member
                          :handler command/teams-remove-member-handler
@@ -38,7 +39,7 @@
 
                 (command settings/command-open-team-edit-form
                          :handler command/teams-edit-form-handler
-                         :signal-spec {:current-edit-id :uuid})
+                         :signal-spec {:team {:team-id :uuid}})
 
                 (command settings/command-close-team-edit-form
                          :handler command/close-teams-edit-form-handler)

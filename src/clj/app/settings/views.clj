@@ -7,125 +7,124 @@
             [app.settings.routes :as settings]
             [app.ui :as ui]
             [app.ui.button :as button]
+            [app.ui.button2 :as button2]
             [app.ui.core :as uic]
             [app.ui.dialog :as dialog]
             [app.ui.dl :as dl]
             [app.ui.input :as input]
+            [app.ui.form :as form]
             [app.ui.layout :as l]
             [app.urls :as urls]))
 
 (defn team-create-form [{:keys [tr] :as req}]
-  [:div {:data-show "$team-create-form-open" :class "team-add-form"}
-   [:div {:class "pb-12 sm:space-y-0 sm:divide-y sm:divide-gray-900/10 sm:pb-0"}
-    [:div {:class "sm:grid sm:grid-cols-4 sm:items-start sm:gap-4"}
-     [:div {:class "sm:col-span-2"}
-      [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
-       (ui/text  :placeholder (tr [:team/name]) :id "team-name" :name "team-name"
-                 :extra-attrs {:data-bind "team-name"})]]
-     [:div {:class "sm:col-span-2 flex space-x-2"}
-      (button/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
-                      :tabindex                      "-1"
-                      :-priority                     :white
-                      :data-on-click__viewtransition "$team-create-form-open=false"}
-                     (tr [:action/cancel]))
-      (button/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
-                      :-priority                     :primary
-                      :data-on-click__viewtransition (d*/dispatch req settings/command-create-team)
-                      :-icon                         icon/plus}
-                     (tr [:action/create]))]]]])
+  (let [form {:ns      :team-create
+              :open    "team-create.open"
+              :command (d*/dispatch req settings/command-create-team)
+              :fields  {:team-name ""}}]
+    [:div {:data-show "$team-create.open"}
+     [:div {:class "pb-12 sm:space-y-0 sm:divide-y sm:divide-gray-900/10 sm:pb-0"}
+      (form/form {:-form form}
+                 (input/input-button (form/input {:-label      (tr [:team/name])
+                                                  :-form       form
+                                                  :-variant    :hidden
+                                                  :placeholder (tr [:team/name])
+                                                  :type        :text
+                                                  :name        :team-name})
+                                     (button2/button {:tabindex                      "-1"
+                                                      :-priority                     :secondary
+                                                      :data-on-click__viewtransition "$team-create.open=false"}
+                                                     (tr [:action/cancel]))
+                                     (button2/button {:-priority :primary
+                                                      :-icon     icon/plus
+                                                      :type      :submit}
+                                                     (tr [:action/create]))))]]))
 
-(defn team-edit-form [{:keys [tr db] :as req} {team-name :team/name :team/keys [team-id members team-type]}]
+(defn team-members-edit [{:keys [tr] :as req} all-members form {:team/keys [members team-type]}]
+  [:div {:class "sm:col-span-6 flex flex-col space-y-2"}
+   ;; List of current members with remove buttons
+   (if (seq members)
+     [:div {:class "flex flex-col mb-4"}
+      (->> members
+           (map (fn [{:member/keys [name member-id] :as member}]
+                  [:div {:class "grid grid-cols-3 items-center justify-between border-b border-gray-100"}
+                   [:a {:class "col-span-2 link-blue" :href (urls/link-member member)} name]
+                   (button2/button {:-priority                     :link-destructive
+                                    :-size                         :xsmall
+                                    :type                          :button
+                                    :data-on-click__viewtransition (d*/expr (d*/assign "team.remove-member-id" member-id)
+                                                                            (d*/dispatch req settings/command-delete-team-member))}
+                                   (tr [:action/remove]))])))]
+
+     [:div {:class "text-gray-500 italic mb-4"} (tr [:team/no-members])])
+   (input/input-button
+    (form/select {:-required? true
+                  :-form      form
+                  :name       :member-id
+                  :value      (when team-type (name team-type))
+                  :-options   (ui/member-select-options all-members :with-empty-opt? true)})
+    (button2/button {:-priority                     :secondary
+                     :type                          :button
+                     :class                         "mt-2"
+                     :data-on-click__viewtransition (d*/dispatch req settings/command-add-team-member)}
+                    (tr [:action/add])))])
+
+(defn team-edit-form [{:keys [tr db] :as req} {team-name :team/name :team/keys [team-id team-type] :as team}]
   (let [all-members (q/members-for-select db)
-        signal      #(str "team." %)]
+        form        {:ns      :team
+                     :open    "team.open"
+                     :command (d*/dispatch req settings/command-update-team)
+                     :fields  {:team-name        team-name
+                               :team-id          team-id
+                               :team-type        (when team-type (name team-type))
+                               :member-id        nil
+                               :remove-member-id nil}}]
     [:div
-     [:input {:type :hidden :name "team-id" :value (str team-id)}]
-     [:div {:data-signals__ifmissing                        (d*/->signals {:team {:team-name team-name
-                                                                                  :team-id   team-id
-                                                                                  :team-type (when team-type (name team-type))}})
-            :data-signals-team.remove-member-id__case.kebab "null"}
-      (dl/dl
-       (list
-        (dl/item {:-span 3 :-label (tr [:team/name])}
-                 (ui/text :name "team-name" :value team-name :required? true :attr {:data-bind (signal "team-name")}))
-        (dl/item {:-span 3 :-label (tr [:team/team-type])}
-                 (ui/select
-                  :id "team-type"
-                  :name "team-type"
-                  :attr {:data-bind (signal "team-type")}
-                  :value (when team-type (name team-type))
-                  :options (concat [{:value "" :label " - "}] (map (fn [m] {:label (tr [m]) :value (name m)}) domain/team-types))))
-
-        (dl/item {:-span 3 :-label (tr [:team/members])}
-                 [:div {:class "flex flex-col space-y-2"}
-                  ;; List of current members with remove buttons
-                  (if (seq members)
-                    [:div {:class "flex flex-col space-y-1 mb-4"}
-                     (->> members
-                          (map (fn [{:member/keys [name member-id] :as member}]
-                                 [:div {:class "grid grid-cols-3 items-center justify-between py-1 border-b border-gray-100"}
-                                  [:a {:class "col-span-2 link-blue" :href (urls/link-member member)} name]
-                                  (button/button {:-priority                     :link-destructive
-                                                  :-size                         :xsmall
-                                                  :type                          :button
-                                                  :data-on-click__viewtransition (d*/expr (d*/assign "team.remove-member-id" member-id)
-                                                                                          (d*/dispatch req settings/command-delete-team-member))}
-                                                 (tr [:action/remove]))])))]
-
-                    [:div {:class "text-gray-500 italic mb-4"} (tr [:team/no-members])])
-                  [:div {:class "flex space-x-2"}
-                   [:div {:class "flex-grow"}
-                    (ui/member-select :variant :inline-no-label
-                                      :id "member-id"
-                                      :attr {:data-bind (signal "member-id")}
-                                      ;; :size :small
-                                      :name "member-id"
-                                      :members all-members
-                                      :with-empty-opt? true)]
-                   (button/button {:-priority                     :white
-                                   :-size                         :xsmall
-                                   :type                          :button
-                                   :data-on-click__viewtransition (d*/dispatch req settings/command-add-team-member)}
-                                  (tr [:action/add]))]])
-        (dl/item {:-span 3 :-label [:span {:class "text-red-700"} "Error"] :data-show "$team-update-error"}
-                 [:span {:class "text-red-700" :data-text "$team-update-error"}])))]
-
-     [:div
-      {:class "py-5 flex justify-between items-center"}
-      [:div {:class "flex items-center space-x-3 space-x-4"}
-       (button/button {:-priority     :white-destructive
-                       :-size         :xsmall
-                       :data-on-click (format "$delete-confirm-%s=true" team-id)}
-                      (tr [:action/delete]))]
-      [:div {:class "flex justify-end space-x-4"}
-       (button/button {:-priority   :white
-                       :-centered?  true
-                       :data-dialog "close"}
-                      (tr [:action/cancel]))
-       (button/button {:-priority     :primary
-                       :-centered?    true
-                       :data-on-click (d*/expr (d*/assign "team-id" team-id)
-                                               (d*/dispatch  req settings/command-update-team))}
-                      (tr [:action/save]))]]]))
+     (form/form {:-form form}
+                (form/section {:-compact? true}
+                              (form/hidden {:name :team-id :-form form})
+                              (form/input {:-label (tr [:team/name])
+                                           :-form  form
+                                           :class  "sm:col-span-3"
+                                           :type   :text
+                                           :name   :team-name})
+                              (form/select {:-label   (tr [:team/team-type])
+                                            :-form    form
+                                            :-options (concat [{:value "" :label " - "}] (map (fn [m] {:label (tr [m]) :value (name m)}) domain/team-types))
+                                            :class    "sm:col-span-3"
+                                            :name     :team-type}))
+                (form/section {:-compact? true :-subtitle (tr [:team/members])}
+                              (team-members-edit req all-members form team))
+                (form/actions
+                 {:-left  (button2/button {:-priority     :secondary-destructive
+                                           :data-on-click (format "$_delete-confirm-%s=true" team-id)}
+                                          (tr [:action/delete]))
+                  :-right (list
+                           (button2/button {:-priority   :secondary
+                                            :-centered?  true
+                                            :data-dialog "close"}
+                                           (tr [:action/cancel]))
+                           (button2/button {:-priority  :primary
+                                            :-centered? true
+                                            :type       :submit}
+                                           (tr [:action/save])))}))]))
 
 (defn team-row [{:keys [tr] :as req} editing? edit-any-row? {team-name :team/name :team/keys [team-id members] :as team}]
   (list
    (when editing?
-     (dialog/confirm-dialog :id (str "delete-confirm-" team-id)
+     (dialog/confirm-dialog :id (str "_delete-confirm-" team-id)
                             :title (tr [:action/confirm-generic])
                             :text (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])
-                            :on-hide  (format "$delete-confirm-%s=false" team-id)
+                            :on-hide  (format "$_delete-confirm-%s=false" team-id)
                             :confirm-text (tr [:action/confirm-delete])
                             :cancel-text (tr [:action/cancel])
-                            :on-confirm (d*/expr (d*/assign "team-id" team-id)
-                                                 (d*/dispatch req settings/command-delete-team))
+                            :on-confirm (d*/dispatch req settings/command-delete-team)
                             :icon icon/triangle-exclamation))
    (when editing?
      (dialog/form-dialog {:id      (str "edit-team-" team-id)
                           :title   "Edit Team"
-                          :open    (format "$current-edit-id == '%s'" team-id)
+                          :open    (format "$team.open && $team.team-id == '%s'" team-id)
                           :on-hide (d*/expr
-                                    "console.log('on-hiding') "
-                                    (str "!!$current-edit-id &&" (d*/dispatch req settings/command-close-team-edit-form)))}
+                                    (str "$team.open &&" (d*/dispatch req settings/command-close-team-edit-form)))}
                          (team-edit-form req team)))
 
    [:dt {:class (uic/cs  "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
@@ -142,28 +141,27 @@
 
        [:span {:class "text-gray-500 italic"} (tr [:team/no-members])])]
     [:div {:class "flex space-x-2 text-left"}
-     (button/button (array-map :-priority                       :link
-                               :-disabled?                      edit-any-row?
-                               :type                            :button
-                               :id                              (str "update-btn-" team-id)
-                               :data-indicator                  "team-fetching"
-                               :data-attr-disabled              "$team-fetching"
-                               :data-class                      (format "{'spinning': $team-fetching && $current-edit-id == '%s'}" team-id)
-                               :data-on-click (d*/expr (d*/assign "current-edit-id" team-id)
-                                                       (d*/dispatch req settings/command-open-team-edit-form)))
-                    (tr [:action/update]))]]))
+     (button2/button (array-map :-priority                       :link
+                                :-disabled?                      edit-any-row?
+                                :type                            :button
+                                :id                              (str "update-btn-" team-id)
+                                :data-indicator                  "team-fetching"
+                                :data-attr-disabled              "$team-fetching"
+                                :data-class                      (format "{'spinning': $team-fetching && $team.team-id == '%s'}" team-id)
+                                :data-on-click (d*/expr (d*/assign "team.team-id" team-id)
+                                                        (d*/dispatch req settings/command-open-team-edit-form)))
+                     (tr [:action/update]))]]))
 
 (defn teams-panel
   [{:keys [page-state db tr] :as req}]
-  (let [edit-id      (:current-edit-id page-state)
+  (let [edit-id      (:current-team-id page-state)
         teams        (q/retrieve-all-teams db)
         editing-any? (some? edit-id)]
     [:div {:id                      "teams-panel"
-           :data-signals__ifmissing (d*/->signals {:team-create-form-open false
-                                                   :team-create-error     false
-                                                   :team-update-error     false})
-           :data-signals            (d*/->signals {:team-id         nil
-                                                   :current-edit-id edit-id})}
+           :data-signals__ifmissing (d*/->signals {:team-create {:open false}
+                                                   :team        {:open false}})
+           :data-signals            (d*/->signals {#_#_:team-id nil
+                                                   :team        {:team-id edit-id}})}
      (l/panel {:-title   "Teams"
                :subtitle "Because someone has to do the work"}
               [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
@@ -173,13 +171,12 @@
                                  (team-row req editing? editing-any? team)]))
                             teams)]
 
-              (button/button {:data-on-click__viewtransition "$team-create-form-open = !$team-create-form-open"
-                              :data-show                     "!$team-create-form-open"
-                              :-icon                         icon/plus}
-                             (tr [:team/create-team]))
+              (button2/button {:data-on-click__viewtransition "$team-create.open = !$team-create.open"
+                               :data-show                     "!$team-create.open"
+                               :-icon                         icon/plus}
+                              (tr [:team/create-team]))
               (team-create-form req)
-              [:div {:class "text-red-700 my-4" :data-show "$team-create-error"} "Error: " [:span {:data-text "$team-create-error"}]]
-              #_[:pre {:data-text "ctx.signals.JSON()"}])]))
+              [:pre {:data-text "ctx.signals.JSON()"}])]))
 
 (defn discount-type-update-handler [req]
   (controller/update-discount-type req))
@@ -187,23 +184,23 @@
 (defn travel-discount-type-create-form [{:keys [tr] :as req}]
   [:div {:data-show "$discount-create-form-open"}
    [:div {:class "pb-12 sm:space-y-0 sm:divide-y sm:divide-gray-900/10 sm:pb-0"}
-    [:form {:class          "sm:grid sm:grid-cols-4 sm:items-start sm:gap-4"
-            :data-on-submit (d*/dispatch req settings/command-add-discount-type)}
-     [:div {:class "sm:col-span-2"}
-      [:div {:class "flex rounded-md shadow-xs ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-sno-orange-600 sm:max-w-md"}
-       (ui/text  :placeholder "Klimaticket Mond" :id "discount-type-name" :name "discount-type-name"
-                 :required? true :extra-attrs {:data-bind "discount-type-name"})]]
-     [:div {:class "sm:col-span-2 flex space-x-2"}
-      (button/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
+    (input/input-button
+     (input/text  :-required? true
+                  :-label  (tr [:travel-discounts/discount-type-name])
+                  :placeholder "Klimaticket Mond"
+                  :id "discount-type-name" :name "discount-type-name"
+                  :data-bind "discount-type-name")
+     (button2/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
                       :tabindex                      "-1"
-                      :-priority                     :white
+                      :-priority                     :secondary
                       :data-on-click__viewtransition "$discount-create-form-open=false"}
                      (tr [:action/cancel]))
-      (button/button {:class     "grid-cols-1 mt-4 sm:mt-0"
-                      :type      :submit
-                      :-priority :primary
-                      :-icon     icon/plus}
-                     (tr [:action/create]))]]]])
+     (button2/button {:class                         "grid-cols-1 mt-4 sm:mt-0"
+                      :type                          :submit
+                      :-priority                     :primary
+                      :data-on-click__viewtransition (d*/dispatch req settings/command-add-discount-type)
+                      :-icon                         icon/plus}
+                     (tr [:action/create])))]])
 
 (defn travel-discount-type-edit-form [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name enabled?]}]
   (assert discount-type-id)
@@ -216,9 +213,11 @@
       (dl/dl
        (list
         (dl/item {:-span 3 :-label (tr [:travel-discounts/discount-type-name])}
-                 (ui/text :name "discount-type-name" :value discount-type-name :required? true :attr {:data-bind (signal "discount-type-name")}))
+                 (input/text :-required? true :-label (tr [:travel-discounts/discount-type-name])
+                             :id (str "input-" discount-type-id)
+                             :name "discount-type-name" :value discount-type-name :data-bind (signal "discount-type-name")))
         (dl/item {:-span 3 :-label (tr [:Active])}
-                 (input/toggle-checkbox {:-name "enabled?" :-checked? enabled? :-id "enabled" :data-bind (signal "discount-type-enabled")})
+                 (input/toggle-checkbox {:-name "enabled?" :-checked? enabled? :id "enabled" :data-bind (signal "discount-type-enabled")})
                  [:div {:class "flex flex-col space-y-2"}])
         (dl/item {:-span 3 :-label [:span {:class "text-red-700"} "Error"] :data-show "$discount-update-error"}
                  [:span {:class "text-red-700" :data-text "$discount-update-error"}])))]
@@ -228,7 +227,7 @@
       [:div {:class "flex items-center space-x-3 space-x-4"}
        (button/button {:-priority     :white-destructive
                        :-size         :xsmall
-                       :data-on-click (format "$delete-confirm-%s=true" discount-type-id)}
+                       :data-on-click (format "$_delete-confirm-%s=true" discount-type-id)}
                       (tr [:action/delete]))]
       [:div {:class "flex justify-end space-x-4"}
        (button/button {:-priority   :white
@@ -246,10 +245,10 @@
   (assert dt)
   (list
    (when editing?
-     (dialog/confirm-dialog :id (str "delete-confirm-" discount-type-id)
+     (dialog/confirm-dialog :id (str "_delete-confirm-" discount-type-id)
                             :title (tr [:action/confirm-generic])
                             :text (tr [:action/confirm-delete-team] [(str "\"" discount-type-name "\"")])
-                            :on-hide  (format "$delete-confirm-%s=false" discount-type-id)
+                            :on-hide  (format "$_delete-confirm-%s=false" discount-type-id)
                             :confirm-text (tr [:action/confirm-delete])
                             :cancel-text (tr [:action/cancel])
                             :on-confirm (d*/expr (d*/assign "discount-type-id" discount-type-id)
@@ -317,15 +316,32 @@
      [:div {:data-signals__ifmissing (d*/->signals {:section {:section-name     name
                                                               :section-old-name name
                                                               :section-active   active?}})}
-      (dl/dl
-       (list
-        (dl/item {:-span 3 :-label (tr [:section])}
-                 (ui/text :name "section-name" :value name :required? true :attr {:data-bind (signal "section-name")}))
-        (dl/item {:-span 3 :-label (tr [:Active])}
-                 (input/toggle-checkbox {:-name "enabled?" :-checked? active? :-id "enabled" :data-bind (signal "section-active")})
-                 [:div {:class "flex flex-col space-y-2"}])
-        (dl/item {:-span 3 :-label [:span {:class "text-red-700"} "Error"] :data-show "$section-update-error"}
-                 [:span {:class "text-red-700" :data-text "$section-update-error"}])))]
+      [:div {:class "space-y-12"}
+       (form/section
+        (form/input {:-required? true
+                     :-label     (tr [:section])
+                     :class      "sm:col-span-4"
+                     :type       :text
+                     :id         (str "input-" name)
+                     :name       "section-name" :value name :data-bind (signal "section-name")})
+        (form/toggle {:-name     "enabled?"
+                      :-checked? active?
+                      :-label    (tr [:Active])
+                      :id        (str "enabled-section-" name)
+                      :data-bind (signal "section-active")
+                      :class     "sm:col-span-4"}))]
+
+      #_(dl/dl
+         (list
+          (form/input {:-required? true           :-label (tr [:section])
+                       :type       :text
+                       :id         (str "input-" name)
+                       :name       "section-name" :value  name :data-bind (signal "section-name")})
+          (dl/item {:-span 3 :-label (tr [:Active])}
+                   (input/toggle-checkbox {:-name "enabled?" :-checked? active? :id "enabled" :data-bind (signal "section-active")})
+                   [:div {:class "flex flex-col space-y-2"}])
+          (dl/item {:-span 3 :-label [:span {:class "text-red-700"} "Error"] :data-show "$section-update-error"}
+                   [:span {:class "text-red-700" :data-text "$section-update-error"}])))]
 
      [:div
       {:class "py-5 flex justify-between items-center"}
@@ -471,7 +487,7 @@
   [:main {:class "flex-1" :id "main"}
    (ui/page-header :title (tr [:nav/band-settings]))
    (teams-panel req)
-   (travel-discount-types req)
-   (sections req)])
+   #_(travel-discount-types req)
+   #_(sections req)])
 
 (d*/refresh-all!)

@@ -526,21 +526,23 @@
     (:section/name section)
     "No Section"))
 
+(defn member-select-options [members & {:keys [full-names?  with-empty-opt?]}]
+  (concat
+   (if with-empty-opt?
+     [{:value "" :label " - "}] [])
+   (->> members
+        (map (fn [m] {:value (:member/member-id m)
+                      :label (if full-names?
+                               (:member/name m)
+                               (member-nick m))}))
+        (util/isort-by :label))))
+
 (defn member-select [& {:keys [id value label members variant with-empty-opt? error full-names? size attr]
                         :or   {label           "Member"
                                full-names?     false
                                variant         :inline
                                with-empty-opt? false}}]
-  (let [options
-        (concat
-         (if with-empty-opt?
-           [{:value "" :label " - "}] [])
-         (->> members
-              (map (fn [m] {:value (:member/member-id m)
-                            :label (if full-names?
-                                     (:member/name m)
-                                     (member-nick m))}))
-              (util/isort-by :label)))]
+  (let [options (member-select-options members :full-names? full-names? :with-empty-opt? with-empty-opt?)]
     (condp = variant
       :inline (select :id id
                       :label label
@@ -957,12 +959,12 @@
 (defn toggle-checkbox [& {:keys [label checked? name id]}]
   [:label {:for (or id name) :class "inline-flex relative items-center cursor-pointer"}
    [:input {:type "checkbox" :checked checked? :class "sr-only peer" :name name :id (or id name)}]
-   [:div {:class  (cs
-                   ;; dark:peer-focus:ring-sno-orange-800 dark:bg-gray-700 dark:border-gray-600
-                   "w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-sno-orange-300  rounded-full peer"
-                   " peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]"
-                   "after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
-                   " peer-checked:bg-sno-orange-600")}]
+   [:div {:class (cs
+                  ;; dark:peer-focus:ring-sno-orange-800 dark:bg-gray-700 dark:border-gray-600
+                  "w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-sno-orange-300  rounded-full peer"
+                  " peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]"
+                  "after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                  " peer-checked:bg-sno-orange-600")}]
    [:span {:class "ml-3 text-sm font-medium text-gray-900 "
            ;; dark:text-gray-300
            }label]])
