@@ -1,6 +1,7 @@
 (ns app.datastar
   (:refer-clojure :exclude [get])
   (:require [app.errors :as error]
+            [app.brotli :as br]
             [app.html :as html]
             [app.urls :as urls]
             [app.util :as util]
@@ -14,6 +15,7 @@
             [integrant.core :as ig]
             [jsonista.core :as j]
             [medley.core :as medley]
+            [starfederation.datastar.clojure.adapter.common :as d*com]
             [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
             [starfederation.datastar.clojure.api :as d*])
   (:import (java.time Duration Instant)))
@@ -117,6 +119,11 @@
       (assoc :page-state (clojure.core/get @!page-state tab-id {}))
       (assoc :db (d/db (:datomic-conn req)))))
 
+(def brotli-write-profile
+  {d*com/wrap-output-stream (fn [os] (-> os br/->brotli-os d*com/->os-writer))
+   d*com/content-encoding   "br"
+   d*com/write!             (d*com/->write-with-temp-buffer!)})
+
 (defn render-handler [render-fn & {:keys [on-close on-open wrap-req] :or {wrap-req wrap-req} :as _opts}]
   (fn handler [req]
     (assert (::refresh-mult req))
@@ -131,8 +138,8 @@
           ;; poison pill for work cancelling
           <cancel (a/chan)]
       (hk-gen/->sse-response  req
-                              {:headers {"X-Accel-Buffering" "no"
-                                         "Cache-Control"     "no-cache"}
+                              {:headers             {"X-Accel-Buffering" "no"
+                                                     "Cache-Control"     "no-cache"}
                                hk-gen/on-open
                                (fn hk-on-open [sse-gen]
                                  (init-tab-state! <ch tab-id)
@@ -169,7 +176,8 @@
                                    (when on-close (on-close req))
                                    (catch Throwable t
                                      (error/report-error! t req)
-                                     nil)))}))))
+                                     nil)))
+                               hk-gen/write-profile brotli-write-profile}))))
 (defonce ^:private refresh-ch_ (atom nil))
 
 (defn refresh-all! [& args]

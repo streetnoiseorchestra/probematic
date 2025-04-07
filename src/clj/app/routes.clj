@@ -1,27 +1,24 @@
 (ns app.routes
-  (:require
-   [reitit.coercion :as coercion]
-   [app.datastar :as ds]
-   [app.interceptors.diff :as diff]
-   [app.auth :as auth]
-   [app.dashboard.routes :as dashboard]
-   [app.file-browser.routes :as file-browser]
-   [app.gigs.routes :as gigs]
-   [app.insurance.routes :as insurance]
-   [app.interceptors :as interceptors]
-   [app.members.routes :as members]
-   [app.nextcloud :as nextcloud]
-   [app.poll.routes :as polls]
-   [app.probeplan.routes :as probeplan]
-   [app.routes.errors :as errors]
-   [app.settings.core :as settings]
-   [app.songs.routes :as songs]
-   [app.stats.routes :as stats]
-   [reitit.http :as http]
-   [reitit.http.interceptors.dev :as reitit.http.interceptors.dev]
-   [reitit.interceptor.sieppari :as sieppari]
-   [reitit.interceptor :as reitit.interceptor]
-   [reitit.ring :as ring]))
+  (:require [app.auth :as auth]
+            [app.dashboard.routes :as dashboard]
+            [app.datastar :as ds]
+            [app.file-browser.routes :as file-browser]
+            [app.gigs.routes :as gigs]
+            [app.insurance.routes :as insurance]
+            [app.interceptors :as interceptors]
+            [app.interceptors.compression :as compression]
+            [app.members.routes :as members]
+            [app.nextcloud :as nextcloud]
+            [app.poll.routes :as polls]
+            [app.probeplan.routes :as probeplan]
+            [app.routes.errors :as errors]
+            [app.settings.core :as settings]
+            [app.songs.routes :as songs]
+            [app.stats.routes :as stats]
+            [reitit.coercion :as coercion]
+            [reitit.http :as http]
+            [reitit.interceptor.sieppari :as sieppari]
+            [reitit.ring :as ring]))
 
 (defn routes [system]
   ["" {:coercion     interceptors/default-coercion
@@ -75,7 +72,7 @@
     (ring/create-resource-handler {:path "/"})
     (ring/create-default-handler))
    {:executor     sieppari/executor
-    :interceptors []}))
+    :interceptors [compression/compress-response-interceptor]}))
 
 (comment
   (do
