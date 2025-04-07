@@ -517,6 +517,7 @@
                             :members               "Members"
                             :create-team           "Create Team"
                             :add-member            "Add Member"
+                            :choose-add-member     "Choose member to add"
                             :choose-remove-members "Choose members to remove"
                             :no-members            "No members"
                             :team-type             "Team Type"}

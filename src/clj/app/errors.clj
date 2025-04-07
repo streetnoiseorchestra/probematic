@@ -1,5 +1,6 @@
 (ns app.errors
   (:require
+   [app.util.error :as u.error]
    [app.config :as config]
    [app.util :as util]
    [com.brunobonacci.mulog :as μ]
@@ -48,12 +49,13 @@
       v)))
 
 (defn unwrap-ex [ex]
-  (sanitize
-   (if-let [data (ex-data ex)]
-     (if-let [nested-ex (:exception data)]
-       nested-ex
-       ex)
-     ex)))
+  (-> (if-let [data (ex-data ex)]
+        (if-let [nested-ex (:exception data)]
+          nested-ex
+          ex)
+        ex)
+      (sanitize)
+      (u.error/clean-throwable)))
 
 (defn prepare-req
   "Given a request map, returns a smaller sanitized map designed for event logging consumption"
@@ -85,19 +87,27 @@
 (defn log-error! [req ex]
   (when (config/prod-mode? (-> req :system :env))
     (μ/log ::error
-           :ex ex
-           :request (prepare-req req))))
+      :ex (unwrap-ex ex)
+      :request (prepare-req req))))
 
 (defn report-error!
   "Report an exception outside the normal request/response lifecycle"
   ([ex]
    (report-error! ex nil))
   ([ex extra]
-   (μ/with-context {:msg (ex-message ex)
-                    :extra extra
+   (μ/with-context {:msg       (ex-message ex)
+                    :extra     extra
                     :reported? true}
      (μ/log ::error :ex (unwrap-ex ex)))))
 
 (defn redact-mulog-events [events]
   (->> events
        (map sanitize)))
+
+(defmacro try-log [data & body]
+  `(try
+     ~@body
+     (catch Throwable ~'t
+       (report-error! ~'t ~data)
+       ;; Return nil when there is an error
+       nil)))

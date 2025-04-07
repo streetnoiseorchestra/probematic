@@ -36,15 +36,16 @@
   (input (assoc opts :type "text")))
 
 (defn toggle-checkbox
-  {:opts {:label    (l/optional :string)
-          :checked? (l/optional :boolean)}}
+  {:opts {:label (l/optional :string)
+          ;; :checked? (l/optional :boolean)
+          }}
   [& args]
-  (let [[opts attrs _children]   (uic/extract #'toggle-checkbox args)
-        {:keys [id]}             attrs
-        {:keys [label checked?]} opts]
+  (let [[opts attrs _children] (uic/extract #'toggle-checkbox args)
+        {:keys [id]}           attrs
+        {:keys [label]}        opts]
     (assert id "toggle-checkbox requires :id")
     [:label {:for id :class "inline-flex relative items-center cursor-pointer"}
-     [:input (uic/merge-attrs attrs :type "checkbox" :checked checked? :class "sr-only peer")]
+     [:input (uic/merge-attrs attrs :type "checkbox" :class "sr-only peer")]
      [:div {:class (uic/cs
                     ;; dark:peer-focus:ring-sno-orange-800 dark:bg-gray-700 dark:border-gray-600
                     "w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-sno-orange-300  rounded-full peer"

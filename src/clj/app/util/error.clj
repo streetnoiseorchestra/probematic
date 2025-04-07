@@ -20,28 +20,61 @@
 ;; SOFTWARE.
 (ns app.util.error
   (:require
+   [medley.core :as medley]
+   [clojure.main :as clojure.main]
    [clojure.string :as str])
   (:import
    [clojure.lang Compiler ExceptionInfo MultiFn]
    [java.io Writer]))
 
-(defn- noise? [^StackTraceElement el]
-  (let [class (.getClassName el)]
-    (#{"clojure.lang.RestFn" "clojure.lang.AFn"} class)))
+(def demunge-csl-xf
+  (map (fn [stack-element-data]
+         (update stack-element-data 0 (comp clojure.main/demunge str)))))
 
-(defn- duplicate? [^StackTraceElement prev-el ^StackTraceElement el]
-  (and
-   (= (.getClassName prev-el) (.getClassName el))
-   (= (.getFileName prev-el) (.getFileName el))
-   (#{"invokeStatic"} (.getMethodName prev-el))
-   (#{"invoke" "doInvoke" "invokePrim"} (.getMethodName el))))
+(def demunge-anonymous-functions-xf
+  (map (fn [stack-element-data]
+         (update stack-element-data 0 str/replace #"(/[^/]+)--\d+" "$1"))))
 
-(defn- clear-duplicates [els]
-  (for [[prev-el el] (map vector (cons nil els) els)
-        :when        (or (nil? prev-el) (not (duplicate? prev-el el)))]
-    el))
+(def ignored-cls-re
+  (re-pattern
+   (str "^("
+        (str/join "|"
+                  ["clojure.lang"
+                   "clojure.main"
+                   "clojure.core.server"
+                   "clojure.core/eval"
+                   "clojure.core/binding-conveyor-fn"
+                   "java.util.concurrent.FutureTask"
+                   "java.util.concurrent.ThreadPoolExecutor"
+                   "java.util.concurrent.ThreadPoolExecutor/Worker"
+                   "java.lang.Thread"])
+        ").*")))
 
-(defn- trace-element [^StackTraceElement el]
+(def remove-ignored-cls-xf
+  ;; We don't care about var indirection
+  (remove (fn [[cls _ _ _]] (re-find ignored-cls-re cls))))
+
+(def not-our-cls-xf
+  (drop-while (fn [[cls _ _ _]] (not (str/starts-with? cls "app")))))
+
+(defn clean-trace [trace]
+  (into []
+        (comp demunge-csl-xf
+              not-our-cls-xf
+              remove-ignored-cls-xf
+              demunge-anonymous-functions-xf
+              (medley/dedupe-by first)
+              (take 15))
+        trace))
+
+(defn clean-throwable [t]
+  (let [m (Throwable->map t)]
+    (-> m
+        (update :cause str/replace #"\"" "'")
+        (update :trace clean-trace)
+        (assoc :type (-> m :via peek :type str)))))
+
+(defn trace-element [^StackTraceElement el]
   (let [file     (.getFileName el)
         line     (.getLineNumber el)
         cls      (.getClassName el)
@@ -73,12 +106,6 @@
      :ns        ns
      :separator separator
      :method    method}))
-
-(defn clean-trace [trace]
-  (->> trace
-       (remove noise?)
-       (clear-duplicates)
-       (mapv trace-element)))
 
 (defmacro write [w & args]
   (list* 'do

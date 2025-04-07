@@ -1,11 +1,10 @@
 (ns app.ui.form
-  (:require
-   [jsonista.core :as j]
-   [app.icons :as icon]
-   [app.ui.core :as uic]
-   [malli.experimental.lite :as l]
-   [app.ui.input :as input]
-   [clojure.string :as str]))
+  (:require [app.icons :as icon]
+            [app.ui.core :as uic]
+            [app.ui.input :as input]
+            [clojure.string :as str]
+            [jsonista.core :as j]
+            [malli.experimental.lite :as l]))
 
 (defn data-class [m]
   (str "{"
@@ -28,18 +27,18 @@
   [& args]
   (let [[opts attrs children] (uic/extract #'form args)
         {:keys [form]}        opts]
+
     [:form (uic/merge-attrs attrs
                             :data-signals__ifmissing (j/write-value-as-string
                                                       {(:ns form)
                                                        (merge
                                                         (-> form :fields)
                                                         {:error (zipmap (-> form :fields keys) (repeat nil))})})
-
                             :data-on-submit (:command form))
      children]))
 
 (defn actions
-  {:opts {:left  :any
+  {:opts {:left  (l/optional :any)
           :right (l/optional :any)}}
   [& args]
   (let [[opts _attrs _children] (uic/extract #'actions args)
@@ -157,20 +156,31 @@
                                         (data-class {$error-signal           "col-start-1 row-start-1 pr-10 pl-3 text-red-900 outline-red-300 placeholder:text-red-300 focus:outline-red-600 sm:pr-9"
                                                      (str "!" $error-signal) "px-3 text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-sno-orange-600"})
                                         :data-attr-aria-invalid $error-signal)]))))
+
 (defn toggle
   {:opts {:label (l/optional :string)
 
           :form     :any
           :checked? (l/optional :boolean)}}
   [& args]
-  (let [[opts attrs _children] (uic/extract #'toggle args)]
+  (let [[opts attrs _children] (uic/extract #'toggle args)
+        value                  (:value attrs)]
     (control opts attrs
-             (fn [attrs {:keys [id error aria-describedby]}]
-               (input/toggle-checkbox (uic/merge-attrs attrs
-                                                       :-checked?        (:checked? opts)
-                                                       :id               id
-                                                       :aria-invalid     (when error "true")
-                                                       :aria-describedby aria-describedby))))))
+             (fn [attrs {:keys [$error-signal]}]
+               (let [checked      (:value attrs)
+                     real-signal  (:data-bind attrs)
+                     $real-signal (str "$" real-signal)
+                     signal       (str real-signal "ref")
+                     $signal      (str "$" signal)]
+                 (input/toggle-checkbox
+                  (uic/merge-attrs (into (uic/attr-map) (dissoc attrs
+                                                                :value
+                                                                :data-bind))
+                                   :value value
+                                   :checked checked
+                                   :data-ref signal
+                                   :data-attr-aria-invalid $error-signal
+                                   :data-on-change (str $real-signal " = " $signal ".checked"))))))))
 (defn select
   {:opts {:label       :string
           :form        :any

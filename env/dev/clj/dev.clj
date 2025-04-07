@@ -4,6 +4,7 @@
                                        :unused-referred-var  {:level :off}}
                        :skip-comments true}}
   (:require
+   [app.errors :as error]
    [com.brunobonacci.mulog :as mu]
    [clj-reload.core :as clj-reload]
    [portal-helpers :as portal-repl]
@@ -24,7 +25,9 @@
 ;; Portal & Logging
 
 (add-tap portal-repl/submit)
-(defonce pub! (mu/start-publisher! {:type :custom, :fqn-function "user/tap-publisher"}))
+(defonce pub! (mu/start-publisher! {:type         :custom
+                                    :fqn-function "user/tap-publisher"
+                                    :transform    error/redact-mulog-events}))
 
 ;; --------------------------------------------------------------------------------------------
 ;; System Control
@@ -44,7 +47,9 @@
   (start))
 
 (defn reset []
-  (clj-reload/reload))
+  (stop)
+  (clj-reload/reload)
+  (start))
 
 (defn reload-all []
   (clj-reload/reload {:only :all}))
@@ -52,14 +57,14 @@
 ;; --------------------------------------------------------------------------------------------
 ;; Code Reloading
 
-(clj-reload/init {:dirs        ["src" "dev" "test"]
-                  :unload-hook 'stop
-                  :reload-hook 'start})
+(clj-reload/init {:dirs      ["src" "dev" "test"]
+                  :no-reload '#{integrant.repl.state}
+                  :no-unload '#{dev user integrant.repl.state}})
 
 (comment
+  (stop)
   (restart) ;; rcf
   ;; much
-
   (clojure.repl.deps/sync-deps)
   ;;
   )

@@ -29,6 +29,7 @@
         datastar/sdk                         {:git/url   "https://github.com/starfederation/datastar/"
                                               :git/sha   "7f7b555998d24d5a33e16eecbdfd6aa554a16427"
                                               :deps/root "sdk/clojure/sdk"}
+        org.flatland/ordered                 {:mvn/version "1.15.12"}
         ;; datastar/malli-schemas               {:git/url   "https://github.com/starfederation/datastar/"
         ;;                                       :git/sha   "c35b85ce4e9e1ea64ee8457f80f7a4d59955919d"
         ;;                                       :deps/root "sdk/clojure/malli-schemas"}

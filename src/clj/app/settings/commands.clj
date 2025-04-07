@@ -3,129 +3,96 @@
    [app.datastar :as d*]
    [app.settings.controller :as controller]))
 
-(defn teams-edit-form-handler [req]
-  (let [team-id (-> req :parameters :body :team :team-id)]
-    (d*/state-transact! req #(assoc % :current-team-id team-id))
-    (d*/respond-signals req :merge {:team {:open true}})
-    {:status 204}))
+(def open-team-edit (d*/open-form-handler :team :team-id))
+(def close-team-edit (d*/close-form-handler :team :team-id))
 
-(defn close-teams-edit-form-handler [req]
-  (d*/state-transact! req #(dissoc % :current-team-id))
-  (d*/respond-signals req :remove ["team"])
-  {:status 204})
-
-(defn teams-create-handler [req]
+(defn create-team [req]
   (let [{:keys [error]} (controller/create-team! req)]
     (if error
       (d*/respond-signals req :merge {:team-create {:error error}})
       (d*/respond-signals req :remove ["team-create"]))))
 
-(defn teams-update-handler [req]
+(defn update-team [req]
   (let [{:keys [error]} (controller/update-team! req)]
     (if error
       (d*/respond-signals req :merge {:team {:error error}})
-      (do
-        (d*/state-transact! req #(dissoc % :current-team-id))
-        (d*/respond-signals req :remove ["team"])))))
+      (d*/close-form req :team :team-id))))
 
-(defn teams-remove-member-handler [req]
+(defn remove-team-member [req]
   (controller/remove-member! req)
   {:status 204})
 
-(defn teams-add-member-handler [req]
+(defn add-team-member [req]
   (controller/add-member! req)
   (d*/respond-signals req :merge {:team {:member-id ""}})
   {:status 204})
 
-(defn teams-delete-handler [req]
+(defn delete-team [req]
   (let [{:keys [error]} (controller/delete-team! req)]
     (if error
       (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
       (do
-        (d*/state-transact! req #(dissoc % :current-team-id))
-        (d*/respond-signals req :remove ["team"])
+        (d*/close-form req :team :team-id)
         {:status 204}))))
 
 ;; --------------------------------------------------------------------------------------------
 ;; Discount type commands
 
-(defn discount-type-edit-form-handler [req]
-  (let [discount-type-id (-> req :parameters :body :discount-current-edit-id)]
-    (d*/state-transact! req #(assoc % :discount-current-edit-id discount-type-id))
-    {:status 204}))
+(def open-discount-type-edit (d*/open-form-handler :discount-type :discount-type-id))
+(def close-discount-type-edit (d*/close-form-handler :discount-type :discount-type-id))
 
-(defn discount-type-close-edit-form-handler [req]
-  (d*/state-transact! req #(dissoc % :discount-current-edit-id))
-  (d*/respond-signals req :merge {:discount-update-error false} :remove ["discount-type"])
-  {:status 204})
-
-(defn discount-type-create-handler [req]
+(defn create-discount-type [req]
   (let [{:keys [error]} (controller/create-discount-type! req)]
     (if error
-      (d*/respond-signals req :merge {:discount-create-error error})
-      (d*/respond-signals req :merge {:discount-create-form-open false :discount-type-name ""}))))
+      (d*/respond-signals req :merge {:discount-type-create {:error error}})
+      (d*/respond-signals req :remove ["discount-type-create"]))))
 
-(defn discount-type-update-handler [req]
+(defn update-discount-type [req]
   (let [{:keys [error]} (controller/update-discount-type req)]
     (if error
-      (d*/respond-signals req :merge {:discount-update-error error})
-      (do
-        (d*/state-transact! req #(dissoc % :discount-current-edit-id))
-        (d*/respond-signals req
-                            :merge {:discount-update-error false}
-                            :remove ["discount-type"])))))
+      (d*/respond-signals req :merge {:discount-type {:error error}})
+      (d*/close-form req :discount-type :discount-type-id))))
 
-(defn discount-type-delete-handler [req]
+(defn delete-discount-type [req]
   (let [{:keys [error]} (controller/delete-discount-type! req)]
     (if error
       (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
       (do
-        (d*/state-transact! req #(dissoc % :discount-current-edit-id))
+        (d*/close-form req :discount-type :discount-type-id)
         {:status 204}))))
 ;; --------------------------------------------------------------------------------------------
 ;; Section commands
 
-(defn command-open-section-edit-form [req]
-  (let [section-id (-> req :parameters :body :section-current-edit-id)]
-    (d*/state-transact! req #(assoc % :section-current-edit-id section-id))
-    {:status 204}))
+(def open-section-edit (d*/open-form-handler :section :section-id))
+(def close-section-edit (d*/close-form-handler :section :section-id))
 
-(defn command-close-section-edit-form [req]
-  (d*/state-transact! req #(dissoc % :section-current-edit-id))
-  (d*/respond-signals req :merge {:section-update-error false} :remove ["section"])
+(defn open-section-reorder [req]
+  (d*/state-transact! req #(assoc-in % [:section-reorder :open] true))
   {:status 204})
 
-(defn command-open-section-reorder [req]
-  (d*/state-transact! req #(assoc % :section-reorder-open true))
+(defn close-section-reorder [req]
+  (d*/state-transact! req #(assoc-in % [:section-reorder :open] false))
+  (d*/respond-signals req :merge {:section-reorder {:open false}})
   {:status 204})
 
-(defn command-close-section-reorder [req]
-  (d*/state-transact! req #(assoc % :section-reorder-open false))
-  (d*/respond-signals req :merge {:section-reorder-open false})
-  {:status 204})
-
-(defn command-update-section-order [req]
+(defn update-section-order [req]
   (controller/order-sections! req)
-  (d*/respond-signals req :merge {:sections-order false})
+  (d*/respond-signals req :merge {:section-reorder {:open false}})
   {:status 204})
 
-(defn command-add-section [req]
+(defn create-section [req]
   (let [{:keys [error]} (controller/create-section! req)]
     (if error
-      (d*/respond-signals req :merge {:section-create-error error})
-      (d*/respond-signals req :merge {:section-create-form-open false :section-name ""}))))
+      (d*/respond-signals req :merge {:section-create {:error error}})
+      (d*/respond-signals req :remove ["section-create"]))))
 
-(defn command-update-section [req]
+(defn update-section [req]
   (let [{:keys [error]} (controller/update-section! req)]
     (if error
-      (d*/respond-signals req :merge {:section-update-error error})
-      (do
-        (d*/state-transact! req #(dissoc % :section-current-edit-id))
-        (d*/respond-signals req
-                            :merge {:section-update-error false}
-                            :remove ["section"])))))
+      (d*/respond-signals req :merge {:section {:error error}})
+      (d*/close-form req :section :section-id))))
 
-#_(defn command-delete-section [req]
+#_(defn delete-section [req]
     (let [{:keys [error]} nil]
       (if error
         (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))

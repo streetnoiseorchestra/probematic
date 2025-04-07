@@ -8,7 +8,7 @@
             [com.yetanalytics.squuid :as sq]))
 
 (defn create-discount-type! [req]
-  (let [discount-type-name (-> req :parameters :body :discount-type-name)
+  (let [discount-type-name (-> req :parameters :body :discount-type-create :discount-type-name)
         valid?             (and discount-type-name (not (str/blank? discount-type-name)))
         tx-data            [{:travel.discount.type/discount-type-id   (sq/generate-squuid)
                              :travel.discount.type/enabled?           true
@@ -19,9 +19,9 @@
         (d/transact-wrapper! req {:tx-data tx-data})
         (catch java.util.concurrent.ExecutionException e
           (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
-            {:error (format "Discount type named '%s' already exists." discount-type-name)}
+            {:error {:discount-type-name (format "Discount type named '%s' already exists." discount-type-name)}}
             (throw e))))
-      {:error "Discount type name is required."})))
+      {:error {:discount-type-name "Discount type name is required."}})))
 
 (defn update-discount-type [{:keys [datomic-conn] :as req}]
   (let [{:keys [discount-type-name discount-type-id discount-type-enabled]} (-> req :parameters :body :discount-type)
@@ -33,27 +33,33 @@
     (q/retrieve-discount-type db-after discount-type-id)))
 
 (defn delete-discount-type! [req]
-  (let [discount-type-id (util/ensure-uuid! (-> req :body-params :discount-type-id))
+  (let [discount-type-id (-> req :parameters :body :discount-type :discount-type-id)
         tx-data          [[:db/retractEntity [:travel.discount.type/discount-type-id discount-type-id]]]]
     (d/transact-wrapper! req {:tx-data tx-data})))
 
-(defn create-section! [{:keys [datomic-conn] :as req}]
-  (let [section-name       (-> req :parameters :body :section-name)
-        {:keys [db-after]} (datomic/transact datomic-conn {:tx-data [{:section/active? true
-                                                                      :section/name    section-name}]})]
+(defn create-section! [req]
+  (let [section-name (-> req :parameters :body :section-create :section-name)
+        valid?       (and section-name (not (str/blank? section-name)))
+        tx-data      [{:section/active? true
+                       :section/name    section-name}]]
+    (if valid?
+      (try
+        (d/transact-wrapper! req {:tx-data tx-data})
+        (catch java.util.concurrent.ExecutionException e
+          (if (= :db.error/unique-conflict (:db/error (ex-data (.getCause e))))
+            {:error {:section-name (format "Section named '%s' already exists." section-name)}}
+            (throw e))))
+      {:error {:section-name "Section name is required."}})))
 
-    db-after))
+(defn update-section! [req]
+  (let [{:keys [section-old-name section-name section-enabled]} (-> req :parameters :body :section)
+        tx-data                                                 [[:db/add [:section/name section-old-name] :section/name section-name]
+                                                                 [:db/add [:section/name section-old-name] :section/active? section-enabled]]]
 
-(defn update-section! [{:keys [datomic-conn] :as req}]
-  (let [{:keys [section-old-name section-name section-active]} (-> req :parameters :body :section)
-        tx-data                                                [[:db/add [:section/name section-old-name] :section/name section-name]
-                                                                [:db/add [:section/name section-old-name] :section/active? section-active]]
-        {:keys [db-after]}                                     (datomic/transact datomic-conn {:tx-data tx-data})]
-
-    (q/retrieve-section-by-name db-after section-name)))
+    (d/transact-wrapper! req {:tx-data tx-data})))
 
 (defn order-sections! [req]
-  (let [sections-order (-> req :parameters :body :sections-order)
+  (let [sections-order (-> req :parameters :body :section :order)
         tx-data        (map (fn [[section-name position]]
                               [:db/add [:section/name section-name] :section/position position]) sections-order)]
     (d/transact-wrapper! req {:tx-data tx-data})))
@@ -67,24 +73,17 @@
 
 (defn remove-member! [{:keys [parameters] :as req}]
   (let [{:keys [team-id remove-member-id]} (-> parameters :body :team)
-        team-id                            (util/ensure-uuid! team-id)
-        member-id                          (util/ensure-uuid! remove-member-id)
         team-ref                           [:team/team-id team-id]
-        #_#_team                           (q/retrieve-team db team-id)
-        tx-data                            [[:db/retract team-ref :team/members [:member/member-id member-id]]]]
+        tx-data                            [[:db/retract team-ref :team/members [:member/member-id remove-member-id]]]]
     (d/transact-wrapper! req {:tx-data tx-data})))
 
 (defn add-member! [{:keys [parameters] :as req}]
   (let [{:keys [team-id member-id]} (-> parameters :body :team)
-        team-id                     (util/ensure-uuid! team-id)
-        member-id                   (util/ensure-uuid! member-id)
         team-ref                    [:team/team-id team-id]
-        #_#_team                    (q/retrieve-team db team-id)
         tx-data                     [[:db/add team-ref :team/members [:member/member-id member-id]]]]
     (d/transact-wrapper! req {:tx-data tx-data})))
 
 (defn create-team! [req]
-  (tap> [:create-team (-> req :parameters)])
   (let [team-name (-> req :parameters :body :team-create :team-name)
         valid?    (and team-name (not (str/blank? team-name)))
         tx-data   [{:team/team-id (sq/generate-squuid)

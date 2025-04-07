@@ -1,21 +1,22 @@
 (ns app.datastar
   (:refer-clojure :exclude [get])
-  (:import (java.time Instant Duration))
-  (:require
-   [app.urls :as urls]
-   [chime.core :as chime]
-   [app.html :as html]
-   [camel-snake-kebab.core :as csk]
-   [com.fulcrologic.guardrails.malli.core :refer [>defn =>]]
-   [jsonista.core :as j]
-   [datomic.api :as d]
-   [integrant.core :as ig]
-   [app.util :as util]
-   [buddy.core.codecs :as codecs]
-   [clojure.core.async :as a]
-   [starfederation.datastar.clojure.api :as d*]
-   [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
-   [clojure.string :as str]))
+  (:require [app.errors :as error]
+            [app.html :as html]
+            [app.urls :as urls]
+            [app.util :as util]
+            [buddy.core.codecs :as codecs]
+            [camel-snake-kebab.core :as csk]
+            [chime.core :as chime]
+            [clojure.core.async :as a]
+            [clojure.string :as str]
+            [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
+            [datomic.api :as d]
+            [integrant.core :as ig]
+            [jsonista.core :as j]
+            [medley.core :as medley]
+            [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
+            [starfederation.datastar.clojure.api :as d*])
+  (:import (java.time Duration Instant)))
 
 (defn ->signals [m]
   (j/write-value-as-string m))
@@ -93,9 +94,10 @@
                     (clean-stale-watches!))))
 
 (comment
+  (refresh-all!)
   (reset! !page-state {})
   (name (keyword (str (random-uuid))))
-  @!page-state
+  @!page-state                          ;; rcf
   (swap! !page-state update "1a874961-16c7-40d8-9b44-b83273a82afa" assoc ::created 0)
   (swap! !page-state update "1a874961-16c7-40d8-9b44-b83273a82afa" dissoc :current-edit-id)
   (swap! !page-state dissoc "c9222db8-78ce-4919-9f2f-28bfc1aac41f")
@@ -108,6 +110,7 @@
   ;;
   )
 
+(html/->str (html/->str [:div "wut"]))
 (defn wrap-req [req tab-id]
   (-> req
       (assoc :request-method :get)
@@ -136,32 +139,37 @@
                                  (util/thread
                                    (try
                                      (d*/merge-signals! sse-gen (j/write-value-as-string {:tab-id tab-id}))
-                                     (loop [last-view-hash (get-in req [:headers "last-event-id"])]
+                                     (loop [req            (wrap-req req tab-id)
+                                            last-view-hash (get-in req [:headers "last-event-id"])]
                                        (a/alt!!
                                          [<cancel] (do (a/close! <ch)
                                                        (a/close! <cancel))
-                                         [<ch]     (let [new-view      (render-fn (wrap-req req tab-id))
-                                                         new-view-hash (digest new-view)]
-                                                     ;; (tap> [:render-change :new-view-hash new-view-hash  :last-view-hash last-view-hash new-view])
-                                                     ;; only send an event if the view has changed
-                                                     (when (not= last-view-hash new-view-hash)
-                                                       (d*/merge-fragment! sse-gen (html/->str new-view) {d*/id                  new-view-hash
-                                                                                                          d*/use-view-transition true}))
-                                                     (recur new-view-hash))
+                                         [<ch]
+                                         (let [req           (wrap-req req tab-id)
+                                               new-view      (error/try-log req (render-fn req))
+                                               new-view-hash (digest new-view)]
+                                           #_(tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
+                                           ;; only send an event if the view has changed
+                                           (when (and new-view (not= last-view-hash new-view-hash))
+                                             (d*/merge-fragment! sse-gen new-view {d*/id                  new-view-hash
+                                                                                   d*/use-view-transition true}))
+                                           (recur req new-view-hash))
                                          ;; we want work cancelling to have higher priority
                                          :priority true))
-                                     (catch Exception e
-                                       (tap> [:sse-resp-thread-ex e]))))
-
+                                     (catch Throwable t
+                                       (error/report-error! t req))
+                                     (finally
+                                       (d*/close-sse! sse-gen))))
                                  (when on-open (on-open req)))
-                               hk-gen/on-close (fn hk-on-close [_ _]
-                                                 (remove-tab-state! tab-id)
-                                                 (try
-                                                   (a/>!! <cancel :cancel)
-                                                   (when on-close (on-close req))
-                                                   (catch Exception e
-                                                     (tap> [:sse-response-on-close-ex e])
-                                                     nil)))}))))
+                               hk-gen/on-close
+                               (fn hk-on-close [_ _]
+                                 (try
+                                   (remove-tab-state! tab-id)
+                                   (a/>!! <cancel :cancel)
+                                   (when on-close (on-close req))
+                                   (catch Throwable t
+                                     (error/report-error! t req)
+                                     nil)))}))))
 (defonce ^:private refresh-ch_ (atom nil))
 
 (defn refresh-all! [& args]
@@ -227,14 +235,19 @@
      ::refresh-mult   refresh-mult
      ::datomic        datomic}))
 
-(defn stop-refresh-mult [{::keys [datomic <refresh-ch chime-schedule]}]
+(defn stop-refresh-mult [{::keys [datomic <refresh-ch chime-schedule refresh-mult]}]
+  (when refresh-mult
+    (a/untap-all refresh-mult))
+  (when <refresh-ch
+    (prn "CLOSE REFRESH-CH")
+    (a/close! <refresh-ch)
+    (reset! refresh-ch_ nil))
   (when chime-schedule
+    (prn "CLOSE chime -schedule")
     (.close chime-schedule))
   (when datomic
-    (stop-react-datomic-tx datomic))
-  (when <refresh-ch
-    (a/close! <refresh-ch)
-    (reset! refresh-ch_ nil)))
+    (prn "CLOSE datomic react")
+    (stop-react-datomic-tx datomic)))
 
 (defn datastar-refresh-interceptor [sys]
   (let [refresh-mult (get-in sys [:datastar-refresh-mult ::refresh-mult])]
@@ -346,3 +359,33 @@
    (action :post (urls/url-for req cmd)))
   ([req cmd opts]
    (action :post (urls/url-for req cmd) opts)))
+
+(defn open-form [req form-name form-id-key]
+  (let [team-id (-> req :parameters :body form-name form-id-key)]
+    (state-transact! req #(assoc-in % [:form :current form-name form-id-key] team-id))
+    (respond-signals req :merge {form-name {:open true}})
+    {:status 204}))
+
+(defn close-form [req form-name form-id-key]
+  ((state-transact! req #(medley/dissoc-in % [:form :current form-name form-id-key]))
+   (respond-signals req :remove [(name form-name)])
+   {:status 204}))
+
+(defn open-form-handler [form-name form-id-key]
+  (fn [req]
+    (let [team-id (-> req :parameters :body form-name form-id-key)]
+      (state-transact! req #(assoc-in % [:form :current form-name form-id-key] team-id))
+      (respond-signals req :merge {form-name {:open true}})
+      {:status 204})))
+
+(defn close-form-handler [form-name form-id-key]
+  (fn [req]
+    (state-transact! req #(medley/dissoc-in % [:form :current form-name form-id-key]))
+    (respond-signals req :remove [(name form-name)])
+    {:status 204}))
+
+(defn get-form-current [page-state form-name form-id-key]
+  (get-in page-state [:form :current form-name form-id-key]))
+
+(defn debug-signals []
+  [:pre {:data-text "ctx.signals.JSON()"}])

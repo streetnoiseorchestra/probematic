@@ -1,5 +1,6 @@
 (ns app.ui.core
   (:require
+   [flatland.ordered.map :refer [ordered-map]]
    [app.util.error :as u.error]
    [bling.core :refer [callout bling point-of-interest]]
    [malli.core :as m]
@@ -12,6 +13,8 @@
   (str/join " " (filter identity names)))
 
 (defonce ^:dynamic *validate-opts* false)
+
+(def attr-map ordered-map)
 
 (defn bad-opt-value-callout
 
@@ -83,7 +86,9 @@
        (me/humanize explain)))
 
 (defn stack-traces []
-  (u.error/clean-trace (.getStackTrace (Thread/currentThread))))
+  (->> (.getStackTrace (Thread/currentThread))
+       (map StackTraceElement->vec)
+       (u.error/clean-trace)))
 
 (defn validate-opts [cvar opts]
   (when *validate-opts*
@@ -199,3 +204,14 @@
             (second (add-class [:input (array-map :class "wut"
                                                   :a     "a" :b "b" :c "c" :d "d" :e "e" :f "f"
                                                   :g     "g" :h "h" :i "i" :j "j" :k "k" :l "l" :m "m") "Much nice"] "cool")))))
+(type
+ (assoc
+  (ordered-map :1 1 :2 :2 :3 :3 :4 :4 :5 5 :6 6 :7 7)
+  :lol :wut
+  :omg :omg))
+(type
+ (assoc
+  (assoc
+   (ordered-map :1 1 :2 :2 :3 :3 :4 :4 :5 5 :6 6 :7 7)
+   :lol :wut)
+  :omg :omg))

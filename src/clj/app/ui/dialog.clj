@@ -1,23 +1,25 @@
-(ns app.ui.dialog)
+(ns app.ui.dialog
+  (:require
+   [app.ui.core :as uic]))
 
 (defn form-dialog [{:keys [id title on-hide on-show open]} & body]
-  [:wa-dialog (array-map :id                       id
-                         :data-attr-open open
-                         :data-on-wa-show__case.kebab (when on-show on-show)
-                         :data-on-wa-hide__case.kebab__debounce.300ms (when on-hide on-hide)
-                         :with-header  (when title title)
-                         :label title)
+  [:wa-dialog (uic/attr-map :id                       id
+                            :data-attr-open open
+                            :data-on-wa-show__case.kebab (when on-show on-show)
+                            :data-on-wa-hide__case.kebab__debounce.300ms (when on-hide on-hide)
+                            :with-header  (when title title)
+                            :label title)
    [:div {:class "px-2"}
     body]])
 
 (defn confirm-dialog [& {:keys [id title text confirm-text cancel-text icon on-confirm on-show on-hide]}]
-  [:wa-dialog (array-map :id id
-                         :class "cloak"
-                         :data-signals  (format  "{'%s': false}" id)
-                         :data-class (format "{'cloak': !$%s}" id)
-                         :data-attr-open (format "$%s" id)
-                         :data-on-wa-show__case.kebab (when on-show on-show)
-                         :data-on-wa-hide__case.kebab__debounce.300ms (when on-hide on-hide))
+  [:wa-dialog (uic/attr-map :id id
+                            :class "cloak"
+                            :data-signals  (format  "{'%s': false}" id)
+                            :data-class (format "{'cloak': !$%s}" id)
+                            :data-attr-open (format "$%s" id)
+                            :data-on-wa-show__case.kebab (when on-show on-show)
+                            :data-on-wa-hide__case.kebab__debounce.300ms (when on-hide on-hide))
    [:div {:class "sm:flex sm:items-start"}
     (when icon
       [:div {:class "mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:size-10"}
