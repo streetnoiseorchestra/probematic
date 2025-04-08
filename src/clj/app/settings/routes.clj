@@ -3,31 +3,6 @@
    [app.schemas :as s]
    [malli.experimental.lite :as l]))
 
-#_(comment
-    (def index ::band-settings)
-    (def command-delete-team-member ::command-delete-team-member)
-    (def command-add-team-member ::command-add-team-member)
-    (def command-create-team ::command-create-team)
-    (def command-update-team ::command-update-team)
-    (def command-delete-team ::command-delete-team)
-    (def command-open-team-edit-form ::command-open-team-edit-form)
-    (def command-close-team-edit-form ::command-close-team-edit-form)
-
-    (def command-add-discount-type ::command-add-discount-type)
-    (def command-update-discount-type ::command-update-discount-type)
-    (def command-delete-discount-type ::command-delete-discount-type)
-    (def command-open-discount-type-edit-form ::command-open-discount-type-edit-form)
-    (def command-close-discount-type-edit-form ::command-close-discount-type-edit-form)
-
-    (def command-add-section ::command-add-section)
-    (def command-update-section ::command-update-section)
-    (def command-delete-section ::command-delete-section)
-    (def command-open-section-edit-form ::command-open-section-edit-form)
-    (def command-close-section-edit-form ::command-close-section-edit-form)
-    (def command-open-section-reorder ::command-open-section-reorder)
-    (def command-close-section-reorder ::command-close-section-reorder)
-    (def command-update-section-order ::command-update-section-order))
-
 (def page {:page-name  ::band-settings
            :view-ns    'app.settings.views
            :command-ns 'app.settings.commands

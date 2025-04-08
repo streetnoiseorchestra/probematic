@@ -68,6 +68,10 @@
                      :data-on-click__viewtransition (d*/dispatch req ::commands/add-team-member)}
                     (tr [:action/add])))])
 
+(defn team-type-options [tr]
+  (into [{:value "" :label " - "}]
+        (map (fn [m] {:label (tr [m]) :value (name m)}) domain/team-types)))
+
 (defn team-edit-form [{:keys [tr db] :as req} {team-name :team/name :team/keys [team-id team-type] :as team}]
   (let [all-members (q/members-for-select db)
         form        {:ns      :team
@@ -89,7 +93,7 @@
                                            :name   :team-name})
                               (form/select {:-label   (tr [:team/team-type])
                                             :-form    form
-                                            :-options (concat [{:value "" :label " - "}] (map (fn [m] {:label (tr [m]) :value (name m)}) domain/team-types))
+                                            :-options (team-type-options tr)
                                             :class    "sm:col-span-3"
                                             :name     :team-type}))
                 (form/section {:-compact? true :-subtitle (tr [:team/members])}

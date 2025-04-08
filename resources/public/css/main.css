@@ -1003,3 +1003,32 @@ wa-dialog::part(base) {
 #my-btn.loading {
   color: red;
 }
+
+@keyframes entry {
+  0% {
+    filter: blur(4px);
+    opacity: 0;
+  }
+}
+.animate-entry {
+  --speed: 0.25s;
+  --easing: linear(
+    0 0%,
+    0.0027 3.64%,
+    0.0106 7.29%,
+    0.0425 14.58%,
+    0.0957 21.87%,
+    0.1701 29.16%,
+    0.2477 35.19%,
+    0.3401 41.23%,
+    0.5982 55.18%,
+    0.7044 61.56%,
+    0.7987 68.28%,
+    0.875 75%,
+    0.9297 81.25%,
+    0.9687 87.5%,
+    0.9922 93.75%,
+    1 100%
+  );
+  animation: entry var(--speed) both var(--easing);
+}

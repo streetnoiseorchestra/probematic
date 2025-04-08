@@ -8,7 +8,15 @@ import {
     ActionMenu,
     Flyout,
 } from "./widgets/action-menu.js?v3";
+
 import { DiscoverTooltips } from "./widgets/tooltip.js?v3";
+
+import { TypeaheadSearch } from "./widgets/typeahead.js?v3";
+
+import { ActionMenuPopover } from "./widgets/popover.js?v3";
+
+window.ActionMenuPopover = ActionMenuPopover;
+window.TypeaheadSearch = TypeaheadSearch;
 
 //// SETUP
 htmx.onLoad(function (content) {

@@ -1,5 +1,7 @@
 (ns app.members.routes
   (:require
+   [app.members.index.views]
+   [app.members.routes2 :as routes2]
    [app.layout :as layout]
    [app.members.views :as view]
    [app.queries :as q]
@@ -21,7 +23,7 @@
 
 (defn members-index []
   (ctmx/make-routes
-   "/members"
+   "/members-old"
    (fn [req]
      (layout/app-shell req
                        (view/members-index-page req false)))))
@@ -39,13 +41,14 @@
 
 (defn routes []
   ["" {:app.route/name :app/members}
-   ["" {:interceptors  members-interceptors}
+   ["" {:interceptors members-interceptors}
     (member-vcard-download)
     (members-detail)]
-   (members-index)])
+   (members-index)
+   (routes2/routes)])
 
 (defn unauthenticated-routes []
   [""
    ["/invite-accept" {:app.route/name :app/invite-accept
-                      :get  (fn [req] (view/invite-accept req))
-                      :post (fn [req] (view/invite-accept-post req))}]])
+                      :get            (fn [req] (view/invite-accept req))
+                      :post           (fn [req] (view/invite-accept-post req))}]])

@@ -5,22 +5,23 @@
 
 (defn input
   {:opts {:label     :string
-          :suffix    (l/optional :any)
+          :leading   (l/optional :any)
+          :trailing  (l/optional :any)
           :variant   (l/optional [:enum :overlap :hidden])
           :required? (l/optional :boolean)}}
   [& args]
   (let [[opts attrs _children]      (uic/extract #'input args)
         class                       (:class attrs)
         {:keys [id] :as attrs}      (dissoc attrs :class)
-        {:keys [label suffix required?  variant]
+        {:keys [label leading trailing  required?  variant]
          :or   {required? true
                 variant   :hidden}} opts]
 
     (assert id "input requires :id")
     (when (= "null" (:value attrs))
       (throw (ex-info "Legacy behavior: would have put `nil` as input :value, but not anymore. Better fix caller" {:attrs attrs :opts opts})))
-    (assert (nil? suffix) "Suffix not yet implemented")
-    [:div {:class (uic/cs class)}
+    [:div {:class (uic/cs class
+                          (when (or trailing leading) "grid grid-cols-1"))}
      (when (= variant :overlap)
        [:label {:for id :class "absolute -top-2 left-2 inline-block rounded-lg bg-white px-1 text-xs font-medium text-gray-900"}
         label])
@@ -28,9 +29,24 @@
                               :id id
                               :aria-label (when (= variant :hidden) label)
                               :class       (uic/cs
+                                            (when (or leading trailing) "col-start-1 row-start-1")
+                                            (when leading "pl-10")
+                                            (when trailing "pr-10")
                                             (when (= variant :hidden) "block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-sno-orange-600 sm:text-sm/6")
                                             (when (= variant :overlap) "block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-sno-orange-600 sm:text-sm/6"))
-                              :required    required?)]]))
+                              :required    required?)]
+     (when leading
+       (let [c "pointer-events-none col-start-1 row-start-1 ml-3 size-5 self-center text-gray-400 sm:size-4"]
+         (when (vector? leading)
+           (uic/add-class leading c))
+         (when (fn? leading)
+           (leading {:class c}))))
+     (when trailing
+       (let [c "pointer-events-none col-start-1 row-start-1 mr-3 size-5 self-center justify-self-end text-gray-400 sm:size-4"]
+         (when (vector? trailing)
+           (uic/add-class trailing c))
+         (when (fn? trailing)
+           (trailing {:class c}))))]))
 
 (defn text [& {:as opts}]
   (input (assoc opts :type "text")))
