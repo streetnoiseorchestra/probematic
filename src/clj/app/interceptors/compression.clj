@@ -38,7 +38,7 @@
         (assoc "Content-Encoding" encoding-type)
         (dissoc "Content-Length" "content-length"))))
 
-(def ^:private supported-status? #{200, 201, 202, 203, 204, 205 403, 404})
+(def ^:private supported-status? #{200 201 202 203 205 403 404})
 
 (defn- unencoded-type?
   [headers]
@@ -60,7 +60,8 @@
 
 (defn- supported-type?
   [resp]
-  (let [{:keys [headers body]} resp]
+  (let [{:keys [headers body]
+         :or   {headers {}}} resp]
     (or (string? body)
         (seq? body)
         (instance? InputStream body)
