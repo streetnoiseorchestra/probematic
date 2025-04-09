@@ -8,7 +8,7 @@
    [app.rand-human-id :as human-id]
    [app.routes.errors :as errors]
    [app.schemas :as schemas]
-   ;; [clojure.string :as str]
+   [clojure.string :as str]
    ;; [co.deps.ring-etag-middleware :as etag]
    [com.brunobonacci.mulog :as μ]
    [app.datomic.shim :as d]
@@ -170,37 +170,37 @@
 (defn i18n-interceptor [system]
   (let [lang-dicts (:i18n-langs system)]
     (assert lang-dicts "Translations not available")
-    {:name ::i18n-interceptor
+    {:name  ::i18n-interceptor
      :enter (fn [ctx]
 
-              (let [lang-dicts (if (config/dev-mode? (:env system))
-                                 (i18n/read-langs)
-                                 lang-dicts)
-                    request (:request ctx)
-                    query-string (:query-string request)
-                    lang-qr (query-string-lang query-string)
-                    lang-cookie (cookie-lang (:cookies request))
-                    lang-browser (i18n/browser-lang (:headers request))
+              (let [lang-dicts         (if (config/dev-mode? (:env system))
+                                         (i18n/read-langs)
+                                         lang-dicts)
+                    request            (:request ctx)
+                    query-string       (:query-string request)
+                    lang-qr            (query-string-lang query-string)
+                    lang-cookie        (cookie-lang (:cookies request))
+                    lang-browser       (i18n/browser-lang (:headers request))
                     all-accepted-langs (filterv some? (concat  [lang-qr lang-cookie] lang-browser [(name i18n/default-locale)]))
-                    both-set (and lang-qr lang-cookie)
-                    change-lang (or
-                                 (and both-set (not (= lang-qr lang-cookie)))
-                                 (and (not both-set) lang-qr))
-                    tempura-accepted (if (:tempura/accept-langs request)
-                                       (:tempura/accept-langs request)
-                                       [])
-                    accepted (if all-accepted-langs (into [] (concat all-accepted-langs tempura-accepted)) tempura-accepted)
-                    current-locale (i18n/supported-lang lang-dicts accepted)
-                    tr (i18n/tr-with lang-dicts accepted)
-                    req (if tr
-                          (assoc request
-                                 :will-change-lang change-lang
-                                 :tr tr
-                                 :tempura/accept-langs accepted
-                                 :current-locale (keyword current-locale))
-                          (assoc request
-                                 :will-change-lang change-lang
-                                 :current-locale (keyword current-locale)))
+                    both-set           (and lang-qr lang-cookie)
+                    change-lang        (or
+                                        (and both-set (not (= lang-qr lang-cookie)))
+                                        (and (not both-set) lang-qr))
+                    tempura-accepted   (if (:tempura/accept-langs request)
+                                         (:tempura/accept-langs request)
+                                         [])
+                    accepted           (if all-accepted-langs (into [] (concat all-accepted-langs tempura-accepted)) tempura-accepted)
+                    current-locale     (i18n/supported-lang lang-dicts accepted)
+                    tr                 (i18n/tr-with lang-dicts accepted)
+                    req                (if tr
+                                         (assoc request
+                                                :will-change-lang change-lang
+                                                :tr tr
+                                                :tempura/accept-langs accepted
+                                                :current-locale (keyword current-locale))
+                                         (assoc request
+                                                :will-change-lang change-lang
+                                                :current-locale (keyword current-locale)))
                     ;;
                     ]
                 (assoc ctx :request req)))
@@ -212,6 +212,44 @@
                     (assoc-in [:response :cookies "lang" :path] "/")
                     (assoc-in [:response :cookies "lang" :max-age] (* 3600 30)))
                 ctx))}))
+
+(def csp-keys [:base-uri
+               :default-src
+               :script-src
+               :object-src
+               :style-src
+               :img-src
+               :media-src
+               :frame-src
+               :child-src
+               :frame-ancestors
+               :font-src
+               :connect-src
+               :manifest-src
+               :form-action
+               :sandbox
+               :script-nonce
+               :plugin-types
+               :reflected-xss
+               :block-all-mixed-content
+               :upgrade-insecure-requests
+               :referrer
+               :report-uri
+               :report-to])
+(defn csp->str
+  [options]
+  (if (string? options)
+    options
+    (str/join "; "
+              (map (fn [[k v]] (str (name k) " " v))
+                   (select-keys options csp-keys)))))
+
+(defn csp-interceptor
+  [system]
+  (let [csp (-> system :env :content-security-policy csp->str)]
+    {:name  ::csp-interceptor
+     :leave (fn [ctx]
+              (assoc-in ctx  [:response :headers "Content-Security-Policy"] csp))}))
 
 (def default-coercion
   (-> rcm/default-options
@@ -239,6 +277,7 @@
                     human-id-interceptor
                     (i18n-interceptor system)
                     log-request-interceptor
+                    (csp-interceptor system)
                     #_(cond (config/demo-mode? (:env system))
                             auth/demo-auth-interceptor
                             ;; (config/dev-mode? (:env system))

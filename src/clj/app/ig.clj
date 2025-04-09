@@ -9,7 +9,6 @@
             [app.errors :as error]
             [app.filestore :as filestore]
             [app.i18n :as i18n]
-            [app.interceptors :as interceptors]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
             [app.routes :as routes]
@@ -50,24 +49,6 @@
   (if (config/demo-mode? env)
     {}
     (jobs/job-defs system)))
-
-(defn csp-settings
-  [env]
-  (let [base-uri      (config/app-base-url env)
-        id-uri        (config/keycloak-auth-server-url env)
-        forum-uri     (config/discourse-forum-url env)
-        nextcloud-uri (config/nextcloud-url env)]
-    (assert base-uri)
-    (assert id-uri)
-    (assert forum-uri)
-    {:content-security-policy-settings {:img-src     "https://*.streetnoise.at 'self' data:"
-                                        :object-src  "'none'"
-                                        :default-src (format  "%s %s 'self'" base-uri id-uri)
-                                        :font-src    (format  "%s 'self'" base-uri)
-                                        :script-src  (format  "%s %s 'self' 'unsafe-inline' 'unsafe-eval' blob:" base-uri forum-uri)
-                                        :style-src   (format "%s 'self' 'unsafe-inline'" base-uri)
-                                        :connect-src "'self'"
-                                        :frame-src   (format  "%s %s 'self'" nextcloud-uri forum-uri)}}))
 
 (comment
   ;; CORS
@@ -156,11 +137,11 @@
   (μ/log ::halt-nrepl))
 
 (defmethod ig/init-key ::calendar
-  [_ {:keys [env] :as system}]
+  [_ {:keys [env]}]
   (caldav/init-calendar env))
 
 (defmethod ig/init-key ::filestore
-  [_ {:keys [env] :as system}]
+  [_ {:keys [env]}]
   (filestore/start! (:filestore env)))
 
 (defmethod ig/halt-key! ::filestore

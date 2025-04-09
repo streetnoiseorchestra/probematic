@@ -1,126 +1,134 @@
-{:name            "SNOrga"
- :git-hash        #or [#env GIT_HASH "unknown"]
- :build-date      #or [#env BUILD_DATE "unknown"]
- :secrets         #include #or [#env APP_SECRETS_FILE "../secrets.edn"]
- :admin-email     #ref [:secrets :admin-email]
- :app-base-url    #ref [:secrets :app-base-url]
- :app-secret-key  #ref [:secrets :app-secret-key]
- :band-bank-info  #ref [:secrets :band-bank-info]
- :session-config  {:cookie-attrs  {:same-site :strict
-                                   :http-only true
-                                   :path      "/"}
-                   :session-ttl-s 1210000 ; 14 days
-                   }
- :filestore       {:store-path #profile {:dev  "/home/ramblurr/src/sno/probematic/data.dev/filestore"
-                                         :prod #or [#env APP_FILESTORE_DIR "/data/filestore"]}}
- :oauth2          {:well-known-uri #ref [:secrets :oauth2 :well-known-uri]
-                   :client-id      #ref [:secrets :oauth2 :client-id]
-                   :client-secret  #ref [:secrets :oauth2 :client-secret]
-                   :callback-path  "/oauth2/callback"}
- :authorization   {:known-roles #{:admin :Mitglieder}}
- :insurance       {:insurance-policy #ref [:secrets :insurance-policy]
-                   :images           {;; small thumbnails
-                                      :thumbnail-opts {:thumbnail-mode :thumbnail-down :width 600 :height 600 :format :webp :quality 70}
-                                      ;; for downloading
-                                      :full-opts      {:thumbnail-mode :thumbnail-down :width 1500 :height 1500 :format :jpeg :quality 80}}}
- :smtp-sno        #ref [:secrets :smtp-sno]
- :cms             #ref [:secrets :cms]
- :keycloak        #ref [:secrets :keycloak]
- :discourse       {:api-key   #ref [:secrets :discourse :api-key]
-                   :username  #ref [:secrets :discourse :username]
-                   :forum-url "https://forum.streetnoise.at"}
- :nextcloud       #ref [:secrets :nextcloud]
- :twilio          {:bot-number     #ref [:secrets :twilio :bot-number]
-                   :twilio-account #ref [:secrets :twilio :twilio-account]
-                   :twilio-token   #ref [:secrets :twilio :twilio-token]}
- :mailgun         {;;  test mode hits the mailgun API but mailgun does not send the message.
-                   ;;  this still costs money
-                   :test-mode?             #ref [:secrets :mailgun :test-mode?]
-                   ;; demo mode does not hit the mailgun API.. it just taps the emails instead of sending
-                   :demo-mode?             #ref [:secrets :mailgun :demo-mode?]
-                   :test-mode-disabled-for #ref [:secrets :mailgun :test-mode-disabled-for]
-                   :api-key                #ref [:secrets :mailgun :api-key]
-                   :from                   #ref [:secrets :mailgun :from]
-                   :send-domain            #ref [:secrets :mailgun :send-domain]
-                   :mailgun-domain         #ref [:secrets :mailgun :mailgun-domain]}
- :redis           {:conn-spec #ref [:secrets :redis :conn-spec]}
- :max-header-size 12000
- :ig/system       {:app.ig/profile         #profile {:prod :prod
-                                                     :dev  :dev
-                                                     :demo :demo
-                                                     :test :test}
-                   :app.ig/console-logging {:pretty? #profile {:prod false
-                                                               :dev  true
-                                                               :test true
-                                                               :demo true}}
-                   :app.ig/openobserve     #merge [#ref [:secrets :openobserve]
-                                                   {:enabled?    #profile {:prod true
-                                                                           :dev  false
-                                                                           :test false
-                                                                           :demo false}
-                                                    :data-stream #profile {:prod "snorga_prod_logs"
-                                                                           :dev  "snorga_dev_logs"
-                                                                           :test "snorga_test_logs"}}]
+{:name                    "SNOrga"
+ :git-hash                #or [#env GIT_HASH "unknown"]
+ :build-date              #or [#env BUILD_DATE "unknown"]
+ :secrets                 #include #or [#env APP_SECRETS_FILE "../secrets.edn"]
+ :admin-email             #ref [:secrets :admin-email]
+ :app-base-url            #ref [:secrets :app-base-url]
+ :app-secret-key          #ref [:secrets :app-secret-key]
+ :band-bank-info          #ref [:secrets :band-bank-info]
+ :session-config          {:cookie-attrs  {:same-site :strict
+                                           :http-only true
+                                           :path      "/"}
+                           :session-ttl-s 1210000 ; 14 days
+                           }
+ :filestore               {:store-path #profile {:dev  "/home/ramblurr/src/sno/probematic/data.dev/filestore"
+                                                 :prod #or [#env APP_FILESTORE_DIR "/data/filestore"]}}
+ :oauth2                  {:well-known-uri #ref [:secrets :oauth2 :well-known-uri]
+                           :client-id      #ref [:secrets :oauth2 :client-id]
+                           :client-secret  #ref [:secrets :oauth2 :client-secret]
+                           :callback-path  "/oauth2/callback"}
+ :authorization           {:known-roles #{:admin :Mitglieder}}
+ :insurance               {:insurance-policy #ref [:secrets :insurance-policy]
+                           :images           {;; small thumbnails
+                                              :thumbnail-opts {:thumbnail-mode :thumbnail-down :width 600 :height 600 :format :webp :quality 70}
+                                              ;; for downloading
+                                              :full-opts      {:thumbnail-mode :thumbnail-down :width 1500 :height 1500 :format :jpeg :quality 80}}}
+ :smtp-sno                #ref [:secrets :smtp-sno]
+ :cms                     #ref [:secrets :cms]
+ :keycloak                #ref [:secrets :keycloak]
+ :discourse               {:api-key   #ref [:secrets :discourse :api-key]
+                           :username  #ref [:secrets :discourse :username]
+                           :forum-url "https://forum.streetnoise.at"}
+ :nextcloud               #ref [:secrets :nextcloud]
+ :twilio                  {:bot-number     #ref [:secrets :twilio :bot-number]
+                           :twilio-account #ref [:secrets :twilio :twilio-account]
+                           :twilio-token   #ref [:secrets :twilio :twilio-token]}
+ :mailgun                 {;;  test mode hits the mailgun API but mailgun does not send the message.
+                           ;;  this still costs money
+                           :test-mode?             #ref [:secrets :mailgun :test-mode?]
+                           ;; demo mode does not hit the mailgun API.. it just taps the emails instead of sending
+                           :demo-mode?             #ref [:secrets :mailgun :demo-mode?]
+                           :test-mode-disabled-for #ref [:secrets :mailgun :test-mode-disabled-for]
+                           :api-key                #ref [:secrets :mailgun :api-key]
+                           :from                   #ref [:secrets :mailgun :from]
+                           :send-domain            #ref [:secrets :mailgun :send-domain]
+                           :mailgun-domain         #ref [:secrets :mailgun :mailgun-domain]}
+ :redis                   {:conn-spec #ref [:secrets :redis :conn-spec]}
+ :max-header-size         12000
+ :content-security-policy {:img-src     "https://*.streetnoise.at 'self' data:"
+                           :object-src  "'none'"
+                           :default-src #join [#ref [:app-base-url] " " #ref [:keycloak :auth-server-url] " 'self'"]
+                           :font-src    #join [#ref [:app-base-url] " 'self'"]
+                           :script-src  #join [#ref [:app-base-url] " " #ref [:discourse :forum-url] " https://early.webawesome.com 'self' 'unsafe-inline' 'unsafe-eval' blob:"]
+                           :style-src   #join [#ref [:app-base-url] " " #ref [:discourse :forum-url] " https://early.webawesome.com 'self' 'unsafe-inline'"]
+                           :connect-src "'self'"
+                           :frame-src   #join [#ref [:app-base-url] " https://" #ref [:nextcloud :host] " 'self'"]}
+ :ig/system               {:app.ig/profile         #profile {:prod :prod
+                                                             :dev  :dev
+                                                             :demo :demo
+                                                             :test :test}
+                           :app.ig/console-logging {:pretty? #profile {:prod false
+                                                                       :dev  true
+                                                                       :test true
+                                                                       :demo true}}
+                           :app.ig/openobserve     #merge [#ref [:secrets :openobserve]
+                                                           {:enabled?    #profile {:prod true
+                                                                                   :dev  false
+                                                                                   :test false
+                                                                                   :demo false}
+                                                            :data-stream #profile {:prod "snorga_prod_logs"
+                                                                                   :dev  "snorga_dev_logs"
+                                                                                   :test "snorga_test_logs"}}]
 
-                   :app.ig/env                {:profile         #ig/ref :app.ig/profile
-                                               :console-logging #ig/ref :app.ig/console-logging
-                                               :openobserve     #ig/ref :app.ig/openobserve}
-                   :app.ig/nrepl-server       {:port #long #or [#env NREPL_PORT
-                                                                #profile {:prod 7000
-                                                                          :dev  -1
-                                                                          :test -1
-                                                                          :demo -1}]
-                                               :bind #or [#env NREPL_HOST "127.0.0.1"]}
-                   :app.server/http-kit       {:options {:port     #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
-                                                         :ip       #or [#env HTTP_BIND_HOST "127.0.0.1"]
-                                                         :max-line 16384}
-                                               :env     #ig/ref :app.ig/env
-                                               :handler #ig/ref :app.ig/handler}
-                   :app.ig/handler            {:env                   #ig/ref :app.ig/env
-                                               :i18n-langs            #ig/ref :app.ig/i18n-langs
-                                               :profile               #ig/ref :app.ig/profile ;needed?
-                                               :oauth2                #ig/ref :app.ig/oauth2
-                                               :datomic               #ig/ref :app.ig/datomic-db
-                                               :webdav                #ig/ref :app.ig/webdav-sardine
-                                               :keycloak              #ig/ref :app.ig/keycloak
-                                               :redis                 #ig/ref          :app.ig/redis
-                                               :calendar              #ig/ref :app.ig/calendar
-                                               :filestore             #ig/ref :app.ig/filestore
-                                               :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult}
-                   :app.datastar/refresh-mult {:datomic #ig/ref :app.ig/datomic-db}
-                   :app.ig/oauth2             {:env #ig/ref :app.ig/env}
-                   :ol.ig/jobs                {:job-defs #ig/ref :app.ig.jobs/definitions
-                                               :env      #ig/ref :app.ig/env}
-                   :app.ig/gigo-client        {:env #ig/ref :app.ig/env}
-                   :app.ig/datomic-db         {:client {:server-type :datomic-local
-                                                        :system      "app"
-                                                        :db-name     "probematic"
-                                                        :env         #ig/ref :app.ig/env
-                                                        :storage-dir #or [#env DATOMIC_DB_STORAGE_DIR
-                                                                          #profile {;; :dev  #envf ["%s/datomic.data" PWD]
-                                                                                    :dev  #envf ["%s/datomic.data.restored" PWD]
-                                                                                    :test #envf ["%s/datomic.test.data" PWD]
-                                                                                    :demo #envf ["%s/datomic.demo.data" PWD]}]}
-                                               :peer   {:db-uri     #or [#env DATOMIC_URI
-                                                                         #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]
-                                                        :migrations {}}}
-                   :app.ig/i18n-langs         {}
-                   :app.ig/mailgun            {:env #ig/ref :app.ig/env}
-                   :app.ig/redis              {:env #ig/ref :app.ig/env}
-                   :app.ig/email-worker       {:env     #ig/ref :app.ig/env
-                                               :redis   #ig/ref :app.ig/redis
-                                               :mailgun #ig/ref :app.ig/mailgun}
-                   :app.ig/webdav-sardine     {:env #ig/ref :app.ig/env}
-                   :app.ig/keycloak           {:env #ig/ref :app.ig/env}
-                   :app.ig/calendar           {:env #ig/ref :app.ig/env}
-                   :app.ig/filestore          {:env #ig/ref :app.ig/env}
-                   :app.ig.jobs/definitions   {:env        #ig/ref :app.ig/env
-                                               :gigo       #ig/ref :app.ig/gigo-client
-                                               :datomic    #ig/ref :app.ig/datomic-db
-                                               :i18n-langs #ig/ref :app.ig/i18n-langs
-                                               :redis      #ig/ref :app.ig/redis
-                                               :calendar   #ig/ref :app.ig/calendar
-                                               :filestore  #ig/ref :app.ig/filestore}}
+                           :app.ig/env                {:profile         #ig/ref :app.ig/profile
+                                                       :console-logging #ig/ref :app.ig/console-logging
+                                                       :openobserve     #ig/ref :app.ig/openobserve}
+                           :app.ig/nrepl-server       {:port #long #or [#env NREPL_PORT
+                                                                        #profile {:prod 7000
+                                                                                  :dev  -1
+                                                                                  :test -1
+                                                                                  :demo -1}]
+                                                       :bind #or [#env NREPL_HOST "127.0.0.1"]}
+                           :app.server/http-kit       {:options {:port     #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
+                                                                 :ip       #or [#env HTTP_BIND_HOST "127.0.0.1"]
+                                                                 :max-line 16384}
+                                                       :env     #ig/ref :app.ig/env
+                                                       :handler #ig/ref :app.ig/handler}
+                           :app.ig/handler            {:env                   #ig/ref :app.ig/env
+                                                       :i18n-langs            #ig/ref :app.ig/i18n-langs
+                                                       :profile               #ig/ref :app.ig/profile ;needed?
+                                                       :oauth2                #ig/ref :app.ig/oauth2
+                                                       :datomic               #ig/ref :app.ig/datomic-db
+                                                       :webdav                #ig/ref :app.ig/webdav-sardine
+                                                       :keycloak              #ig/ref :app.ig/keycloak
+                                                       :redis                 #ig/ref          :app.ig/redis
+                                                       :calendar              #ig/ref :app.ig/calendar
+                                                       :filestore             #ig/ref :app.ig/filestore
+                                                       :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult}
+                           :app.datastar/refresh-mult {:datomic #ig/ref :app.ig/datomic-db}
+                           :app.ig/oauth2             {:env #ig/ref :app.ig/env}
+                           :ol.ig/jobs                {:job-defs #ig/ref :app.ig.jobs/definitions
+                                                       :env      #ig/ref :app.ig/env}
+                           :app.ig/gigo-client        {:env #ig/ref :app.ig/env}
+                           :app.ig/datomic-db         {:client {:server-type :datomic-local
+                                                                :system      "app"
+                                                                :db-name     "probematic"
+                                                                :env         #ig/ref :app.ig/env
+                                                                :storage-dir #or [#env DATOMIC_DB_STORAGE_DIR
+                                                                                  #profile {;; :dev  #envf ["%s/datomic.data" PWD]
+                                                                                            :dev  #envf ["%s/datomic.data.restored" PWD]
+                                                                                            :test #envf ["%s/datomic.test.data" PWD]
+                                                                                            :demo #envf ["%s/datomic.demo.data" PWD]}]}
+                                                       :peer   {:db-uri     #or [#env DATOMIC_URI
+                                                                                 #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]
+                                                                :migrations {}}}
+                           :app.ig/i18n-langs         {}
+                           :app.ig/mailgun            {:env #ig/ref :app.ig/env}
+                           :app.ig/redis              {:env #ig/ref :app.ig/env}
+                           :app.ig/email-worker       {:env     #ig/ref :app.ig/env
+                                                       :redis   #ig/ref :app.ig/redis
+                                                       :mailgun #ig/ref :app.ig/mailgun}
+                           :app.ig/webdav-sardine     {:env #ig/ref :app.ig/env}
+                           :app.ig/keycloak           {:env #ig/ref :app.ig/env}
+                           :app.ig/calendar           {:env #ig/ref :app.ig/env}
+                           :app.ig/filestore          {:env #ig/ref :app.ig/env}
+                           :app.ig.jobs/definitions   {:env        #ig/ref :app.ig/env
+                                                       :gigo       #ig/ref :app.ig/gigo-client
+                                                       :datomic    #ig/ref :app.ig/datomic-db
+                                                       :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                       :redis      #ig/ref :app.ig/redis
+                                                       :calendar   #ig/ref :app.ig/calendar
+                                                       :filestore  #ig/ref :app.ig/filestore}}
  :jobs {#_#_:job/sync-songs     {:job/frequency     [60 :minutes]
                                  :job/initial-delay [2 :minutes]}
         :job/probe-housekeeping {:job/frequency     [10 :minutes]
