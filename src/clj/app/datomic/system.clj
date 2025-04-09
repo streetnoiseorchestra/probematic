@@ -19,16 +19,16 @@
   [:map-of :keyword MigrateableComponent])
 
 (>defn- gather-migrations
-  "Gathers migrations from the provided components"
-  [migration-components]
-  [MigrateableComponentsMap => migrations/MigrationInputSchema]
-  (mapcat :migrations (vals migration-components)))
+        "Gathers migrations from the provided components"
+        [migration-components]
+        [MigrateableComponentsMap => migrations/MigrationInputSchema]
+        (mapcat :migrations (vals migration-components)))
 
 (>defn- ensure-and-connect [db-uri]
-  [migrations/DatomicDbUriSchema => migrations/DatomicConnectionSchema]
-  (when (d/create-database db-uri)
-    (μ/log ::db-created :msg "Datomic database created"))
-  (d/connect db-uri))
+        [migrations/DatomicDbUriSchema => migrations/DatomicConnectionSchema]
+        (when (d/create-database db-uri)
+          (μ/log ::db-created :msg "Datomic database created"))
+        (d/connect db-uri))
 
 (defn transact-schema [conn]
   (d/transact conn (-> (io/resource "schema.edn") slurp edn/read-string)))

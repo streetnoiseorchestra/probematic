@@ -6,6 +6,8 @@
  {:db/ident       :member/nick
   :db/doc         "A member's nickname"
   :db/valueType   :db.type/string
+  :db/index       true;; TODO(pro migrate)
+  :db/unique      :db.unique/unique     ;; TODO(pro migrate)
   :db/cardinality :db.cardinality/one}
 
  {:db/ident       :member/active?
@@ -39,13 +41,13 @@
  {:db/ident       :member/email
   :db/doc         "The email address of the member"
   :db/valueType   :db.type/string
-  :db/unique      :db.unique/identity
+  :db/unique      :db.unique/value ;; TODO(pro migrate)
   :db/cardinality :db.cardinality/one}
 
  {:db/ident       :member/username
   :db/doc         "The username of the member"
   :db/valueType   :db.type/string
-  :db/unique      :db.unique/identity
+  :db/unique      :db.unique/unique     ;; TODO(pro migrate)
   :db/cardinality :db.cardinality/one}
 
  {:db/ident       :member/keycloak-id

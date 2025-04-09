@@ -207,19 +207,33 @@
 
   (d/transact conn {:tx-data (-> (io/resource "seeds.edn") slurp edn/read-string)})
 
-  (d/transact conn {:tx-data  [{:db/ident :attendance/motivation
-                                :db/doc "The member-added motivation statement"
-                                :db/valueType :db.type/keyword
-                                :db/cardinality :db.cardinality/one}]})
+  (d/transact conn {:tx-data [{:db/ident       :attendance/motivation
+                               :db/doc         "The member-added motivation statement"
+                               :db/valueType   :db.type/keyword
+                               :db/cardinality :db.cardinality/one}]})
   (d/transact conn {:tx-data [{:section/name "dance" :section/default? false}
                               {:section/name "melodica" :section/default? false}
                               {:section/name "cabaret" :section/default? false}
                               {:section/name "violin" :section/default? false}
                               {:section/name "horn" :section/default? false}]})
-  (d/transact conn {:tx-data [{:db/ident :forum.topic/topic-id
-                               :db/doc "The topic id of the associated forum topic"
-                               :db/valueType :db.type/string
+  (d/transact conn {:tx-data [{:db/ident       :forum.topic/topic-id
+                               :db/doc         "The topic id of the associated forum topic"
+                               :db/valueType   :db.type/string
                                :db/cardinality :db.cardinality/one}]})
+
+  (d/q '[:find [?e]
+         :in $
+         :where [?e _ :member/email]]
+       db)
+  (d/transact conn {:tx-data [[:db/retract :member/email :db/unique :db.unique/identity]]})
+
+  (d/transact conn {:tx-data [{:db/id     :member/nick
+                               ;; :db/index  true
+                               :db/unique :db.unique/value}]})
+
+  (d/transact conn {:tx-data [{:db/id     :member/email
+                               ;; :db/index  true
+                               :db/unique :db.unique/value}]})
 
   (defn rollback
     "Reassert retracted datoms and retract asserted datoms in a transaction,
@@ -227,17 +241,17 @@
 
   WARNING: *very* naive function!"
     [conn tx]
-    (let [tx-log (d/tx-range conn {:start tx :end nil}) ; find the transaction
-          txid   (-> tx-log :t d/t->tx) ; get the transaction entity id
-          newdata (->> (:data tx-log)   ; get the datoms from the transaction
+    (let [tx-log  (d/tx-range conn {:start tx :end nil}) ; find the transaction
+          txid    (-> tx-log :t d/t->tx) ; get the transaction entity id
+          newdata (->> (:data tx-log)    ; get the datoms from the transaction
                        (remove #(= (:e %) txid)) ; remove transaction-metadata datoms
-                     ; invert the datoms add/retract state.
+                                        ; invert the datoms add/retract state.
                        (map #(do [(if (:added %) :db/retract :db/add) (:e %) (:a %) (:v %)]))
-                       reverse)] ; reverse order of inverted datoms.
+                       reverse)]        ; reverse order of inverted datoms.
       @(d/transact conn newdata)))
 
-  (let [tx-log (d/tx-range conn {:start tx :end nil}) ; find the transaction
-        txid   (-> tx-log :t d/t->tx)   ; get the transaction entity id
+  (let [tx-log  (d/tx-range conn {:start tx :end nil}) ; find the transaction
+        txid    (-> tx-log :t d/t->tx)  ; get the transaction entity id
         newdata (->> (:data tx-log)     ; get the datoms from the transaction
                      (remove #(= (:e %) txid)) ; remove transaction-metadata datoms
                                         ; invert the datoms add/retract state.
@@ -250,7 +264,7 @@
     (:data
      (last
       (d/tx-range conn {:start (last-transaction-time db)
-                        :end nil})))))
+                        :end   nil})))))
 
-;;
+  ;;
   )
