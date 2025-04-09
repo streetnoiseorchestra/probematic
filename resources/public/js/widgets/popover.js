@@ -1,7 +1,4 @@
-import {
-    computePosition,
-    flip,
-} from "https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.6.13/+esm";
+const { computePosition, flip } = window.FloatingUIDOM;
 
 export function ActionMenuPopover(container) {
     const trigger = container.querySelector("[popovertarget]");
