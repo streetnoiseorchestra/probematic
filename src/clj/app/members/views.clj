@@ -405,7 +405,7 @@
      [:div {:class "divide-y divide-gray-200 px-4 sm:px-6"}
       [:div {:class "space-y-6 pt-6 pb-5"}
        [:div
-        [:label {:for (path "name")  :class "block text-sm font-medium text-gray-900"} (tr [:member/name]) required-label]
+        [:label {:for (path "name") :class "block text-sm font-medium text-gray-900"} (tr [:member/name]) required-label]
         [:div {:class "mt-2 space-y-5"}
          (ui/text :id (path "name") :name "name" :value "" :class "mb-2 sm:mb-0 sm:mr-2" :required? true)]]
        [:div
@@ -419,7 +419,7 @@
        [:div
         [:label {:for "username" :class "block text-sm font-medium text-gray-900"} (tr [:member/username]) required-label]
         [:div {:class "mt-2 space-y-5"}
-         (ui/input :name "username" :label ""  :pattern (str controller/username-regex) :title (tr [:member/username-validation]) :required? true)]]
+         (ui/input :name "username" :label ""  :pattern (str members.domain/username-regex) :title (tr [:member/username-validation]) :required? true)]]
        [:div
         [:label {:for (path "phone") :class "block text-sm font-medium text-gray-900"} (tr [:Phone]) required-label]
         [:div {:class "mt-2 space-y-5"}
@@ -447,7 +447,7 @@
 
 (defn -member-create [req]
   (try
-    (let [new-member (controller/create-member! req)]
+    (let [new-member (throw (ex-info "PORTED ELSEWHERE" {}))]
       (response/hx-redirect (url/link-member new-member)))
     (catch Exception e
       (if-let [error-msg (when (:validation/error (ex-data e))

@@ -40,6 +40,8 @@
 (defn explain-human [schema value]
   (me/humanize (m/explain schema value malli-opts)))
 
+(def humanize me/humanize)
+
 (defn encode [schema value]
   (m/encode schema value malli-opts mt/string-transformer))
 

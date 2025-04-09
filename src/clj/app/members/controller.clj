@@ -1,6 +1,9 @@
 (ns app.members.controller
+  (:import java.util.concurrent.ExecutionException)
   (:require
+   [app.members.phone-number :as phone-number]
    [com.brunobonacci.mulog :as μ]
+   [app.members.domain :as domain]
    [app.ledger.domain :as ledger.domain]
    [app.auth :as auth]
    [app.datomic :as d]
@@ -19,7 +22,10 @@
    [ctmx.rt :as rt]
    [app.datomic.shim :as datomic]
    [taoensso.carmine :as redis]
-   [tick.core :as t]))
+   [tick.core :as t]
+   [app.schemas :as s]
+   [medley.core :as medley]
+   [app.datastar :as d*]))
 
 (defn sections [db]
   (->> (d/find-all db :section/name [:section/name])
@@ -97,56 +103,13 @@
 
 (defn munge-unique-conflict-error [tr e]
   (let [field (cond
-                (re-find #".*:member/phone.*" (ex-message e)) :error/member-unique-phone
-                (re-find #".*:member/username.*" (ex-message e))  :error/member-unique-username
-                (re-find #".*:member/email.*" (ex-message e))   :error/member-unique-email
-                :else nil)]
+                (re-find #".*:member/phone.*" (ex-message e))    :error/member-unique-phone
+                (re-find #".*:member/username.*" (ex-message e)) :error/member-unique-username
+                (re-find #".*:member/email.*" (ex-message e))    :error/member-unique-email
+                :else                                            nil)]
     (ex-info "Validation error" {:validation/error (if field (tr [field]) (ex-message e))})))
 
 ;;  derived from https://github.com/nextcloud/server/blob/cbcf072b23970790065e0df4a43492e1affa4bf7/lib/private/User/Manager.php#L334-L337
-(def username-regex #"^(?=[a-zA-Z0-9_.@\-]{3,20}$)(?!.*[_.]{2})[^_.].*[^_.]$")
-(defn validate-username [tr username]
-  (if (re-matches username-regex username)
-    username
-    (throw (ex-info "Validation error" {:validation/error (tr [:member/username-validation])}))))
-
-(defn clean-email [email]
-  (str/trim (str/lower-case email)))
-
-(defn generate-invite-code! [{:keys [system] :as req} member]
-  (let [invite-code (secret-box/random-str 32)
-        key (str "invite:" invite-code)]
-    (redis/wcar (:redis system)
-                (redis/setex key (* 60 60 24 30) (:member/member-id member)))
-    invite-code))
-
-(defn create-member! [{:keys [system] :as req}]
-  (let [tr (i18n/tr-from-req req)]
-    (try
-      (let [{:keys [create-sno-id phone email name nick username section-name active?] :as params} (-> req :params)
-            member-id (sq/generate-squuid)
-            member-tmpid (d/tempid)
-            txs (concat [{:member/name name
-                          :member/nick nick
-                          :member/member-id member-id
-                          :member/phone (twilio/clean-number (:env system) phone)
-                          :member/username (validate-username tr username)
-                          :member/active? (http.util/check->bool active?)
-                          :member/section [:section/name section-name]
-                          :member/email (clean-email email)
-                          :db/id member-tmpid}]
-                        (ledger.domain/txs-new-member-ledger (d/tempid) (sq/generate-squuid) member-tmpid))
-            new-member (:member (transact-member! req member-id txs))]
-        (when (http.util/check->bool create-sno-id)
-          (email/send-new-user-email! req new-member (generate-invite-code! req new-member)))
-        new-member)
-
-      (catch Exception e
-        (throw
-         (cond
-           (= :db.error/unique-conflict (:db/error (ex-data e)))
-           (munge-unique-conflict-error tr e)
-           :else e))))))
 
 (defn try-clean-number [env phone]
   (try
@@ -156,28 +119,31 @@
       phone)))
 
 (defn update-member! [req]
-  (let [member-id (http.util/path-param-uuid! req :member-id)
+  (let [member-id           (http.util/path-param-uuid! req :member-id)
         current-user-admin? (auth/current-user-admin? req)
-        {:keys [sno-id-enabled? name phone nick email active? section-name keycloak-id username]} (http.util/unwrap-params req)
-        member-ref [:member/member-id member-id]
-        old-phone (-> req :member :member/phone)
-        tx-data [(merge
-                  {:db/id member-ref
-                   :member/name name
-                   :member/phone (if (not=  old-phone phone)
-                                   (try-clean-number (-> req :system :env) phone)
-                                   old-phone)
-                   :member/nick nick
-                   :member/email (clean-email email)
-                   :member/active? (http.util/check->bool active?)
-                   :member/section [:section/name section-name]}
-                  (if current-user-admin?
-                    (util/remove-nils
-                     (util/remove-empty-strings
-                      {:member/username username
-                       :member/keycloak-id keycloak-id}))
-                    {}))]
-        result (transact-member! req member-id tx-data)]
+        {:keys [sno-id-enabled? name phone
+                nick email active?
+                section-name keycloak-id
+                username]}  (http.util/unwrap-params req)
+        member-ref          [:member/member-id member-id]
+        old-phone           (-> req :member :member/phone)
+        tx-data             [(merge
+                              {:db/id          member-ref
+                               :member/name    name
+                               :member/phone   (if (not=  old-phone phone)
+                                                 (try-clean-number (-> req :system :env) phone)
+                                                 old-phone)
+                               :member/nick    nick
+                               :member/email   (domain/clean-email email)
+                               :member/active? (http.util/check->bool active?)
+                               :member/section [:section/name section-name]}
+                              (if current-user-admin?
+                                (util/remove-nils
+                                 (util/remove-empty-strings
+                                  {:member/username    username
+                                   :member/keycloak-id keycloak-id}))
+                                {}))]
+        result              (transact-member! req member-id tx-data)]
     (when (and current-user-admin? (-> result :member :member/keycloak-id))
       (if (ctmx.rt/parse-boolean sno-id-enabled?)
         (keycloak/unlock-account! (keycloak/kc-from-req req) (:member result))
@@ -185,7 +151,7 @@
     result))
 
 (defn member-current-insurance-info [{:keys [db] :as req} member]
-  (let [policy (q/insurance-policy-effective-as-of db (t/inst) q/policy-pattern)
+  (let [policy    (q/insurance-policy-effective-as-of db (t/inst) q/policy-pattern)
         coverages (q/instruments-for-member-covered-by db  member policy q/instrument-coverage-detail-pattern)]
     {:coverages coverages
      :policy policy}))
@@ -249,15 +215,15 @@
             member))))))
 
 (defn add-discount! [{:keys [datomic-conn db] :as req}]
-  (let [member (:member req)
+  (let [member                                  (:member req)
         {:keys [expiry-date new-discount-type]} (:params req)
-        discount-type-id (util/ensure-uuid! new-discount-type)
-        encoded (settings.domain/discount->db {:travel.discount/discount-id (sq/generate-squuid)
-                                               :travel.discount/discount-type [:travel.discount.type/discount-type-id discount-type-id]
-                                               :travel.discount/expiry-date (t/date expiry-date)})
-        tx-data [(assoc  encoded :db/id "new-discount")
-                 [:db/add (d/ref member) :member/travel-discounts "new-discount"]]
-        {:keys [db-after]} (datomic/transact datomic-conn {:tx-data tx-data})]
+        discount-type-id                        (util/ensure-uuid! new-discount-type)
+        encoded                                 (settings.domain/discount->db {:travel.discount/discount-id   (sq/generate-squuid)
+                                                                               :travel.discount/discount-type [:travel.discount.type/discount-type-id discount-type-id]
+                                                                               :travel.discount/expiry-date   (t/date expiry-date)})
+        tx-data                                 [(assoc  encoded :db/id "new-discount")
+                                                 [:db/add (d/ref member) :member/travel-discounts "new-discount"]]
+        {:keys [db-after]}                      (datomic/transact datomic-conn {:tx-data tx-data})]
     db-after))
 
 (defn update-travel-discount! [{:keys [datomic-conn] :as req}]

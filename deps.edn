@@ -48,6 +48,7 @@
         dk.ative/docjure                               {:mvn/version "1.19.0"}
         mvxcvi/blocks                                  {:mvn/version "2.1.0"}
         org.im4java/im4java                            {:git/tag "1.4.0-penpot-2" :git/sha "e2b3e16" :git/url "https://github.com/penpot/im4java"}
+        com.googlecode.libphonenumber/libphonenumber   {:mvn/version "9.0.2"}
         ;; Compression - Assumes you deploy uberjar on linux x86_64
         com.aayushatharva.brotli4j/brotli4j            {:mvn/version "1.18.0"}
         com.aayushatharva.brotli4j/native-linux-x86_64 {:mvn/version "1.18.0"}

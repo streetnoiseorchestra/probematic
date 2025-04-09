@@ -58,12 +58,12 @@
 ;; Code Reloading
 
 (clj-reload/init {:dirs      ["src" "dev" "test"]
-                  :no-reload '#{integrant.repl.state}
-                  :no-unload '#{dev user integrant.repl.state}})
+                  :no-reload '#{dev user integrant.repl.state}})
 
 (comment
   (stop)
   (restart) ;; rcf
+  (reload-all)
   ;; much
   (clojure.repl.deps/sync-deps)
   ;;

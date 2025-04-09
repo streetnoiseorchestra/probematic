@@ -305,6 +305,10 @@
                                   (d*/remove-signals! sse-gen remove))
                                 (when execute
                                   (d*/execute-script! sse-gen execute))))))
+(defn redirect
+  ([request url]
+   (respond-and-close request (fn [sse-gen]
+                                (d*/redirect! sse-gen url)))))
 
 (defn respond [request on-open  & {:keys [on-close]}]
   (hk-gen/->sse-response request {hk-gen/on-open  on-open
@@ -419,3 +423,34 @@
 
 (defn debug-signals []
   [:pre {:data-text "ctx.signals.JSON()"}])
+
+;;; ------------------------------------------------------------
+;;; TODO move these to a better ns
+;;; They are generic helpers for validating forms and returning errors
+
+(defn unhandled-form-error [{:keys [tr] :as req} e]
+  (error/log-error! req e)
+  {:_top (str (tr [:error/unknown-form-error]) " " (:human-id req))})
+
+(defn untouched-fields [req form-key]
+  (keys (medley/filter-vals #(== % 0) (-> req :parameters :body form-key :touched))))
+
+(defn touched-fields [req form-key]
+  (keys (medley/filter-vals #(> % 0) (-> req :parameters :body form-key :touched))))
+(defn all-fields [req form-key]
+  (keys (-> req :parameters :body form-key :touched)))
+
+(defn form-errors
+  ([req form-key error]
+   (form-errors req form-key error nil))
+  ([req form-key error {:as _opts :keys [only] :or {only :all}}]
+   (let [fields (-> (if (= only :touched)
+                      (touched-fields req form-key)
+                      (all-fields req form-key))
+                    (zipmap (repeat nil))
+                    (assoc :_top nil))]
+
+     (respond-signals req :merge {form-key {:error (merge fields error)}}))))
+
+(defn clear-form-errors [req form-key]
+  (form-errors req form-key nil))

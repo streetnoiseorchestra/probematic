@@ -52,27 +52,28 @@
           :icon-trailing (l/optional fn?)
           :centered?     (l/optional :boolean)}}
   [& args]
-  (let [[opts attrs children]             (uic/extract #'button args)
+  (let [[opts attrs children]                  (uic/extract #'button args)
         {:keys [size priority centered? disabled? loading? icon icon-trailing]
          :or   {size     :normal
                 priority :secondary
-                loading? false}}          opts
-        {:keys [type] :or {type :button}} attrs
-        size-data                         (get button-sizes size)
-        priority-data                     (get button-priorities priority)
-        classes                           (uic/cs
-                                           "font-semibold"
-                                           (:classes size-data)
-                                           (:classes priority-data)
-                                           (:dark priority-data)
-                                           (when (or icon icon-trailing loading?) "inline-flex items-center")
-                                           (when (or icon icon-trailing) (:gap size-data))
-                                           (when centered? "items-center justify-center")
-                                           (when disabled? "opacity-50 cursor-not-allowed")
-                                           "disabled:opacity-50 disabled:cursor-not-allowed")]
-    [:button (uic/merge-attrs attrs
-                              :type type
-                              :class classes)
+                loading? false}}               opts
+        {:keys [href type] :or {type :button}} attrs
+        anchor?                                (some? href)
+        size-data                              (get button-sizes size)
+        priority-data                          (get button-priorities priority)
+        classes                                (uic/cs
+                                                "font-semibold"
+                                                (:classes size-data)
+                                                (:classes priority-data)
+                                                (:dark priority-data)
+                                                (when (or icon icon-trailing loading?) "inline-flex items-center")
+                                                (when (or icon icon-trailing) (:gap size-data))
+                                                (when centered? "items-center justify-center")
+                                                (when disabled? "opacity-50 cursor-not-allowed")
+                                                "disabled:opacity-50 disabled:cursor-not-allowed")]
+    [(if anchor? :a :button) (uic/merge-attrs attrs
+                                              :type type
+                                              :class classes)
      (when loading?
        [:svg {:class (uic/cs "spinner me-2 animate-spin"
                              (:icon-size size-data)

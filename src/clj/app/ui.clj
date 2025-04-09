@@ -567,9 +567,11 @@
                                     :attr attr
                                     :options options))))
 
+(defn section-select-options [sections]
+  (map (fn [{:section/keys [name]}]
+         {:value name :label name}) sections))
 (defn section-select [& {:keys [id value label sections extra-attrs]}]
-  (let [options (map (fn [{:section/keys [name]}]
-                       {:value name :label name}) sections)]
+  (let [options (section-select-options sections)]
     (select :id id :label label :value value :options options :extra-attrs extra-attrs)))
 
 (defn motivation-select [& {:keys [id value label motivations extra-attrs]}]
