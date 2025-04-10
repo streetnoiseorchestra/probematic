@@ -3,32 +3,32 @@
             [malli.experimental.lite :as l]))
 
 (def index {:page-name  ::members
-            :view-ns    'app.members.index.views
+            :view-ns    'app.members.index.view
             :command-ns 'app.members.index.commands
             :cmds       {::search-member {:member-table {:phrase         :string
                                                          :update-history (l/optional :boolean)}}}})
 
-(def new-member {:page-name  ::new-member
-                 :view-ns    'app.members.index.views
-                 :command-ns 'app.members.index.commands
-                 :cmds       {::create-member {:member {:validate-only :boolean
-                                                        :name          :string
-                                                        :nick          :string
-                                                        :email         :string
-                                                        :username      :string
-                                                        :phone         :string
-                                                        :section-name  :string
-                                                        :active        :boolean
-                                                        :create-sno-id :boolean
-                                                        :touched       {:name          :int
-                                                                        :nick          :int
-                                                                        :email         :int
-                                                                        :username      :int
-                                                                        :phone         :int
-                                                                        :section-name  :int
-                                                                        :active        :int
-                                                                        :create-sno-id :int}}}}})
+(def create {:page-name  ::new-member
+             :view-ns    'app.members.create.view
+             :command-ns 'app.members.create.commands
+             :cmds       {::create-member {:member {:validate-only :boolean
+                                                    :name          :string
+                                                    :nick          :string
+                                                    :email         :string
+                                                    :username      :string
+                                                    :phone         :string
+                                                    :section-name  :string
+                                                    :active        :boolean
+                                                    :create-sno-id :boolean
+                                                    :touched       {:name          :int
+                                                                    :nick          :int
+                                                                    :email         :int
+                                                                    :username      :int
+                                                                    :phone         :int
+                                                                    :section-name  :int
+                                                                    :active        :int
+                                                                    :create-sno-id :int}}}}})
 
 (defn routes []
   [(page-routes2 index)
-   (page-routes2 new-member)])
+   (page-routes2 create)])

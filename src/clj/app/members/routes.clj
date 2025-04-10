@@ -1,13 +1,12 @@
 (ns app.members.routes
-  (:require
-   [app.members.index.views]
-   [app.members.routes2 :as routes2]
-   [app.layout :as layout]
-   [app.members.views :as view]
-   [app.queries :as q]
-   [app.util.http :as http.util]
-   [ctmx.core :as ctmx]
-   [app.datomic.shim :as d]))
+  (:require [app.datomic.shim :as d]
+            [app.layout :as layout]
+            [app.members.index.view]
+            [app.members.routes2 :as routes2]
+            [app.members.views :as view]
+            [app.queries :as q]
+            [app.util.http :as http.util]
+            [ctmx.core :as ctmx]))
 
 (defn member-vcard-download []
   ["/member-vcard/{member-id}" {:app.route/name :app/member-vcard
