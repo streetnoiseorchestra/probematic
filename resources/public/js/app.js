@@ -15,6 +15,8 @@ import { TypeaheadSearch } from "./widgets/typeahead.js?v3";
 
 import { ActionMenuPopover } from "./widgets/popover.js?v3";
 
+import { MyDialog } from "./widgets/dialog.js";
+
 window.ActionMenuPopover = ActionMenuPopover;
 window.TypeaheadSearch = TypeaheadSearch;
 
