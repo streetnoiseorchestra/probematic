@@ -27,18 +27,20 @@
   (let [[opts attrs children]                  (uic/extract #'form-dialog args)
         {:keys [id]} attrs
         {:keys [title on-hide on-show open]} opts
-        modal-title-id (str "modal-title-" id)]
+        modal-title-id (str "modal-title-" id)
+        modal-body-id (str "modal-body-" id)]
     [:my-dialog (uic/attr-map :id                       id
+                              :body-id modal-body-id
                               :aria-labelledby modal-title-id
                               :data-attr-open open
                               :data-on-my-show__case.kebab (when on-show on-show)
                               :data-on-my-hide__case.kebab__debounce.300ms (when on-hide on-hide))
 
      [:div {:class "relative z-10"}
-      [:div {:class "fixed inset-0 bg-gray-500/75 transition-opacity" :aria-hidden "true"}]
+      [:div {:data-dialog-backdrop true :class "fixed inset-0 bg-gray-500/75 transition-opacity" :aria-hidden "true"}]
       [:div {:class "fixed inset-0 z-10 w-screen overflow-y-auto"}
        [:div {:class "flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"}
-        [:div {:class "relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"}
+        [:div {:id modal-body-id :data-dialog-body true :class "relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"}
          [:div {:class "sm:flex sm:items-start"}
           [:div
            {:class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left"}

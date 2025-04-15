@@ -144,6 +144,12 @@ body {
   @apply h-full;
 }
 
+/* prevent scrolling of body content when a dialog is open */
+body:has(my-dialog[open]),
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
 .logotype-dark .logotype-text {
   @apply text-orange-500;
 }

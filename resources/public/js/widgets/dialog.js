@@ -1,11 +1,17 @@
-/**
- * MyDialog - A simple headless dialog web component
+/*
+ * MyDialog - A simple headless dialog web component wrapping HTML's <dialog>
+ *
+ * Why not use <dialog> directly? Because <dialog>'s open property is horrible.
+ * See: https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/open
+ *
+ * We want property-driven web components!
  *
  * Features:
  *
  * 1. HTML Properties:
  *    - open: Boolean - Controls dialog visibility. Default: false
  *    - light-dismiss: Boolean - Enables closing when clicking outside. Default: false
+ *    - body-id: String - ID of the dialog body element for improved light-dismiss. Default: null
  *    - aria-labelledby: String - ID reference for accessible dialog title
  *    - aria-describedby: String - ID reference for accessible dialog description
  *    - aria-modal: String - Indicates if dialog is modal. Default: "true"
@@ -22,20 +28,46 @@
  *
  * 4. Special Features:
  *    - data-dialog="close" - Add to any element inside dialog to make it close the dialog
- *    - Pulse animation when trying to click outside a non-light-dismiss dialog
  *    - Focus management - Returns focus to trigger element when closed
  *    - Escape key support - Closes dialog when Escape is pressed
  *    - Accessibility - Full support for ARIA attributes and keyboard interaction
+ *    - Fully customizable styling (truly headless)
+ *
+ * 5. Styling:
+ *    - CSS Parts:
+ *      - ::part(dialog): Allows styling the dialog element including the ::backdrop
+ *        Example:
+ *
+ *            my-dialog::part(dialog)::backdrop {
+ *              background-color: rgba(0, 0, 0, 0.8);
+ *              backdrop-filter: blur(5px);
+ *            }
+ *
+ *            my-dialog::part(dialog) {
+ *              max-width: 500px;
+ *              border-radius: 8px;
+ *              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+ *            }
  *
  * Usage Example:
  *
- * <my-dialog aria-labelledby="dialog-title" aria-describedby="dialog-description">
- *   <div class="dialog-content">
+ * <my-dialog aria-labelledby="dialog-title" aria-describedby="dialog-description" open="true">
+ *   <div id="dialog-body">
  *     <h2 id="dialog-title">Dialog Title</h2>
- *     <div id="dialog-description">
+ *     <div>
  *       <p>Dialog content goes here</p>
  *     </div>
  *     <button data-dialog="close">Close</button>
+ *   </div>
+ * </my-dialog>
+ *
+ * <!-- With light-dismiss and body-id -->
+ * <my-dialog light-dismiss="true" body-id="dialog-body" aria-labelledby="dialog-title">
+ *   <div id="dialog-body" class="fixed inset-0 z-10 w-screen overflow-y-auto">
+ *     <div class="dialog-content">
+ *       <h2 id="dialog-title">Dialog Title</h2>
+ *       <p>Click outside this content to close</p>
+ *     </div>
  *   </div>
  * </my-dialog>
  */
@@ -46,6 +78,7 @@ export class MyDialog extends LitElement {
   static properties = {
     open: { type: Boolean, reflect: true },
     lightDismiss: { type: Boolean, attribute: "light-dismiss" },
+    bodyId: { type: String, attribute: "body-id" },
     ariaLabelledby: {
       type: String,
       attribute: "aria-labelledby",
@@ -61,8 +94,6 @@ export class MyDialog extends LitElement {
 
   static styles = css`
     :host {
-      --show-duration: 200ms;
-      --hide-duration: 200ms;
       display: none;
     }
 
@@ -72,32 +103,7 @@ export class MyDialog extends LitElement {
 
     dialog {
       border: none;
-      background: none;
       padding: 0;
-      margin: 0;
-      width: auto;
-      height: auto;
-      overflow: visible;
-    }
-
-    dialog::backdrop {
-      background-color: rgba(0, 0, 0, 0.25);
-    }
-
-    dialog.pulse {
-      animation: pulse 250ms ease;
-    }
-
-    @keyframes pulse {
-      0% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.02);
-      }
-      100% {
-        transform: scale(1);
-      }
     }
   `;
 
@@ -105,9 +111,11 @@ export class MyDialog extends LitElement {
     super();
     this.open = false;
     this.lightDismiss = false;
+    this.bodyId = null;
     this.ariaModal = "true"; // Default to true for modal dialogs
     this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
     this.handleDialogClick = this.handleDialogClick.bind(this);
+    this.handleDialogPointerDown = this.handleDialogPointerDown.bind(this);
   }
 
   firstUpdated() {
@@ -210,9 +218,6 @@ export class MyDialog extends LitElement {
 
     if (hideEvent.defaultPrevented) {
       this.open = true;
-      if (source !== this && !this.lightDismiss) {
-        this.pulseDialog();
-      }
       return;
     }
 
@@ -240,12 +245,10 @@ export class MyDialog extends LitElement {
 
   addOpenListeners() {
     document.addEventListener("keydown", this.handleDocumentKeyDown);
-    this.addEventListener("click", this.handleDialogClick);
   }
 
   removeOpenListeners() {
     document.removeEventListener("keydown", this.handleDocumentKeyDown);
-    this.removeEventListener("click", this.handleDialogClick);
   }
 
   handleDocumentKeyDown(event) {
@@ -262,28 +265,33 @@ export class MyDialog extends LitElement {
   }
 
   handleDialogPointerDown(event) {
-    if (event.target === this.dialog) {
-      if (this.lightDismiss) {
-        this.hideDialog(this.dialog);
-      } else {
-        this.pulseDialog();
+    if (!this.lightDismiss) return;
+    
+    // If a body-id is specified, check if the click is outside that element
+    if (this.bodyId) {
+      const bodyElement = this.querySelector(`#${this.bodyId}`);
+      if (bodyElement) {
+        // Check if the event target is not inside the specified body element
+        if (!bodyElement.contains(event.target) && event.target !== bodyElement) {
+          this.hideDialog(this.dialog);
+        }
+        return;
       }
+    }
+    
+    // Default behavior: check if click was directly on the dialog backdrop
+    if (event.target === this.dialog) {
+      this.hideDialog(this.dialog);
     }
   }
 
   handleDialogClick(event) {
     const target = event.target;
-    const closeButton = target.closest('[data-dialog="close"]');
-    if (closeButton) {
+    const button = target.closest('[data-dialog="close"]');
+    if (button) {
       event.stopPropagation();
-      this.hideDialog(closeButton);
+      this.hideDialog(button);
     }
-  }
-
-  pulseDialog() {
-    this.dialog.classList.remove("pulse");
-    void this.dialog.offsetWidth; // Force reflow
-    this.dialog.classList.add("pulse");
   }
 
   // Public methods
@@ -298,7 +306,9 @@ export class MyDialog extends LitElement {
   render() {
     return html`
       <dialog
+        part="dialog"
         @cancel=${this.handleDialogCancel}
+        @click=${this.handleDialogClick}
         @pointerdown=${this.handleDialogPointerDown}
       >
         <slot></slot>
