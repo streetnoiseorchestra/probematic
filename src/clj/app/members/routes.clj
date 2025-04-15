@@ -1,5 +1,12 @@
 (ns app.members.routes
   (:require [app.datomic.shim :as d]
+
+            [app.members.create.view]
+            [app.members.index.view]
+            [app.members.detail.view]
+            [app.members.create.commands]
+            [app.members.index.commands]
+            [app.members.detail.commands]
             [app.layout :as layout]
             [app.members.index.view]
             [app.members.routes2 :as routes2]
@@ -15,7 +22,7 @@
 
 (defn members-detail []
   (ctmx/make-routes
-   "/member/{member-id}"
+   "/member-old/{member-id}"
    (fn [req]
      (layout/app-shell req
                        (view/members-detail-page req false)))))

@@ -1,5 +1,6 @@
 (ns app.settings.views
   (:require [app.datastar :as d*]
+            [starfederation.datastar.clojure.expressions :refer [->expr]]
             [app.html :as html]
             [app.icons :as icon]
             [app.queries :as q]
@@ -50,13 +51,15 @@
                    (button2/button {:-priority                     :link-destructive
                                     :-size                         :xsmall
                                     :type                          :button
-                                    :data-on-click__viewtransition (d*/expr (d*/assign "team.remove-member-id" member-id)
-                                                                            (d*/dispatch req ::commands/remove-team-member))}
+                                    :data-on-click__viewtransition (->expr (set! $team.remove-member-id ~(str member-id))
+                                                                           (@post ~(urls/url-for req ::commands/remove-team-member)))
+                                    #_(d*/expr_DEPRECATED (d*/assign "team.remove-member-id" member-id)
+                                                          (d*/dispatch req ::commands/remove-team-member))}
                                    (tr [:action/remove]))])))]
 
      [:div {:class "text-gray-500 italic mb-4"} (tr [:team/no-members])])
    (input/input-button
-    (form/select {:-required? true
+    (form/select {:-required? false
                   :-form      form
                   :-label     (tr [:team/choose-add-member])
                   :-variant   :hidden
@@ -115,6 +118,7 @@
 (defn open-modal-button [{:keys [tr] :as req} form form-key-id command edit-any-row? ent-id]
   (let [fetching-signal  (str (name form) "-fetching")
         $fetching-signal (str "$" fetching-signal)
+        form-ent-signal  (format "%s.%s" (name form) (name form-key-id))
         $form-ent-signal (format "$%s.%s" (name form) (name form-key-id))]
     (button2/button (uic/attr-map :-priority                       :link
                                   :-disabled?                      edit-any-row?
@@ -122,28 +126,41 @@
                                   :id                              (str "update-btn-" ent-id)
                                   :data-indicator  fetching-signal
                                   :data-attr-disabled              $fetching-signal
-                                  :data-class                      (format "{'spinning': %s && %s == '%s'}" $fetching-signal $form-ent-signal  ent-id)
-                                  :data-on-click (d*/expr (format "%s='%s'" $form-ent-signal ent-id)
-                                                          (d*/dispatch req command)))
+                                  :data-class (->expr {"spinning" (&& ($ fetching-signal)
+                                                                      (= ($ form-ent-signal) ~(str ent-id)))})
+
+                                  #_(format "{'spinning': %s && %s == '%s'}" $fetching-signal $form-ent-signal  ent-id)
+                                  :data-on-wtf (->expr (let [foo $my-signal]
+                                                         ;; do something with fooo
+                                                         (str/upper-case foo)))
+                                  :data-on-click (->expr (set!
+                                                          ($ ~(name form) "." ~(name form-key-id)) ~(str ent-id))
+                                                         (@post ~(urls/url-for req command)))
+                                  #_(d*/expr_DEPRECATED (format "%s='%s'" $form-ent-signal ent-id)
+                                                        (d*/dispatch req command)))
                     (tr [:action/update]))))
 
 (defn team-row [{:keys [tr] :as req} editing? edit-any-row? {team-name :team/name :team/keys [team-id members] :as team}]
   (list
    (when editing?
-     (dialog/confirm-dialog :id (str "_delete-confirm-" team-id)
-                            :title (tr [:action/confirm-generic])
-                            :text (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])
-                            :on-hide  (format "$_delete-confirm-%s=false" team-id)
-                            :confirm-text (tr [:action/confirm-delete])
-                            :cancel-text (tr [:action/cancel])
-                            :on-confirm (d*/dispatch req ::commands/delete-team)
-                            :icon icon/triangle-exclamation))
+     (dialog/confirm-dialog {:id (str "_delete-confirm-" team-id)
+                             :-title (tr [:action/confirm-generic])
+                             :-prompt (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])
+                             :-on-hide (->expr (set! ($_delete-confirm- ~team-id) false))
+                             :-confirm-text (tr [:action/confirm-delete])
+                             :-cancel-text (tr [:action/cancel])
+                             :-on-confirm (d*/dispatch req ::commands/delete-team)
+                             :-icon dialog/alert-icon}))
    (when editing?
      (dialog/form-dialog {:id      (str "edit-team-" team-id)
-                          :title   "Edit Team"
-                          :open    (format "$team.open && $team.team-id == '%s'" team-id)
-                          :on-hide (d*/expr
-                                    (str "$team.open &&" (d*/dispatch req ::commands/close-team-edit)))}
+                          :-title   "Edit Team"
+                          #_(format "$team.open && $team.team-id == '%s'" team-id)
+                          :-open  (->expr (when $team.open
+                                            (set! $team.team-id ~(str team-id))))
+                          :-on-hide (->expr (when $team.open
+                                              (@post ~(urls/url-for req ::commands/close-team-edit))))
+                          #_(d*/expr_DEPRECATED
+                             (str "$team.open &&" (d*/dispatch req ::commands/close-team-edit)))}
                          (team-edit-form req team)))
 
    [:dt {:class (uic/cs  "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
@@ -184,7 +201,9 @@
                                :data-show                     "!$team-create.open"
                                :-icon                         icon/plus}
                               (tr [:team/create-team]))
-              (team-create-form req))]))
+              (team-create-form req))
+     ;; (d*/debug-signals)
+     ]))
 
 (defn travel-discount-type-create-form [{:keys [tr] :as req}]
   (let [form {:ns      :discount-type-create
@@ -250,20 +269,24 @@
   (list
    (when editing?
 
-     (dialog/confirm-dialog :id (str "_delete-confirm-" discount-type-id)
-                            :title (tr [:action/confirm-generic])
-                            :text (tr [:action/confirm-delete] [(str "\"" discount-type-name "\"")])
-                            :on-hide  (format "$_delete-confirm-%s=false" discount-type-id)
-                            :confirm-text (tr [:action/confirm-delete])
-                            :cancel-text (tr [:action/cancel])
-                            :on-confirm (d*/dispatch req ::commands/delete-discount-type)
-                            :icon icon/triangle-exclamation))
+     (dialog/confirm-dialog {:id (str "_delete-confirm-" discount-type-id)
+                             :-title (tr [:action/confirm-generic])
+                             :-prompt (tr [:action/confirm-delete] [(str "\"" discount-type-name "\"")])
+                             :-on-hide (format "$_delete-confirm-%s=false" discount-type-id)
+                             :-confirm-text (tr [:action/confirm-delete])
+                             :-cancel-text (tr [:action/cancel])
+                             :-on-confirm (d*/dispatch req ::commands/delete-discount-type)
+                             :-icon dialog/alert-icon}))
    (when editing?
      (dialog/form-dialog {:id      (str "edit-discount-type-" discount-type-id)
-                          :title   (tr [:travel-discounts/discount-type-name])
-                          :open    (format "$discount-type.open && $discount-type.discount-type-id == '%s'" discount-type-id)
-                          :on-hide (d*/expr
-                                    (str "$discount-type.open && " (d*/dispatch req ::commands/close-discount-type-edit)))}
+                          :-title   (tr [:travel-discounts/discount-type-name])
+                          :-open    (->expr (when $discount-type.open
+                                              (set! $discount-type.discount-type-id ~(str discount-type-id))))
+                          #_(format "$discount-type.open && $discount-type.discount-type-id == '%s'" discount-type-id)
+                          :-on-hide (->expr (when $discount-type.open
+                                              (@post ~(urls/url-for req ::commands/close-discount-type-edit))))
+                          #_(d*/expr_DEPRECATED
+                             (str "$discount-type.open && " (d*/dispatch req ::commands/close-discount-type-edit)))}
                          (travel-discount-type-edit-form req dt)))
 
    [:dt {:class (uic/cs  "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
@@ -302,9 +325,12 @@
   [:div
    [:p "This is the order in which the sections appear on gig pages."]
    [:dl {:class             "mt-2 divide-y divide-gray-100 text-sm leading-6" :id "sections-sort-container"
-         :data-on-reordered (d*/expr
-                             "$section.order = event.detail.orderInfo"
-                             (d*/dispatch req ::commands/update-section-order))}
+         :data-on-reordered
+         (->expr (set! $section.order event.detail.orderInfo)
+                 (@post ~(urls/url-for req ::commands/update-section-order)))
+         #_(d*/expr_DEPRECATED
+            "$section.order = event.detail.orderInfo"
+            (d*/dispatch req ::commands/update-section-order))}
     (map-indexed (fn [idx section]
                    (let [section-name (:section/name section)]
                      [:div {:class             "sm:flex sm:items-center cursor-pointer"
@@ -316,7 +342,8 @@
                        [:div section-name]]]))
                  sections)]
    [:div {:class "flex border-t border-gray-100 pt-6"}
-    (button/button {:data-on-click__viewtransition (d*/expr (d*/dispatch req ::commands/close-section-reorder))
+    (button/button {:data-on-click__viewtransition
+                    (->expr (@post ~(urls/url-for req ::commands/close-section-reorder)))
                     :-priority                     :primary} (tr [:action/done]))]
    [:div {:data-on-load "initEventSortable('sections-sort-container')"}]])
 
@@ -358,10 +385,12 @@
   (list
    (when editing?
      (dialog/form-dialog {:id      (str "edit-section-" section-id)
-                          :title   (tr [:section])
-                          :open    (format "$section.open && $section.section-id == '%s'" section-id)
-                          :on-hide (d*/expr
-                                    (str "$section.open && " (d*/dispatch req ::commands/close-section-edit)))}
+                          :-title   (tr [:section])
+                          :-open    (format "$section.open && $section.section-id == '%s'" section-id)
+                          :-on-hide (->expr (when $section.open
+                                              (@post ~(urls/url-for req ::commands/close-section-edit))))
+                          #_(d*/expr_DEPRECATED
+                             (str "$section.open && " (d*/dispatch req ::commands/close-section-edit)))}
                          (section-edit-form req section)))
 
    [:dt {:class (uic/cs  "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
@@ -417,7 +446,8 @@
         sections     (q/retrieve-sections db)]
     (l/panel {:-title   (tr [:sections])
               :-buttons (when-not reordering?
-                          (button/button {:data-on-click__viewtransition (d*/expr (d*/dispatch req ::commands/open-section-reorder))} (tr [:action/reorder])))
+                          (button/button {:data-on-click__viewtransition
+                                          (->expr (@post ~(urls/url-for req ::commands/open-section-reorder)))} (tr [:action/reorder])))
               :id       "sections-panel"
 
               :data-signals__ifmissing (d*/->signals {:section-create  {:open false}
@@ -430,7 +460,7 @@
                (sections-reordering req sections)
                (sections-default req sections edit-id editing-any?)))))
 
-(defn band-settings [{:keys [tr] :as req}]
+(defn page [{:keys [tr] :as req}]
   (html/->str
    [:main {:class "flex-1" :id "main"}
     (ui/page-header :title (tr [:nav/band-settings]))
@@ -439,3 +469,8 @@
     (sections req)]))
 
 (d*/refresh-all!)
+
+#_[:div {:data-computed (->expr (let [foo $my-signal]
+                                ;; do something with fooo
+                                  (str/upper-case foo)))}]
+;; => [:div {:data-computed "(() => { const foo1 = $my-signal; return str.upper_case(foo1); })()"}]

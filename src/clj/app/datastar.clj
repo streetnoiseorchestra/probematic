@@ -20,25 +20,26 @@
 ;; SOFTWARE.
 (ns app.datastar
   (:refer-clojure :exclude [get])
-  (:require [app.errors :as error]
-            [app.brotli :as br]
-            [app.html :as html]
-            [app.urls :as urls]
-            [app.util :as util]
-            [buddy.core.codecs :as codecs]
-            [camel-snake-kebab.core :as csk]
-            [chime.core :as chime]
-            [clojure.core.async :as a]
-            [clojure.string :as str]
-            [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
-            [datomic.api :as d]
-            [integrant.core :as ig]
-            [jsonista.core :as j]
-            [medley.core :as medley]
-            [starfederation.datastar.clojure.adapter.common :as d*com]
-            [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
-            [starfederation.datastar.clojure.api :as d*])
-  (:import (java.time Duration Instant)))
+  (:require
+   [app.brotli :as br]
+   [app.errors :as error]
+   [app.html :as html]
+   [app.urls :as urls]
+   [app.util :as util]
+   [buddy.core.codecs :as codecs]
+   [camel-snake-kebab.core :as csk]
+   [chime.core :as chime]
+   [clojure.core.async :as a]
+   [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
+   [datomic.api :as d]
+   [integrant.core :as ig]
+   [jsonista.core :as j]
+   [medley.core :as medley]
+   [starfederation.datastar.clojure.adapter.common :as d*com]
+   [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
+   [starfederation.datastar.clojure.api :as d*])
+  (:import
+   (java.time Duration Instant)))
 
 (defn ->signals [m]
   (j/write-value-as-string m))
@@ -374,19 +375,13 @@
           (str "@" (name method) "('" url "', " (j/write-value-as-string opts camelCaseMapper) ")")
           (str "@" (name method) "('" url "')"))))
 
-(def get (partial action :get))
-(def put (partial action :put))
-(def patch (partial action :patch))
-(def post (partial action :post))
-(def delete (partial action :delete))
+#_(>defn expr_DEPRECATED [& stmts]
+         [[:* [:maybe :string]] => :string]
+         (str/join "; " (filter identity stmts)))
 
-(>defn expr [& stmts]
-       [[:* [:maybe :string]] => :string]
-       (str/join "; " (filter identity stmts)))
-
-(>defn assign [signal-name value]
-       [:string :any => :string]
-       (format "$%s=%s" signal-name (j/write-value-as-string value)))
+#_(>defn assign [signal-name value]
+         [:string :any => :string]
+         (format "$%s=%s" signal-name (j/write-value-as-string value)))
 
 (defn dispatch
   ([req cmd]
@@ -422,6 +417,7 @@
   (get-in page-state [:form :current form-name form-id-key]))
 
 (defn debug-signals []
+  ;; [:pre {:data-json-signals true}]
   [:pre {:data-text "ctx.signals.JSON()"}])
 
 ;;; ------------------------------------------------------------

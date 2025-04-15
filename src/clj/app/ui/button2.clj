@@ -33,6 +33,11 @@
                            :dark          "dark:text-sno-orange-400 dark:hover:text-sno-orange-300"
                            :spinner-color "text-sno-orange-600"
                            :no-border     true}
+
+   :link-success      {:classes       "text-sno-green-600 hover:text-sno-green-500 underline-offset-4 hover:underline"
+                       :dark          "dark:text-sno-green-400 dark:hover:text-sno-green-300"
+                       :spinner-color "text-sno-green-600"
+                       :no-border     true}
    :link-destructive      {:classes       "text-red-600 hover:text-red-500 underline-offset-4 hover:underline"
                            :dark          "dark:text-red-400 dark:hover:text-red-300"
                            :spinner-color "text-red-600"
@@ -45,7 +50,7 @@
 
 (defn button
   {:opts {:size          (l/optional [:enum :xxsmall :xsmall :small :normal :large])
-          :priority      (l/optional [:enum :primary :secondary :secondary-destructive :link :link-destructive])
+          :priority      (l/optional [:enum :primary :secondary :secondary-destructive :link :link-success :link-destructive])
           :disabled?     (l/optional :boolean)
           :loading?      (l/optional :boolean)
           :icon          (l/optional fn?)
@@ -62,7 +67,7 @@
         size-data                              (get button-sizes size)
         priority-data                          (get button-priorities priority)
         classes                                (uic/cs
-                                                "font-semibold"
+                                                "btn-new font-semibold"
                                                 (:classes size-data)
                                                 (:classes priority-data)
                                                 (:dark priority-data)
@@ -74,11 +79,10 @@
     [(if anchor? :a :button) (uic/merge-attrs attrs
                                               :type type
                                               :class classes)
-     (when loading?
-       [:svg {:class (uic/cs "spinner me-2 animate-spin"
-                             (:icon-size size-data)
-                             (:spinner-color priority-data))}
-        [:use {:href "#svg-sprite-spinner"}]])
+     [:svg {:class (uic/cs "spinner me-2 animate-spin"
+                           (:icon-size size-data)
+                           (:spinner-color priority-data))}
+      [:use {:href "#svg-sprite-spinner"}]]
      (when (and icon (not loading?))
        (icon {:class (uic/cs "button-icon" (:icon-size size-data) "-ml-0.5") :aria-hidden true}))
      (wrap-text-node children)

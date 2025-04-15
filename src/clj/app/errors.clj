@@ -87,8 +87,8 @@
 (defn log-error! [req ex]
   (when (config/prod-mode? (-> req :system :env))
     (μ/log ::error
-      :ex (unwrap-ex ex)
-      :request (prepare-req req))))
+           :ex (unwrap-ex ex)
+           :request (prepare-req req))))
 
 (defn report-error!
   "Report an exception outside the normal request/response lifecycle"

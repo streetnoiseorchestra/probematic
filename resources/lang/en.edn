@@ -41,7 +41,8 @@
                        :filter-all                     "All Members"
                        :filter-active                  "Active Members"
                        :filter-inactive                "Inactive Members"
-                       :filter-sno-id-disabled         "SNO ID Disabled"}
+                       :filter-sno-id-disabled         "SNO ID Disabled"
+                       :browse-members                  "Browse Members"}
 
  :travel-discounts {:discount-type-name "Discount Type"
                     :expiry-date        "Expires On"
@@ -276,9 +277,9 @@
                                   :confirm-delete-poll       "Are you sure you want to delete the poll '%1?'"
                                   :confirm-delete-song       "Are you sure you want to delete the song %1?"
                                   :confirm-delete-team       "Are you sure you want to delete the team %1?"
-                                  :confirm-delete            "Yes, delete it."
+                                  :confirm-delete            "Yes, delete it"
                                   :confirm-generic           "Are you sure?"
-                                  :confirm-open-poll         "Yes, open the poll."
+                                  :confirm-open-poll         "Yes, open the poll"
                                   :continue                  "Continue"
                                   :copy-link-confirm         "Copied"
                                   :copy-link                 "Copy Link"
@@ -303,7 +304,8 @@
                                   :subscribe                 "Subscribe"
                                   :update                    "Update"
                                   :view                      "View"
-                                  :vote                      "Vote!"}
+                                  :vote                      "Vote!"
+                                  :resend-invite "Resend Invite"}
  :motivation                     {:none      "-"
                                   :very-high "Very Motivated!"
                                   :high      "Motivated"

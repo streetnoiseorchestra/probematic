@@ -1,9 +1,9 @@
 (ns app.settings.routes
-  (:require
-   [app.schemas :as s]
-   [malli.experimental.lite :as l]))
+  (:require [app.schemas :as s]
+            [malli.experimental.lite :as l]))
 
 (def page {:page-name  ::band-settings
+           :path       "/band-settings"
            :view-ns    'app.settings.views
            :command-ns 'app.settings.commands
            :cmds       {;; Teams

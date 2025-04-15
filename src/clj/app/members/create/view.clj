@@ -10,7 +10,7 @@
             [app.ui.layout :as l]
             [app.urls :as url]))
 
-(defn new-member [{:keys [tr db] :as req}]
+(defn page [{:keys [tr db] :as req}]
   (html/->str
    [:main {:class "flex-1" :id "main"}
     (l/panel {:-title    (tr [:member/new-member])

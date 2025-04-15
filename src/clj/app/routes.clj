@@ -84,5 +84,6 @@
     (def _router (-> state/system :app.ig.router/routes :router))
     (def env (-> state/system :app.ig/env))
     (tap> _routes)) ;; rcf
+  (-> state/system :app.ig/handler)
   ;;
   )

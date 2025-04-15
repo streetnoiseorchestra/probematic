@@ -1,5 +1,7 @@
 (ns app.settings.core
   (:require [app.auth :as auth]
+            [app.settings.views]
+            [app.settings.commands]
             [app.routes.datastar :refer [page-routes2]]
             [app.settings.routes :as settings]))
 

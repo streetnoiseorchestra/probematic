@@ -648,21 +648,43 @@ body:has(dialog[open]) {
 
 /* ANIMATIONS */
 
-button.btn-new > .spinner {
+.btn-new {
+  position: relative;
+  width: fit-content;
+}
+
+.btn-new > .spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  opacity: 0;
+  pointer-events: none;
+
+  /*
   opacity: 0;
   display: none;
   transition: all 200ms ease-in;
+   **/
 }
 
-button.btn-new.spinning > .spinner {
+.btn-new.spinning > .spinner {
+  /*
   opacity: 1;
   display: inline-block;
+   */
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* all other children except the .spinner should be hidden */
-button.btn-new.spinning > :not(:first-child) {
+.btn-new.spinning > :not(:first-child) {
+  /*
   opacity: 0;
   display: none;
+   */
+
+  opacity: 0;
+  pointer-events: none;
 }
 
 .htmx-request.pulsate,

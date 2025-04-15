@@ -1,9 +1,12 @@
 (ns app.members.index.view
   (:require [app.datastar :as d*]
+            [starfederation.datastar.clojure.expressions :refer [->expr]]
+            [app.ui.layout :as l]
+            [app.ui.core :as uic]
             [app.html :as html]
             [app.icons :as icon]
             [app.members.queries :as queries]
-            [app.members.routes2 :as commands]
+            [app.members.routes2 :as routes]
             [app.settings.domain :as settings.domain]
             [app.ui :as ui]
             [app.ui.button2 :as button2]
@@ -104,7 +107,7 @@
                              (if (settings.domain/expired? d) "text-green-800 bg-green-100" "text-red-800 bg-red-100"))}
                (:travel.discount.type/discount-type-name discount-type)]))))
 
-(defn member-row-ro [{:keys [tr] :as _req} _idx  {:member/keys [member-id name email active? phone section travel-discounts] :as member}]
+(defn member-row-ro [{:keys [tr] :as req} _idx  {:member/keys [member-id name email active? phone section travel-discounts] :as member}]
   ;; (q/retrieve-member db member-id)
   (let [discounts    (member-travel-discounts travel-discounts)
         section-name (:section/name section)
@@ -113,7 +116,7 @@
      (list
       [:td {:class (ui/cs "w-full max-w-0 py-4 pl-4 pr-3 sm:w-auto   sm:max-w-none sm:pl-6"
                           (ui/table-row-priorities :important))}
-       [:a {:href (url/link-member member) :class "font-medium text-blue-600 hover:text-blue-500"} name
+       [:a {:href (routes/link-member req member) :class "font-medium text-blue-600 hover:text-blue-500"} name
         [:span {:class "xl:hidden"} " " (ui/bool-bubble active?)]]
        [:dl {:class "font-normal xl:hidden"}
         [:dt {:class "sr-only sm:hidden"} (tr [:member/email])]
@@ -208,12 +211,12 @@
                              :-id     "member-search"
                              :-ns     :member-table
                              :-label  (tr [:action/search])
-                             :-action (d*/dispatch req ::commands/search-member)})]
+                             :-action (d*/dispatch req ::routes/search-member)})]
       [:div
        {:class
         "w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0"}
        (button2/button {:-priority :primary :-icon icon/plus
-                        :href      (url/url-for req ::commands/new-member)} (tr [:team/add-member]))
+                        :href      (url/url-for req ::routes/new-member)} (tr [:team/add-member]))
        [:div {:class "flex items-center space-x-3 w-full md:w-auto"}
         #_[:button
            {:id                   "actionsDropdownButton",
@@ -254,19 +257,121 @@
 
 (defn members-table [{:keys [page-state] :as req}]
   (let [quick-edit? (get-in page-state [:quick-edit :open])]
-    [:div {:class "mt-4"}
-     (if quick-edit?
-       nil
-       #_(member-table-rw req)
-       (member-table-ro req))]))
+    (if quick-edit?
+      nil
+      #_(member-table-rw req)
+      (member-table-ro req))))
 
-(defn open-invitations [_req])
+(comment
+  ;; UI Pattern, two action buttons next to each other.
+  ;; Both issue different commands.
+  ;; When a command is in flight, both should be disabled
+  ;; and the button for the current command should show a spinner.
 
-(defn members [{:keys [tr] :as req}]
-  (html/->str
-   [:main {:class "flex-1" :id "main"}
-    (ui/page-header :title (tr [:nav/members]))
-    (open-invitations req)
-    (members-table req)]))
+;;;;  Before
+  ;; with string concatenation
+  (let [inflight-signal  "invite.inflight"
+        $action-signal  "$invite.action"
+        $inflight-signal (str "$" inflight-signal)
+        $code-signal (format "$%s.%s" "invite" "code")]
+    [:button  {:data-indicator     inflight-signal
+               :data-attr-disabled $inflight-signal
+               :data-class         (format "{'spinning': %s && %s == '%s' && %s == '%s'}"
+                                           $inflight-signal $action-signal "resend" $code-signal invite-code)
+               :data-on-click (format "%s = '%s'; %s = '%s'; @post('%s')"
+                                      $code-signal invite-code
+                                      $action-signal "resend"
+                                      (url/url-for req ::routes/resend-invitation))}]
+    ;; 2nd button omitted
+    )
+
+;;;;  AFTER
+  ;; with d* ->expr compiler
+  ;; (no let block required!)
+  [:button  {:data-indicator "invite.inflight"
+             :data-attr-disabled (->expr $invite.inflight)
+             :data-class (->expr {"spinning"
+                                  (and $invite.inflight
+                                       (= $invite.action "resend")
+                                       (= $invite.code ~invite-code) true)})
+
+             :data-on-click (->expr (set! $invite.code ~invite-code)
+                                    (set! $invite.action "resend")
+                                    (@post ~(urls/url-for ::routes/resend-invitation)))}]
+
+   ;; 2nd button omitted
+  )
+
+(defn open-invitations-list [{:keys [tr] :as req} open-invitations]
+  (let [inflight-signal  "invite.inflight"
+        $action-signal  "$invite.action"
+        $inflight-signal (str "$" inflight-signal)
+        $code-signal (format "$%s.%s" "invite" "code")]
+    (list
+     (l/panel {:-title   (tr [:member/open-invitations])}
+              [:table {:class "min-w-full divide-y divide-gray-300"
+                       :data-signals (d*/->signals {:invite {:code nil
+                                                             :inflight nil
+                                                             :action nil}})}
+               (ui/table-row-head [{:label (tr [:member/name]) :priority :medium :key :owner}
+                                   {:label (tr [:member/email]) :priority :medium :key :owner}
+                                   {:label "" :variant :action :key :action}])
+               (ui/table-body
+                (map (fn [{:member/keys [name email invite-code]}]
+                       [:tr
+                        [:td {:class "sm:hidden"} name " " email]
+                        [:td {:class "hidden sm:table-cell px-3 py-4"} name]
+                        [:td {:class "hidden sm:table-cell px-3 py-4"} email]
+                        [:td {:class "py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"}
+                         [:span {:class "flex flex-row space-x-2"}
+                          (button2/button (uic/attr-map :-priority :link-success :type :button
+                                                        :data-indicator "invite.inflight"
+                                                        :data-attr-disabled (->expr ($invite.inflight))
+                                                        :data-class (->expr {"spinning"
+                                                                             (and $invite.inflight
+                                                                                  (= $invite.action "resend")
+                                                                                  (= $invite.code ~invite-code) true)})
+                                                        #_(format "{'spinning': %s && %s == '%s' && %s == '%s'}" $inflight-signal $action-signal "resend" $code-signal invite-code)
+                                                        :data-on-click (->expr (set! $invite.code ~invite-code)
+                                                                               (set! $invite.action "resend")
+                                                                               (@post ~(url/url-for req ::routes/resend-invitation)))
+                                                        #_(format "%s = '%s'; %s = '%s'; @post('%s')"
+                                                                  $code-signal invite-code
+                                                                  $action-signal "resend"
+                                                                  (url/url-for req ::routes/resend-invitation))
+                                                        #_(d*/expr_DEPRECATED (format "%s='%s'" $code-signal invite-code)
+                                                                              (format "%s='%s'" $action-signal "resend")
+                                                                              (d*/dispatch req ::routes/resend-invitation)))
+                                          (tr [:action/resend-invite]))
+                          (button2/button (uic/attr-map :-priority :link-destructive :type :button
+                                                        :data-indicator "invite.inflight"
+                                                        :data-attr-disabled (->expr ($invite.inflight))
+                                                        :data-class (->expr {"spinning"
+                                                                             (and $invite.inflight
+                                                                                  (= $invite.action "delete")
+                                                                                  (= $invite.code ~invite-code) true)})
+                                                        #_(format "{'spinning': %s && %s == '%s' && %s == '%s'}" $inflight-signal $action-signal "delete" $code-signal invite-code)
+                                                        :data-on-click (->expr (set! $invite.code ~invite-code)
+                                                                               (set! $invite.action "delete")
+                                                                               (@post ~(url/url-for req ::routes/delete-invitation)))
+                                                        #_(d*/expr_DEPRECATED (format "%s='%s'" $code-signal invite-code)
+                                                                              (format "%s='%s'" $action-signal "delete")
+                                                                              (d*/dispatch req ::routes/delete-invitation)))
+                                          (tr [:action/delete]))]]])
+                     open-invitations))])
+
+     (d*/debug-signals))))
+
+(defn page [{:keys [tr] :as req}]
+  (let [open-invitations (queries/members-with-open-invites req)]
+    (html/->str
+     [:main {:class "flex-1" :id "main"}
+      (ui/page-header :title (tr [:nav/members]))
+      (when (seq open-invitations)
+        [:div {:class "mt-4 lg:mt-12"}
+         (open-invitations-list req open-invitations)])
+      [:div {:class "mt-6 lg:mt-12"}
+       (when (seq open-invitations) [:div {:class "px-4 sm:px-6 lg:px-8"} (ui/divider-left (tr [:member/browse-members]) nil)])
+       (members-table req)]])))
 
 (d*/refresh-all!)

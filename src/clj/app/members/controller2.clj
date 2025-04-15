@@ -1,5 +1,7 @@
 (ns app.members.controller2
   (:require [app.datomic :as d]
+            [app.errors :as errors]
+            [com.brunobonacci.mulog :as μ]
             [app.datomic.shim :as datomic]
             [app.email :as email]
             [app.keycloak :as keycloak]
@@ -29,7 +31,7 @@
          before-member (q/retrieve-member (:db-before tx-result) member-id)
          after-member  (q/retrieve-member (:db-after tx-result) member-id)]
      (when
-         (and (keycloak-attrs-changed? before-member after-member) (:member/keycloak-id after-member))
+      (and (keycloak-attrs-changed? before-member after-member) (:member/keycloak-id after-member))
        ;; TODO: rollback datomic tx if keycloak update fails
        (keycloak/update-user-meta! (:keycloak system) after-member))
      {:member after-member})))
@@ -61,5 +63,35 @@
     (re-find #".*:member/nick.*" (ex-message e))     {:nick (tr [:error/member-unique-nick])}
     :else                                            {:_top (str (tr [:error/unknown-form-error]) " " human-id)}))
 
+(defn -delete-invitation [redis code]
+  (redis/wcar redis (redis/del (str "invite:" code))))
+
+(defn fetch-invite-code [system invite-code]
+  (let [key (str "invite:" invite-code)]
+    (redis/wcar (:redis system) (redis/get key))))
+
+(defn load-invite
+  "Load the invitation with a code returns nil if it is not valid."
+  [{:keys [system db] :as req} invite-code]
+  (assert invite-code)
+  (try
+    (let [member-id (fetch-invite-code system invite-code)]
+      (if-not member-id
+        (throw (ex-info "Invite code expired" {:invite-code invite-code}))
+        {:member (q/retrieve-member db member-id) :invite-code invite-code}))
+    (catch Throwable e
+      (tap> {:ex e})
+      (errors/log-error! req e)
+      nil)))
+
+(defn resend-invitation! [req invite-code]
+  (let [{:keys [member invite-code]} (load-invite req invite-code)]
+    (μ/log ::resend-member-invite)
+    (email/send-new-user-email! req member invite-code)))
+
 (defn send-user-invitation! [req new-member]
   (email/send-new-user-email! req new-member (generate-invite-code! req new-member)))
+
+(defn delete-invitation! [req invite-code]
+  (μ/log ::delete-member-invite)
+  (-delete-invitation (-> req :system :redis) invite-code))

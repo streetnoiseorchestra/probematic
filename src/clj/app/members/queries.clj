@@ -1,6 +1,7 @@
 (ns app.members.queries
   (:require [app.datomic :as d]
             [app.queries :as q]
+            [taoensso.carmine :as redis]
             [clojure.string :as str]))
 
 (defn sections [db]
@@ -49,3 +50,15 @@
          (mapv #(first %))
          (filter-by-spec filtering)
          (sort-by-spec sorting))))
+
+(defn members-with-open-invites
+  "Return the members with open invites"
+  [req]
+  (->> (redis/wcar (-> req :system :redis) (redis/keys "invite:*"))
+       (map (fn [k]
+              {:key k
+               :member-id (redis/wcar (-> req :system :redis) (redis/get k))}))
+       (map (fn [{:keys [member-id key]}]
+              (assoc (q/retrieve-member (:db req) member-id)
+                     :member/invite-code
+                     (second (str/split key #":")))))))

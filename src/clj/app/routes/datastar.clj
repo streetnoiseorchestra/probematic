@@ -1,7 +1,10 @@
 (ns app.routes.datastar
   (:require
+
+   [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
    [app.datastar :as d*]
-   [app.layout :as layout]))
+   [app.layout :as layout]
+   [clojure.string :as str]))
 
 (defn shim [req]
   (layout/app-shell req nil))
@@ -35,19 +38,36 @@
      (let [qualified-sym (symbol (str ns) (clojure.core/name kw))]
        (resolve qualified-sym)))))
 
-(defn command2 [cmd-ns [cmd-name param-spec]]
-  (let [handler-fn (resolve-from-kw cmd-ns cmd-name)]
-    (assert handler-fn (str "Command handler function not found for " cmd-name))
-    [(route->path cmd-name)
-     (let [data {:name cmd-name :post {:handler (var-get handler-fn)}}]
-       (cond-> data
-         param-spec (assoc-in [:post :parameters :body]  param-spec)))]))
+(>defn command2 [cmd-ns [cmd-name param-spec]]
+       [:symbol [:vector :qualified-keyword [:maybe :map]] => :vector]
+       (let [handler-fn   (resolve-from-kw cmd-ns cmd-name)
+             path         (route->path cmd-name)
+             post-handler (var-get handler-fn)
+             route-data   (cond-> {:name cmd-name :post {:handler post-handler}}
+                            param-spec (assoc-in [:post :parameters :body]  param-spec))]
+         (assert handler-fn (str "Command handler function not found for " cmd-name " in ns " cmd-ns))
+         [path route-data]))
 
-(defn page-routes2 [{:keys [page-name route-data view-ns command-ns cmds]}]
-  (let [render-fn (resolve-from-kw view-ns page-name)]
-    (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
-    [(route->path page-name) (merge {:name page-name}
-                                    route-data)
-     (into [["" {:get  shim
-                 :post (d*/render-handler render-fn)}]]
-           (mapv (partial command2 command-ns) cmds))]))
+(def CommandOpt
+  [:map-of :keyword :map])
+
+(def PageOpts
+  [:map
+   [:path [:and :string [:fn {:error/message "should start with a /"} #(str/starts-with? % "/")]]]
+   [:page-name :qualified-keyword]
+   [:route-data {:optional true} :map]
+   [:view-ns :symbol]
+   [:command-ns :symbol]
+   [:cmds [:map-of :qualified-keyword CommandOpt]]])
+
+(>defn page-routes2
+       [{:keys [path page-name route-data view-ns command-ns cmds]}]
+       [PageOpts => :vector]
+       (assert path "path is required")
+       (let [render-fn  (resolve-from-kw view-ns :page)
+             route-data (merge {:name page-name} route-data)]
+         (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
+         [path route-data
+          (into [["" {:get  shim
+                      :post (d*/render-handler render-fn)}]]
+                (mapv (partial command2 command-ns) cmds))]))

@@ -8,6 +8,7 @@
                  starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
  :linters       {;; :unused-value        {:level :off}
                  ;; :unused-binding      {:level :off}
+                 :unresolved-symbol {:exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
                  :unused-import       {:level :off}
                  :invalid-arity       {:level :error}
                  :unused-namespace    {:level   :warning
