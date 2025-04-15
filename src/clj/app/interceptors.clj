@@ -9,7 +9,6 @@
    [app.routes.errors :as errors]
    [app.schemas :as schemas]
    [clojure.string :as str]
-   ;; [co.deps.ring-etag-middleware :as etag]
    [com.brunobonacci.mulog :as μ]
    [app.datomic.shim :as d]
    [luminus-transit.time :as time]
@@ -308,13 +307,6 @@
                     ;; multipart
                     (multipart/multipart-interceptor)])))
 
-#_(def etag-interceptor
-    (interceptor/interceptor
-     {:name  ::etag
-      :leave (middlewares/response-fn-adapter
-              (fn [request _opts]
-                (etag/add-file-etag request false)))}))
-
 (def hash-prefix-len (count "hash-"))
 (def hash-len 8)
 
@@ -363,7 +355,7 @@
                    ctx)
                  ctx))}))
 
-;; TODO after removing p edestal
-;;  - add etag interceptor
+;; TODO after removing pedestal
+;;  - add etag interceptor (maybe?)
 ;;  - exceptions
 ;;  - cache control
