@@ -25,16 +25,17 @@
         datastar/sdk                                   {:git/url   "https://github.com/starfederation/datastar/"
                                                         :git/sha   "7f7b555998d24d5a33e16eecbdfd6aa554a16427"
                                                         :deps/root "sdk/clojure/sdk"}
-        org.flatland/ordered                           {:mvn/version "1.15.12"}
-        ;; datastar/malli-schemas               {:git/url   "https://github.com/starfederation/datastar/"
-        ;;                                       :git/sha   "c35b85ce4e9e1ea64ee8457f80f7a4d59955919d"
-        ;;                                       :deps/root "sdk/clojure/malli-schemas"}
         datastar/http-kit                              {:git/url   "https://github.com/starfederation/datastar/"
                                                         :git/sha   "7f7b555998d24d5a33e16eecbdfd6aa554a16427"
                                                         :deps/root "sdk/clojure/adapter-http-kit"}
+        datastar/expressions                                   {;; :git/url   "https://github.com/ramblurr/datastar-expressions/"
+                                                                ;; :git/sha   "32d6c20ff48cd41ba5818a67ef0cd223ae3a93ba"
+                                                                :local/root "/home/ramblurr/src/clojure-playground/datastar-expressions"}
+        org.flatland/ordered                           {:mvn/version "1.15.12"}
         ;; for Discourse integration
         clj-commons/clj-yaml                           {:mvn/version "1.0.27"}
-        com.github.oliyh/martian-httpkit               {:mvn/version "0.1.26"}
+        com.github.oliyh/martian {:mvn/version "0.1.30"}
+        com.github.oliyh/martian-httpkit {:mvn/version "0.1.30"}
         ;; Data
         metosin/malli                                  {:mvn/version "0.17.0"}
         luminus-transit/luminus-transit                {:mvn/version "0.1.6" :exclusions [com.cognitect/transit-clj]}
