@@ -1,7 +1,7 @@
 (ns ol.system-test
   (:require
    [clojure.test :refer [deftest is use-fixtures]]
-   [ol.test-utils.system :refer [with-system-fixture *system*]]))
+   [app.test-system :refer [with-system-fixture *system*]]))
 
 (defn new-system
   "Define a minimal system which is just enough for the tests in this

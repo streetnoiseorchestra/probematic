@@ -10,7 +10,7 @@
    [portal-helpers :as portal-repl]
    [app.ui.core :as ui-core]
    [com.fulcrologic.guardrails.malli.core]
-   [ol.system :as system]
+   [app.system :as system]
    [app.ig]
    [integrant.repl.state :as state]
    [integrant.repl :as integrant.repl]))

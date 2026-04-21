@@ -19,7 +19,7 @@
             [integrant.core :as ig]
             [nrepl.server :as nrepl]
             [ol.jobs.ig]
-            [ol.system :as system]
+            [app.system :as system]
             [app.datastar]
             [taoensso.carmine :as car]))
 ;; Ensure ctmx is using the XSS safe hiccup render function

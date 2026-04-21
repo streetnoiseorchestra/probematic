@@ -28,9 +28,8 @@
         datastar/http-kit                {:git/url   "https://github.com/starfederation/datastar/"
                                           :git/sha   "3c5974c2e15d74a2bd2f8326232dbe59d84d6135"
                                           :deps/root "sdk/clojure/adapter-http-kit"}
-        datastar/expressions             {;; :git/url   "https://github.com/ramblurr/datastar-expressions/"
-                                          ;; :git/sha   "32d6c20ff48cd41ba5818a67ef0cd223ae3a93ba"
-                                          :local/root "/home/ramblurr/src/clojure-playground/datastar-expressions"}
+        datastar/expressions             {:git/url "https://github.com/ramblurr/datastar-expressions/"
+                                          :git/sha "ae625bcc1d9267fc6c76fc96b44c87cdbfc81ac6"}
         org.flatland/ordered             {:mvn/version "1.15.12"}
         ;; for Discourse integration
         clj-commons/clj-yaml             {:mvn/version "1.0.29"}
@@ -88,19 +87,22 @@
         com.github.javafaker/javafaker                 {:mvn/version "1.0.2"}
         spootnik/signal                                {:mvn/version "0.2.5"}
         io.github.paintparty/bling                     {:mvn/version "0.10.0"}
+        integrant/integrant                            {:mvn/version "1.0.1"}
+        jarohen/chime                                  {:mvn/version "0.3.3"}
+        nano-id/nano-id                                {:mvn/version "1.1.0"}
         ;; FCIS/Effects System
         exoscale/interceptor                           {:mvn/version "0.1.17"}
-        funcool/promesa {:mvn/version "11.0.678"}
+        funcool/promesa                                {:mvn/version "11.0.678"}
         ;; REPL
         nrepl/nrepl                                    {:mvn/version "1.7.0"}
         integrant/repl                                 {:mvn/version "0.5.1"}
         cider/cider-nrepl                              {:mvn/version "0.59.0"}
-        djblue/portal                                  {:mvn/version "0.64.1"}
-        ;; Shared Outskirts Labs libs
-        ol/system                                      {:git/url "https://github.com/ramblurr/ol-system.git" :git/sha "a7094d0431b5502603db5cfa202b4b69f53eb822" :deps/root "lib/ol.system"}
-        ol/jobs                                        {:git/url "https://github.com/ramblurr/ol-system.git" :git/sha "a7094d0431b5502603db5cfa202b4b69f53eb822" :deps/root "lib/ol.jobs"}}
+        djblue/portal                                  {:mvn/version "0.64.1"}}
  :aliases
- {:dev
+ {:kaocha {:extra-paths ["test"]
+           :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+           :main-opts   ["-m" "kaocha.runner"]}
+  :dev
   {:extra-paths ["env/dev/clj"
                  "env/dev/resources"
                  "test"]
@@ -120,10 +122,7 @@
    :jvm-opts ["-Duser.timezone=UTC"
               "-Dguardrails.enabled=true"
               "-XX:+UseZGC"
-              ;; ZGenerational will be the default in future
-              ;; so this won't need to be specified
-              "-XX:+ZGenerational"
-              ;; "-XX:-OmitStackTraceInFastThrow"
+              "-XX:-OmitStackTraceInFastThrow"
               ;; "--add-opens=java.base/java.nio=ALL-UNNAMED"
               ;; "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
               ]}

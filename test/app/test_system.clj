@@ -1,9 +1,8 @@
 (ns app.test-system
   (:require
    [clojure.string :as str]
-   [clojure.java.io :as io]
    [integrant.core :as ig]
-   [ol.system])
+   [app.system])
   (:import
    java.util.regex.Pattern))
 
@@ -22,7 +21,7 @@
 
 (defn- default-system
   []
-  (ol.system/system-config
+  (app.system/system-config
    {:profile :test}))
 
 (defn with-system-fixture
@@ -55,6 +54,3 @@
        (map #(sanitize %))
        (remove empty?)
        (not-empty)))
-
-(defn- read-resource [name]
-  (slurp (io/resource name)))

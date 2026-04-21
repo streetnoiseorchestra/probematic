@@ -1,7 +1,7 @@
 (ns app.main
   (:gen-class)
   (:require
-   ol.system
+   [app.system]
    [app.ig]
    [signal.handler :as signal]
    [com.brunobonacci.mulog :as μ]
@@ -17,10 +17,10 @@
 (defn stop-system! []
   (alter-var-root #'system ig/halt!))
 
-(defn -main [& args]
+(defn -main [& _args]
   (let [profile (profile)
         _ (μ/log ::pre-start :profile profile)
-        system-config (ol.system/system-config {:profile profile})
+        system-config (app.system/system-config {:profile profile})
         sys (ig/init system-config)]
     (.addShutdownHook
      (Runtime/getRuntime)
