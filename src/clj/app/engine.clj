@@ -31,4 +31,4 @@
      (throw (ex-info "Invalid command" {:command command})))
    (shell/dispatch-sync (merge env (request-context req))
                         command
-                        opts)))
+                        (or opts shell/default-opts))))

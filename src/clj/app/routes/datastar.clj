@@ -3,6 +3,7 @@
 
    [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
    [app.datastar :as d*]
+   [app.engine :as engine]
    [app.layout :as layout]
    [clojure.string :as str]))
 
@@ -48,6 +49,19 @@
          (assert handler-fn (str "Command handler function not found for " cmd-name " in ns " cmd-ns))
          [path route-data]))
 
+(defn engine-command-handler [cmd-name]
+  (fn [req]
+    (let [env (get-in req [:system :engine])]
+      (assert env "Engine not found in request system")
+      (engine/dispatch-request-sync env req {:command/kind cmd-name}))))
+
+(defn command-engine [[cmd-name param-spec]]
+  (let [path       (route->path cmd-name)
+        route-data (cond-> {:name cmd-name
+                            :post {:handler (engine-command-handler cmd-name)}}
+                     param-spec (assoc-in [:post :parameters :body] param-spec))]
+    [path route-data]))
+
 (def CommandOpt
   [:map-of :keyword :map])
 
@@ -71,3 +85,14 @@
           (into [["" {:get  shim
                       :post (d*/render-handler render-fn)}]]
                 (mapv (partial command2 command-ns) cmds))]))
+
+(defn page-routes-engine
+  [{:keys [path page-name route-data view-ns cmds]}]
+  (assert path "path is required")
+  (let [render-fn   (resolve-from-kw view-ns :page)
+        route-data  (merge {:name page-name} route-data)
+        child-routes (into [["" {:get  shim
+                                 :post (d*/render-handler render-fn)}]]
+                           (mapv command-engine cmds))]
+    (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
+    (into [path route-data] child-routes)))
