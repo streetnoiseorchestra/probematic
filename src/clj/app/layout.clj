@@ -46,7 +46,7 @@
 (defn app-container
   [req member body]
   [:div {:id                            "app-container"
-         :data-class-app_container_wide "!$_sidebar.expanded"
+         :data-class:app_container_wide "!$_sidebar.expanded"
          :class                         "flex flex-col lg:pl-64 transition-all"}
    [:div {:class "sticky top-0 z-10 flex h-16 shrink-0 border-b border-gray-200 bg-white lg:hidden"}
     [:button {:type                "button" :class "border-r border-gray-200 px-4 text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-inset focus:ring-purple-500 lg:hidden"
@@ -133,9 +133,9 @@
 
 (defn desktop-menu
   [req member]
-  [:div {:data-signals-_sidebar.expanded "true"}
+  [:div {:data-signals:_sidebar.expanded "true"}
    [:div {:id                   "desktop-sidebar-menu"
-          :data-class-collapsed "!$_sidebar.expanded"
+          :data-class:collapsed "!$_sidebar.expanded"
           :class
           (ui/cs
            "hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-gray-100 lg:pt-5 lg:pb-4"
@@ -159,7 +159,7 @@
       ]
      [:div {:class "flex items-end justify-end"}
       [:button {:class         "px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md sidebar-open-close-button rotate-0 "
-                :data-on-click "$_sidebar.expanded = !$_sidebar.expanded"}
+                :data-on:click "$_sidebar.expanded = !$_sidebar.expanded"}
        (icon/arrow-small-left {:class "w-6 h-6 hidden lg:block"})]]]]])
 
 (defn mobile-menu
@@ -274,7 +274,7 @@
    (let [member (auth/get-current-member req)]
      (render/html5-response req (merge {:title "SNOrga"} opts)
                             [:div
-                             [:div {:data-on-load "@post(window.location.pathname + window.location.search)" :id "long-lived-sse"}]
+                             [:div {:data-init "@post(window.location.pathname + window.location.search)" :id "long-lived-sse"}]
                              [:div {:class "min-h-full"}
                               (mobile-menu req)
                               (desktop-menu req member)

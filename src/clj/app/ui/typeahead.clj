@@ -51,9 +51,9 @@
       (input/text (uic/attr-map :id                   input-id
                                 :class                "w-full"
                                 :placeholder          label
-                                :data-on-load         (selmer/render  "TypeaheadSearch('{{input-id}}', '{{container-id}}')" {:input-id input-id :container-id container-id})
+                                :data-init         (selmer/render  "TypeaheadSearch('{{input-id}}', '{{container-id}}')" {:input-id input-id :container-id container-id})
                                 :data-bind            (ns-signal ns :phrase)
-                                :data-on-keydown__debounce.300ms
+                                :data-on:keydown__debounce.300ms
                                 (selmer/render
                                  "{{phrase}}.trim() !== {{last-phrase}}.trim() && ( {{update-history}} = true ) && {{
 action|safe }} && {{search-counter}}++; {{last-phrase}} = {{phrase}}.trim();"
@@ -65,7 +65,7 @@ action|safe }} && {{search-counter}}++; {{last-phrase}} = {{phrase}}.trim();"
                                   :search-counter          $search-counter
                                   :browser-history-counter $browser-history-counter})
 
-                                :data-on-historychange
+                                :data-on:historychange
                                 (selmer/render "{{phrase}}=evt.detail.phrase; {{browser-history-counter}}++; {{update-history}} = false; {{action|safe}}"
                                                {:action                  action
                                                 :phrase                  $phrase

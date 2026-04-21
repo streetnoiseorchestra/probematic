@@ -275,10 +275,10 @@
         $inflight-signal (str "$" inflight-signal)
         $code-signal (format "$%s.%s" "invite" "code")]
     [:button  {:data-indicator     inflight-signal
-               :data-attr-disabled $inflight-signal
+               :data-attr:disabled $inflight-signal
                :data-class         (format "{'spinning': %s && %s == '%s' && %s == '%s'}"
                                            $inflight-signal $action-signal "resend" $code-signal invite-code)
-               :data-on-click (format "%s = '%s'; %s = '%s'; @post('%s')"
+               :data-on:click (format "%s = '%s'; %s = '%s'; @post('%s')"
                                       $code-signal invite-code
                                       $action-signal "resend"
                                       (url/url-for req ::routes/resend-invitation))}]
@@ -289,13 +289,13 @@
   ;; with d* ->expr compiler
   ;; (no let block required!)
   [:button  {:data-indicator "invite.inflight"
-             :data-attr-disabled (->expr $invite.inflight)
+             :data-attr:disabled (->expr $invite.inflight)
              :data-class (->expr {"spinning"
                                   (and $invite.inflight
                                        (= $invite.action "resend")
                                        (= $invite.code ~invite-code) true)})
 
-             :data-on-click (->expr (set! $invite.code ~invite-code)
+             :data-on:click (->expr (set! $invite.code ~invite-code)
                                     (set! $invite.action "resend")
                                     (@post ~(urls/url-for ::routes/resend-invitation)))}]
 
@@ -326,13 +326,13 @@
                          [:span {:class "flex flex-row space-x-2"}
                           (button2/button (uic/attr-map :-priority :link-success :type :button
                                                         :data-indicator "invite.inflight"
-                                                        :data-attr-disabled (->expr ($invite.inflight))
+                                                        :data-attr:disabled (->expr ($invite.inflight))
                                                         :data-class (->expr {"spinning"
                                                                              (and $invite.inflight
                                                                                   (= $invite.action "resend")
                                                                                   (= $invite.code ~invite-code) true)})
                                                         #_(format "{'spinning': %s && %s == '%s' && %s == '%s'}" $inflight-signal $action-signal "resend" $code-signal invite-code)
-                                                        :data-on-click (->expr (set! $invite.code ~invite-code)
+                                                        :data-on:click (->expr (set! $invite.code ~invite-code)
                                                                                (set! $invite.action "resend")
                                                                                (@post ~(url/url-for req ::routes/resend-invitation)))
                                                         #_(format "%s = '%s'; %s = '%s'; @post('%s')"
@@ -345,13 +345,13 @@
                                           (tr [:action/resend-invite]))
                           (button2/button (uic/attr-map :-priority :link-destructive :type :button
                                                         :data-indicator "invite.inflight"
-                                                        :data-attr-disabled (->expr ($invite.inflight))
+                                                        :data-attr:disabled (->expr ($invite.inflight))
                                                         :data-class (->expr {"spinning"
                                                                              (and $invite.inflight
                                                                                   (= $invite.action "delete")
                                                                                   (= $invite.code ~invite-code) true)})
                                                         #_(format "{'spinning': %s && %s == '%s' && %s == '%s'}" $inflight-signal $action-signal "delete" $code-signal invite-code)
-                                                        :data-on-click (->expr (set! $invite.code ~invite-code)
+                                                        :data-on:click (->expr (set! $invite.code ~invite-code)
                                                                                (set! $invite.action "delete")
                                                                                (@post ~(url/url-for req ::routes/delete-invitation)))
                                                         #_(d*/expr_DEPRECATED (format "%s='%s'" $code-signal invite-code)

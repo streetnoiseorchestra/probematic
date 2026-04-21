@@ -30,6 +30,7 @@
    [camel-snake-kebab.core :as csk]
    [chime.core :as chime]
    [clojure.core.async :as a]
+   [clojure.string :as str]
    [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
    [datomic.api :as d]
    [integrant.core :as ig]
@@ -44,9 +45,14 @@
 (defn ->signals [m]
   (j/write-value-as-string m))
 
-#_(def merge-fragments! d*/merge-fragments!)
-#_(def merge-fragment! d*/merge-fragment!)
-(def merge-signals! d*/merge-signals!)
+#_(def patch-elements! d*/patch-elements!)
+(def patch-signals! d*/patch-signals!)
+
+(defn- remove-signals-patch [paths]
+  (reduce (fn [acc path]
+            (assoc-in acc (mapv keyword (str/split path #"\.")) nil))
+          {}
+          paths))
 
 (defn digest
   "Digest function based on Clojure's hash."
@@ -166,7 +172,7 @@
                                  (init-tab-state! <ch tab-id)
                                  (util/thread
                                    (try
-                                     (d*/merge-signals! sse-gen (j/write-value-as-string {:tab-id tab-id}))
+                                     (d*/patch-signals! sse-gen (j/write-value-as-string {:tab-id tab-id}))
                                      (loop [req            (wrap-req req tab-id)
                                             last-view-hash (get-in req [:headers "last-event-id"])]
                                        (a/alt!!
@@ -179,7 +185,7 @@
                                            #_(tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
                                            ;; only send an event if the view has changed
                                            (when (and new-view (not= last-view-hash new-view-hash))
-                                             (d*/merge-fragment! sse-gen new-view {d*/id                  new-view-hash
+                                             (d*/patch-elements! sse-gen new-view {d*/id                  new-view-hash
                                                                                    d*/use-view-transition true}))
                                            (recur req new-view-hash))
                                          ;; we want work cancelling to have higher priority
@@ -295,15 +301,15 @@
 ;; I must not fragment. Fragmentation is the simplicity-killer. ... LITANY.md
 #_(defn respond-fragment [request fragment]
     (respond-and-close request (fn [sse-gen]
-                                 (d*/merge-fragment! sse-gen (html/->str fragment)))))
+                                 (d*/patch-elements! sse-gen (html/->str fragment)))))
 
 (defn respond-signals
   ([request & {:keys [merge remove execute]}]
    (respond-and-close request (fn [sse-gen]
                                 (when merge
-                                  (d*/merge-signals! sse-gen (->signals merge)))
+                                  (d*/patch-signals! sse-gen (->signals merge)))
                                 (when remove
-                                  (d*/remove-signals! sse-gen remove))
+                                  (d*/patch-signals! sse-gen (->signals (remove-signals-patch remove))))
                                 (when execute
                                   (d*/execute-script! sse-gen execute))))))
 (defn redirect

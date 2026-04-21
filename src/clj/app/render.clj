@@ -114,10 +114,7 @@
    (script req nil "widgets/sortable.js")
    (script req nil "sortable@1.14.0.js")
    (script req relative-prefix "app.js" :type :module)
-   (script req relative-prefix "datastar@dev.js" :type :module)
-   ;; (script req relative-prefix "datastar@RC.2.js" :type :module)
-   ;; (script req relative-prefix "datastar@1.0.0-beta.11.js" :type :module)
-   ))
+   (script req relative-prefix "datastar@1.0.1.js" :type :module)))
 
 (defn chart-poll-scripts [req]
   (list

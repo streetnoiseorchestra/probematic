@@ -22,12 +22,8 @@
                                                                             machhiato/hiccups]}
         ;; Datastar
         dev.onionpancakes/chassis        {:mvn/version "1.0.365"}
-        datastar/sdk                     {:git/url   "https://github.com/starfederation/datastar/"
-                                          :git/sha   "3c5974c2e15d74a2bd2f8326232dbe59d84d6135"
-                                          :deps/root "sdk/clojure/sdk"}
-        datastar/http-kit                {:git/url   "https://github.com/starfederation/datastar/"
-                                          :git/sha   "3c5974c2e15d74a2bd2f8326232dbe59d84d6135"
-                                          :deps/root "sdk/clojure/adapter-http-kit"}
+        dev.data-star.clojure/sdk        {:mvn/version "1.0.0-RC9"}
+        dev.data-star.clojure/http-kit   {:mvn/version "1.0.0-RC9"}
         datastar/expressions             {:git/url "https://github.com/ramblurr/datastar-expressions/"
                                           :git/sha "ae625bcc1d9267fc6c76fc96b44c87cdbfc81ac6"}
         org.flatland/ordered             {:mvn/version "1.15.12"}

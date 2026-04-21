@@ -32,7 +32,7 @@
                                                   :name        :team-name})
                                      (button2/button {:tabindex                      "-1"
                                                       :-priority                     :secondary
-                                                      :data-on-click__viewtransition "$team-create.open=false"}
+                                                      :data-on:click__viewtransition "$team-create.open=false"}
                                                      (tr [:action/cancel]))
                                      (button2/button {:-priority :primary
                                                       :-icon     icon/plus
@@ -51,7 +51,7 @@
                    (button2/button {:-priority                     :link-destructive
                                     :-size                         :xsmall
                                     :type                          :button
-                                    :data-on-click__viewtransition (->expr (set! $team.remove-member-id ~(str member-id))
+                                    :data-on:click__viewtransition (->expr (set! $team.remove-member-id ~(str member-id))
                                                                            (@post ~(urls/url-for req ::commands/remove-team-member)))
                                     #_(d*/expr_DEPRECATED (d*/assign "team.remove-member-id" member-id)
                                                           (d*/dispatch req ::commands/remove-team-member))}
@@ -68,7 +68,7 @@
                   :-options   (ui/member-select-options all-members :with-empty-opt? true)})
     (button2/button {:-priority                     :secondary
                      :type                          :button
-                     :data-on-click__viewtransition (d*/dispatch req ::commands/add-team-member)}
+                     :data-on:click__viewtransition (d*/dispatch req ::commands/add-team-member)}
                     (tr [:action/add])))])
 
 (defn team-type-options [tr]
@@ -103,7 +103,7 @@
                               (team-members-edit req all-members form team))
                 (form/actions
                  {:-left  (button2/button {:-priority     :secondary-destructive
-                                           :data-on-click (format "$_delete-confirm-%s=true" team-id)}
+                                           :data-on:click (format "$_delete-confirm-%s=true" team-id)}
                                           (tr [:action/delete]))
                   :-right (list
                            (button2/button {:-priority   :secondary
@@ -125,15 +125,15 @@
                                   :type                            :button
                                   :id                              (str "update-btn-" ent-id)
                                   :data-indicator  fetching-signal
-                                  :data-attr-disabled              $fetching-signal
+                                  :data-attr:disabled              $fetching-signal
                                   :data-class (->expr {"spinning" (&& ($ fetching-signal)
                                                                       (= ($ form-ent-signal) ~(str ent-id)))})
 
                                   #_(format "{'spinning': %s && %s == '%s'}" $fetching-signal $form-ent-signal  ent-id)
-                                  :data-on-wtf (->expr (let [foo $my-signal]
+                                  :data-on:wtf (->expr (let [foo $my-signal]
                                                          ;; do something with fooo
                                                          (str/upper-case foo)))
-                                  :data-on-click (->expr (set!
+                                  :data-on:click (->expr (set!
                                                           ($ ~(name form) "." ~(name form-key-id)) ~(str ent-id))
                                                          (@post ~(urls/url-for req command)))
                                   #_(d*/expr_DEPRECATED (format "%s='%s'" $form-ent-signal ent-id)
@@ -197,7 +197,7 @@
                                  (team-row req editing? editing-any? team)]))
                             teams)]
 
-              (button2/button {:data-on-click__viewtransition "$team-create.open = !$team-create.open"
+              (button2/button {:data-on:click__viewtransition "$team-create.open = !$team-create.open"
                                :data-show                     "!$team-create.open"
                                :-icon                         icon/plus}
                               (tr [:team/create-team]))
@@ -221,7 +221,7 @@
                                                   :name        :discount-type-name})
                                      (button2/button {:tabindex                      "-1"
                                                       :-priority                     :secondary
-                                                      :data-on-click__viewtransition "$discount-type-create.open=false"}
+                                                      :data-on:click__viewtransition "$discount-type-create.open=false"}
                                                      (tr [:action/cancel]))
                                      (button2/button {:-priority :primary
                                                       :-icon     icon/plus
@@ -252,7 +252,7 @@
 
                 (form/actions
                  {:-left  (button2/button {:-priority     :secondary-destructive
-                                           :data-on-click (format "$_delete-confirm-%s=true" discount-type-id)}
+                                           :data-on:click (format "$_delete-confirm-%s=true" discount-type-id)}
                                           (tr [:action/delete]))
                   :-right (list
                            (button2/button {:-priority   :secondary
@@ -316,7 +316,7 @@
                             discount-types)]
               [:div {:class "flex border-t border-gray-100 pt-6"}
                (travel-discount-type-create-form req)
-               (button/button {:data-on-click__viewtransition "$discount-type-create.open = !$discount-type-create.open"
+               (button/button {:data-on:click__viewtransition "$discount-type-create.open = !$discount-type-create.open"
                                :data-show                     "!$discount-type-create.open"
                                :-icon                         icon/plus}
                               (tr [:travel-discounts/add-discount-type]))]])))
@@ -325,7 +325,7 @@
   [:div
    [:p "This is the order in which the sections appear on gig pages."]
    [:dl {:class             "mt-2 divide-y divide-gray-100 text-sm leading-6" :id "sections-sort-container"
-         :data-on-reordered
+         :data-on:reordered
          (->expr (set! $section.order event.detail.orderInfo)
                  (@post ~(urls/url-for req ::commands/update-section-order)))
          #_(d*/expr_DEPRECATED
@@ -342,10 +342,10 @@
                        [:div section-name]]]))
                  sections)]
    [:div {:class "flex border-t border-gray-100 pt-6"}
-    (button/button {:data-on-click__viewtransition
+    (button/button {:data-on:click__viewtransition
                     (->expr (@post ~(urls/url-for req ::commands/close-section-reorder)))
                     :-priority                     :primary} (tr [:action/done]))]
-   [:div {:data-on-load "initEventSortable('sections-sort-container')"}]])
+   [:div {:data-init "initEventSortable('sections-sort-container')"}]])
 
 (defn section-edit-form [{:keys [tr] :as req} {section-id :section/name enabled? :section/active?}]
   (let [form {:ns      :section
@@ -416,7 +416,7 @@
                                                   :name        :section-name})
                                      (button2/button {:tabindex                      "-1"
                                                       :-priority                     :secondary
-                                                      :data-on-click__viewtransition "$section-create.open=false"}
+                                                      :data-on:click__viewtransition "$section-create.open=false"}
                                                      (tr [:action/cancel]))
                                      (button2/button {:-priority :primary
                                                       :-icon     icon/plus
@@ -434,7 +434,7 @@
                  sections)]
    [:div {:class "flex border-t border-gray-100 pt-6"}
     (section-create-form req)
-    (button/button {:data-on-click__viewtransition "$section-create.open = !$section-create.open"
+    (button/button {:data-on:click__viewtransition "$section-create.open = !$section-create.open"
                     :data-show                     "!$section-create.open"
                     :-icon                         icon/plus}
                    (tr [:section-add]))]])
@@ -446,7 +446,7 @@
         sections     (q/retrieve-sections db)]
     (l/panel {:-title   (tr [:sections])
               :-buttons (when-not reordering?
-                          (button/button {:data-on-click__viewtransition
+                          (button/button {:data-on:click__viewtransition
                                           (->expr (@post ~(urls/url-for req ::commands/open-section-reorder)))} (tr [:action/reorder])))
               :id       "sections-panel"
 

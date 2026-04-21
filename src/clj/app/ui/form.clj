@@ -50,7 +50,7 @@
                                                                :error         (-> (-> form :fields keys)
                                                                                   (zipmap (repeat nil))
                                                                                   (assoc :_top nil))})})
-                            :data-on-submit (str $validate-signal " = false; " (:command form)))
+                            :data-on:submit (str $validate-signal " = false; " (:command form)))
      children]))
 
 (defn actions
@@ -76,7 +76,7 @@
         $top-error-signal     (str "$" (clojure.core/name (:ns form)) ".error._top")]
     [:div (uic/merge-attrs attrs :class (uic/cs
                                          "hidden mt-1 text-red-700")
-                           :data-class-hidden (str "!" $top-error-signal))
+                           :data-class:hidden (str "!" $top-error-signal))
      (when title
        [:h3 {:class "text-sm font-semibold text-red-700"} title])
      [:p {:class     "mt-1 text-sm/6 text-sm text-red-600"
@@ -141,7 +141,7 @@
                                  :aria-describedby aria-describedby
                                  :aria-label (when (= variant :hidden) label)
                                  :data-bind        signal
-                                 :data-on-blur (when (:live-validation? form) (str $touched-signal "++;" $validate-signal "= true;" (:command form)))
+                                 :data-on:blur (when (:live-validation? form) (str $touched-signal "++;" $validate-signal "= true;" (:command form)))
                                  :value default-value
                                  :id               id)
                 {:required?      required?
@@ -193,7 +193,7 @@
                                         :data-class
                                         (data-class {$error-signal           "col-start-1 row-start-1 pr-10 pl-3 text-red-900 outline-red-300 placeholder:text-red-300 focus:outline-red-600 sm:pr-9"
                                                      (str "!" $error-signal) "px-3 text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-sno-orange-600"})
-                                        :data-attr-aria-invalid $error-signal)]))))
+                                        :data-attr:aria-invalid $error-signal)]))))
 
 (defn toggle
   {:opts {:label (l/optional :string)
@@ -217,8 +217,8 @@
                                    :value value
                                    :checked checked
                                    :data-ref signal
-                                   :data-attr-aria-invalid $error-signal
-                                   :data-on-change (str $real-signal " = " $signal ".checked"))))))))
+                                   :data-attr:aria-invalid $error-signal
+                                   :data-on:change (str $real-signal " = " $signal ".checked"))))))))
 (defn checkbox
   {:opts {:label       (l/optional :string)
           :description (l/optional :string)
@@ -244,8 +244,8 @@
                                      :value value
                                      :checked checked
                                      :data-ref signal
-                                     :data-attr-aria-invalid $error-signal
-                                     :data-on-change (str $real-signal " = " $signal ".checked")))
+                                     :data-attr:aria-invalid $error-signal
+                                     :data-on:change (str $real-signal " = " $signal ".checked")))
                    [:div
                     {:class "text-sm/6"}
                     [:label {:for id :class "font-medium text-gray-900"} label]
@@ -272,4 +272,4 @@
                                               :data-class
                                               (data-class {$error-signal           "text-red-900 outline-red-300 placeholder:text-red-300 focus:outline-red-600"
                                                            (str "!" $error-signal) "text-gray-900 outline-gray-300 focus:outline-sno-orange-600"})
-                                              :data-attr-aria-invalid $error-signal))))))
+                                              :data-attr:aria-invalid $error-signal))))))

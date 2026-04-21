@@ -32,9 +32,9 @@
     [:my-dialog (uic/attr-map :id                       id
                               :body-id modal-body-id
                               :aria-labelledby modal-title-id
-                              :data-attr-open open
-                              :data-on-my-show__case.kebab (when on-show on-show)
-                              :data-on-my-hide__case.kebab__debounce.300ms (when on-hide on-hide))
+                              :data-attr:open open
+                              :data-on:my-show__case.kebab (when on-show on-show)
+                              :data-on:my-hide__case.kebab__debounce.300ms (when on-hide on-hide))
 
      [:div {:class "relative z-10"}
       [:div {:data-dialog-backdrop true :class "fixed inset-0 bg-gray-500/75 transition-opacity" :aria-hidden "true"}]
@@ -70,9 +70,9 @@
                               :aria-labelledby modal-title-id
                               :data-signals  (format  "{'%s': false}" id)
                               :data-class (format "{'cloak': !$%s}" id)
-                              :data-attr-open (format "$%s" id)
-                              :data-on-my-show__case.kebab (when on-show on-show)
-                              :data-on-my-hide__case.kebab__debounce.300ms (when on-hide on-hide))
+                              :data-attr:open (format "$%s" id)
+                              :data-on:my-show__case.kebab (when on-show on-show)
+                              :data-on:my-hide__case.kebab__debounce.300ms (when on-hide on-hide))
      [:div {:class "relative z-10"}
       [:div {:class "fixed inset-0 bg-gray-500/75 transition-opacity" :aria-hidden "true"}]
       [:div {:class "fixed inset-0 z-10 w-screen overflow-y-auto"}
@@ -90,7 +90,7 @@
          [:div
           {:class "mt-5 sm:mt-4 sm:flex sm:flex-row-reverse"}
           [:button {:type "button"
-                    :data-on-click (when on-confirm on-confirm)
+                    :data-on:click (when on-confirm on-confirm)
                     :data-dialog   "close"
                     :class "inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-500 sm:ml-3 sm:w-auto"}
            confirm-text]

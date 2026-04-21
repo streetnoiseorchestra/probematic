@@ -59,7 +59,7 @@
                 button-icon-class "text-gray-900"}} opts
         trigger                                     (str id "_trigger")]
     [:div {:class "flex items-center"}
-     [:div (uic/attr-map :class "relative" :data-ref id :data-on-load (format "ActionMenuPopover($%s)" id))
+     [:div (uic/attr-map :class "relative" :data-ref id :data-init (format "ActionMenuPopover($%s)" id))
       [:div
        [:button {:id            trigger
                  :popovertarget id
