@@ -10,6 +10,8 @@
                   (fn [existing new]
                     (str new " " existing)) (str  "icon " class)))))
 
+#_(defmacro deficon [name svg]
+    `(def ~name (partial icon* ~svg)))
 (defn deficon [svg] (partial icon* svg))
 
 (def pencil (deficon
