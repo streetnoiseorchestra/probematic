@@ -1,6 +1,7 @@
 #+title: Todo List for the Probematic
 
-* 2024-05
+
+*
 
 ** DONE mark as  change doesnt ask for confirm
 ** DONE create *band* instrument should get all coverages
@@ -16,3 +17,5 @@
 ** TODO exclude removed instruments from total
 ** TODO remove images
 ** TODO save excel to filestore for download again
+* Datastar refactor
+** TODO move new member invitation storage from redis to datomic (we dont do renders on redis key changes)
