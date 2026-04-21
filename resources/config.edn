@@ -94,8 +94,19 @@
                                                        :redis                 #ig/ref          :app.ig/redis
                                                        :calendar              #ig/ref :app.ig/calendar
                                                        :filestore             #ig/ref :app.ig/filestore
+                                                       :engine                #ig/ref :app.ig/engine
                                                        :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult}
                            :app.datastar/refresh-mult {:datomic #ig/ref :app.ig/datomic-db}
+                           :app.ig/engine             {:env        #ig/ref :app.ig/env
+                                                       :gigo       #ig/ref :app.ig/gigo-client
+                                                       :datomic    #ig/ref :app.ig/datomic-db
+                                                       :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                       :redis      #ig/ref :app.ig/redis
+                                                       :oauth2     #ig/ref :app.ig/oauth2
+                                                       :webdav     #ig/ref :app.ig/webdav-sardine
+                                                       :keycloak   #ig/ref :app.ig/keycloak
+                                                       :calendar   #ig/ref :app.ig/calendar
+                                                       :filestore  #ig/ref :app.ig/filestore}
                            :app.ig/oauth2             {:env #ig/ref :app.ig/env}
                            :ol.ig/jobs                {:job-defs #ig/ref :app.ig.jobs/definitions
                                                        :env      #ig/ref :app.ig/env}
