@@ -1,4 +1,5 @@
 archive
+.worktrees/
 /target
 /classes
 /checkouts
