@@ -276,7 +276,7 @@
                     human-id-interceptor
                     (i18n-interceptor system)
                     log-request-interceptor
-                    (csp-interceptor system)
+                    ;; (csp-interceptor system)
                     #_(cond (config/demo-mode? (:env system))
                             auth/demo-auth-interceptor
                             ;; (config/dev-mode? (:env system))
