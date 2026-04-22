@@ -95,20 +95,3 @@
                            (mapv (partial command-nexus nexus-command-ns) cmds))]
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     (into [path route-data] child-routes)))
-
-(defn page-routes-mixed
-  [{:keys [path page-name route-data view-ns command-ns cmds nexus-command-ns nexus-cmds]}]
-  (assert path "path is required")
-  (let [render-fn     (resolve-from-kw view-ns :page)
-        route-data    (merge {:name page-name} route-data)
-        direct-routes (if (seq cmds)
-                        (mapv (partial command2 command-ns) cmds)
-                        [])
-        nexus-routes  (if (seq nexus-cmds)
-                        (mapv (partial command-nexus nexus-command-ns) nexus-cmds)
-                        [])
-        child-routes  (into [["" {:get  shim
-                                  :post (d*/render-handler render-fn)}]]
-                            (concat direct-routes nexus-routes))]
-    (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
-    (into [path route-data] child-routes)))

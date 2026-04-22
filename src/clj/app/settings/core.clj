@@ -1,7 +1,6 @@
 (ns app.settings.core
   (:require [app.auth :as auth]
-            [app.routes.datastar :refer [page-routes-mixed]]
-            [app.settings.commands]
+            [app.routes.datastar :refer [page-routes-nexus]]
             [app.settings.engine]
             [app.settings.views]
             [app.settings.routes :as settings]))
@@ -10,10 +9,4 @@
   ["" {:app.route/name :app/band-settings
        :app.auth/roles #{:Mitglieder}
        :interceptors   [auth/roles-authorization-interceptor]}
-   (page-routes-mixed {:path       (:path settings/page)
-                       :page-name  (:page-name settings/page)
-                       :view-ns    (:view-ns settings/page)
-                       :command-ns (:command-ns settings/page)
-                       :nexus-command-ns (:nexus-command-ns settings/page)
-                       :cmds       (:direct-cmds settings/page)
-                       :nexus-cmds (:nexus-cmds settings/page)})])
+   (page-routes-nexus settings/page)])

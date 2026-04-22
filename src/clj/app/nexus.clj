@@ -11,6 +11,9 @@
   #{:user-account/id
     :user-account/email
     :user-account/username
+    :team/team-id
+    :team/name
+    :section/name
     :travel.discount.type/discount-type-id
     :travel.discount.type/discount-type-name})
 
@@ -88,6 +91,15 @@
 (defn remove-signals-fx [ctx _system remove-signals]
   (datastar/respond-signals (request ctx) :remove remove-signals))
 
+(defn open-form-fx [ctx _system form-name form-id-key]
+  (datastar/open-form (request ctx) form-name form-id-key))
+
+(defn close-form-fx [ctx _system form-name form-id-key]
+  (datastar/close-form (request ctx) form-name form-id-key))
+
+(defn assoc-page-state-fx [ctx _system path value]
+  (datastar/state-transact! (request ctx) #(assoc-in % path value)))
+
 (defn current-member-id-placeholder [{:keys [request]}]
   (get-in request [:session :session/member :member/member-id]))
 
@@ -116,35 +128,35 @@
       (assoc-in [:nexus/actions :http-response/ok]
                 (fn [_ response-body]
                   [[:http/respond {:status 200
-                                    :body   response-body}]]))
+                                   :body   response-body}]]))
       (assoc-in [:nexus/actions :http-response/created]
                 (fn ([_ response-body]
                      [[:http/respond {:status 201
-                                       :body   response-body}]])
+                                      :body   response-body}]])
                   ([_ response-body location]
                    [[:http/respond (cond-> {:status 201
-                                             :body   response-body}
-                                      location (assoc-in [:headers "Location"] location))]])))
+                                            :body   response-body}
+                                     location (assoc-in [:headers "Location"] location))]])))
       (assoc-in [:nexus/actions :http-response/bad-request]
                 (fn [_ response-body]
                   [[:http/respond {:status 400
-                                    :body   response-body}]]))
+                                   :body   response-body}]]))
       (assoc-in [:nexus/actions :http-response/unauthorized]
                 (fn [_ response-body]
                   [[:http/respond {:status 401
-                                    :body   response-body}]]))
+                                   :body   response-body}]]))
       (assoc-in [:nexus/actions :http-response/forbidden]
                 (fn [_ response-body]
                   [[:http/respond {:status 403
-                                    :body   response-body}]]))
+                                   :body   response-body}]]))
       (assoc-in [:nexus/actions :http-response/not-found]
                 (fn [_ response-body]
                   [[:http/respond {:status 404
-                                    :body   response-body}]]))
+                                   :body   response-body}]]))
       (assoc-in [:nexus/actions :http-response/internal-server-error]
                 (fn [_ response-body]
                   [[:http/respond {:status 500
-                                    :body   response-body}]]))))
+                                   :body   response-body}]]))))
 
 (defn prepare-nexus-template
   [nexus {:ring-nexus/keys [fail-fast? add-response-actions?]
@@ -206,10 +218,13 @@
 
 (defn nexus []
   {:nexus/system->state system->state
-   :nexus/effects  {:db/transact                  (with-meta db-transact-fx {:nexus/batch true})
-                    :app.datastar/merge-signals  merge-signals-fx
-                    :app.datastar/remove-signals remove-signals-fx}
-   :nexus/placeholders {:app/current-member-id current-member-id-placeholder
-                        :app/new-squuid        new-squuid-placeholder}
-   :nexus/actions (merge
-                   app.settings.engine/actions)})
+   :nexus/effects       {:db/transact                 (with-meta db-transact-fx {:nexus/batch true})
+                         :app.datastar/merge-signals  merge-signals-fx
+                         :app.datastar/remove-signals remove-signals-fx
+                         :app.datastar/open-form      open-form-fx
+                         :app.datastar/close-form     close-form-fx
+                         :app.datastar/assoc-state    assoc-page-state-fx}
+   :nexus/placeholders  {:app/current-member-id current-member-id-placeholder
+                         :app/new-squuid        new-squuid-placeholder}
+   :nexus/actions       (merge
+                         app.settings.engine/actions)})

@@ -3,15 +3,8 @@
    [app.settings.routes :as settings.routes]
    [clojure.test :refer [deftest is]]))
 
-(defn page-routes-mixed [page]
-  ((requiring-resolve 'app.routes.datastar/page-routes-mixed)
-   {:path             (:path page)
-    :page-name        (:page-name page)
-    :view-ns          (:view-ns page)
-    :command-ns       (:command-ns page)
-    :nexus-command-ns (:nexus-command-ns page)
-    :cmds             (:direct-cmds page)
-    :nexus-cmds       (:nexus-cmds page)}))
+(defn page-routes-nexus [page]
+  ((requiring-resolve 'app.routes.datastar/page-routes-nexus) page))
 
 (defn nexus-command-handler [command-ns command-name]
   ((requiring-resolve 'app.routes.datastar/nexus-command-handler) command-ns command-name))
@@ -24,8 +17,8 @@
                                    :name (:name data)}))
                        (drop 2 route))})
 
-(deftest page-routes-mixed-preserves-the-settings-route-shape
-  (let [route (page-routes-mixed settings.routes/page)]
+(deftest page-routes-nexus-preserves-the-settings-route-shape
+  (let [route (page-routes-nexus settings.routes/page)]
     (is (= {:path         "/band-settings"
             :name         :app.settings.routes/band-settings
             :child-routes #{{:path ""
