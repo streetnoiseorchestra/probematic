@@ -2,7 +2,7 @@
   (:require
    [app.datastar :as datastar]
    [app.nexus :as app-nexus]
-   [app.settings.engine :as settings.engine]
+   [app.settings.actions :as settings.actions]
    [clojure.test :refer [deftest is]]
    [datomic.api :as d]))
 
@@ -36,24 +36,24 @@
       {:conn conn
        :member-id member-id})))
 
-(defn request-for [{:keys [conn member-id]} body tab-id]
-  {:db           (d/db conn)
-   :datomic-conn conn
-   :parameters   {:body body}
-   :body-params  {:tab-id tab-id}
-   :session      {:session/member {:member/member-id member-id}}})
-
 (defn dispatch-with-nexus [handler nexus-config system req]
   (let [interceptor (app-nexus/nexus-interceptor nexus-config system)
         ctx         ((:enter interceptor) {:request req})
         response    (handler (:request ctx))]
     (:response ((:leave interceptor) (assoc ctx :response response)))))
 
-(defn dispatch! [system handler body tab-id]
-  (dispatch-with-nexus handler
-                       (app-nexus/nexus)
-                       system
-                       (request-for system body tab-id)))
+(defn act-dispatch! [system body tab-id action]
+  (let [nexus-config (app-nexus/nexus)
+        req          {:db           (d/db (:conn system))
+                      :datomic-conn (:conn system)
+                      :parameters   {:query (datastar/action-query-params action)}
+                      :body-params  (assoc body :tab-id tab-id)
+                      :session      {:session/member {:member/member-id (:member-id system)}}
+                      :system       (assoc system :nexus nexus-config)}]
+    (dispatch-with-nexus (requiring-resolve 'app.routes.datastar/act-handler)
+                         nexus-config
+                         system
+                         req)))
 
 (defn capture-signals [calls]
   (fn [_req & {:keys [merge remove execute]}]
@@ -76,10 +76,10 @@
         calls                     (atom [])
         tab-id                    (str (random-uuid))
         resp                      (with-redefs [datastar/respond-signals (capture-signals calls)]
-                                    (dispatch! system
-                                               settings.engine/create-section
-                                               {:section-create {:section-name "Trumpets"}}
-                                               tab-id))
+                                    (act-dispatch! system
+                                                   {:section-create {:section-name "Trumpets"}}
+                                                   tab-id
+                                                   ::settings.actions/create-section))
         section                   (d/entity (d/db conn) [:section/name "Trumpets"])]
     (is (= {:status 200
             :body   {:remove ["section-create"]}}
@@ -95,10 +95,10 @@
         calls                     (atom [])
         tab-id                    (str (random-uuid))
         resp                      (with-redefs [datastar/respond-signals (capture-signals calls)]
-                                    (dispatch! system
-                                               settings.engine/create-section
-                                               {:section-create {:section-name ""}}
-                                               tab-id))]
+                                    (act-dispatch! system
+                                                   {:section-create {:section-name ""}}
+                                                   tab-id
+                                                   ::settings.actions/create-section))]
     (is (= {:status 200
             :body   {:merge {:section-create
                              {:error {:section-name "Section name is required."}}}}}
@@ -117,12 +117,12 @@
                          :active?      true})
     (swap! datastar/!page-state assoc tab-id {:form {:current {:section {:section-id "Old Section"}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/update-section
-                            {:section {:section-old-name "Old Section"
-                                       :section-name     "New Section"
-                                       :section-enabled  false}}
-                            tab-id))
+                 (act-dispatch! system
+                                {:section {:section-old-name "Old Section"
+                                           :section-name     "New Section"
+                                           :section-enabled  false}}
+                                tab-id
+                                ::settings.actions/update-section))
           section (d/entity (d/db conn) [:section/name "New Section"])]
       (is (= {:status 200
               :body   {:remove ["section"]}}
@@ -140,10 +140,10 @@
         calls      (atom [])
         tab-id     (str (random-uuid))
         resp       (with-redefs [datastar/respond-signals (capture-signals calls)]
-                     (dispatch! system
-                                settings.engine/open-section-edit
-                                {:section {:section-id section-id}}
-                                tab-id))]
+                     (act-dispatch! system
+                                    {:section {:section-id section-id}}
+                                    tab-id
+                                    ::settings.actions/open-section-edit))]
     (is (= {:status 200
             :body   {:merge {:section {:open true}}}}
            resp))
@@ -160,10 +160,10 @@
         tab-id     (str (random-uuid))]
     (swap! datastar/!page-state assoc tab-id {:form {:current {:section {:section-id section-id}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/close-section-edit
-                            {}
-                            tab-id))]
+                 (act-dispatch! system
+                                {}
+                                tab-id
+                                ::settings.actions/close-section-edit))]
       (is (= {:status 200
               :body   {:remove ["section"]}}
              resp))
@@ -175,10 +175,10 @@
   (reset! datastar/!page-state {})
   (let [system (new-system)
         tab-id (str (random-uuid))
-        resp   (dispatch! system
-                          settings.engine/open-section-reorder
-                          {}
-                          tab-id)]
+        resp   (act-dispatch! system
+                              {}
+                              tab-id
+                              ::settings.actions/open-section-reorder)]
     (is (= {:status 204
             :headers {}
             :body ""}
@@ -192,10 +192,10 @@
         tab-id (str (random-uuid))]
     (swap! datastar/!page-state assoc tab-id {:section-reorder {:open true}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/close-section-reorder
-                            {}
-                            tab-id))]
+                 (act-dispatch! system
+                                {}
+                                tab-id
+                                ::settings.actions/close-section-reorder))]
       (is (= {:status 200
               :body   {:merge {:section-reorder {:open false}}}}
              resp))
@@ -215,11 +215,11 @@
                          :active?      true
                          :position     20})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/update-section-order
-                            {:section {:order {"Trumpets" 1
-                                               "Trombones" 0}}}
-                            tab-id))]
+                 (act-dispatch! system
+                                {:section {:order {:Trumpets  1
+                                                   :Trombones 0}}}
+                                tab-id
+                                ::settings.actions/update-section-order))]
       (is (= {:status 200
               :body   {:merge {:section-reorder {:open false}}}}
              resp))

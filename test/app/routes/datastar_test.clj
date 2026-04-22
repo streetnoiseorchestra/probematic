@@ -10,9 +10,6 @@
    [reitit.core :as r]
    [reitit.http :as http]))
 
-(defn page-routes-nexus [page]
-  ((requiring-resolve 'app.routes.datastar/page-routes-nexus) page))
-
 (defn act-handler [req]
   ((requiring-resolve 'app.routes.datastar/act-handler) req))
 
@@ -33,8 +30,8 @@
                                    :name (:name data)}))
                        (drop 2 route))})
 
-(deftest page-routes-nexus-preserves-the-settings-route-shape
-  (let [route (page-routes-nexus settings.routes/page)]
+(deftest settings-routes-preserve-the-settings-route-shape
+  (let [route (last (settings.routes/routes))]
     (is (= {:path         "/band-settings"
             :name         :app.settings.routes/band-settings
             :child-routes #{{:path ""
@@ -95,7 +92,7 @@
                   q/retrieve-all-discount-types (constantly [])
                   q/retrieve-sections (constantly [])]
       (let [html (settings.views/page req)]
-        (is (str/includes? html "/act?ns=app.settings.routes"))
+        (is (str/includes? html "/act?ns=app.settings.actions"))
         (is (str/includes? html "create-team"))
         (is (str/includes? html "create-discount-type"))
         (is (str/includes? html "create-section"))))))

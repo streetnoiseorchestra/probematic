@@ -898,7 +898,6 @@
   (->>
    (d/find-all db :team/team-id team-pattern)
    (map first)
-   (map settings.domain/db->team)
    (util/isort-by :team/name)))
 
 (defn retrieve-team [db team-id]

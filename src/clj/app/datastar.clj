@@ -19,7 +19,6 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 (ns app.datastar
-  (:refer-clojure :exclude [get])
   (:require
    [app.brotli :as br]
    [app.errors :as error]
@@ -298,11 +297,6 @@
                                             (d*/close-sse! sse-gen))
                           hk-gen/on-close on-close}))
 
-;; I must not fragment. Fragmentation is the simplicity-killer. ... LITANY.md
-#_(defn respond-fragment [request fragment]
-    (respond-and-close request (fn [sse-gen]
-                                 (d*/patch-elements! sse-gen (html/->str fragment)))))
-
 (defn respond-signals
   ([request & {:keys [merge remove execute]}]
    (respond-and-close request (fn [sse-gen]
@@ -414,27 +408,13 @@
            (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))
            opts)))
 
-(defn open-form [req form-name form-id-key]
-  (let [team-id (-> req :parameters :body form-name form-id-key)]
-    (state-transact! req #(assoc-in % [:form :current form-name form-id-key] team-id))
-    (respond-signals req :merge {form-name {:open true}})))
+(defn open-form [req form-name form-id-key form-id-value]
+  (state-transact! req #(assoc-in % [:form :current form-name form-id-key] form-id-value))
+  (respond-signals req :merge {form-name {:open true}}))
 
 (defn close-form [req form-name form-id-key]
   (state-transact! req #(medley/dissoc-in % [:form :current form-name form-id-key]))
   (respond-signals req :remove [(name form-name)]))
-
-(defn open-form-handler [form-name form-id-key]
-  (fn [req]
-    (let [team-id (-> req :parameters :body form-name form-id-key)]
-      (state-transact! req #(assoc-in % [:form :current form-name form-id-key] team-id))
-      (respond-signals req :merge {form-name {:open true}})
-      {:status 204})))
-
-(defn close-form-handler [form-name form-id-key]
-  (fn [req]
-    (state-transact! req #(medley/dissoc-in % [:form :current form-name form-id-key]))
-    (respond-signals req :remove [(name form-name)])
-    {:status 204}))
 
 (defn get-form-current [page-state form-name form-id-key]
   (get-in page-state [:form :current form-name form-id-key]))

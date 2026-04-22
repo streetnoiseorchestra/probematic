@@ -18,15 +18,6 @@
    [:travel.discount/discount-type ::s/datomic-ref]
    [:travel.discount/expiry-date ::s/instdate]])
 
-(defn discount-type->db [travel-discount-type]
-  (when-not (s/valid? TravelDiscountTypeEntity travel-discount-type)
-    (throw
-     (ex-info "Travel Discount Type not valid" {:travel.discount.type travel-discount-type
-                                                :schema TravelDiscountTypeEntity
-                                                :error (s/explain TravelDiscountTypeEntity travel-discount-type)
-                                                :human (s/explain-human TravelDiscountTypeEntity travel-discount-type)})))
-  (s/encode-datomic TravelDiscountTypeEntity travel-discount-type))
-
 (defn db->discount-type [ent]
   (s/decode-datomic TravelDiscountTypeEntity ent))
 
@@ -44,6 +35,3 @@
 
 (defn expired? [{:travel.discount/keys [expiry-date]}]
   (t/> (t/date expiry-date) (t/date)))
-
-(defn db->team [ent]
-  ent)

@@ -11,7 +11,7 @@
     (is (= app-nexus/system->state
            (:nexus/system->state nexus-config)))
     (is (contains? (:nexus/actions nexus-config)
-                   :app.settings.routes/create-discount-type))
+                   :app.settings.actions/create-discount-type))
     (is (contains? (:nexus/effects nexus-config) :db/transact))))
 
 (deftest system-config-wires-nexus-into-the-handler-system

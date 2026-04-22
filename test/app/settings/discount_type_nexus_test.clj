@@ -3,8 +3,7 @@
    [app.datastar :as datastar]
    [app.nexus :as app-nexus]
    [app.queries :as q]
-   [app.settings.engine :as settings.engine]
-   [app.settings.routes :as settings.routes]
+   [app.settings.actions :as settings.actions]
    [clojure.test :refer [deftest is]]
    [datomic.api :as d]))
 
@@ -43,31 +42,20 @@
                       :travel.discount.type/discount-type-name discount-type-name
                       :travel.discount.type/enabled?           enabled?}]))
 
-(defn request-for [{:keys [conn member-id]} body tab-id]
-  {:db           (d/db conn)
-   :datomic-conn conn
-   :parameters   {:body body}
-   :body-params  {:tab-id tab-id}
-   :session      {:session/member {:member/member-id member-id}}})
-
 (defn dispatch-with-nexus [handler nexus-config system req]
   (let [interceptor (app-nexus/nexus-interceptor nexus-config system)
         ctx         ((:enter interceptor) {:request req})
         response    (handler (:request ctx))]
     (:response ((:leave interceptor) (assoc ctx :response response)))))
 
-(defn dispatch! [system handler body tab-id]
-  (dispatch-with-nexus handler
-                       (app-nexus/nexus)
-                       system
-                       (request-for system body tab-id)))
-
 (defn act-dispatch! [system body tab-id action]
   (let [nexus-config (app-nexus/nexus)
-        req          (assoc (request-for system {} tab-id)
-                            :system      (assoc system :nexus nexus-config)
-                            :parameters  {:query (datastar/action-query-params action)}
-                            :body-params (assoc body :tab-id tab-id))]
+        req          {:db           (d/db (:conn system))
+                      :datomic-conn (:conn system)
+                      :parameters   {:query (datastar/action-query-params action)}
+                      :body-params  (assoc body :tab-id tab-id)
+                      :session      {:session/member {:member/member-id (:member-id system)}}
+                      :system       (assoc system :nexus nexus-config)}]
     (dispatch-with-nexus (requiring-resolve 'app.routes.datastar/act-handler)
                          nexus-config
                          system
@@ -92,7 +80,7 @@
                                     (act-dispatch! system
                                                    {:discount-type-create {:discount-type-name "Klimaticket"}}
                                                    tab-id
-                                                   ::settings.routes/create-discount-type))]
+                                                   ::settings.actions/create-discount-type))]
     (is (= {:status 200
             :body   {:remove ["discount-type-create"]}}
            resp))
@@ -113,7 +101,7 @@
                                     (act-dispatch! system
                                                    {:discount-type-create {:discount-type-name ""}}
                                                    tab-id
-                                                   ::settings.routes/create-discount-type))]
+                                                   ::settings.actions/create-discount-type))]
     (is (= {:status 200
             :body   {:merge {:discount-type-create
                              {:error {:discount-type-name "Discount type name is required."}}}}}
@@ -135,7 +123,7 @@
                  (act-dispatch! system
                                 {:discount-type-create {:discount-type-name "Klimaticket"}}
                                 tab-id
-                                ::settings.routes/create-discount-type))]
+                                ::settings.actions/create-discount-type))]
       (is (= {:status 200
               :body   {:merge {:discount-type-create
                                {:error {:discount-type-name "Discount type named 'Klimaticket' already exists."}}}}}
@@ -156,12 +144,12 @@
                                :enabled?           true})
     (swap! datastar/!page-state assoc tab-id {:form {:current {:discount-type {:discount-type-id discount-type-id}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/update-discount-type
-                            {:discount-type {:discount-type-id      discount-type-id
-                                             :discount-type-name    "New Name"
-                                             :discount-type-enabled false}}
-                            tab-id))]
+                 (act-dispatch! system
+                                {:discount-type {:discount-type-id      (str discount-type-id)
+                                                 :discount-type-name    "New Name"
+                                                 :discount-type-enabled false}}
+                                tab-id
+                                ::settings.actions/update-discount-type))]
       (is (= {:status 200
               :body   {:remove ["discount-type"]}}
              resp))
@@ -185,10 +173,10 @@
                                :enabled?           true})
     (swap! datastar/!page-state assoc tab-id {:form {:current {:discount-type {:discount-type-id discount-type-id}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/delete-discount-type
-                            {:discount-type {:discount-type-id discount-type-id}}
-                            tab-id))]
+                 (act-dispatch! system
+                                {:discount-type {:discount-type-id (str discount-type-id)}}
+                                tab-id
+                                ::settings.actions/delete-discount-type))]
       (is (= {:status 200
               :body   {:remove ["discount-type"]}}
              resp))
@@ -204,10 +192,10 @@
         calls             (atom [])
         tab-id            (str (random-uuid))
         resp              (with-redefs [datastar/respond-signals (capture-signals calls)]
-                            (dispatch! system
-                                       settings.engine/open-discount-type-edit
-                                       {:discount-type {:discount-type-id discount-type-id}}
-                                       tab-id))]
+                            (act-dispatch! system
+                                           {:discount-type {:discount-type-id (str discount-type-id)}}
+                                           tab-id
+                                           ::settings.actions/open-discount-type-edit))]
     (is (= {:status 200
             :body   {:merge {:discount-type {:open true}}}}
            resp))
@@ -224,10 +212,10 @@
         tab-id            (str (random-uuid))]
     (swap! datastar/!page-state assoc tab-id {:form {:current {:discount-type {:discount-type-id discount-type-id}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/close-discount-type-edit
-                            {}
-                            tab-id))]
+                 (act-dispatch! system
+                                {}
+                                tab-id
+                                ::settings.actions/close-discount-type-edit))]
       (is (= {:status 200
               :body   {:remove ["discount-type"]}}
              resp))

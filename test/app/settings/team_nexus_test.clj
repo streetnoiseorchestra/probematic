@@ -2,7 +2,7 @@
   (:require
    [app.datastar :as datastar]
    [app.nexus :as app-nexus]
-   [app.settings.engine :as settings.engine]
+   [app.settings.actions :as settings.actions]
    [clojure.test :refer [deftest is]]
    [datomic.api :as d]))
 
@@ -39,24 +39,24 @@
       {:conn conn
        :member-id member-id})))
 
-(defn request-for [{:keys [conn member-id]} body tab-id]
-  {:db           (d/db conn)
-   :datomic-conn conn
-   :parameters   {:body body}
-   :body-params  {:tab-id tab-id}
-   :session      {:session/member {:member/member-id member-id}}})
-
 (defn dispatch-with-nexus [handler nexus-config system req]
   (let [interceptor (app-nexus/nexus-interceptor nexus-config system)
         ctx         ((:enter interceptor) {:request req})
         response    (handler (:request ctx))]
     (:response ((:leave interceptor) (assoc ctx :response response)))))
 
-(defn dispatch! [system handler body tab-id]
-  (dispatch-with-nexus handler
-                       (app-nexus/nexus)
-                       system
-                       (request-for system body tab-id)))
+(defn act-dispatch! [system body tab-id action]
+  (let [nexus-config (app-nexus/nexus)
+        req          {:db           (d/db (:conn system))
+                      :datomic-conn (:conn system)
+                      :parameters   {:query (datastar/action-query-params action)}
+                      :body-params  (assoc body :tab-id tab-id)
+                      :session      {:session/member {:member/member-id (:member-id system)}}
+                      :system       (assoc system :nexus nexus-config)}]
+    (dispatch-with-nexus (requiring-resolve 'app.routes.datastar/act-handler)
+                         nexus-config
+                         system
+                         req)))
 
 (defn capture-signals [calls]
   (fn [_req & {:keys [merge remove execute]}]
@@ -66,7 +66,7 @@
                     execute (assoc :execute execute))]
       (swap! calls conj payload)
       {:status 200
-   :body   payload})))
+       :body   payload})))
 
 (defn seed-team! [conn {:keys [team-id team-name team-type]}]
   @(d/transact conn [(cond-> {:team/team-id team-id
@@ -87,10 +87,10 @@
         calls                     (atom [])
         tab-id                    (str (random-uuid))
         resp                      (with-redefs [datastar/respond-signals (capture-signals calls)]
-                                    (dispatch! system
-                                               settings.engine/create-team
-                                               {:team-create {:team-name "Booking"}}
-                                               tab-id))]
+                                    (act-dispatch! system
+                                                   {:team-create {:team-name "Booking"}}
+                                                   tab-id
+                                                   ::settings.actions/create-team))]
     (is (= {:status 200
             :body   {:remove ["team-create"]}}
            resp))
@@ -105,10 +105,10 @@
         calls                     (atom [])
         tab-id                    (str (random-uuid))
         resp                      (with-redefs [datastar/respond-signals (capture-signals calls)]
-                                    (dispatch! system
-                                               settings.engine/create-team
-                                               {:team-create {:team-name ""}}
-                                               tab-id))]
+                                    (act-dispatch! system
+                                                   {:team-create {:team-name ""}}
+                                                   tab-id
+                                                   ::settings.actions/create-team))]
     (is (= {:status 200
             :body   {:merge {:team-create
                              {:error {:team-name "Team name is required."}}}}}
@@ -129,12 +129,12 @@
                       :team-type :team.type/insurance})
     (swap! datastar/!page-state assoc tab-id {:form {:current {:team {:team-id team-id}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/update-team
-                            {:team {:team-id   team-id
-                                    :team-name " New Team "
-                                    :team-type nil}}
-                            tab-id))
+                 (act-dispatch! system
+                                {:team {:team-id   (str team-id)
+                                        :team-name " New Team "
+                                        :team-type nil}}
+                                tab-id
+                                ::settings.actions/update-team))
           team (d/entity (d/db conn) [:team/team-id team-id])]
       (is (= {:status 200
               :body   {:remove ["team"]}}
@@ -155,10 +155,10 @@
                       :team-name "Delete Me"})
     (swap! datastar/!page-state assoc tab-id {:form {:current {:team {:team-id team-id}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/delete-team
-                            {:team {:team-id team-id}}
-                            tab-id))]
+                 (act-dispatch! system
+                                {:team {:team-id (str team-id)}}
+                                tab-id
+                                ::settings.actions/delete-team))]
       (is (= {:status 200
               :body   {:remove ["team"]}}
              resp))
@@ -177,11 +177,11 @@
     (seed-team! conn {:team-id   team-id
                       :team-name "Members"})
     @(d/transact conn [[:db/add [:team/team-id team-id] :team/members [:member/member-id member-id]]])
-    (let [resp (dispatch! system
-                          settings.engine/remove-team-member
-                          {:team {:team-id          team-id
-                                  :remove-member-id member-id}}
-                          tab-id)]
+    (let [resp (act-dispatch! system
+                              {:team {:team-id          (str team-id)
+                                      :remove-member-id (str member-id)}}
+                              tab-id
+                              ::settings.actions/remove-team-member)]
       (is (= {:status 204
               :headers {}
               :body ""}
@@ -199,11 +199,11 @@
     (seed-team! conn {:team-id   team-id
                       :team-name "Members"})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/add-team-member
-                            {:team {:team-id   team-id
-                                    :member-id member-id}}
-                            tab-id))]
+                 (act-dispatch! system
+                                {:team {:team-id   (str team-id)
+                                        :member-id (str member-id)}}
+                                tab-id
+                                ::settings.actions/add-team-member))]
       (is (= {:status 200
               :body   {:merge {:team {:member-id ""}}}}
              resp))
@@ -219,10 +219,10 @@
         calls   (atom [])
         tab-id  (str (random-uuid))
         resp    (with-redefs [datastar/respond-signals (capture-signals calls)]
-                  (dispatch! system
-                             settings.engine/open-team-edit
-                             {:team {:team-id team-id}}
-                             tab-id))]
+                  (act-dispatch! system
+                                 {:team {:team-id (str team-id)}}
+                                 tab-id
+                                 ::settings.actions/open-team-edit))]
     (is (= {:status 200
             :body   {:merge {:team {:open true}}}}
            resp))
@@ -239,10 +239,10 @@
         tab-id  (str (random-uuid))]
     (swap! datastar/!page-state assoc tab-id {:form {:current {:team {:team-id team-id}}}})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/close-team-edit
-                            {}
-                            tab-id))]
+                 (act-dispatch! system
+                                {}
+                                tab-id
+                                ::settings.actions/close-team-edit))]
       (is (= {:status 200
               :body   {:remove ["team"]}}
              resp))

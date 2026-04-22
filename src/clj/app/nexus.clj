@@ -1,12 +1,12 @@
 (ns app.nexus
   (:require
    [app.datastar :as datastar]
-   [app.settings.engine]
+   [app.settings.actions]
    [clojure.walk :as walk]
+   [com.yetanalytics.squuid :as sq]
    [datomic.api :as d]
    [nexus.core :as nexus]
-   [nexus.strategies :as strategies]
-   [com.yetanalytics.squuid :as sq]))
+   [nexus.strategies :as strategies]))
 
 (def unique-attrs
   #{:user-account/id
@@ -127,20 +127,14 @@
 (defn remove-signals-fx [ctx _system remove-signals]
   (datastar/respond-signals (request ctx) :remove remove-signals))
 
-(defn open-form-fx [ctx _system form-name form-id-key]
-  (datastar/open-form (request ctx) form-name form-id-key))
+(defn open-form-fx [ctx _system form-name form-id-key form-id-value]
+  (datastar/open-form (request ctx) form-name form-id-key form-id-value))
 
 (defn close-form-fx [ctx _system form-name form-id-key]
   (datastar/close-form (request ctx) form-name form-id-key))
 
 (defn assoc-page-state-fx [ctx _system path value]
   (datastar/state-transact! (request ctx) #(assoc-in % path value)))
-
-(defn current-member-id-placeholder [{:keys [request]}]
-  (get-in request [:session :session/member :member/member-id]))
-
-(defn new-squuid-placeholder [_]
-  (sq/generate-squuid))
 
 (defn response? [x]
   (and (map? x) (contains? x :status)))
@@ -259,7 +253,4 @@
                          :app.datastar/open-form      open-form-fx
                          :app.datastar/close-form     close-form-fx
                          :app.datastar/assoc-state    assoc-page-state-fx}
-   :nexus/placeholders  {:app/current-member-id current-member-id-placeholder
-                         :app/new-squuid        new-squuid-placeholder}
-   :nexus/actions       (merge
-                         app.settings.engine/actions)})
+   :nexus/actions       app.settings.actions/actions})
