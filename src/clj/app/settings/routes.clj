@@ -2,7 +2,7 @@
   (:require [app.schemas :as s]
             [malli.experimental.lite :as l]))
 
-(def direct-cmds
+(def team-cmds
   {;; Teams
    ::create-team          {:team-create {:team-name ::s/non-blank-string}}
    ::update-team          {:team {:team-name ::s/non-blank-string
@@ -14,8 +14,18 @@
    ::add-team-member      {:team {:team-id   :uuid
                                   :member-id :uuid}}
    ::open-team-edit       {:team {:team-id :uuid}}
-   ::close-team-edit      {}
-   ;; Sections
+   ::close-team-edit      {}})
+
+(def discount-type-direct-cmds
+  {::update-discount-type     {:discount-type {:discount-type-name    ::s/non-blank-string
+                                               :discount-type-id      :uuid
+                                               :discount-type-enabled :boolean}}
+   ::delete-discount-type     {:discount-type {:discount-type-id :uuid}}
+   ::open-discount-type-edit  {:discount-type {:discount-type-id :uuid}}
+   ::close-discount-type-edit {}})
+
+(def section-cmds
+  {;; Sections
    ::create-section       {:section-create {:section-name ::s/non-blank-string}}
    ::update-section       {:section {:section-name     ::s/non-blank-string
                                      :section-old-name ::s/non-blank-string
@@ -26,19 +36,17 @@
    ::close-section-reorder {}
    ::update-section-order {:section {:order [:map-of :string :int]}}})
 
-(def engine-cmds
-  {::create-discount-type     {:discount-type-create {:discount-type-name ::s/non-blank-string}}
-   ::update-discount-type     {:discount-type {:discount-type-name    ::s/non-blank-string
-                                               :discount-type-id      :uuid
-                                               :discount-type-enabled :boolean}}
-   ::delete-discount-type     {:discount-type {:discount-type-id :uuid}}
-   ::open-discount-type-edit  {:discount-type {:discount-type-id :uuid}}
-   ::close-discount-type-edit {}})
+(def direct-cmds
+  (merge team-cmds discount-type-direct-cmds section-cmds))
+
+(def nexus-cmds
+  {::create-discount-type {:discount-type-create {:discount-type-name ::s/non-blank-string}}})
 
 (def page {:page-name   ::band-settings
            :path        "/band-settings"
            :view-ns     'app.settings.views
            :command-ns  'app.settings.commands
-           :cmds        (merge direct-cmds engine-cmds)
+           :nexus-command-ns 'app.settings.engine
+           :cmds        (merge direct-cmds nexus-cmds)
            :direct-cmds direct-cmds
-           :engine-cmds engine-cmds})
+           :nexus-cmds  nexus-cmds})

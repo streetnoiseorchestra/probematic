@@ -5,13 +5,13 @@
             [app.server]
             [app.config :as config]
             [app.datomic.system :as datomic]
-            [app.engine :as engine]
             [app.email.email-worker :as email-worker]
             [app.errors :as error]
             [app.filestore :as filestore]
             [app.i18n :as i18n]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
+            [app.nexus :as app-nexus]
             [app.routes :as routes]
             [app.sardine :as sardine]
             [com.brunobonacci.mulog :as μ]
@@ -41,9 +41,9 @@
 (defmethod ig/init-key ::handler [_ system]
   (routes/default-handler system))
 
-(defmethod ig/init-key ::engine
-  [_ config]
-  (engine/build-env config))
+(defmethod ig/init-key ::nexus
+  [_ _config]
+  (app-nexus/nexus))
 
 (defmethod ig/init-key :app.ig.router/routes
   [_ system]

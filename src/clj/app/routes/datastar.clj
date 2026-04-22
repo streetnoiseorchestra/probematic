@@ -2,8 +2,8 @@
   (:require
 
    [app.datastar :as d*]
-   [app.engine :as engine]
    [app.layout :as layout]
+   [app.nexus :as nexus]
    [clojure.string :as str]))
 
 (defn shim [req]
@@ -47,16 +47,18 @@
     (assert handler-fn (str "Command handler function not found for " cmd-name " in ns " cmd-ns))
     [path route-data]))
 
-(defn engine-command-handler [cmd-name]
-  (fn [req]
-    (let [env (get-in req [:system :engine])]
-      (assert env "Engine not found in request system")
-      (engine/dispatch-request-sync env req {:command/kind cmd-name}))))
+(defn nexus-command-handler [cmd-ns cmd-name]
+  (let [handler-fn (resolve-from-kw cmd-ns cmd-name)]
+    (assert handler-fn (str "Nexus command handler function not found for " cmd-name " in ns " cmd-ns))
+    (fn [req]
+      (let [nexus-config (get-in req [:system :nexus])]
+        (assert nexus-config "Nexus config not found in request system")
+        ((nexus/wrap-nexus (var-get handler-fn) nexus-config (:system req)) req)))))
 
-(defn command-engine [[cmd-name param-spec]]
+(defn command-nexus [cmd-ns [cmd-name param-spec]]
   (let [path       (route->path cmd-name)
         route-data (cond-> {:name cmd-name
-                            :post {:handler (engine-command-handler cmd-name)}}
+                            :post {:handler (nexus-command-handler cmd-ns cmd-name)}}
                      param-spec (assoc-in [:post :parameters :body] param-spec))]
     [path route-data]))
 
@@ -83,30 +85,30 @@
                   :post (d*/render-handler render-fn)}]]
            (mapv (partial command2 command-ns) cmds))]))
 
-(defn page-routes-engine
-  [{:keys [path page-name route-data view-ns cmds]}]
+(defn page-routes-nexus
+  [{:keys [path page-name route-data view-ns nexus-command-ns cmds]}]
   (assert path "path is required")
   (let [render-fn    (resolve-from-kw view-ns :page)
         route-data   (merge {:name page-name} route-data)
         child-routes (into [["" {:get  shim
                                  :post (d*/render-handler render-fn)}]]
-                           (mapv command-engine cmds))]
+                           (mapv (partial command-nexus nexus-command-ns) cmds))]
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     (into [path route-data] child-routes)))
 
 (defn page-routes-mixed
-  [{:keys [path page-name route-data view-ns command-ns cmds engine-cmds]}]
+  [{:keys [path page-name route-data view-ns command-ns cmds nexus-command-ns nexus-cmds]}]
   (assert path "path is required")
   (let [render-fn     (resolve-from-kw view-ns :page)
         route-data    (merge {:name page-name} route-data)
         direct-routes (if (seq cmds)
                         (mapv (partial command2 command-ns) cmds)
                         [])
-        engine-routes (if (seq engine-cmds)
-                        (mapv command-engine engine-cmds)
+        nexus-routes  (if (seq nexus-cmds)
+                        (mapv (partial command-nexus nexus-command-ns) nexus-cmds)
                         [])
         child-routes  (into [["" {:get  shim
                                   :post (d*/render-handler render-fn)}]]
-                            (concat direct-routes engine-routes))]
+                            (concat direct-routes nexus-routes))]
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     (into [path route-data] child-routes)))

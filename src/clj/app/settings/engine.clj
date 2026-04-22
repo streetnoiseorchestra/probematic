@@ -1,71 +1,39 @@
 (ns app.settings.engine
   (:require
-   [app.settings.controller :as controller]
-   [app.settings.routes :as routes]))
+   [app.settings.routes :as routes]
+   [clojure.string :as str]
+   [datomic.api :as d]))
 
-(def discount-type-form
-  {:form-name   :discount-type
-   :form-id-key :discount-type-id})
+(defn create-discount-type [req]
+  [[::routes/create-discount-type
+    (get-in req [:parameters :body :discount-type-create])
+    [:app/new-squuid]
+    [:app/current-member-id]]])
 
-(defn create-discount-type-handler [{:app/keys [request]} _]
-  (let [{:keys [error]} (controller/create-discount-type! request)]
-    {:outcome/effects [(if error
-                         {:effect/kind :app.datastar/merge-signals
-                          :effect/data {:discount-type-create {:error error}}}
-                         {:effect/kind :app.datastar/remove-signals
-                          :effect/data ["discount-type-create"]})]}))
+(defn- create-error [error]
+  [[:app.datastar/merge-signals {:discount-type-create {:error error}}]])
 
-(defn update-discount-type-handler [{:app/keys [request]} _]
-  (let [{:keys [error]} (controller/update-discount-type request)]
-    {:outcome/effects [(if error
-                         {:effect/kind :app.datastar/merge-signals
-                          :effect/data {:discount-type {:error error}}}
-                         {:effect/kind :app.datastar/close-form
-                          :effect/data discount-type-form})]}))
+(defn- discount-type-name-taken? [db discount-type-name]
+  (boolean
+   (when db
+     (d/entity db [:travel.discount.type/discount-type-name discount-type-name]))))
 
-(defn delete-discount-type-handler [{:app/keys [request]} _]
-  (let [{:keys [error]} (controller/delete-discount-type! request)]
-    (if error
-      (throw (ex-info (str "TODO implement delete failure " error) {:status 500}))
-      {:outcome/effects [{:effect/kind :app.datastar/close-form
-                          :effect/data discount-type-form}]})))
+(defn create-discount-type-action
+  [{:keys [db]} {:keys [discount-type-name]} discount-type-id member-id]
+  (cond
+    (str/blank? discount-type-name)
+    (create-error {:discount-type-name "Discount type name is required."})
 
-(defn open-discount-type-edit-handler [_ _]
-  {:outcome/effects [{:effect/kind :app.datastar/open-form
-                      :effect/data discount-type-form}]})
+    (discount-type-name-taken? db discount-type-name)
+    (create-error {:discount-type-name (format "Discount type named '%s' already exists." discount-type-name)})
 
-(defn close-discount-type-edit-handler [_ _]
-  {:outcome/effects [{:effect/kind :app.datastar/close-form
-                      :effect/data discount-type-form}]})
+    :else
+    (let [tx-data (cond-> [{:travel.discount.type/discount-type-id   discount-type-id
+                            :travel.discount.type/enabled?           true
+                            :travel.discount.type/discount-type-name discount-type-name}]
+                    member-id (conj [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]))]
+      [[:db/transact tx-data {:transact-w-nils? false}]
+       [:app.datastar/remove-signals ["discount-type-create"]]])))
 
-(def create-discount-type-command
-  {:command/kind      ::routes/create-discount-type
-   :command/coeffects [:app/request]
-   :command/handler   #'create-discount-type-handler})
-
-(def update-discount-type-command
-  {:command/kind      ::routes/update-discount-type
-   :command/coeffects [:app/request]
-   :command/handler   #'update-discount-type-handler})
-
-(def delete-discount-type-command
-  {:command/kind      ::routes/delete-discount-type
-   :command/coeffects [:app/request]
-   :command/handler   #'delete-discount-type-handler})
-
-(def open-discount-type-edit-command
-  {:command/kind      ::routes/open-discount-type-edit
-   :command/coeffects []
-   :command/handler   #'open-discount-type-edit-handler})
-
-(def close-discount-type-edit-command
-  {:command/kind      ::routes/close-discount-type-edit
-   :command/coeffects []
-   :command/handler   #'close-discount-type-edit-handler})
-
-(defn commands []
-  [create-discount-type-command
-   update-discount-type-command
-   delete-discount-type-command
-   open-discount-type-edit-command
-   close-discount-type-edit-command])
+(def actions
+  {::routes/create-discount-type #'create-discount-type-action})

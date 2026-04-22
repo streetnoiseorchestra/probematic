@@ -2,6 +2,7 @@
   (:require [app.auth :as auth]
             [app.routes.datastar :refer [page-routes-mixed]]
             [app.settings.commands]
+            [app.settings.engine]
             [app.settings.views]
             [app.settings.routes :as settings]))
 
@@ -13,5 +14,6 @@
                        :page-name  (:page-name settings/page)
                        :view-ns    (:view-ns settings/page)
                        :command-ns (:command-ns settings/page)
+                       :nexus-command-ns (:nexus-command-ns settings/page)
                        :cmds       (:direct-cmds settings/page)
-                       :engine-cmds (:engine-cmds settings/page)})])
+                       :nexus-cmds (:nexus-cmds settings/page)})])

@@ -87,7 +87,7 @@
         jarohen/chime                                  {:mvn/version "0.3.3"}
         nano-id/nano-id                                {:mvn/version "1.1.0"}
         ;; FCIS/Effects System
-        outskirtslabs/hifi-engine                      {:local/root "/home/ramblurr/src/clojure-playground/hyperlith-is-for-crud/libs/hifi-engine"}
+        no.cjohansen/nexus                             {:mvn/version "2025.11.1"}
         ;; REPL
         nrepl/nrepl                                    {:mvn/version "1.7.0"}
         integrant/repl                                 {:mvn/version "0.5.1"}
