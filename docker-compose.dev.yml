@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   datomic-console:
-    image: ghcr.io/ramblurr/datomic-pro:1.0.7277
+    image: ghcr.io/outskirtslabs/datomic-pro:1.0.7491
     command: console
     environment:
       DB_URI: "datomic:sql://?jdbc:sqlite:/data/datomic-sqlite.db"
@@ -35,7 +35,7 @@ services:
       - 127.0.0.1:8081:8080
 
   datomic-transactor:
-    image: ghcr.io/ramblurr/datomic-pro:1.0.7277
+    image: ghcr.io/outskirtslabs/datomic-pro:1.0.7491
     environment:
       DATOMIC_PROTOCOL: sql
       DATOMIC_SQL_DRIVER_CLASS: org.sqlite.JDBC

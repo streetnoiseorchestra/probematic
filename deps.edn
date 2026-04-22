@@ -1,38 +1,38 @@
 {:paths ["resources" "src/clj" "src/java-classes"]
 
- :deps {org.clojure/clojure              {:mvn/version "1.12.4"}
-        org.clojure/core.cache           {:mvn/version "1.2.263"}
+ :deps {org.clojure/clojure                            {:mvn/version "1.12.4"}
+        org.clojure/core.cache                         {:mvn/version "1.2.263"}
         ;; org.clojure/data.generators                    {:mvn/version "1.1.0"}
-        org.clojure/data.xml             {:mvn/version "0.2.0-alpha11"}
+        org.clojure/data.xml                           {:mvn/version "0.2.0-alpha11"}
         ;; Routing
-        metosin/reitit                   {:mvn/version "0.10.1"}
+        metosin/reitit                                 {:mvn/version "0.10.1"}
         ;; http-kit, ring, reitit
-        metosin/ring-http-response       {:mvn/version "0.9.5"}
-        ring/ring-core                   {:mvn/version "1.15.4"}
-        http-kit/http-kit                {:mvn/version "2.9.0-beta3"}
+        metosin/ring-http-response                     {:mvn/version "0.9.5"}
+        ring/ring-core                                 {:mvn/version "1.15.4"}
+        http-kit/http-kit                              {:mvn/version "2.9.0-beta3"}
         ;; CTMX
-        hiccup/hiccup                    {:mvn/version "2.0.0"}
-        org.clojure/data.json            {:mvn/version "2.5.2"}
-        ctmx/ctmx                        {:mvn/version "1.4.7" :exclusions [;; use newer version of data.json that supports serializing uuids
-                                                                            org.clojure/data.json
-                                                                            ;; using newer version of hiccup
-                                                                            hiccup/hiccup
-                                                                            ;; exclude these fat cljs deps
-                                                                            ;; org.clojure/clojurescript
-                                                                            machhiato/hiccups]}
+        hiccup/hiccup                                  {:mvn/version "2.0.0"}
+        org.clojure/data.json                          {:mvn/version "2.5.2"}
+        ctmx/ctmx                                      {:mvn/version "1.4.7" :exclusions [;; use newer version of data.json that supports serializing uuids
+                                                                                          org.clojure/data.json
+                                                                                          ;; using newer version of hiccup
+                                                                                          hiccup/hiccup
+                                                                                          ;; exclude these fat cljs deps
+                                                                                          ;; org.clojure/clojurescript
+                                                                                          machhiato/hiccups]}
         ;; Datastar
-        dev.onionpancakes/chassis        {:mvn/version "1.0.365"}
-        dev.data-star.clojure/sdk        {:mvn/version "1.0.0-RC9"}
-        dev.data-star.clojure/http-kit   {:mvn/version "1.0.0-RC9"}
-        datastar/expressions             {:git/url "https://github.com/ramblurr/datastar-expressions/"
-                                          :git/sha "ae625bcc1d9267fc6c76fc96b44c87cdbfc81ac6"}
-        org.flatland/ordered             {:mvn/version "1.15.12"}
+        dev.onionpancakes/chassis                      {:mvn/version "1.0.365"}
+        dev.data-star.clojure/sdk                      {:mvn/version "1.0.0-RC9"}
+        dev.data-star.clojure/http-kit                 {:mvn/version "1.0.0-RC9"}
+        datastar/expressions                           {:git/url "https://github.com/ramblurr/datastar-expressions/"
+                                                        :git/sha "ae625bcc1d9267fc6c76fc96b44c87cdbfc81ac6"}
+        org.flatland/ordered                           {:mvn/version "1.15.12"}
         ;; for Discourse integration
-        clj-commons/clj-yaml             {:mvn/version "1.0.29"}
-        com.github.oliyh/martian         {:mvn/version "0.1.30"}
-        com.github.oliyh/martian-httpkit {:mvn/version "0.1.30"}
+        clj-commons/clj-yaml                           {:mvn/version "1.0.29"}
+        com.github.oliyh/martian                       {:mvn/version "0.1.30"}
+        com.github.oliyh/martian-httpkit               {:mvn/version "0.1.30"}
         ;; Data
-
+        aero/aero                                      {:mvn/version "1.1.6"}
         metosin/malli                                  {:mvn/version "0.20.1"}
         luminus-transit/luminus-transit                {:mvn/version "0.1.6" :exclusions [com.cognitect/transit-clj]}
         metosin/muuntaja                               {:mvn/version "0.6.11"}
