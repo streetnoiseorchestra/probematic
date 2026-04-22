@@ -65,26 +65,34 @@
                              :name :app.settings.routes/update-section-order}}}
            (route-signature route)))))
 
-(deftest engine-command-handler-dispatches-through-the-request-engine
+(deftest engine-command-handler-returns-the-ring-response-produced-by-effects
   (let [calls   (atom [])
         handler (engine-command-handler ::ping)
         env     (shell/register (engine/build-env)
                                 [{:effect/kind    ::record
-                                  :effect/handler (fn [ctx data]
-                                                    (swap! calls conj {:command-kind (get-in ctx [:command :command/kind])
-                                                                       :data         data}))}
+                                  :effect/handler (fn [_ctx data]
+                                                    (swap! calls conj [:record data])
+                                                    nil)}
+                                 {:effect/kind    ::respond
+                                  :effect/handler (fn [_ctx data]
+                                                    (swap! calls conj [:respond data])
+                                                    {:status 200
+                                                     :body   data})}
                                  {:command/kind      ::ping
                                   :command/coeffects []
                                   :command/handler   (fn [_cofx data]
                                                        {:outcome/effects [{:effect/kind ::record
-                                                                           :effect/data {:received data}}]})}])
+                                                                           :effect/data {:received data}}
+                                                                          {:effect/kind ::respond
+                                                                           :effect/data {:ok true
+                                                                                         :command data}}]})}])
         result  (handler {:system {:engine env}
                           :params {:foo :bar}})]
-    (is (= {:calls        [{:command-kind ::ping
-                            :data         {:received {:command/kind ::ping}}}]
-            :command-kind ::ping
-            :outcome      {:outcome/effects [{:effect/kind ::record
-                                              :effect/data {:received {:command/kind ::ping}}}]}}
-           {:calls        @calls
-            :command-kind (get-in result [:command :command/kind])
-            :outcome      (select-keys (:outcome result) [:outcome/effects])}))))
+    (is (= [[:record {:received {:command/kind ::ping}}]
+            [:respond {:ok true
+                       :command {:command/kind ::ping}}]]
+           @calls))
+    (is (= {:status 200
+            :body   {:ok true
+                     :command {:command/kind ::ping}}}
+           result))))

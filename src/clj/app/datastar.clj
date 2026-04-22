@@ -398,13 +398,11 @@
 (defn open-form [req form-name form-id-key]
   (let [team-id (-> req :parameters :body form-name form-id-key)]
     (state-transact! req #(assoc-in % [:form :current form-name form-id-key] team-id))
-    (respond-signals req :merge {form-name {:open true}})
-    {:status 204}))
+    (respond-signals req :merge {form-name {:open true}})))
 
 (defn close-form [req form-name form-id-key]
-  ((state-transact! req #(medley/dissoc-in % [:form :current form-name form-id-key]))
-   (respond-signals req :remove [(name form-name)])
-   {:status 204}))
+  (state-transact! req #(medley/dissoc-in % [:form :current form-name form-id-key]))
+  (respond-signals req :remove [(name form-name)]))
 
 (defn open-form-handler [form-name form-id-key]
   (fn [req]

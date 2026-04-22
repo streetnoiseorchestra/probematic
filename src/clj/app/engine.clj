@@ -7,11 +7,21 @@
   (:require
    [app.engine.coeffects :as coeffects]
    [app.engine.effects :as effects]
+   [app.engine.interceptors :as interceptors]
+   [app.settings.engine :as settings.engine]
    [hifi.engine.shell :as shell]))
+
+(def response-key :app.engine/response_)
+
+(def default-opts
+  {:interceptors [:unhandled-error-interceptor
+                  :app.engine/do-fx-interceptor]})
 
 (defn registrations []
   [effects/effects
-   coeffects/coeffects])
+   coeffects/coeffects
+   interceptors/interceptors
+   settings.engine/commands])
 
 (defn build-env
   ([]
@@ -20,8 +30,15 @@
    (cond-> (shell/register (registrations))
      (some? ctx) (merge ctx))))
 
-(defn request-context [req]
-  {:request req})
+(defn request-context [req response_]
+  {:request req
+   response-key response_})
+
+(defn- ring-response [result]
+  (some->> (get-in result [:results :outcome/results])
+           (keep :result/data)
+           (filter #(and (map? %) (contains? % :status)))
+           last))
 
 (defn dispatch-request-sync
   ([env req command]
@@ -29,6 +46,11 @@
   ([env req command opts]
    (when-not (map? command)
      (throw (ex-info "Invalid command" {:command command})))
-   (shell/dispatch-sync (merge env (request-context req))
-                        command
-                        (or opts shell/default-opts))))
+   (let [response_ (atom nil)
+         result    (shell/dispatch-sync (merge env (request-context req response_))
+                                        command
+                                        (or opts default-opts))]
+     (or @response_
+         (ring-response result)
+         (get-in result [:outcome :outcome/response])
+         result))))

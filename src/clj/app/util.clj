@@ -20,10 +20,10 @@
    (java.time.format DateTimeFormatter DateTimeFormatterBuilder ResolverStyle)
    (java.util Locale)))
 
-(defn url-encode [v]
+(defn url-encode [^String v]
   (URLEncoder/encode v "UTF-8"))
 
-(defn url-decode [v]
+(defn url-decode [^String v]
   (URLDecoder/decode v "UTF-8"))
 
 (defn random-bytes [size]
