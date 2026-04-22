@@ -61,7 +61,10 @@
                   :no-reload '#{dev user integrant.repl.state}})
 
 (comment
+  (clj-reload/reload)
+  (clj-reload/reload {:only :loaded})
   (stop)
+  (reset)
   (restart) ;; rcf
   (reload-all)
   ;; much

@@ -46,11 +46,17 @@
    :body-params  {:tab-id tab-id}
    :session      {:session/member {:member/member-id member-id}}})
 
+(defn dispatch-with-nexus [handler nexus-config system req]
+  (let [interceptor (app-nexus/nexus-interceptor nexus-config system)
+        ctx         ((:enter interceptor) {:request req})
+        response    (handler (:request ctx))]
+    (:response ((:leave interceptor) (assoc ctx :response response)))))
+
 (defn dispatch! [system handler body tab-id]
-  ((app-nexus/wrap-nexus handler
-                         (app-nexus/nexus)
-                         system)
-   (request-for system body tab-id)))
+  (dispatch-with-nexus handler
+                       (app-nexus/nexus)
+                       system
+                       (request-for system body tab-id)))
 
 (defn capture-signals [calls]
   (fn [_req & {:keys [merge remove execute]}]

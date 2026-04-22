@@ -1,8 +1,9 @@
 (ns app.nexus
   (:require
    [app.datastar :as datastar]
-   [datomic.api :as d]
    [app.settings.engine]
+   [clojure.walk :as walk]
+   [datomic.api :as d]
    [nexus.core :as nexus]
    [nexus.strategies :as strategies]
    [com.yetanalytics.squuid :as sq]))
@@ -56,25 +57,60 @@
         [tx]))
     txes)))
 
+(defn generated-value-replacer []
+  (let [now             (java.time.Instant/now)
+        named-squuid->v (atom {})]
+    (fn [x]
+      (cond
+        (= :db/now x)
+        now
+
+        (= :db/gen-uuid x)
+        (sq/generate-squuid)
+
+        (and (vector? x)
+             (= :db/gen-uuid (first x))
+             (= 2 (count x)))
+        (or (get @named-squuid->v x)
+            (let [squuid (sq/generate-squuid)]
+              (swap! named-squuid->v assoc x squuid)
+              squuid))
+
+        :else
+        x))))
+
 (defn batch-transactions
   "Given a list of transaction actions, batch them into a single transaction,
-  adding retractions if a transaction action, has the
-  property :transact-w-nils?"
+  adding retractions if a transaction action has the property
+  :transact-w-nils?. Replaces generated value markers before preparing
+  retractions:
+
+  - :db/now becomes one Instant shared by the batch
+  - :db/gen-uuid becomes a fresh squuid at each occurrence
+  - [:db/gen-uuid k] becomes one stable squuid per k within the batch"
   ([transact-actions] (batch-transactions transact-actions unique-attrs))
   ([transact-actions unique-attrs]
-   (->> (reduce (fn [acc [txs opts]]
-                  (let [txs (if (:transact-w-nils? opts)
-                              (prepare-tx-with-retractions txs unique-attrs)
-                              txs)]
-                    (into acc txs)))
-                []
-                transact-actions)
-        (distinct)
-        (vec))))
+   (let [generated-value-replacer (generated-value-replacer)]
+     (->> (reduce (fn [acc [txs opts]]
+                    (let [txs (walk/prewalk generated-value-replacer txs)
+                          txs (if (:transact-w-nils? opts)
+                                (prepare-tx-with-retractions txs unique-attrs)
+                                txs)]
+                      (into acc txs)))
+                  []
+                  transact-actions)
+          (distinct)
+          (vec)))))
 
-(defn system->state [system]
-  (cond-> {:now (java.util.Date.)}
-    (system->conn system) (assoc :db (d/db (system->conn system)))))
+(defn current-member-id [request]
+  (get-in request [:session :session/member :member/member-id]))
+
+(defn system->state
+  ([system] (system->state system nil))
+  ([system request]
+   (cond-> {:now (java.util.Date.)}
+     (system->conn system) (assoc :db (d/db (system->conn system)))
+     (current-member-id request) (assoc :current-member-id (current-member-id request)))))
 
 (defn ^:nexus/batch db-transact-fx
   [_ system transact-actions]
@@ -186,35 +222,34 @@
          :headers {}
          :body ""})))
 
-(defn wrap-nexus
-  "Wrap a Ring handler that may return Nexus action vectors.
+(defn- request-state [system->state system request]
+  (try
+    (system->state system request)
+    (catch clojure.lang.ArityException _
+      (system->state system))))
+
+(defn nexus-interceptor
+  "Dispatch Nexus action vectors returned by a Reitit route handler.
 
   This is the small local subset of ring-nexus-middleware that Probematic needs:
   attach a Nexus state snapshot to the request, dispatch action vectors, and
   pass normal Ring responses through unchanged."
-  ([handler nexus system]
-   (wrap-nexus handler nexus system nil))
-  ([handler {:keys [nexus/system->state] :as nexus} system
+  ([nexus system]
+   (nexus-interceptor nexus system nil))
+  ([{:keys [nexus/system->state] :as nexus} system
     {:ring-nexus/keys [state-k on-error]
      :or {state-k :nexus/state, on-error #(throw %)}
      :as opts}]
    (let [nexus-template (prepare-nexus-template nexus opts)]
-     (fn
-       ([request]
-        (let [request  (assoc request state-k (system->state system))
-              response (handler request)]
-          (if (vector? response)
-            (dispatch-actions nexus-template system request response on-error)
-            response)))
-       ([request respond raise]
-        (try
-          (let [request  (assoc request state-k (system->state system))
-                response (handler request)]
-            (if (vector? response)
-              (respond (dispatch-actions nexus-template system request response (or raise on-error)))
-              (respond response)))
-          (catch Exception e
-            (raise e))))))))
+     {:name  ::nexus-interceptor
+      :enter (fn [ctx]
+               (update ctx :request assoc state-k
+                       (request-state system->state system (:request ctx))))
+      :leave (fn [{:keys [request response] :as ctx}]
+               (if (vector? response)
+                 (assoc ctx :response
+                        (dispatch-actions nexus-template system request response on-error))
+                 ctx))})))
 
 (defn nexus []
   {:nexus/system->state system->state

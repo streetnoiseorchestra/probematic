@@ -4,6 +4,7 @@
    [app.nexus :as app-nexus]
    [app.queries :as q]
    [app.settings.engine :as settings.engine]
+   [app.settings.routes :as settings.routes]
    [clojure.test :refer [deftest is]]
    [datomic.api :as d]))
 
@@ -49,11 +50,28 @@
    :body-params  {:tab-id tab-id}
    :session      {:session/member {:member/member-id member-id}}})
 
+(defn dispatch-with-nexus [handler nexus-config system req]
+  (let [interceptor (app-nexus/nexus-interceptor nexus-config system)
+        ctx         ((:enter interceptor) {:request req})
+        response    (handler (:request ctx))]
+    (:response ((:leave interceptor) (assoc ctx :response response)))))
+
 (defn dispatch! [system handler body tab-id]
-  ((app-nexus/wrap-nexus handler
-                         (app-nexus/nexus)
-                         system)
-   (request-for system body tab-id)))
+  (dispatch-with-nexus handler
+                       (app-nexus/nexus)
+                       system
+                       (request-for system body tab-id)))
+
+(defn act-dispatch! [system body tab-id action]
+  (let [nexus-config (app-nexus/nexus)
+        req          (assoc (request-for system {} tab-id)
+                            :system      (assoc system :nexus nexus-config)
+                            :parameters  {:query (datastar/action-query-params action)}
+                            :body-params (assoc body :tab-id tab-id))]
+    (dispatch-with-nexus (requiring-resolve 'app.routes.datastar/act-handler)
+                         nexus-config
+                         system
+                         req)))
 
 (defn capture-signals [calls]
   (fn [_req & {:keys [merge remove execute]}]
@@ -71,10 +89,10 @@
         calls                     (atom [])
         tab-id                    (str (random-uuid))
         resp                      (with-redefs [datastar/respond-signals (capture-signals calls)]
-                                    (dispatch! system
-                                               settings.engine/create-discount-type
-                                               {:discount-type-create {:discount-type-name "Klimaticket"}}
-                                               tab-id))]
+                                    (act-dispatch! system
+                                                   {:discount-type-create {:discount-type-name "Klimaticket"}}
+                                                   tab-id
+                                                   ::settings.routes/create-discount-type))]
     (is (= {:status 200
             :body   {:remove ["discount-type-create"]}}
            resp))
@@ -92,10 +110,10 @@
         calls                     (atom [])
         tab-id                    (str (random-uuid))
         resp                      (with-redefs [datastar/respond-signals (capture-signals calls)]
-                                    (dispatch! system
-                                               settings.engine/create-discount-type
-                                               {:discount-type-create {:discount-type-name ""}}
-                                               tab-id))]
+                                    (act-dispatch! system
+                                                   {:discount-type-create {:discount-type-name ""}}
+                                                   tab-id
+                                                   ::settings.routes/create-discount-type))]
     (is (= {:status 200
             :body   {:merge {:discount-type-create
                              {:error {:discount-type-name "Discount type name is required."}}}}}
@@ -114,10 +132,10 @@
                                :discount-type-name "Klimaticket"
                                :enabled?           true})
     (let [resp (with-redefs [datastar/respond-signals (capture-signals calls)]
-                 (dispatch! system
-                            settings.engine/create-discount-type
-                            {:discount-type-create {:discount-type-name "Klimaticket"}}
-                            tab-id))]
+                 (act-dispatch! system
+                                {:discount-type-create {:discount-type-name "Klimaticket"}}
+                                tab-id
+                                ::settings.routes/create-discount-type))]
       (is (= {:status 200
               :body   {:merge {:discount-type-create
                                {:error {:discount-type-name "Discount type named 'Klimaticket' already exists."}}}}}

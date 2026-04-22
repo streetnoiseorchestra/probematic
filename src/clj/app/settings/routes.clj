@@ -16,8 +16,7 @@
    ::close-team-edit {}})
 
 (def discount-type-cmds
-  {::create-discount-type {:discount-type-create {:discount-type-name ::s/non-blank-string}}
-   ::update-discount-type {:discount-type {:discount-type-name    ::s/non-blank-string
+  {::update-discount-type {:discount-type {:discount-type-name    ::s/non-blank-string
                                            :discount-type-id      :uuid
                                            :discount-type-enabled :boolean}}
    ::delete-discount-type {:discount-type {:discount-type-id :uuid}}
@@ -41,5 +40,4 @@
 (def page {:page-name        ::band-settings
            :path             "/band-settings"
            :view-ns          'app.settings.views
-           :nexus-command-ns 'app.settings.engine
            :cmds             cmds})

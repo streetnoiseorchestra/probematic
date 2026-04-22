@@ -1,6 +1,5 @@
 (ns app.routes.datastar
   (:require
-
    [app.datastar :as d*]
    [app.layout :as layout]
    [app.nexus :as nexus]
@@ -47,20 +46,38 @@
     (assert handler-fn (str "Command handler function not found for " cmd-name " in ns " cmd-ns))
     [path route-data]))
 
-(defn nexus-command-handler [cmd-ns cmd-name]
-  (let [handler-fn (resolve-from-kw cmd-ns cmd-name)]
-    (assert handler-fn (str "Nexus command handler function not found for " cmd-name " in ns " cmd-ns))
-    (fn [req]
-      (let [nexus-config (get-in req [:system :nexus])]
-        (assert nexus-config "Nexus config not found in request system")
-        ((nexus/wrap-nexus (var-get handler-fn) nexus-config (:system req)) req)))))
+(defn- action-query-params [req]
+  (or (get-in req [:parameters :query])
+      (:query-params req)
+      (:params req)))
 
-(defn command-nexus [cmd-ns [cmd-name param-spec]]
-  (let [path       (route->path cmd-name)
-        route-data (cond-> {:name cmd-name
-                            :post {:handler (nexus-command-handler cmd-ns cmd-name)}}
-                     param-spec (assoc-in [:post :parameters :body] param-spec))]
-    [path route-data]))
+(defn- action-body [req]
+  (or (:body-params req)
+      (get-in req [:parameters :body])
+      {}))
+
+(defn act-handler [req]
+  (let [action-key   (d*/action-key (action-query-params req))
+        nexus-config (get-in req [:system :nexus])
+        action       (get-in nexus-config [:nexus/actions action-key])]
+    (cond
+      (nil? action-key)
+      {:status 400
+       :headers {}
+       :body "Missing or invalid act query params: ns and kw"}
+
+      (nil? action)
+      {:status 404
+       :headers {}
+       :body (str "No such action registered for " action-key)}
+
+      :else
+      [[action-key (action-body req)]])))
+
+(defn act-route [system]
+  ["/act" {:name       ::act
+           :interceptors [(nexus/nexus-interceptor (:nexus system) system)]
+           :post       {:handler act-handler}}])
 
 (def CommandOpt
   [:map-of :keyword :map])
@@ -82,16 +99,15 @@
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     [path route-data
      (into [["" {:get  shim
-                  :post (d*/render-handler render-fn)}]]
+                 :post (d*/render-handler render-fn)}]]
            (mapv (partial command2 command-ns) cmds))]))
 
 (defn page-routes-nexus
-  [{:keys [path page-name route-data view-ns nexus-command-ns cmds]}]
+  [{:keys [path page-name route-data view-ns]}]
   (assert path "path is required")
   (let [render-fn    (resolve-from-kw view-ns :page)
         route-data   (merge {:name page-name} route-data)
         child-routes (into [["" {:get  shim
-                                 :post (d*/render-handler render-fn)}]]
-                           (mapv (partial command-nexus nexus-command-ns) cmds))]
+                                 :post (d*/render-handler render-fn)}]])]
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     (into [path route-data] child-routes)))

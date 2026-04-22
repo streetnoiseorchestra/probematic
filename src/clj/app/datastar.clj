@@ -395,6 +395,25 @@
   ([req cmd opts]
    (action :post (urls/url-for req cmd) opts)))
 
+(defn action-query-params [cmd]
+  (assert (qualified-keyword? cmd) (str "Actions must be qualified keywords: " cmd))
+  {"ns" (namespace cmd)
+   "kw" (name cmd)})
+
+(defn action-key [query-params]
+  (let [action-ns (or (clojure.core/get query-params :ns) (clojure.core/get query-params "ns"))
+        action-kw (or (clojure.core/get query-params :kw) (clojure.core/get query-params "kw"))]
+    (when (and (seq action-ns) (seq action-kw))
+      (keyword action-ns action-kw))))
+
+(defn act
+  ([req cmd]
+   (act req cmd nil))
+  ([req cmd opts]
+   (action :post
+           (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))
+           opts)))
+
 (defn open-form [req form-name form-id-key]
   (let [team-id (-> req :parameters :body form-name form-id-key)]
     (state-transact! req #(assoc-in % [:form :current form-name form-id-key] team-id))

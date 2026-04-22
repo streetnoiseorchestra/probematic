@@ -11,6 +11,7 @@
             [app.nextcloud :as nextcloud]
             [app.poll.routes :as polls]
             [app.probeplan.routes :as probeplan]
+            [app.routes.datastar :as datastar-routes]
             [app.routes.errors :as errors]
             [app.settings.core :as settings]
             [app.songs.routes :as songs]
@@ -42,6 +43,7 @@
    ["" {:interceptors [auth/require-authenticated-user
                        (interceptors/webdav-interceptor system)]}
 
+    (datastar-routes/act-route system)
     (dashboard/routes)
     (settings/routes)
     (file-browser/routes)
