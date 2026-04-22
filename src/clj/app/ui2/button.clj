@@ -1,0 +1,143 @@
+(ns app.ui2.button
+  (:require
+   [app.ui2.core :as uic]
+   [dev.onionpancakes.chassis.compiler :as cc]
+   [dev.onionpancakes.chassis.core :as c]))
+
+(def button-sizes
+  {:xxsmall {:classes   "rounded-sm px-2 py-1 text-xs"
+             :gap       "gap-x-1.5"
+             :icon-size "size-3"}
+   :xsmall  {:classes   "rounded-sm px-2 py-1 text-sm"
+             :gap       "gap-x-1.5"
+             :icon-size "size-4"}
+   :small   {:classes   "rounded-md px-2.5 py-1.5 text-sm"
+             :gap       "gap-x-1.5"
+             :icon-size "size-5"}
+   :normal  {:classes   "rounded-md px-3 py-2 text-sm"
+             :gap       "gap-x-1.5"
+             :icon-size "size-5"}
+   :large   {:classes   "rounded-md px-3.5 py-2.5 text-sm"
+             :gap       "gap-x-2"
+             :icon-size "size-5"}})
+
+(def button-intents
+  {:primary               {:classes       "bg-sno-orange-600 text-white shadow-xs hover:bg-sno-orange-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sno-orange-600"
+                           :spinner-color "text-white"}
+   :destructive           {:classes       "bg-red-600 text-white shadow-xs hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                           :spinner-color "text-white"}
+   :secondary             {:classes       "bg-white text-gray-900 ring-1 ring-gray-300 ring-inset shadow-xs hover:bg-gray-50"
+                           :spinner-color "text-gray-900"}
+   :secondary-destructive {:classes       "bg-white text-red-600 ring-1 ring-red-300 ring-inset shadow-xs hover:bg-red-50"
+                           :spinner-color "text-red-600"}
+   :ghost                 {:classes       "text-gray-900 hover:bg-gray-50"
+                           :spinner-color "text-gray-900"}
+   :outline               {:classes       "border border-gray-300 bg-white text-gray-900 shadow-xs hover:bg-gray-50"
+                           :spinner-color "text-gray-900"}
+   :outline-destructive   {:classes       "border border-red-300 bg-white text-red-600 shadow-xs hover:bg-red-50"
+                           :spinner-color "text-red-600"}
+   :link                  {:classes       "text-sno-orange-600 underline-offset-4 hover:text-sno-orange-500 hover:underline"
+                           :spinner-color "text-sno-orange-600"
+                           :no-border     true}
+   :link-success          {:classes       "text-sno-green-600 underline-offset-4 hover:text-sno-green-500 hover:underline"
+                           :spinner-color "text-sno-green-600"
+                           :no-border     true}
+   :link-destructive      {:classes       "text-red-600 underline-offset-4 hover:text-red-500 hover:underline"
+                           :spinner-color "text-red-600"
+                           :no-border     true}})
+
+(def doc-button
+  {:examples ["[btn/Button {::btn/intent :primary :id :some-id} \"Click me!\"]"
+              "[btn/Button {::btn/size :large ::btn/icon some-icon-fn} \"Star Button\"]"]
+   :ns       *ns*
+   :as       'btn
+   :name     'Button
+   :desc     "A Datastar-friendly button component."
+   :alias    ::button
+   :schema
+   [:map {}
+    [::size {:optional true
+             :default  :normal
+             :doc      "Button size"}
+     [:enum :xxsmall :xsmall :small :normal :large]]
+    [::intent {:optional true
+               :default  :secondary
+               :doc      "Button intent"}
+     [:enum :primary :destructive :secondary :secondary-destructive :ghost :outline :outline-destructive :link :link-success :link-destructive]]
+    [::disabled? {:optional true
+                  :doc      "When true, disables button interaction"}
+     :boolean]
+    [::loading? {:optional true
+                 :doc      "When true, shows the spinner state"}
+     :boolean]
+    [::icon {:optional true
+             :doc      "A leading icon function that returns hiccup"}
+     fn?]
+    [::icon-trailing {:optional true
+                      :doc      "A trailing icon function that returns hiccup"}
+     fn?]
+    [::centered? {:optional true
+                  :doc      "When true, centers the button contents"}
+     :boolean]]})
+
+(def ^{:doc (uic/generate-docstring doc-button)} Button
+  ::button)
+
+(defn- button-body [{:keys [size-data intent-data loading? icon icon-trailing]} children]
+  (list
+   [:svg {:class (uic/cs "spinner animate-spin"
+                         (:icon-size size-data)
+                         (:spinner-color intent-data))}
+    [:use {:href "#svg-sprite-spinner"}]]
+   (when (and icon (not loading?))
+     (icon {:class (uic/cs "button-icon" (:icon-size size-data) "-ml-0.5")
+            :aria-hidden true}))
+   (uic/wrap-text-node :span children)
+   (when icon-trailing
+     (icon-trailing {:class (uic/cs "button-icon" (:icon-size size-data) "-mr-0.5")
+                     :aria-hidden true}))))
+
+(defmethod c/resolve-alias ::button
+  [_ {::keys [size intent disabled? loading? icon icon-trailing centered?]
+      :keys   [type href]
+      :or     {type     :button
+               size     :normal
+               intent   :secondary
+               loading? false}
+      :as     attrs}
+   children]
+  (uic/validate-opts! doc-button attrs)
+  (let [anchor?     (some? href)
+        size-data   (get button-sizes size)
+        intent-data (get button-intents intent)
+        classes     (uic/cs
+                     "btn btn-new font-semibold relative min-w-fit transition-all"
+                     (:classes size-data)
+                     (:classes intent-data)
+                     (when loading? "spinning")
+                     (when (or icon icon-trailing loading?) "inline-flex items-center")
+                     (when (or icon icon-trailing) (:gap size-data))
+                     (when centered? "items-center justify-center")
+                     (when disabled? "opacity-50 cursor-not-allowed")
+                     "disabled:opacity-50 disabled:cursor-not-allowed")]
+    (if anchor?
+      (cc/compile
+       [:a (uic/merge-attrs attrs
+                            :class classes)
+        (button-body {:size-data     size-data
+                      :intent-data   intent-data
+                      :loading?      loading?
+                      :icon          icon
+                      :icon-trailing icon-trailing}
+                     children)])
+      (cc/compile
+       [:button (cond-> (uic/merge-attrs attrs
+                                         :type type
+                                         :class classes)
+                  disabled? (assoc :disabled true))
+        (button-body {:size-data     size-data
+                      :intent-data   intent-data
+                      :loading?      loading?
+                      :icon          icon
+                      :icon-trailing icon-trailing}
+                     children)]))))
