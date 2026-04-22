@@ -37,3 +37,4 @@ src/java-classes
 /*.xls
 data.*
 datastar-inspector*.js
+prompts/
