@@ -419,10 +419,6 @@
 (defn get-form-current [page-state form-name form-id-key]
   (get-in page-state [:form :current form-name form-id-key]))
 
-(defn debug-signals []
-  ;; [:pre {:data-json-signals true}]
-  [:pre {:data-text "ctx.signals.JSON()"}])
-
 ;;; ------------------------------------------------------------
 ;;; TODO move these to a better ns
 ;;; They are generic helpers for validating forms and returning errors

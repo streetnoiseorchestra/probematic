@@ -36,3 +36,4 @@ env/dev/clj/insurance.clj
 src/java-classes
 /*.xls
 data.*
+datastar-inspector*.js

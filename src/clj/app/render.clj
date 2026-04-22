@@ -114,7 +114,9 @@
    (script req nil "widgets/sortable.js")
    (script req nil "sortable@1.14.0.js")
    (script req relative-prefix "app.js" :type :module)
-   (script req relative-prefix "datastar@1.0.1.js" :type :module)))
+   (script req relative-prefix "datastar@1.0.1.js" :type :module)
+   (when (config/dev-mode? (-> req :system :env))
+     (script req relative-prefix "datastar-inspector@1.1.4.js" :type :module))))
 
 (defn chart-poll-scripts [req]
   (list
@@ -145,7 +147,8 @@
        (body-end req nil)
        (when extra-scripts
          (map #(apply script %) extra-scripts))
-       (when js (map (partial script nil) js)))]))))
+       (when js (map (partial script nil) js)))
+      [:datastar-inspector]]))))
 
 (defn html5-response-absolute
   ([req {:keys [js title
