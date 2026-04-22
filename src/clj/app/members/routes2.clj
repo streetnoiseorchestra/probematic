@@ -1,7 +1,6 @@
 (ns app.members.routes2
-  (:require [app.routes.datastar :refer [page-routes2]]
-            [malli.experimental.lite :as l]
-            [app.urls :as url]))
+  (:require [app.urls :as url]
+            [malli.experimental.lite :as l]))
 
 (def index {:page-name  ::members
             :path       "/members"
@@ -43,7 +42,8 @@
 (defn link-member [req member]
   (url/url-for req ::member-detail {:member-id (:member/member-id member)}))
 
-(defn routes []
-  [(page-routes2 index)
-   (page-routes2 create)
-   (page-routes2 detail)])
+(comment
+  ;; Intentionally disabled. These Datastar members routes are being retired,
+  ;; but the namespace still anchors route/action keywords used by old views.
+  (defn routes []
+    []))

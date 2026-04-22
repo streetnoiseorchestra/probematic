@@ -1,15 +1,6 @@
 (ns app.members.routes
   (:require [app.datomic.shim :as d]
-
-            [app.members.create.view]
-            [app.members.index.view]
-            [app.members.detail.view]
-            [app.members.create.commands]
-            [app.members.index.commands]
-            [app.members.detail.commands]
             [app.layout :as layout]
-            [app.members.index.view]
-            [app.members.routes2 :as routes2]
             [app.members.views :as view]
             [app.queries :as q]
             [app.util.http :as http.util]
@@ -50,8 +41,7 @@
    ["" {:interceptors members-interceptors}
     (member-vcard-download)
     (members-detail)]
-   (members-index)
-   (routes2/routes)])
+   (members-index)])
 
 (defn unauthenticated-routes []
   [""
