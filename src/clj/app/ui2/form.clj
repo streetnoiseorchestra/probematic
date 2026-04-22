@@ -3,6 +3,7 @@
    [app.datastar :as d*]
    [app.ui2.core :as uic]
    [app.ui2.input :as input]
+   [app.ui2.select :as sel]
    [clojure.string :as str]
    [dev.onionpancakes.chassis.compiler :as cc]
    [dev.onionpancakes.chassis.core :as c]
@@ -309,7 +310,7 @@
   (uic/validate-opts! doc-select attrs)
   (control attrs
            (fn [attrs {:keys [required? $error-signal]}]
-             (input/select (uic/merge-attrs (assoc attrs :options options :required? required?)
-                                            :data-class (data-class {$error-signal           "text-red-900 outline-red-300 placeholder:text-red-300 focus:outline-red-600"
-                                                                     (str "!" $error-signal) "text-gray-900 outline-gray-300 focus:outline-sno-orange-600"})
-                                            :data-attr:aria-invalid $error-signal)))))
+             (sel/select (uic/merge-attrs (assoc attrs :options options :required? required?)
+                                          :data-class (data-class {$error-signal           "text-red-900 outline-red-300 placeholder:text-red-300 focus:outline-red-600"
+                                                                   (str "!" $error-signal) "text-gray-900 outline-gray-300 focus:outline-sno-orange-600"})
+                                          :data-attr:aria-invalid $error-signal)))))

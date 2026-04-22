@@ -4,6 +4,40 @@
    [dev.onionpancakes.chassis.compiler :as cc]
    [dev.onionpancakes.chassis.core :as c]))
 
+(def doc-page-header
+  {:examples ["[layout/PageHeader {::layout/title \"Band Settings\"}]"
+              "[layout/PageHeader {::layout/title \"Band Settings\" ::layout/subtitle \"Manage teams\" ::layout/buttons [:button \"Create\"]}]"
+   ]
+   :ns       *ns*
+   :as       'layout
+   :name     'PageHeader
+   :desc     "A full-width page header with optional subtitle and action buttons."
+   :alias    ::page-header
+   :schema
+   [:map {}
+    [::title {:doc "Header title"} :any]
+    [::subtitle {:optional true
+                 :doc      "Header subtitle"} :any]
+    [::buttons {:optional true
+                :doc      "Header action buttons"} :any]]})
+
+(def ^{:doc (uic/generate-docstring doc-page-header)} PageHeader
+  ::page-header)
+
+(defmethod c/resolve-alias ::page-header
+  [_ {::keys [title subtitle buttons] :as attrs} _children]
+  (uic/validate-opts! doc-page-header attrs)
+  (cc/compile
+   [:div (uic/merge-attrs attrs :class "border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8 bg-white")
+    [:div {:class "min-w-0 flex-1"}
+     [:h1 {:class "text-lg font-medium leading-6 text-gray-900"}
+      title]
+     (when subtitle
+       [:p {:class "text-sm font-medium text-gray-500"}
+        subtitle])]
+    [:div {:class "justify-stretch mt-6 flex flex-col-reverse space-y-4 space-y-reverse sm:flex-row-reverse sm:justify-end sm:space-y-0 sm:space-x-3 sm:space-x-reverse md:mt-0 md:flex-row md:space-x-3"}
+     buttons]]))
+
 (def doc-panel
   {:examples ["[layout/Panel {::layout/title \"Teams\" ::layout/subtitle \"Because someone has to do the work\"}] ...]"]
    :ns       *ns*
