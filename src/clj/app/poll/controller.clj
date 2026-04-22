@@ -14,19 +14,18 @@
 
 (def UpdatePoll
   "This schema describes the http post we receive when updating an instrument"
-  (s/schema
-   [:map {:name ::UpdatePoll}
-    [:poll-title :string]
-    [:poll-description :string]
-    [:poll-type :string]
-    [:min-choice {:optional true} :int]
-    [:max-choice {:optional true} :int]
-    [:author-id :string]
-    [:poll-status :string]
-    [:closes-at ::s/date-time]
-    [:autoremind? ::s/checkbox-boolean]
-    [:options [:map
-               [:value [:vector :string]]]]]))
+  [:map {:name ::UpdatePoll}
+   [:poll-title :string]
+   [:poll-description :string]
+   [:poll-type :string]
+   [:min-choice {:optional true} :int]
+   [:max-choice {:optional true} :int]
+   [:author-id :string]
+   [:poll-status :string]
+   [:closes-at ::s/date-time]
+   [:autoremind? ::s/checkbox-boolean]
+   [:options [:map
+              [:value [:vector :string]]]]])
 
 (defn update-poll-schema [open? multiple?]
   (cond-> UpdatePoll

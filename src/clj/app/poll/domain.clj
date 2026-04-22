@@ -20,48 +20,45 @@
 (def str->chart-type (zipmap (map name poll-chart-types) poll-chart-types))
 
 (def PollEntity
-  (s/schema
-   [:and
-    [:fn (fn [{:keys [min-choice max-choice options poll-type]}]
-           (if (= poll-type :poll.type/multiple)
-             (and
-              (>= max-choice min-choice)
-              (if options
-                (>= (count options) max-choice)
-                true))
-             true))]
+  [:and
+   [:fn (fn [{:keys [min-choice max-choice options poll-type]}]
+          (if (= poll-type :poll.type/multiple)
+            (and
+             (>= max-choice min-choice)
+             (if options
+               (>= (count options) max-choice)
+               true))
+            true))]
 
-    [:map {:name :app.entity/poll}
-     [:poll/poll-id :uuid]
-     [:poll/poll-type (s/enum-from poll-types)]
-     [:poll/poll-status (s/enum-from poll-statuses)]
-     [:poll/chart-type (s/enum-from poll-chart-types)]
-     [:poll/min-choice {:optional true} :int]
-     [:poll/max-choice {:optional true} :int]
-     [:poll/author ::s/datomic-ref]
-     [:poll/created-at ::s/inst]
-     [:poll/closes-at ::s/inst]
-     [:poll/autoremind? :boolean]
-     [:poll/votes {:optional true} [:sequential ::s/datomic-ref]]
-     [:poll/options {:optional true} [:sequential ::s/datomic-ref]]
-     [:poll/title {:max 200} ::s/non-blank-string]
-     [:poll/description {:max 4096} ::s/non-blank-string]
-     [:forum.topic/topic-id {:optional true :max 30} :string]]]))
+   [:map {:name :app.entity/poll}
+    [:poll/poll-id :uuid]
+    [:poll/poll-type (s/enum-from poll-types)]
+    [:poll/poll-status (s/enum-from poll-statuses)]
+    [:poll/chart-type (s/enum-from poll-chart-types)]
+    [:poll/min-choice {:optional true} :int]
+    [:poll/max-choice {:optional true} :int]
+    [:poll/author ::s/datomic-ref]
+    [:poll/created-at ::s/inst]
+    [:poll/closes-at ::s/inst]
+    [:poll/autoremind? :boolean]
+    [:poll/votes {:optional true} [:sequential ::s/datomic-ref]]
+    [:poll/options {:optional true} [:sequential ::s/datomic-ref]]
+    [:poll/title {:max 200} ::s/non-blank-string]
+    [:poll/description {:max 4096} ::s/non-blank-string]
+    [:forum.topic/topic-id {:optional true :max 30} :string]]])
 
 (def PollOptionEntity
-  (s/schema
-   [:map {:name :app.entity/poll-option}
-    [:poll.option/poll-option-id :uuid]
-    [:poll.option/position :int]
-    [:poll.option/value {:max 100} ::s/non-blank-string]]))
+  [:map {:name :app.entity/poll-option}
+   [:poll.option/poll-option-id :uuid]
+   [:poll.option/position :int]
+   [:poll.option/value {:max 100} ::s/non-blank-string]])
 
 (def PollVoteEntity
-  (s/schema
-   [:map {:name :app.entity/poll-option}
-    [:poll.vote/poll-vote-id :uuid]
-    [:poll.vote/poll-option ::s/datomic-ref]
-    [:poll.vote/author ::s/datomic-ref]
-    [:poll.vote/created-at ::s/inst]]))
+  [:map {:name :app.entity/poll-option}
+   [:poll.vote/poll-vote-id :uuid]
+   [:poll.vote/poll-option ::s/datomic-ref]
+   [:poll.vote/author ::s/datomic-ref]
+   [:poll.vote/created-at ::s/inst]])
 
 (t/inst
  (->

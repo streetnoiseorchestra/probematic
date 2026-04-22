@@ -42,28 +42,25 @@
        (probeplan-classic-emphases? v)))
 
 (def ProbeplanClassicEntity
-  (s/schema
-   [:map {:name :app.entity/probeplan-classic}
-    [:probeplan/gig ::s/datomic-ref]
-    [:probeplan/version (s/enum-from probeplan-versions)]
-    [:probeplan.classic/ordered-songs [:sequential [:tuple ::s/datomic-ref :int (s/enum-from probeplan-classic-emphases)]]]]))
+  [:map {:name :app.entity/probeplan-classic}
+   [:probeplan/gig ::s/datomic-ref]
+   [:probeplan/version (s/enum-from probeplan-versions)]
+   [:probeplan.classic/ordered-songs [:sequential [:tuple ::s/datomic-ref :int (s/enum-from probeplan-classic-emphases)]]]])
 
 (def ProbeplanTableRow
-  (s/schema
-   [:map {:name :app.entity/probeplan-table-row}
-    [:date ::s/date]
-    [:gig-id {:optional true} :uuid]
-    [:fixed? :boolean]
-    [:last-fixed? :boolean]
-    [:num-gigs integer?]
-    [:idx integer?]]))
+  [:map {:name :app.entity/probeplan-table-row}
+   [:date ::s/date]
+   [:gig-id {:optional true} :uuid]
+   [:fixed? :boolean]
+   [:last-fixed? :boolean]
+   [:num-gigs integer?]
+   [:idx integer?]])
 
 (defn future-probeplans [all-songs future-probes]
   (let [num-probes        20
         num-songs-p-probe MAX-SONGS
         num-songs-needed  (* 20 MAX-SONGS)
         num-fixed         4
-        num-floating      (- num-probes 4)
         probe-dates       (mapv t/date (take num-probes (drop num-fixed (pp/wednesday-sequence (t/date)))))
         songs             (partition num-songs-p-probe (take num-songs-needed (cycle all-songs)))
         fixed-probes (->> (take num-fixed future-probes)
@@ -94,10 +91,9 @@
 
 ;; score = a_rank * a_weight + b_rank * b_weight + c_rank * c_weight.
 (defn score-song [{:song/keys [days-since-performed days-since-rehearsed days-since-intensive]
-                   :or  {days-since-performed 999
-                         days-since-rehearsed 999
-                         days-since-intensive 999}
-                   :as s}]
+                   :or        {days-since-performed 999
+                               days-since-rehearsed 999
+                               days-since-intensive 999}}]
   (reduce +
           [(* days-since-performed (:song/days-since-performed stat-weights))
            (* days-since-rehearsed (:song/days-since-rehearsed stat-weights))

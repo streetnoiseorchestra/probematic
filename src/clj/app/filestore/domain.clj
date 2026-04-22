@@ -7,26 +7,24 @@
    [tick.core :as t]))
 
 (def FileStoreEntity
-  (s/schema
-   [:map {:name :app.entity/filestore.file}
-    [:filestore.file/file-id :uuid]
-    [:filestore.file/atime ::s/inst]
-    [:filestore.file/mtime ::s/inst]
-    [:filestore.file/ctime ::s/inst]
-    [:filestore.file/hash :string]
-    [:filestore.file/size :int]
-    [:filestore.file/mime-type {:optional true} :string]
-    [:filestore.file/file-name :string]]))
+  [:map {:name :app.entity/filestore.file}
+   [:filestore.file/file-id :uuid]
+   [:filestore.file/atime ::s/inst]
+   [:filestore.file/mtime ::s/inst]
+   [:filestore.file/ctime ::s/inst]
+   [:filestore.file/hash :string]
+   [:filestore.file/size :int]
+   [:filestore.file/mime-type {:optional true} :string]
+   [:filestore.file/file-name :string]])
 
 (def ImageEntity
-  (s/schema
-   [:map {:name :app.entity/filestore.image}
-    [:image/image-id :uuid]
-    [:image/source-file s/DatomicRefOrTempid]
-    [:image/width :int]
-    [:image/height :int]
-    [:image/filter-spec {:optional true} :string]
-    #_[:image/renditions {:optional true} [:sequential ImageEntity]]]))
+  [:map {:name :app.entity/filestore.image}
+   [:image/image-id :uuid]
+   [:image/source-file s/DatomicRefOrTempid]
+   [:image/width :int]
+   [:image/height :int]
+   [:image/filter-spec {:optional true} :string]
+   #_[:image/renditions {:optional true} [:sequential ImageEntity]]])
 
 (defn txs-new-file [tempid file-name mime-type size hash]
   (assert hash "hash must be provided")

@@ -157,7 +157,7 @@
 (defn get-reminder [{:keys [db]} gig-id member-id]
   (q/gig-reminder-for db gig-id member-id))
 
-(defn set-reminder! [{:keys [datomic-conn db] :as req} gig-id member-id remind-in-days]
+(defn set-reminder! [{:keys [datomic-conn db]} gig-id member-id remind-in-days]
   (let [existing-reminder (q/gig-reminder-for db gig-id member-id)]
     (when remind-in-days
       (if existing-reminder
@@ -203,8 +203,8 @@
 (defn create-attendance-plan-tx [db gig-id member-id plan]
   (assoc (create-attendance-tx db gig-id member-id) :attendance/plan plan))
 
-(defn update-attendance-plan! [{:keys [datomic-conn db] :as req} gig-id]
-  (let [{:keys [member-id plan] :as params} (common/unwrap-params req)
+(defn update-attendance-plan! [{:keys [db] :as req} gig-id]
+  (let [{:keys [member-id plan]} (common/unwrap-params req)
         member-id (util/ensure-uuid! member-id)
         _ (assert gig-id)
         _ (assert member-id)
@@ -218,7 +218,7 @@
     (assert plan-kw (format  "unknown plan value: '%s'" plan))
     (transact-attendance! req attendance-txs gig-id member-id)))
 
-(defn update-attendance-from-link! [{:keys [datomic-conn db system params] :as req}]
+(defn update-attendance-from-link! [{:keys [db system params] :as req}]
   (let [answer-enc (:answer params)
         answer (secret-box/decrypt answer-enc (config/app-secret-key (:env system)))
         member-id (util/ensure-uuid! (:member/member-id answer))
@@ -253,8 +253,8 @@
 (defn retract-attendance-comment-tx [attendance]
   [:db/retract (d/ref attendance) :attendance/comment])
 
-(defn update-attendance-comment! [{:keys [datomic-conn db] :as req} gig-id]
-  (let [{:keys [member-id comment] :as params} (common/unwrap-params req)
+(defn update-attendance-comment! [{:keys [db] :as req} gig-id]
+  (let [{:keys [member-id comment]} (common/unwrap-params req)
         member-id (util/ensure-uuid! member-id)
         _ (assert gig-id)
         _ (assert member-id)
@@ -281,8 +281,8 @@
 (defn update-attendance-motivation-tx [attendance motivation]
   [:db/add (d/ref attendance) :attendance/motivation motivation])
 
-(defn update-attendance-motivation! [{:keys [datomic-conn db] :as req} gig-id]
-  (let [{:keys [member-id motivation] :as params} (common/unwrap-params req)
+(defn update-attendance-motivation! [{:keys [db] :as req} gig-id]
+  (let [{:keys [member-id motivation]} (common/unwrap-params req)
         member-id (util/ensure-uuid! member-id)
         _ (assert gig-id)
         _ (assert member-id)
@@ -316,28 +316,27 @@
 
 (def UpdateGig
   "This schema describes the http post we receive when updating a gig's info"
-  (s/schema
-   [:map {:name ::UpdateGig}
-    [:gig-id :uuid]
-    [:title ::s/non-blank-string]
-    [:date ::s/date]
-    [:end-date {:optional true} ::s/date]
-    [:location ::s/non-blank-string]
-    [:contact {:optional true} :uuid]
-    [:gig-type (s/enum-from (map name domain/gig-types))]
-    [:status (s/enum-from (map name domain/statuses))]
-    [:call-time ::s/time]
-    [:set-time {:optional true} ::s/time]
-    [:end-time {:optional true} ::s/time]
-    [:leader {:optional true} :string]
-    [:rehearsal-leader1 {:optional true} :string]
-    [:rehearsal-leader2 {:optional true} :string]
-    [:pay-deal {:optional true} :string]
-    [:outfit {:optional true} :string]
-    [:more-details {:optional true} :string]
-    [:setlist {:optional true} :string]
-    [:post-gig-plans {:optional true} :string]
-    [:topic-id {:optional true} :string]]))
+  [:map {:name ::UpdateGig}
+   [:gig-id :uuid]
+   [:title ::s/non-blank-string]
+   [:date ::s/date]
+   [:end-date {:optional true} ::s/date]
+   [:location ::s/non-blank-string]
+   [:contact {:optional true} :uuid]
+   [:gig-type (s/enum-from (map name domain/gig-types))]
+   [:status (s/enum-from (map name domain/statuses))]
+   [:call-time ::s/time]
+   [:set-time {:optional true} ::s/time]
+   [:end-time {:optional true} ::s/time]
+   [:leader {:optional true} :string]
+   [:rehearsal-leader1 {:optional true} :string]
+   [:rehearsal-leader2 {:optional true} :string]
+   [:pay-deal {:optional true} :string]
+   [:outfit {:optional true} :string]
+   [:more-details {:optional true} :string]
+   [:setlist {:optional true} :string]
+   [:post-gig-plans {:optional true} :string]
+   [:topic-id {:optional true} :string]])
 
 (defn maybe-remove-association-tx [eid attr v]
   (when-not v
@@ -406,7 +405,6 @@
 (defn -delete-gig! [{:keys [datomic-conn db] :as req} gig-id]
   (try
     (let [gig-ref     [:gig/gig-id gig-id]
-          gig (q/retrieve-gig db gig-id)
           attendances (mapv (fn [{:attendance/keys [gig+member]}]
                               [:db/retractEntity [:attendance/gig+member gig+member]])  (q/attendances-for-gig db gig-id))
           played      (mapv (fn [{:played/keys [play-id]}]
@@ -458,7 +456,7 @@
         remove-tx       (map #(-> [:db/retract eid :probeplan.classic/ordered-songs %]) (filter some? removed))]
     (concat add-tx remove-tx)))
 
-(defn probeplan-song-tx [{:keys [song-id emphasis position] :as s}]
+(defn probeplan-song-tx [{:keys [song-id emphasis position]}]
   [[:song/song-id (util/ensure-uuid song-id)]
    (Integer/parseInt position)
    (if (rt/parse-boolean emphasis)

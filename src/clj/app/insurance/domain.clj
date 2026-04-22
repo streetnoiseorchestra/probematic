@@ -90,30 +90,27 @@
         coverages))
 
 (def SurveyReportEntity
-  (s/schema
-   [:map {:name :app.entity/insurance.survey.report}
-    [:insurance.survey.report/report-id :uuid]
-    [:insurance.survey.report/completed-at {:optional true} ::s/inst]
-    [:insurance.survey.report/coverage ::s/datomic-ref]]))
+  [:map {:name :app.entity/insurance.survey.report}
+   [:insurance.survey.report/report-id :uuid]
+   [:insurance.survey.report/completed-at {:optional true} ::s/inst]
+   [:insurance.survey.report/coverage ::s/datomic-ref]])
 
 (def SurveyResponseEntity
-  (s/schema
-   [:map {:name :app.entity/insurance.survey.response}
-    [:insurance.survey.response/response-id :uuid]
-    [:insurance.survey.response/member ::s/datomic-ref]
-    [:insurance.survey.response/completed-at {:optional true} ::s/inst]
-    [:insurance.survey.response/coverage-reports {:optional true} [:sequential s/DatomicRefOrTempid]]]))
+  [:map {:name :app.entity/insurance.survey.response}
+   [:insurance.survey.response/response-id :uuid]
+   [:insurance.survey.response/member ::s/datomic-ref]
+   [:insurance.survey.response/completed-at {:optional true} ::s/inst]
+   [:insurance.survey.response/coverage-reports {:optional true} [:sequential s/DatomicRefOrTempid]]])
 
 (def SurveyEntity
-  (s/schema
-   [:map {:name :app.entity/insurance.survey}
-    [:insurance.survey/survey-id :uuid]
-    [:insurance.survey/survey-name ::s/non-blank-string]
-    [:insurance.survey/policy ::s/datomic-ref]
-    [:insurance.survey/created-at ::s/inst]
-    [:insurance.survey/closes-at ::s/inst]
-    [:insurance.survey/closed-at {:optional true} ::s/inst]
-    [:insurance.survey/responses {:optional true} [:sequential s/DatomicRefOrTempid]]]))
+  [:map {:name :app.entity/insurance.survey}
+   [:insurance.survey/survey-id :uuid]
+   [:insurance.survey/survey-name ::s/non-blank-string]
+   [:insurance.survey/policy ::s/datomic-ref]
+   [:insurance.survey/created-at ::s/inst]
+   [:insurance.survey/closes-at ::s/inst]
+   [:insurance.survey/closed-at {:optional true} ::s/inst]
+   [:insurance.survey/responses {:optional true} [:sequential s/DatomicRefOrTempid]]])
 
 (defn tx-new-survey-report [tempid coverage-id]
   (assert tempid "Tempid must be non-nil")

@@ -7,18 +7,16 @@
 (def str->team-type (zipmap (map name team-types) team-types))
 
 (def TravelDiscountTypeEntity
-  (s/schema
-   [:map {:name :app.entity/travel.discount.type}
-    [:travel.discount.type/discount-type-id :uuid]
-    [:travel.discount.type/discount-type-name ::s/non-blank-string]
-    [:travel.discount.type/enabled? :boolean]]))
+  [:map {:name :app.entity/travel.discount.type}
+   [:travel.discount.type/discount-type-id :uuid]
+   [:travel.discount.type/discount-type-name ::s/non-blank-string]
+   [:travel.discount.type/enabled? :boolean]])
 
 (def TravelDiscountEntity
-  (s/schema
-   [:map {:name :app.entity/travel.discount}
-    [:travel.discount/discount-id :uuid]
-    [:travel.discount/discount-type ::s/datomic-ref]
-    [:travel.discount/expiry-date ::s/instdate]]))
+  [:map {:name :app.entity/travel.discount}
+   [:travel.discount/discount-id :uuid]
+   [:travel.discount/discount-type ::s/datomic-ref]
+   [:travel.discount/expiry-date ::s/instdate]])
 
 (defn discount-type->db [travel-discount-type]
   (when-not (s/valid? TravelDiscountTypeEntity travel-discount-type)

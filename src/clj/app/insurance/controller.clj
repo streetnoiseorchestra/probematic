@@ -339,34 +339,48 @@
 
 (def UpdateInstrument
   "This schema describes the http post we receive when updating an instrument"
-  (s/schema
-   [:map {:name ::UpdateInstrument}
-    [:instrument-id {:optional true} [:or :uuid [:string {:min 0 :max 0}]]]
-    [:category-id :uuid]
-    [:owner-member-id :uuid]
-    [:description :string]
-    [:build-year :string]
-    [:serial-number :string]
-    [:make ::s/non-blank-string]
-    [:model :string]
-    [:instrument-name ::s/non-blank-string]]))
+  [:map {:name ::UpdateInstrument}
+   [:instrument-id {:optional true} [:or :uuid [:string {:min 0 :max 0}]]]
+   [:category-id :uuid]
+   [:owner-member-id :uuid]
+   [:description :string]
+   [:build-year :string]
+   [:serial-number :string]
+   [:make ::s/non-blank-string]
+   [:model :string]
+   [:instrument-name ::s/non-blank-string]])
 
 (def UpdateCoverage
   "This schema describes the http post we receive when updating a coverage"
-  (s/schema
-   [:map {:name ::UpdateInstrumentAndCoverage}
-    [:instrument-id :uuid]
-    [:policy-id :uuid]
-    [:coverage-id {:optional true} [:or :uuid [:string {:min 0 :max 0}]]]
-    [:coverage-types [:vector {:min 1} :uuid]]
-    [:value [:int {:min 1}]]
-    [:item-count [:int {:min 1}]]
-    [:insurer-id {:optional true} :string]
-    [:private-band [:enum "band" "private"]]]))
+  [:map {:name ::UpdateInstrumentAndCoverage}
+   [:instrument-id :uuid]
+   [:policy-id :uuid]
+   [:coverage-id {:optional true} [:or :uuid [:string {:min 0 :max 0}]]]
+   [:coverage-types [:vector {:min 1} :uuid]]
+   [:value [:int {:min 1}]]
+   [:item-count [:int {:min 1}]]
+   [:insurer-id {:optional true} :string]
+   [:private-band [:enum "band" "private"]]])
 
 (def UpdateInstrumentAndCoverage
   "This schema describes the http post we receive when updating an instrument and coverage "
-  (mu/merge UpdateInstrument UpdateCoverage))
+  [:map {:name ::UpdateInstrumentAndCoverage}
+   [:instrument-id {:optional true} [:or :uuid [:string {:min 0 :max 0}]]]
+   [:category-id :uuid]
+   [:owner-member-id :uuid]
+   [:description :string]
+   [:build-year :string]
+   [:serial-number :string]
+   [:make ::s/non-blank-string]
+   [:model :string]
+   [:instrument-name ::s/non-blank-string]
+   [:policy-id :uuid]
+   [:coverage-id {:optional true} [:or :uuid [:string {:min 0 :max 0}]]]
+   [:coverage-types [:vector {:min 1} :uuid]]
+   [:value [:int {:min 1}]]
+   [:item-count [:int {:min 1}]]
+   [:insurer-id {:optional true} :string]
+   [:private-band [:enum "band" "private"]]])
 
 (defn update-coverage-txs [policy {:keys [value coverage-types item-count private-band insurer-id] :as decoded} coverage owner-changed? category-changed?]
   (let [coverage-ref (d/ref coverage)
@@ -585,13 +599,12 @@
        (sort-by :member/name)))
 
 (def MarkAsSchema
-  (s/schema
-   [:map {:name ::MarkAs}
-    [:policy-id :uuid]
-    [:workflow-status {:optional true} (into [:enum {:kw-namespace true}] domain/instrument-coverage-statuses)
-     [:enum {:kw-namespace true} :instrument.coverage.status/needs-review :instrument.coverage.status/reviewed :instrument.coverage.status/coverage-active]]
-    [:change-status {:optional true} (into [:enum {:kw-namespace true}] domain/instrument-coverage-changes)]
-    [:coverage-ids [:vector {:vectorize true} :uuid]]]))
+  [:map {:name ::MarkAs}
+   [:policy-id :uuid]
+   [:workflow-status {:optional true} (into [:enum {:kw-namespace true}] domain/instrument-coverage-statuses)
+    [:enum {:kw-namespace true} :instrument.coverage.status/needs-review :instrument.coverage.status/reviewed :instrument.coverage.status/coverage-active]]
+   [:change-status {:optional true} (into [:enum {:kw-namespace true}] domain/instrument-coverage-changes)]
+   [:coverage-ids [:vector {:vectorize true} :uuid]]])
 
 (defn mark-coverages-as! [req]
   (let [{:keys [policy-id coverage-ids workflow-status change-status] :as p} (s/decode MarkAsSchema (:params req))]

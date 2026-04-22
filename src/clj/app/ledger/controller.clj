@@ -29,20 +29,12 @@
 
 (def AddTransaction
   "This schema describes the http post we receive when creating a transaction"
-  (s/schema
-   [:map {:name ::AddTransaction}
-    [:member-id :uuid]
-    [:tx-date ::s/date]
-    [:description :string]
-    [:amount {:decode/string domain/coerce-amount} :int]
-    [:tx-direction [:enum "debit" "credit"]]]))
-
-(s/explain-human AddTransaction
-                 (s/decode AddTransaction {:member-id "01860c2a-2929-8727-af1a-5545941b1115"
-                                           :tx-date "2021-09-01"
-                                           :description "Testing"
-                                           :amount "10.00"
-                                           :tx-direction "debit"}))
+  [:map {:name ::AddTransaction}
+   [:member-id :uuid]
+   [:tx-date ::s/date]
+   [:description :string]
+   [:amount {:decode/string domain/coerce-amount} :int]
+   [:tx-direction [:enum "debit" "credit"]]])
 
 (defn adjust-amount-sign [direction amount]
   (assert (> amount 0) "Amount must be positive")
@@ -70,7 +62,7 @@
       {:error (s/explain-human AddTransaction decoded)})))
 
 (defn prepare-delete-transaction-txs [{:ledger.entry/keys [amount entry-id] :as entry}]
-  (let [{:ledger/keys [balance entries] :as ledger} (first (:ledger/_entries entry))]
+  (let [{:ledger/keys [balance] :as ledger} (first (:ledger/_entries entry))]
     (assert ledger "Ledger must be present")
     [[:db/retractEntity [:ledger.entry/entry-id entry-id]]
      [:db/add (d/ref ledger) :ledger/balance (- balance amount)]]))
