@@ -8,18 +8,20 @@
                  starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
  :linters       {;; :unused-value        {:level :off}
                  ;; :unused-binding      {:level :off}
-                 :unresolved-symbol {:exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
-                 :unused-import       {:level :off}
-                 :invalid-arity       {:level :error}
-                 :unused-namespace    {:level   :warning
-                                       :exclude [com.fulcrologic.guardrails.core]}
-                 :consistent-alias    {:level   :warning
-                                       :aliases {clojure.test.check.generators gen
-                                                 clojure.test.check.properties prop}}
-                 :unused-referred-var {:level   :warning
-                                       :exclude {com.fulcrologic.guardrails.core       [>def >defn >fdef => | <- ?]
-                                                 com.fulcrologic.guardrails.malli.core [>def >defn >fdef => | <- ?]
-                                                 clojure.test                          [deftest is are run-tests testing]}}
+                 :not-a-function            {:exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
+                 :unresolved-symbol         {:exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
+                 :unquote-not-syntax-quoted {:level :off :exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
+                 :unused-import             {:level :off}
+                 :invalid-arity             {:level :error}
+                 :unused-namespace          {:level   :warning
+                                             :exclude [com.fulcrologic.guardrails.core]}
+                 :consistent-alias          {:level   :warning
+                                             :aliases {clojure.test.check.generators gen
+                                                       clojure.test.check.properties prop}}
+                 :unused-referred-var       {:level   :warning
+                                             :exclude {com.fulcrologic.guardrails.core       [>def >defn >fdef => | <- ?]
+                                                       com.fulcrologic.guardrails.malli.core [>def >defn >fdef => | <- ?]
+                                                       clojure.test                          [deftest is are run-tests testing]}}
 
                  :unresolved-var {:exclude [taoensso.carmine
                                             org.httpkit.client
