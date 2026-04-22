@@ -3,24 +3,14 @@
    [app.datastar :as datastar]
    [app.nexus :as app-nexus]
    [app.queries :as q]
+   [app.routes.datastar :as dsr]
    [app.settings.routes :as settings.routes]
    [app.settings.views :as settings.views]
+   [app.test-common :as tc]
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [reitit.core :as r]
    [reitit.http :as http]))
-
-(defn act-handler [req]
-  ((requiring-resolve 'app.routes.datastar/act-handler) req))
-
-(defn act-route [system]
-  ((requiring-resolve 'app.routes.datastar/act-route) system))
-
-(defn dispatch-with-nexus [handler nexus-config system req]
-  (let [interceptor (app-nexus/nexus-interceptor nexus-config system)
-        ctx         ((:enter interceptor) {:request req})
-        response    (handler (:request ctx))]
-    (:response ((:leave interceptor) (assoc ctx :response response)))))
 
 (defn route-signature [route]
   {:path         (first route)
@@ -55,10 +45,10 @@
                 :query-params (datastar/action-query-params ::ping)
                 :body-params {:received true}}]
     (is (= [[::ping {:received true}]]
-           (act-handler req)))
+           (dsr/act-handler req)))
     (is (= {:status 200
             :body   {:ok true}}
-           (dispatch-with-nexus act-handler config (:system req) req)))
+           (tc/dispatch-with-nexus dsr/act-handler config (:system req) req)))
     (is (= [[:record {:received true}]
             [:respond {:ok true}]]
            @calls))))
@@ -66,7 +56,7 @@
 (deftest act-route-installs-nexus-as-route-interceptor
   (let [config {:nexus/system->state identity
                 :nexus/actions       {}}
-        [_path route-data] (act-route {:nexus config})]
+        [_path route-data] (dsr/act-route {:nexus config})]
     (is (= :app.routes.datastar/act (:name route-data)))
     (is (nil? (:middleware route-data)))
     (is (= [::app-nexus/nexus-interceptor]
@@ -75,7 +65,7 @@
 (deftest act-helper-builds-url-from-the-named-act-route
   (let [config {:nexus/system->state identity
                 :nexus/actions       {}}
-        router (http/router ["" (act-route {:nexus config})])
+        router (http/router ["" (dsr/act-route {:nexus config})])
         req    {::r/router router}]
     (is (= "@post('/act?ns=app.routes.datastar-test&kw=ping')"
            (datastar/act req ::ping)))))
@@ -83,7 +73,7 @@
 (deftest settings-page-renders-command-urls-through-the-act-route
   (let [config {:nexus/system->state identity
                 :nexus/actions       {}}
-        router (http/router ["" (act-route {:nexus config})])
+        router (http/router ["" (dsr/act-route {:nexus config})])
         req    {::r/router router
                 :tr       (fn [k & _] (pr-str k))
                 :db       nil
