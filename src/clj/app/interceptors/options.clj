@@ -85,8 +85,8 @@
     [:debug-errors? {:doc      "When true uses pink.interceptors.errors functionality for debugging application failures."
                      :optional true
                      :default  false} :boolean]
-    [:error-handlers {:doc      "TODO"
-                      :optional true} [:map-of :any fn?]]
+    [:error-handlers {:doc      "Map of pattern -> handler for exception matching. Kept broad because the keys are heterogeneous matcher data."
+                      :optional true} :map]
     [:pretty-exceptions-opts {:doc     "Options for the pretty exceptiosn page handler"
                               :default {}} PrettyExceptionsPageOptions]]))
 

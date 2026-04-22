@@ -250,7 +250,7 @@
      :leave (fn [ctx]
               (assoc-in ctx  [:response :headers "Content-Security-Policy"] csp))}))
 
-(def default-coercion
+(defn default-coercion []
   (-> rcm/default-options
       (assoc-in [:options :registry] schemas/registry)
       rcm/create))

@@ -21,7 +21,7 @@
             [reitit.ring :as ring]))
 
 (defn routes [system]
-  ["" {:coercion     interceptors/default-coercion
+  ["" {:coercion     (interceptors/default-coercion)
        :muuntaja     interceptors/formats-instance
        :interceptors (into [] (concat (interceptors/default-reitit-interceptors system)
                                       [(auth/session-interceptor system)
