@@ -139,26 +139,26 @@
   ([req body] (html5-response req nil body))
   ([req {:keys [js extra-scripts title]} body]
    (html-response
-    (html5-safe
-     (head req title nil)
-     [:body
-      (ctmx.render/walk-attrs body)
-      (conj
-       (body-end req nil)
-       (when extra-scripts
-         (map #(apply script %) extra-scripts))
-       (when js (map (partial script nil) js)))
-      [:datastar-inspector]]))))
+    (html5-safe {}
+                (head req title nil)
+                [:body
+                 (ctmx.render/walk-attrs body)
+                 (conj
+                  (body-end req nil)
+                  (when extra-scripts
+                    (map #(apply script %) extra-scripts))
+                  (when js (map (partial script nil) js)))
+                 [:datastar-inspector]]))))
 
 (defn html5-response-absolute
   ([req {:keys [js title
                 uri-prefix]} body]
    (html-response
-    (html5-safe
-     (head req title uri-prefix)
-     [:body (ctmx.render/walk-attrs body)
-      (body-end req uri-prefix)]
-     (when js [:script {:src (str uri-prefix "/js" js)}])))))
+    (html5-safe {}
+                (head req title uri-prefix)
+                [:body (ctmx.render/walk-attrs body)
+                 (body-end req uri-prefix)]
+                (when js [:script {:src (str uri-prefix "/js" js)}])))))
 
 (defn snippet-response [body]
   (ctmx.render/snippet-response body))

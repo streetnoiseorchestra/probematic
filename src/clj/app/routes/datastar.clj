@@ -1,11 +1,12 @@
 (ns app.routes.datastar
   (:require
    [app.datastar :as d*]
-   [app.layout :as layout]
+   #_[app.layout :as layout]
+   [app.layout2 :as layout2]
    [app.nexus :as nexus]))
 
 (defn shim [req]
-  (layout/app-shell req nil))
+  (layout2/app-shell req nil))
 
 (defn resolve-from-kw
   "Resolves a namespace-qualified keyword to a symbol and then resolves that symbol to a var."

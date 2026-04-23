@@ -128,7 +128,7 @@
                  :data-indicator       fetching-signal
                  :data-attr:disabled   $fetching-signal
                  :data-class           (->expr {"spinning" (&& ($ fetching-signal)
-                                                                  (= ($ form-ent-signal) ~(str ent-id)))})
+                                                               (= ($ form-ent-signal) ~(str ent-id)))})
                  :data-on:click        (->expr (set! ($ ~(name form-name) "." ~(name form-key-id)) ~(str ent-id))
                                                (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params action))))}
      (tr [:action/update])]))
@@ -430,6 +430,7 @@
 (defn page [{:keys [tr] :as req}]
   (html/->str
    [:main {:class "flex-1" :id "main"}
+    [:wa-button [:wa-icon {:name "gear", :slot "start"}] "Hello World."]
     [l/PageHeader {::l/title (tr [:nav/band-settings])}]
     (teams-panel req)
     (travel-discount-types req)

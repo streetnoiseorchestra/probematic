@@ -1,0 +1,89 @@
+:root {
+  --sno-brand-green: #22c55e;
+  --sno-brand-orange: #f97316;
+}
+
+html,
+body {
+  min-height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+wa-page [slot="navigation"] wa-button::part(base) {
+  justify-content: start;
+}
+
+/* app.icons SVGs have no intrinsic width/height, so without this rule they
+   render at the SVG spec default of 300x150. Every icon from app.icons carries
+   class="icon", so one selector sizes them all to match surrounding text.
+   flex: none keeps them from being squeezed inside wa-button's flex row. */
+wa-page svg.icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+}
+
+/* The hamburger is icon-only (no label), so bump it up for visual weight and
+   a finger-friendly tap target. */
+wa-page svg.nav-toggle-icon {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+a.brand-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  & svg.brand-logotype {
+    height: 2rem;
+    width: auto;
+  }
+}
+
+.logotype-snoman {
+  fill: var(--sno-brand-green);
+  color: var(--sno-brand-green);
+}
+
+.logotype-text {
+  fill: var(--sno-brand-orange);
+}
+
+wa-page [slot="navigation"] wa-button#account-dropdown-button {
+  inline-size: 100%;
+
+  &::part(base) {
+    justify-content: start;
+  }
+
+  &::part(caret) {
+    flex: auto;
+    justify-content: end;
+  }
+}
+
+.page-subheader {
+  align-items: center;
+  padding: var(--wa-space-xs) var(--wa-space-m);
+  border-bottom: var(--wa-border-style) var(--wa-panel-border-width)
+    var(--wa-color-surface-border);
+  background-color: var(--wa-color-surface-default);
+
+  & .subheader-logo .subheader-snoman {
+    height: 1.75rem;
+    width: auto;
+  }
+
+  & .subheader-user wa-button#account-dropdown-button {
+    & .member-nick,
+    &::part(caret) {
+      display: none;
+    }
+  }
+}
+
+wa-page[view="desktop"] [data-toggle-nav] {
+  display: none;
+}

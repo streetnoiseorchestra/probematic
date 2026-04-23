@@ -1,0 +1,165 @@
+(ns app.layout2
+  (:require
+   [app.auth :as auth]
+   [app.config :as config]
+   [app.i18n :as i18n]
+   [app.icons :as icon]
+   [app.render :as render]
+   [app.ui :as ui]
+   [app.urls :as url]
+   [clojure.string :as str]
+   [hiccup.util :as hiccup.util]))
+
+(def ^:private nav-icon-opts {:slot "start" :class "nav-icon"})
+
+(defn- nav-items
+  [tr]
+  [{:label (tr [:nav/home])          :icon icon/home                 :href "/"                                       :route-name :app/dashboard}
+   {:label (tr [:nav/gigs])          :icon icon/trumpet              :href (url/link-gigs-home)                      :route-name :app/gigs}
+   {:label (tr [:nav/songs])         :icon icon/music-note-outline   :href "/songs"                                  :route-name :app/songs}
+   {:label (tr [:nav/probeplan])     :icon icon/calendar             :href "/probeplan"                              :route-name :app/probeplan}
+   {:label (tr [:nav/polls])         :icon icon/question             :href "/polls"                                  :route-name :app/polls}
+   {:label (tr [:nav/stats])         :icon icon/chart-bar-square     :href "/stats"                                  :route-name :app/stats}
+   {:label (tr [:nav/forum])         :icon icon/snomegaphone         :href "https://forum.streetnoise.at"            :route-name :app/forum}
+   {:label (tr [:nav/nextcloud])     :icon icon/folder-open          :href "https://data.streetnoise.at/apps/files/" :route-name :app/nextcloud}
+   {:label (tr [:nav/chat])          :icon icon/comments             :href "https://chat.streetnoise.at"             :route-name :app/chat}
+   {:label (tr [:nav/members])       :icon icon/users-outline        :href "/members"                                :route-name :app/members}
+   {:label (tr [:nav/insurance])     :icon icon/shield-check-outline :href "/insurance"                              :route-name :app/insurance}
+   {:label (tr [:nav/band-settings]) :icon icon/cog                  :href "/band-settings"                          :route-name :app/band-settings}])
+
+(defn- active? [req route-name]
+  (= route-name (-> req :reitit.core/match :data :app.route/name)))
+
+(defn- nav-button [req {:keys [label icon href route-name]}]
+  [:wa-button (cond-> {:href       href
+                       :appearance "plain"}
+                (active? req route-name) (assoc :variant "brand"))
+   (icon nav-icon-opts)
+   label])
+
+(defn navigation [req]
+  (let [tr (i18n/tr-from-req req)]
+    (into [:div {:class "wa-stack wa-gap-0"}]
+          (map (partial nav-button req) (nav-items tr)))))
+
+(defn- avatar-src [member]
+  (when-let [tpl (:member/avatar-template member)]
+    (str "https://forum.streetnoise.at"
+         (str/replace tpl "{size}" "200"))))
+
+(def ^:private menu-icon-opts {:slot "icon" :class "menu-icon"})
+
+(defn brand-link []
+  [:a {:href "/" :class "brand-link logotype-dark"}
+   (icon/logotype {:class "brand-logotype"})])
+
+(defn navigation-header [req member]
+  (let [tr  (i18n/tr-from-req req)
+        src (avatar-src member)]
+    [:wa-dropdown {:distance "4"}
+     [:div {:slot "trigger"}
+      [:wa-button {:id         "account-dropdown-button"
+                   :appearance "plain"
+                   :with-caret true}
+       [:wa-avatar (cond-> {:slot  "start"
+                            :label (ui/member-nick member)
+                            :shape "rounded"
+                            :style "--size: 2rem"}
+                     src (assoc :image src))
+        (when-not src (icon/user {:slot "icon"}))]
+       [:span {:class "member-nick"} (ui/member-nick member)]]]
+     [:wa-dropdown-item {:value   (url/link-member member)
+                         :onclick "window.location = this.value"}
+      (icon/user menu-icon-opts)
+      (tr [:my-profile])]
+     [:wa-dropdown-item {:value   "/band-settings"
+                         :onclick "window.location = this.value"}
+      (icon/cog menu-icon-opts)
+      (tr [:nav/band-settings])]
+     [:wa-divider]
+     [:wa-dropdown-item {:value   (url/link-logout)
+                         :variant "danger"
+                         :onclick "window.location = this.value"}
+      (icon/xmark menu-icon-opts)
+      (tr [:nav/logout])]]))
+
+(defn head [req title]
+  [:head
+   [:meta {:charset "utf-8"}]
+   [:meta {:name    "viewport"
+           :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
+   [:link {:rel "shortcut icon" :href "/img/megaphone-icon.png"}]
+   [:title (or title "SNOrga")]
+   [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=IBM+Plex+Sans+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"}]
+   [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Grotesk:wght@300..700&display=swap"}]
+   [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"}]
+   [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Podkova:wght@400..800&display=swap"}]
+   (render/stylesheet req nil "wa/styles/themes" "active.css")
+   (render/stylesheet req nil "wa/styles/color/palettes" "vogue.css")
+   (render/stylesheet req nil "wa/styles" "native.css")
+   (render/stylesheet req nil "wa/styles" "utilities.css")
+   [:style
+    (hiccup.util/raw-string
+     ":root {
+        --wa-font-family-body: \"Space Grotesk\", sans-serif;
+        --wa-font-family-heading: \"IBM Plex Sans Condensed\", sans-serif;
+        --wa-font-family-code: \"Space Mono\", monospace;
+        --wa-font-family-longform: Podkova, serif;
+        --wa-font-family-longform: Aleo, serif;
+        --wa-font-weight-body: 400;
+        --wa-font-weight-heading: 650;
+        --wa-font-weight-code: 400;
+        --wa-font-weight-longform: 400;
+        --wa-border-radius-scale: 1.75;
+        --wa-border-width-scale: 1;
+        --wa-space-scale: 1;
+      }")]
+   (render/stylesheet req nil "css" "main2.css")
+   [:script {:type "module" :src "/wa/webawesome.loader.js"}]
+   [:script {:defer true :src "/js/datastar@1.0.1.js" :type "module"}]
+   (when (config/dev-mode? (-> req :system :env))
+     [:script {:defer true :src "/js/datastar-inspector@1.1.4.js" :type "module"}])])
+
+(defn html5-response
+  ([req body] (html5-response req nil body))
+  ([req {:keys [title]} body]
+   (render/html-response
+    (render/html5-safe {:class "wa-theme-active wa-palette-rudimentary wa-brand-green"}
+                       (head req title)
+                       body))))
+
+(defn app-shell
+  ([req body]
+   (app-shell req body nil))
+  ([req body opts]
+   (let [member (auth/get-current-member req)]
+     (html5-response
+      req (merge {:title "SNOrga"} opts)
+      [:body
+       [:div {:data-init "@post(window.location.pathname + window.location.search)"
+              :id        "long-lived-sse"}]
+       [:wa-page {:mobile-breakpoint         "1152"
+                  :disable-navigation-toggle true}
+        [:header {:slot "navigation-header"}
+         (brand-link)]
+
+        [:div {:slot "navigation" :style "padding-top: 0"}
+         [:div {:class "wa-desktop-only"}
+          (navigation-header req member)]
+         (navigation req)]
+
+        [:div {:slot "subheader" :class "page-subheader wa-split wa-mobile-only"}
+         [:wa-button {:data-toggle-nav true
+                      :appearance       "plain"
+                      :aria-label       "Toggle navigation"}
+          (icon/bars {:slot "start" :class "nav-toggle-icon"})]
+         [:a {:href "/" :class "subheader-logo" :aria-label "Home"}
+          (icon/snoman {:class "subheader-snoman"})]
+         [:div {:class "subheader-user"}
+          (navigation-header req member)]]
+
+        (if (= :main (first body))
+          body
+          [:main {:id "main"} body])]
+       (when (config/dev-mode? (-> req :system :env))
+         [:datastar-inspector])]))))
