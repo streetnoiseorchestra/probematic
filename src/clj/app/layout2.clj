@@ -128,7 +128,15 @@
    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Podkova:wght@400..800&display=swap"}]
    [:script {:type "module" :src "/wa/webawesome.loader.js"}]
    [:script {:type "module"}
-    (hiccup.util/raw-string "import { registerIconLibrary } from '/wa/webawesome.js';
+    (hiccup.util/raw-string "
+  import { registerIconLibrary } from '/wa/webawesome.js';
+  // these imports ensure that webcomonents custom elements are defined
+  // before datastar inits so that d* can properly interact with their value and change attrs
+  import '/wa/components/button/button.js';
+  import '/wa/components/input/input.js';
+  import '/wa/components/dialog/dialog.js';
+  import '/wa/components/checkbox/checkbox.js';
+  import '/wa/components/select/select.js';
   registerIconLibrary('default', {
     resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
     mutator: svg => svg.setAttribute('fill', 'currentColor'),
