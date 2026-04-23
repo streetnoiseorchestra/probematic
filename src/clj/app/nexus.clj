@@ -1,6 +1,8 @@
 (ns app.nexus
   (:require
    [app.datastar :as datastar]
+   [app.members.controller2 :as members.controller2]
+   [app.members.index.actions]
    [app.settings.actions]
    [clojure.walk :as walk]
    [com.yetanalytics.squuid :as sq]
@@ -136,6 +138,14 @@
 (defn assoc-page-state-fx [ctx _system path value]
   (datastar/state-transact! (request ctx) #(assoc-in % path value)))
 
+(defn members-index-resend-invitation-fx [ctx _system invite-code]
+  (when (some? invite-code)
+    (members.controller2/resend-invitation! (request ctx) invite-code)))
+
+(defn members-index-delete-invitation-fx [ctx _system invite-code]
+  (when (some? invite-code)
+    (members.controller2/delete-invitation! (request ctx) invite-code)))
+
 (defn response? [x]
   (and (map? x) (contains? x :status)))
 
@@ -247,10 +257,13 @@
 
 (defn nexus []
   {:nexus/system->state system->state
-   :nexus/effects       {:db/transact                 (with-meta db-transact-fx {:nexus/batch true})
-                         :app.datastar/merge-signals  merge-signals-fx
-                         :app.datastar/remove-signals remove-signals-fx
-                         :app.datastar/open-form      open-form-fx
-                         :app.datastar/close-form     close-form-fx
-                         :app.datastar/assoc-state    assoc-page-state-fx}
-   :nexus/actions       app.settings.actions/actions})
+   :nexus/effects       {:db/transact                         (with-meta db-transact-fx {:nexus/batch true})
+                         :app.datastar/merge-signals          merge-signals-fx
+                         :app.datastar/remove-signals         remove-signals-fx
+                         :app.datastar/open-form              open-form-fx
+                         :app.datastar/close-form             close-form-fx
+                         :app.datastar/assoc-state            assoc-page-state-fx
+                         :app.members.index/resend-invitation members-index-resend-invitation-fx
+                         :app.members.index/delete-invitation members-index-delete-invitation-fx}
+   :nexus/actions       (merge app.settings.actions/actions
+                               app.members.index.actions/actions)})

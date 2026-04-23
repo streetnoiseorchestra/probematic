@@ -1,6 +1,9 @@
 (ns app.routes.datastar-test
   (:require
    [app.datastar :as datastar]
+   [app.members.index.views :as members.index.views]
+   [app.members.queries :as members.queries]
+   [app.members.routes :as members.routes]
    [app.nexus :as app-nexus]
    [app.queries :as q]
    [app.routes.datastar :as dsr]
@@ -74,9 +77,9 @@
   (let [config {:nexus/system->state identity
                 :nexus/actions       {}}
         router (http/router ["" (dsr/act-route {:nexus config})])
-        req    {::r/router router
-                :tr       (fn [k & _] (pr-str k))
-                :db       nil
+        req    {::r/router  router
+                :tr         (fn [k & _] (pr-str k))
+                :db         nil
                 :page-state {}}]
     (with-redefs [q/retrieve-all-teams (constantly [])
                   q/retrieve-all-discount-types (constantly [])
@@ -86,3 +89,45 @@
         (is (str/includes? html "create-team"))
         (is (str/includes? html "create-discount-type"))
         (is (str/includes? html "create-section"))))))
+
+(deftest members-routes-expose-the-datastar-index-and-detail-compatibility-paths
+  (let [router (http/router ["" (members.routes/routes)])]
+    (is (= :app/members
+           (get-in (r/match-by-path router "/members") [:data :app.route/name])))
+    (is (= :app.members.routes/members-index
+           (get-in (r/match-by-path router "/members") [:data :name])))
+    (is (= :app/members
+           (get-in (r/match-by-path router "/members-old") [:data :app.route/name])))
+    (is (= :app/members
+           (get-in (r/match-by-path router (str "/member/" (random-uuid))) [:data :app.route/name])))))
+
+(deftest members-page-renders-action-urls-through-the-act-route
+  (let [config {:nexus/system->state identity
+                :nexus/actions       {}}
+        router (http/router [""
+                             (dsr/act-route {:nexus config})
+                             (members.routes/routes)])
+        req    {::r/router  router
+                :tr         (fn [k & _] (pr-str k))
+                :db         nil
+                :page-state {}}]
+    (with-redefs [members.queries/members
+                  (constantly [{:member/member-id (random-uuid)
+                                :member/name      "Alice"
+                                :member/email     "alice@example.com"
+                                :member/phone     "+43 123"
+                                :member/active?   true
+                                :member/section   {:section/name "Trumpets"}
+                                :member/travel-discounts []}])
+                  members.queries/members-with-open-invites
+                  (constantly [{:member/member-id    (random-uuid)
+                                :member/name         "Bob"
+                                :member/email        "bob@example.com"
+                                :member/invite-code  "invite-123"}])]
+      (let [html (members.index.views/page req)]
+        (is (str/includes? html "/act?ns=app.members.index.actions"))
+        (is (str/includes? html "set-search-phrase"))
+        (is (str/includes? html "set-filter-preset"))
+        (is (str/includes? html "set-sort"))
+        (is (str/includes? html "resend-invitation"))
+        (is (str/includes? html "delete-invitation"))))))
