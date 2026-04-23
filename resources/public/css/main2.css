@@ -14,21 +14,18 @@ wa-page [slot="navigation"] wa-button::part(base) {
   justify-content: start;
 }
 
-/* app.icons SVGs have no intrinsic width/height, so without this rule they
-   render at the SVG spec default of 300x150. Every icon from app.icons carries
-   class="icon", so one selector sizes them all to match surrounding text.
+/* Custom snoico wa-icons size from font-size, so style the host element.
    flex: none keeps them from being squeezed inside wa-button's flex row. */
-wa-page svg.icon {
-  width: 1.1em;
-  height: 1.1em;
+wa-page wa-icon.nav-icon,
+wa-page wa-icon.menu-icon {
+  font-size: 1.1em;
   flex: none;
 }
 
 /* The hamburger is icon-only (no label), so bump it up for visual weight and
    a finger-friendly tap target. */
-wa-page svg.nav-toggle-icon {
-  width: 1.5em;
-  height: 1.5em;
+wa-page wa-icon.nav-toggle-icon {
+  font-size: 1.5em;
 }
 
 a.brand-link {
@@ -36,19 +33,10 @@ a.brand-link {
   align-items: center;
   justify-content: flex-start;
 
-  & svg.brand-logotype {
-    height: 2rem;
-    width: auto;
+  & wa-icon.brand-logotype {
+    font-size: 2rem;
+    color: inherit;
   }
-}
-
-.logotype-snoman {
-  fill: var(--sno-brand-green);
-  color: var(--sno-brand-green);
-}
-
-.logotype-text {
-  fill: var(--sno-brand-orange);
 }
 
 wa-page [slot="navigation"] wa-button#account-dropdown-button {
@@ -72,8 +60,7 @@ wa-page [slot="navigation"] wa-button#account-dropdown-button {
   background-color: var(--wa-color-surface-default);
 
   & .subheader-logo .subheader-snoman {
-    height: 1.75rem;
-    width: auto;
+    font-size: 1.75rem;
   }
 
   & .subheader-user wa-button#account-dropdown-button {
@@ -86,4 +73,32 @@ wa-page [slot="navigation"] wa-button#account-dropdown-button {
 
 wa-page[view="desktop"] [data-toggle-nav] {
   display: none;
+}
+
+wa-dialog wa-callout {
+  margin-block-end: var(--wa-space-m);
+}
+
+wa-input:state(user-invalid)::part(input),
+wa-input[data-invalid]:not([data-invalid=""])::part(input) {
+  --wa-form-control-border-color: red;
+}
+
+wa-input:state(user-invalid)::part(input):hover,
+wa-input[data-invalid]:not([data-invalid=""])::part(input):hover {
+  --wa-form-control-border-color: red;
+}
+
+wa-input:state(user-invalid)::part(hint),
+wa-input[data-invalid]:not([data-invalid=""])::part(hint),
+wa-select:state(user-invalid)::part(hint),
+wa-select[data-invalid]:not([data-invalid=""])::part(hint),
+wa-switch:state(user-invalid)::part(hint),
+wa-switch[data-invalid]:not([data-invalid=""])::part(hint) {
+  color: red;
+}
+
+wa-select:state(user-invalid)::part(combobox),
+wa-select[data-invalid]:not([data-invalid=""])::part(combobox) {
+  --wa-form-control-border-color: red;
 }
