@@ -2262,6 +2262,18 @@ msgctxt ":action/confirm-delete-team"
 msgid "Are you sure you want to delete the team %1?"
 msgstr "Bist du sicher, dass du das Team %1 löschen möchtest?"
 
+#: :action/confirm-delete-discount-type
+#, ycp-format
+msgctxt ":action/confirm-delete-discount-type"
+msgid "Are you sure you want to delete the discount type %1?"
+msgstr "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?"
+
+#: :action/confirm-delete-section
+#, ycp-format
+msgctxt ":action/confirm-delete-section"
+msgid "Are you sure you want to delete the section %1?"
+msgstr "Bist du sicher, dass du das Register %1 löschen möchtest?"
+
 #: :action/comment
 #, ycp-format
 msgctxt ":action/comment"

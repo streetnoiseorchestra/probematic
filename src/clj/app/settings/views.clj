@@ -5,20 +5,104 @@
    [app.queries :as q]
    [app.settings.actions :as actions]
    [app.settings.domain :as domain]
-   [app.ui2.badge :as badge]
    [app.ui2.button :as btn]
-   [app.ui2.core :as uic]
    [app.ui2.dialog :as dialog]
    [app.ui2.form :as form]
    [app.ui2.icon :as icon]
    [app.ui2.input :as input]
-   [app.ui2.layout :as l]
    [app.ui2.select :as sel]
    [app.urls :as urls]
+   [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn plus-icon [attrs]
   [icon/Icon (merge {::icon/name :plus} attrs)])
+
+(defn open-form-on-click [req form-name form-key-id action ent-id]
+  (->expr (set! ($ ~(name form-name) "." ~(name form-key-id)) ~(str ent-id))
+          (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params action)))))
+
+(defn remove-on-click [req form-name form-key-id action ent-id]
+  (->expr (set! ($ ~(name form-name) "." ~(name form-key-id)) ~(str ent-id))
+          (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params action)))))
+
+(defn safe-dom-id [value]
+  (-> (str value)
+      (str/replace #"[^A-Za-z0-9_-]+" "-")))
+
+(defn remove-dialog-id [prefix ent-id]
+  (str prefix "-remove-" (safe-dom-id ent-id)))
+
+(defn remove-confirm-dialog [{:keys [tr] :as req} {:keys [dialog-id title prompt action form-name form-key-id ent-id]}]
+  [:wa-dialog {:id    dialog-id
+               :label title}
+   [:p prompt]
+   [:wa-button {:slot       "footer"
+                :appearance "outlined"
+                :data-dialog "close"}
+    (tr [:action/cancel])]
+   [:wa-button {:slot                         "footer"
+                :appearance                   "filled"
+                :variant                      "danger"
+                :data-dialog                  "close"
+                :data-on:click__viewtransition (remove-on-click req form-name form-key-id action ent-id)}
+    (tr [:action/confirm-delete])]])
+
+(defn active-badge [active?]
+  [:wa-badge (cond-> {:appearance "outlined"
+                      :pill       true}
+               active? (assoc :variant "success")
+               (not active?) (assoc :variant "neutral"))
+   (if active? "Active" "Inactive")])
+
+(defn settings-card [{:keys [id title subtitle actions] :as attrs} & children]
+  (into
+   [:section (merge {:id    id
+                     :class "wa-stack"}
+                    (dissoc attrs :id :title :subtitle :actions))
+    [:div {:class "wa-flank:end wa-align-items-start"}
+     [:div {:class "wa-stack"}
+      [:h2 title]
+      (when subtitle
+        [:span {:class "wa-caption-s"} subtitle])]
+     (when actions
+       (into [:div {:class "wa-cluster wa-gap-xs"}]
+             actions))]]
+   children))
+
+(defn row-action-menu [{:keys [button-id disabled? items]}]
+  (list
+   [:wa-dropdown {:placement "bottom-end"}
+    [:wa-button {:id         button-id
+                 :slot       "trigger"
+                 :appearance "plain"
+                 :disabled   disabled?
+                 :aria-label "More actions"}
+     [:wa-icon {:name "more-vert" :label "More actions"}]]
+    (for [{:keys [label icon] :as item} items]
+      [:wa-dropdown-item (assoc (select-keys item [:variant :data-dialog :data-on:click :disabled]) :value label)
+       (when icon
+         [:wa-icon {:slot "icon" :name icon :variant "regular"}])
+       label])]
+   [:wa-tooltip {:for button-id :without-arrow true}
+    "More"]))
+
+(defn table-shell [& children]
+  (into
+   [:div {:style "overflow-x: auto; background-color: var(--wa-color-neutral-fill-quiet); border-radius: var(--wa-panel-border-radius);"}]
+   children))
+
+(defn empty-state [title body]
+  [:wa-callout {:appearance "outlined" :variant "neutral"}
+   [:wa-icon {:slot "icon" :name "info-circle" :variant "regular"}]
+   [:div {:class "wa-stack wa-gap-2xs"}
+    [:strong title]
+    [:span body]]])
+
+(defn team-type-label [tr team-type]
+  (if team-type
+    (tr [team-type])
+    "—"))
 
 (defn team-create-form [{:keys [tr] :as req}]
   (let [form-data {:ns      :team-create
@@ -117,53 +201,53 @@
                                                 :type           :submit}
                                     (tr [:action/save])])}]]]))
 
-(defn open-modal-button [{:keys [tr] :as req} form-name form-key-id action edit-any-row? ent-id]
-  (let [fetching-signal  (str (name form-name) "-fetching")
-        $fetching-signal (str "$" fetching-signal)
-        form-ent-signal  (format "%s.%s" (name form-name) (name form-key-id))]
-    [btn/Button {::btn/intent          :link
-                 ::btn/disabled?       edit-any-row?
-                 :type                 :button
-                 :id                   (str "update-btn-" ent-id)
-                 :data-indicator       fetching-signal
-                 :data-attr:disabled   $fetching-signal
-                 :data-class           (->expr {"spinning" (&& ($ fetching-signal)
-                                                               (= ($ form-ent-signal) ~(str ent-id)))})
-                 :data-on:click        (->expr (set! ($ ~(name form-name) "." ~(name form-key-id)) ~(str ent-id))
-                                               (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params action))))}
-     (tr [:action/update])]))
-
-(defn team-row [{:keys [tr] :as req} editing? edit-any-row? {team-name :team/name :team/keys [team-id members] :as team}]
+(defn team-dialogs [{:keys [tr] :as req} {team-name :team/name :team/keys [team-id] :as team}]
   (list
-   (when editing?
-     [dialog/ConfirmDialog {:id                    (str "_delete-confirm-" team-id)
-                            ::dialog/title         (tr [:action/confirm-generic])
-                            ::dialog/prompt        (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])
-                            ::dialog/on-hide       (format "$_delete-confirm-%s=false" team-id)
-                            ::dialog/confirm-text  (tr [:action/confirm-delete])
-                            ::dialog/cancel-text   (tr [:action/cancel])
-                            ::dialog/on-confirm    (d*/act req ::actions/delete-team)
-                            ::dialog/icon          dialog/AlertIcon}])
-   (when editing?
-     [dialog/FormDialog {:id              (str "edit-team-" team-id)
-                         ::dialog/title   "Edit Team"
-                         ::dialog/open    (format "$team.open && $team.team-id == '%s'" team-id)
-                         ::dialog/on-hide (d*/act req ::actions/close-team-edit)}
-      (team-edit-form req team)])
-   [:dt {:class (uic/cs "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
-    [:div team-name]]
-   [:dd {:class (uic/cs "mt-1 flex sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto")}
-    [:div {:class "text-gray-900"}
-     (if (seq members)
-       [:div {:class "inline"}
-        (->> members
-             (map (fn [{:member/keys [name] :as member}]
-                    [:a {:class "link-blue" :href (urls/link-member member)}
-                     name]))
-             (interpose ", "))]
-       [:span {:class "text-gray-500 italic"} (tr [:team/no-members])])]
-    [:div {:class "flex space-x-2 text-left"}
-     (open-modal-button req :team :team-id ::actions/open-team-edit edit-any-row? team-id)]]))
+   [dialog/ConfirmDialog {:id                   (str "_delete-confirm-" team-id)
+                          ::dialog/title        (tr [:action/confirm-generic])
+                          ::dialog/prompt       (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])
+                          ::dialog/on-hide      (format "$_delete-confirm-%s=false" team-id)
+                          ::dialog/confirm-text (tr [:action/confirm-delete])
+                          ::dialog/cancel-text  (tr [:action/cancel])
+                          ::dialog/on-confirm   (d*/act req ::actions/delete-team)
+                          ::dialog/icon         dialog/AlertIcon}]
+   [dialog/FormDialog {:id              (str "edit-team-" team-id)
+                       ::dialog/title   "Edit Team"
+                       ::dialog/open    (format "$team.open && $team.team-id == '%s'" team-id)
+                       ::dialog/on-hide (d*/act req ::actions/close-team-edit)}
+    (team-edit-form req team)]))
+
+(defn team-remove-dialog [{:keys [tr] :as req} {team-name :team/name :team/keys [team-id]}]
+  (remove-confirm-dialog req {:dialog-id (remove-dialog-id "team" team-id)
+                              :title     (tr [:action/confirm-generic])
+                              :prompt    (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])
+                              :action    ::actions/delete-team
+                              :form-name :team
+                              :form-key-id :team-id
+                              :ent-id    team-id}))
+
+(defn team-table-row [{:keys [tr] :as req} _edit-any-row? {team-name :team/name :team/keys [team-id members team-type]}]
+  (let [button-id (str "team-actions-" team-id)]
+    [:tr {:id (str "team-container-" team-id)}
+     [:td {:style "vertical-align: middle"} team-name]
+     [:td {:style "vertical-align: middle"}
+      (if (seq members)
+        [:div {:class "wa-cluster wa-gap-2xs"}
+         (for [{:member/keys [name] :as member} members]
+           [:a {:href (urls/link-member member)}
+            name])]
+        [:span {:style "color: var(--wa-color-text-quiet); font-style: italic;"}
+         (tr [:team/no-members])])]
+     [:td {:style "vertical-align: middle"} (team-type-label tr team-type)]
+     [:td {:style "vertical-align: top; text-align: end"}
+      (row-action-menu {:button-id button-id
+                        :items     [{:label    (tr [:action/update])
+                                     :icon     "edit-pencil"
+                                     :disabled true}
+                                    {:label       (tr [:action/remove])
+                                     :icon        "xmark"
+                                     :variant     "danger"
+                                     :data-dialog (format "open %s" (remove-dialog-id "team" team-id))}]})]]))
 
 (defn teams-panel [{:keys [page-state db tr] :as req}]
   (let [edit-id      (d*/get-form-current page-state :team :team-id)
@@ -173,19 +257,31 @@
            :data-signals__ifmissing (d*/->signals {:team-create {:open false}
                                                    :team        {:open false}})
            :data-signals            (d*/->signals {:team {:team-id edit-id}})}
-     [l/Panel {::l/title    "Teams"
-               ::l/subtitle "Because someone has to do the work"}
-      [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
-       (map-indexed (fn [_idx {:team/keys [team-id] :as team}]
-                      (let [editing? (= edit-id team-id)]
-                        [:div {:class "sm:flex" :id (str "team-container-" team-id)}
-                         (team-row req editing? editing-any? team)]))
-                    teams)]
-      [btn/Button {:data-on:click__viewtransition "$team-create.open = !$team-create.open"
-                   :data-show                     "!$team-create.open"
-                   ::btn/icon                     plus-icon}
-       (tr [:team/create-team])]
-      (team-create-form req)]]))
+     (for [team teams]
+       (team-remove-dialog req team))
+     (settings-card {:title    "Teams"
+                     :subtitle "Because someone has to do the work"
+                     :actions  [[:wa-button {:appearance "outlined"
+                                             :variant    "brand"
+                                             :size       "medium"
+                                             :with-start true
+                                             :disabled   true}
+                                 [:wa-icon {:slot "start" :name "plus"}]
+                                 (tr [:team/create-team])]]}
+                    (table-shell
+                     (if (seq teams)
+                       [:table
+                        [:thead
+                         [:tr
+                          [:th "Team"]
+                          [:th "Members"]
+                          [:th "Type"]
+                          [:th]]]
+                        [:tbody
+                         (for [team teams]
+                           (team-table-row req editing-any? team))]]
+                       (empty-state "No teams yet."
+                                    "Create a team to organize members around responsibilities."))))]))
 
 (defn travel-discount-type-create-form [{:keys [tr] :as req}]
   (let [form-data {:ns      :discount-type-create
@@ -246,77 +342,103 @@
                                                 :type           :submit}
                                     (tr [:action/save])])}]]]))
 
-(defn travel-discount-type-row [{:keys [tr] :as req} editing? edit-any-row? {:travel.discount.type/keys [discount-type-id discount-type-name enabled?] :as dt}]
+(defn travel-discount-type-dialogs [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name] :as dt}]
   (list
-   (when editing?
-     [dialog/ConfirmDialog {:id                   (str "_delete-confirm-" discount-type-id)
-                            ::dialog/title        (tr [:action/confirm-generic])
-                            ::dialog/prompt       (tr [:action/confirm-delete] [(str "\"" discount-type-name "\"")])
-                            ::dialog/on-hide      (format "$_delete-confirm-%s=false" discount-type-id)
-                            ::dialog/confirm-text (tr [:action/confirm-delete])
-                            ::dialog/cancel-text  (tr [:action/cancel])
-                            ::dialog/on-confirm   (d*/act req ::actions/delete-discount-type)
-                            ::dialog/icon         dialog/AlertIcon}])
-   (when editing?
-     [dialog/FormDialog {:id              (str "edit-discount-type-" discount-type-id)
-                         ::dialog/title   (tr [:travel-discounts/discount-type-name])
-                         ::dialog/open    (format "$discount-type.open && $discount-type.discount-type-id == '%s'" discount-type-id)
-                         ::dialog/on-hide (d*/act req ::actions/close-discount-type-edit)}
-      (travel-discount-type-edit-form req dt)])
-   [:dt {:class (uic/cs "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
-    [:div discount-type-name]]
-   [:dd {:class (uic/cs "mt-1 flex sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto")}
-    [:div {:class "text-gray-900"}
-     [badge/BoolBubble {::badge/value enabled?}]]
-    [:div {:class "flex space-x-2 text-left"}
-     (open-modal-button req :discount-type :discount-type-id ::actions/open-discount-type-edit edit-any-row? discount-type-id)]]))
+   [dialog/ConfirmDialog {:id                   (str "_delete-confirm-" discount-type-id)
+                          ::dialog/title        (tr [:action/confirm-generic])
+                          ::dialog/prompt       (tr [:action/confirm-delete] [(str "\"" discount-type-name "\"")])
+                          ::dialog/on-hide      (format "$_delete-confirm-%s=false" discount-type-id)
+                          ::dialog/confirm-text (tr [:action/confirm-delete])
+                          ::dialog/cancel-text  (tr [:action/cancel])
+                          ::dialog/on-confirm   (d*/act req ::actions/delete-discount-type)
+                          ::dialog/icon         dialog/AlertIcon}]
+   [dialog/FormDialog {:id              (str "edit-discount-type-" discount-type-id)
+                       ::dialog/title   (tr [:travel-discounts/discount-type-name])
+                       ::dialog/open    (format "$discount-type.open && $discount-type.discount-type-id == '%s'" discount-type-id)
+                       ::dialog/on-hide (d*/act req ::actions/close-discount-type-edit)}
+    (travel-discount-type-edit-form req dt)]))
+
+(defn travel-discount-type-remove-dialog [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name]}]
+  (remove-confirm-dialog req {:dialog-id   (remove-dialog-id "discount-type" discount-type-id)
+                              :title       (tr [:action/confirm-generic])
+                              :prompt      (tr [:action/confirm-delete-discount-type] [(str "\"" discount-type-name "\"")])
+                              :action      ::actions/delete-discount-type
+                              :form-name   :discount-type
+                              :form-key-id :discount-type-id
+                              :ent-id      discount-type-id}))
+
+(defn travel-discount-type-table-row [{:keys [tr] :as req} _edit-any-row? {:travel.discount.type/keys [discount-type-id discount-type-name enabled?]}]
+  (let [button-id (str "discount-type-actions-" discount-type-id)]
+    [:tr {:id (str "dt-container-" discount-type-id)}
+     [:td {:style "vertical-align: middle"} discount-type-name]
+     [:td {:style "vertical-align: middle"} (active-badge enabled?)]
+     [:td {:style "vertical-align: top; text-align: end"}
+      (row-action-menu {:button-id button-id
+                        :items     [{:label    (tr [:action/update])
+                                     :icon     "edit-pencil"
+                                     :disabled true}
+                                    {:label       (tr [:action/remove])
+                                     :icon        "xmark"
+                                     :variant     "danger"
+                                     :data-dialog (format "open %s" (remove-dialog-id "discount-type" discount-type-id))}]})]]))
 
 (defn travel-discount-types [{:keys [page-state db tr] :as req}]
   (let [edit-id        (d*/get-form-current page-state :discount-type :discount-type-id)
         editing-any?   (some? edit-id)
         discount-types (q/retrieve-all-discount-types db)]
-    [l/Panel {::l/title                   (tr [:travel-discounts/title])
-              :id                         "travel-discount-types"
-              :data-signals__ifmissing    (d*/->signals {:discount-type-create {:open false}
-                                                         :discount-type        {:open false}})
-              :data-signals               (d*/->signals {:discount-type {:discount-type-id edit-id}})}
-     [:div
-      [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
-       (map-indexed (fn [_idx dt]
-                      (let [dt-id    (:travel.discount.type/discount-type-id dt)
-                            editing? (= edit-id dt-id)]
-                        [:div {:class "sm:flex" :id (str "dt-container-" dt-id)}
-                         (travel-discount-type-row req editing? editing-any? dt)]))
-                    discount-types)]
-      [:div {:class "flex border-t border-gray-100 pt-6"}
-       (travel-discount-type-create-form req)
-       [btn/Button {:data-on:click__viewtransition "$discount-type-create.open = !$discount-type-create.open"
-                    :data-show                     "!$discount-type-create.open"
-                    ::btn/icon                     plus-icon}
-        (tr [:travel-discounts/add-discount-type])]]]]))
+    [:div {:id                      "travel-discount-types"
+           :data-signals__ifmissing (d*/->signals {:discount-type-create {:open false}
+                                                   :discount-type        {:open false}})
+           :data-signals            (d*/->signals {:discount-type {:discount-type-id edit-id}})}
+     (for [discount-type discount-types]
+       (travel-discount-type-remove-dialog req discount-type))
+     (settings-card {:title    (tr [:travel-discounts/title])
+                     :subtitle "Reusable labels for member travel discounts."
+                     :actions  [[:wa-button {:appearance "outlined"
+                                             :variant    "brand"
+                                             :size       "medium"
+                                             :with-start true
+                                             :disabled   true}
+                                 [:wa-icon {:slot "start" :name "plus"}]
+                                 (tr [:travel-discounts/add-discount-type])]]}
+                    (table-shell
+                     (if (seq discount-types)
+                       [:table
+                        [:thead
+                         [:tr
+                          [:th (tr [:travel-discounts/discount-type-name])]
+                          [:th "Status"]
+                          [:th]]]
+                        [:tbody
+                         (for [dt discount-types]
+                           (travel-discount-type-table-row req editing-any? dt))]]
+                       (empty-state "No travel discount types yet."
+                                    "Add discount types so members can select them consistently."))))]))
 
 (defn sections-reordering [{:keys [tr] :as req} sections]
-  [:div
-   [:p "This is the order in which the sections appear on gig pages."]
-   [:dl {:class             "mt-2 divide-y divide-gray-100 text-sm leading-6"
-         :id                "sections-sort-container"
-         :data-on:reordered (->expr (set! $section.order event.detail.orderInfo)
-                                    (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params ::actions/update-section-order))))}
-    (map-indexed (fn [idx section]
-                   (let [section-name (:section/name section)]
-                     [:div {:class             "sm:flex sm:items-center cursor-pointer"
-                            :data-drag-item-id section-name
-                            :id                (str "section-container-" section-name)}
-                      [:div {:class "drag-handle cursor-pointer pr-3"}
-                       [icon/Icon {::icon/name :bars :class "h-5 w-5"}]]
-                      [:dt {:class (uic/cs "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
-                       [:input {:type "hidden" :value idx :data-sort-order section-name}]
-                       [:div section-name]]]))
-                 sections)]
-   [:div {:class "flex border-t border-gray-100 pt-6"}
-    [btn/Button {::btn/intent                   :primary
-                 :data-on:click__viewtransition (d*/act req ::actions/close-section-reorder)}
-     (tr [:action/done])]]
+  [:div {:class "wa-stack wa-gap-m"}
+   [:wa-callout {:appearance "outlined" :variant "neutral"}
+    [:wa-icon {:slot "icon" :name "sort" :variant "regular"}]
+    "Drag sections to control the order in which they appear on gig pages."]
+   (table-shell
+    [:div {:id                "sections-sort-container"
+           :class             "wa-stack wa-gap-0"
+           :style             "padding-block: var(--wa-space-2xs);"
+           :data-on:reordered (->expr (set! $section.order event.detail.orderInfo)
+                                      (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params ::actions/update-section-order))))}
+     (for [[idx section] (map-indexed vector sections)]
+       (let [section-name (:section/name section)]
+         [:div {:data-drag-item-id section-name
+                :id                (str "section-container-" section-name)
+                :style             "display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--wa-space-s); padding: var(--wa-space-s) 0;"}
+          [:div {:class "drag-handle"
+                 :style "color: var(--wa-color-text-quiet); cursor: grab;"}
+           [:wa-icon {:name "drag" :label "Drag to reorder"}]]
+          [:div {:style "min-inline-size: 0;"}
+           [:input {:type "hidden" :value idx :data-sort-order section-name}]
+           [:strong section-name]]
+          [:wa-badge {:appearance "outlined" :variant "neutral" :pill true}
+           (inc idx)]]))])
    [:div {:data-init "initEventSortable('sections-sort-container')"}]])
 
 (defn section-edit-form [{:keys [tr] :as req} {section-id :section/name enabled? :section/active?}]
@@ -350,22 +472,36 @@
                                                 :type           :submit}
                                     (tr [:action/save])])}]]]))
 
-(defn section-row [{:keys [tr] :as req} editing? edit-any-row? {:as section section-id :section/name enabled? :section/active?}]
-  (assert section)
-  (list
-   (when editing?
-     [dialog/FormDialog {:id              (str "edit-section-" section-id)
-                         ::dialog/title   (tr [:section])
-                         ::dialog/open    (format "$section.open && $section.section-id == '%s'" section-id)
-                         ::dialog/on-hide (d*/act req ::actions/close-section-edit)}
-      (section-edit-form req section)])
-   [:dt {:class (uic/cs "text-gray-900 sm:w-64 sm:flex-none sm:pr-6")}
-    [:div section-id]]
-   [:dd {:class (uic/cs "mt-1 flex sm:items-center justify-between gap-x-6 sm:mt-0 sm:flex-auto")}
-    [:div {:class "text-gray-900"}
-     [badge/BoolBubble {::badge/value enabled?}]]
-    [:div {:class "flex space-x-2 text-left"}
-     (open-modal-button req :section :section-id ::actions/open-section-edit edit-any-row? section-id)]]))
+(defn section-dialogs [{:keys [tr] :as req} {:as section section-id :section/name}]
+  [dialog/FormDialog {:id              (str "edit-section-" section-id)
+                      ::dialog/title   (tr [:section])
+                      ::dialog/open    (format "$section.open && $section.section-id == '%s'" section-id)
+                      ::dialog/on-hide (d*/act req ::actions/close-section-edit)}
+   (section-edit-form req section)])
+
+(defn section-remove-dialog [{:keys [tr] :as req} {:as section section-id :section/name}]
+  (remove-confirm-dialog req {:dialog-id   (remove-dialog-id "section" section-id)
+                              :title       (tr [:action/confirm-generic])
+                              :prompt      (tr [:action/confirm-delete-section] [(str "\"" section-id "\"")])
+                              :action      ::actions/delete-section
+                              :form-name   :section
+                              :form-key-id :section-id
+                              :ent-id      section-id}))
+
+(defn section-table-row [{:keys [tr] :as req} _edit-any-row? {:as section section-id :section/name enabled? :section/active?}]
+  (let [button-id (str "section-actions-" section-id)]
+    [:tr {:id (str "section-container-" section-id)}
+     [:td {:style "vertical-align: middle"} section-id]
+     [:td {:style "vertical-align: middle"} (active-badge enabled?)]
+     [:td {:style "vertical-align: top; text-align: end"}
+      (row-action-menu {:button-id button-id
+                        :items     [{:label    (tr [:action/update])
+                                     :icon     "edit-pencil"
+                                     :disabled true}
+                                    {:label       (tr [:action/remove])
+                                     :icon        "xmark"
+                                     :variant     "danger"
+                                     :data-dialog (format "open %s" (remove-dialog-id "section" section-id))}]})]]))
 
 (defn section-create-form [{:keys [tr] :as req}]
   (let [form-data {:ns      :section-create
@@ -392,48 +528,63 @@
       [form/Form {::form/form form-data}
        controls]]]))
 
-(defn sections-default [{:keys [tr] :as req} sections edit-id editing-any?]
-  [:div
-   [:dl {:class "divide-y divide-gray-100 text-sm leading-6"}
-    (map-indexed (fn [_idx section]
-                   (let [section-name (:section/name section)
-                         editing?     (= edit-id section-name)]
-                     [:div {:class "sm:flex" :id (str "section-container-" section-name)}
-                      (section-row req editing? editing-any? section)]))
-                 sections)]
-   [:div {:class "flex border-t border-gray-100 pt-6"}
-    (section-create-form req)
-    [btn/Button {:data-on:click__viewtransition "$section-create.open = !$section-create.open"
-                 :data-show                     "!$section-create.open"
-                 ::btn/icon                     plus-icon}
-     (tr [:section-add])]]])
+(defn sections-default [{:keys [tr] :as req} sections editing-any?]
+  [:div {:class "wa-stack wa-gap-m"}
+   (table-shell
+    (if (seq sections)
+      [:table
+       [:thead
+        [:tr
+         [:th (tr [:section])]
+         [:th "Status"]
+         [:th]]]
+       [:tbody
+        (for [section sections]
+          (section-table-row req editing-any? section))]]
+      (empty-state "No sections yet."
+                   "Add sections to group members and organize gig views.")))])
 
 (defn sections [{:keys [page-state db tr] :as req}]
   (let [edit-id      (d*/get-form-current page-state :section :section-id)
-        reordering?  (get-in page-state [:section-reorder :open])
         editing-any? (some? edit-id)
         sections     (q/retrieve-sections db)]
-    [l/Panel {::l/title                (tr [:sections])
-              ::l/buttons              (when-not reordering?
-                                         [btn/Button {:data-on:click__viewtransition (d*/act req ::actions/open-section-reorder)}
-                                          (tr [:action/reorder])])
-              :id                      "sections-panel"
-              :data-signals__ifmissing (d*/->signals {:section-create  {:open false}
-                                                      :section         {:open false}
-                                                      :section-reorder {:open false}})
-              :data-signals            (d*/->signals {:section {:section-id edit-id
-                                                                :order      nil}})}
-     (if reordering?
-       (sections-reordering req sections)
-       (sections-default req sections edit-id editing-any?))]))
+    [:div {:id                      "sections-panel"
+           :data-signals__ifmissing (d*/->signals {:section-create  {:open false}
+                                                   :section         {:open false}
+                                                   :section-reorder {:open false}})
+           :data-signals            (d*/->signals {:section {:section-id edit-id
+                                                             :order      nil}})}
+     (for [section sections]
+       (section-remove-dialog req section))
+     (settings-card {:title    (tr [:sections])
+                     :subtitle "Choose which sections are visible and how they are ordered."
+                     :actions  [[:wa-button {:appearance "outlined"
+                                             :variant    "brand"
+                                             :size       "medium"
+                                             :with-start true
+                                             :disabled   true}
+                                 [:wa-icon {:slot "start" :name "plus"}]
+                                 (tr [:section-add])]
+                                [:wa-button {:appearance "outlined"
+                                             :size       "medium"
+                                             :with-start true
+                                             :disabled   true}
+                                 [:wa-icon {:slot "start" :name "sort"}]
+                                 (tr [:action/reorder])]]}
+                    (sections-default req sections editing-any?))]))
 
 (defn page [{:keys [tr] :as req}]
   (html/->str
-   [:main {:class "flex-1" :id "main"}
-    [:wa-button [:wa-icon {:name "gear", :slot "start"}] "Hello World."]
-    [l/PageHeader {::l/title (tr [:nav/band-settings])}]
-    (teams-panel req)
-    (travel-discount-types req)
-    (sections req)]))
+   [:main {:id "main"}
+    [:div {:class "wa-stack wa-gap-2xl"}
+     [:div {:class "wa-stack"}
+      [:span {:class "wa-caption-s"} "Administration"]
+      [:h1 (tr [:nav/band-settings])]
+      [:span {:class "wa-caption-s"}
+       "Manage teams, travel discount types, and sections from one place."]
+      [:wa-divider]]
+     (teams-panel req)
+     (travel-discount-types req)
+     (sections req)]]))
 
 (d*/refresh-all!)

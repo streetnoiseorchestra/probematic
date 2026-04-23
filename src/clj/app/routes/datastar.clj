@@ -6,6 +6,7 @@
    [app.nexus :as nexus]))
 
 (defn shim [req]
+  #_(layout/app-shell req nil)
   (layout2/app-shell req nil))
 
 (defn resolve-from-kw

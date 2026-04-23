@@ -448,6 +448,10 @@
   :back "Zurück",
   :confirm-delete-team
   "Bist du sicher, dass du das Team %1 löschen möchtest?",
+  :confirm-delete-discount-type
+  "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?",
+  :confirm-delete-section
+  "Bist du sicher, dass du das Register %1 löschen möchtest?",
   :comment "Kommentar",
   :send "Senden",
   :add-to-calendar "Zum Kalender hinzufügen",

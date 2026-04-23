@@ -64,8 +64,8 @@
   (clj-reload/reload)
   (clj-reload/reload {:only :loaded})
   (stop)
-  (reset)
-  (restart) ;; rcf
+  (reset) ;; rcf
+  (restart)
   (reload-all)
   ;; much
   (clojure.repl.deps/sync-deps)

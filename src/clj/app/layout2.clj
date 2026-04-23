@@ -105,7 +105,6 @@
         --wa-font-family-heading: \"IBM Plex Sans Condensed\", sans-serif;
         --wa-font-family-code: \"Space Mono\", monospace;
         --wa-font-family-longform: Podkova, serif;
-        --wa-font-family-longform: Aleo, serif;
         --wa-font-weight-body: 400;
         --wa-font-weight-heading: 650;
         --wa-font-weight-code: 400;
@@ -116,6 +115,12 @@
       }")]
    (render/stylesheet req nil "css" "main2.css")
    [:script {:type "module" :src "/wa/webawesome.loader.js"}]
+   [:script {:type "module"}
+    (hiccup.util/raw-string "import { registerIconLibrary } from '/wa/webawesome.js';
+  registerIconLibrary('default', {
+    resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
+    mutator: svg => svg.setAttribute('fill', 'currentColor'),
+  });")]
    [:script {:defer true :src "/js/datastar@1.0.1.js" :type "module"}]
    (when (config/dev-mode? (-> req :system :env))
      [:script {:defer true :src "/js/datastar-inspector@1.1.4.js" :type "module"}])])
