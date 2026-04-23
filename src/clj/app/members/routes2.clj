@@ -4,7 +4,7 @@
 
 (def index {:page-name  ::members
             :path       "/members"
-            :view-ns    'app.members.index.views
+            :view-ns    nil ;;'app.members.index.views
             :command-ns 'app.members.index.actions
             :cmds       {::search-member {:member-table {:phrase         :string
                                                          :update-history (l/optional :boolean)}}
