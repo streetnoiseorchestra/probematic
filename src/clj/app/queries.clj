@@ -1193,9 +1193,9 @@
                           (assoc member :foo :bar)
                           ;; (get plans (:section/name section))
                           ;;
-                          )members)
+                          ) members)
                    ;;
-                   )))sections)
+                   ))) sections)
   plans
 
   (def active-mem (active-members db))

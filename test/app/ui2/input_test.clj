@@ -16,7 +16,7 @@
                (html/->str (@v {}
                                [:input {:type "text" :name "team-name"}]
                                [:button {:type "button"} "Cancel"]
-                               [:button {:type "submit"} "Save"]))) ]
+                               [:button {:type "submit"} "Save"])))]
     (is (some? html) "input-button should exist")
     (when html
       (is (str/includes? html "sm:flex sm:items-center"))

@@ -23,7 +23,7 @@
     MigrationDataSchema]])
 
 (>defn install-schema
-  "Installs schema migrations into a Datomic database. This function is designed
+       "Installs schema migrations into a Datomic database. This function is designed
    to be called at system startup to ensure all necessary schema is in place.
 
    The function handles both direct migration data and migration files (as resources).
@@ -56,16 +56,16 @@
        - A string path to a migration EDN file (resource path)
        - A map with :id and :tx-data keys for direct schema definition
        - A map with :id and :tx-data-fn keys where :tx-data-fn is a function that returns tx-data"
-  [conn migrations]
-  [DatomicConnectionSchema MigrationInputSchema => :any]
-  (run!
-   (fn [m]
-     (if-let [migration (if (string? m)
-                          (stork/read-resource m) m)]
-       (stork/ensure-installed conn migration)
-       (throw (ex-info "A non-existent migration was encountered, aborting schema installation."
-                       {:migration m}))))
-   migrations))
+       [conn migrations]
+       [DatomicConnectionSchema MigrationInputSchema => :any]
+       (run!
+        (fn [m]
+          (if-let [migration (if (string? m)
+                               (stork/read-resource m) m)]
+            (stork/ensure-installed conn migration)
+            (throw (ex-info "A non-existent migration was encountered, aborting schema installation."
+                            {:migration m}))))
+        migrations))
 
 (defn show-schema
   "Returns all custom schema entities (attributes, enums, etc.) installed in the database,

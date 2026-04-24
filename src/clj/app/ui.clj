@@ -969,7 +969,7 @@
                   " peer-checked:bg-sno-orange-600")}]
    [:span {:class "ml-3 text-sm font-medium text-gray-900 "
            ;; dark:text-gray-300
-           }label]])
+           } label]])
 
 (defn toggle-checkbox-left [& {:keys [label checked? name id hint]}]
   [:div {:class "sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:border-t sm:border-gray-200 sm:pt-5"}

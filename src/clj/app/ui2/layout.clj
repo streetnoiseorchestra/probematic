@@ -6,8 +6,7 @@
 
 (def doc-page-header
   {:examples ["[layout/PageHeader {::layout/title \"Band Settings\"}]"
-              "[layout/PageHeader {::layout/title \"Band Settings\" ::layout/subtitle \"Manage teams\" ::layout/buttons [:button \"Create\"]}]"
-   ]
+              "[layout/PageHeader {::layout/title \"Band Settings\" ::layout/subtitle \"Manage teams\" ::layout/buttons [:button \"Create\"]}]"]
    :ns       *ns*
    :as       'layout
    :name     'PageHeader

@@ -50,8 +50,8 @@
 (defn valid?
   ([^String n region-code]
    (try-parse-or-false
-     (.isValidNumber (instance)
-                     (parse-phone-number n region-code)))))
+    (.isValidNumber (instance)
+                    (parse-phone-number n region-code)))))
 
 (defn region-for-country-code [cc]
   (region->kw

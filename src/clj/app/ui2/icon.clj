@@ -74,8 +74,8 @@
   (uic/validate-opts! doc-icon attrs)
   (when-let [icon (ico name)]
     (cc/compile
-      (update-in icon [1]
-                 uic/merge-attrs* attrs))))
+     (update-in icon [1]
+                uic/merge-attrs* attrs))))
 
 (def doc-spinner
   {:examples ["[icon/Spinner]"
@@ -92,5 +92,5 @@
 (defmethod c/resolve-alias ::spinner
   [_ attrs _children]
   (cc/compile
-    [:svg (uic/merge-attrs attrs :class "spinner animate-spin")
-     [:use {:href "#svg-sprite-spinner"}]]))
+   [:svg (uic/merge-attrs attrs :class "spinner animate-spin")
+    [:use {:href "#svg-sprite-spinner"}]]))

@@ -37,7 +37,7 @@
                       :app.ui2.dialog/open   "$team.open"
                       :app.ui2.dialog/on-hide "closeTeam()"
                       :app.ui2.dialog/on-show "openTeam()"}
-                     [:div "Body"]) ]
+                     [:div "Body"])]
     (is (some? html) "FormDialog alias should exist")
     (when html
       (is (str/includes? html "<my-dialog"))
@@ -58,7 +58,7 @@
                            :app.ui2.dialog/on-confirm    "deleteTeam()"
                            :app.ui2.dialog/on-hide       "hideConfirm()"
                            :app.ui2.dialog/icon          AlertIcon}
-                          [:div "ignored"]) ]
+                          [:div "ignored"])]
     (is (some? html) "ConfirmDialog alias should exist")
     (when html
       (is (str/includes? html "<my-dialog"))

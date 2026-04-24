@@ -27,7 +27,7 @@
                      {:app.ui2.layout/title    "Teams"
                       :app.ui2.layout/subtitle "Because someone has to do the work"
                       :app.ui2.layout/buttons  [:button {:type "button"} "Reorder"]}
-                     [:div "Body"]) ]
+                     [:div "Body"])]
     (is (some? html) "Panel alias should exist")
     (when html
       (is (str/includes? html "Teams"))
