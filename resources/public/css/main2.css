@@ -1,6 +1,20 @@
 :root {
   --sno-brand-green: #22c55e;
   --sno-brand-orange: #f97316;
+  --color-sno-orange-100: #ffedd5;
+  --color-sno-orange-200: #fed7aa;
+  --color-sno-orange-300: #fdba74;
+  --color-sno-orange-400: #fb923c;
+  --color-sno-orange-500: #f97316;
+  --color-sno-orange-600: #ea580c;
+  --color-sno-orange-700: #c2410c;
+  --color-sno-orange-800: #9a3412;
+  --color-sno-orange-900: #7c2d12;
+  --color-sno-green-300: #86efac;
+  --color-sno-green-400: #4ade80;
+  --color-sno-green-500: #22c55e;
+  --color-sno-green-600: #16a34a;
+  --color-sno-green-700: #15803d;
 }
 
 html,
@@ -104,4 +118,17 @@ wa-select:state(user-invalid)::part(combobox),
 wa-select[data-invalid]:not([data-invalid=""])::part(combobox) {
   --wa-form-control-border-color: red;
   --wa-color-focus: red;
+}
+
+.bg-sno-green-300 {
+  background-color: var(--color-sno-green-300);
+}
+
+wa-page[view="mobile"] {
+  --menu-width: auto;
+
+  [slot*="main"],
+  main {
+    padding: var(--wa-space-s);
+  }
 }

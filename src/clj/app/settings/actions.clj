@@ -301,7 +301,8 @@
   [clear-loading clear-section-create])
 
 (defn open-section-reorder-action [_state _signals]
-  [[:app.datastar/assoc-state [:section-reorder :open] true]])
+  [clear-loading
+   [:app.datastar/assoc-state [:section-reorder :open] true]])
 
 (defn close-section-reorder-action [_state _signals]
   [[:app.datastar/assoc-state [:section-reorder :open] false]
@@ -310,12 +311,13 @@
 (defn update-section-order-action
   [{:keys [current-member-id]} {:keys [section]}]
   (let [order (:order section)]
-    [[:db/transact (with-audit (mapv (fn [[section-name position]]
-                                       [:db/add [:section/name (name section-name)] :section/position position])
+    [[:db/transact (with-audit (mapv (fn [idx section-name]
+                                       [:db/add [:section/name section-name]
+                                        :section/position idx])
+                                     (range)
                                      order)
                      current-member-id)
-      {:transact-w-nils? false}]
-     [:app.datastar/merge-signals {:section-reorder {:open false}}]]))
+      {:transact-w-nils? false}]]))
 
 (def actions
   {::create-discount-type     #'create-discount-type-action

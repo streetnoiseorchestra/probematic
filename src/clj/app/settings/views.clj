@@ -398,7 +398,6 @@
 
 (defn travel-discount-types [{:keys [db tr page-state] :as req}]
   (let [discount-types (q/retrieve-all-discount-types db)]
-    (tap> [:dt-view-ps (:discount-type page-state) :sig (d*/->signals {:discount-type (:discount-type page-state)})])
     [:div {:id                      "travel-discount-types"
            :data-signals (d*/->signals {:discount-type-create (:discount-type-create page-state)
                                         :discount-type (:discount-type page-state)})}
@@ -431,31 +430,81 @@
                        (empty-state "No travel discount types yet."
                                     "Add discount types so members can select them consistently."))))]))
 
-#_(defn sections-reordering [{:keys [tr] :as req} sections]
-    [:div {:class "wa-stack wa-gap-m"}
-     [:wa-callout {:appearance "outlined" :variant "neutral"}
-      [:wa-icon {:slot "icon" :name "sort" :variant "regular"}]
-      "Drag sections to control the order in which they appear on gig pages."]
-     (table-shell
-      [:div {:id                "sections-sort-container"
-             :class             "wa-stack wa-gap-0"
-             :style             "padding-block: var(--wa-space-2xs);"
-             :data-on:reordered (->expr (set! $section.order event.detail.orderInfo)
-                                        (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params ::actions/update-section-order))))}
+(defn sections-reordering [{:keys [tr page-state] :as req} sections]
+  (when (get-in page-state [:section-reorder :open])
+    [:wa-dialog {:id                    "section-reorder-dialog"
+                 :label                 (tr [:action/reorder])
+                 :data-init__delay.10ms "el.open = true"
+                 :data-signals          (d*/->signals {:section {:order []}})
+                 :data-preserve-attr    "open"
+                 :data-on:wa-hide       (->expr
+                                         (evt.preventDefault)
+                                         (@post ~(d*/act req ::actions/close-section-reorder)))}
+     [:div {:class "wa-stack wa-gap-m"}
+      [:wa-callout {:appearance "outlined" :variant "neutral"}
+       [:wa-icon {:slot "icon" :name "sort" :variant "regular"}]
+       "Drag sections to control the order in which they appear on gig pages."]
+      [:div {:id                "sortContainer"
+             :class             "wa-stack"
+             :data-on:reordered (->expr
+                                 (set! $section.order evt.detail.orderInfo)
+                                 (@post ~(d*/act req ::actions/update-section-order)))}
        (for [[idx section] (map-indexed vector sections)]
-         (let [section-name (:section/name section)]
+         (let [section-name (:section/name section)
+               active?      (:section/active? section)]
            [:div {:data-drag-item-id section-name
-                  :id                (str "section-container-" section-name)
-                  :style             "display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--wa-space-s); padding: var(--wa-space-s) 0;"}
+                  :class             "wa-flank"
+                  :style             (str "cursor: grab; padding: var(--wa-space-xs) var(--wa-space-s); border-radius: var(--wa-border-radius-m);"
+                                          " background-color: "
+                                          (if active?
+                                            "var(--wa-color-success-fill-quiet)"
+                                            "var(--wa-color-neutral-fill-normal)")
+                                          "; color: "
+                                          (if active?
+                                            "var(--wa-color-text-normal)"
+                                            "var(--wa-color-text-quiet)")
+                                          "; opacity: "
+                                          (if active? "1" "0.65")
+                                          ";")}
             [:div {:class "drag-handle"
-                   :style "color: var(--wa-color-text-quiet); cursor: grab;"}
-             [:wa-icon {:name "drag" :label "Drag to reorder"}]]
+                   :style (str "color: "
+                               (if active?
+                                 "var(--wa-color-success-on-quiet)"
+                                 "var(--wa-color-text-quiet)")
+                               ";")}
+             [:wa-icon {:name "dots-grid-3x3" :label "Drag to reorder"}]]
             [:div {:style "min-inline-size: 0;"}
              [:input {:type "hidden" :value idx :data-sort-order section-name}]
-             [:strong section-name]]
-            [:wa-badge {:appearance "outlined" :variant "neutral" :pill true}
-             (inc idx)]]))])
-     [:div {:data-init "initEventSortable('sections-sort-container')"}]])
+             [:strong section-name]]]))]]
+     [:script {:type :module}
+      (html/raw "
+    import Sortable from '/js/sortable@1.15.7-esm.js';
+    new Sortable(sortContainer, {
+        animation: 100,
+        ghostClass: 'bg-sno-green-300',
+        onEnd: () => {
+          const data = [];
+          sortContainer
+            .querySelectorAll('input[data-sort-order]')
+            .forEach((el) => {
+              const id = el.getAttribute('data-sort-order');
+              if (!id) {
+                console.warn('no data-sort-order value found on dragged item');
+                return;
+              }
+              data.push(id);
+            });
+          sortContainer.dispatchEvent(
+                new CustomEvent('reordered', {detail: {
+                    orderInfo: data
+                }})
+            )
+        }
+    })")]
+     [:wa-button {:slot        "footer"
+                  :appearance  "outlined"
+                  :data-dialog "close"}
+      (tr [:action/done])]]))
 
 (defn section-create-form [{:keys [tr page-state] :as req}]
   (let [{:keys [error]} (:section-create page-state)
@@ -576,10 +625,12 @@
 (defn sections [{:keys [page-state db tr] :as req}]
   (let [sections (q/retrieve-sections db)]
     [:div {:id           "sections-panel"
-           :data-signals (d*/->signals {:section-create (:section-create page-state)
-                                        :section        (:section page-state)})}
+           :data-signals (d*/->signals {:section-create  (:section-create page-state)
+                                        :section         (:section page-state)
+                                        :section-reorder (:section-reorder page-state)})}
      (section-create-form req)
      (section-edit-form req)
+     (sections-reordering req sections)
      (for [section sections]
        (section-remove-dialog req section))
      (settings-card {:title    (tr [:sections])
@@ -592,13 +643,13 @@
                                              :data-action (d*/act req ::actions/open-section-create)}
                                  [:wa-icon {:slot "start" :name "plus"}]
                                  (tr [:section-add])]
-                                #_[:wa-button {:appearance "outlined"
-                                               :size       "medium"
-                                               :with-start true
-                                               :data-id    "section-reorder"
-                                               :data-action (d*/act req ::actions/open-section-reorder)}
-                                   [:wa-icon {:slot "start" :name "sort"}]
-                                   (tr [:action/reorder])]]}
+                                [:wa-button {:appearance "outlined"
+                                             :size       "medium"
+                                             :with-start true
+                                             :data-id    "section-reorder"
+                                             :data-action (d*/act req ::actions/open-section-reorder)}
+                                 [:wa-icon {:slot "start" :name "sort"}]
+                                 (tr [:action/reorder])]]}
                     (table-shell
                      (if (seq sections)
                        [:table

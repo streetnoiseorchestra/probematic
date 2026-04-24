@@ -372,7 +372,8 @@
            (actions/close-section-create-action {} {}))))
 
   (testing "opens section reordering"
-    (is (= [[:app.datastar/assoc-state [:section-reorder :open] true]]
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:section-reorder :open] true]]
            (actions/open-section-reorder-action {} {}))))
 
   (testing "closes section reordering"
@@ -382,12 +383,11 @@
 
   (testing "updates the section order"
     (let [{:keys [member-id] :as system} (new-system)
-          order                          (array-map :Trumpets 1 :Trombones 0)]
-      (is (= [[:db/transact [[:db/add [:section/name "Trumpets"] :section/position 1]
-                             [:db/add [:section/name "Trombones"] :section/position 0]
+          order                          ["sax soprano/clarinet" "Trumpets"]]
+      (is (= [[:db/transact [[:db/add [:section/name "sax soprano/clarinet"] :section/position 0]
+                             [:db/add [:section/name "Trumpets"] :section/position 1]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:section-reorder {:open false}}]]
+                      {:transact-w-nils? false}]]
              (actions/update-section-order-action
               (state-for system)
               {:section {:order order}}))))))
