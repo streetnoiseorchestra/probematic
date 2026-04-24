@@ -18,13 +18,40 @@
                                    :name (:name data)}))
                        (drop 2 route))})
 
-(deftest settings-routes-preserve-the-settings-route-shape
-  (let [route (last (settings.routes/routes))]
-    (is (= {:path         "/band-settings"
-            :name         :app.settings.routes/band-settings
-            :child-routes #{{:path ""
-                             :name nil}}}
-           (route-signature route)))))
+(deftest settings-routes-expose-the-band-settings-index-and-subpages
+  (let [routes (drop 2 (settings.routes/routes))]
+    (is (= #{{:path         "/band-settings"
+              :name         :app.settings.routes/index
+              :child-routes #{{:path ""
+                               :name nil}}}
+             {:path         "/band-settings/teams"
+              :name         :app.settings.routes/teams
+              :child-routes #{{:path ""
+                               :name nil}}}
+             {:path         "/band-settings/travel-discounts"
+              :name         :app.settings.routes/travel-discounts
+              :child-routes #{{:path ""
+                               :name nil}}}
+             {:path         "/band-settings/sections"
+              :name         :app.settings.routes/sections
+              :child-routes #{{:path ""
+                               :name nil}}}}
+           (into #{} (map route-signature) routes)))))
+
+(deftest settings-subpages-share-the-band-settings-navigation-route
+  (let [router (http/router ["" (settings.routes/routes)])]
+    (is (= :app/band-settings
+           (get-in (r/match-by-path router "/band-settings") [:data :app.route/name])))
+    (is (= :app.settings.routes/index
+           (get-in (r/match-by-path router "/band-settings") [:data :name])))
+    (is (= :app/band-settings
+           (get-in (r/match-by-path router "/band-settings/teams") [:data :app.route/name])))
+    (is (= :app.settings.routes/teams
+           (get-in (r/match-by-path router "/band-settings/teams") [:data :name])))
+    (is (= :app.settings.routes/travel-discounts
+           (get-in (r/match-by-path router "/band-settings/travel-discounts") [:data :name])))
+    (is (= :app.settings.routes/sections
+           (get-in (r/match-by-path router "/band-settings/sections") [:data :name])))))
 
 (deftest act-handler-dispatches-the-registered-action-from-query-params
   (let [calls  (atom [])
@@ -65,15 +92,12 @@
                 :nexus/actions       {}}
         router (http/router ["" (dsr/act-route {:nexus config})])
         req    {::r/router router}]
-    (is (= "@post('/act?ns=app.routes.datastar-test&kw=ping')"
+    (is (= "/act?ns=app.routes.datastar-test&kw=ping"
            (datastar/act req ::ping)))))
 
-(deftest members-routes-expose-the-datastar-index-and-detail-compatibility-paths
+(deftest members-routes-expose-the-legacy-index-and-detail-compatibility-paths
   (let [router (http/router ["" (members.routes/routes)])]
-    (is (= :app/members
-           (get-in (r/match-by-path router "/members") [:data :app.route/name])))
-    (is (= :app.members.routes/members-index
-           (get-in (r/match-by-path router "/members") [:data :name])))
+    (is (nil? (r/match-by-path router "/members")))
     (is (= :app/members
            (get-in (r/match-by-path router "/members-old") [:data :app.route/name])))
     (is (= :app/members

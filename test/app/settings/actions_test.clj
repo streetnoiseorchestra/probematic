@@ -1,6 +1,8 @@
 (ns app.settings.actions-test
   (:require
-   [app.settings.actions :as actions]
+   [app.settings.discounts.actions :as discount-actions]
+   [app.settings.sections.actions :as section-actions]
+   [app.settings.teams.actions :as team-actions]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
@@ -37,10 +39,10 @@
                               :travel.discount.type/enabled?           true
                               :travel.discount.type/discount-type-name "Klimaticket"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:discount-type-create] false]]
-             (actions/create-discount-type-action
+             (discount-actions/create-discount-type-action
               (state-for system)
               {:discount-type-create {:discount-type-name "Klimaticket"}})))))
 
@@ -48,7 +50,7 @@
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:discount-type-create :error :discount-type-name]
              {:error "Discount type name is required."}]]
-           (actions/create-discount-type-action
+           (discount-actions/create-discount-type-action
             {:current-member-id (random-uuid)}
             {:discount-type-create {:discount-type-name ""}}))))
 
@@ -63,7 +65,7 @@
                {:discount-type-name "Klimaticket"
                 :error {:discount-type-name
                         {:error "Discount type named 'Klimaticket' already exists."}}}]]
-             (actions/create-discount-type-action
+             (discount-actions/create-discount-type-action
               (state-for system)
               {:discount-type-create {:discount-type-name "Klimaticket"}})))))
 
@@ -77,10 +79,10 @@
                               :travel.discount.type/enabled?           false
                               :travel.discount.type/discount-type-name "New Name"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:discount-type] false]]
-             (actions/update-discount-type-action
+             (discount-actions/update-discount-type-action
               (state-for system)
               {:discount-type {:discount-type-id      (str discount-type-id)
                                :discount-type-name    "New Name"
@@ -101,7 +103,7 @@
                {:discount-type-name "Taken"
                 :error {:discount-type-name
                         {:error "Discount type named 'Taken' already exists."}}}]]
-             (actions/update-discount-type-action
+             (discount-actions/update-discount-type-action
               (state-for system)
               {:discount-type {:discount-type-id      (str discount-type-id)
                                :discount-type-name    "Taken"
@@ -112,10 +114,10 @@
           discount-type-id               (random-uuid)]
       (is (= [[:db/transact [[:db/retractEntity [:travel.discount.type/discount-type-id discount-type-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:discount-type] false]]
-             (actions/delete-discount-type-action
+             (discount-actions/delete-discount-type-action
               (state-for system)
               {:targetid (str discount-type-id)})))))
 
@@ -130,26 +132,26 @@
                {:discount-type-id      discount-type-id
                 :discount-type-name    "Old Name"
                 :discount-type-enabled true}]]
-             (actions/open-discount-type-edit-action
+             (discount-actions/open-discount-type-edit-action
               (state-for system)
               {:targetid (str discount-type-id)})))))
 
   (testing "closes the discount type edit form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:discount-type] false]]
-           (actions/close-discount-type-edit-action {} {}))))
+           (discount-actions/close-discount-type-edit-action {} {}))))
 
   (testing "opens the discount type create form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:discount-type-create]
              {:open true
               :discount-type-name ""}]]
-           (actions/open-discount-type-create-action {} {}))))
+           (discount-actions/open-discount-type-create-action {} {}))))
 
   (testing "closes the discount type create form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:discount-type-create] false]]
-           (actions/close-discount-type-create-action {} {})))))
+           (discount-actions/close-discount-type-create-action {} {})))))
 
 (deftest team-actions-test
   (testing "creates a new team"
@@ -157,10 +159,10 @@
       (is (= [[:db/transact [{:team/team-id :db/gen-uuid
                               :team/name    "Booking"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:team-create] false]]
-             (actions/create-team-action
+             (team-actions/create-team-action
               (state-for system)
               {:team-create {:team-name "Booking"}})))))
 
@@ -168,7 +170,7 @@
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:team-create :error :team-name]
              {:error "Team name is required."}]]
-           (actions/create-team-action
+           (team-actions/create-team-action
             {:current-member-id (random-uuid)}
             {:team-create {:team-name ""}}))))
 
@@ -182,7 +184,7 @@
                {:team-name "Booking"
                 :error {:team-name
                         {:error "Team named 'Booking' already exists."}}}]]
-             (actions/create-team-action
+             (team-actions/create-team-action
               (state-for system)
               {:team-create {:team-name "Booking"}})))))
 
@@ -195,10 +197,10 @@
       (is (= [[:db/transact [[:db/add [:team/team-id team-id] :team/name "New Team"]
                              [:db/retract [:team/team-id team-id] :team/team-type :team.type/insurance]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:team] false]]
-             (actions/update-team-action
+             (team-actions/update-team-action
               (state-for system)
               {:team {:team-id   (str team-id)
                       :team-name " New Team "
@@ -218,7 +220,7 @@
                {:team-name "Taken"
                 :error {:team-name
                         {:error "Team named 'Taken' already exists."}}}]]
-             (actions/update-team-action
+             (team-actions/update-team-action
               (state-for system)
               {:team {:team-id   (str team-id)
                       :team-name "Taken"
@@ -229,10 +231,10 @@
           team-id                        (random-uuid)]
       (is (= [[:db/transact [[:db/retractEntity [:team/team-id team-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:team] false]]
-             (actions/delete-team-action
+             (team-actions/delete-team-action
               (state-for system)
               {:targetid (str team-id)})))))
 
@@ -242,10 +244,10 @@
           remove-member-id               (random-uuid)]
       (is (= [[:db/transact [[:db/retract [:team/team-id team-id] :team/members [:member/member-id remove-member-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:team :remove-member-id] nil]]
-             (actions/remove-team-member-action
+             (team-actions/remove-team-member-action
               (state-for system)
               {:team {:team-id          (str team-id)
                       :remove-member-id (str remove-member-id)}})))))
@@ -257,10 +259,10 @@
       (seed-member! (:conn system) new-member-id)
       (is (= [[:db/transact [[:db/add [:team/team-id team-id] :team/members [:member/member-id new-member-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:team :member-id] ""]]
-             (actions/add-team-member-action
+             (team-actions/add-team-member-action
               (state-for system)
               {:team {:team-id   (str team-id)
                       :member-id (str new-member-id)}})))))
@@ -277,26 +279,26 @@
                 :team-name "Old Team"
                 :team-type "insurance"
                 :member-id ""}]]
-             (actions/open-team-edit-action
+             (team-actions/open-team-edit-action
               (state-for system)
               {:targetid (str team-id)})))))
 
   (testing "closes the team edit form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:team] false]]
-           (actions/close-team-edit-action {} {}))))
+           (team-actions/close-team-edit-action {} {}))))
 
   (testing "opens the team create form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:team-create]
              {:open true
               :team-name ""}]]
-           (actions/open-team-create-action {} {}))))
+           (team-actions/open-team-create-action {} {}))))
 
   (testing "closes the team create form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:team-create] false]]
-           (actions/close-team-create-action {} {})))))
+           (team-actions/close-team-create-action {} {})))))
 
 (deftest section-actions-test
   (testing "creates a new section"
@@ -304,10 +306,10 @@
       (is (= [[:db/transact [{:section/active? true
                               :section/name    "Trumpets"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:section-create] false]]
-             (actions/create-section-action
+             (section-actions/create-section-action
               (state-for system)
               {:section-create {:section-name "Trumpets"}})))))
 
@@ -315,7 +317,7 @@
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:section-create :error :section-name]
              {:error "Section name is required."}]]
-           (actions/create-section-action
+           (section-actions/create-section-action
             {:current-member-id (random-uuid)}
             {:section-create {:section-name ""}}))))
 
@@ -329,7 +331,7 @@
                {:section-name "Trumpets"
                 :error {:section-name
                         {:error "Section named 'Trumpets' already exists."}}}]]
-             (actions/create-section-action
+             (section-actions/create-section-action
               (state-for system)
               {:section-create {:section-name "Trumpets"}})))))
 
@@ -340,10 +342,10 @@
       (is (= [[:db/transact [[:db/add [:section/name "Old Section"] :section/name "New Section"]
                              [:db/add [:section/name "Old Section"] :section/active? false]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:section] false]]
-             (actions/update-section-action
+             (section-actions/update-section-action
               (state-for system)
               {:section {:section-id      "Old Section"
                          :section-name    "New Section"
@@ -361,7 +363,7 @@
                {:section-name "Taken"
                 :error {:section-name
                         {:error "Section named 'Taken' already exists."}}}]]
-             (actions/update-section-action
+             (section-actions/update-section-action
               (state-for system)
               {:section {:section-id      "Old Section"
                          :section-name    "Taken"
@@ -371,10 +373,10 @@
     (let [{:keys [member-id] :as system} (new-system)]
       (is (= [[:db/transact [[:db/retractEntity [:section/name "Trumpets"]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]
+               {:transact-w-nils? false}]
               [:app.datastar/merge-signals {:loading false :targetid false}]
               [:app.datastar/assoc-state [:section] false]]
-             (actions/delete-section-action
+             (section-actions/delete-section-action
               (state-for system)
               {:targetid "Trumpets"})))))
 
@@ -387,36 +389,36 @@
                {:section-id      "Trumpets"
                 :section-name    "Trumpets"
                 :section-enabled false}]]
-             (actions/open-section-edit-action
+             (section-actions/open-section-edit-action
               (state-for system)
               {:targetid "Trumpets"})))))
 
   (testing "closes the section edit form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:section] false]]
-           (actions/close-section-edit-action {} {}))))
+           (section-actions/close-section-edit-action {} {}))))
 
   (testing "opens the section create form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:section-create]
              {:open true
               :section-name ""}]]
-           (actions/open-section-create-action {} {}))))
+           (section-actions/open-section-create-action {} {}))))
 
   (testing "closes the section create form"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:section-create] false]]
-           (actions/close-section-create-action {} {}))))
+           (section-actions/close-section-create-action {} {}))))
 
   (testing "opens section reordering"
     (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
             [:app.datastar/assoc-state [:section-reorder :open] true]]
-           (actions/open-section-reorder-action {} {}))))
+           (section-actions/open-section-reorder-action {} {}))))
 
   (testing "closes section reordering"
     (is (= [[:app.datastar/assoc-state [:section-reorder :open] false]
             [:app.datastar/merge-signals {:section-reorder {:open false}}]]
-           (actions/close-section-reorder-action {} {}))))
+           (section-actions/close-section-reorder-action {} {}))))
 
   (testing "updates the section order"
     (let [{:keys [member-id] :as system} (new-system)
@@ -424,7 +426,7 @@
       (is (= [[:db/transact [[:db/add [:section/name "sax soprano/clarinet"] :section/position 0]
                              [:db/add [:section/name "Trumpets"] :section/position 1]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]]
-             (actions/update-section-order-action
+               {:transact-w-nils? false}]]
+             (section-actions/update-section-order-action
               (state-for system)
               {:section {:order order}}))))))

@@ -89,6 +89,18 @@ wa-page[view="desktop"] [data-toggle-nav] {
   display: none;
 }
 
+wa-button.band-settings-index-card-button::part(base) {
+  height: auto;
+  justify-content: start;
+  padding: var(--wa-form-control-padding-block)
+    var(--wa-form-control-padding-inline);
+  text-align: start;
+}
+
+wa-button.band-settings-index-card-button p {
+  margin: 0;
+}
+
 wa-dialog wa-callout {
   margin-block-end: var(--wa-space-m);
 }
@@ -120,8 +132,27 @@ wa-select[data-invalid]:not([data-invalid=""])::part(combobox) {
   --wa-color-focus: red;
 }
 
+div[data-drag-item-id] {
+  cursor: grab;
+  padding: var(--wa-space-xs) var(--wa-space-s);
+  border-radius: var(--wa-border-radius-m);
+}
+
+div[data-drag-item-id].inactive {
+  background-color: var(--wa-color-neutral-fill-normal);
+  color: var(--wa-color-text-quiet);
+}
+div[data-drag-item-id].active {
+  background-color: var(--wa-color-success-fill-quiet);
+  color: var(--wa-color-text-normal);
+}
+
 .bg-sno-green-300 {
   background-color: var(--color-sno-green-300);
+}
+
+.bg-sno-orange-300 {
+  background-color: var(--color-sno-orange-300) !important;
 }
 
 wa-page[view="mobile"] {
@@ -131,4 +162,12 @@ wa-page[view="mobile"] {
   main {
     padding: var(--wa-space-s);
   }
+}
+
+.opacity-50 {
+  opacity: 50% !important;
+}
+
+.opacity-25 {
+  opacity: 25%;
 }
