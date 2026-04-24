@@ -5,18 +5,9 @@
    [app.queries :as q]
    [app.settings.actions :as actions]
    [app.settings.domain :as domain]
-   [app.ui2.button :as btn]
-   [app.ui2.dialog :as dialog]
-   [app.ui2.form :as form]
-   [app.ui2.input :as input]
-   [app.ui2.select :as sel]
    [app.urls :as urls]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
-
-(defn remove-on-click [req form-name form-key-id action ent-id]
-  (->expr (set! ($ ~(name form-name) "." ~(name form-key-id)) ~(str ent-id))
-          (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params action)))))
 
 (defn safe-dom-id [value]
   (-> (str value)
@@ -25,29 +16,10 @@
 (defn remove-dialog-id [prefix ent-id]
   (str prefix "-remove-" (safe-dom-id ent-id)))
 
-(defn remove-confirm-dialog [{:keys [tr] :as req} {:keys [dialog-id title prompt action form-name form-key-id ent-id]}]
-  #_[:wa-dialog {:id    dialog-id
-                 :label title}
-     [:p prompt]
-     [:wa-button {:slot       "footer"
-                  :appearance "outlined"
-                  :data-dialog "close"}
-      (tr [:action/cancel])]
-     [:wa-button {:slot                         "footer"
-                  :appearance                   "filled"
-                  :variant                      "danger"
-                  :data-dialog                  "close"
-                ;; :data-on:click__viewtransition (remove-on-click req form-name form-key-id action ent-id)
-                  :data-attr:disabled "!!$loading && $loading !== 'discount-type.discount-type-id'"
-                  :data-attr:loading  "$loading === 'discount-type.discount-type-id'"
-                  :data-id            discount-type-id
-                  :data-action        (d*/act req ::actions/open-discount-type-edit)}
-      (tr [:action/confirm-delete])]])
-
 (defn active-badge [active?]
   [:wa-badge (cond-> {:appearance "outlined"
                       :pill       true}
-               active? (assoc :variant "success")
+               active?       (assoc :variant "success")
                (not active?) (assoc :variant "neutral"))
    (if active? "Active" "Inactive")])
 
@@ -100,132 +72,165 @@
     (tr [team-type])
     "—"))
 
-(defn team-create-form [{:keys [tr] :as req}]
-  (let [form-data {:ns      :team-create
-                   :open    "team-create.open"
-                   :command (d*/act req ::actions/create-team)
-                   :fields  {:team-name ""}}
-        controls  (input/input-button
-                   [form/Input {::form/label   (tr [:team/name])
-                                ::form/form    form-data
-                                ::form/variant :hidden
-                                :placeholder   (tr [:team/name])
-                                :type          :text
-                                :name          :team-name}]
-                   [btn/Button {::btn/intent                   :secondary
-                                :tabindex                      "-1"
-                                :data-on:click__viewtransition "$team-create.open=false"}
-                    (tr [:action/cancel])]
-                   [btn/Button {::btn/intent :primary
-                                ::btn/icon   (fn [attrs]
-                                               [:wa-icon (merge {:name "plus"}
-                                                                attrs)])
-                                :type        :submit}
-                    (tr [:action/create])])]
-    [:div {:data-show "$team-create.open"}
-     [:div {:class "pb-12 sm:space-y-0 sm:divide-y sm:divide-gray-900/10 sm:pb-0"}
-      [form/Form {::form/form form-data}
-       controls]]]))
-
-(defn team-members-edit [{:keys [tr] :as req} all-members form-data {:team/keys [members team-type]}]
-  [:div {:class "sm:col-span-6 flex flex-col space-y-2"}
-   (if (seq members)
-     [:div {:class "flex flex-col mb-4"}
-      (->> members
-           (map (fn [{:member/keys [name member-id] :as member}]
-                  [:div {:class "grid grid-cols-3 items-center justify-between border-b border-gray-100"}
-                   [:a {:class "col-span-2 link-blue" :href (urls/link-member member)} name]
-                   [btn/Button {::btn/intent                    :link-destructive
-                                ::btn/size                      :xsmall
-                                :type                           :button
-                                :data-on:click__viewtransition  (->expr (set! $team.remove-member-id ~(str member-id))
-                                                                        (@post ~(urls/url-for req :app.routes.datastar/act nil (d*/action-query-params ::actions/remove-team-member))))}
-                    (tr [:action/remove])]])))]
-     [:div {:class "text-gray-500 italic mb-4"} (tr [:team/no-members])])
-   (input/input-button
-    [form/Select {::form/required? false
-                  ::form/form      form-data
-                  ::form/label     (tr [:team/choose-add-member])
-                  ::form/variant   :hidden
-                  ::form/options   (sel/member-options all-members :with-empty-opt? true)
-                  :name            :member-id
-                  :value           (when team-type (name team-type))}]
-    [btn/Button {::btn/intent                    :secondary
-                 :type                           :button
-                 :data-on:click__viewtransition  (d*/act req ::actions/add-team-member)}
-     (tr [:action/add])])])
-
 (defn team-type-options [tr]
   (into [{:value "" :label " - "}]
         (map (fn [m] {:label (tr [m]) :value (name m)}) domain/team-types)))
 
-(defn team-edit-form [{:keys [tr db] :as req} {team-name :team/name :team/keys [team-id team-type] :as team}]
-  (let [all-members (q/members-for-select db)
-        form-data   {:ns      :team
-                     :open    "team.open"
-                     :command (d*/act req ::actions/update-team)
-                     :fields  {:team-name        team-name
-                               :team-id          team-id
-                               :team-type        (when team-type (name team-type))
-                               :member-id        nil
-                               :remove-member-id nil}}]
-    [:div
-     [form/Form {::form/form form-data}
-      [form/Section {::form/compact? true}
-       [form/HiddenInput {::form/form form-data :name :team-id}]
-       [form/Input {::form/label (tr [:team/name])
-                    ::form/form  form-data
-                    :class       "sm:col-span-3"
-                    :type        :text
-                    :name        :team-name}]
-       [form/Select {::form/label   (tr [:team/team-type])
-                     ::form/form    form-data
-                     ::form/options (team-type-options tr)
-                     :class         "sm:col-span-3"
-                     :name          :team-type}]]
-      [form/Section {::form/compact? true
-                     ::form/subtitle (tr [:team/members])}
-       (team-members-edit req all-members form-data team)]
-      [form/Actions {::form/left  [btn/Button {::btn/intent :secondary-destructive
-                                               :data-on:click (format "$_delete-confirm-%s=true" team-id)}
-                                   (tr [:action/delete])]
-                     ::form/right (list
-                                   [btn/Button {::btn/intent   :secondary
-                                                ::btn/centered? true
-                                                :data-dialog    "close"}
-                                    (tr [:action/cancel])]
-                                   [btn/Button {::btn/intent   :primary
-                                                ::btn/centered? true
-                                                :type           :submit}
-                                    (tr [:action/save])])}]]]))
+(defn team-member-label [{:member/keys [name nick]}]
+  (if (seq nick)
+    (str name " (" nick ")")
+    name))
 
-(defn team-dialogs [{:keys [tr] :as req} {team-name :team/name :team/keys [team-id] :as team}]
-  (list
-   [dialog/ConfirmDialog {:id                   (str "_delete-confirm-" team-id)
-                          ::dialog/title        (tr [:action/confirm-generic])
-                          ::dialog/prompt       (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])
-                          ::dialog/on-hide      (format "$_delete-confirm-%s=false" team-id)
-                          ::dialog/confirm-text (tr [:action/confirm-delete])
-                          ::dialog/cancel-text  (tr [:action/cancel])
-                          ::dialog/on-confirm   (d*/act req ::actions/delete-team)
-                          ::dialog/icon         dialog/AlertIcon}]
-   [dialog/FormDialog {:id              (str "edit-team-" team-id)
-                       ::dialog/title   "Edit Team"
-                       ::dialog/open    (format "$team.open && $team.team-id == '%s'" team-id)
-                       ::dialog/on-hide (d*/act req ::actions/close-team-edit)}
-    (team-edit-form req team)]))
+(defn team-create-form [{:keys [tr page-state] :as req}]
+  (let [{:keys [error]} (:team-create page-state)
+        team-name-error (-> error :team-name :error)]
+    (when (get-in page-state [:team-create :open])
+      [:wa-dialog {:id                    "team-create-dialog"
+                   :label                 (tr [:team/create-team])
+                   :data-init__delay.10ms "el.open = true"
+                   :data-preserve-attr    "open"
+                   :data-on:wa-hide       (->expr
+                                           (evt.preventDefault)
+                                           (@post ~(d*/act req ::actions/close-team-create)))}
+       [:form {:id             "team-create-form"
+               :data-id        "team-create"
+               :data-action    (d*/act req ::actions/create-team)
+               :data-on:submit "evt.preventDefault();"}
+        [:wa-input {:placeholder  (tr [:team/name])
+                    :type         :text
+                    :required     true
+                    :label        (tr [:team/name])
+                    :autofocus    true
+                    :hint         team-name-error
+                    :data-invalid (if team-name-error "true" nil)
+                    :data-bind    "team-create.team-name"
+                    :name         :team-name}]]
+       [:wa-button {:slot        "footer"
+                    :appearance  "outlined"
+                    :data-dialog "close"}
+        (tr [:action/cancel])]
+       [:wa-button {:slot               "footer"
+                    :appearance         "filled"
+                    :variant            "brand"
+                    :type               "submit"
+                    :form               "team-create-form"
+                    :data-attr:disabled "!!$loading && $loading !== 'team-create'"
+                    :data-attr:loading  "$loading === 'team-create'"}
+        (tr [:action/create])]])))
+
+(defn team-edit-form [{:keys [tr db page-state] :as req}]
+  (let [{:keys [error team-id member-id team-type]} (:team page-state)
+        team            (when team-id (q/retrieve-team db team-id))
+        all-members     (q/members-for-select db)
+        team-name-error (-> error :team-name :error)]
+    (when team-id
+      [:wa-dialog {:id                    "team-edit-dialog"
+                   :label                 (tr [:action/update])
+                   :data-init__delay.10ms "el.open = true"
+                   :data-preserve-attr    "open"
+                   :data-on:wa-hide       (str "if (evt.target !== el) return; evt.preventDefault(); @post('"
+                                               (d*/act req ::actions/close-team-edit)
+                                               "')")}
+       [:form {:id             "team-edit-form"
+               :data-id        "team"
+               :data-action    (d*/act req ::actions/update-team)
+               :data-on:submit "evt.preventDefault();"}
+        [:input {:type :hidden :name "team.team-id" :value nil}]
+        [:div {:class "wa-stack wa-gap-m"}
+         [:wa-input {:placeholder  (tr [:team/name])
+                     :type         :text
+                     :required     true
+                     :label        (tr [:team/name])
+                     :autofocus    true
+                     :hint         team-name-error
+                     :data-invalid (if team-name-error "true" nil)
+                     :data-bind    "team.team-name"
+                     :name         :team-name}]
+         (into
+          [:wa-select {:label     (tr [:team/team-type])
+                       :name      :team-type
+                       :value     (or team-type "")
+                       :data-bind "team.team-type"}]
+          (for [{:keys [label value]} (team-type-options tr)]
+            [:wa-option {:value value} label]))
+         [:div {:class "wa-stack wa-gap-s"}
+          [:div {:class "wa-stack wa-gap-2xs"}
+           [:span {:class "wa-caption-s"} (tr [:team/members])]
+           (if (seq (:team/members team))
+             (into
+              [:div {:class "wa-stack wa-gap-2xs"}]
+              (for [{:member/keys [member-id name] :as member} (:team/members team)]
+                (let [loading-id (pr-str (str member-id))]
+                  [:div {:class "wa-flank:end wa-align-items-center wa-gap-xs"
+                         :style "padding: var(--wa-space-2xs) 0; border-bottom: 1px solid var(--wa-color-neutral-border-quiet);"}
+                   [:a {:href (urls/link-member member)} name]
+                   [:wa-button {:appearance         "plain"
+                                :variant            "danger"
+                                :size               "small"
+                                :type               "button"
+                                :data-id            (str member-id)
+                                :data-action        (d*/act req ::actions/remove-team-member)
+                                :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                                :data-attr:loading  (str "$loading === " loading-id)
+                                :data-on:mousedown  (->expr (set! $team.remove-member-id ~(str member-id)))}
+                    (tr [:action/remove])]])))
+             [:span {:class "wa-caption-s"
+                     :style "color: var(--wa-color-text-quiet); font-style: italic;"}
+              (tr [:team/no-members])])]
+          [:div {:class "wa-cluster wa-align-items-end"}
+           (into
+            [:wa-select {:label     (tr [:team/choose-add-member])
+                         :name      :member-id
+                         :value     (or member-id "")
+                         :data-bind "team.member-id"}
+             [:wa-option {:value ""} " - "]]
+            (for [member all-members]
+              [:wa-option {:value (:member/member-id member)}
+               (team-member-label member)]))
+           [:wa-button {:appearance         "outlined"
+                        :variant            "brand"
+                        :size               "medium"
+                        :type               "button"
+                        :data-id            "team-add-member"
+                        :data-action        (d*/act req ::actions/add-team-member)
+                        :data-attr:disabled "$team.member-id == null || $team.member-id === '' || (!!$loading && $loading !== 'team-add-member')"
+                        :data-attr:loading  "$loading === 'team-add-member'"}
+            (tr [:action/add])]]]]]
+       [:wa-button {:slot        "footer"
+                    :appearance  "outlined"
+                    :data-dialog "close"}
+        (tr [:action/cancel])]
+       [:wa-button {:slot               "footer"
+                    :appearance         "filled"
+                    :variant            "brand"
+                    :type               "submit"
+                    :form               "team-edit-form"
+                    :data-attr:disabled "!!$loading && $loading !== 'team'"
+                    :data-attr:loading  "$loading === 'team'"}
+        (tr [:action/save])]])))
 
 (defn team-remove-dialog [{:keys [tr] :as req} {team-name :team/name :team/keys [team-id]}]
-  #_(remove-confirm-dialog req {:dialog-id   (remove-dialog-id "team" team-id)
-                                :title
-                                :prompt
-                                :action      ::actions/delete-team
-                                :form-name   :team
-                                :form-key-id :team-id
-                                :ent-id      team-id}))
+  (let [loading-id (pr-str (str team-id))]
+    [:wa-dialog {:id    (remove-dialog-id "team" team-id)
+                 :label (tr [:action/confirm-generic])}
+     [:p (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])]
+     [:wa-button {:slot        "footer"
+                  :appearance  "outlined"
+                  :data-dialog "close"}
+      (tr [:action/cancel])]
+     [:wa-button {:slot               "footer"
+                  :appearance         "filled"
+                  :variant            "danger"
+                  :data-dialog        "close"
+                  :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                  :data-attr:loading  (str "$loading === " loading-id)
+                  :data-id            team-id
+                  :data-action        (d*/act req ::actions/delete-team)}
+      (tr [:action/confirm-delete])]]))
 
 (defn team-table-row [{:keys [tr] :as req} _edit-any-row? {team-name :team/name :team/keys [team-id members team-type]}]
-  (let [button-id (str "team-actions-" team-id)]
+  (let [button-id  (str "team-actions-" team-id)
+        loading-id (pr-str (str team-id))]
     [:tr {:id (str "team-container-" team-id)}
      [:td {:style "vertical-align: middle"} team-name]
      [:td {:style "vertical-align: middle"}
@@ -239,31 +244,34 @@
      [:td {:style "vertical-align: middle"} (team-type-label tr team-type)]
      [:td {:style "vertical-align: top; text-align: end"}
       (row-action-menu {:button-id button-id
-                        :items     [{:label    (tr [:action/update])
-                                     :icon     "edit-pencil"
-                                     :disabled true}
+                        :items     [{:label              (tr [:action/update])
+                                     :icon               "edit-pencil"
+                                     :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                                     :data-attr:loading  (str "$loading === " loading-id)
+                                     :data-id            team-id
+                                     :data-action        (d*/act req ::actions/open-team-edit)}
                                     {:label       (tr [:action/remove])
                                      :icon        "xmark"
                                      :variant     "danger"
                                      :data-dialog (format "open %s" (remove-dialog-id "team" team-id))}]})]]))
 
 (defn teams-panel [{:keys [page-state db tr] :as req}]
-  (let [edit-id      (d*/get-form-current page-state :team :team-id)
-        teams        (q/retrieve-all-teams db)
-        editing-any? (some? edit-id)]
-    [:div {:id                      "teams-panel"
-           :data-signals__ifmissing (d*/->signals {:team-create {:open false}
-                                                   :team        {:open false}})
-           :data-signals            (d*/->signals {:team {:team-id edit-id}})}
+  (let [teams (q/retrieve-all-teams db)]
+    [:div {:id           "teams-panel"
+           :data-signals (d*/->signals {:team-create (:team-create page-state)
+                                        :team        (:team page-state)})}
+     (team-create-form req)
+     (team-edit-form req)
      (for [team teams]
        (team-remove-dialog req team))
      (settings-card {:title    "Teams"
                      :subtitle "Because someone has to do the work"
-                     :actions  [[:wa-button {:appearance "outlined"
-                                             :variant    "brand"
-                                             :size       "medium"
-                                             :with-start true
-                                             :disabled   true}
+                     :actions  [[:wa-button {:appearance  "outlined"
+                                             :variant     "brand"
+                                             :size        "medium"
+                                             :with-start  true
+                                             :data-id     "team-create"
+                                             :data-action (d*/act req ::actions/open-team-create)}
                                  [:wa-icon {:slot "start" :name "plus"}]
                                  (tr [:team/create-team])]]}
                     (table-shell
@@ -277,7 +285,7 @@
                           [:th]]]
                         [:tbody
                          (for [team teams]
-                           (team-table-row req editing-any? team))]]
+                           (team-table-row req nil team))]]
                        (empty-state "No teams yet."
                                     "Create a team to organize members around responsibilities."))))]))
 
@@ -378,7 +386,7 @@
                 :data-action        (d*/act req ::actions/delete-discount-type)}
     (tr [:action/confirm-delete])]])
 
-(defn travel-discount-type-table-row [{:keys [tr] :as req} _edit-any-row? {:as dt :travel.discount.type/keys [discount-type-id discount-type-name enabled?]}]
+(defn travel-discount-type-table-row [{:keys [tr] :as req} _edit-any-row? {:travel.discount.type/keys [discount-type-id discount-type-name enabled?]}]
   (let [button-id (str "discount-type-actions-" discount-type-id)]
     [:tr {:id (str "dt-container-" discount-type-id)}
      [:td {:style "vertical-align: middle"} discount-type-name]
@@ -691,7 +699,7 @@
       [:span {:class "wa-caption-s"}
        "Manage teams, travel discount types, and sections from one place."]
       [:wa-divider]]
-     #_(teams-panel req)
+     (teams-panel req)
      (travel-discount-types req)
      (sections req)]]))
 

@@ -8,7 +8,7 @@
                  starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
  :linters       {;; :unused-value        {:level :off}
                  ;; :unused-binding      {:level :off}
-                 :not-a-function            {:exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
+                 :not-a-function            {:skip-args [starfederation.datastar.clojure.expressions/->expr]}
                  :unresolved-symbol         {:exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
                  :unquote-not-syntax-quoted {:level :off :exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
                  :unused-import             {:level :off}

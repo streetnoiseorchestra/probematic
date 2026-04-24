@@ -158,14 +158,16 @@
                               :team/name    "Booking"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/remove-signals ["team-create"]]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:team-create] false]]
              (actions/create-team-action
               (state-for system)
               {:team-create {:team-name "Booking"}})))))
 
   (testing "returns a validation error when the team name is blank"
-    (is (= [[:app.datastar/merge-signals
-             {:team-create {:error {:team-name "Team name is required."}}}]]
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:team-create :error :team-name]
+             {:error "Team name is required."}]]
            (actions/create-team-action
             {:current-member-id (random-uuid)}
             {:team-create {:team-name ""}}))))
@@ -174,8 +176,12 @@
     (let [{:keys [conn] :as system} (new-system)]
       (seed-team! conn {:team-id   (random-uuid)
                         :team-name "Booking"})
-      (is (= [[:app.datastar/merge-signals
-               {:team-create {:error {:team-name "Team named 'Booking' already exists."}}}]]
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/merge-state
+               [:team-create]
+               {:team-name "Booking"
+                :error {:team-name
+                        {:error "Team named 'Booking' already exists."}}}]]
              (actions/create-team-action
               (state-for system)
               {:team-create {:team-name "Booking"}})))))
@@ -190,7 +196,8 @@
                              [:db/retract [:team/team-id team-id] :team/team-type :team.type/insurance]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/close-form :team :team-id]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:team] false]]
              (actions/update-team-action
               (state-for system)
               {:team {:team-id   (str team-id)
@@ -205,8 +212,12 @@
                         :team-type :team.type/insurance})
       (seed-team! conn {:team-id   (random-uuid)
                         :team-name "Taken"})
-      (is (= [[:app.datastar/merge-signals
-               {:team {:error {:team-name "Team named 'Taken' already exists."}}}]]
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/merge-state
+               [:team]
+               {:team-name "Taken"
+                :error {:team-name
+                        {:error "Team named 'Taken' already exists."}}}]]
              (actions/update-team-action
               (state-for system)
               {:team {:team-id   (str team-id)
@@ -219,10 +230,11 @@
       (is (= [[:db/transact [[:db/retractEntity [:team/team-id team-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/close-form :team :team-id]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:team] false]]
              (actions/delete-team-action
               (state-for system)
-              {:team {:team-id (str team-id)}})))))
+              {:targetid (str team-id)})))))
 
   (testing "removes a team member"
     (let [{:keys [member-id] :as system} (new-system)
@@ -230,7 +242,9 @@
           remove-member-id               (random-uuid)]
       (is (= [[:db/transact [[:db/retract [:team/team-id team-id] :team/members [:member/member-id remove-member-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                      {:transact-w-nils? false}]]
+                      {:transact-w-nils? false}]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:team :remove-member-id] nil]]
              (actions/remove-team-member-action
               (state-for system)
               {:team {:team-id          (str team-id)
@@ -244,22 +258,45 @@
       (is (= [[:db/transact [[:db/add [:team/team-id team-id] :team/members [:member/member-id new-member-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:team {:member-id ""}}]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:team :member-id] ""]]
              (actions/add-team-member-action
               (state-for system)
               {:team {:team-id   (str team-id)
                       :member-id (str new-member-id)}})))))
 
   (testing "opens the team edit form"
-    (let [team-id (random-uuid)]
-      (is (= [[:app.datastar/open-form :team :team-id team-id]]
+    (let [{:keys [conn] :as system} (new-system)
+          team-id                   (random-uuid)]
+      (seed-team! conn {:team-id   team-id
+                        :team-name "Old Team"
+                        :team-type :team.type/insurance})
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:team]
+               {:team-id   team-id
+                :team-name "Old Team"
+                :team-type "insurance"
+                :member-id ""}]]
              (actions/open-team-edit-action
-              {}
-              {:team {:team-id (str team-id)}})))))
+              (state-for system)
+              {:targetid (str team-id)})))))
 
   (testing "closes the team edit form"
-    (is (= [[:app.datastar/close-form :team :team-id]]
-           (actions/close-team-edit-action {} {})))))
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:team] false]]
+           (actions/close-team-edit-action {} {}))))
+
+  (testing "opens the team create form"
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:team-create]
+             {:open true
+              :team-name ""}]]
+           (actions/open-team-create-action {} {}))))
+
+  (testing "closes the team create form"
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:team-create] false]]
+           (actions/close-team-create-action {} {})))))
 
 (deftest section-actions-test
   (testing "creates a new section"

@@ -61,7 +61,7 @@
          clear-discount-type-create]))))
 
 (defn update-discount-type-action
-  [{:keys [db current-member-id]} {:keys [discount-type] :as p}]
+  [{:keys [db current-member-id]} {:keys [discount-type]}]
   (let [{:keys [discount-type-name discount-type-enabled]} discount-type
         discount-type-id (util/ensure-uuid! (:discount-type-id discount-type))]
     (cond
@@ -122,8 +122,11 @@
 ;; Team actions
 ;; --------------------------------------------------------------------------
 
-(defn- team-create-error [error]
-  [[:app.datastar/merge-signals {:team-create {:error error}}]])
+(def clear-team
+  [:app.datastar/assoc-state [:team] false])
+
+(def clear-team-create
+  [:app.datastar/assoc-state [:team-create] false])
 
 (defn- team-name-taken? [db team-name]
   (boolean
@@ -135,17 +138,24 @@
   (let [{:keys [team-name]} team-create]
     (cond
       (str/blank? team-name)
-      (team-create-error {:team-name "Team name is required."})
+      [clear-loading
+       [:app.datastar/assoc-state [:team-create :error :team-name] {:error "Team name is required."}]]
 
       (team-name-taken? db team-name)
-      (team-create-error {:team-name (format "Team named '%s' already exists." team-name)})
+      [clear-loading
+       [:app.datastar/merge-state
+        [:team-create]
+        {:team-name team-name
+         :error {:team-name
+                 {:error (format "Team named '%s' already exists." team-name)}}}]]
 
       :else
-      [[:db/transact (with-audit [{:team/team-id :db/gen-uuid
-                                   :team/name    team-name}]
-                       current-member-id)
-        {:transact-w-nils? false}]
-       [:app.datastar/remove-signals ["team-create"]]])))
+      (let [tx-data (with-audit [{:team/team-id :db/gen-uuid
+                                  :team/name    team-name}]
+                      current-member-id)]
+        [[:db/transact tx-data {:transact-w-nils? false}]
+         clear-loading
+         clear-team-create]))))
 
 (defn update-team-action
   [{:keys [db current-member-id]} {:keys [team]}]
@@ -157,10 +167,16 @@
         current-team-type (:team/team-type current-team)]
     (cond
       (str/blank? team-name)
-      [[:app.datastar/merge-signals {:team {:error {:team-name "Team name is required."}}}]]
+      [clear-loading
+       [:app.datastar/assoc-state [:team :error :team-name] {:error "Team name is required."}]]
 
       (lookup-taken-by-other? db [:team/name team-name] team-ref)
-      [[:app.datastar/merge-signals {:team {:error {:team-name (format "Team named '%s' already exists." team-name)}}}]]
+      [clear-loading
+       [:app.datastar/merge-state
+        [:team]
+        {:team-name team-name
+         :error {:team-name
+                 {:error (format "Team named '%s' already exists." team-name)}}}]]
 
       :else
       (let [tx-data (with-audit (concat
@@ -172,40 +188,63 @@
                                    [[:db/retract team-ref :team/team-type current-team-type]]))
                       current-member-id)]
         [[:db/transact tx-data {:transact-w-nils? false}]
-         [:app.datastar/close-form :team :team-id]]))))
+         clear-loading
+         clear-team]))))
 
 (defn delete-team-action
-  [{:keys [current-member-id]} {:keys [team]}]
-  (let [team-id (util/ensure-uuid! (:team-id team))]
+  [{:keys [current-member-id]} {:keys [targetid]}]
+  (let [team-id (util/ensure-uuid! targetid)]
     [[:db/transact (with-audit [[:db/retractEntity [:team/team-id team-id]]]
                      current-member-id)
       {:transact-w-nils? false}]
-     [:app.datastar/close-form :team :team-id]]))
+     clear-loading
+     clear-team]))
 
 (defn remove-team-member-action
   [{:keys [current-member-id]} {:keys [team]}]
-  (let [team-id          (util/ensure-uuid! (:team-id team))
-        remove-member-id (util/ensure-uuid! (:remove-member-id team))]
-    [[:db/transact (with-audit [[:db/retract [:team/team-id team-id] :team/members [:member/member-id remove-member-id]]]
-                     current-member-id)
-      {:transact-w-nils? false}]]))
+  (let [team-id          (some-> (:team-id team) util/ensure-uuid)
+        remove-member-id (some-> (:remove-member-id team) util/ensure-uuid)]
+    (if (and team-id remove-member-id)
+      [[:db/transact (with-audit [[:db/retract [:team/team-id team-id] :team/members [:member/member-id remove-member-id]]]
+                       current-member-id)
+        {:transact-w-nils? false}]
+       clear-loading
+       [:app.datastar/assoc-state [:team :remove-member-id] nil]]
+      [clear-loading])))
 
 (defn add-team-member-action
   [{:keys [current-member-id]} {:keys [team]}]
-  (let [team-id   (util/ensure-uuid! (:team-id team))
-        member-id (util/ensure-uuid! (:member-id team))]
-    [[:db/transact (with-audit [[:db/add [:team/team-id team-id] :team/members [:member/member-id member-id]]]
-                     current-member-id)
-      {:transact-w-nils? false}]
-     [:app.datastar/merge-signals {:team {:member-id ""}}]]))
+  (let [team-id   (some-> (:team-id team) util/ensure-uuid)
+        member-id (some-> (:member-id team) util/ensure-uuid)]
+    (if (and team-id member-id)
+      [[:db/transact (with-audit [[:db/add [:team/team-id team-id] :team/members [:member/member-id member-id]]]
+                       current-member-id)
+        {:transact-w-nils? false}]
+       clear-loading
+       [:app.datastar/assoc-state [:team :member-id] ""]]
+      [clear-loading])))
 
 (defn open-team-edit-action
-  [_state {:keys [team]}]
-  (let [team-id (util/ensure-uuid! (:team-id team))]
-    [[:app.datastar/open-form :team :team-id team-id]]))
+  [{:keys [db]} {:keys [targetid]}]
+  (let [team-id (util/ensure-uuid! targetid)
+        team    (q/retrieve-team db team-id)]
+    [clear-loading
+     [:app.datastar/assoc-state [:team] {:team-id   team-id
+                                         :team-name (:team/name team)
+                                         :team-type (some-> (:team/team-type team) name)
+                                         :member-id ""}]]))
 
 (defn close-team-edit-action [_state _signals]
-  [[:app.datastar/close-form :team :team-id]])
+  [clear-loading clear-team])
+
+(defn open-team-create-action
+  [_ _]
+  [clear-loading
+   [:app.datastar/assoc-state [:team-create] {:open true
+                                              :team-name ""}]])
+
+(defn close-team-create-action [_state _signals]
+  [clear-loading clear-team-create])
 
 ;; --------------------------------------------------------------------------
 ;; Section actions
@@ -334,6 +373,8 @@
    ::add-team-member          #'add-team-member-action
    ::open-team-edit           #'open-team-edit-action
    ::close-team-edit          #'close-team-edit-action
+   ::open-team-create         #'open-team-create-action
+   ::close-team-create        #'close-team-create-action
    ::create-section           #'create-section-action
    ::update-section           #'update-section-action
    ::delete-section           #'delete-section-action
