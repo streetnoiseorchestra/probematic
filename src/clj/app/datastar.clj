@@ -182,7 +182,7 @@
                                          (let [req           (wrap-req req tab-id)
                                                new-view      (error/try-log req (render-fn req))
                                                new-view-hash (digest new-view)]
-                                           (tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
+                                           ;; (tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
                                            ;; only send an event if the view has changed
                                            (when (and new-view (not= last-view-hash new-view-hash))
                                              (d*/patch-elements! sse-gen new-view {d*/id                  new-view-hash

@@ -89,16 +89,41 @@ wa-page[view="desktop"] [data-toggle-nav] {
   display: none;
 }
 
-wa-button.band-settings-index-card-button::part(base) {
-  height: auto;
-  justify-content: start;
-  padding: var(--wa-form-control-padding-block)
-    var(--wa-form-control-padding-inline);
-  text-align: start;
+div.band-settings-index-grid {
+  --min-column-size: 32ch;
 }
 
-wa-button.band-settings-index-card-button p {
-  margin: 0;
+wa-divider.band-settings-index-divider {
+  padding-bottom: var(--spacing);
+}
+
+wa-button.band-settings-index-card-button {
+  &::part(base) {
+    height: auto;
+    justify-content: start;
+    padding: var(--wa-form-control-padding-block)
+      var(--wa-form-control-padding-inline);
+  }
+
+  .wa-flank {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  wa-avatar {
+    flex: none;
+  }
+
+  .band-settings-index-card-body {
+    flex: 1 1 0%;
+    min-inline-size: 0;
+    white-space: normal;
+  }
+
+  .band-settings-index-card-body p {
+    margin: 0;
+    white-space: normal;
+  }
 }
 
 wa-dialog wa-callout {

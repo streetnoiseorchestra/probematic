@@ -3,27 +3,36 @@
    [app.datastar :as d*]
    [app.settings.view-support :as support]))
 
-(defn- settings-link-card [{:keys [href title body]}]
+(defn- settings-link-card [{:keys [href icon title body]}]
   [:wa-button {:href       href
                :appearance "plain"
                :class      "band-settings-index-card-button"}
-   [:div {:class "wa-stack wa-gap-2xs wa-align-items-start"}
-    [:strong {:class "wa-color-text-link"} title]
-    [:p body]]])
+   [:div {:class "wa-flank wa-flex-nowrap wa-align-items-start"}
+    [:wa-avatar {:shape "rounded"}
+     [:wa-icon {:slot    "icon"
+                :library "snoico"
+                :name    icon
+                :class   "wa-color-text-link"}]]
+    [:div {:class "band-settings-index-card-body"}
+     [:strong {:class "wa-color-text-link"} title]
+     [:p body]]]])
 
 (defn page [{:keys [tr]}]
   (let [tr (or tr (fn [path & _] (name (last path))))]
     (support/plain-page
-     [:div {:class "wa-grid"
-            :style "--min-column-size: 28ch"}
+     [:div {:class "wa-grid band-settings-index-grid"}
       [:h1 {:class "wa-span-grid"} (tr [:nav/band-settings])]
+      [:wa-divider {:class "wa-span-grid band-settings-index-divider"}]
       (settings-link-card {:href  "/band-settings/teams"
+                           :icon  "users-outline"
                            :title "Teams"
                            :body  "Create teams and manage their members."})
       (settings-link-card {:href  "/band-settings/travel-discounts"
+                           :icon  "cog"
                            :title "Travel Discounts"
                            :body  "Manage the reusable travel discount types members can choose."})
       (settings-link-card {:href  "/band-settings/sections"
+                           :icon  "trumpet"
                            :title "Sections"
                            :body  "Choose which sections are available and how they are ordered."})])))
 
