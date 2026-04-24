@@ -1,6 +1,8 @@
 (ns app.html
   (:import (java.io OutputStream))
   (:require
+   [squint.compiler :as squint]
+   [backtick         :refer [template]]
    [dev.onionpancakes.chassis.core :as chassis]
    [ring.util.response :as ring-response]
    [buddy.core.codecs :as codecs]
@@ -59,8 +61,8 @@
 (defn resource-last-modified [resource]
   (some-> resource
           (ring-response/resource-data)
-          :last-modified
-          .getTime))
+          ^java.util.Date (:last-modified)
+          (.getTime)))
 
 (defn asset-meta [path]
   (let [resource      (io/resource (asset-path path))
@@ -153,3 +155,18 @@
 (def half [:span (chassis/raw "&frac12;")])
 (def degree [:span (chassis/raw "&deg;")])
 (def plusminus [:span (chassis/raw "&plusmn;")])
+
+(defn js* [form]
+  (squint.compiler/compile-string (str form) {}))
+
+(defmacro ->js
+  [& forms]
+  `(js* (template ~forms)))
+
+(defn script-inline [s]
+  [:script {:type :module}
+   (raw s)])
+
+(defmacro squint-inline
+  [& forms]
+  `[:script {:type :module} (raw (js* (template ~forms)))])

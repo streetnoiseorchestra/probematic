@@ -1,5 +1,6 @@
 (ns app.layout2
   (:require
+   [jsonista.core :as j]
    [app.auth :as auth]
    [app.config :as config]
    [app.i18n :as i18n]
@@ -150,6 +151,11 @@
       svg.querySelectorAll('.logotype-snoman').forEach(node => node.setAttribute('fill', '#22c55e'));
     },
   });")]
+   [:script {:type :importmap}
+    (hiccup.util/raw-string
+     (j/write-value-as-string {:imports
+                               {"squint-cljs/core.js" "/js/squint/core.js"
+                                "squint-cljs/string.js" "/js/squint/string.js"}}))]
    [:script {:defer true :src "/js/datastar@1.0.1.js" :type "module"}]
    (when (config/dev-mode? (-> req :system :env))
      [:script {:defer true :src "/js/datastar-inspector@1.1.4.js" :type "module"}])])

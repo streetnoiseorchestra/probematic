@@ -8,9 +8,18 @@
                  starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
  :linters       {;; :unused-value        {:level :off}
                  ;; :unused-binding      {:level :off}
-                 :not-a-function            {:skip-args [starfederation.datastar.clojure.expressions/->expr]}
-                 :unresolved-symbol         {:exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
-                 :unquote-not-syntax-quoted {:level :off :exclude ['(starfederation.datastar.clojure.expressions/->expr)]}
+                 :not-a-function            {:skip-args [starfederation.datastar.clojure.expressions/->expr
+                                                         app.html/->js
+                                                         app.html/squint-inline]}
+                 :unresolved-symbol         {:exclude ['(starfederation.datastar.clojure.expressions/->expr)
+                                                       '(app.html/->js)
+                                                       '(app.html/squint-inline)]}
+                 :unresolved-namespace      {:exclude ['(starfederation.datastar.clojure.expressions/->expr)
+                                                       '(app.html/->js)
+                                                       '(app.html/squint-inline)]}
+                 :unquote-not-syntax-quoted {:level :off :exclude ['(starfederation.datastar.clojure.expressions/->expr)
+                                                                   '(app.html/->js)
+                                                                   '(app.html/squint-inline)]}
                  :unused-import             {:level :off}
                  :invalid-arity             {:level :error}
                  :unused-namespace          {:level   :warning
@@ -25,6 +34,7 @@
 
                  :unresolved-var {:exclude [taoensso.carmine
                                             org.httpkit.client
+                                            backtick/template
                                             ol.app.dev.dev-extras
                                             starfederation.datastar.clojure.adapter.http-kit/on-close
                                             starfederation.datastar.clojure.adapter.http-kit/on-open]}}}
