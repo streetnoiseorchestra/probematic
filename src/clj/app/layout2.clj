@@ -137,6 +137,8 @@
   import '/wa/components/dialog/dialog.js';
   import '/wa/components/checkbox/checkbox.js';
   import '/wa/components/select/select.js';
+  import '/wa/components/switch/switch.js';
+  import '/wa/components/callout/callout.js';
   registerIconLibrary('default', {
     resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
     mutator: svg => svg.setAttribute('fill', 'currentColor'),

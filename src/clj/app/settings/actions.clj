@@ -3,7 +3,8 @@
    [app.settings.domain :as domain]
    [app.util :as util]
    [clojure.string :as str]
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [app.queries :as q]))
 
 (defn- lookup-eid [db lookup-ref]
   (:db/id (d/entity db lookup-ref)))
@@ -21,23 +22,34 @@
 ;; Discount type actions
 ;; --------------------------------------------------------------------------
 
-(defn- discount-type-create-error [error]
-  [[:app.datastar/merge-signals {:discount-type-create {:error error}}]])
-
 (defn- discount-type-name-taken? [db discount-type-name]
   (boolean
    (when db
      (d/entity db [:travel.discount.type/discount-type-name discount-type-name]))))
+
+(def clear-loading [:app.datastar/merge-signals {:loading false :targetid false}])
+
+(def clear-discount-type
+  [:app.datastar/assoc-state [:discount-type] false])
+
+(def clear-discount-type-create
+  [:app.datastar/assoc-state [:discount-type-create] false])
 
 (defn create-discount-type-action
   [{:keys [current-member-id db]} {:keys [discount-type-create]}]
   (let [{:keys [discount-type-name]} discount-type-create]
     (cond
       (str/blank? discount-type-name)
-      (discount-type-create-error {:discount-type-name "Discount type name is required."})
+      [clear-loading
+       [:app.datastar/assoc-state [:discount-type-create :error :discount-type-name] {:error "Discount type name is required."}]]
 
       (discount-type-name-taken? db discount-type-name)
-      (discount-type-create-error {:discount-type-name (format "Discount type named '%s' already exists." discount-type-name)})
+      [clear-loading
+       [:app.datastar/merge-state
+        [:discount-type-create]
+        {:discount-type-name discount-type-name
+         :error {:discount-type-name
+                 {:error (format "Discount type named '%s' already exists." discount-type-name)}}}]]
 
       :else
       (let [tx-data (with-audit [{:travel.discount.type/discount-type-id   :db/gen-uuid
@@ -45,21 +57,27 @@
                                   :travel.discount.type/discount-type-name discount-type-name}]
                       current-member-id)]
         [[:db/transact tx-data {:transact-w-nils? false}]
-         [:app.datastar/remove-signals ["discount-type-create"]]]))))
+         clear-loading
+         clear-discount-type-create]))))
 
 (defn update-discount-type-action
-  [{:keys [db current-member-id]} {:keys [discount-type]}]
+  [{:keys [db current-member-id]} {:keys [discount-type] :as p}]
   (let [{:keys [discount-type-name discount-type-enabled]} discount-type
         discount-type-id (util/ensure-uuid! (:discount-type-id discount-type))]
     (cond
       (str/blank? discount-type-name)
-      [[:app.datastar/merge-signals {:discount-type {:error {:discount-type-name "Discount type name is required."}}}]]
-
+      [clear-loading
+       [:app.datastar/assoc-state [:discount-type :error :discount-type-name] {:error "Discount type name is required."}]]
       (lookup-taken-by-other? db
                               [:travel.discount.type/discount-type-name discount-type-name]
                               [:travel.discount.type/discount-type-id discount-type-id])
-      [[:app.datastar/merge-signals {:discount-type {:error {:discount-type-name
-                                                             (format "Discount type named '%s' already exists." discount-type-name)}}}]]
+
+      [clear-loading
+       [:app.datastar/merge-state
+        [:discount-type]
+        {:discount-type-name discount-type-name
+         :error {:discount-type-name
+                 {:error (format "Discount type named '%s' already exists." discount-type-name)}}}]]
 
       :else
       [[:db/transact (with-audit [{:travel.discount.type/discount-type-id   discount-type-id
@@ -67,23 +85,38 @@
                                    :travel.discount.type/discount-type-name discount-type-name}]
                        current-member-id)
         {:transact-w-nils? false}]
-       [:app.datastar/close-form :discount-type :discount-type-id]])))
+       clear-loading
+       clear-discount-type])))
 
 (defn delete-discount-type-action
-  [{:keys [current-member-id]} {:keys [discount-type]}]
-  (let [discount-type-id (util/ensure-uuid! (:discount-type-id discount-type))]
+  [{:keys [current-member-id]} {:keys [targetid]}]
+  (let [discount-type-id (util/ensure-uuid! targetid)]
     [[:db/transact (with-audit [[:db/retractEntity [:travel.discount.type/discount-type-id discount-type-id]]]
                      current-member-id)
       {:transact-w-nils? false}]
-     [:app.datastar/close-form :discount-type :discount-type-id]]))
+     clear-loading
+     clear-discount-type]))
 
 (defn open-discount-type-edit-action
-  [_state {:keys [discount-type]}]
-  (let [discount-type-id (util/ensure-uuid! (:discount-type-id discount-type))]
-    [[:app.datastar/open-form :discount-type :discount-type-id discount-type-id]]))
+  [{:keys [db]}  {:keys [targetid]}]
+  (let [discount-type-id (util/ensure-uuid! targetid)
+        dt (q/retrieve-discount-type db discount-type-id)]
+    [clear-loading
+     [:app.datastar/assoc-state [:discount-type] {:discount-type-id discount-type-id
+                                                  :discount-type-name (:travel.discount.type/discount-type-name dt)
+                                                  :discount-type-enabled (:travel.discount.type/enabled? dt)}]]))
 
 (defn close-discount-type-edit-action [_state _signals]
-  [[:app.datastar/close-form :discount-type :discount-type-id]])
+  [clear-loading clear-discount-type])
+
+(defn open-discount-type-create-action
+  [_ _]
+  [clear-loading
+   [:app.datastar/assoc-state [:discount-type-create] {:open true
+                                                       :discount-type-name ""}]])
+
+(defn close-discount-type-create-action [_state _signals]
+  [clear-loading clear-discount-type-create])
 
 ;; --------------------------------------------------------------------------
 ;; Team actions
@@ -178,8 +211,11 @@
 ;; Section actions
 ;; --------------------------------------------------------------------------
 
-(defn- section-create-error [error]
-  [[:app.datastar/merge-signals {:section-create {:error error}}]])
+(def clear-section
+  [:app.datastar/assoc-state [:section] false])
+
+(def clear-section-create
+  [:app.datastar/assoc-state [:section-create] false])
 
 (defn- section-name-taken? [db section-name]
   (boolean
@@ -191,42 +227,78 @@
   (let [{:keys [section-name]} section-create]
     (cond
       (str/blank? section-name)
-      (section-create-error {:section-name "Section name is required."})
+      [clear-loading
+       [:app.datastar/assoc-state [:section-create :error :section-name] {:error "Section name is required."}]]
 
       (section-name-taken? db section-name)
-      (section-create-error {:section-name (format "Section named '%s' already exists." section-name)})
+      [clear-loading
+       [:app.datastar/merge-state
+        [:section-create]
+        {:section-name section-name
+         :error {:section-name
+                 {:error (format "Section named '%s' already exists." section-name)}}}]]
 
       :else
-      [[:db/transact (with-audit [{:section/active? true
-                                   :section/name    section-name}]
-                       current-member-id)
-        {:transact-w-nils? false}]
-       [:app.datastar/remove-signals ["section-create"]]])))
+      (let [tx-data (with-audit [{:section/active? true
+                                  :section/name    section-name}]
+                      current-member-id)]
+        [[:db/transact tx-data {:transact-w-nils? false}]
+         clear-loading
+         clear-section-create]))))
 
 (defn update-section-action
   [{:keys [db current-member-id]} {:keys [section]}]
-  (let [{:keys [section-old-name section-name section-enabled]} section]
+  (let [{:keys [section-id section-name section-enabled]} section]
     (cond
       (str/blank? section-name)
-      [[:app.datastar/merge-signals {:section {:error {:section-name "Section name is required."}}}]]
+      [clear-loading
+       [:app.datastar/assoc-state [:section :error :section-name] {:error "Section name is required."}]]
 
-      (lookup-taken-by-other? db [:section/name section-name] [:section/name section-old-name])
-      [[:app.datastar/merge-signals {:section {:error {:section-name
-                                                       (format "Section named '%s' already exists." section-name)}}}]]
+      (lookup-taken-by-other? db [:section/name section-name] [:section/name section-id])
+      [clear-loading
+       [:app.datastar/merge-state
+        [:section]
+        {:section-name section-name
+         :error {:section-name
+                 {:error (format "Section named '%s' already exists." section-name)}}}]]
 
       :else
-      [[:db/transact (with-audit [[:db/add [:section/name section-old-name] :section/name section-name]
-                                  [:db/add [:section/name section-old-name] :section/active? section-enabled]]
+      [[:db/transact (with-audit [[:db/add [:section/name section-id] :section/name section-name]
+                                  [:db/add [:section/name section-id] :section/active? section-enabled]]
                        current-member-id)
         {:transact-w-nils? false}]
-       [:app.datastar/close-form :section :section-id]])))
+       clear-loading
+       clear-section])))
+
+(defn delete-section-action
+  [{:keys [current-member-id]} {:keys [targetid]}]
+  (let [section-id targetid]
+    [[:db/transact (with-audit [[:db/retractEntity [:section/name section-id]]]
+                     current-member-id)
+      {:transact-w-nils? false}]
+     clear-loading
+     clear-section]))
 
 (defn open-section-edit-action
-  [_state {:keys [section]}]
-  [[:app.datastar/open-form :section :section-id (:section-id section)]])
+  [{:keys [db]} {:keys [targetid]}]
+  (let [section-id targetid
+        section    (q/retrieve-section-by-name db section-id)]
+    [clear-loading
+     [:app.datastar/assoc-state [:section] {:section-id      section-id
+                                            :section-name    (:section/name section)
+                                            :section-enabled (:section/active? section)}]]))
 
 (defn close-section-edit-action [_state _signals]
-  [[:app.datastar/close-form :section :section-id]])
+  [clear-loading clear-section])
+
+(defn open-section-create-action
+  [_ _]
+  [clear-loading
+   [:app.datastar/assoc-state [:section-create] {:open true
+                                                 :section-name ""}]])
+
+(defn close-section-create-action [_state _signals]
+  [clear-loading clear-section-create])
 
 (defn open-section-reorder-action [_state _signals]
   [[:app.datastar/assoc-state [:section-reorder :open] true]])
@@ -251,6 +323,8 @@
    ::delete-discount-type     #'delete-discount-type-action
    ::open-discount-type-edit  #'open-discount-type-edit-action
    ::close-discount-type-edit #'close-discount-type-edit-action
+   ::open-discount-type-create  #'open-discount-type-create-action
+   ::close-discount-type-create #'close-discount-type-create-action
    ::create-team              #'create-team-action
    ::update-team              #'update-team-action
    ::delete-team              #'delete-team-action
@@ -260,8 +334,11 @@
    ::close-team-edit          #'close-team-edit-action
    ::create-section           #'create-section-action
    ::update-section           #'update-section-action
+   ::delete-section           #'delete-section-action
    ::open-section-edit        #'open-section-edit-action
    ::close-section-edit       #'close-section-edit-action
+   ::open-section-create      #'open-section-create-action
+   ::close-section-create     #'close-section-create-action
    ::open-section-reorder     #'open-section-reorder-action
    ::close-section-reorder    #'close-section-reorder-action
    ::update-section-order     #'update-section-order-action})

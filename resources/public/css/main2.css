@@ -79,14 +79,16 @@ wa-dialog wa-callout {
   margin-block-end: var(--wa-space-m);
 }
 
-wa-input:state(user-invalid)::part(input),
-wa-input[data-invalid]:not([data-invalid=""])::part(input) {
+wa-input:state(user-invalid),
+wa-input[data-invalid]:not([data-invalid=""]) {
   --wa-form-control-border-color: red;
+  --wa-color-focus: red;
 }
 
 wa-input:state(user-invalid)::part(input):hover,
 wa-input[data-invalid]:not([data-invalid=""])::part(input):hover {
   --wa-form-control-border-color: red;
+  --wa-color-focus: red;
 }
 
 wa-input:state(user-invalid)::part(hint),
@@ -101,4 +103,5 @@ wa-switch[data-invalid]:not([data-invalid=""])::part(hint) {
 wa-select:state(user-invalid)::part(combobox),
 wa-select[data-invalid]:not([data-invalid=""])::part(combobox) {
   --wa-form-control-border-color: red;
+  --wa-color-focus: red;
 }

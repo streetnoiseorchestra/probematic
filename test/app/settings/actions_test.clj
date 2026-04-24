@@ -38,15 +38,16 @@
                               :travel.discount.type/discount-type-name "Klimaticket"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/remove-signals ["discount-type-create"]]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:discount-type-create] false]]
              (actions/create-discount-type-action
               (state-for system)
               {:discount-type-create {:discount-type-name "Klimaticket"}})))))
 
   (testing "returns a validation error when the discount type name is blank"
-    (is (= [[:app.datastar/merge-signals
-             {:discount-type-create
-              {:error {:discount-type-name "Discount type name is required."}}}]]
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:discount-type-create :error :discount-type-name]
+             {:error "Discount type name is required."}]]
            (actions/create-discount-type-action
             {:current-member-id (random-uuid)}
             {:discount-type-create {:discount-type-name ""}}))))
@@ -56,9 +57,12 @@
       (seed-discount-type! conn {:discount-type-id   (random-uuid)
                                  :discount-type-name "Klimaticket"
                                  :enabled?           true})
-      (is (= [[:app.datastar/merge-signals
-               {:discount-type-create
-                {:error {:discount-type-name "Discount type named 'Klimaticket' already exists."}}}]]
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/merge-state
+               [:discount-type-create]
+               {:discount-type-name "Klimaticket"
+                :error {:discount-type-name
+                        {:error "Discount type named 'Klimaticket' already exists."}}}]]
              (actions/create-discount-type-action
               (state-for system)
               {:discount-type-create {:discount-type-name "Klimaticket"}})))))
@@ -74,7 +78,8 @@
                               :travel.discount.type/discount-type-name "New Name"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/close-form :discount-type :discount-type-id]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:discount-type] false]]
              (actions/update-discount-type-action
               (state-for system)
               {:discount-type {:discount-type-id      (str discount-type-id)
@@ -90,9 +95,12 @@
       (seed-discount-type! conn {:discount-type-id   (random-uuid)
                                  :discount-type-name "Taken"
                                  :enabled?           true})
-      (is (= [[:app.datastar/merge-signals
-               {:discount-type
-                {:error {:discount-type-name "Discount type named 'Taken' already exists."}}}]]
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/merge-state
+               [:discount-type]
+               {:discount-type-name "Taken"
+                :error {:discount-type-name
+                        {:error "Discount type named 'Taken' already exists."}}}]]
              (actions/update-discount-type-action
               (state-for system)
               {:discount-type {:discount-type-id      (str discount-type-id)
@@ -105,21 +113,43 @@
       (is (= [[:db/transact [[:db/retractEntity [:travel.discount.type/discount-type-id discount-type-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/close-form :discount-type :discount-type-id]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:discount-type] false]]
              (actions/delete-discount-type-action
               (state-for system)
-              {:discount-type {:discount-type-id (str discount-type-id)}})))))
+              {:targetid (str discount-type-id)})))))
 
   (testing "opens the discount type edit form"
-    (let [discount-type-id (random-uuid)]
-      (is (= [[:app.datastar/open-form :discount-type :discount-type-id discount-type-id]]
+    (let [{:keys [conn] :as system} (new-system)
+          discount-type-id          (random-uuid)]
+      (seed-discount-type! conn {:discount-type-id   discount-type-id
+                                 :discount-type-name "Old Name"
+                                 :enabled?           true})
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:discount-type]
+               {:discount-type-id      discount-type-id
+                :discount-type-name    "Old Name"
+                :discount-type-enabled true}]]
              (actions/open-discount-type-edit-action
-              {}
-              {:discount-type {:discount-type-id (str discount-type-id)}})))))
+              (state-for system)
+              {:targetid (str discount-type-id)})))))
 
   (testing "closes the discount type edit form"
-    (is (= [[:app.datastar/close-form :discount-type :discount-type-id]]
-           (actions/close-discount-type-edit-action {} {})))))
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:discount-type] false]]
+           (actions/close-discount-type-edit-action {} {}))))
+
+  (testing "opens the discount type create form"
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:discount-type-create]
+             {:open true
+              :discount-type-name ""}]]
+           (actions/open-discount-type-create-action {} {}))))
+
+  (testing "closes the discount type create form"
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:discount-type-create] false]]
+           (actions/close-discount-type-create-action {} {})))))
 
 (deftest team-actions-test
   (testing "creates a new team"
@@ -238,14 +268,16 @@
                               :section/name    "Trumpets"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/remove-signals ["section-create"]]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:section-create] false]]
              (actions/create-section-action
               (state-for system)
               {:section-create {:section-name "Trumpets"}})))))
 
   (testing "returns a validation error when the section name is blank"
-    (is (= [[:app.datastar/merge-signals
-             {:section-create {:error {:section-name "Section name is required."}}}]]
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:section-create :error :section-name]
+             {:error "Section name is required."}]]
            (actions/create-section-action
             {:current-member-id (random-uuid)}
             {:section-create {:section-name ""}}))))
@@ -254,8 +286,12 @@
     (let [{:keys [conn] :as system} (new-system)]
       (seed-section! conn {:section-name "Trumpets"
                            :active?      true})
-      (is (= [[:app.datastar/merge-signals
-               {:section-create {:error {:section-name "Section named 'Trumpets' already exists."}}}]]
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/merge-state
+               [:section-create]
+               {:section-name "Trumpets"
+                :error {:section-name
+                        {:error "Section named 'Trumpets' already exists."}}}]]
              (actions/create-section-action
               (state-for system)
               {:section-create {:section-name "Trumpets"}})))))
@@ -268,12 +304,13 @@
                              [:db/add [:section/name "Old Section"] :section/active? false]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                       {:transact-w-nils? false}]
-              [:app.datastar/close-form :section :section-id]]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:section] false]]
              (actions/update-section-action
               (state-for system)
-              {:section {:section-old-name "Old Section"
-                         :section-name     "New Section"
-                         :section-enabled  false}})))))
+              {:section {:section-id      "Old Section"
+                         :section-name    "New Section"
+                         :section-enabled false}})))))
 
   (testing "rejects a duplicate section name during update"
     (let [{:keys [conn] :as system} (new-system)]
@@ -281,23 +318,58 @@
                            :active?      true})
       (seed-section! conn {:section-name "Taken"
                            :active?      true})
-      (is (= [[:app.datastar/merge-signals
-               {:section {:error {:section-name "Section named 'Taken' already exists."}}}]]
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/merge-state
+               [:section]
+               {:section-name "Taken"
+                :error {:section-name
+                        {:error "Section named 'Taken' already exists."}}}]]
              (actions/update-section-action
               (state-for system)
-              {:section {:section-old-name "Old Section"
-                         :section-name     "Taken"
-                         :section-enabled  true}})))))
+              {:section {:section-id      "Old Section"
+                         :section-name    "Taken"
+                         :section-enabled true}})))))
+
+  (testing "deletes a section"
+    (let [{:keys [member-id] :as system} (new-system)]
+      (is (= [[:db/transact [[:db/retractEntity [:section/name "Trumpets"]]
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+                      {:transact-w-nils? false}]
+              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:section] false]]
+             (actions/delete-section-action
+              (state-for system)
+              {:targetid "Trumpets"})))))
 
   (testing "opens the section edit form"
-    (is (= [[:app.datastar/open-form :section :section-id "Trumpets"]]
-           (actions/open-section-edit-action
-            {}
-            {:section {:section-id "Trumpets"}}))))
+    (let [{:keys [conn] :as system} (new-system)]
+      (seed-section! conn {:section-name "Trumpets"
+                           :active?      false})
+      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/assoc-state [:section]
+               {:section-id      "Trumpets"
+                :section-name    "Trumpets"
+                :section-enabled false}]]
+             (actions/open-section-edit-action
+              (state-for system)
+              {:targetid "Trumpets"})))))
 
   (testing "closes the section edit form"
-    (is (= [[:app.datastar/close-form :section :section-id]]
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:section] false]]
            (actions/close-section-edit-action {} {}))))
+
+  (testing "opens the section create form"
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:section-create]
+             {:open true
+              :section-name ""}]]
+           (actions/open-section-create-action {} {}))))
+
+  (testing "closes the section create form"
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state [:section-create] false]]
+           (actions/close-section-create-action {} {}))))
 
   (testing "opens section reordering"
     (is (= [[:app.datastar/assoc-state [:section-reorder :open] true]]
@@ -310,7 +382,7 @@
 
   (testing "updates the section order"
     (let [{:keys [member-id] :as system} (new-system)
-          order                         (array-map :Trumpets 1 :Trombones 0)]
+          order                          (array-map :Trumpets 1 :Trombones 0)]
       (is (= [[:db/transact [[:db/add [:section/name "Trumpets"] :section/position 1]
                              [:db/add [:section/name "Trombones"] :section/position 0]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]

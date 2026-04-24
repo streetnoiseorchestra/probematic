@@ -1,5 +1,6 @@
 (ns app.nexus
   (:require
+   [medley.core :as m]
    [app.datastar :as datastar]
    [app.members.controller2 :as members.controller2]
    [app.members.index.actions]
@@ -138,6 +139,11 @@
 (defn assoc-page-state-fx [ctx _system path value]
   (datastar/state-transact! (request ctx) #(assoc-in % path value)))
 
+(defn merge-page-state-fx [ctx _system path value]
+  (datastar/state-transact! (request ctx)
+                            (fn [s]
+                              (update-in s path (fnil m/deep-merge {}) value))))
+
 (defn members-index-resend-invitation-fx [ctx _system invite-code]
   (when (some? invite-code)
     (members.controller2/resend-invitation! (request ctx) invite-code)))
@@ -263,6 +269,7 @@
                          :app.datastar/open-form              open-form-fx
                          :app.datastar/close-form             close-form-fx
                          :app.datastar/assoc-state            assoc-page-state-fx
+                         :app.datastar/merge-state            merge-page-state-fx
                          :app.members.index/resend-invitation members-index-resend-invitation-fx
                          :app.members.index/delete-invitation members-index-delete-invitation-fx}
    :nexus/actions       (merge app.settings.actions/actions

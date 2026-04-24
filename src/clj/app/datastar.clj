@@ -71,11 +71,12 @@
 
 (defn state-transact! [req f]
   (if-let [tab-id (-> req :body-params :tab-id)]
-    (swap! !page-state update tab-id (fn [state]
-                                       (-> state
-                                           (f)
-                                           (assoc ::modified (System/currentTimeMillis)))))
-
+    (do
+      (swap! !page-state update tab-id (fn [state]
+                                         (-> state
+                                             (f)
+                                             (assoc ::modified (System/currentTimeMillis)))))
+      #_(tap> [:state-transacted @!page-state]))
     (throw (ex-info "No tab-id in request" {}))))
 
 (defn init-tab-state! [<ch tab-id]
@@ -181,7 +182,7 @@
                                          (let [req           (wrap-req req tab-id)
                                                new-view      (error/try-log req (render-fn req))
                                                new-view-hash (digest new-view)]
-                                           ;; (tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
+                                           (tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
                                            ;; only send an event if the view has changed
                                            (when (and new-view (not= last-view-hash new-view-hash))
                                              (d*/patch-elements! sse-gen new-view {d*/id                  new-view-hash
@@ -404,9 +405,10 @@
   ([req cmd]
    (act req cmd nil))
   ([req cmd opts]
-   (action :post
-           (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))
-           opts)))
+   (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))
+   #_(action :post
+             (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))
+             opts)))
 
 (defn open-form [req form-name form-id-key form-id-value]
   (state-transact! req #(assoc-in % [:form :current form-name form-id-key] form-id-value))
