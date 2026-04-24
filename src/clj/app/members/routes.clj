@@ -1,7 +1,6 @@
 (ns app.members.routes
   (:require [app.datomic.shim :as d]
             [app.layout :as layout]
-            #_[app.members.index.views]
             [app.members.views :as view]
             [app.queries :as q]
             [app.routes.datastar :as ds]
@@ -27,11 +26,6 @@
      (layout/app-shell req
                        (view/members-detail-page req false)))))
 
-#_(defn members-index []
-    (ds/page-routes {:page-name ::members-index
-                     :path      "/members"
-                     :view-ns   'app.members.index.views}))
-
 (defn legacy-members-index []
   (ctmx/make-routes
    "/members-old"
@@ -56,7 +50,6 @@
     (member-vcard-download)
     (members-detail)
     (legacy-members-detail)]
-   #_(members-index)
    (legacy-members-index)])
 
 (defn unauthenticated-routes []
