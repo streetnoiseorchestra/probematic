@@ -2,6 +2,8 @@
   (:require
    [medley.core :as m]
    [app.datastar :as datastar]
+   [app.members.controller2 :as members.controller]
+   [app.members.index.actions]
    [app.settings.actions]
    [clojure.walk :as walk]
    [com.yetanalytics.squuid :as sq]
@@ -142,6 +144,18 @@
                             (fn [s]
                               (update-in s path (fnil m/deep-merge {}) value))))
 
+(defn resend-invitation-fx [ctx _system invite-code]
+  (members.controller/resend-invitation!
+   (assoc (request ctx)
+          :db (get-in (request ctx) [:nexus/state :db]))
+   invite-code))
+
+(defn delete-invitation-fx [ctx _system invite-code]
+  (members.controller/delete-invitation!
+   (assoc (request ctx)
+          :db (get-in (request ctx) [:nexus/state :db]))
+   invite-code))
+
 (defn response? [x]
   (and (map? x) (contains? x :status)))
 
@@ -259,5 +273,8 @@
                          :app.datastar/open-form              open-form-fx
                          :app.datastar/close-form             close-form-fx
                          :app.datastar/assoc-state            assoc-page-state-fx
-                         :app.datastar/merge-state merge-page-state-fx}
-   :nexus/actions app.settings.actions/actions})
+                         :app.datastar/merge-state            merge-page-state-fx
+                         :app.members.index/resend-invitation resend-invitation-fx
+                         :app.members.index/delete-invitation delete-invitation-fx}
+   :nexus/actions       (merge app.settings.actions/actions
+                               app.members.index.actions/actions)})

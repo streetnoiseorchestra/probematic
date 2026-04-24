@@ -16,7 +16,11 @@
                    :app.settings.teams.actions/create-team))
     (is (contains? (:nexus/actions nexus-config)
                    :app.settings.sections.actions/create-section))
-    (is (contains? (:nexus/effects nexus-config) :db/transact))))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.members.index.actions/set-search-phrase))
+    (is (contains? (:nexus/effects nexus-config) :db/transact))
+    (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
+    (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))))
 
 (deftest system-config-wires-nexus-into-the-handler-system
   (let [cfg (app.system/system-config {:profile :test})]

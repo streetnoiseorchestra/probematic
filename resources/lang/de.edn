@@ -220,7 +220,8 @@
  :oebb-discount "ÖBB-Rabatt",
  :my-profile "Mein Profil",
  :or-scan-qr-code "Oder scanne diesen QR-Code mit deiner Banking-App",
- :Active "Aktiv?",
+ :Active "Aktiv",
+ :Inactive "Inaktiv",
  :insurance.survey
  {:edit-survey "Umfrage bearbeiten",
   :contact-insurance-team "Bitte kontaktiere das Versicherungsteam",

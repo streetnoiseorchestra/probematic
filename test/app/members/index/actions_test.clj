@@ -7,13 +7,23 @@
   (is (= [[:app.datastar/assoc-state [:members-index :search] "Alice"]]
          (actions/set-search-phrase-action
           {}
-          {:members-index {:search "Alice"}}))))
+          {:members-index {:search "Alice"}})))
+
+  (is (= [[:app.datastar/assoc-state [:members-index :search] ""]]
+         (actions/set-search-phrase-action
+          {}
+          {:members-index {:search nil}}))))
 
 (deftest set-filter-preset-action-test
   (is (= [[:app.datastar/assoc-state [:members-index :filter-preset] "inactive"]]
          (actions/set-filter-preset-action
           {}
-          {:members-index {:filter-preset "inactive"}}))))
+          {:members-index {:filter-preset "inactive"}})))
+
+  (is (= [[:app.datastar/assoc-state [:members-index :filter-preset] "active"]]
+         (actions/set-filter-preset-action
+          {}
+          {:members-index {:filter-preset "wat"}}))))
 
 (deftest set-sort-action-test
   (testing "toggles the sort order when the same field is requested again"
@@ -32,7 +42,25 @@
             {}
             {:members-index {:sort-field         "name"
                              :sort-order         "desc"
-                             :sort-request-field "email"}})))))
+                             :sort-request-field "email"}}))))
+
+  (testing "accepts the travel discount field"
+    (is (= [[:app.datastar/assoc-state [:members-index :sort-field] "travel-discount"]
+            [:app.datastar/assoc-state [:members-index :sort-order] "asc"]]
+           (actions/set-sort-action
+            {}
+            {:members-index {:sort-field         "name"
+                             :sort-order         "desc"
+                             :sort-request-field "travel-discount"}}))))
+
+  (testing "falls back to the default sort field when the request is invalid"
+    (is (= [[:app.datastar/assoc-state [:members-index :sort-field] "name"]
+            [:app.datastar/assoc-state [:members-index :sort-order] "asc"]]
+           (actions/set-sort-action
+            {}
+            {:members-index {:sort-field         "email"
+                             :sort-order         "desc"
+                             :sort-request-field "wat"}})))))
 
 (deftest resend-invitation-action-test
   (let [now (java.util.Date.)]

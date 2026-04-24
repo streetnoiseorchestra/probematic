@@ -95,10 +95,15 @@
     (is (= "/act?ns=app.routes.datastar-test&kw=ping"
            (datastar/act req ::ping)))))
 
-(deftest members-routes-expose-the-legacy-index-and-detail-compatibility-paths
+(deftest members-routes-expose-the-datastar-index-and-legacy-compatibility-paths
   (let [router (http/router ["" (members.routes/routes)])]
-    (is (nil? (r/match-by-path router "/members")))
+    (is (= :app/members
+           (get-in (r/match-by-path router "/members") [:data :app.route/name])))
+    (is (= :app.members.routes/index
+           (get-in (r/match-by-path router "/members") [:data :name])))
     (is (= :app/members
            (get-in (r/match-by-path router "/members-old") [:data :app.route/name])))
     (is (= :app/members
-           (get-in (r/match-by-path router (str "/member/" (random-uuid))) [:data :app.route/name])))))
+           (get-in (r/match-by-path router (str "/member/" (random-uuid))) [:data :app.route/name])))
+    (is (= :app/members
+           (get-in (r/match-by-path router (str "/member-old/" (random-uuid))) [:data :app.route/name])))))

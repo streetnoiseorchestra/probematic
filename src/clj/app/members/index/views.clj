@@ -1,0 +1,208 @@
+(ns app.members.index.views
+  (:require
+   [app.datastar :as d*]
+   [app.members.index.actions :as actions]
+   [app.members.index.queries :as queries]
+   [app.settings.view-support :as support]
+   [app.urls :as urls]
+   [clojure.string :as str]
+   [starfederation.datastar.clojure.expressions :refer [->expr]]))
+
+(defn- member-name [{:member/keys [name nick]}]
+  (if (str/blank? nick)
+    name
+    (str name " (" nick ")")))
+
+(defn- member-section-name [{:member/keys [section]}]
+  (or (:section/name section) "—"))
+
+(defn- status-badge [{:keys [tr]} active?]
+  [:wa-badge (cond-> {:appearance "outlined"
+                      :pill       true}
+               active?       (assoc :variant "success")
+               (not active?) (assoc :variant "neutral"))
+   (if active?
+     (tr [:Active])
+     (tr [:Inactive]))])
+
+(defn- travel-discount-tags [member]
+  (let [discount-names (->> (:member/travel-discounts member)
+                            (map (comp :travel.discount.type/discount-type-name :travel.discount/discount-type))
+                            (remove str/blank?))]
+    (if (seq discount-names)
+      [:span {:class "members-index-discounts"}
+       (for [discount-name discount-names]
+         [:wa-tag {:size "small"} discount-name])]
+      [:span {:class "members-index-muted"} "—"])))
+
+(defn- sort-indicator [{:keys [sort-field sort-order]} field]
+  (when (= sort-field field)
+    (if (= sort-order "desc")
+      " ↓"
+      " ↑")))
+
+(defn- sort-button [req page-state field label]
+  [:a {:href          "#"
+       :class         "members-index-sort-link"
+       :data-on:click (->expr
+                       (evt.preventDefault)
+                       (set! $members-index.sort-request-field ~field)
+                       (@post ~(d*/act req ::actions/set-sort)))}
+   label
+   [:span {:aria-hidden true} (or (sort-indicator page-state field) "")]])
+
+(defn- search-control [{:keys [tr] :as req} {:keys [search]}]
+  [:wa-input {:label                        (tr [:action/search])
+              :placeholder                  (tr [:action/search])
+              :appearance                   "outlined"
+              :size                         "medium"
+              :value                        search
+              :with-clear                   true
+              :data-bind                    "members-index.search"
+              :data-on:input__debounce.250ms
+              (str "@post('" (d*/act req ::actions/set-search-phrase) "')")}])
+
+(defn- filter-control [{:keys [tr] :as req} {:keys [filter-preset]}]
+  [:wa-select {:label          "Filter"
+               :appearance     "outlined"
+               :size           "medium"
+               :value          filter-preset
+               :data-bind      "members-index.filter-preset"
+               :data-on:change (str "@post('" (d*/act req ::actions/set-filter-preset) "')")}
+   [:wa-option {:value "active"} (tr [:member/filter-active])]
+   [:wa-option {:value "inactive"} (tr [:member/filter-inactive])]
+   [:wa-option {:value "all"} (tr [:member/filter-all])]])
+
+(defn- invite-button []
+  [:wa-button {:appearance "filled"
+               :variant    "brand"
+               :disabled   true}
+   "Invite user"])
+
+(defn- members-toolbar [{:keys [tr] :as req} page-state total]
+  [:div {:class "members-index-toolbar"}
+   [:div {:class "wa-stack wa-gap-2xs"}
+    [:h1 (tr [:nav/members])]
+    [:span {:class "wa-caption-s"}
+     (str (tr [:total]) ": " total)]]
+   [:div {:class "members-index-toolbar-controls"}
+    (search-control req page-state)
+    (filter-control req page-state)
+    (invite-button)]])
+
+(defn- invite-loading? [invite-code action]
+  (format "$invite.inflight && $invite.code === %s && $invite.action === %s"
+          (pr-str invite-code)
+          (pr-str action)))
+
+(defn- invite-action-button [req {:keys [invite-code action label variant action-key]}]
+  [:wa-button {:appearance         "outlined"
+               :variant            variant
+               :size               "small"
+               :type               "button"
+               :data-attr:loading  (invite-loading? invite-code action)
+               :data-attr:disabled "$invite.inflight"
+               :data-on:click      (->expr
+                                    (set! $invite.code ~invite-code)
+                                    (set! $invite.action ~action)
+                                    (set! $invite.inflight true)
+                                    (@post ~(d*/act req action-key)))}
+   label])
+
+(defn- open-invitations-panel [{:keys [tr] :as req} open-invitations]
+  (when (seq open-invitations)
+    [:section {:class "wa-stack wa-gap-s"}
+     [:div {:class "wa-stack wa-gap-2xs"}
+      [:h2 (tr [:member/open-invitations])]
+      [:span {:class "wa-caption-s"}
+       "Pending invitations can be resent or deleted."]]
+     [:div {:class "members-index-table-shell"}
+      [:table {:class "members-index-table"}
+       [:thead
+        [:tr
+         [:th (tr [:member/name])]
+         [:th (tr [:Email])]
+         [:th {:class "members-index-actions-header"}]]]
+       [:tbody
+        (for [{:member/keys [name email invite-code]} open-invitations]
+          [:tr
+           [:td name]
+           [:td email]
+           [:td {:class "members-index-row-actions"}
+            [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
+             (invite-action-button req {:invite-code invite-code
+                                        :action      "resend"
+                                        :label       (tr [:action/resend-invite])
+                                        :variant     "brand"
+                                        :action-key  ::actions/resend-invitation})
+             (invite-action-button req {:invite-code invite-code
+                                        :action      "delete"
+                                        :label       (tr [:action/delete])
+                                        :variant     "danger"
+                                        :action-key  ::actions/delete-invitation})]]])]]]]))
+
+(defn- member-row [req member]
+  (let [{:member/keys [email phone active?]} member
+        section-name (member-section-name member)
+        discounts    (travel-discount-tags member)]
+    [:tr
+     [:td
+      [:div {:class "wa-stack wa-gap-3xs"}
+       [:a {:href  (urls/link-member member)
+            :class "members-index-member-link"}
+        (member-name member)]
+       [:div {:class "members-index-row-meta"}
+        [:span {:class "members-index-row-meta__discounts"} discounts]
+        [:span {:class "members-index-row-meta__email"} email]
+        [:span {:class "members-index-row-meta__section"} section-name]
+        (when (seq phone)
+          [:span {:class "members-index-row-meta__phone"} phone])
+        [:span {:class "members-index-row-meta__status"}
+         (status-badge req active?)]]]]
+     [:td {:class "members-index-col members-index-col--discount"} discounts]
+     [:td {:class "members-index-col members-index-col--md"} email]
+     [:td {:class "members-index-col members-index-col--lg"} (or phone "—")]
+     [:td {:class "members-index-col members-index-col--sm"} section-name]
+     [:td {:class "members-index-col members-index-col--sm"}
+      (status-badge req active?)]]))
+
+(defn- members-table [{:keys [tr] :as req} page-state members]
+  (if (seq members)
+    [:div {:class "members-index-table-shell"}
+     [:table {:class "members-index-table"}
+      [:thead
+       [:tr
+        [:th (sort-button req page-state "name" (tr [:member/name]))]
+        [:th {:class "members-index-col members-index-col--discount"}
+         (sort-button req page-state "travel-discount" (tr [:oebb-discount]))]
+        [:th {:class "members-index-col members-index-col--md"}
+         (sort-button req page-state "email" (tr [:Email]))]
+        [:th {:class "members-index-col members-index-col--lg"}
+         (sort-button req page-state "phone" (tr [:Phone]))]
+        [:th {:class "members-index-col members-index-col--sm"}
+         (sort-button req page-state "section" (tr [:section]))]
+        [:th {:class "members-index-col members-index-col--sm"}
+         (sort-button req page-state "active" (tr [:Active]))]]]
+      [:tbody
+       (for [member members]
+         (member-row req member))]]]
+    (support/empty-state
+     "No members found."
+     "Try a different search phrase or filter.")))
+
+(defn page [{:keys [db page-state tr] :as req}]
+  (let [tr               (or tr (fn [path & _] (name (last path))))
+        page-state       (queries/normalize-page-state (:members-index page-state))
+        members          (queries/members db page-state)
+        open-invitations (queries/open-invitations req)]
+    (support/datastar-page
+     [:div {:class        "wa-stack wa-gap-l members-index-page"
+            :data-signals (d*/->signals {:members-index page-state
+                                         :invite        {:action nil
+                                                         :code nil
+                                                         :inflight false}})}
+      (members-toolbar (assoc req :tr tr) page-state (count members))
+      (open-invitations-panel (assoc req :tr tr) open-invitations)
+      (members-table (assoc req :tr tr) page-state members)])))
+
+(d*/refresh-all!)
