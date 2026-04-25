@@ -5,6 +5,7 @@
    [app.members.detail.actions :as actions]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
 
@@ -204,7 +205,7 @@
       [:wa-breadcrumb-item {:href "/members"}
        (tr [:nav/members])]
       [:wa-breadcrumb-item (cond-> {}
-                             form-state (assoc :href (str "/members/" (:member/member-id member))))
+                             form-state (assoc :href (urls/link-member member)))
        (:member/name member)]
       (when form-state
         [:wa-breadcrumb-item (tr [:action/edit])])]
