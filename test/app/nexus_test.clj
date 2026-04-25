@@ -18,7 +18,11 @@
                    :app.settings.sections.actions/create-section))
     (is (contains? (:nexus/actions nexus-config)
                    :app.members.index.actions/set-search-phrase))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.members.invite.actions/submit-member-invite))
     (is (contains? (:nexus/effects nexus-config) :db/transact))
+    (is (contains? (:nexus/effects nexus-config) :app.datastar/redirect))
+    (is (contains? (:nexus/effects nexus-config) :app.members/send-user-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))))
 

@@ -130,6 +130,10 @@ div.members-index-page {
   max-inline-size: 100%;
 }
 
+div.members-invite-page {
+  inline-size: min(100%, 28rem);
+}
+
 .members-index-toolbar {
   display: flex;
   flex-wrap: wrap;

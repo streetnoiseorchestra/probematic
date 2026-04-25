@@ -2,6 +2,7 @@
   (:require [app.datomic.shim :as d]
             [app.layout :as layout]
             [app.members.index.views]
+            [app.members.invite.views]
             [app.members.views :as view]
             [app.queries :as q]
             [app.routes.datastar :as ds]
@@ -50,6 +51,9 @@
    (ds/page-routes {:page-name ::index
                     :path      "/members"
                     :view-ns   'app.members.index.views})
+   (ds/page-routes {:page-name ::invite
+                    :path      "/members/invite"
+                    :view-ns   'app.members.invite.views})
    ["" {:interceptors members-interceptors}
     (member-vcard-download)
     (members-detail)

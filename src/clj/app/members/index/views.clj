@@ -63,7 +63,7 @@
               (str "@post('" (d*/act req ::actions/set-search-phrase) "')")}])
 
 (defn- filter-control [{:keys [tr] :as req} {:keys [filter-preset]}]
-  [:wa-select {:label          "Filter"
+  [:wa-select {:label          (tr [:action/filter])
                :appearance     "outlined"
                :size           "medium"
                :value          filter-preset
@@ -73,11 +73,11 @@
    [:wa-option {:value "inactive"} (tr [:member/filter-inactive])]
    [:wa-option {:value "all"} (tr [:member/filter-all])]])
 
-(defn- invite-button []
+(defn- invite-button [{:keys [tr]}]
   [:wa-button {:appearance "filled"
                :variant    "brand"
-               :disabled   true}
-   "Invite user"])
+               :href       "/members/invite"}
+   (tr [:member/invite-member])])
 
 (defn- members-toolbar [{:keys [tr] :as req} page-state total]
   [:div {:class "members-index-toolbar"}
@@ -88,7 +88,7 @@
    [:div {:class "members-index-toolbar-controls"}
     (search-control req page-state)
     (filter-control req page-state)
-    (invite-button)]])
+    (invite-button req)]])
 
 (defn- invite-loading? [invite-code action]
   (format "$invite.inflight && $invite.code === %s && $invite.action === %s"
@@ -115,7 +115,7 @@
      [:div {:class "wa-stack wa-gap-2xs"}
       [:h2 (tr [:member/open-invitations])]
       [:span {:class "wa-caption-s"}
-       "Pending invitations can be resent or deleted."]]
+       (tr [:member/open-invitations-subtitle])]]
      [:div {:class "members-index-table-shell"}
       [:table {:class "members-index-table"}
        [:thead
@@ -187,8 +187,8 @@
        (for [member members]
          (member-row req member))]]]
     (support/empty-state
-     "No members found."
-     "Try a different search phrase or filter.")))
+     (tr [:member/browse-empty])
+     (tr [:member/browse-empty-subtitle]))))
 
 (defn page [{:keys [db page-state tr] :as req}]
   (let [tr               (or tr (fn [path & _] (name (last path))))

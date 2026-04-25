@@ -346,6 +346,7 @@
   :nick "Spitzname",
   :filter-sno-id-disabled "SNO-ID deaktiviert",
   :open-invitations "Einladungen öffnen",
+  :open-invitations-subtitle "Ausstehende Einladungen können erneut gesendet oder gelöscht werden.",
   :gigs-attended "Gigs besucht",
   :phone "Telefon",
   :name "Name",
@@ -370,6 +371,11 @@
   "Eine Einladung zum Erstellen einer SNO-ID wird an die Person per E-Mail gesendet, damit sie ein Konto erstellen und auf alle SNO-Online-Systeme zugreifen kann.",
   :probes-attended "Proben besuchtaProben Attended",
   :new-member "Neues Mitglied",
+  :invite-member "Mitglied einladen",
+  :invite-member-page-description "Erstelle ein Mitglied und sende optional eine SNO-ID-Einladung.",
+  :invite-member-form-subtitle "Alle Felder aus dem bisherigen Einladungsablauf sind hier verfügbar.",
+  :browse-empty "Keine Mitglieder gefunden.",
+  :browse-empty-subtitle "Versuche einen anderen Suchbegriff oder Filter.",
   :sno-id-enabled-disabled "SNO-ID aktiviert/deaktiviert"},
  :instruments "Instrumente",
  :good-job "Good Job!",
@@ -436,6 +442,7 @@
   :celebrate "Celebrate!",
   :copy-link "Link kopieren",
   :search "Suchen",
+  :filter "Filter",
   :confirm-close-poll
   "Sind Sie sicher, dass Sie die Umfrage „%1“ schließen möchten?",
   :reorder "Neu anordnen",
@@ -475,6 +482,7 @@
   "Ihre Identität ist dem System unbekannt. Wahrscheinlich ist etwas schief gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
   :unknown-title "Ein Fehler ist aufgetreten",
   :member-unique-email "Ein Mitglied hat diese E-Mail-Adresse bereits",
+  :member-unique-nick "Ein Mitglied hat bereits diesen Spitznamen",
   :unauthorized-title "Authentifizierung fehlgeschlagen",
   :unknown-message
   "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
@@ -482,6 +490,8 @@
   :not-found-message
   "Das, wonach du gesucht hast, wurde nicht gefunden. Wenn du denkst, dass es existieren sollte, bitte kontaktiere Casey und teile ihm diesen Fehlercode mit:",
   :member-unique-phone "Ein Mitglied hat diese Telefonnummer bereits",
+  :is-required "%1 ist erforderlich.",
+  :member-section-invalid "Bitte wähle ein gültiges Register aus.",
   :notify "Click to notify Casey",
   :member-unique-username
   "Ein Mitglied hat bereits diesen Benutzernamen"},
