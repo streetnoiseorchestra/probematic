@@ -153,13 +153,16 @@
           "Add discount types so members can select them consistently."))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [tr (or tr (fn [path & _] (name (last path))))]
+  (let [tr    (or tr (fn [path & _] (name (last path))))
+        title (tr [:travel-discounts/title])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [:div {:class "wa-stack wa-gap-2xs"}
-       [:a {:href "/band-settings" :class "wa-caption-s"}
-        "Band Settings"]
-       [:h1 "Travel Discounts"]
+       [:wa-breadcrumb
+        [:wa-breadcrumb-item {:href "/band-settings"}
+         (tr [:nav/band-settings])]
+        [:wa-breadcrumb-item title]]
+       [:h1 title]
        [:span {:class "wa-caption-s"}
         "Manage the reusable travel discount types members can choose."]]
       (travel-discount-types (assoc req :tr tr))])))
