@@ -7,7 +7,8 @@
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util.http :as http.util]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [tick.core :as t]))
 
 (defn- member-name [{:member/keys [name nick]}]
   (if (str/blank? nick)
@@ -171,6 +172,165 @@
   [:div {:class "wa-stack wa-gap-m"}
    (ui2/empty-state title body)])
 
+(defn- form-state->signals [form-state]
+  (if (map? form-state)
+    (dissoc form-state :_error)
+    form-state))
+
+(defn- date-value [value]
+  (some-> value t/date str))
+
+(defn- discount-current? [{:travel.discount/keys [expiry-date]}]
+  (not (t/< (t/date expiry-date) (t/date))))
+
+(defn- expiry-badge [discount]
+  [:wa-badge {:appearance "outlined"
+              :pill       true
+              :variant    (if (discount-current? discount) "success" "danger")}
+   (date-value (:travel.discount/expiry-date discount))])
+
+(defn- discount-type-select [{:keys [tr]} form-state discount-types]
+  (let [error (field-error form-state :discount-type-id)]
+    (into
+     [:wa-select {:label             (tr [:travel-discounts/discount-type-name])
+                  :appearance        "outlined"
+                  :size              "medium"
+                  :value             (:discount-type-id form-state)
+                  :hint              error
+                  :data-invalid      (when error "true")
+                  :data-bind         "member-detail.travel-discount-create.discount-type-id"
+                  :data-on:wa-change "$member-detail.travel-discount-create.discount-type-id = evt.target.value"}
+      [:wa-option {:value ""} " - "]]
+     (for [{:travel.discount.type/keys [discount-type-id discount-type-name]} discount-types]
+       [:wa-option {:value (str discount-type-id)} discount-type-name]))))
+
+(defn- travel-discount-create-form [{:keys [tr] :as req} form-state discount-types]
+  (when form-state
+    [:form {:id             "member-travel-discount-create-form"
+            :data-id        "member-travel-discount-create"
+            :data-action    (d*/act req ::actions/add-travel-discount)
+            :data-on:submit "evt.preventDefault();"}
+     [:div {:class "wa-stack wa-gap-m"}
+      (when-let [top-error (field-error form-state :_top)]
+        [:wa-callout {:appearance "outlined" :variant "danger"}
+         top-error])
+      [:input {:type      "hidden"
+               :value     (:member-id form-state)
+               :data-bind "member-detail.travel-discount-create.member-id"}]
+      [:div {:class "wa-grid wa-gap-m" :style "--min-column-size: 16rem;"}
+       (discount-type-select req form-state discount-types)
+       (form-input form-state
+                   "member-detail.travel-discount-create.expiry-date"
+                   (tr [:travel-discounts/expiry-date])
+                   {:type             "date"
+                    :data-on:wa-input "$member-detail.travel-discount-create.expiry-date = evt.target.value"})]
+      [:div {:class "wa-cluster wa-justify-content-end"}
+       [:wa-button {:appearance  "outlined"
+                    :type        "button"
+                    :data-id     "member-travel-discount-create-cancel"
+                    :data-action (d*/act req ::actions/close-travel-discount-create)}
+        (tr [:action/cancel])]
+       [:wa-button {:appearance         "filled"
+                    :variant            "brand"
+                    :type               "submit"
+                    :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount-create'"
+                    :data-attr:loading  "$loading === 'member-travel-discount-create'"}
+        (tr [:action/add])]]]]))
+
+(defn- travel-discount-edit-form [{:keys [tr] :as req} form-state]
+  [:form {:id             (str "member-travel-discount-edit-" (:discount-id form-state))
+          :data-id        "member-travel-discount"
+          :data-action    (d*/act req ::actions/update-travel-discount)
+          :data-on:submit "evt.preventDefault();"}
+   [:div {:class "wa-cluster wa-gap-s wa-align-items-end wa-justify-content-end"}
+    (when-let [top-error (field-error form-state :_top)]
+      [:wa-callout {:appearance "outlined" :variant "danger"}
+       top-error])
+    [:input {:type      "hidden"
+             :value     (:discount-id form-state)
+             :data-bind "member-detail.travel-discount.discount-id"}]
+    (form-input form-state
+                "member-detail.travel-discount.expiry-date"
+                (tr [:travel-discounts/expiry-date])
+                {:type             "date"
+                 :data-on:wa-input "$member-detail.travel-discount.expiry-date = evt.target.value"})
+    [:wa-button {:appearance  "outlined"
+                 :type        "button"
+                 :data-id     "member-travel-discount-cancel"
+                 :data-action (d*/act req ::actions/close-travel-discount-edit)}
+     (tr [:action/cancel])]
+    [:wa-button {:appearance         "filled"
+                 :variant            "brand"
+                 :type               "submit"
+                 :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount'"
+                 :data-attr:loading  "$loading === 'member-travel-discount'"}
+     (tr [:action/save])]]])
+
+(defn- travel-discount-row [{:keys [tr] :as req} edit-state {:travel.discount/keys [discount-id discount-type] :as discount}]
+  (let [editing? (= discount-id (:discount-id edit-state))]
+    [:tr
+     [:td {:style "vertical-align: middle"}
+      (:travel.discount.type/discount-type-name discount-type)]
+     [:td {:style "vertical-align: middle"}
+      (if editing?
+        (travel-discount-edit-form req edit-state)
+        (expiry-badge discount))]
+     [:td {:style "vertical-align: middle; text-align: end"}
+      (when-not editing?
+        [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
+         [:wa-button {:appearance  "outlined"
+                      :variant     "brand"
+                      :size        "small"
+                      :type        "button"
+                      :data-id     discount-id
+                      :data-action (d*/act req ::actions/open-travel-discount-edit)}
+          (tr [:action/update])]
+         [:wa-button {:appearance  "outlined"
+                      :variant     "danger"
+                      :size        "small"
+                      :type        "button"
+                      :data-id     discount-id
+                      :data-action (d*/act req ::actions/delete-travel-discount)}
+          (tr [:action/delete])]])]]))
+
+(defn- travel-discounts-table [{:keys [tr] :as req} edit-state discounts]
+  (if (seq discounts)
+    (ui2/table-shell
+     [:table
+      [:thead
+       [:tr
+        [:th (tr [:travel-discounts/discount-type-name])]
+        [:th (tr [:travel-discounts/expiry-date])]
+        [:th]]]
+      [:tbody
+       (for [discount discounts]
+         (travel-discount-row req edit-state discount))]])
+    (ui2/empty-state
+     (tr [:travel-discounts/none])
+     (tr [:travel-discounts/subtitle]))))
+
+(defn- travel-discounts-panel [{:keys [db page-state tr] :as req} member]
+  (let [create-state   (get-in page-state [:member-detail :travel-discount-create])
+        edit-state     (get-in page-state [:member-detail :travel-discount])
+        discount-types (q/retrieve-all-discount-types db)
+        discounts      (q/member-travel-discounts member)]
+    [:div {:class "wa-stack wa-gap-l"}
+     (ui2/section-card
+      {:title    (tr [:travel-discounts/title])
+       :subtitle (tr [:travel-discounts/subtitle])
+       :actions  (when-not create-state
+                   [[:wa-button {:appearance  "outlined"
+                                 :variant     "brand"
+                                 :type        "button"
+                                 :data-id     (:member/member-id member)
+                                 :data-action (d*/act req ::actions/open-travel-discount-create)}
+                     (tr [:travel-discounts/add-discount])]])}
+      (travel-discounts-table req edit-state discounts)
+      (when create-state
+        [:div {:class "wa-stack wa-gap-s"}
+         [:wa-divider]
+         (travel-discount-create-form req create-state discount-types)]))]))
+
 (defn- profile-summary [{:keys [tr] :as req} member]
   (let [src (avatar-src member)]
     [:section {:class "wa-stack wa-gap-l"}
@@ -215,13 +375,17 @@
        (profile-summary req member))]))
 
 (defn page [{:keys [db page-state tr] :as req}]
-  (let [member-id       (http.util/path-param-uuid! req :member-id)
-        member          (q/retrieve-member db member-id)
-        form-state      (get-in page-state [:member-detail :contact])
-        contact-signals (dissoc form-state :_error)]
+  (let [member-id                       (http.util/path-param-uuid! req :member-id)
+        member                          (q/retrieve-member db member-id)
+        form-state                      (get-in page-state [:member-detail :contact])
+        contact-signals                 (form-state->signals form-state)
+        travel-discount-create-signals  (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))
+        travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
-            :data-signals (d*/->signals {:member-detail {:contact contact-signals}})}
+            :data-signals (d*/->signals {:member-detail {:contact                contact-signals
+                                                         :travel-discount-create travel-discount-create-signals
+                                                         :travel-discount        travel-discount-signals}})}
       (member-header req member)
       (when-not form-state
         [:wa-tab-group {:active "discounts"}
@@ -230,8 +394,8 @@
          [:wa-tab {:panel "insurance"} (tr [:member/insurance-title])]
          [:wa-tab {:panel "activity"} "Gigs & Probes"]
 
-         [:wa-tab-panel {:name "discounts"}
-          (placeholder-panel (tr [:travel-discounts/title]) "Travel discount management will move here next.")]
+         [:wa-tab-panel {:name "discounts" :active true}
+          (travel-discounts-panel req member)]
          [:wa-tab-panel {:name "ledger"}
           (placeholder-panel "Ledger" "Member ledger activity will move here next.")]
          [:wa-tab-panel {:name "insurance"}

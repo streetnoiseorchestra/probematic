@@ -5,10 +5,17 @@
    [app.settings.action-support :as support]
    [app.util :as util]
    [clojure.string :as str]
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [tick.core :as t]))
 
 (def clear-contact
   [:app.datastar/assoc-state [:member-detail :contact] false])
+
+(def clear-travel-discount-create
+  [:app.datastar/assoc-state [:member-detail :travel-discount-create] false])
+
+(def clear-travel-discount-edit
+  [:app.datastar/assoc-state [:member-detail :travel-discount] false])
 
 (defn- normalize-bool [v default]
   (cond
@@ -155,8 +162,164 @@
         true
         (conj support/clear-loading clear-contact)))))
 
+(defn- trim-string [v]
+  (some-> v str str/trim))
+
+(defn- parse-date [value]
+  (when (seq (trim-string value))
+    (try
+      (t/date (trim-string value))
+      (catch Exception _
+        nil))))
+
+(defn- date->db-inst [date]
+  (t/inst (t/in (t/at date (t/midnight)) "UTC")))
+
+(defn- expiry-date->db-inst [value]
+  (some-> value parse-date date->db-inst))
+
+(defn- expiry-date->form-value [value]
+  (some-> value t/date str))
+
+(defn- normalize-travel-discount-create [form]
+  {:member-id        (trim-string (:member-id form))
+   :discount-type-id (trim-string (:discount-type-id form))
+   :expiry-date      (trim-string (:expiry-date form))})
+
+(defn- normalize-travel-discount-edit [form]
+  {:discount-id (some-> (:discount-id form) util/ensure-uuid!)
+   :expiry-date (trim-string (:expiry-date form))})
+
+(defn- expiry-date-error [expiry-date]
+  (cond
+    (str/blank? expiry-date)
+    {:error "Expiry date is required."}
+
+    (nil? (parse-date expiry-date))
+    {:error "Please enter a valid expiry date."}))
+
+(defn- discount-type-exists? [db discount-type-id]
+  (boolean
+   (when (and db discount-type-id)
+     (d/entity db [:travel.discount.type/discount-type-id discount-type-id]))))
+
+(defn- travel-discount-create-errors [db {:keys [member-id discount-type-id expiry-date]}]
+  (let [member-uuid        (when (seq member-id)
+                             (util/ensure-uuid! member-id))
+        discount-type-uuid (when (seq discount-type-id)
+                             (util/ensure-uuid! discount-type-id))]
+    (merge
+     (when-not member-uuid
+       {:_top {:error "Member id is missing."}})
+     (cond
+       (str/blank? discount-type-id)
+       {:discount-type-id {:error "Discount type is required."}}
+
+       (not (discount-type-exists? db discount-type-uuid))
+       {:discount-type-id {:error "Please choose a valid discount type."}})
+     (when-let [error (expiry-date-error expiry-date)]
+       {:expiry-date error}))))
+
+(defn- travel-discount-edit-errors [{:keys [discount-id expiry-date]}]
+  (merge
+   (when-not discount-id
+     {:_top {:error "Travel discount id is missing."}})
+   (when-let [error (expiry-date-error expiry-date)]
+     {:expiry-date error})))
+
+(defn open-travel-discount-create-action
+  [_state {:keys [targetid]}]
+  [support/clear-loading
+   [:app.datastar/assoc-state
+    [:member-detail :travel-discount-create]
+    {:member-id        (str (util/ensure-uuid! targetid))
+     :discount-type-id ""
+     :expiry-date      ""
+     :_error           {}}]])
+
+(defn close-travel-discount-create-action [_state _signals]
+  [support/clear-loading clear-travel-discount-create])
+
+(defn add-travel-discount-action
+  [{:keys [db current-member-id]} {:keys [member-detail]}]
+  (let [form             (normalize-travel-discount-create (:travel-discount-create member-detail))
+        member-id        (util/ensure-uuid! (:member-id form))
+        discount-type-id (when (seq (:discount-type-id form))
+                           (util/ensure-uuid! (:discount-type-id form)))
+        errors           (travel-discount-create-errors db form)]
+    (if (seq errors)
+      [support/clear-loading
+       [:app.datastar/assoc-state
+        [:member-detail :travel-discount-create]
+        (assoc form :_error errors)]]
+      [[:db/transact
+        (support/with-audit
+          [{:db/id                         "new-travel-discount"
+            :travel.discount/discount-id   :db/gen-uuid
+            :travel.discount/discount-type [:travel.discount.type/discount-type-id discount-type-id]
+            :travel.discount/expiry-date   (expiry-date->db-inst (:expiry-date form))}
+           [:db/add
+            [:member/member-id member-id]
+            :member/travel-discounts
+            "new-travel-discount"]]
+          current-member-id)
+        {:transact-w-nils? false}]
+       support/clear-loading
+       clear-travel-discount-create])))
+
+(defn open-travel-discount-edit-action
+  [{:keys [db]} {:keys [targetid]}]
+  (let [discount-id (util/ensure-uuid! targetid)
+        discount    (q/retrieve-travel-discount db discount-id)]
+    [support/clear-loading
+     [:app.datastar/assoc-state
+      [:member-detail :travel-discount]
+      {:discount-id discount-id
+       :expiry-date (expiry-date->form-value (:travel.discount/expiry-date discount))
+       :_error      {}}]]))
+
+(defn close-travel-discount-edit-action [_state _signals]
+  [support/clear-loading clear-travel-discount-edit])
+
+(defn update-travel-discount-action
+  [{:keys [current-member-id]} {:keys [member-detail]}]
+  (let [form   (normalize-travel-discount-edit (:travel-discount member-detail))
+        errors (travel-discount-edit-errors form)]
+    (if (seq errors)
+      [support/clear-loading
+       [:app.datastar/assoc-state
+        [:member-detail :travel-discount]
+        (assoc form :_error errors)]]
+      [[:db/transact
+        (support/with-audit
+          [[:db/add
+            [:travel.discount/discount-id (:discount-id form)]
+            :travel.discount/expiry-date
+            (expiry-date->db-inst (:expiry-date form))]]
+          current-member-id)
+        {:transact-w-nils? false}]
+       support/clear-loading
+       clear-travel-discount-edit])))
+
+(defn delete-travel-discount-action
+  [{:keys [current-member-id]} {:keys [targetid]}]
+  (let [discount-id (util/ensure-uuid! targetid)]
+    [[:db/transact
+      (support/with-audit [[:db/retractEntity [:travel.discount/discount-id discount-id]]]
+        current-member-id)
+      {:transact-w-nils? false}]
+     support/clear-loading
+     clear-travel-discount-edit]))
+
 (def actions
-  {::open-contact-edit      #'open-contact-edit-action
-   ::close-contact-edit     #'close-contact-edit-action
-   ::validate-contact-field #'validate-contact-field-action
-   ::update-contact         #'update-contact-action})
+  {::open-contact-edit                 #'open-contact-edit-action
+   ::close-contact-edit                #'close-contact-edit-action
+   ::validate-contact-field            #'validate-contact-field-action
+   ::update-contact                    #'update-contact-action
+   ::open-travel-discount-create       #'open-travel-discount-create-action
+   ::close-travel-discount-create      #'close-travel-discount-create-action
+   ::add-travel-discount               #'add-travel-discount-action
+   ::open-travel-discount-edit         #'open-travel-discount-edit-action
+   ::close-travel-discount-edit        #'close-travel-discount-edit-action
+   ::update-travel-discount            #'update-travel-discount-action
+   ::delete-travel-discount            #'delete-travel-discount-action})

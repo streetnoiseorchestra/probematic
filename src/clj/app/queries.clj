@@ -431,6 +431,12 @@
 (defn retrieve-member [db member-id]
   (d/find-by db :member/member-id member-id member-detail-pattern))
 
+(defn member-travel-discounts [member]
+  (->> (:member/travel-discounts member)
+       (sort-by (juxt #(get-in % [:travel.discount/discount-type
+                                  :travel.discount.type/discount-type-name])
+                      :travel.discount/expiry-date))))
+
 (defn members-for-select
   [db]
   (mapv first

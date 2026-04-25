@@ -21,6 +21,21 @@
 (defn seed-member! [conn member]
   @(d/transact conn [member]))
 
+(defn seed-discount-type! [conn {:keys [discount-type-id discount-type-name enabled?]}]
+  @(d/transact conn [{:travel.discount.type/discount-type-id   discount-type-id
+                      :travel.discount.type/discount-type-name discount-type-name
+                      :travel.discount.type/enabled?           enabled?}]))
+
+(defn seed-travel-discount! [conn {:keys [member-id discount-id discount-type-id expiry-date]}]
+  @(d/transact conn [{:db/id                         "seed-travel-discount"
+                      :travel.discount/discount-id   discount-id
+                      :travel.discount/discount-type [:travel.discount.type/discount-type-id discount-type-id]
+                      :travel.discount/expiry-date   expiry-date}
+                     [:db/add
+                      [:member/member-id member-id]
+                      :member/travel-discounts
+                      "seed-travel-discount"]]))
+
 (defn tr [path & [args]]
   (case path
     [:member/name] "Name"
@@ -172,6 +187,186 @@
                                           :email "alice@example.com"
                                           :phone "+43 677 123456"
                                           :validate-field "nick"})))))))
+
+(deftest travel-discount-actions-test
+  (testing "opens and closes the create form"
+    (let [{:keys [conn] :as system} (new-system)
+          member-id                 (random-uuid)]
+      (seed-member! conn {:member/member-id member-id})
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :travel-discount-create]
+               {:member-id         (str member-id)
+                :discount-type-id  ""
+                :expiry-date       ""
+                :_error            {}}]]
+             (actions/open-travel-discount-create-action
+              (state-for system)
+              {:targetid (str member-id)}))))
+    (is (= [support/clear-loading
+            [:app.datastar/assoc-state [:member-detail :travel-discount-create] false]]
+           (actions/close-travel-discount-create-action {} {}))))
+
+  (testing "adds a discount to the member"
+    (let [{:keys [conn member-id] :as system} (new-system)
+          edited-member-id                    (random-uuid)
+          discount-type-id                    (random-uuid)]
+      (seed-member! conn {:member/member-id edited-member-id})
+      (seed-discount-type! conn {:discount-type-id   discount-type-id
+                                 :discount-type-name "Klimaticket"
+                                 :enabled?           true})
+      (is (= [[:db/transact [{:db/id                         "new-travel-discount"
+                              :travel.discount/discount-id   :db/gen-uuid
+                              :travel.discount/discount-type [:travel.discount.type/discount-type-id discount-type-id]
+                              :travel.discount/expiry-date   #inst "2027-01-15T00:00:00.000-00:00"}
+                             [:db/add
+                              [:member/member-id edited-member-id]
+                              :member/travel-discounts
+                              "new-travel-discount"]
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? false}]
+              support/clear-loading
+              [:app.datastar/assoc-state [:member-detail :travel-discount-create] false]]
+             (actions/add-travel-discount-action
+              (state-for system)
+              {:member-detail
+               {:travel-discount-create
+                {:member-id        (str edited-member-id)
+                 :discount-type-id (str discount-type-id)
+                 :expiry-date      "2027-01-15"}}})))))
+
+  (testing "returns create validation errors"
+    (let [{:keys [conn] :as system} (new-system)
+          edited-member-id          (random-uuid)]
+      (seed-member! conn {:member/member-id edited-member-id})
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :travel-discount-create]
+               {:member-id        (str edited-member-id)
+                :discount-type-id ""
+                :expiry-date      "not-a-date"
+                :_error           {:discount-type-id {:error "Discount type is required."}
+                                   :expiry-date      {:error "Please enter a valid expiry date."}}}]]
+             (actions/add-travel-discount-action
+              (state-for system)
+              {:member-detail
+               {:travel-discount-create
+                {:member-id        (str edited-member-id)
+                 :discount-type-id ""
+                 :expiry-date      "not-a-date"}}})))))
+
+  (testing "rejects an unknown discount type"
+    (let [{:keys [conn] :as system} (new-system)
+          edited-member-id          (random-uuid)
+          discount-type-id          (random-uuid)]
+      (seed-member! conn {:member/member-id edited-member-id})
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :travel-discount-create]
+               {:member-id        (str edited-member-id)
+                :discount-type-id (str discount-type-id)
+                :expiry-date      "2027-01-15"
+                :_error           {:discount-type-id {:error "Please choose a valid discount type."}}}]]
+             (actions/add-travel-discount-action
+              (state-for system)
+              {:member-detail
+               {:travel-discount-create
+                {:member-id        (str edited-member-id)
+                 :discount-type-id (str discount-type-id)
+                 :expiry-date      "2027-01-15"}}})))))
+
+  (testing "rejects a missing member id instead of transacting against nil"
+    (let [{:keys [conn] :as system} (new-system)
+          discount-type-id          (random-uuid)]
+      (seed-discount-type! conn {:discount-type-id   discount-type-id
+                                 :discount-type-name "Klimaticket"
+                                 :enabled?           true})
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :travel-discount-create]
+               {:member-id        ""
+                :discount-type-id (str discount-type-id)
+                :expiry-date      "2027-01-15"
+                :_error           {:_top {:error "Member id is missing."}}}]]
+             (actions/add-travel-discount-action
+              (state-for system)
+              {:member-detail
+               {:travel-discount-create
+                {:member-id        ""
+                 :discount-type-id (str discount-type-id)
+                 :expiry-date      "2027-01-15"}}})))))
+
+  (testing "opens and closes expiry editing for an existing discount"
+    (let [{:keys [conn] :as system} (new-system)
+          edited-member-id          (random-uuid)
+          discount-type-id          (random-uuid)
+          discount-id               (random-uuid)]
+      (seed-member! conn {:member/member-id edited-member-id})
+      (seed-discount-type! conn {:discount-type-id   discount-type-id
+                                 :discount-type-name "Klimaticket"
+                                 :enabled?           true})
+      (seed-travel-discount! conn {:member-id        edited-member-id
+                                   :discount-id      discount-id
+                                   :discount-type-id discount-type-id
+                                   :expiry-date      #inst "2026-03-01T00:00:00.000-00:00"})
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :travel-discount]
+               {:discount-id discount-id
+                :expiry-date "2026-03-01"
+                :_error      {}}]]
+             (actions/open-travel-discount-edit-action
+              (state-for system)
+              {:targetid (str discount-id)}))))
+    (is (= [support/clear-loading
+            [:app.datastar/assoc-state [:member-detail :travel-discount] false]]
+           (actions/close-travel-discount-edit-action {} {}))))
+
+  (testing "updates a discount expiry date"
+    (let [{:keys [member-id] :as system} (new-system)
+          discount-id                    (random-uuid)]
+      (is (= [[:db/transact [[:db/add
+                              [:travel.discount/discount-id discount-id]
+                              :travel.discount/expiry-date
+                              #inst "2027-12-31T00:00:00.000-00:00"]
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? false}]
+              support/clear-loading
+              [:app.datastar/assoc-state [:member-detail :travel-discount] false]]
+             (actions/update-travel-discount-action
+              (state-for system)
+              {:member-detail
+               {:travel-discount
+                {:discount-id (str discount-id)
+                 :expiry-date "2027-12-31"}}})))))
+
+  (testing "returns expiry edit validation errors"
+    (let [{:keys [_conn] :as system} (new-system)
+          discount-id                (random-uuid)]
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :travel-discount]
+               {:discount-id discount-id
+                :expiry-date ""
+                :_error      {:expiry-date {:error "Expiry date is required."}}}]]
+             (actions/update-travel-discount-action
+              (state-for system)
+              {:member-detail
+               {:travel-discount
+                {:discount-id (str discount-id)
+                 :expiry-date ""}}})))))
+
+  (testing "deletes a discount"
+    (let [{:keys [member-id] :as system} (new-system)
+          discount-id                    (random-uuid)]
+      (is (= [[:db/transact [[:db/retractEntity [:travel.discount/discount-id discount-id]]
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? false}]
+              support/clear-loading
+              [:app.datastar/assoc-state [:member-detail :travel-discount] false]]
+             (actions/delete-travel-discount-action
+              (state-for system)
+              {:targetid (str discount-id)}))))))
 
 (deftest update-contact-action-test
   (testing "updates contact fields and closes the form"
