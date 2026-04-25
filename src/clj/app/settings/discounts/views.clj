@@ -128,7 +128,7 @@
      (travel-discount-type-edit-form req)
      (for [discount-type discount-types]
        (travel-discount-type-remove-dialog req discount-type))
-     (ui2/settings-card
+     (ui2/section-card
       {:title    "Manage travel discounts"
        :subtitle "Reusable labels for member travel discounts."
        :actions  [[:wa-button {:appearance  "outlined"
@@ -153,8 +153,7 @@
           "Add discount types so members can select them consistently."))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [tr    (or tr (fn [path & _] (name (last path))))
-        title (tr [:travel-discounts/title])]
+  (let [title (tr [:travel-discounts/title])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [:div {:class "wa-stack wa-gap-2xs"}
@@ -165,6 +164,6 @@
        [:h1 title]
        [:span {:class "wa-caption-s"}
         "Manage the reusable travel discount types members can choose."]]
-      (travel-discount-types (assoc req :tr tr))])))
+      (travel-discount-types req)])))
 
 (d*/refresh-all!)

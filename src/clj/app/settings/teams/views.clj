@@ -233,8 +233,7 @@
           "Create a team to organize members around responsibilities."))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [tr    (or tr (fn [path & _] (name (last path))))
-        title "Teams"]
+  (let [title "Teams"]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [:div {:class "wa-stack wa-gap-2xs"}
@@ -245,6 +244,6 @@
        [:h1 title]
        [:span {:class "wa-caption-s"}
         "Create teams and manage their members."]]
-      (teams-panel (assoc req :tr tr))])))
+      (teams-panel req)])))
 
 (d*/refresh-all!)

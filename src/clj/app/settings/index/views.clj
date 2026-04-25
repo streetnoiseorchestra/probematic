@@ -18,22 +18,21 @@
      [:p body]]]])
 
 (defn page [{:keys [tr]}]
-  (let [tr (or tr (fn [path & _] (name (last path))))]
-    (ui2/plain-page
-     [:div {:class "wa-grid band-settings-index-grid"}
-      [:h1 {:class "wa-span-grid"} (tr [:nav/band-settings])]
-      [:wa-divider {:class "wa-span-grid band-settings-index-divider"}]
-      (settings-link-card {:href  "/band-settings/teams"
-                           :icon  "users-outline"
-                           :title "Teams"
-                           :body  "Create teams and manage their members."})
-      (settings-link-card {:href  "/band-settings/travel-discounts"
-                           :icon  "cog"
-                           :title "Travel Discounts"
-                           :body  "Manage the reusable travel discount types members can choose."})
-      (settings-link-card {:href  "/band-settings/sections"
-                           :icon  "trumpet"
-                           :title "Sections"
-                           :body  "Choose which sections are available and how they are ordered."})])))
+  (ui2/plain-page
+   [:div {:class "wa-grid band-settings-index-grid"}
+    [:h1 {:class "wa-span-grid"} (tr [:nav/band-settings])]
+    [:wa-divider {:class "wa-span-grid band-settings-index-divider"}]
+    (settings-link-card {:href  "/band-settings/teams"
+                         :icon  "users-outline"
+                         :title "Teams"
+                         :body  "Create teams and manage their members."})
+    (settings-link-card {:href  "/band-settings/travel-discounts"
+                         :icon  "cog"
+                         :title "Travel Discounts"
+                         :body  "Manage the reusable travel discount types members can choose."})
+    (settings-link-card {:href  "/band-settings/sections"
+                         :icon  "trumpet"
+                         :title "Sections"
+                         :body  "Choose which sections are available and how they are ordered."})]))
 
 (d*/refresh-all!)

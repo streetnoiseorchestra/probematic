@@ -201,7 +201,7 @@
      (sections-reordering req sections)
      (for [section sections]
        (section-remove-dialog req section))
-     (ui2/settings-card
+     (ui2/section-card
       {:title    "Manage sections"
        :subtitle "Choose which sections are visible and how they are ordered."
        :actions  [[:wa-button {:appearance  "outlined"
@@ -231,8 +231,7 @@
           "Add sections to group members and organize gig views."))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [tr    (or tr (fn [path & _] (name (last path))))
-        title (tr [:sections])]
+  (let [title (tr [:sections])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [:div {:class "wa-stack wa-gap-2xs"}
@@ -243,6 +242,6 @@
        [:h1 title]
        [:span {:class "wa-caption-s"}
         "Choose which sections are available and how they are ordered."]]
-      (sections-panel (assoc req :tr tr))])))
+      (sections-panel req)])))
 
 (d*/refresh-all!)
