@@ -18,7 +18,7 @@
                (not active?) (assoc :variant "neutral"))
    (if active? "Active" "Inactive")])
 
-(defn settings-card [{:keys [id title subtitle actions] :as attrs} & children]
+(defn section-card [{:keys [id title subtitle actions] :as attrs} & children]
   (into
    [:section (merge {:id    id
                      :class "wa-stack"}

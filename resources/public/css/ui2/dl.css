@@ -1,7 +1,7 @@
 @scope (dl.particulars) {
   :scope {
     display: grid;
-    gap: var(--wa-space-2xl);
+    gap: var(--wa-space-l);
     grid-template-columns: repeat(
       auto-fit,
       minmax(

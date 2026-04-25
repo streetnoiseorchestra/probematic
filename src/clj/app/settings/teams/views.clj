@@ -207,7 +207,7 @@
      (team-edit-form req)
      (for [team teams]
        (team-remove-dialog req team))
-     (ui2/settings-card
+     (ui2/section-card
       {:title    "Manage teams"
        :subtitle "Teams help organize members around responsibilities."
        :actions  [[:wa-button {:appearance  "outlined"

@@ -97,8 +97,7 @@
     (when-let [top-error (field-error form-state :_top)]
       [:wa-callout {:appearance "outlined" :variant "danger"}
        top-error])
-    [:input {:type "hidden"
-             :data-bind "member-detail.contact.member-id"}]
+    [:input {:type "hidden" :data-bind "member-detail.contact.member-id"}]
     [:div {:class "wa-grid wa-gap-m" :style "--min-column-size: 18rem;"}
      (form-input form-state "member-detail.contact.name" (tr [:member/name]) {:required true :autofocus true})
      (form-input form-state "member-detail.contact.nick" (tr [:member/nick]) {})
@@ -182,34 +181,34 @@
       [:wa-breadcrumb-item
        (:member/name member)]]
      (if form-state
-       (ui2/settings-card
-        {:title    (member-name member)
-         :subtitle "Core member profile data used by the band roster and SNO ID."}
-        (contact-form req form-state sections))
+       (ui2/section-card {:title    (tr [:action/edit])}
+                         (contact-form req form-state sections))
        (profile-summary req member))]))
 
 (defn page [{:keys [db page-state tr] :as req}]
-  (let [tr        (tr-fn tr)
-        member-id (http.util/path-param-uuid! req :member-id)
-        member    (q/retrieve-member db member-id)
-        req       (assoc req :tr tr)]
+  (let [tr           (tr-fn tr)
+        member-id    (http.util/path-param-uuid! req :member-id)
+        member       (q/retrieve-member db member-id)
+        contact-form (get-in page-state [:member-detail :contact])
+        req          (assoc req :tr tr)]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
-            :data-signals (d*/->signals {:member-detail {:contact (get-in page-state [:member-detail :contact])}})}
+            :data-signals (d*/->signals {:member-detail {:contact contact-form}})}
       (member-header req member)
-      [:wa-tab-group {:active "discounts"}
-       [:wa-tab {:panel "discounts"} (tr [:travel-discounts/title])]
-       [:wa-tab {:panel "ledger"} "Ledger"]
-       [:wa-tab {:panel "insurance"} (tr [:member/insurance-title])]
-       [:wa-tab {:panel "activity"} "Gigs & Probes"]
+      (when-not contact-form
+        [:wa-tab-group {:active "discounts"}
+         [:wa-tab {:panel "discounts"} (tr [:travel-discounts/title])]
+         [:wa-tab {:panel "ledger"} "Ledger"]
+         [:wa-tab {:panel "insurance"} (tr [:member/insurance-title])]
+         [:wa-tab {:panel "activity"} "Gigs & Probes"]
 
-       [:wa-tab-panel {:name "discounts"}
-        (placeholder-panel (tr [:travel-discounts/title]) "Travel discount management will move here next.")]
-       [:wa-tab-panel {:name "ledger"}
-        (placeholder-panel "Ledger" "Member ledger activity will move here next.")]
-       [:wa-tab-panel {:name "insurance"}
-        (placeholder-panel (tr [:member/insurance-title]) "Insurance and instrument details will move here next.")]
-       [:wa-tab-panel {:name "activity"}
-        (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next.")]]])))
+         [:wa-tab-panel {:name "discounts"}
+          (placeholder-panel (tr [:travel-discounts/title]) "Travel discount management will move here next.")]
+         [:wa-tab-panel {:name "ledger"}
+          (placeholder-panel "Ledger" "Member ledger activity will move here next.")]
+         [:wa-tab-panel {:name "insurance"}
+          (placeholder-panel (tr [:member/insurance-title]) "Insurance and instrument details will move here next.")]
+         [:wa-tab-panel {:name "activity"}
+          (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next.")]])])))
 
 (d*/refresh-all!)
