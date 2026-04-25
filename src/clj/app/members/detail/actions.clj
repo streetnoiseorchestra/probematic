@@ -17,6 +17,14 @@
 (def clear-travel-discount-edit
   [:app.datastar/assoc-state [:member-detail :travel-discount] false])
 
+(def allowed-tabs
+  #{"discounts" "ledger" "insurance" "activity"})
+
+(defn- normalize-active-tab [active-tab]
+  (if (contains? allowed-tabs active-tab)
+    active-tab
+    "discounts"))
+
 (defn- normalize-bool [v default]
   (cond
     (true? v) true
@@ -227,6 +235,13 @@
    (when-let [error (expiry-date-error expiry-date)]
      {:expiry-date error})))
 
+(defn set-active-tab-action
+  [_state {:keys [member-detail targetid]}]
+  [support/clear-loading
+   [:app.datastar/assoc-state
+    [:member-detail :active-tab]
+    (normalize-active-tab (or targetid (:active-tab member-detail)))]])
+
 (defn open-travel-discount-create-action
   [_state {:keys [targetid]}]
   [support/clear-loading
@@ -316,6 +331,7 @@
    ::close-contact-edit                #'close-contact-edit-action
    ::validate-contact-field            #'validate-contact-field-action
    ::update-contact                    #'update-contact-action
+   ::set-active-tab                    #'set-active-tab-action
    ::open-travel-discount-create       #'open-travel-discount-create-action
    ::close-travel-discount-create      #'close-travel-discount-create-action
    ::add-travel-discount               #'add-travel-discount-action

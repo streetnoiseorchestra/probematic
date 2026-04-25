@@ -8,6 +8,7 @@
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
+   [starfederation.datastar.clojure.expressions :refer [->expr]]
    [tick.core :as t]))
 
 (defn- member-name [{:member/keys [name nick]}]
@@ -316,8 +317,7 @@
         discounts      (q/member-travel-discounts member)]
     [:div {:class "wa-stack wa-gap-l"}
      (ui2/section-card
-      {:title    (tr [:travel-discounts/title])
-       :subtitle (tr [:travel-discounts/subtitle])
+      {:subtitle (tr [:travel-discounts/subtitle])
        :actions  (when-not create-state
                    [[:wa-button {:appearance  "outlined"
                                  :variant     "brand"
@@ -325,11 +325,11 @@
                                  :data-id     (:member/member-id member)
                                  :data-action (d*/act req ::actions/open-travel-discount-create)}
                      (tr [:travel-discounts/add-discount])]])}
-      (travel-discounts-table req edit-state discounts)
       (when create-state
         [:div {:class "wa-stack wa-gap-s"}
-         [:wa-divider]
-         (travel-discount-create-form req create-state discount-types)]))]))
+         (travel-discount-create-form req create-state discount-types)
+         [:wa-divider]])
+      (travel-discounts-table req edit-state discounts))]))
 
 (defn- profile-summary [{:keys [tr] :as req} member]
   (let [src (avatar-src member)]
@@ -374,33 +374,59 @@
                          (contact-form req form-state sections))
        (profile-summary req member))]))
 
+(defn- active-tab [page-state]
+  (let [active-tab (get-in page-state [:member-detail :active-tab] "discounts")]
+    (if (contains? actions/allowed-tabs active-tab)
+      active-tab
+      "discounts")))
+
+(defn- tab [req active-tab panel label]
+  [:wa-tab (cond-> {:panel panel
+
+                    :data-on:mousedown (->expr
+                                        (evt.stopPropagation)
+                                        (evt.preventDefault)
+                                        (set! $member-detail.active-tab ~panel)
+                                        (@post ~(d*/act req ::actions/set-active-tab)))}
+             (= active-tab panel) (assoc :active true))
+   label])
+
+(defn- tab-panel [active-tab panel & children]
+  (into [:wa-tab-panel (cond-> {:name panel}
+                         (= active-tab panel) (assoc :active true))]
+        (when (= active-tab panel)
+          children)))
+
 (defn page [{:keys [db page-state tr] :as req}]
   (let [member-id                       (http.util/path-param-uuid! req :member-id)
         member                          (q/retrieve-member db member-id)
         form-state                      (get-in page-state [:member-detail :contact])
         contact-signals                 (form-state->signals form-state)
+        active-tab                      (active-tab page-state)
         travel-discount-create-signals  (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))
         travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
-            :data-signals (d*/->signals {:member-detail {:contact                contact-signals
+            :data-signals (d*/->signals {:member-detail {:active-tab             active-tab
+                                                         :contact                contact-signals
                                                          :travel-discount-create travel-discount-create-signals
                                                          :travel-discount        travel-discount-signals}})}
       (member-header req member)
       (when-not form-state
-        [:wa-tab-group {:active "discounts"}
-         [:wa-tab {:panel "discounts"} (tr [:travel-discounts/title])]
-         [:wa-tab {:panel "ledger"} "Ledger"]
-         [:wa-tab {:panel "insurance"} (tr [:member/insurance-title])]
-         [:wa-tab {:panel "activity"} "Gigs & Probes"]
+        [:wa-tab-group {:id "member-detail-tabs"
+                        :active active-tab}
+         (tab req active-tab "discounts" (tr [:travel-discounts/title]))
+         (tab req active-tab "ledger" "Ledger")
+         (tab req active-tab "insurance" (tr [:member/insurance-title]))
+         (tab req active-tab "activity" "Gigs & Probes")
 
-         [:wa-tab-panel {:name "discounts" :active true}
-          (travel-discounts-panel req member)]
-         [:wa-tab-panel {:name "ledger"}
-          (placeholder-panel "Ledger" "Member ledger activity will move here next.")]
-         [:wa-tab-panel {:name "insurance"}
-          (placeholder-panel (tr [:member/insurance-title]) "Insurance and instrument details will move here next.")]
-         [:wa-tab-panel {:name "activity"}
-          (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next.")]])])))
+         (tab-panel active-tab "discounts"
+                    (travel-discounts-panel req member))
+         (tab-panel active-tab "ledger"
+                    (placeholder-panel "Ledger" "Member ledger activity will move here next."))
+         (tab-panel active-tab "insurance"
+                    (placeholder-panel (tr [:member/insurance-title]) "Insurance and instrument details will move here next."))
+         (tab-panel active-tab "activity"
+                    (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next."))])])))
 
 (d*/refresh-all!)

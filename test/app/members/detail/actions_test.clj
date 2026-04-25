@@ -188,6 +188,25 @@
                                           :phone "+43 677 123456"
                                           :validate-field "nick"})))))))
 
+(deftest set-active-tab-action-test
+  (is (= [support/clear-loading
+          [:app.datastar/assoc-state [:member-detail :active-tab] "ledger"]]
+         (actions/set-active-tab-action
+          {}
+          {:targetid "ledger"})))
+
+  (is (= [support/clear-loading
+          [:app.datastar/assoc-state [:member-detail :active-tab] "insurance"]]
+         (actions/set-active-tab-action
+          {}
+          {:member-detail {:active-tab "insurance"}})))
+
+  (is (= [support/clear-loading
+          [:app.datastar/assoc-state [:member-detail :active-tab] "discounts"]]
+         (actions/set-active-tab-action
+          {}
+          {:targetid "unknown"}))))
+
 (deftest travel-discount-actions-test
   (testing "opens and closes the create form"
     (let [{:keys [conn] :as system} (new-system)
