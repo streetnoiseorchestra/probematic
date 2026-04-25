@@ -26,6 +26,16 @@
     [:span {:class "wa-color-text-quiet"} "—"]
     value))
 
+(defn- phone-link [phone]
+  (if (str/blank? (str phone))
+    (muted phone)
+    [:a {:href (str "tel:" (str/replace phone #"\\s+" ""))} phone]))
+
+(defn- email-link [email]
+  (if (str/blank? (str email))
+    (muted email)
+    [:a {:href (str "mailto:" email)} email]))
+
 (defn- status-badge [tr active?]
   [:wa-badge (cond-> {:appearance "outlined"
                       :pill       true}
@@ -120,50 +130,27 @@
     [:a {:href (keycloak/link-user-edit (:env system) keycloak-id)} keycloak-id]
     (muted nil)))
 
-(defn- contact-details [{:keys [tr] :as req} member]
-  (let [{:member/keys [email phone username keycloak-id active?]} member]
+(defn- profile-details [{:keys [tr] :as req} member]
+  (let [{:member/keys [email phone username keycloak-id active? nick]} member
+        section-name (get-in member [:member/section :section/name])]
     [:dl {:class "particulars"}
+     (detail-item (tr [:section]) (muted section-name))
+     (detail-item (tr [:member/nick]) (muted nick))
+     (detail-item (tr [:member/email]) (email-link email))
+     (detail-item (tr [:member/phone]) (phone-link phone))
      (detail-item (tr [:member/active?]) (status-badge tr active?))
-     (detail-item (tr [:member/email]) (muted email))
-     (detail-item (tr [:member/phone]) (muted phone))
      (detail-item (tr [:member/username]) (muted username))
      (detail-item (tr [:member/keycloak-id]) (keycloak-link req keycloak-id))
      (detail-item (tr [:sno-id]) (sno-id-badge keycloak-id))]))
-
-(defn- contact-panel [{:keys [db page-state tr] :as req} member]
-  (let [form-state (get-in page-state [:member-detail :contact])
-        sections   (q/retrieve-sections db)]
-    (ui2/settings-card
-     {:title    (tr [:Contact-Information])
-      :subtitle "Core member profile data used by the band roster and SNO ID."
-      :actions  [[:wa-button {:appearance "outlined"
-                              :href       (str "/member-vcard/" (:member/member-id member))}
-                  (tr [:Contact-Download])]
-                 (when-not form-state
-                   [:wa-button {:appearance  "outlined"
-                                :variant     "brand"
-                                :type        "button"
-                                :data-id     (:member/member-id member)
-                                :data-action (d*/act req ::actions/open-contact-edit)}
-                    (tr [:action/edit])])]}
-     (if form-state
-       (contact-form req form-state sections)
-       (contact-details req member)))))
 
 (defn- placeholder-panel [title body]
   [:div {:class "wa-stack wa-gap-m"}
    (ui2/empty-state title body)])
 
-(defn- member-header [{:keys [tr] :as req} member editing?]
-  (let [section-name (get-in member [:member/section :section/name])
-        src          (avatar-src member)]
-    [:header {:class "member-detail-header wa-stack wa-gap-m"}
-     [:wa-breadcrumb
-      [:wa-breadcrumb-item {:href "/members"}
-       (tr [:nav/members])]
-      [:wa-breadcrumb-item
-       (member-name member)]]
-     [:div {:class "member-detail-header-body"}
+(defn- profile-summary [{:keys [tr] :as req} member]
+  (let [src (avatar-src member)]
+    [:section {:class "wa-stack wa-gap-l"}
+     [:div {:class "wa-flank:end wa-align-items-start"}
       [:div {:class "wa-flank wa-flex-nowrap wa-align-items-center"}
        [:wa-avatar (cond-> {:label (member-name member)
                             :shape "rounded"}
@@ -172,17 +159,34 @@
           [:wa-icon {:library "snoico"
                      :name    "user"
                      :slot    "icon"}])]
-       [:div {:class "wa-stack wa-gap-2xs"}
-        [:h1 (member-name member)]
-        [:span {:class "wa-caption-s"}
-         (or section-name (tr [:section-none]))]]]
-      (when-not editing?
-        [:wa-button {:appearance  "outlined"
-                     :variant     "brand"
-                     :type        "button"
-                     :data-id     (:member/member-id member)
-                     :data-action (d*/act req ::actions/open-contact-edit)}
-         (tr [:action/edit])])]]))
+       [:h1 (:member/name member)]]
+      [:div {:class "wa-cluster wa-gap-xs"}
+       [:wa-button {:appearance "outlined"
+                    :href       (str "/member-vcard/" (:member/member-id member))}
+        (tr [:Contact-Download])]
+       [:wa-button {:appearance  "outlined"
+                    :variant     "brand"
+                    :type        "button"
+                    :data-id     (:member/member-id member)
+                    :data-action (d*/act req ::actions/open-contact-edit)}
+        (tr [:action/edit])]]]
+     (profile-details req member)]))
+
+(defn- member-header [{:keys [db page-state tr] :as req} member]
+  (let [form-state (get-in page-state [:member-detail :contact])
+        sections   (when form-state (q/retrieve-sections db))]
+    [:header {:class "member-detail-header wa-stack wa-gap-m"}
+     [:wa-breadcrumb
+      [:wa-breadcrumb-item {:href "/members"}
+       (tr [:nav/members])]
+      [:wa-breadcrumb-item
+       (:member/name member)]]
+     (if form-state
+       (ui2/settings-card
+        {:title    (member-name member)
+         :subtitle "Core member profile data used by the band roster and SNO ID."}
+        (contact-form req form-state sections))
+       (profile-summary req member))]))
 
 (defn page [{:keys [db page-state tr] :as req}]
   (let [tr        (tr-fn tr)
@@ -192,16 +196,13 @@
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
             :data-signals (d*/->signals {:member-detail {:contact (get-in page-state [:member-detail :contact])}})}
-      (member-header req member (boolean (get-in page-state [:member-detail :contact])))
-      [:wa-tab-group {:active "contact"}
-       [:wa-tab {:panel "contact"} (tr [:Contact-Information])]
+      (member-header req member)
+      [:wa-tab-group {:active "discounts"}
        [:wa-tab {:panel "discounts"} (tr [:travel-discounts/title])]
        [:wa-tab {:panel "ledger"} "Ledger"]
        [:wa-tab {:panel "insurance"} (tr [:member/insurance-title])]
        [:wa-tab {:panel "activity"} "Gigs & Probes"]
 
-       [:wa-tab-panel {:name "contact"}
-        (contact-panel req member)]
        [:wa-tab-panel {:name "discounts"}
         (placeholder-panel (tr [:travel-discounts/title]) "Travel discount management will move here next.")]
        [:wa-tab-panel {:name "ledger"}

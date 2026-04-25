@@ -6,6 +6,13 @@
   inline-size: min(var(--sno-size-full), var(--sno-narrow-form-max-inline-size));
 }
 
+/* Size the host before Web Awesome upgrades it to prevent avatar FOUC. */
+.member-detail-header wa-avatar {
+  --size: var(--sno-member-detail-avatar-size);
+  width: var(--size);
+  height: var(--size);
+}
+
 @scope (.members-index-page) {
   .members-index-toolbar {
     display: flex;

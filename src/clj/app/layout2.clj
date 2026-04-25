@@ -166,6 +166,7 @@
   // before datastar inits so that d* can properly interact with their value and change attrs
   import '/wa/components/button/button.js';
   import '/wa/components/input/input.js';
+  import '/wa/components/avatar/avatar.js';
   import '/wa/components/dialog/dialog.js';
   import '/wa/components/checkbox/checkbox.js';
   import '/wa/components/select/select.js';
