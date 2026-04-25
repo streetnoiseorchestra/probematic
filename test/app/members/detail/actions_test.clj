@@ -24,6 +24,7 @@
 (defn tr [path & [args]]
   (case path
     [:member/name] "Name"
+    [:member/nick] "Nick"
     [:Email] "Email"
     [:Phone] "Phone"
     [:section] "Section"
@@ -69,7 +70,7 @@
                 :phone        "+43677123456"
                 :section-name "Trumpets"
                 :active       true
-                :error        {}}]]
+                :_error       {}}]]
              (actions/open-contact-edit-action
               (state-for system)
               {:targetid (str member-id)}))))))
@@ -79,10 +80,12 @@
           [:app.datastar/assoc-state [:member-detail :contact] false]]
          (actions/close-contact-edit-action {} {}))))
 
-(deftest validate-contact-phone-action-test
-  (testing "sets a phone validation error"
-    (let [member-id (random-uuid)]
-      (is (= [[:app.datastar/assoc-state
+(deftest validate-contact-field-action-test
+  (testing "sets a validation error for the blurred field"
+    (let [{:keys [conn] :as system} (new-system)
+          member-id                 (random-uuid)]
+      (seed-section! conn "Trumpets")
+      (is (= [[:app.datastar/merge-state
                [:member-detail :contact]
                {:member-id    (str member-id)
                 :name         "Alice Admin"
@@ -90,16 +93,21 @@
                 :email        "alice@example.com"
                 :phone        "123"
                 :section-name "Trumpets"
-                :active       true
-                :error        {:phone {:error "Phone format is invalid."}}}]]
-             (actions/validate-contact-phone-action
-              {:tr tr}
+                :active       true}]
+              [:app.datastar/assoc-state
+               [:member-detail :contact :_error :phone]
+               {:error "Phone format is invalid."}]]
+             (actions/validate-contact-field-action
+              (assoc (state-for system) :tr tr)
               (contact-signals member-id {:email "alice@example.com"
-                                          :phone "123"}))))))
+                                          :phone "123"
+                                          :validate-field "phone"}))))))
 
-  (testing "clears an existing phone validation error"
-    (let [member-id (random-uuid)]
-      (is (= [[:app.datastar/assoc-state
+  (testing "clears an existing error for the blurred field"
+    (let [{:keys [conn] :as system} (new-system)
+          member-id                 (random-uuid)]
+      (seed-section! conn "Trumpets")
+      (is (= [[:app.datastar/merge-state
                [:member-detail :contact]
                {:member-id    (str member-id)
                 :name         "Alice Admin"
@@ -107,13 +115,63 @@
                 :email        "alice@example.com"
                 :phone        "+43677123456"
                 :section-name "Trumpets"
-                :active       true
-                :error        {}}]]
-             (actions/validate-contact-phone-action
-              {:tr tr}
+                :active       true}]
+              [:app.datastar/assoc-state
+               [:member-detail :contact :_error :phone]
+               nil]]
+             (actions/validate-contact-field-action
+              (assoc (state-for system) :tr tr)
               (contact-signals member-id {:email "alice@example.com"
                                           :phone "+43 677 123456"
-                                          :error {:phone {:error "Phone format is invalid."}}})))))))
+                                          :validate-field "phone"
+                                          :_error {:phone {:error "Phone format is invalid."}}}))))))
+
+  (testing "ignores stale error signals while validating the current field"
+    (let [{:keys [conn] :as system} (new-system)
+          member-id                 (random-uuid)]
+      (seed-section! conn "Trumpets")
+      (is (= [[:app.datastar/merge-state
+               [:member-detail :contact]
+               {:member-id    (str member-id)
+                :name         ""
+                :nick         "ally"
+                :email        "alice@example.com"
+                :phone        "123"
+                :section-name "Trumpets"
+                :active       true}]
+              [:app.datastar/assoc-state
+               [:member-detail :contact :_error :name]
+               {:error "Name is required."}]]
+             (actions/validate-contact-field-action
+              (assoc (state-for system) :tr tr)
+              (contact-signals member-id {:name ""
+                                          :email "alice@example.com"
+                                          :phone "123"
+                                          :validate-field "name"
+                                          :_error {:phone {:error "Previous phone error"}}}))))))
+
+  (testing "requires nick on blur"
+    (let [{:keys [conn] :as system} (new-system)
+          member-id                 (random-uuid)]
+      (seed-section! conn "Trumpets")
+      (is (= [[:app.datastar/merge-state
+               [:member-detail :contact]
+               {:member-id    (str member-id)
+                :name         "Alice Admin"
+                :nick         ""
+                :email        "alice@example.com"
+                :phone        "+43677123456"
+                :section-name "Trumpets"
+                :active       true}]
+              [:app.datastar/assoc-state
+               [:member-detail :contact :_error :nick]
+               {:error "Nick is required."}]]
+             (actions/validate-contact-field-action
+              (assoc (state-for system) :tr tr)
+              (contact-signals member-id {:nick ""
+                                          :email "alice@example.com"
+                                          :phone "+43 677 123456"
+                                          :validate-field "nick"})))))))
 
 (deftest update-contact-action-test
   (testing "updates contact fields and closes the form"
@@ -142,9 +200,9 @@
               (assoc (state-for system) :tr tr)
               (contact-signals edited-member-id {}))))))
 
-  (testing "retracts a cleared nick"
-    (let [{:keys [conn member-id] :as system} (new-system)
-          edited-member-id                    (random-uuid)]
+  (testing "returns validation error for a cleared nick"
+    (let [{:keys [conn] :as system} (new-system)
+          edited-member-id          (random-uuid)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id edited-member-id
                           :member/name "Alice Old"
@@ -153,17 +211,17 @@
                           :member/phone "+431111111"
                           :member/section [:section/name "Trumpets"]
                           :member/active? true})
-      (is (= [[:db/transact [{:db/id            [:member/member-id edited-member-id]
-                              :member/name      "Alice Admin"
-                              :member/nick      nil
-                              :member/email     "alice@example.com"
-                              :member/phone     "+43677123456"
-                              :member/section   [:section/name "Trumpets"]
-                              :member/active?   true}
-                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? true}]
-              support/clear-loading
-              [:app.datastar/assoc-state [:member-detail :contact] false]]
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :contact]
+               {:member-id    (str edited-member-id)
+                :name         "Alice Admin"
+                :nick         ""
+                :email        "alice@example.com"
+                :phone        "+43677123456"
+                :section-name "Trumpets"
+                :active       true
+                :_error       {:nick {:error "Nick is required."}}}]]
              (actions/update-contact-action
               (assoc (state-for system) :tr tr)
               (contact-signals edited-member-id {:nick "  "}))))))
@@ -210,7 +268,8 @@
                 :phone        "123"
                 :section-name "Unknown"
                 :active       true
-                :error        {:name         {:error "Name is required."}
+                :_error       {:name         {:error "Name is required."}
+                               :nick         {:error "Nick is required."}
                                :email        {:error "Email is required."}
                                :phone        {:error "Phone format is invalid."}
                                :section-name {:error "Please choose a valid section."}}}]]
@@ -246,7 +305,7 @@
                 :phone        "+43677123456"
                 :section-name "Trumpets"
                 :active       true
-                :error        {:email {:error "A member already has that email address"}
+                :_error       {:email {:error "A member already has that email address"}
                                :nick  {:error "A member already has that nick"}
                                :phone {:error "A member already has that phone number"}}}]]
              (actions/update-contact-action

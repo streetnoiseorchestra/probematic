@@ -62,10 +62,12 @@
     (not (members.domain/phone-valid? phone))
     {:error (tr [:error/member-phone-format])}))
 
-(defn- validation-errors [{:keys [db tr member-ref]} {:keys [name email phone section-name] :as contact}]
+(defn- validation-errors [{:keys [db tr member-ref]} {:keys [name nick email phone section-name] :as contact}]
   (merge
    (when (str/blank? name)
      {:name (required-error tr (tr [:member/name]))})
+   (when (str/blank? nick)
+     {:nick (required-error tr (tr [:member/nick]))})
    (when (str/blank? email)
      {:email (required-error tr (tr [:Email]))})
    (when-let [error (phone-error tr phone)]
@@ -84,7 +86,7 @@
    :phone        (:member/phone member)
    :section-name (get-in member [:member/section :section/name])
    :active       (boolean (:member/active? member))
-   :error        {}})
+   :_error       {}})
 
 (defn- contact-tx [member-id {:keys [name nick email phone section-name active]}]
   {:db/id            [:member/member-id member-id]
@@ -117,16 +119,19 @@
 (defn close-contact-edit-action [_state _signals]
   [support/clear-loading clear-contact])
 
-(defn validate-contact-phone-action
-  [{:keys [tr]} {:keys [member-detail]}]
-  (let [raw     (:contact member-detail)
-        contact (normalize-contact raw)
-        error   (phone-error tr (:phone contact))]
-    [[:app.datastar/assoc-state
-      [:member-detail :contact]
-      (assoc contact :error (cond-> (or (:error raw) {})
-                              error (assoc :phone error)
-                              (nil? error) (dissoc :phone)))]]))
+(defn validate-contact-field-action
+  [{:keys [db tr]} {:keys [member-detail]}]
+  (let [raw        (:contact member-detail)
+        field      (some-> (:validate-field raw) keyword)
+        contact    (normalize-contact raw)
+        member-id  (util/ensure-uuid! (:member-id contact))
+        member-ref [:member/member-id member-id]
+        error      (get (validation-errors {:db db :tr tr :member-ref member-ref} contact) field)]
+    (tap> [:field field :error error :raw raw])
+    (cond-> [[:app.datastar/merge-state [:member-detail :contact] contact]]
+      field (conj [:app.datastar/assoc-state
+                   [:member-detail :contact :_error field]
+                   error]))))
 
 (defn update-contact-action
   [{:keys [db current-member-id tr]} {:keys [member-detail]}]
@@ -139,7 +144,7 @@
       [support/clear-loading
        [:app.datastar/assoc-state
         [:member-detail :contact]
-        (assoc contact :error errors)]]
+        (assoc contact :_error errors)]]
       (cond-> [[:db/transact
                 (support/with-audit [(contact-tx member-id contact)]
                   current-member-id)
@@ -151,7 +156,7 @@
         (conj support/clear-loading clear-contact)))))
 
 (def actions
-  {::open-contact-edit     #'open-contact-edit-action
-   ::close-contact-edit    #'close-contact-edit-action
-   ::validate-contact-phone #'validate-contact-phone-action
-   ::update-contact        #'update-contact-action})
+  {::open-contact-edit      #'open-contact-edit-action
+   ::close-contact-edit     #'close-contact-edit-action
+   ::validate-contact-field #'validate-contact-field-action
+   ::update-contact         #'update-contact-action})

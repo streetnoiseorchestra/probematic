@@ -57,7 +57,7 @@
    [:dd value]])
 
 (defn- field-error [form-state field]
-  (get-in form-state [:error field :error]))
+  (get-in form-state [:_error field :error]))
 
 (defn- form-input [form-state signal label attrs]
   (let [field (keyword (last (str/split signal #"\.")))
@@ -71,7 +71,20 @@
                        :data-bind    signal}
                       attrs)]))
 
-(defn- section-select [{:keys [tr]} form-state sections]
+(defn- validate-field-action [req field]
+  (str "$member-detail.contact.validate-field = '"
+       (name field)
+       "'; @post('"
+       (d*/act req ::actions/validate-contact-field)
+       "')"))
+
+(defn- validate-field-on-blur [req field]
+  {:data-on:blur (validate-field-action req field)})
+
+(defn- validate-field-on-keydown [req field]
+  {:data-on:keydown__debounce.500ms (validate-field-action req field)})
+
+(defn- section-select [{:keys [tr] :as req} form-state sections]
   (let [error (field-error form-state :section-name)]
     (into
      [:wa-select {:label        (tr [:section])
@@ -80,51 +93,60 @@
                   :value        (:section-name form-state)
                   :hint         error
                   :data-invalid (when error "true")
-                  :data-bind    "member-detail.contact.section-name"}
+                  :data-bind    "member-detail.contact.section-name"
+                  :data-on:blur (:data-on:blur (validate-field-on-blur req :section-name))}
       [:wa-option {:value ""} " - "]]
      (for [{:section/keys [name]} sections]
        [:wa-option {:value name} name]))))
 
 (defn- contact-form [{:keys [tr] :as req} form-state sections]
-  [:form {:id             "member-contact-form"
-          :data-id        "member-contact"
-          :data-action    (d*/act req ::actions/update-contact)
-          :data-on:submit "evt.preventDefault();"}
-   [:div {:class "wa-stack wa-gap-l"}
-    (when-let [top-error (field-error form-state :_top)]
-      [:wa-callout {:appearance "outlined" :variant "danger"}
-       top-error])
-    [:input {:type "hidden" :data-bind "member-detail.contact.member-id"}]
-    [:div {:class "wa-grid wa-gap-m" :style "--min-column-size: 18rem;"}
-     (form-input form-state "member-detail.contact.name" (tr [:member/name]) {:required true :autofocus true})
-     (form-input form-state "member-detail.contact.nick" (tr [:member/nick]) {})
-     (form-input form-state "member-detail.contact.email" (tr [:Email]) {:type "email" :required true})
-     (form-input form-state
-                 "member-detail.contact.phone"
-                 (tr [:Phone])
-                 {:type         "tel"
-                  :required     true
-                  :data-on:blur (str "@post('" (d*/act req ::actions/validate-contact-phone) "')")})
-     (section-select req form-state sections)
-     [:div {:class "wa-stack wa-gap-2xs"}
-      [:span {:class "wa-caption-s"} (tr [:member/active?])]
-      [:wa-switch {:size           "medium"
-                   :checked        (:active form-state)
-                   :data-bind      "member-detail.contact.active"
-                   :data-on:change "$member-detail.contact.active = !$member-detail.contact.active"}
-       (tr [:Active])]]]
-    [:div {:class "wa-cluster wa-justify-content-end"}
-     [:wa-button {:appearance  "outlined"
-                  :type        "button"
-                  :data-id     "member-contact-cancel"
-                  :data-action (d*/act req ::actions/close-contact-edit)}
-      (tr [:action/cancel])]
-     [:wa-button {:appearance         "filled"
-                  :variant            "brand"
-                  :type               "submit"
-                  :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
-                  :data-attr:loading  "$loading === 'member-contact'"}
-      (tr [:action/save])]]]])
+  (let [validate-on-keydown #(validate-field-on-keydown req %)]
+    [:form {:id             "member-contact-form"
+            :data-id        "member-contact"
+            :data-action    (d*/act req ::actions/update-contact)
+            :data-on:submit "evt.preventDefault();"}
+     [:div {:class "wa-stack wa-gap-l"}
+      (when-let [top-error (field-error form-state :_top)]
+        [:wa-callout {:appearance "outlined" :variant "danger"}
+         top-error])
+      [:input {:type "hidden" :data-bind "member-detail.contact.member-id"}]
+      [:div {:class "wa-grid wa-gap-m" :style "--min-column-size: 18rem;"}
+       (form-input form-state
+                   "member-detail.contact.name"
+                   (tr [:member/name])
+                   (merge {:required true :autofocus true} (validate-on-keydown :name)))
+       (form-input form-state
+                   "member-detail.contact.nick"
+                   (tr [:member/nick])
+                   (merge {:required true} (validate-on-keydown :nick)))
+       (form-input form-state
+                   "member-detail.contact.email"
+                   (tr [:Email])
+                   (merge {:type "email" :required true} (validate-on-keydown :email)))
+       (form-input form-state
+                   "member-detail.contact.phone"
+                   (tr [:Phone])
+                   (merge {:type "tel" :required true} (validate-on-keydown :phone)))
+       (section-select req form-state sections)
+       [:div {:class "wa-stack wa-gap-2xs"}
+        [:span {:class "wa-caption-s"} (tr [:member/active?])]
+        [:wa-switch {:size           "medium"
+                     :checked        (:active form-state)
+                     :data-bind      "member-detail.contact.active"
+                     :data-on:change "$member-detail.contact.active = !$member-detail.contact.active"}
+         (tr [:Active])]]]
+      [:div {:class "wa-cluster wa-justify-content-end"}
+       [:wa-button {:appearance  "outlined"
+                    :type        "button"
+                    :data-id     "member-contact-cancel"
+                    :data-action (d*/act req ::actions/close-contact-edit)}
+        (tr [:action/cancel])]
+       [:wa-button {:appearance         "filled"
+                    :variant            "brand"
+                    :type               "submit"
+                    :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
+                    :data-attr:loading  "$loading === 'member-contact'"}
+        (tr [:action/save])]]]]))
 
 (defn- keycloak-link [{:keys [system]} keycloak-id]
   (if (seq keycloak-id)
@@ -192,14 +214,15 @@
        (profile-summary req member))]))
 
 (defn page [{:keys [db page-state tr] :as req}]
-  (let [member-id    (http.util/path-param-uuid! req :member-id)
-        member       (q/retrieve-member db member-id)
-        contact-form (get-in page-state [:member-detail :contact])]
+  (let [member-id       (http.util/path-param-uuid! req :member-id)
+        member          (q/retrieve-member db member-id)
+        form-state      (get-in page-state [:member-detail :contact])
+        contact-signals (dissoc form-state :_error)]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
-            :data-signals (d*/->signals {:member-detail {:contact contact-form}})}
+            :data-signals (d*/->signals {:member-detail {:contact contact-signals}})}
       (member-header req member)
-      (when-not contact-form
+      (when-not form-state
         [:wa-tab-group {:active "discounts"}
          [:wa-tab {:panel "discounts"} (tr [:travel-discounts/title])]
          [:wa-tab {:panel "ledger"} "Ledger"]
