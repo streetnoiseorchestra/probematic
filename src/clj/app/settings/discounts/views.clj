@@ -3,7 +3,7 @@
    [app.datastar :as d*]
    [app.queries :as q]
    [app.settings.discounts.actions :as actions]
-   [app.settings.view-support :as support]
+   [app.ui2 :as ui2]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn travel-discount-type-create-form [{:keys [tr page-state] :as req}]
@@ -85,7 +85,7 @@
         (tr [:action/save])]])))
 
 (defn travel-discount-type-remove-dialog [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name]}]
-  [:wa-dialog {:id    (support/remove-dialog-id "discount-type" discount-type-id)
+  [:wa-dialog {:id    (ui2/remove-dialog-id "discount-type" discount-type-id)
                :label (tr [:action/confirm-generic])}
    [:p (tr [:action/confirm-delete-discount-type] [(str "\"" discount-type-name "\"")])]
    [:wa-button {:slot        "footer"
@@ -106,9 +106,9 @@
   (let [button-id (str "discount-type-actions-" discount-type-id)]
     [:tr {:id (str "dt-container-" discount-type-id)}
      [:td {:style "vertical-align: middle"} discount-type-name]
-     [:td {:style "vertical-align: middle"} (support/active-badge enabled?)]
+     [:td {:style "vertical-align: middle"} (ui2/active-badge enabled?)]
      [:td {:style "vertical-align: top; text-align: end"}
-      (support/row-action-menu
+      (ui2/row-action-menu
        {:button-id button-id
         :items     [{:label              (tr [:action/update])
                      :data-attr:disabled "!!$loading && $loading !== 'discount-type.discount-type-id'"
@@ -117,7 +117,7 @@
                      :data-action        (d*/act req ::actions/open-discount-type-edit)}
                     {:label       (tr [:action/remove])
                      :variant     "danger"
-                     :data-dialog (format "open %s" (support/remove-dialog-id "discount-type" discount-type-id))}]})]]))
+                     :data-dialog (format "open %s" (ui2/remove-dialog-id "discount-type" discount-type-id))}]})]]))
 
 (defn travel-discount-types [{:keys [db tr page-state] :as req}]
   (let [discount-types (q/retrieve-all-discount-types db)]
@@ -128,7 +128,7 @@
      (travel-discount-type-edit-form req)
      (for [discount-type discount-types]
        (travel-discount-type-remove-dialog req discount-type))
-     (support/settings-card
+     (ui2/settings-card
       {:title    "Manage travel discounts"
        :subtitle "Reusable labels for member travel discounts."
        :actions  [[:wa-button {:appearance  "outlined"
@@ -137,7 +137,7 @@
                                :data-id     "discount-type-create"
                                :data-action (d*/act req ::actions/open-discount-type-create)}
                    (tr [:travel-discounts/add-discount-type])]]}
-      (support/table-shell
+      (ui2/table-shell
        (if (seq discount-types)
          [:table
           [:thead
@@ -148,13 +148,13 @@
           [:tbody
            (for [discount-type discount-types]
              (travel-discount-type-table-row req discount-type))]]
-         (support/empty-state
+         (ui2/empty-state
           "No travel discount types yet."
           "Add discount types so members can select them consistently."))))]))
 
 (defn page [{:keys [tr] :as req}]
   (let [tr (or tr (fn [path & _] (name (last path))))]
-    (support/datastar-page
+    (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [:div {:class "wa-stack wa-gap-2xs"}
        [:a {:href "/band-settings" :class "wa-caption-s"}

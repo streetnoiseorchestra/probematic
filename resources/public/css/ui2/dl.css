@@ -1,0 +1,37 @@
+@scope (dl.particulars) {
+  :scope {
+    display: grid;
+    gap: var(--wa-space-2xl);
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(
+        min(var(--sno-size-full), var(--sno-particulars-min-column-size)),
+        var(--sno-grid-track-max)
+      )
+    );
+  }
+
+  :scope > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--wa-space-xs);
+  }
+
+  dt {
+    color: var(--wa-color-text-quiet);
+    font-size: var(--wa-font-size-s);
+  }
+
+  dd {
+    margin: var(--sno-size-none);
+  }
+
+  @media (--sno-particulars-wide) {
+    :scope {
+      grid-template-columns: repeat(
+        var(--sno-particulars-max-column-count),
+        minmax(var(--sno-grid-track-min), var(--sno-grid-track-max))
+      );
+    }
+  }
+}

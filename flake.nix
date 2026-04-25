@@ -118,6 +118,8 @@
             # { package = pkgs.bazqux; }
           ];
           packages = [
+            pkgs.lightningcss
+            pkgs.watchexec
             pkgs.gitleaks
             (if self ? packages then self.packages.${pkgs.system}.locker else pkgs.deps-lock)
             # pkgs.foobar

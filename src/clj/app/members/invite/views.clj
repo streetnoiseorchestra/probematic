@@ -3,7 +3,7 @@
    [app.datastar :as d*]
    [app.members.invite.actions :as actions]
    [app.queries :as q]
-   [app.settings.view-support :as support]
+   [app.ui2 :as ui2]
    [clojure.string :as str]))
 
 (defn- default-form-state []
@@ -95,7 +95,7 @@
   (let [tr         (or tr (fn [path & _] (name (last path))))
         form-state (merge (default-form-state) (:member-invite page-state))
         sections   (q/retrieve-sections db)]
-    (support/datastar-page
+    (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-invite-page"
             :data-signals (d*/->signals {:member-invite form-state})}
       [:div {:class "wa-stack wa-gap-2xs"}
@@ -107,7 +107,7 @@
        [:h1 (tr [:member/invite-member])]
        [:span {:class "wa-caption-s"}
         (tr [:member/invite-member-page-description])]]
-      (support/settings-card
+      (ui2/settings-card
        {:title    (tr [:member/invite-member])
         :subtitle (tr [:member/invite-member-form-subtitle])}
        (invite-form (assoc req :tr tr) form-state sections))])))

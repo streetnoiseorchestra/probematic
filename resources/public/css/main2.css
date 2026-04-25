@@ -1,334 +1,264 @@
+/* The wa-* layers come from Web Awesome's stylesheet.
+   Recheck resources/public/wa/styles/webawesome.css when upgrading Web Awesome. */
+@layer wa-native, wa-utilities, wa-color-palette, wa-color-variant, wa-theme, wa-theme-dimension, wa-theme-overrides, sno-global, sno-page, sno-component;
+
+@import "ui2/dl.css" layer(sno-page);
+@import "pages/members.css" layer(sno-page);
+
+@custom-media --sno-viewport-s (min-width: 640px);
+@custom-media --sno-viewport-below-s (max-width: calc(640px - 1px));
+@custom-media --sno-viewport-l (min-width: 960px);
+@custom-media --sno-viewport-s-to-l (min-width: 640px) and (max-width: calc(960px - 1px));
+@custom-media --sno-index-collapsed (max-width: calc(1152px - 1px));
+@custom-media --sno-index-expanded (min-width: 1152px);
+@custom-media --sno-index-collapsed-wide (min-width: 960px) and (max-width: calc(1152px - 1px));
+@custom-media --sno-particulars-wide (min-width: 60rem);
+
 :root {
-  --sno-brand-green: #22c55e;
-  --sno-brand-orange: #f97316;
-  --color-sno-orange-100: #ffedd5;
-  --color-sno-orange-200: #fed7aa;
-  --color-sno-orange-300: #fdba74;
-  --color-sno-orange-400: #fb923c;
-  --color-sno-orange-500: #f97316;
-  --color-sno-orange-600: #ea580c;
-  --color-sno-orange-700: #c2410c;
-  --color-sno-orange-800: #9a3412;
-  --color-sno-orange-900: #7c2d12;
-  --color-sno-green-300: #86efac;
-  --color-sno-green-400: #4ade80;
-  --color-sno-green-500: #22c55e;
-  --color-sno-green-600: #16a34a;
-  --color-sno-green-700: #15803d;
+  /* do not add anything here, this is only for WA config */
+  --wa-font-family-body: \"Space Grotesk\", sans-serif;
+  --wa-font-family-heading: \"IBM Plex Sans Condensed\", sans-serif;
+  --wa-font-family-code: \"Space Mono\", monospace;
+  --wa-font-family-longform: Podkova, serif;
+  --wa-font-weight-body: 400;
+  --wa-font-weight-heading: 650;
+  --wa-font-weight-code: 400;
+  --wa-font-weight-longform: 400;
+  --wa-border-radius-scale: 1.75;
+  --wa-border-width-scale: 1;
+  --wa-space-scale: 1;
 }
 
-html,
-body {
-  min-height: 100%;
-  padding: 0;
-  margin: 0;
-}
+@layer sno-global {
+  :root {
+    --sno-brand-green: #22c55e;
+    --sno-brand-orange: #f97316;
+    --color-sno-orange-100: #ffedd5;
+    --color-sno-orange-200: #fed7aa;
+    --color-sno-orange-300: #fdba74;
+    --color-sno-orange-400: #fb923c;
+    --color-sno-orange-500: #f97316;
+    --color-sno-orange-600: #ea580c;
+    --color-sno-orange-700: #c2410c;
+    --color-sno-orange-800: #9a3412;
+    --color-sno-orange-900: #7c2d12;
+    --color-sno-green-300: #86efac;
+    --color-sno-green-400: #4ade80;
+    --color-sno-green-500: #22c55e;
+    --color-sno-green-600: #16a34a;
+    --color-sno-green-700: #15803d;
+    --sno-size-none: 0;
+    --sno-size-full: 100%;
+    --sno-grid-track-min: 0;
+    --sno-grid-track-max: 1fr;
+    --sno-content-max-inline-size: 80rem;
+    --sno-narrow-form-max-inline-size: 28rem;
+    --sno-particulars-min-column-size: 18rem;
+    --sno-particulars-max-column-count: 3;
+    --sno-settings-index-min-column-size: 32ch;
+    --sno-members-index-search-min-inline-size: 16rem;
+    --sno-members-index-filter-inline-size: 14rem;
+    --sno-member-detail-avatar-size: 3.5rem;
+    --sno-member-detail-avatar-size-wide: 4rem;
+    --sno-member-detail-heading-fluid-size: 8vw;
+    --sno-line-height-tight: 1.05;
+    --sno-font-weight-semibold: 600;
+    --sno-nav-icon-size: var(--wa-font-size-l);
+    --sno-nav-toggle-icon-size: var(--wa-font-size-2xl);
+    --sno-brand-logotype-size: var(--wa-font-size-2xl);
+    --sno-subheader-logo-size: var(--wa-font-size-xl);
+    --sno-opacity-muted: 50%;
+    --sno-opacity-subtle: 25%;
+    --sno-invalid-color: var(--wa-color-danger-border-loud);
+  }
 
-wa-page [slot="navigation"] wa-button::part(base) {
-  justify-content: start;
-}
+  html,
+  body {
+    min-height: var(--sno-size-full);
+    padding: var(--sno-size-none);
+    margin: var(--sno-size-none);
+  }
 
-/* Custom snoico wa-icons size from font-size, so style the host element.
-   flex: none keeps them from being squeezed inside wa-button's flex row. */
-wa-page wa-icon.nav-icon,
-wa-page wa-icon.menu-icon {
-  font-size: 1.1em;
-  flex: none;
-}
-
-/* The hamburger is icon-only (no label), so bump it up for visual weight and
-   a finger-friendly tap target. */
-wa-page wa-icon.nav-toggle-icon {
-  font-size: 1.5em;
-}
-
-a.brand-link {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-
-  & wa-icon.brand-logotype {
-    font-size: 2rem;
-    color: inherit;
+  #main {
+    inline-size: min(var(--sno-size-full), var(--sno-content-max-inline-size));
+    max-inline-size: var(--sno-content-max-inline-size);
+    margin-inline: auto;
   }
 }
 
-wa-page [slot="navigation"] wa-button#account-dropdown-button {
-  inline-size: 100%;
-
-  &::part(base) {
+@layer sno-component {
+  wa-page [slot="navigation"] wa-button::part(base) {
     justify-content: start;
   }
 
-  &::part(caret) {
-    flex: auto;
-    justify-content: end;
-  }
-}
-
-.page-subheader {
-  align-items: center;
-  padding: var(--wa-space-xs) var(--wa-space-m);
-  border-bottom: var(--wa-border-style) var(--wa-panel-border-width)
-    var(--wa-color-surface-border);
-  background-color: var(--wa-color-surface-default);
-
-  & .subheader-logo .subheader-snoman {
-    font-size: 1.75rem;
+  /* Custom snoico wa-icons size from font-size, so style the host element.
+   flex: none keeps them from being squeezed inside wa-button's flex row. */
+  wa-page wa-icon.nav-icon,
+  wa-page wa-icon.menu-icon {
+    font-size: var(--sno-nav-icon-size);
+    flex: none;
   }
 
-  & .subheader-user wa-button#account-dropdown-button {
-    & .member-nick,
+  /* The hamburger is icon-only (no label), so bump it up for visual weight and
+   a finger-friendly tap target. */
+  wa-page wa-icon.nav-toggle-icon {
+    font-size: var(--sno-nav-toggle-icon-size);
+  }
+
+  a.brand-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    & wa-icon.brand-logotype {
+      font-size: var(--sno-brand-logotype-size);
+      color: inherit;
+    }
+  }
+
+  wa-page [slot="navigation"] wa-button#account-dropdown-button {
+    inline-size: var(--sno-size-full);
+
+    &::part(base) {
+      justify-content: start;
+    }
+
     &::part(caret) {
-      display: none;
+      flex: auto;
+      justify-content: end;
+    }
+  }
+
+  .page-subheader {
+    align-items: center;
+    padding: var(--wa-space-xs) var(--wa-space-m);
+    border-bottom: var(--wa-border-style) var(--wa-panel-border-width)
+      var(--wa-color-surface-border);
+    background-color: var(--wa-color-surface-default);
+
+    & .subheader-logo .subheader-snoman {
+      font-size: var(--sno-subheader-logo-size);
+    }
+
+    & .subheader-user wa-button#account-dropdown-button {
+      & .member-nick,
+      &::part(caret) {
+        display: none;
+      }
+    }
+  }
+
+  wa-page[view="desktop"] [data-toggle-nav] {
+    display: none;
+  }
+
+  div.band-settings-index-grid {
+    --min-column-size: var(--sno-settings-index-min-column-size);
+  }
+
+  wa-divider.band-settings-index-divider {
+    padding-bottom: var(--spacing);
+  }
+
+  wa-button.band-settings-index-card-button {
+    &::part(base) {
+      height: auto;
+      justify-content: start;
+      padding: var(--wa-form-control-padding-block)
+        var(--wa-form-control-padding-inline);
+    }
+
+    .wa-flank {
+      inline-size: var(--sno-size-full);
+      min-inline-size: var(--sno-size-none);
+    }
+
+    wa-avatar {
+      flex: none;
+    }
+
+    .band-settings-index-card-body {
+      flex: 1 1 var(--sno-size-none);
+      min-inline-size: var(--sno-size-none);
+      white-space: normal;
+    }
+
+    .band-settings-index-card-body p {
+      margin: var(--sno-size-none);
+      white-space: normal;
+    }
+  }
+
+  wa-dialog wa-callout {
+    margin-block-end: var(--wa-space-m);
+  }
+
+  wa-input:state(user-invalid),
+  wa-input[data-invalid]:not([data-invalid=""]) {
+    --wa-form-control-border-color: var(--sno-invalid-color);
+    --wa-color-focus: var(--sno-invalid-color);
+  }
+
+  wa-input:state(user-invalid)::part(input):hover,
+  wa-input[data-invalid]:not([data-invalid=""])::part(input):hover {
+    --wa-form-control-border-color: var(--sno-invalid-color);
+    --wa-color-focus: var(--sno-invalid-color);
+  }
+
+  wa-input:state(user-invalid)::part(hint),
+  wa-input[data-invalid]:not([data-invalid=""])::part(hint),
+  wa-select:state(user-invalid)::part(hint),
+  wa-select[data-invalid]:not([data-invalid=""])::part(hint),
+  wa-switch:state(user-invalid)::part(hint),
+  wa-switch[data-invalid]:not([data-invalid=""])::part(hint) {
+    color: var(--sno-invalid-color);
+  }
+
+  wa-select:state(user-invalid)::part(combobox),
+  wa-select[data-invalid]:not([data-invalid=""])::part(combobox) {
+    --wa-form-control-border-color: var(--sno-invalid-color);
+    --wa-color-focus: var(--sno-invalid-color);
+  }
+
+  div[data-drag-item-id] {
+    cursor: grab;
+    padding: var(--wa-space-xs) var(--wa-space-s);
+    border-radius: var(--wa-border-radius-m);
+  }
+
+  div[data-drag-item-id].inactive {
+    background-color: var(--wa-color-neutral-fill-normal);
+    color: var(--wa-color-text-quiet);
+  }
+  div[data-drag-item-id].active {
+    background-color: var(--wa-color-success-fill-quiet);
+    color: var(--wa-color-text-normal);
+  }
+
+  wa-page[view="mobile"] {
+    --menu-width: auto;
+
+    [slot*="main"],
+    main {
+      padding: var(--wa-space-s);
     }
   }
 }
 
-wa-page[view="desktop"] [data-toggle-nav] {
-  display: none;
-}
-
-div.band-settings-index-grid {
-  --min-column-size: 32ch;
-}
-
-wa-divider.band-settings-index-divider {
-  padding-bottom: var(--spacing);
-}
-
-wa-button.band-settings-index-card-button {
-  &::part(base) {
-    height: auto;
-    justify-content: start;
-    padding: var(--wa-form-control-padding-block)
-      var(--wa-form-control-padding-inline);
+@layer wa-utilities {
+  .opacity-50 {
+    opacity: var(--sno-opacity-muted) !important;
   }
 
-  .wa-flank {
-    inline-size: 100%;
-    min-inline-size: 0;
+  .opacity-25 {
+    opacity: var(--sno-opacity-subtle);
   }
 
-  wa-avatar {
-    flex: none;
+  .bg-sno-green-300 {
+    background-color: var(--color-sno-green-300);
   }
 
-  .band-settings-index-card-body {
-    flex: 1 1 0%;
-    min-inline-size: 0;
-    white-space: normal;
+  .bg-sno-orange-300 {
+    background-color: var(--color-sno-orange-300) !important;
   }
-
-  .band-settings-index-card-body p {
-    margin: 0;
-    white-space: normal;
-  }
-}
-
-div.members-index-page {
-  max-inline-size: 100%;
-}
-
-div.members-invite-page {
-  inline-size: min(100%, 28rem);
-}
-
-.members-index-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  justify-content: space-between;
-  gap: var(--wa-space-s) var(--wa-space-l);
-
-  & h1 {
-    margin: 0;
-  }
-}
-
-.members-index-toolbar-controls {
-  display: grid;
-  gap: var(--wa-space-s);
-  align-items: end;
-  inline-size: 100%;
-}
-
-.members-index-table-shell {
-  overflow-x: auto;
-  background-color: var(--wa-color-surface-default);
-  border: var(--wa-border-width-s) var(--wa-border-style)
-    var(--wa-color-surface-border);
-  border-radius: var(--wa-panel-border-radius);
-}
-
-.members-index-table {
-  inline-size: 100%;
-  border-collapse: collapse;
-
-  & th,
-  & td {
-    padding: var(--wa-space-s) var(--wa-space-m);
-    border-bottom: var(--wa-border-width-s) var(--wa-border-style)
-      var(--wa-color-surface-border);
-    text-align: start;
-    vertical-align: top;
-  }
-
-  & tbody tr:last-child td {
-    border-bottom: 0;
-  }
-}
-
-.members-index-actions-header,
-.members-index-row-actions {
-  text-align: end !important;
-  white-space: nowrap;
-}
-
-a.members-index-sort-link {
-  color: inherit;
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: none;
-
-  &:hover {
-    color: var(--wa-color-text-link);
-    text-decoration: underline;
-  }
-}
-
-a.members-index-member-link {
-  color: var(--wa-color-text-link);
-  font-weight: 600;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-.members-index-row-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wa-space-2xs) var(--wa-space-s);
-  color: var(--wa-color-text-quiet);
-  font-size: var(--wa-font-size-s);
-}
-
-.members-index-discounts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wa-space-2xs);
-}
-
-.members-index-muted {
-  color: var(--wa-color-text-quiet);
-}
-
-@media screen and (max-width: calc(640px - 1px)) {
-  .members-index-col {
-    display: none;
-  }
-}
-
-@media screen and (min-width: 640px) {
-  .members-index-toolbar-controls {
-    grid-template-columns: minmax(16rem, 1fr) 14rem auto;
-    inline-size: auto;
-  }
-
-  .members-index-row-meta__discounts,
-  .members-index-row-meta__email,
-  .members-index-row-meta__section,
-  .members-index-row-meta__status {
-    display: none;
-  }
-}
-
-@media screen and (min-width: 960px) {
-  .members-index-row-meta__discounts {
-    display: none;
-  }
-
-  .members-index-row-meta {
-    display: none;
-  }
-}
-
-@media screen and (min-width: 640px) and (max-width: calc(960px - 1px)) {
-  .members-index-col--lg {
-    display: none;
-  }
-}
-
-wa-dialog wa-callout {
-  margin-block-end: var(--wa-space-m);
-}
-
-wa-input:state(user-invalid),
-wa-input[data-invalid]:not([data-invalid=""]) {
-  --wa-form-control-border-color: red;
-  --wa-color-focus: red;
-}
-
-wa-input:state(user-invalid)::part(input):hover,
-wa-input[data-invalid]:not([data-invalid=""])::part(input):hover {
-  --wa-form-control-border-color: red;
-  --wa-color-focus: red;
-}
-
-wa-input:state(user-invalid)::part(hint),
-wa-input[data-invalid]:not([data-invalid=""])::part(hint),
-wa-select:state(user-invalid)::part(hint),
-wa-select[data-invalid]:not([data-invalid=""])::part(hint),
-wa-switch:state(user-invalid)::part(hint),
-wa-switch[data-invalid]:not([data-invalid=""])::part(hint) {
-  color: red;
-}
-
-wa-select:state(user-invalid)::part(combobox),
-wa-select[data-invalid]:not([data-invalid=""])::part(combobox) {
-  --wa-form-control-border-color: red;
-  --wa-color-focus: red;
-}
-
-div[data-drag-item-id] {
-  cursor: grab;
-  padding: var(--wa-space-xs) var(--wa-space-s);
-  border-radius: var(--wa-border-radius-m);
-}
-
-div[data-drag-item-id].inactive {
-  background-color: var(--wa-color-neutral-fill-normal);
-  color: var(--wa-color-text-quiet);
-}
-div[data-drag-item-id].active {
-  background-color: var(--wa-color-success-fill-quiet);
-  color: var(--wa-color-text-normal);
-}
-
-.bg-sno-green-300 {
-  background-color: var(--color-sno-green-300);
-}
-
-.bg-sno-orange-300 {
-  background-color: var(--color-sno-orange-300) !important;
-}
-
-wa-page[view="mobile"] {
-  --menu-width: auto;
-
-  [slot*="main"],
-  main {
-    padding: var(--wa-space-s);
-  }
-}
-
-.opacity-50 {
-  opacity: 50% !important;
-}
-
-.opacity-25 {
-  opacity: 25%;
 }

@@ -3,6 +3,7 @@
    [app.datomic.shim :as datomic]
    [app.email :as email]
    [app.i18n :as i18n]
+   [app.keycloak :as keycloak]
    [app.queries :as q]
    [app.secret-box :as secret-box]
    [com.brunobonacci.mulog :as μ]
@@ -64,3 +65,8 @@
     (μ/log ::resend-member-invite)
     (email/queue-email! (email-sys req)
                         (email/build-new-user-invite (email-sys req) member invite-code))))
+
+(defn update-keycloak-meta! [req member-id]
+  (when-let [member (q/retrieve-member (db-from-req req) member-id)]
+    (when (:member/keycloak-id member)
+      (keycloak/update-user-meta! (get-in req [:system :keycloak]) member))))

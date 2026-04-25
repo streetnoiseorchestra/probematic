@@ -28,6 +28,8 @@
   ([value & more]
    (apply chassis/raw value more)))
 
+(def doctype-html5 chassis/doctype-html5)
+
 (defn -sri-integrity
   "Generates an integrity hash for an asset resource"
   [resource _cache-break]
@@ -92,9 +94,9 @@
   [req]
   [:input {:type "hidden" :name "__anti-forgery-token" :value (:pink.interceptors.csrf/token req)}])
 
-(defn html-document [{:keys [lang title description image favicon svg-icon apple-touch-icon url canonical head body-attrs]} & body]
+(defn html-document [{:keys [class lang title description image favicon svg-icon apple-touch-icon url canonical head body-attrs]} & body]
   [chassis/doctype-html5
-   [:html {:lang (or lang "en")}
+   [:html {:lang (or lang "en") :class class}
     [:head
      [:title title]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]

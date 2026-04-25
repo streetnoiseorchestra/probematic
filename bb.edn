@@ -53,20 +53,19 @@
          {:doc     "Run CI checks: test, format check, and lint"
           :depends [test fmt:check lint]}
 
-         css          (shell "tailwindcss -i resources/public/css/main.css -o resources/public/css/compiled/main.css")
-         watch-css    (shell "tailwindcss --watch --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
-         prod-css     (shell "tailwindcss --minify --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
-         dev-services (shell "docker compose -f ./docker-compose.dev.yml up -d")
-
-         uberjar      {:override-builtin true
-                       :depends          [clean]
-                       :doc              "Build uberjar"
-                       :task             (shell "clojure -T:build uberjar")}
-
-         clean        {:override-builtin true
-                       :doc              "Clean build artifacts"
-                       :task             (shell "clojure -T:build clean")}
-
-         container-build          {:task (exec 'container/build)}
-         container-publish        {:task (exec 'container/publish)}
-         container-publish-latest {:task (exec 'container/publish-latest)}}}
+         tw-css              (shell "tailwindcss -i resources/public/css/main.css -o resources/public/css/compiled/main.css")
+         tw-watch-css        (shell "tailwindcss --watch --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
+         tw-prod-css         (shell "tailwindcss --minify --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
+         css                 (shell "lightningcss --bundle --custom-media --targets 'defaults' resources/public/css/main2.css -o resources/public/css/compiled/main2.css")
+         watch-css           (shell "watchexec -e css bb css")
+         dev-services        (shell "docker compose -f ./docker-compose.dev.yml up -d")
+         uberjar             {:override-builtin true
+                              :depends          [clean]
+                              :doc              "Build uberjar"
+                              :task             (shell "clojure -T:build uberjar")}
+         clean               {:override-builtin true
+                              :doc              "Clean build artifacts"
+                              :task             (shell "clojure -T:build clean")}
+         container-build     {:task (exec 'container/build)}
+         container-publish   {:task (exec 'container/publish)}
+         container-publish-l {:task (exec 'container/publish-latest)}}}

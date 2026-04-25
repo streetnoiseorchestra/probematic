@@ -1,6 +1,7 @@
 (ns app.members.routes
   (:require [app.datomic.shim :as d]
             [app.layout :as layout]
+            [app.members.detail.views]
             [app.members.index.views]
             [app.members.invite.views]
             [app.members.views :as view]
@@ -15,11 +16,14 @@
                                        (view/member-vcard req))}])
 
 (defn members-detail []
-  (ctmx/make-routes
-   "/member/{member-id}"
-   (fn [req]
-     (layout/app-shell req
-                       (view/members-detail-page req false)))))
+  (ds/page-routes {:page-name ::detail
+                   :path      "/member/{member-id}"
+                   :view-ns   'app.members.detail.views}))
+
+(defn members-detail-trailing-slash []
+  (ds/page-routes {:page-name ::detail-trailing-slash
+                   :path      "/member/{member-id}/"
+                   :view-ns   'app.members.detail.views}))
 
 (defn legacy-members-detail []
   (ctmx/make-routes
@@ -57,6 +61,7 @@
    ["" {:interceptors members-interceptors}
     (member-vcard-download)
     (members-detail)
+    (members-detail-trailing-slash)
     (legacy-members-detail)]
    (legacy-members-index)])
 

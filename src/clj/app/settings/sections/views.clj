@@ -4,7 +4,7 @@
    [app.html :as html]
    [app.queries :as q]
    [app.settings.sections.actions :as actions]
-   [app.settings.view-support :as support]
+   [app.ui2 :as ui2]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn sections-reordering [{:keys [tr page-state] :as req} sections]
@@ -155,7 +155,7 @@
 
 (defn section-remove-dialog [{:keys [tr] :as req} {:section/keys [name]}]
   (let [loading-id (pr-str (str name))]
-    [:wa-dialog {:id    (support/remove-dialog-id "section" name)
+    [:wa-dialog {:id    (ui2/remove-dialog-id "section" name)
                  :label (tr [:action/confirm-generic])}
      [:p (tr [:action/confirm-delete-section] [(str "\"" name "\"")])]
      [:wa-button {:slot        "footer"
@@ -177,9 +177,9 @@
         loading-id (pr-str (str name))]
     [:tr {:id (str "section-container-" name)}
      [:td {:style "vertical-align: middle"} name]
-     [:td {:style "vertical-align: middle"} (support/active-badge active?)]
+     [:td {:style "vertical-align: middle"} (ui2/active-badge active?)]
      [:td {:style "vertical-align: top; text-align: end"}
-      (support/row-action-menu
+      (ui2/row-action-menu
        {:button-id button-id
         :items     [{:label              (tr [:action/update])
                      :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
@@ -188,7 +188,7 @@
                      :data-action        (d*/act req ::actions/open-section-edit)}
                     {:label       (tr [:action/remove])
                      :variant     "danger"
-                     :data-dialog (format "open %s" (support/remove-dialog-id "section" name))}]})]]))
+                     :data-dialog (format "open %s" (ui2/remove-dialog-id "section" name))}]})]]))
 
 (defn sections-panel [{:keys [page-state db tr] :as req}]
   (let [sections (q/retrieve-sections db)]
@@ -201,7 +201,7 @@
      (sections-reordering req sections)
      (for [section sections]
        (section-remove-dialog req section))
-     (support/settings-card
+     (ui2/settings-card
       {:title    "Manage sections"
        :subtitle "Choose which sections are visible and how they are ordered."
        :actions  [[:wa-button {:appearance  "outlined"
@@ -215,7 +215,7 @@
                                :data-id     "section-reorder"
                                :data-action (d*/act req ::actions/open-section-reorder)}
                    (tr [:action/reorder])]]}
-      (support/table-shell
+      (ui2/table-shell
        (if (seq sections)
          [:table
           [:thead
@@ -226,13 +226,13 @@
           [:tbody
            (for [section sections]
              (section-table-row req section))]]
-         (support/empty-state
+         (ui2/empty-state
           "No sections yet."
           "Add sections to group members and organize gig views."))))]))
 
 (defn page [{:keys [tr] :as req}]
   (let [tr (or tr (fn [path & _] (name (last path))))]
-    (support/datastar-page
+    (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [:div {:class "wa-stack wa-gap-2xs"}
        [:a {:href "/band-settings" :class "wa-caption-s"}

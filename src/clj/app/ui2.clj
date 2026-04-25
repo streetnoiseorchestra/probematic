@@ -1,4 +1,4 @@
-(ns app.settings.view-support
+(ns app.ui2
   (:require
    [app.html :as html]
    [clojure.string :as str]

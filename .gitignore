@@ -38,3 +38,8 @@ src/java-classes
 data.*
 datastar-inspector*.js
 prompts/
+extra/
+.agents
+resources/public/wa/skills
+resources/public/wa/react
+resources/public/wa/llms*

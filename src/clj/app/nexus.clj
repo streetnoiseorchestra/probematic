@@ -156,6 +156,9 @@
 (defn delete-invitation-fx [ctx _system invite-code]
   (members.effects/delete-invitation! (request ctx) invite-code))
 
+(defn update-keycloak-meta-fx [ctx _system member-id]
+  (members.effects/update-keycloak-meta! (request ctx) member-id))
+
 (defn response? [x]
   (and (map? x) (contains? x :status)))
 
@@ -276,6 +279,7 @@
                          :app.datastar/merge-state            merge-page-state-fx
                          :app.datastar/redirect               redirect-fx
                          :app.members/send-user-invitation    send-user-invitation-fx
+                         :app.members/update-keycloak-meta    update-keycloak-meta-fx
                          :app.members.index/resend-invitation resend-invitation-fx
                          :app.members.index/delete-invitation delete-invitation-fx}
    :nexus/actions       (merge app.settings.actions/actions

@@ -107,7 +107,14 @@
            (get-in (r/match-by-path router "/members/invite") [:data :name])))
     (is (= :app/members
            (get-in (r/match-by-path router "/members-old") [:data :app.route/name])))
-    (is (= :app/members
-           (get-in (r/match-by-path router (str "/member/" (random-uuid))) [:data :app.route/name])))
+    (let [member-id (random-uuid)]
+      (is (= :app/members
+             (get-in (r/match-by-path router (str "/member/" member-id)) [:data :app.route/name])))
+      (is (= :app.members.routes/detail
+             (get-in (r/match-by-path router (str "/member/" member-id)) [:data :name])))
+      (is (= :app/members
+             (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :app.route/name])))
+      (is (= :app.members.routes/detail-trailing-slash
+             (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :name]))))
     (is (= :app/members
            (get-in (r/match-by-path router (str "/member-old/" (random-uuid))) [:data :app.route/name])))))

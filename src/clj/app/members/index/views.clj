@@ -3,7 +3,7 @@
    [app.datastar :as d*]
    [app.members.index.actions :as actions]
    [app.members.index.queries :as queries]
-   [app.settings.view-support :as support]
+   [app.ui2 :as ui2]
    [app.urls :as urls]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -186,7 +186,7 @@
       [:tbody
        (for [member members]
          (member-row req member))]]]
-    (support/empty-state
+    (ui2/empty-state
      (tr [:member/browse-empty])
      (tr [:member/browse-empty-subtitle]))))
 
@@ -195,7 +195,7 @@
         page-state       (queries/normalize-page-state (:members-index page-state))
         members          (queries/members db page-state)
         open-invitations (queries/open-invitations req)]
-    (support/datastar-page
+    (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-l members-index-page"
             :data-signals (d*/->signals {:members-index page-state
                                          :invite        {:action nil

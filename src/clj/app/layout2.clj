@@ -1,14 +1,15 @@
 (ns app.layout2
   (:require
-   [jsonista.core :as j]
    [app.auth :as auth]
    [app.config :as config]
+   [app.html :as html]
    [app.i18n :as i18n]
-   [app.render :as render]
+   [app.secret-box :as secret-box]
    [app.ui :as ui]
    [app.urls :as url]
+   [app.util :as util]
    [clojure.string :as str]
-   [hiccup.util :as hiccup.util]))
+   [jsonista.core :as j]))
 
 (defn- nav-items
   [tr]
@@ -96,6 +97,36 @@
                        menu-icon-opts)]
       (tr [:nav/logout])]]))
 
+(def ^:private memoed-sha384-resource (memoize secret-box/sha384-resource))
+
+(defn- sha384-resource [{:keys [system]} path]
+  (if (config/prod-mode? (:env system))
+    (memoed-sha384-resource path)
+    (secret-box/sha384-resource path)))
+
+(defn- cache-buster [req public-path]
+  (let [hash (sha384-resource req public-path)]
+    (util/url-encode (subs hash (- (count hash) 8)))))
+
+(defn- asset-url [req path]
+  (str "/"
+       path
+       "?v="
+       (cache-buster req (str "public/" path))))
+
+(defn- public-script [req path & extra]
+  [:script (merge {:src   (asset-url req path)
+                   :defer true}
+                  (apply hash-map extra))])
+
+(defn- script [req path & extra]
+  (apply public-script req (str "js/" path) extra))
+
+(defn- stylesheet [req dir path & extra]
+  [:link (merge {:rel  "stylesheet"
+                 :href (asset-url req (str dir "/" path))}
+                (apply hash-map extra))])
+
 (defn head [req title]
   [:head
    [:meta {:charset "utf-8"}]
@@ -103,12 +134,8 @@
            :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
    [:link {:rel "shortcut icon" :href "/img/megaphone-icon.png"}]
    [:title (or title "SNOrga")]
-   (render/stylesheet req nil "wa/styles/themes" "active.css")
-   (render/stylesheet req nil "wa/styles/color/palettes" "vogue.css")
-   (render/stylesheet req nil "wa/styles" "native.css")
-   (render/stylesheet req nil "wa/styles" "utilities.css")
    [:style
-    (hiccup.util/raw-string
+    (html/raw
      ":root {
         --wa-font-family-body: \"Space Grotesk\", sans-serif;
         --wa-font-family-heading: \"IBM Plex Sans Condensed\", sans-serif;
@@ -122,14 +149,18 @@
         --wa-border-width-scale: 1;
         --wa-space-scale: 1;
       }")]
-   (render/stylesheet req nil "css" "main2.css")
+   (stylesheet req "wa/styles/themes" "active.css")
+   (stylesheet req "wa/styles/color/palettes" "vogue.css")
+   (stylesheet req "wa/styles" "native.css")
+   (stylesheet req "wa/styles" "utilities.css")
+   (stylesheet req "css/compiled" "main2.css")
    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=IBM+Plex+Sans+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"}]
    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Grotesk:wght@300..700&display=swap"}]
    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"}]
    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Podkova:wght@400..800&display=swap"}]
    [:script {:type "module" :src "/wa/webawesome.loader.js"}]
    [:script {:type "module"}
-    (hiccup.util/raw-string "
+    (html/raw "
   import { registerIconLibrary } from '/wa/webawesome.js';
   // these imports ensure that webcomonents custom elements are defined
   // before datastar inits so that d* can properly interact with their value and change attrs
@@ -152,21 +183,23 @@
     },
   });")]
    [:script {:type :importmap}
-    (hiccup.util/raw-string
-     (j/write-value-as-string {:imports
-                               {"squint-cljs/core.js" "/js/squint/core.js"
-                                "squint-cljs/string.js" "/js/squint/string.js"}}))]
-   [:script {:defer true :src "/js/datastar@1.0.1.js" :type "module"}]
+    (html/raw (j/write-value-as-string {:imports {"squint-cljs/core.js" (asset-url req "js/squint/core.js")
+                                                  "squint-cljs/string.js" (asset-url req "js/squint/string.js")}}))]
+   (script req "datastar@1.0.1.js" :type "module")
    (when (config/dev-mode? (-> req :system :env))
-     [:script {:defer true :src "/js/datastar-inspector@1.1.4.js" :type "module"}])])
+     (script req "datastar-inspector@1.1.4.js" :type "module"))])
 
 (defn html5-response
   ([req body] (html5-response req nil body))
   ([req {:keys [title]} body]
-   (render/html-response
-    (render/html5-safe {:class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-green"}
-                       (head req title)
-                       body))))
+   {:status 200
+    :headers {"Content-Type" "text/html"}
+    :body (html/->str
+           [html/doctype-html5
+            [:html {:lang  "en"  ;; TODO figure out where to grab lang from (or lang "en")
+                    :class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-green"}
+             (head req title)
+             body]])}))
 
 (defn app-shell
   ([req body]

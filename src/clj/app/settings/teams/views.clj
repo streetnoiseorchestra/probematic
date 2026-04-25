@@ -4,7 +4,7 @@
    [app.queries :as q]
    [app.settings.domain :as domain]
    [app.settings.teams.actions :as actions]
-   [app.settings.view-support :as support]
+   [app.ui2 :as ui2]
    [app.urls :as urls]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -155,7 +155,7 @@
 
 (defn team-remove-dialog [{:keys [tr] :as req} {team-name :team/name :team/keys [team-id]}]
   (let [loading-id (pr-str (str team-id))]
-    [:wa-dialog {:id    (support/remove-dialog-id "team" team-id)
+    [:wa-dialog {:id    (ui2/remove-dialog-id "team" team-id)
                  :label (tr [:action/confirm-generic])}
      [:p (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])]
      [:wa-button {:slot        "footer"
@@ -187,7 +187,7 @@
          (tr [:team/no-members])])]
      [:td {:style "vertical-align: middle"} (team-type-label tr team-type)]
      [:td {:style "vertical-align: top; text-align: end"}
-      (support/row-action-menu
+      (ui2/row-action-menu
        {:button-id button-id
         :items     [{:label              (tr [:action/update])
                      :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
@@ -196,7 +196,7 @@
                      :data-action        (d*/act req ::actions/open-team-edit)}
                     {:label       (tr [:action/remove])
                      :variant     "danger"
-                     :data-dialog (format "open %s" (support/remove-dialog-id "team" team-id))}]})]]))
+                     :data-dialog (format "open %s" (ui2/remove-dialog-id "team" team-id))}]})]]))
 
 (defn teams-panel [{:keys [page-state db tr] :as req}]
   (let [teams (q/retrieve-all-teams db)]
@@ -207,7 +207,7 @@
      (team-edit-form req)
      (for [team teams]
        (team-remove-dialog req team))
-     (support/settings-card
+     (ui2/settings-card
       {:title    "Manage teams"
        :subtitle "Teams help organize members around responsibilities."
        :actions  [[:wa-button {:appearance  "outlined"
@@ -216,7 +216,7 @@
                                :data-id     "team-create"
                                :data-action (d*/act req ::actions/open-team-create)}
                    (tr [:team/create-team])]]}
-      (support/table-shell
+      (ui2/table-shell
        (if (seq teams)
          [:table
           [:thead
@@ -228,13 +228,13 @@
           [:tbody
            (for [team teams]
              (team-table-row req team))]]
-         (support/empty-state
+         (ui2/empty-state
           "No teams yet."
           "Create a team to organize members around responsibilities."))))]))
 
 (defn page [{:keys [tr] :as req}]
   (let [tr (or tr (fn [path & _] (name (last path))))]
-    (support/datastar-page
+    (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [:div {:class "wa-stack wa-gap-2xs"}
        [:a {:href "/band-settings" :class "wa-caption-s"}

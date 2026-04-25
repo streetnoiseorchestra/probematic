@@ -1,7 +1,7 @@
 (ns app.settings.index.views
   (:require
    [app.datastar :as d*]
-   [app.settings.view-support :as support]))
+   [app.ui2 :as ui2]))
 
 (defn- settings-link-card [{:keys [href icon title body]}]
   [:wa-button {:href       href
@@ -19,7 +19,7 @@
 
 (defn page [{:keys [tr]}]
   (let [tr (or tr (fn [path & _] (name (last path))))]
-    (support/plain-page
+    (ui2/plain-page
      [:div {:class "wa-grid band-settings-index-grid"}
       [:h1 {:class "wa-span-grid"} (tr [:nav/band-settings])]
       [:wa-divider {:class "wa-span-grid band-settings-index-divider"}]
