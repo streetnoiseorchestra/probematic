@@ -79,6 +79,42 @@
           [:app.datastar/assoc-state [:member-detail :contact] false]]
          (actions/close-contact-edit-action {} {}))))
 
+(deftest validate-contact-phone-action-test
+  (testing "sets a phone validation error"
+    (let [member-id (random-uuid)]
+      (is (= [[:app.datastar/assoc-state
+               [:member-detail :contact]
+               {:member-id    (str member-id)
+                :name         "Alice Admin"
+                :nick         "ally"
+                :email        "alice@example.com"
+                :phone        "123"
+                :section-name "Trumpets"
+                :active       true
+                :error        {:phone {:error "Phone format is invalid."}}}]]
+             (actions/validate-contact-phone-action
+              {:tr tr}
+              (contact-signals member-id {:email "alice@example.com"
+                                          :phone "123"}))))))
+
+  (testing "clears an existing phone validation error"
+    (let [member-id (random-uuid)]
+      (is (= [[:app.datastar/assoc-state
+               [:member-detail :contact]
+               {:member-id    (str member-id)
+                :name         "Alice Admin"
+                :nick         "ally"
+                :email        "alice@example.com"
+                :phone        "+43677123456"
+                :section-name "Trumpets"
+                :active       true
+                :error        {}}]]
+             (actions/validate-contact-phone-action
+              {:tr tr}
+              (contact-signals member-id {:email "alice@example.com"
+                                          :phone "+43 677 123456"
+                                          :error {:phone {:error "Phone format is invalid."}}})))))))
+
 (deftest update-contact-action-test
   (testing "updates contact fields and closes the form"
     (let [{:keys [conn member-id] :as system} (new-system)

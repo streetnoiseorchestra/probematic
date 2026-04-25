@@ -92,8 +92,7 @@
       (tr [:member/invite-member])]]]])
 
 (defn page [{:keys [db page-state tr] :as req}]
-  (let [tr         (or tr (fn [path & _] (name (last path))))
-        form-state (merge (default-form-state) (:member-invite page-state))
+  (let [form-state (merge (default-form-state) (:member-invite page-state))
         sections   (q/retrieve-sections db)]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-invite-page"
@@ -107,9 +106,9 @@
        [:h1 (tr [:member/invite-member])]
        [:span {:class "wa-caption-s"}
         (tr [:member/invite-member-page-description])]]
-      (ui2/settings-card
+      (ui2/section-card
        {:title    (tr [:member/invite-member])
         :subtitle (tr [:member/invite-member-form-subtitle])}
-       (invite-form (assoc req :tr tr) form-state sections))])))
+       (invite-form req form-state sections))])))
 
 (d*/refresh-all!)

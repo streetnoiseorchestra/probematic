@@ -8,9 +8,6 @@
    [app.util.http :as http.util]
    [clojure.string :as str]))
 
-(defn- tr-fn [tr]
-  (or tr (fn [path & _] (name (last path)))))
-
 (defn- member-name [{:member/keys [name nick]}]
   (if (str/blank? nick)
     name
@@ -102,7 +99,12 @@
      (form-input form-state "member-detail.contact.name" (tr [:member/name]) {:required true :autofocus true})
      (form-input form-state "member-detail.contact.nick" (tr [:member/nick]) {})
      (form-input form-state "member-detail.contact.email" (tr [:Email]) {:type "email" :required true})
-     (form-input form-state "member-detail.contact.phone" (tr [:Phone]) {:type "tel" :required true})
+     (form-input form-state
+                 "member-detail.contact.phone"
+                 (tr [:Phone])
+                 {:type         "tel"
+                  :required     true
+                  :data-on:blur (str "@post('" (d*/act req ::actions/validate-contact-phone) "')")})
      (section-select req form-state sections)
      [:div {:class "wa-stack wa-gap-2xs"}
       [:span {:class "wa-caption-s"} (tr [:member/active?])]
@@ -176,21 +178,23 @@
         sections   (when form-state (q/retrieve-sections db))]
     [:header {:class "member-detail-header wa-stack wa-gap-m"}
      [:wa-breadcrumb
+      [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
       [:wa-breadcrumb-item {:href "/members"}
        (tr [:nav/members])]
-      [:wa-breadcrumb-item
-       (:member/name member)]]
+      [:wa-breadcrumb-item (cond-> {}
+                             form-state (assoc :href (str "/members/" (:member/member-id member))))
+       (:member/name member)]
+      (when form-state
+        [:wa-breadcrumb-item (tr [:action/edit])])]
      (if form-state
        (ui2/section-card {:title    (tr [:action/edit])}
                          (contact-form req form-state sections))
        (profile-summary req member))]))
 
 (defn page [{:keys [db page-state tr] :as req}]
-  (let [tr           (tr-fn tr)
-        member-id    (http.util/path-param-uuid! req :member-id)
+  (let [member-id    (http.util/path-param-uuid! req :member-id)
         member       (q/retrieve-member db member-id)
-        contact-form (get-in page-state [:member-detail :contact])
-        req          (assoc req :tr tr)]
+        contact-form (get-in page-state [:member-detail :contact])]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
             :data-signals (d*/->signals {:member-detail {:contact contact-form}})}

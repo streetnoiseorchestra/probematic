@@ -10,9 +10,6 @@
 (def clear-contact
   [:app.datastar/assoc-state [:member-detail :contact] false])
 
-(defn- tr-fn [tr]
-  (or tr (fn [path & _] (name (last path)))))
-
 (defn- normalize-bool [v default]
   (cond
     (true? v) true
@@ -57,18 +54,24 @@
               (support/lookup-taken-by-other? db [:member/phone phone] member-ref))
      {:phone {:error (tr [:error/member-unique-phone])}})))
 
+(defn- phone-error [tr phone]
+  (cond
+    (str/blank? phone)
+    (required-error tr (tr [:Phone]))
+
+    (not (members.domain/phone-valid? phone))
+    {:error (tr [:error/member-phone-format])}))
+
 (defn- validation-errors [{:keys [db tr member-ref]} {:keys [name email phone section-name] :as contact}]
   (merge
    (when (str/blank? name)
      {:name (required-error tr (tr [:member/name]))})
    (when (str/blank? email)
      {:email (required-error tr (tr [:Email]))})
-   (when (str/blank? phone)
-     {:phone (required-error tr (tr [:Phone]))})
+   (when-let [error (phone-error tr phone)]
+     {:phone error})
    (when (str/blank? section-name)
      {:section-name (required-error tr (tr [:section]))})
-   (when (and (seq phone) (not (members.domain/phone-valid? phone)))
-     {:phone {:error (tr [:error/member-phone-format])}})
    (when (and (seq section-name) (not (section-exists? db section-name)))
      {:section-name {:error (tr [:error/member-section-invalid])}})
    (duplicate-errors db tr member-ref contact)))
@@ -114,10 +117,20 @@
 (defn close-contact-edit-action [_state _signals]
   [support/clear-loading clear-contact])
 
+(defn validate-contact-phone-action
+  [{:keys [tr]} {:keys [member-detail]}]
+  (let [raw     (:contact member-detail)
+        contact (normalize-contact raw)
+        error   (phone-error tr (:phone contact))]
+    [[:app.datastar/assoc-state
+      [:member-detail :contact]
+      (assoc contact :error (cond-> (or (:error raw) {})
+                              error (assoc :phone error)
+                              (nil? error) (dissoc :phone)))]]))
+
 (defn update-contact-action
   [{:keys [db current-member-id tr]} {:keys [member-detail]}]
-  (let [tr             (tr-fn tr)
-        contact        (normalize-contact (:contact member-detail))
+  (let [contact        (normalize-contact (:contact member-detail))
         member-id      (util/ensure-uuid! (:member-id contact))
         member-ref     [:member/member-id member-id]
         current-member (q/retrieve-member db member-id)
@@ -138,6 +151,7 @@
         (conj support/clear-loading clear-contact)))))
 
 (def actions
-  {::open-contact-edit  #'open-contact-edit-action
-   ::close-contact-edit #'close-contact-edit-action
-   ::update-contact     #'update-contact-action})
+  {::open-contact-edit     #'open-contact-edit-action
+   ::close-contact-edit    #'close-contact-edit-action
+   ::validate-contact-phone #'validate-contact-phone-action
+   ::update-contact        #'update-contact-action})

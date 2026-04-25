@@ -190,9 +190,8 @@
      (tr [:member/browse-empty])
      (tr [:member/browse-empty-subtitle]))))
 
-(defn page [{:keys [db page-state tr] :as req}]
-  (let [tr               (or tr (fn [path & _] (name (last path))))
-        page-state       (queries/normalize-page-state (:members-index page-state))
+(defn page [{:keys [db page-state] :as req}]
+  (let [page-state       (queries/normalize-page-state (:members-index page-state))
         members          (queries/members db page-state)
         open-invitations (queries/open-invitations req)]
     (ui2/datastar-page
@@ -201,8 +200,8 @@
                                          :invite        {:action nil
                                                          :code nil
                                                          :inflight false}})}
-      (members-toolbar (assoc req :tr tr) page-state (count members))
-      (open-invitations-panel (assoc req :tr tr) open-invitations)
-      (members-table (assoc req :tr tr) page-state members)])))
+      (members-toolbar req page-state (count members))
+      (open-invitations-panel req open-invitations)
+      (members-table req page-state members)])))
 
 (d*/refresh-all!)
