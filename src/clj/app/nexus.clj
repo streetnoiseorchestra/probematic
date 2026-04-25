@@ -1,6 +1,5 @@
 (ns app.nexus
   (:require
-   [medley.core :as m]
    [app.datastar :as datastar]
    [app.members.actions]
    [app.members.effects :as members.effects]
@@ -8,8 +7,8 @@
    [clojure.walk :as walk]
    [com.yetanalytics.squuid :as sq]
    [datomic.api :as d]
-   [nexus.core :as nexus]
-   [nexus.strategies :as strategies]))
+   [medley.core :as m]
+   [nexus.core :as nexus]))
 
 (def unique-attrs
   #{:user-account/id
@@ -20,11 +19,6 @@
     :section/name
     :travel.discount.type/discount-type-id
     :travel.discount.type/discount-type-name})
-
-(defn system->conn [system]
-  (or (:conn system)
-      (:datomic-conn system)
-      (get-in system [:datomic :conn])))
 
 (defn prepare-tx-with-retractions
   "Transform transactions by connverting nil values to retractions.
@@ -109,55 +103,51 @@
   (get-in request [:session :session/member :member/member-id]))
 
 (defn system->state
-  ([system] (system->state system nil))
-  ([system request]
-   (cond-> {:now (java.util.Date.)}
-     (system->conn system) (assoc :db (d/db (system->conn system)))
-     (current-member-id request) (assoc :current-member-id (current-member-id request)))))
+  [{:keys [system request]}]
+  (cond-> {:now (java.util.Date.) :tr (:tr request)
+           :db (d/db (-> system :datomic :conn))}
+    (current-member-id request) (assoc :current-member-id (current-member-id request))))
 
 (defn ^:nexus/batch db-transact-fx
-  [_ system transact-actions]
-  (let [conn (system->conn system)]
+  [_ {:keys [system]} transact-actions]
+  (let [conn (-> system :datomic :conn)]
     (assert conn "Nexus :db/transact requires a Datomic connection")
     @(d/transact conn (batch-transactions transact-actions))))
 
-(defn request [ctx]
-  (get-in ctx [:dispatch-data :request]))
+(defn merge-signals-fx [_ {req :request} merge-signals]
+  (datastar/respond-signals req :merge merge-signals))
 
-(defn merge-signals-fx [ctx _system merge-signals]
-  (datastar/respond-signals (request ctx) :merge merge-signals))
+(defn remove-signals-fx [_ {req :request} remove-signals]
+  (datastar/respond-signals req :remove remove-signals))
 
-(defn remove-signals-fx [ctx _system remove-signals]
-  (datastar/respond-signals (request ctx) :remove remove-signals))
+(defn open-form-fx [_ {req :request} form-name form-id-key form-id-value]
+  (datastar/open-form req form-name form-id-key form-id-value))
 
-(defn open-form-fx [ctx _system form-name form-id-key form-id-value]
-  (datastar/open-form (request ctx) form-name form-id-key form-id-value))
+(defn close-form-fx [_ {req :request} form-name form-id-key]
+  (datastar/close-form req form-name form-id-key))
 
-(defn close-form-fx [ctx _system form-name form-id-key]
-  (datastar/close-form (request ctx) form-name form-id-key))
+(defn assoc-page-state-fx [_ {req :request} path value]
+  (datastar/state-transact! req #(assoc-in % path value)))
 
-(defn assoc-page-state-fx [ctx _system path value]
-  (datastar/state-transact! (request ctx) #(assoc-in % path value)))
-
-(defn merge-page-state-fx [ctx _system path value]
-  (datastar/state-transact! (request ctx)
+(defn merge-page-state-fx [_ {req :request} path value]
+  (datastar/state-transact! req
                             (fn [s]
                               (update-in s path (fnil m/deep-merge {}) value))))
 
-(defn redirect-fx [ctx _system url]
-  (datastar/redirect (request ctx) url))
+(defn redirect-fx [_ {req :request} url]
+  (datastar/redirect req url))
 
-(defn send-user-invitation-fx [ctx _system member-id]
-  (members.effects/send-user-invitation! (request ctx) member-id))
+(defn send-user-invitation-fx [_ {req :request} member-id]
+  (members.effects/send-user-invitation! req member-id))
 
-(defn resend-invitation-fx [ctx _system invite-code]
-  (members.effects/resend-invitation! (request ctx) invite-code))
+(defn resend-invitation-fx [_ {req :request} invite-code]
+  (members.effects/resend-invitation! req invite-code))
 
-(defn delete-invitation-fx [ctx _system invite-code]
-  (members.effects/delete-invitation! (request ctx) invite-code))
+(defn delete-invitation-fx [_ {req :request} invite-code]
+  (members.effects/delete-invitation! req invite-code))
 
-(defn update-keycloak-meta-fx [ctx _system member-id]
-  (members.effects/update-keycloak-meta! (request ctx) member-id))
+(defn update-keycloak-meta-fx [_ {req :request} member-id]
+  (members.effects/update-keycloak-meta! req member-id))
 
 (defn response? [x]
   (and (map? x) (contains? x :status)))
@@ -168,105 +158,34 @@
            (filter response?)
            last))
 
-(defn has-fail-fast-strategy? [nexus]
-  (contains? (set (:nexus/interceptors nexus)) strategies/fail-fast))
-
-(defn maybe-add-fail-fast [nexus]
-  (if (has-fail-fast-strategy? nexus)
-    nexus
-    (update nexus :nexus/interceptors (fnil conj []) strategies/fail-fast)))
-
-(defn add-response-actions [nexus]
-  (-> nexus
-      (assoc-in [:nexus/actions :http-response/ok]
-                (fn [_ response-body]
-                  [[:http/respond {:status 200
-                                   :body   response-body}]]))
-      (assoc-in [:nexus/actions :http-response/created]
-                (fn ([_ response-body]
-                     [[:http/respond {:status 201
-                                      :body   response-body}]])
-                  ([_ response-body location]
-                   [[:http/respond (cond-> {:status 201
-                                            :body   response-body}
-                                     location (assoc-in [:headers "Location"] location))]])))
-      (assoc-in [:nexus/actions :http-response/bad-request]
-                (fn [_ response-body]
-                  [[:http/respond {:status 400
-                                   :body   response-body}]]))
-      (assoc-in [:nexus/actions :http-response/unauthorized]
-                (fn [_ response-body]
-                  [[:http/respond {:status 401
-                                   :body   response-body}]]))
-      (assoc-in [:nexus/actions :http-response/forbidden]
-                (fn [_ response-body]
-                  [[:http/respond {:status 403
-                                   :body   response-body}]]))
-      (assoc-in [:nexus/actions :http-response/not-found]
-                (fn [_ response-body]
-                  [[:http/respond {:status 404
-                                   :body   response-body}]]))
-      (assoc-in [:nexus/actions :http-response/internal-server-error]
-                (fn [_ response-body]
-                  [[:http/respond {:status 500
-                                   :body   response-body}]]))))
-
-(defn prepare-nexus-template
-  [nexus {:ring-nexus/keys [fail-fast? add-response-actions?]
-          :or {fail-fast? true, add-response-actions? true}}]
-  (cond-> nexus
-    add-response-actions? add-response-actions
-    fail-fast? maybe-add-fail-fast))
-
-(defn add-respond-effect [nexus-template respond]
-  (assoc-in nexus-template [:nexus/effects :http/respond]
-            (fn [_ _ {:keys [body status headers] :as response-map}]
-              (respond (cond-> response-map
-                         (nil? body) (assoc :body "")
-                         (nil? headers) (assoc :headers {})
-                         (nil? status) (assoc :status 200))))))
-
 (defn dispatch-actions
-  [nexus-template system request actions on-error]
-  (let [response_      (atom nil)
-        prepared-nexus (add-respond-effect nexus-template #(reset! response_ %))
-        result         (nexus/dispatch prepared-nexus system {:request request} actions)]
+  [nexus system {:keys [request response]} on-error]
+  (let [result (nexus/dispatch nexus {:system system :request request} {:request request} response)]
     (when-let [error (->> (:errors result) (keep :err) first)]
       (on-error error))
-    (or @response_
-        (result-response result)
-        {:status 204
-         :headers {}
-         :body ""})))
-
-(defn- request-state [system->state system request]
-  (try
-    (system->state system request)
-    (catch clojure.lang.ArityException _
-      (system->state system))))
+    (or
+     (result-response result)
+     {:status  204
+      :headers {}
+      :body    ""})))
 
 (defn nexus-interceptor
   "Dispatch Nexus action vectors returned by a Reitit route handler.
-
-  This is the small local subset of ring-nexus-middleware that Probematic needs:
   attach a Nexus state snapshot to the request, dispatch action vectors, and
   pass normal Ring responses through unchanged."
   ([nexus system]
    (nexus-interceptor nexus system nil))
-  ([{:keys [nexus/system->state] :as nexus} system
-    {:ring-nexus/keys [state-k on-error]
-     :or {state-k :nexus/state, on-error #(throw %)}
-     :as opts}]
-   (let [nexus-template (prepare-nexus-template nexus opts)]
-     {:name  ::nexus-interceptor
-      :enter (fn [ctx]
-               (update ctx :request assoc state-k
-                       (request-state system->state system (:request ctx))))
-      :leave (fn [{:keys [request response] :as ctx}]
-               (if (vector? response)
-                 (assoc ctx :response
-                        (dispatch-actions nexus-template system request response on-error))
-                 ctx))})))
+  ([nexus system {:keys [on-error] :or {on-error #(throw %)}}]
+   {:name  ::nexus-interceptor
+    :enter (fn [ctx]
+             ctx
+             #_(update ctx :request assoc :nexus/state
+                       (system->state system (:request ctx))))
+    :leave (fn [{:keys [response] :as ctx}]
+             (if (vector? response)
+               (assoc ctx :response
+                      (dispatch-actions nexus system ctx on-error))
+               ctx))}))
 
 (defn nexus []
   {:nexus/system->state system->state
