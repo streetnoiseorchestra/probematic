@@ -16,14 +16,14 @@
   [{:label (tr [:nav/home])          :icon :home                 :href "/"                                       :route-name :app/dashboard}
    {:label (tr [:nav/gigs])          :icon :trumpet              :href (url/link-gigs-home)                      :route-name :app/gigs}
    {:label (tr [:nav/songs])         :icon :music-note-outline   :href "/songs"                                  :route-name :app/songs}
+   {:label (tr [:nav/members])       :icon :users-outline        :href "/members"                                :route-name :app/members}
+   {:label (tr [:nav/insurance])     :icon :shield-check-outline :href "/insurance"                              :route-name :app/insurance}
    {:label (tr [:nav/probeplan])     :icon :calendar             :href "/probeplan"                              :route-name :app/probeplan}
    {:label (tr [:nav/polls])         :icon :question             :href "/polls"                                  :route-name :app/polls}
-   {:label (tr [:nav/stats])         :icon :chart-bar-square     :href "/stats"                                  :route-name :app/stats}
    {:label (tr [:nav/forum])         :icon :snomegaphone         :href "https://forum.streetnoise.at"            :route-name :app/forum}
    {:label (tr [:nav/nextcloud])     :icon :folder-open          :href "https://data.streetnoise.at/apps/files/" :route-name :app/nextcloud}
    {:label (tr [:nav/chat])          :icon :comments             :href "https://chat.streetnoise.at"             :route-name :app/chat}
-   {:label (tr [:nav/members])       :icon :users-outline        :href "/members"                                :route-name :app/members}
-   {:label (tr [:nav/insurance])     :icon :shield-check-outline :href "/insurance"                              :route-name :app/insurance}
+   {:label (tr [:nav/stats])         :icon :chart-bar-square     :href "/stats"                                  :route-name :app/stats}
    {:label (tr [:nav/band-settings]) :icon :cog                  :href "/band-settings"                          :route-name :app/band-settings}])
 
 (defn- active? [req route-name]
