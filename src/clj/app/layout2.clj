@@ -32,7 +32,8 @@
 (defn- nav-button [req {:keys [label icon href route-name]}]
   [:wa-button (cond-> {:href       href
                        :appearance "plain"}
-                (active? req route-name) (assoc :variant "brand"))
+                (active? req route-name) (assoc :variant "brand"
+                                                :aria-current "page"))
    [:wa-icon {:library "snoico"
               :name    (name icon)
               :slot    "start"
