@@ -1,15 +1,27 @@
 .gigs-index-page,
-.gigs-archive-page {
+.gigs-archive-page,
+.gigs-detail-page {
   max-inline-size: var(--sno-size-full);
   --sno-gig-row-icon-size: 1.25rem;
   --sno-gig-row-gray-400: #9ca3af;
   --sno-gig-row-red-500: #ef4444;
+  --sno-gig-detail-status-icon-size: 1.5rem;
 }
 
 .gigs-index-toolbar h1,
 .gigs-archive-toolbar h1,
+.gigs-detail-header h1,
 .gigs-section-heading h2 {
   margin: var(--sno-size-none);
+}
+
+.gigs-detail-status-icon {
+  flex: none;
+  font-size: var(--sno-gig-detail-status-icon-size);
+}
+
+.gigs-detail-wide {
+  grid-column: 1 / -1;
 }
 
 .gigs-index-columns {

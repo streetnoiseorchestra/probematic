@@ -22,17 +22,17 @@
 ** DONE members detail - travel discounts
 ** DONE members detail - travel ledger
 ** DONE members detail - travel insurance
-** TODO gig index
+** DONE gig index
+** DONE gig archive
 ** TODO gig create
 ** TODO gig detail - gig info
+** TODO gig detail - attendance
 ** TODO gig detail - probeplan
 ** TODO gig detail - setlist
-** TODO gig detail - attendance
 ** TODO gig detail - attendance send reminders
 ** TODO gig detail - forum embed
 ** TODO gig edit - should be similiar/same to gig create
 ** TODO gig detail - log plays
-** TODO gig archive
 ** TODO repertoire index
 ** TODO repertoire create/edit
 ** TODO repertoire detail w/out sheet music

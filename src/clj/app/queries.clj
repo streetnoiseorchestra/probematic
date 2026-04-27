@@ -74,7 +74,7 @@
 (def gig-pattern [:gig/gig-id :gig/title :gig/status :gig/date :gig/end-date :gig/call-time :gig/set-time :gig/location :gig/gig-type :gig/gigo-id])
 (def gig-detail-pattern [:gig/gig-id :gig/title :gig/status :gig/date :gig/location :gig/gigo-id
                          :gig/end-date  :gig/pay-deal :gig/call-time :gig/set-time
-                         :gig/end-time :gig/description :gig/setlist :gig/leader :gig/post-gig-plans
+                         :gig/end-time :gig/description :gig/outfit :gig/setlist :gig/leader :gig/post-gig-plans
                          :forum.topic/topic-id :gig/more-details :gig/gig-type
                          {:gig/comments [{:comment/author [:member/name :member/nick :member/member-id :member/avatar-template]}
                                          :comment/body :comment/comment-id :comment/created-at]}

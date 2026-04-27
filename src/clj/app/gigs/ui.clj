@@ -19,10 +19,17 @@
     :gig.status/cancelled "gigs-status-icon--cancelled"
     "gigs-status-icon--unknown"))
 
-(defn- status-icon [status]
-  [:wa-icon {:library "snoico"
-             :name    (status-icon-name status)
-             :class   (str "gigs-status-icon " (status-class status))}])
+(defn gig-status-icon
+  ([status]
+   (gig-status-icon status nil))
+  ([status attrs]
+   [:wa-icon (merge attrs
+                    {:library "snoico"
+                     :name    (status-icon-name status)
+                     :class   (str "gigs-status-icon "
+                                   (status-class status)
+                                   (when-let [class (:class attrs)]
+                                     (str " " class)))})]))
 
 (defn- date-value [dt]
   (when dt
@@ -56,7 +63,7 @@
   [:a {:href  (urls/link-gig gig)
        :class "gigs-row"}
    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-row-title"}
-    (status-icon status)
+    (gig-status-icon status)
     [:span {:class "gigs-row-title-text"} title]]
    [:div {:class "gigs-row-meta"}
     [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-location"}

@@ -109,6 +109,19 @@
            (get-in (r/match-by-path router "/gigs/archive") [:data :name])))
     (is (= :app.gigs.routes/archive-year
            (get-in (r/match-by-path router "/gigs/archive/2025") [:data :name])))
+    (let [gig-id (random-uuid)]
+      (is (= :app/gigs
+             (get-in (r/match-by-path router (str "/gig/" gig-id)) [:data :app.route/name])))
+      (is (= :app.gigs.routes/detail
+             (get-in (r/match-by-path router (str "/gig/" gig-id)) [:data :name])))
+      (is (= :app/gigs
+             (get-in (r/match-by-path router (str "/gig/" gig-id "/")) [:data :app.route/name])))
+      (is (= :app.gigs.routes/detail-trailing-slash
+             (get-in (r/match-by-path router (str "/gig/" gig-id "/")) [:data :name])))
+      (is (= :app/gigs
+             (get-in (r/match-by-path router (str "/gig-legacy/" gig-id "/")) [:data :app.route/name])))
+      (is (= :app/gigs
+             (get-in (r/match-by-path router (str "/gig/" gig-id "/log-play")) [:data :app.route/name]))))
     (is (= :app/gigs
            (get-in (r/match-by-path router "/gigs-legacy") [:data :app.route/name])))
     (is (= :app/gigs
@@ -124,7 +137,10 @@
   (is (= "/gigs/archive"
          (urls/link-gig-archive)))
   (is (= "/gigs/archive/2025"
-         (urls/link-gig-archive-year 2025))))
+         (urls/link-gig-archive-year 2025)))
+  (let [gig-id (random-uuid)]
+    (is (= (str "/gig/" gig-id "/")
+           (urls/link-gig gig-id)))))
 
 (deftest members-routes-expose-the-datastar-index-invite-and-legacy-compatibility-paths
   (let [router (http/router ["" (members.routes/routes)])]

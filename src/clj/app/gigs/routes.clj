@@ -2,6 +2,7 @@
   (:require
    [app.datomic.shim :as d]
    [app.gigs.archive.views]
+   [app.gigs.detail.views]
    [app.gigs.index.views]
    [app.gigs.views :as view]
    [app.layout :as layout]
@@ -71,11 +72,19 @@
    (ds/page-routes {:page-name ::archive-year
                     :path      "/gigs/archive/{year}"
                     :view-ns   'app.gigs.archive.views})
+   (ds/page-routes {:page-name ::detail
+                    :path      "/gig/{gig/gig-id}"
+                    :view-ns   'app.gigs.detail.views})
+   (ds/page-routes {:page-name ::detail-trailing-slash
+                    :path      "/gig/{gig/gig-id}/"
+                    :view-ns   'app.gigs.detail.views})
    ["/gigs-legacy"
     (gig-create-route)
     (gigs-list-route)
     (gigs-archive-route)]
    ["/gig" {:interceptors [gigs-interceptors]}
+    (gig-log-play-route)]
+   ["/gig-legacy" {:interceptors [gigs-interceptors]}
     (gig-detail-route)
     (gig-log-play-route)]])
 
