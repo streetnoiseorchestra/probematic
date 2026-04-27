@@ -1,7 +1,7 @@
 (ns app.settings.teams.actions
   (:require
    [app.queries :as q]
-   [app.settings.action-support :as support]
+   [app.nexus.actions :as support]
    [app.settings.domain :as domain]
    [app.util :as util]
    [clojure.string :as str]

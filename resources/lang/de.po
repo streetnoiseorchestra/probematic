@@ -2440,6 +2440,48 @@ msgctxt ":error/member-unique-username"
 msgid "A member already has that username"
 msgstr "Ein Mitglied hat bereits diesen Benutzernamen"
 
+#: :error/gig-end-date-before-date
+#, ycp-format
+msgctxt ":error/gig-end-date-before-date"
+msgid "End date must be on or after date."
+msgstr "Das Enddatum muss am oder nach dem Datum liegen."
+
+#: :error/gig-set-time-before-call-time
+#, ycp-format
+msgctxt ":error/gig-set-time-before-call-time"
+msgid "Set time must be at or after call time."
+msgstr "Die Auftrittszeit muss gleich oder nach dem Beginn sein."
+
+#: :error/gig-end-time-before-set-time
+#, ycp-format
+msgctxt ":error/gig-end-time-before-set-time"
+msgid "End time must be at or after set time."
+msgstr "Die Endzeit muss gleich oder nach der Auftrittszeit sein."
+
+#: :error/gig-end-time-before-call-time
+#, ycp-format
+msgctxt ":error/gig-end-time-before-call-time"
+msgid "End time must be at or after call time."
+msgstr "Die Endzeit muss gleich oder nach dem Beginn sein."
+
+#: :error/gig-rehearsal-leaders-same
+#, ycp-format
+msgctxt ":error/gig-rehearsal-leaders-same"
+msgid "Probeleitung 2 must be different from Probeleitung 1."
+msgstr "Probeleitung 2 muss sich von Probeleitung 1 unterscheiden."
+
+#: :error/gig-edit-not-allowed
+#, ycp-format
+msgctxt ":error/gig-edit-not-allowed"
+msgid "You are not allowed to edit this gig."
+msgstr "Du darfst diese Probe oder diesen Gig nicht bearbeiten."
+
+#: :error/gig-edit-not-found
+#, ycp-format
+msgctxt ":error/gig-edit-not-found"
+msgid "Gig not found."
+msgstr "Probe oder Gig wurde nicht gefunden."
+
 #: :reminders/remind-me-in
 #, ycp-format
 msgctxt ":reminders/remind-me-in"

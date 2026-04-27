@@ -1,7 +1,7 @@
 (ns app.settings.sections.actions
   (:require
    [app.queries :as q]
-   [app.settings.action-support :as support]
+   [app.nexus.actions :as support]
    [clojure.string :as str]
    [datomic.api :as d]))
 

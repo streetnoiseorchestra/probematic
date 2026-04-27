@@ -21,8 +21,14 @@
                    :app.members.index.actions/set-search-phrase))
     (is (contains? (:nexus/actions nexus-config)
                    :app.members.invite.actions/submit-member-invite))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.gigs.edit.actions/update-gig))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.gigs.edit.actions/delete-gig))
     (is (contains? (:nexus/effects nexus-config) :db/transact))
     (is (contains? (:nexus/effects nexus-config) :app.datastar/redirect))
+    (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-details-edited))
+    (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-deleted))
     (is (contains? (:nexus/effects nexus-config) :app.members/send-user-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))))
@@ -32,14 +38,32 @@
     (is (= (ig/ref :app.ig/nexus)
            (get-in cfg [:app.ig/handler :nexus])))))
 
-(deftest system->state-includes-current-member-id-from-request
+(deftest system->state-includes-current-member-id-and-roles-from-request
   (let [{:keys [conn]} (tc/new-system "nexus-state")
-        member-id      (random-uuid)]
-    (is (= member-id
-           (:current-member-id
-            (app-nexus/system->state
-             {:system  {:datomic {:conn conn}}
-              :request {:session {:session/member {:member/member-id member-id}}}}))))))
+        member-id      (random-uuid)
+        state          (app-nexus/system->state
+                        {:system  {:datomic {:conn conn}}
+                         :request {:session {:session/member {:member/member-id member-id}
+                                             :session/roles  #{:admin}}}})]
+    (is (= member-id (:current-member-id state)))
+    (is (= #{:admin} (:current-user-roles state)))))
+
+(deftest db-transact-fx-dispatches-on-success-actions
+  (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-success")
+        team-id        (random-uuid)
+        dispatched_    (atom nil)
+        result         (app-nexus/db-transact-fx
+                        {:dispatch (fn [actions dispatch-data]
+                                     (reset! dispatched_ [actions dispatch-data]))}
+                        {:system {:datomic {:conn conn}}}
+                        [[[{:team/team-id team-id
+                            :team/name    "On Success Test"}]
+                          {:on-success [[:test/on-success team-id]]}]])]
+    (is (some? (:db-after result)))
+    (is (= [[:test/on-success team-id]]
+           (first @dispatched_)))
+    (is (= result
+           (-> @dispatched_ second :tx-result)))))
 
 (deftest batch-transactions-replaces-generated-values
   (let [[tx] (app-nexus/batch-transactions

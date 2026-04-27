@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.html :as html]
+   [app.gigs.edit.actions :as actions]
    [app.gigs.domain :as domain]
    [app.gigs.ui :as gigs.ui]
    [app.queries :as q]
@@ -13,8 +14,7 @@
    [tick.core :as t]))
 
 (def extra-head
-  [[:link {:rel  "stylesheet"
-           :href "/css/easymde.min@2.18.0.css"}]
+  [[:link {:rel "stylesheet" :href "/css/easymde.min@2.18.0.css"}]
    [:script {:src "/js/easymde.min@2.18.0.js"}]
    [:script
     (html/raw
@@ -95,6 +95,14 @@
             xhr.send(formData);
           },
         });
+        easyMDE.codemirror.on('change', function () {
+          target.value = easyMDE.value();
+          target.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+        const container = target.parentElement && target.parentElement.querySelector('.EasyMDEContainer');
+        if (container) {
+          container.setAttribute('data-ignore-morph', '');
+        }
         return easyMDE;
       };
 
@@ -117,25 +125,52 @@
                :selected (= value selected-value)}
    label])
 
-(defn- status-select [{:keys [tr]} status]
-  (let [selected (some-> status name)]
+(defn- field-error [form-state field]
+  (-> form-state :_error field :error))
+
+(defn- validate-field-action [req field]
+  (str "$gig-edit.validate-field = '"
+       (name field)
+       "'; @post('"
+       (d*/act req ::actions/validate-gig-field)
+       "')"))
+
+(defn- validate-field-attrs [req form-state field]
+  (let [error (field-error form-state field)]
+    {:hint                            error
+     :data-invalid                    (when error "true")
+     :data-bind                       (str "gig-edit." (name field))
+     :data-on:blur                    (validate-field-action req field)
+     :data-on:keydown__debounce.500ms (validate-field-action req field)}))
+
+(defn- validate-select-attrs [req form-state field]
+  (let [error (field-error form-state field)]
+    {:hint           error
+     :data-invalid   (when error "true")
+     :data-bind      (str "gig-edit." (name field))
+     :data-on:change (validate-field-action req field)}))
+
+(defn- status-select [{:keys [tr] :as req} form-state]
+  (let [selected (:status form-state)]
     (into
-     [:wa-select {:label      (tr [:gig/status])
-                  :name       "status"
-                  :value      selected
-                  :required   true
-                  :appearance "outlined"}]
+     [:wa-select (merge {:label      (tr [:gig/status])
+                         :name       "status"
+                         :value      selected
+                         :required   true
+                         :appearance "outlined"}
+                        (validate-select-attrs req form-state :status))]
      (for [status domain/statuses]
        (option (name status) (tr [status]) selected)))))
 
-(defn- gig-type-select [{:keys [tr]} gig-type]
-  (let [selected (some-> gig-type name)]
+(defn- gig-type-select [{:keys [tr] :as req} form-state]
+  (let [selected (:gig-type form-state)]
     (into
-     [:wa-select {:label      (tr [:gig/gig-type])
-                  :name       "gig-type"
-                  :value      selected
-                  :required   true
-                  :appearance "outlined"}]
+     [:wa-select (merge {:label      (tr [:gig/gig-type])
+                         :name       "gig-type"
+                         :value      selected
+                         :required   true
+                         :appearance "outlined"}
+                        (validate-select-attrs req form-state :gig-type))]
      (for [gig-type domain/gig-types]
        (option (name gig-type) (tr [gig-type]) selected)))))
 
@@ -144,15 +179,22 @@
         value     (str member-id)]
     (option value (ui/member-nick member) (some-> selected-member-id str))))
 
-(defn- member-select [label name selected-member members]
-  (into
-   [:wa-select {:label      label
-                :name       name
-                :value      (some-> selected-member :member/member-id str)
-                :appearance "outlined"}
-    [:wa-option {:value ""} " - "]]
-   (for [member members]
-     (member-option (:member/member-id selected-member) member))))
+(defn- selected-member-id [selected-member]
+  (if (map? selected-member)
+    (:member/member-id selected-member)
+    selected-member))
+
+(defn- member-select [label name selected-member members attrs]
+  (let [selected-member-id (selected-member-id selected-member)]
+    (into
+     [:wa-select (merge {:label      label
+                         :name       name
+                         :value      (some-> selected-member-id str)
+                         :appearance "outlined"}
+                        attrs)
+      [:wa-option {:value ""} " - "]]
+     (for [member members]
+       (member-option selected-member-id member)))))
 
 (defn- input [label name value attrs]
   [:wa-input (merge {:label      label
@@ -162,15 +204,21 @@
                     attrs)])
 
 (defn- textarea [label name value attrs]
-  [:div {:class "gigs-edit-textarea-field"}
-   [:label {:for name} label]
-   [:textarea (merge {:id         name
-                      :name       name
-                      :class      "gigs-edit-textarea"
-                      :rows       6
-                      :data-auto-size "true"}
-                     attrs)
-    (text-value value)]])
+  (let [error         (:hint attrs)
+        wrapper-attrs (:wrapper-attrs attrs)
+        attrs         (dissoc attrs :hint :wrapper-attrs)]
+    [:div (merge {:class "gigs-edit-textarea-field"} wrapper-attrs)
+     [:label {:for name} label]
+     [:textarea (merge {:id             name
+                        :name           name
+                        :class          "gigs-edit-textarea"
+                        :rows           6
+                        :data-auto-size "true"}
+                       attrs)
+      (text-value value)]
+     (when error
+       [:span {:class "wa-caption-s text-danger"}
+        error])]))
 
 (defn- element-ref [name suffix]
   (str (str/replace name #"[^A-Za-z0-9_]" "_") "_" suffix))
@@ -178,26 +226,44 @@
 (defn- markdown-textarea [label name value attrs]
   (let [ref (element-ref name "markdown_editor")]
     (textarea label name value (merge {:class          "gigs-edit-textarea markdown-editor hidden"
-                                       :data-auto-size "true"
-                                       :data-ref       ref
-                                       :data-init      (str "MarkdownEditor($" ref ")")}
+                                       :data-auto-size         "true"
+                                       :data-ref               ref
+                                       :data-init__delay.10ms  (str "MarkdownEditor($" ref ")")
+                                       :wrapper-attrs          {:data-ignore-morph ""}}
                                       attrs))))
+
+(defn- gig-remove-dialog-id [{:gig/keys [gig-id]}]
+  (ui2/remove-dialog-id "gig" gig-id))
+
+(defn- gig-remove-dialog [{:keys [tr] :as req} {:gig/keys [title] :as gig}]
+  (ui2/remove-dialog
+   {:id            (gig-remove-dialog-id gig)
+    :label         (tr [:action/confirm-generic])
+    :cancel-label  (tr [:action/cancel])
+    :confirm-label (tr [:action/confirm-delete])
+    :confirm-attrs {:data-id     "gig-edit-delete"
+                    :data-action (d*/act req ::actions/delete-gig)}}
+   [:p (tr [:action/confirm-delete-gig] [title])]))
 
 (defn- form-actions [{:keys [tr]} gig]
   [:div {:class "wa-cluster wa-gap-xs wa-justify-content-end"}
    [:wa-button {:appearance "outlined"
                 :href       (urls/link-gig gig)}
     (tr [:action/cancel])]
-   [:wa-button {:appearance "outlined"
-                :variant    "danger"
-                :disabled   true}
+   [:wa-button {:appearance  "outlined"
+                :variant     "danger"
+                :type        "button"
+                :data-dialog (str "open " (gig-remove-dialog-id gig))}
     (tr [:action/delete])]
-   [:wa-button {:appearance "filled"
-                :variant    "brand"
-                :disabled   true}
+   [:wa-button {:appearance         "filled"
+                :variant            "brand"
+                :type               "submit"
+                :form               "gig-edit-form"
+                :data-attr:disabled "!!$loading && $loading !== 'gig-edit'"
+                :data-attr:loading  "$loading === 'gig-edit'"}
     (tr [:action/save])]])
 
-(defn- edit-header [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
+(defn- edit-header [{:keys [tr]} {:gig/keys [title gig-type status] :as gig}]
   [:header {:class "gigs-detail-header wa-stack wa-gap-m"}
    [:wa-breadcrumb
     [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
@@ -207,84 +273,137 @@
      title]
     [:wa-breadcrumb-item (tr [:action/edit])]]
    [:section {:class "wa-stack wa-gap-l"}
-    [:div {:class "wa-flank:end wa-align-items-start"}
-     [:div {:class "wa-stack wa-gap-2xs"}
-      [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-       [:h1 (tr [:action/edit])]
-       (when status
-         (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
-      [:span {:class "wa-caption-s"}
-       (str title " · " (tr [gig-type]))]]
-     (form-actions req gig)]]])
+    [:div {:class "wa-stack wa-gap-2xs"}
+     [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+      [:h1 (tr [:action/edit])]
+      (when status
+        (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
+     [:span {:class "wa-caption-s"}
+      (str title " · " (tr [gig-type]))]]]])
 
-(defn- main-fields [{:keys [db tr] :as req} {:gig/keys [call-time contact date description end-date end-time gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title] :as gig}]
-  (let [members (q/members-for-select-active db)]
+(defn- gig->form [{:gig/keys [call-time contact date description end-date end-time gig-id gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title]
+                   :forum.topic/keys [topic-id]}]
+  {:gig-id            (str gig-id)
+   :title             (text-value title)
+   :status            (some-> status name)
+   :gig-type          (some-> gig-type name)
+   :date              (date-value date)
+   :end-date          (date-value end-date)
+   :contact           (text-value (some-> contact :member/member-id str))
+   :call-time         (time-value call-time)
+   :set-time          (time-value set-time)
+   :end-time          (time-value end-time)
+   :location          (text-value location)
+   :outfit            (text-value outfit)
+   :pay-deal          (text-value pay-deal)
+   :leader            (text-value leader)
+   :rehearsal-leader1 (text-value (some-> rehearsal-leader1 :member/member-id str))
+   :rehearsal-leader2 (text-value (some-> rehearsal-leader2 :member/member-id str))
+   :post-gig-plans    (text-value post-gig-plans)
+   :more-details      (text-value more-details)
+   :description       (text-value description)
+   :notify?           false
+   :takeover-topic?   false
+   :topic-id          (text-value topic-id)
+   :_error            {}})
+
+(defn- form-state [{:keys [page-state]} gig]
+  (merge (gig->form gig) (:gig-edit page-state)))
+
+(defn- main-fields [{:keys [db tr] :as req} form-state gig]
+  (let [members      (q/members-for-select-active db)
+        field        #(validate-field-attrs req form-state %)
+        select-field #(validate-select-attrs req form-state %)]
     (ui2/section-card
      {:title    (tr [:gig/gig-info])
       :divider? true}
      [:div {:class "gigs-edit-form-grid"}
-      (input (tr [:gig/title]) "title" title {:required true})
-      (status-select req status)
-      (gig-type-select req gig-type)
-      (input (tr [:gig/date]) "date" (date-value date) {:type "date" :required true})
-      (input (tr [:gig/end-date]) "end-date" (date-value end-date) {:type "date"})
-      (member-select (tr [:gig/contact]) "contact" contact members)
-      (input (tr [:gig/call-time]) "call-time" (time-value call-time) {:type "time" :required true})
-      (input (tr [:gig/set-time]) "set-time" (time-value set-time) {:type "time"})
-      (input (tr [:gig/end-time]) "end-time" (time-value end-time) {:type "time"})
-      (input (tr [:gig/location]) "location" location {})
-      (input (tr [:gig/outfit]) "outfit" (or outfit (tr [:orange-and-green])) {})
-      (input (tr [:gig/pay-deal]) "pay-deal" pay-deal {})
-      (input (tr [:gig/leader]) "leader" leader {})
+      (input (tr [:gig/title]) "title" (:title form-state) (merge {:required true} (field :title)))
+      (status-select req form-state)
+      (gig-type-select req form-state)
+      (input (tr [:gig/date]) "date" (:date form-state) (merge {:type "date" :required true} (field :date)))
+      (input (tr [:gig/end-date]) "end-date" (:end-date form-state) (merge {:type "date"} (field :end-date)))
+      (member-select (tr [:gig/contact]) "contact" (:contact form-state) members (select-field :contact))
+      (input (tr [:gig/call-time]) "call-time" (:call-time form-state) (merge {:type "time" :required true} (field :call-time)))
+      (input (tr [:gig/set-time]) "set-time" (:set-time form-state) (merge {:type "time"} (field :set-time)))
+      (input (tr [:gig/end-time]) "end-time" (:end-time form-state) (merge {:type "time"} (field :end-time)))
+      (input (tr [:gig/location]) "location" (:location form-state) (field :location))
+      (input (tr [:gig/outfit]) "outfit" (or (:outfit form-state) (tr [:orange-and-green])) (field :outfit))
+      (input (tr [:gig/pay-deal]) "pay-deal" (:pay-deal form-state) (field :pay-deal))
+      (input (tr [:gig/leader]) "leader" (:leader form-state) (field :leader))
       (when (domain/probe? gig)
         (list
-         (member-select (tr [:gig/rehearsal-leader1]) "rehearsal-leader1" rehearsal-leader1 members)
-         (member-select (tr [:gig/rehearsal-leader2]) "rehearsal-leader2" rehearsal-leader2 members)))
-      (input (tr [:gig/post-gig-plans]) "post-gig-plans" post-gig-plans {:class "gigs-edit-wide"})
-      (markdown-textarea (tr [:gig/more-details]) "more-details" more-details {:placeholder (tr [:gig/more-details-placeholder])
-                                                                               :class       "gigs-edit-textarea markdown-editor hidden gigs-edit-wide"})
-      (textarea (tr [:gig/description]) "description" description {:class "gigs-edit-textarea gigs-edit-wide"})])))
+         (member-select (tr [:gig/rehearsal-leader1]) "rehearsal-leader1" (:rehearsal-leader1 form-state) members (select-field :rehearsal-leader1))
+         (member-select (tr [:gig/rehearsal-leader2]) "rehearsal-leader2" (:rehearsal-leader2 form-state) members (select-field :rehearsal-leader2))))
+      (input (tr [:gig/post-gig-plans]) "post-gig-plans" (:post-gig-plans form-state) (merge {:class "gigs-edit-wide"} (field :post-gig-plans)))
+      (markdown-textarea (tr [:gig/more-details]) "more-details" (:more-details form-state) (merge {:placeholder (tr [:gig/more-details-placeholder])
+                                                                                                    :class       "gigs-edit-textarea markdown-editor hidden gigs-edit-wide"}
+                                                                                                   (field :more-details)))
+      (textarea (tr [:gig/description]) "description" (:description form-state) (merge {:class "gigs-edit-textarea gigs-edit-wide"}
+                                                                                       (field :description)))])))
 
-(defn- notification-fields [{:keys [tr]}]
+(defn- checkbox-input [label name checked? signal]
+  [:label {:class "wa-cluster wa-gap-xs wa-align-items-center"}
+   [:input (cond-> {:type      "checkbox"
+                    :name      name
+                    :value     "true"
+                    :data-bind signal}
+             checked? (assoc :checked true))]
+   [:span label]])
+
+(defn- notification-fields [{:keys [tr]} form-state]
   (ui2/section-card
    {:title    "Notifications"
     :divider? true}
    [:div {:class "wa-stack wa-gap-s"}
-    [:wa-checkbox {:name  "notify?"
-                   :value "true"}
-     (tr [:gig/email-about-change?])]]))
+    (checkbox-input (tr [:gig/email-about-change?])
+                    "notify?"
+                    (:notify? form-state)
+                    "gig-edit.notify?")]))
 
-(defn- forum-fields [_req {:forum.topic/keys [topic-id]}]
+(defn- forum-fields [req form-state]
   (ui2/section-card
    {:title    "Advanced"
     :subtitle "Forum topic controls."
     :divider? true}
    [:div {:class "gigs-edit-form-grid"}
-    [:wa-checkbox {:name  "takeover-topic?"
-                   :value "true"}
-     "Takeover Forum Topic"]
-    (input "Forum Topic ID" "topic-id" topic-id {:class "gigs-edit-wide"})]))
+    (checkbox-input "Takeover Forum Topic"
+                    "takeover-topic?"
+                    (:takeover-topic? form-state)
+                    "gig-edit.takeover-topic?")
+    (input "Forum Topic ID" "topic-id" (:topic-id form-state) (merge {:class "gigs-edit-wide"}
+                                                                     (validate-field-attrs req form-state :topic-id)))]))
 
 (defn- edit-form [req gig]
-  [:form {:id       "gig-edit-form"
-          :class    "wa-stack wa-gap-xl"
-          :onsubmit "event.preventDefault();"}
-   [:input {:type  "hidden"
-            :name  "gig-id"
-            :value (:gig/gig-id gig)}]
-   (main-fields req gig)
-   (notification-fields req)
-   (forum-fields req gig)
-   (form-actions req gig)])
+  (let [form-state (form-state req gig)]
+    [:form {:id             "gig-edit-form"
+            :class          "wa-stack wa-gap-xl"
+            :data-id        "gig-edit"
+            :data-action    (d*/act req ::actions/update-gig)
+            :data-on:submit "evt.preventDefault();"
+            :data-signals   (d*/->signals {:gig-edit (dissoc form-state :_error)})}
+     [:input {:type      "hidden"
+              :name      "gig-id"
+              :value     (:gig-id form-state)
+              :data-bind "gig-edit.gig-id"}]
+     (main-fields req form-state gig)
+     (notification-fields req form-state)
+     (forum-fields req form-state)
+     (when-let [top-error (field-error form-state :_top)]
+       [:wa-callout {:appearance "outlined"
+                     :variant    "danger"}
+        top-error])
+     (form-actions req gig)]))
 
 (defn page [{:keys [db] :as req}]
   (let [gig-id (http.util/path-param-uuid! req :gig/gig-id)
         gig    (q/retrieve-gig db gig-id)]
     (if gig
-      (ui2/plain-page
+      (ui2/datastar-page
        [:div {:class "wa-stack wa-gap-2xl gigs-edit-page"}
         (edit-header req gig)
-        (edit-form req gig)])
+        (edit-form req gig)
+        (gig-remove-dialog req gig)])
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id})))))
 

@@ -1,7 +1,7 @@
 (ns app.members.invite.actions-test
   (:require
    [app.members.invite.actions :as actions]
-   [app.settings.action-support :as support]
+   [app.nexus.actions :as support]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))

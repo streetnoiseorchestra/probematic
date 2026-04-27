@@ -492,6 +492,13 @@
   :member-unique-phone "Ein Mitglied hat diese Telefonnummer bereits",
   :is-required "%1 ist erforderlich.",
   :member-section-invalid "Bitte wähle ein gültiges Register aus.",
+  :gig-end-date-before-date "Das Enddatum muss am oder nach dem Datum liegen.",
+  :gig-set-time-before-call-time "Die Auftrittszeit muss gleich oder nach dem Beginn sein.",
+  :gig-end-time-before-set-time "Die Endzeit muss gleich oder nach der Auftrittszeit sein.",
+  :gig-end-time-before-call-time "Die Endzeit muss gleich oder nach dem Beginn sein.",
+  :gig-rehearsal-leaders-same "Probeleitung 2 muss sich von Probeleitung 1 unterscheiden.",
+  :gig-edit-not-allowed "Du darfst diese Probe oder diesen Gig nicht bearbeiten.",
+  :gig-edit-not-found "Probe oder Gig wurde nicht gefunden.",
   :notify "Click to notify Casey",
   :member-unique-username
   "Ein Mitglied hat bereits diesen Benutzernamen"},

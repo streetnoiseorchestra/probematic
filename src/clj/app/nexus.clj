@@ -1,6 +1,8 @@
 (ns app.nexus
   (:require
    [app.datastar :as datastar]
+   [app.gigs.actions]
+   [app.gigs.effects :as gigs.effects]
    [app.members.actions]
    [app.members.effects :as members.effects]
    [app.settings.actions]
@@ -14,6 +16,7 @@
   #{:user-account/id
     :user-account/email
     :user-account/username
+    :gig/gig-id
     :team/team-id
     :team/name
     :section/name
@@ -102,17 +105,29 @@
 (defn current-member-id [request]
   (get-in request [:session :session/member :member/member-id]))
 
+(defn current-user-roles [request]
+  (get-in request [:session :session/roles] #{}))
+
 (defn system->state
   [{:keys [system request]}]
-  (cond-> {:now (java.util.Date.) :tr (:tr request)
-           :db (d/db (-> system :datomic :conn))}
+  (cond-> {:now                (java.util.Date.)
+           :tr                 (:tr request)
+           :db                 (d/db (-> system :datomic :conn))
+           :current-user-roles (current-user-roles request)}
     (current-member-id request) (assoc :current-member-id (current-member-id request))))
 
+(defn- on-success-actions [transact-actions]
+  (mapcat (comp :on-success second) transact-actions))
+
 (defn ^:nexus/batch db-transact-fx
-  [_ {:keys [system]} transact-actions]
-  (let [conn (-> system :datomic :conn)]
-    (assert conn "Nexus :db/transact requires a Datomic connection")
-    @(d/transact conn (batch-transactions transact-actions))))
+  [{:keys [dispatch]} {:keys [system]} transact-actions]
+  (let [conn    (-> system :datomic :conn)
+        _       (assert conn "Nexus :db/transact requires a Datomic connection")
+        result  @(d/transact conn (batch-transactions transact-actions))
+        actions (vec (on-success-actions transact-actions))]
+    (when (seq actions)
+      (dispatch actions {:tx-result result}))
+    result))
 
 (defn merge-signals-fx [_ {req :request} merge-signals]
   (datastar/respond-signals req :merge merge-signals))
@@ -197,9 +212,12 @@
                          :app.datastar/assoc-state            assoc-page-state-fx
                          :app.datastar/merge-state            merge-page-state-fx
                          :app.datastar/redirect               redirect-fx
+                         :app.gigs/trigger-gig-details-edited gigs.effects/trigger-gig-details-edited-fx
+                         :app.gigs/trigger-gig-deleted        gigs.effects/trigger-gig-deleted-fx
                          :app.members/send-user-invitation    send-user-invitation-fx
                          :app.members/update-keycloak-meta    update-keycloak-meta-fx
                          :app.members.index/resend-invitation resend-invitation-fx
                          :app.members.index/delete-invitation delete-invitation-fx}
    :nexus/actions       (merge app.settings.actions/actions
-                               app.members.actions/actions)})
+                               app.members.actions/actions
+                               app.gigs.actions/actions)})

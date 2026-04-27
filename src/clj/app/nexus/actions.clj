@@ -1,4 +1,4 @@
-(ns app.settings.action-support
+(ns app.nexus.actions
   (:require
    [datomic.api :as d]))
 

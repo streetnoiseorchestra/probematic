@@ -1,7 +1,7 @@
 (ns app.members.invite.actions
   (:require
    [app.members.domain :as members.domain]
-   [app.settings.action-support :as support]
+   [app.nexus.actions :as support]
    [app.util :as util]
    [clojure.string :as str]
    [datomic.api :as d]))
