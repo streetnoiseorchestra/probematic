@@ -39,6 +39,8 @@
 
 .gigs-row:last-of-type {
   border-block-end: var(--sno-size-none);
+  border-end-start-radius: var(--wa-panel-border-radius);
+  border-end-end-radius: var(--wa-panel-border-radius);
 }
 
 .gigs-row:hover {
