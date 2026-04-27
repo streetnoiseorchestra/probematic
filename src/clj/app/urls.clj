@@ -31,6 +31,8 @@
 (def link-member-ledger-table #(link-member % "/#member-ledger-table"))
 
 (def link-gig (partial link-helper "/gig/" :gig/gig-id))
+(defn link-gig-edit [gig-or-gig-id]
+  (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/edit"))
 (def link-song (partial link-helper "/song/" :song/song-id))
 
 (def link-policy (partial link-helper "/insurance-policy/" :insurance.policy/policy-id))

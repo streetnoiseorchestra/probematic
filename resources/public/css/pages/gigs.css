@@ -1,6 +1,7 @@
 .gigs-index-page,
 .gigs-archive-page,
-.gigs-detail-page {
+.gigs-detail-page,
+.gigs-edit-page {
   max-inline-size: var(--sno-size-full);
   --sno-gig-row-icon-size: 1.25rem;
   --sno-gig-row-gray-400: #9ca3af;
@@ -106,6 +107,48 @@
   font-size: var(--wa-font-size-s);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.gigs-edit-form-grid {
+  display: grid;
+  gap: var(--wa-space-m);
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--sno-size-full), 18rem), 1fr)
+  );
+}
+
+.gigs-edit-wide,
+.gigs-edit-textarea-field {
+  grid-column: 1 / -1;
+}
+
+.gigs-edit-textarea-field {
+  display: grid;
+  gap: var(--wa-space-2xs);
+}
+
+.gigs-edit-textarea-field label {
+  color: var(--wa-color-text-quiet);
+  font-size: var(--wa-font-size-s);
+}
+
+.gigs-edit-textarea {
+  width: var(--sno-size-full);
+  min-height: 10rem;
+  padding: var(--wa-space-s);
+  color: var(--wa-color-text-normal);
+  background-color: var(--wa-color-surface-default);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  border-radius: var(--wa-input-border-radius);
+  font: inherit;
+}
+
+.gigs-edit-textarea:focus {
+  border-color: var(--wa-color-brand-border-loud);
+  outline: var(--wa-focus-ring);
+  outline-offset: var(--wa-focus-ring-offset);
 }
 
 .gigs-index-columns {

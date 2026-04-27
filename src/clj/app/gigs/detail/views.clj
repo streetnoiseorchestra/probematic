@@ -55,17 +55,17 @@
     date                (ui/datetime date)
     :else               (muted nil)))
 
-(defn- header-actions [{:keys [tr]}]
+(defn- header-actions [{:keys [tr]} gig]
   [:div {:class "wa-cluster wa-gap-xs"}
    [:wa-button {:appearance "outlined"
-                :disabled   true}
+                :href       (urls/link-gig-edit gig)}
     (tr [:action/edit])]
    [:wa-button {:appearance "outlined"
                 :variant    "brand"
                 :disabled   true}
     "Log Plays"]])
 
-(defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status]}]
+(defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
   [:header {:class "gigs-detail-header wa-stack wa-gap-m"}
    [:wa-breadcrumb
     [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
@@ -81,7 +81,7 @@
          (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
       [:span {:class "wa-caption-s"}
        (tr [gig-type])]]
-     (header-actions req)]]])
+     (header-actions req gig)]]])
 
 (defn- gig-info-section [{:keys [tr]} {:gig/keys [call-time contact end-time leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time setlist] :as gig}]
   (ui2/section-card

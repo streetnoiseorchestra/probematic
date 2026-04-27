@@ -3,6 +3,7 @@
    [app.datomic.shim :as d]
    [app.gigs.archive.views]
    [app.gigs.detail.views]
+   [app.gigs.edit.views]
    [app.gigs.index.views]
    [app.gigs.views :as view]
    [app.layout :as layout]
@@ -78,6 +79,10 @@
    (ds/page-routes {:page-name ::detail-trailing-slash
                     :path      "/gig/{gig/gig-id}/"
                     :view-ns   'app.gigs.detail.views})
+   (ds/page-routes {:page-name  ::edit
+                    :path       "/gig/{gig/gig-id}/edit"
+                    :view-ns    'app.gigs.edit.views
+                    :extra-head app.gigs.edit.views/extra-head})
    ["/gigs-legacy"
     (gig-create-route)
     (gigs-list-route)

@@ -7,7 +7,7 @@
 
 (defn shim [req]
   #_(layout/app-shell req nil)
-  (layout2/app-shell req nil))
+  (layout2/app-shell req nil (select-keys (-> req :reitit.core/match :data) [:extra-head])))
 
 (defn resolve-from-kw
   "Resolves a namespace-qualified keyword to a symbol and then resolves that symbol to a var."
@@ -56,10 +56,11 @@
            :post       {:handler act-handler}}])
 
 (defn page-routes
-  [{:keys [path page-name route-data view-ns]}]
+  [{:keys [extra-head path page-name route-data view-ns]}]
   (assert path "path is required")
   (let [render-fn    (resolve-from-kw view-ns :page)
-        route-data   (merge {:name page-name} route-data)
+        route-data   (cond-> (merge {:name page-name} route-data)
+                       extra-head (assoc :extra-head extra-head))
         child-routes (into [["" {:get  shim
                                  :post (d*/render-handler render-fn)}]])]
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
