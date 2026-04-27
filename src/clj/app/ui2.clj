@@ -18,7 +18,7 @@
                (not active?) (assoc :variant "neutral"))
    (if active? "Active" "Inactive")])
 
-(defn section-card [{:keys [id title subtitle actions] :as attrs} & children]
+(defn section-card [{:keys [id title subtitle actions divider?] :as attrs} & children]
   (into
    [:section (merge {:id    id
                      :class "wa-stack"}
@@ -31,7 +31,8 @@
         [:span {:class "wa-caption-s"} subtitle])]
      (when actions
        (into [:div {:class "wa-cluster wa-gap-xs"}]
-             actions))]]
+             actions))]
+    (when divider? [:wa-divider {:style "padding-bottom: var(--spacing)"}])]
    children))
 
 (defn remove-dialog [{:keys [id label cancel-label confirm-label dialog-attrs confirm-attrs]} body]
