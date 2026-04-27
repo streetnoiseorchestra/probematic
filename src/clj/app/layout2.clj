@@ -175,7 +175,7 @@
   import '/wa/components/callout/callout.js';
   registerIconLibrary('default', {
     resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
-    mutator: svg => svg.setAttribute('fill', 'currentColor'),
+    //mutator: svg => svg.setAttribute('fill', 'currentColor'),
   });
   registerIconLibrary('snoico', {
     resolver: name => `/img/snoico/${name}.svg`,
