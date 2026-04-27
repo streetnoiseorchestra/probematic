@@ -1,11 +1,13 @@
 (ns app.gigs.routes
   (:require
+   [app.datomic.shim :as d]
+   [app.gigs.index.views]
    [app.gigs.views :as view]
    [app.layout :as layout]
    [app.queries :as q]
+   [app.routes.datastar :as ds]
    [app.util.http :as http.util]
-   [ctmx.core :as ctmx]
-   [app.datomic.shim :as d]))
+   [ctmx.core :as ctmx]))
 
 (defn gig-create-route []
   (ctmx/make-routes
@@ -59,7 +61,10 @@
 
 (defn routes []
   ["" {:app.route/name :app/gigs}
-   ["/gigs"
+   (ds/page-routes {:page-name ::index
+                    :path      "/gigs"
+                    :view-ns   'app.gigs.index.views})
+   ["/gigs-legacy"
     (gig-create-route)
     (gigs-list-route)
     (gigs-archive-route)]

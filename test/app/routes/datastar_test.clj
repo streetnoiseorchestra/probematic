@@ -1,10 +1,12 @@
 (ns app.routes.datastar-test
   (:require
    [app.datastar :as datastar]
+   [app.gigs.routes :as gigs.routes]
    [app.members.routes :as members.routes]
    [app.nexus :as app-nexus]
    [app.routes.datastar :as dsr]
    [app.settings.routes :as settings.routes]
+   [app.urls :as urls]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is]]
    [reitit.core :as r]
@@ -94,6 +96,27 @@
         req    {::r/router router}]
     (is (= "/act?ns=app.routes.datastar-test&kw=ping"
            (datastar/act req ::ping)))))
+
+(deftest gigs-routes-expose-the-datastar-index-and-legacy-compatibility-paths
+  (let [router (http/router ["" (gigs.routes/routes)])]
+    (is (= :app/gigs
+           (get-in (r/match-by-path router "/gigs") [:data :app.route/name])))
+    (is (= :app.gigs.routes/index
+           (get-in (r/match-by-path router "/gigs") [:data :name])))
+    (is (= :app/gigs
+           (get-in (r/match-by-path router "/gigs-legacy") [:data :app.route/name])))
+    (is (= :app/gigs
+           (get-in (r/match-by-path router "/gigs-legacy/new") [:data :app.route/name])))
+    (is (= :app/gigs
+           (get-in (r/match-by-path router "/gigs-legacy/archive") [:data :app.route/name])))))
+
+(deftest gig-helpers-point-to-public-index-and-legacy-create-archive-during-the-index-port
+  (is (= "/gigs"
+         (urls/link-gigs-home)))
+  (is (= "/gigs-legacy/new/"
+         (urls/link-gig-create)))
+  (is (= "/gigs-legacy/archive/"
+         (urls/link-gig-archive))))
 
 (deftest members-routes-expose-the-datastar-index-invite-and-legacy-compatibility-paths
   (let [router (http/router ["" (members.routes/routes)])]

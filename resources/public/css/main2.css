@@ -3,6 +3,7 @@
 @layer wa-native, wa-utilities, wa-color-palette, wa-color-variant, wa-theme, wa-theme-dimension, wa-theme-overrides, sno-global, sno-page, sno-component;
 
 @import "ui2/dl.css" layer(sno-page);
+@import "pages/gigs.css" layer(sno-page);
 @import "pages/members.css" layer(sno-page);
 
 @custom-media --sno-viewport-s (min-width: 640px);

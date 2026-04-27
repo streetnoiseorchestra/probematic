@@ -52,13 +52,13 @@
 
 (def link-coverage-edit (partial link-helper "/insurance-coverage-edit/" :instrument.coverage/coverage-id))
 
-(defn link-gigs-home [] "/gigs/")
+(defn link-gigs-home [] "/gigs")
 (defn link-polls-home [] "/polls/")
 (defn link-songs-home [] "/songs/")
 (defn link-calendar [] "/calendar/")
 (defn link-probeplan-home [] "/probeplan")
-(defn link-gig-create [] "/gigs/new/")
-(defn link-gig-archive [] "/gigs/archive/")
+(defn link-gig-create [] "/gigs-legacy/new/")
+(defn link-gig-archive [] "/gigs-legacy/archive/")
 (defn link-polls-create [] "/polls/new/")
 (defn link-insurance [] "/insurance/")
 
