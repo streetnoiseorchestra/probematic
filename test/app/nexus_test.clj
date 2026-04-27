@@ -3,6 +3,7 @@
    [app.ig]
    [app.nexus :as app-nexus]
    [app.system]
+   [app.test-common :as tc]
    [clojure.test :refer [deftest is]]
    [integrant.core :as ig]))
 
@@ -32,12 +33,13 @@
            (get-in cfg [:app.ig/handler :nexus])))))
 
 (deftest system->state-includes-current-member-id-from-request
-  (let [member-id (random-uuid)]
+  (let [{:keys [conn]} (tc/new-system "nexus-state")
+        member-id      (random-uuid)]
     (is (= member-id
            (:current-member-id
             (app-nexus/system->state
-             {}
-             {:session {:session/member {:member/member-id member-id}}}))))))
+             {:system  {:datomic {:conn conn}}
+              :request {:session {:session/member {:member/member-id member-id}}}}))))))
 
 (deftest batch-transactions-replaces-generated-values
   (let [[tx] (app-nexus/batch-transactions

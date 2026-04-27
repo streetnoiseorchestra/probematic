@@ -1,12 +1,15 @@
 (ns app.members.detail.actions
   (:require
+   [app.ledger.domain :as ledger.domain]
    [app.members.domain :as members.domain]
    [app.queries :as q]
    [app.settings.action-support :as support]
    [app.util :as util]
    [clojure.string :as str]
    [datomic.api :as d]
-   [tick.core :as t]))
+   [tick.core :as t])
+  (:import
+   [java.math BigDecimal RoundingMode]))
 
 (def clear-contact
   [:app.datastar/assoc-state [:member-detail :contact] false])
@@ -16,6 +19,9 @@
 
 (def clear-travel-discount-edit
   [:app.datastar/assoc-state [:member-detail :travel-discount] false])
+
+(def clear-ledger-entry-create
+  [:app.datastar/assoc-state [:member-detail :ledger-entry] false])
 
 (def allowed-tabs
   #{"discounts" "ledger" "insurance" "activity"})
@@ -326,6 +332,160 @@
      support/clear-loading
      clear-travel-discount-edit]))
 
+(def ledger-entry-directions
+  #{"debit" "credit"})
+
+(def ledger-entry-kinds
+  #{"debt" "payment"})
+
+(defn- normalize-ledger-entry-kind [kind]
+  (if (contains? ledger-entry-kinds kind)
+    kind
+    "debt"))
+
+(defn- ledger-entry-create-state [kind member-id now]
+  {:member-id     (str (util/ensure-uuid! member-id))
+   :tx-kind       (normalize-ledger-entry-kind kind)
+   :tx-direction  ""
+   :tx-date       (str (t/date (or now (t/now))))
+   :description   ""
+   :amount        ""
+   :_error        {}})
+
+(defn open-ledger-debt-create-action
+  [{:keys [now]} {:keys [targetid]}]
+  [support/clear-loading
+   [:app.datastar/assoc-state
+    [:member-detail :ledger-entry]
+    (ledger-entry-create-state "debt" targetid now)]])
+
+(defn open-ledger-payment-create-action
+  [{:keys [now]} {:keys [targetid]}]
+  [support/clear-loading
+   [:app.datastar/assoc-state
+    [:member-detail :ledger-entry]
+    (ledger-entry-create-state "payment" targetid now)]])
+
+(defn close-ledger-entry-create-action [_state _signals]
+  [support/clear-loading clear-ledger-entry-create])
+
+(defn- normalize-ledger-entry-create [form]
+  {:member-id    (trim-string (:member-id form))
+   :tx-kind      (normalize-ledger-entry-kind (:tx-kind form))
+   :tx-direction (trim-string (:tx-direction form))
+   :tx-date      (trim-string (:tx-date form))
+   :description  (trim-string (:description form))
+   :amount       (trim-string (:amount form))})
+
+(defn- decimal-cents [s]
+  (try
+    (-> (BigDecimal. ^String s)
+        (.movePointRight 2)
+        (.setScale 0 RoundingMode/HALF_UP)
+        (.intValueExact))
+    (catch Exception _
+      nil)))
+
+(defn- parse-ledger-cents [value]
+  (let [s (trim-string value)]
+    (when (seq s)
+      (if (re-matches #"[+]?[0-9]+(\.[0-9]{1,2})?" s)
+        (decimal-cents s)
+        (ledger.domain/coerce-amount s)))))
+
+(defn- ledger-date-error [tx-date]
+  (cond
+    (str/blank? tx-date)
+    {:error "Transaction date is required."}
+
+    (nil? (parse-date tx-date))
+    {:error "Please enter a valid transaction date."}))
+
+(defn- ledger-amount-error [amount]
+  (cond
+    (str/blank? amount)
+    {:error "Amount is required."}
+
+    (nil? (parse-ledger-cents amount))
+    {:error "Please enter a valid amount."}
+
+    (not (pos? (parse-ledger-cents amount)))
+    {:error "Amount must be greater than zero."}))
+
+(defn- ledger-entry-create-errors [{:keys [member-id tx-direction tx-date description amount]}]
+  (merge
+   (when-not (when (seq member-id) (util/ensure-uuid! member-id))
+     {:_top {:error "Member id is missing."}})
+   (when-not (contains? ledger-entry-directions tx-direction)
+     {:tx-direction {:error "Choose a transaction direction."}})
+   (when-let [error (ledger-date-error tx-date)]
+     {:tx-date error})
+   (when (str/blank? description)
+     {:description {:error "Reference is required."}})
+   (when-let [error (ledger-amount-error amount)]
+     {:amount error})))
+
+(defn- signed-ledger-amount [direction amount]
+  (let [amount (parse-ledger-cents amount)]
+    (if (= direction "credit")
+      (- amount)
+      amount)))
+
+(defn- ledger-entry-tx [form amount posting-date]
+  {:db/id                     "new-ledger-entry"
+   :ledger.entry/entry-id     :db/gen-uuid
+   :ledger.entry/tx-date      (str (parse-date (:tx-date form)))
+   :ledger.entry/posting-date posting-date
+   :ledger.entry/description  (:description form)
+   :ledger.entry/amount       amount})
+
+(defn- append-ledger-entry-tx [ledger member-id entry-tx amount]
+  (if ledger
+    [entry-tx
+     [:db/add [:ledger/ledger-id (:ledger/ledger-id ledger)] :ledger/entries "new-ledger-entry"]
+     [:db/add [:ledger/ledger-id (:ledger/ledger-id ledger)] :ledger/balance (+ (:ledger/balance ledger) amount)]]
+    [entry-tx
+     {:db/id            "new-ledger"
+      :ledger/ledger-id :db/gen-uuid
+      :ledger/owner     [:member/member-id member-id]
+      :ledger/balance   amount
+      :ledger/entries   ["new-ledger-entry"]}]))
+
+(defn add-ledger-entry-action
+  [{:keys [db current-member-id now]} {:keys [member-detail]}]
+  (let [form      (normalize-ledger-entry-create (:ledger-entry member-detail))
+        member-id (when (seq (:member-id form))
+                    (util/ensure-uuid! (:member-id form)))
+        errors    (ledger-entry-create-errors form)]
+    (if (seq errors)
+      [support/clear-loading
+       [:app.datastar/assoc-state
+        [:member-detail :ledger-entry]
+        (assoc form :_error errors)]]
+      (let [amount (signed-ledger-amount (:tx-direction form) (:amount form))
+            ledger (q/retrieve-ledger db member-id)]
+        [[:db/transact
+          (support/with-audit
+            (append-ledger-entry-tx ledger member-id (ledger-entry-tx form amount (or now (java.util.Date.))) amount)
+            current-member-id)
+          {:transact-w-nils? false}]
+         support/clear-loading
+         clear-ledger-entry-create]))))
+
+(defn delete-ledger-entry-action
+  [{:keys [db current-member-id]} {:keys [targetid]}]
+  (let [entry-id (util/ensure-uuid! targetid)
+        {:ledger.entry/keys [amount]
+         :as entry} (q/retrieve-ledger-entry db entry-id)
+        ledger   (first (:ledger/_entries entry))]
+    [[:db/transact
+      (support/with-audit
+        [[:db/retractEntity [:ledger.entry/entry-id entry-id]]
+         [:db/add [:ledger/ledger-id (:ledger/ledger-id ledger)] :ledger/balance (- (:ledger/balance ledger) amount)]]
+        current-member-id)
+      {:transact-w-nils? false}]
+     support/clear-loading]))
+
 (def actions
   {::open-contact-edit                 #'open-contact-edit-action
    ::close-contact-edit                #'close-contact-edit-action
@@ -338,4 +498,9 @@
    ::open-travel-discount-edit         #'open-travel-discount-edit-action
    ::close-travel-discount-edit        #'close-travel-discount-edit-action
    ::update-travel-discount            #'update-travel-discount-action
-   ::delete-travel-discount            #'delete-travel-discount-action})
+   ::delete-travel-discount            #'delete-travel-discount-action
+   ::open-ledger-debt-create           #'open-ledger-debt-create-action
+   ::open-ledger-payment-create        #'open-ledger-payment-create-action
+   ::close-ledger-entry-create         #'close-ledger-entry-create-action
+   ::add-ledger-entry                  #'add-ledger-entry-action
+   ::delete-ledger-entry               #'delete-ledger-entry-action})

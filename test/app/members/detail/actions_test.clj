@@ -36,6 +36,23 @@
                       :member/travel-discounts
                       "seed-travel-discount"]]))
 
+(defn seed-ledger! [conn {:keys [member-id ledger-id balance]}]
+  @(d/transact conn [{:ledger/ledger-id ledger-id
+                      :ledger/owner     [:member/member-id member-id]
+                      :ledger/balance   balance}]))
+
+(defn seed-ledger-entry! [conn {:keys [ledger-id entry-id amount tx-date posting-date description]}]
+  @(d/transact conn [{:db/id                     "seed-ledger-entry"
+                      :ledger.entry/entry-id     entry-id
+                      :ledger.entry/amount       amount
+                      :ledger.entry/tx-date      tx-date
+                      :ledger.entry/posting-date posting-date
+                      :ledger.entry/description  description}
+                     [:db/add
+                      [:ledger/ledger-id ledger-id]
+                      :ledger/entries
+                      "seed-ledger-entry"]]))
+
 (defn tr [path & [args]]
   (case path
     [:member/name] "Name"
@@ -386,6 +403,154 @@
              (actions/delete-travel-discount-action
               (state-for system)
               {:targetid (str discount-id)}))))))
+
+(deftest ledger-entry-actions-test
+  (testing "opens and closes debt and payment entry forms"
+    (let [member-id (random-uuid)
+          now       #inst "2026-04-25T10:15:00.000-00:00"]
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :ledger-entry]
+               {:member-id    (str member-id)
+                :tx-kind      "debt"
+                :tx-direction ""
+                :tx-date      "2026-04-25"
+                :description  ""
+                :amount       ""
+                :_error       {}}]]
+             (actions/open-ledger-debt-create-action
+              {:now now}
+              {:targetid (str member-id)})))
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :ledger-entry]
+               {:member-id    (str member-id)
+                :tx-kind      "payment"
+                :tx-direction ""
+                :tx-date      "2026-04-25"
+                :description  ""
+                :amount       ""
+                :_error       {}}]]
+             (actions/open-ledger-payment-create-action
+              {:now now}
+              {:targetid (str member-id)}))))
+    (is (= [support/clear-loading
+            [:app.datastar/assoc-state [:member-detail :ledger-entry] false]]
+           (actions/close-ledger-entry-create-action {} {}))))
+
+  (testing "adds an entry to an existing ledger"
+    (let [{:keys [conn member-id] :as system} (new-system)
+          edited-member-id                    (random-uuid)
+          ledger-id                           (random-uuid)
+          now                                 #inst "2026-04-26T06:06:51.760-00:00"]
+      (seed-member! conn {:member/member-id edited-member-id})
+      (seed-ledger! conn {:member-id edited-member-id
+                          :ledger-id ledger-id
+                          :balance   1000})
+      (is (= [[:db/transact [{:db/id                     "new-ledger-entry"
+                              :ledger.entry/entry-id     :db/gen-uuid
+                              :ledger.entry/tx-date      "2026-04-20"
+                              :ledger.entry/posting-date #inst "2026-04-26T06:06:51.760-00:00"
+                              :ledger.entry/description  "Monthly dues"
+                              :ledger.entry/amount       4205}
+                             [:db/add [:ledger/ledger-id ledger-id] :ledger/entries "new-ledger-entry"]
+                             [:db/add [:ledger/ledger-id ledger-id] :ledger/balance 5205]
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? false}]
+              support/clear-loading
+              [:app.datastar/assoc-state [:member-detail :ledger-entry] false]]
+             (actions/add-ledger-entry-action
+              (assoc (state-for system) :now now)
+              {:member-detail
+               {:ledger-entry
+                {:member-id    (str edited-member-id)
+                 :tx-kind      "debt"
+                 :tx-direction "debit"
+                 :tx-date      "2026-04-20"
+                 :description  "Monthly dues"
+                 :amount       "42,05"}}})))))
+
+  (testing "creates a ledger when adding an entry for a member without one"
+    (let [{:keys [conn member-id] :as system} (new-system)
+          edited-member-id                    (random-uuid)
+          now                                 #inst "2026-04-26T06:06:51.760-00:00"]
+      (seed-member! conn {:member/member-id edited-member-id})
+      (is (= [[:db/transact [{:db/id                     "new-ledger-entry"
+                              :ledger.entry/entry-id     :db/gen-uuid
+                              :ledger.entry/tx-date      "2026-04-20"
+                              :ledger.entry/posting-date #inst "2026-04-26T06:06:51.760-00:00"
+                              :ledger.entry/description  "Refund"
+                              :ledger.entry/amount       -1050}
+                             {:db/id            "new-ledger"
+                              :ledger/ledger-id :db/gen-uuid
+                              :ledger/owner     [:member/member-id edited-member-id]
+                              :ledger/balance   -1050
+                              :ledger/entries   ["new-ledger-entry"]}
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? false}]
+              support/clear-loading
+              [:app.datastar/assoc-state [:member-detail :ledger-entry] false]]
+             (actions/add-ledger-entry-action
+              (assoc (state-for system) :now now)
+              {:member-detail
+               {:ledger-entry
+                {:member-id    (str edited-member-id)
+                 :tx-kind      "payment"
+                 :tx-direction "credit"
+                 :tx-date      "2026-04-20"
+                 :description  "Refund"
+                 :amount       "10.50"}}})))))
+
+  (testing "returns validation errors"
+    (let [{:keys [_conn] :as system} (new-system)
+          edited-member-id          (random-uuid)]
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :ledger-entry]
+               {:member-id    (str edited-member-id)
+                :tx-kind      "debt"
+                :tx-direction ""
+                :tx-date      "not-a-date"
+                :description  ""
+                :amount       "0"
+                :_error       {:tx-direction {:error "Choose a transaction direction."}
+                               :tx-date      {:error "Please enter a valid transaction date."}
+                               :description  {:error "Reference is required."}
+                               :amount       {:error "Amount must be greater than zero."}}}]]
+             (actions/add-ledger-entry-action
+              (state-for system)
+              {:member-detail
+               {:ledger-entry
+                {:member-id    (str edited-member-id)
+                 :tx-kind      "debt"
+                 :tx-direction ""
+                 :tx-date      "not-a-date"
+                 :description  ""
+                 :amount       "0"}}})))))
+
+  (testing "deletes an entry and adjusts the balance"
+    (let [{:keys [conn member-id] :as system} (new-system)
+          edited-member-id                    (random-uuid)
+          ledger-id                           (random-uuid)
+          entry-id                            (random-uuid)]
+      (seed-member! conn {:member/member-id edited-member-id})
+      (seed-ledger! conn {:member-id edited-member-id
+                          :ledger-id ledger-id
+                          :balance   5205})
+      (seed-ledger-entry! conn {:ledger-id     ledger-id
+                                :entry-id      entry-id
+                                :amount        4205
+                                :tx-date       "2026-04-20"
+                                :posting-date  #inst "2026-04-20T12:00:00.000-00:00"
+                                :description   "Monthly dues"})
+      (is (= [[:db/transact [[:db/retractEntity [:ledger.entry/entry-id entry-id]]
+                             [:db/add [:ledger/ledger-id ledger-id] :ledger/balance 1000]
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? false}]
+              support/clear-loading]
+             (actions/delete-ledger-entry-action
+              (state-for system)
+              {:targetid (str entry-id)}))))))
 
 (deftest update-contact-action-test
   (testing "updates contact fields and closes the form"

@@ -929,6 +929,7 @@
 (def ledger-entry-pattern [:ledger.entry/entry-id
                            :ledger.entry/amount
                            :ledger.entry/tx-date
+                           :ledger.entry/posting-date
                            :ledger.entry/description])
 (def ledger-entry-pattern-with-ledger
   (conj ledger-entry-pattern {:ledger/_entries [:ledger/ledger-id :ledger/balance {:ledger/owner member-pattern}]}))

@@ -1,15 +1,20 @@
 (ns app.members.detail.views
   (:require
+   [app.config :as config]
    [app.datastar :as d*]
    [app.keycloak :as keycloak]
    [app.members.detail.actions :as actions]
+   [app.qrcode :as qr]
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]
-   [tick.core :as t]))
+   [tick.core :as t])
+  (:import
+   [java.text NumberFormat]
+   [java.util Locale]))
 
 (defn- member-name [{:member/keys [name nick]}]
   (if (str/blank? nick)
@@ -113,7 +118,7 @@
         [:wa-callout {:appearance "outlined" :variant "danger"}
          top-error])
       [:input {:type "hidden" :data-bind "member-detail.contact.member-id"}]
-      [:div {:class "wa-grid wa-gap-m" :style "--min-column-size: 18rem;"}
+      [:div {:class "wa-grid wa-gap-m"}
        (form-input form-state
                    "member-detail.contact.name"
                    (tr [:member/name])
@@ -218,7 +223,7 @@
       [:input {:type      "hidden"
                :value     (:member-id form-state)
                :data-bind "member-detail.travel-discount-create.member-id"}]
-      [:div {:class "wa-grid wa-gap-m" :style "--min-column-size: 16rem;"}
+      [:div {:class "wa-grid wa-gap-m"}
        (discount-type-select req form-state discount-types)
        (form-input form-state
                    "member-detail.travel-discount-create.expiry-date"
@@ -267,16 +272,34 @@
                  :data-attr:loading  "$loading === 'member-travel-discount'"}
      (tr [:action/save])]]])
 
+(defn- travel-discount-remove-dialog [{:keys [tr] :as req} {:travel.discount/keys [discount-id discount-type]}]
+  (let [discount-type-name (:travel.discount.type/discount-type-name discount-type)]
+    [:wa-dialog {:id    (ui2/remove-dialog-id "travel-discount" discount-id)
+                 :label (tr [:action/confirm-generic])
+                 :data-preserve-attr "open"}
+     [:p (str (tr [:action/delete]) " " discount-type-name "?")]
+     [:wa-button {:slot        "footer"
+                  :appearance  "outlined"
+                  :data-dialog "close"}
+      (tr [:action/cancel])]
+     [:wa-button {:slot               "footer"
+                  :appearance         "filled"
+                  :variant            "danger"
+                  :data-dialog        "close"
+                  :data-id            discount-id
+                  :data-action        (d*/act req ::actions/delete-travel-discount)}
+      (tr [:action/confirm-delete])]]))
+
 (defn- travel-discount-row [{:keys [tr] :as req} edit-state {:travel.discount/keys [discount-id discount-type] :as discount}]
   (let [editing? (= discount-id (:discount-id edit-state))]
     [:tr
-     [:td {:style "vertical-align: middle"}
+     [:td {:class "align-middle"}
       (:travel.discount.type/discount-type-name discount-type)]
-     [:td {:style "vertical-align: middle"}
+     [:td {:class "align-middle"}
       (if editing?
         (travel-discount-edit-form req edit-state)
         (expiry-badge discount))]
-     [:td {:style "vertical-align: middle; text-align: end"}
+     [:td {:class "align-middle text-right"}
       (when-not editing?
         [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
          [:wa-button {:appearance  "outlined"
@@ -290,8 +313,7 @@
                       :variant     "danger"
                       :size        "small"
                       :type        "button"
-                      :data-id     discount-id
-                      :data-action (d*/act req ::actions/delete-travel-discount)}
+                      :data-dialog (format "open %s" (ui2/remove-dialog-id "travel-discount" discount-id))}
           (tr [:action/delete])]])]]))
 
 (defn- travel-discounts-table [{:keys [tr] :as req} edit-state discounts]
@@ -316,6 +338,8 @@
         discount-types (q/retrieve-all-discount-types db)
         discounts      (q/member-travel-discounts member)]
     [:div {:class "wa-stack wa-gap-l"}
+     (for [discount discounts]
+       (travel-discount-remove-dialog req discount))
      (ui2/section-card
       {:subtitle (tr [:travel-discounts/subtitle])
        :actions  (when-not create-state
@@ -330,6 +354,286 @@
          (travel-discount-create-form req create-state discount-types)
          [:wa-divider]])
       (travel-discounts-table req edit-state discounts))]))
+
+(defn- currency-format [cents]
+  (.format (NumberFormat/getCurrencyInstance Locale/GERMANY) (/ (or cents 0) 100.0)))
+
+(defn- ledger-amount-variant [amount]
+  (cond
+    (pos? amount) "danger"
+    (neg? amount) "success"
+    :else "neutral"))
+
+(defn- ledger-amount-color-class [amount]
+  (if (pos? amount)
+    "text-danger"
+    "text-success"))
+
+(defn- ledger-amount-badge [amount]
+  [:wa-badge {:appearance "outlined"
+              :pill       true
+              :variant    (ledger-amount-variant amount)}
+   (currency-format amount)])
+
+(defn- iban-format [iban]
+  (when iban
+    (->> (str/replace iban #"\s" "")
+         (partition-all 4)
+         (map #(apply str %))
+         (str/join " "))))
+
+(defn- maybe-transfer-reference [balance entries]
+  (when (= balance (:ledger.entry/amount (first entries)))
+    (:ledger.entry/description (first entries))))
+
+#_(defn- payment-qr-src [{:keys [system]} balance entries]
+    (let [{:keys [iban bic account-name]} (config/band-bank-info (-> system :env))]
+      (when (and (pos? balance) iban bic account-name)
+        (qr/image-to-data-uri
+         (qr/qr
+          (qr/sepa-payment-code {:bic                    bic
+                                 :iban                   iban
+                                 :name                   account-name
+                                 :amount                 (/ balance 100.0)
+                                 :unstructured-reference (maybe-transfer-reference balance entries)})
+          300
+          300)))))
+(defn- payment-qr-value [{:keys [system]} balance entries]
+  (let [{:keys [iban bic account-name]} (config/band-bank-info (-> system :env))]
+    (when (and (pos? balance) iban bic account-name)
+      (qr/sepa-payment-code {:bic                    bic
+                             :iban                   iban
+                             :name                   account-name
+                             :amount                 (/ balance 100.0)
+                             :unstructured-reference (maybe-transfer-reference balance entries)}))))
+
+(defn- ledger-balance-status [{:keys [tr system] :as req} balance entries]
+  (let [member-owes-band? (pos? balance)
+        band-owes-member? (neg? balance)
+        {:keys [iban bic account-name]} (config/band-bank-info (-> system :env))]
+    (cond
+      band-owes-member?
+      (tr [:band-owes-you] [(currency-format (abs balance))])
+      member-owes-band?
+      [:div {:class "wa-grid wa-gap-m"}
+       [:div {:class "wa-justify-content-center"}
+        (when-let [qr-value (payment-qr-value req balance entries)]
+          [:wa-qr-code {:value qr-value :label "Scan this code with your banking app to start a transfer"}])]
+       [:div {:class "wa-flank:end" :style "--content-percentage: 70%"}
+        [:p (tr [:please-pay-to-band] [(currency-format balance)])]
+        (when (and account-name iban bic)
+          [:div {:class "wa-stack wa-gap-3xs"}
+           [:span "Name: " [:strong account-name]]
+           [:span "IBAN: " [:strong (iban-format iban)]]
+           [:span "BIC: " [:strong bic]]
+           [:span (tr [:or-scan-qr-code])]])]])))
+
+(defn- ledger-balance-card [{:keys [tr] :as req} member ledger]
+  (let [balance (or (:ledger/balance ledger) 0)
+        entries (:ledger/entries ledger)]
+    [:div {:class ""}
+     [:div {:class "wa-stack wa-gap-xs"}
+      [:span {:class "wa-caption-s"} (tr [:outstanding-balance])]
+      [:div {:class (str "wa-heading-xl " (ledger-amount-color-class balance))}
+       (currency-format balance)]
+      [:a {:href (urls/link-member-ledger-table member)} "Why?"]]
+     (ledger-balance-status req balance entries)]))
+
+(defn- ledger-entry-direction-options [{:keys [tr]} member kind]
+  (let [name (:member/name member)]
+    (if (= kind "payment")
+      [{:value "credit" :label (tr [:ledger.entry/payment-direction-credit] [name])}
+       {:value "debit" :label (tr [:ledger.entry/payment-direction-debit] [name])}]
+      [{:value "debit" :label (tr [:ledger.entry/direction-debit] [name])}
+       {:value "credit" :label (tr [:ledger.entry/direction-credit] [name])}])))
+
+(defn- ledger-direction-button [value label]
+  [:wa-button {:appearance    "outlined"
+               :variant       "brand"
+               :type          "button"
+               :data-on:click (str "$_ledgerDirection = '" value "'; "
+                                   "$member-detail.ledger-entry.tx-direction = '" value "'")}
+   label])
+
+(defn- ledger-direction-choice [req member form-state]
+  [:div {:class     "wa-stack wa-gap-s"
+         :data-show "$_ledgerDirection === ''"}
+   (when-let [error (field-error form-state :tx-direction)]
+     [:wa-callout {:appearance "outlined" :variant "danger"}
+      error])
+   [:div {:class "wa-stack wa-gap-2xs"}
+    [:strong "Choose what happened"]
+    [:span {:class "wa-caption-s"}
+     "Start with the sentence that best describes this transaction."]]
+   (into
+    [:div {:class "wa-cluster wa-gap-s"}]
+    (for [{:keys [value label]} (ledger-entry-direction-options req member (:tx-kind form-state))]
+      (ledger-direction-button value label)))])
+
+(defn- ledger-entry-create-form [{:keys [tr] :as req} member form-state]
+  (let [title          (if (= "payment" (:tx-kind form-state))
+                         (tr [:ledger/add-payment])
+                         (tr [:ledger/add-debt]))
+        direction-text (into {}
+                             (map (juxt :value :label))
+                             (ledger-entry-direction-options req member (:tx-kind form-state)))]
+    [:form {:id             "member-ledger-entry-create-form"
+            :data-id        "member-ledger-entry-create"
+            :data-action    (d*/act req ::actions/add-ledger-entry)
+            :data-signals   (d*/->signals {:_ledgerDirection (or (:tx-direction form-state) "")})
+            :data-on:submit "evt.preventDefault();"}
+     [:div {:class "wa-stack wa-gap-m"}
+      [:div {:class "wa-stack wa-gap-2xs"}
+       [:strong title]
+       [:span {:class "wa-caption-s"}
+        "Record money owed by or paid to the band."]]
+      (when-let [top-error (field-error form-state :_top)]
+        [:wa-callout {:appearance "outlined" :variant "danger"}
+         top-error])
+      [:input {:type      "hidden"
+               :value     (:member-id form-state)
+               :data-bind "member-detail.ledger-entry.member-id"}]
+      [:input {:type      "hidden"
+               :value     (:tx-kind form-state)
+               :data-bind "member-detail.ledger-entry.tx-kind"}]
+      [:input {:type      "hidden"
+               :value     (:tx-direction form-state)
+               :data-bind "member-detail.ledger-entry.tx-direction"}]
+      (ledger-direction-choice req member form-state)
+      [:div {:class     "wa-stack wa-gap-m"
+             :data-show "$_ledgerDirection !== ''"}
+       [:div {:class "wa-flank:end wa-align-items-center"}
+        [:span {:class     "wa-caption-s"
+                :data-show "$_ledgerDirection === 'debit'"}
+         (get direction-text "debit")]
+        [:span {:class     "wa-caption-s"
+                :data-show "$_ledgerDirection === 'credit'"}
+         (get direction-text "credit")]
+        [:wa-button {:appearance    "plain"
+                     :type          "button"
+                     :data-on:click "$_ledgerDirection = ''; $member-detail.ledger-entry.tx-direction = ''"}
+         "Change direction"]]
+       [:div {:class "wa-grid wa-gap-m"}
+        (form-input form-state
+                    "member-detail.ledger-entry.tx-date"
+                    (tr [:ledger.entry/tx-date])
+                    {:type             "date"
+                     :required         true
+                     :data-on:wa-input "$member-detail.ledger-entry.tx-date = evt.target.value"})
+        (form-input form-state
+                    "member-detail.ledger-entry.description"
+                    (tr [:ledger.entry/description])
+                    {:required         true
+                     :data-on:wa-input "$member-detail.ledger-entry.description = evt.target.value"})
+        (form-input form-state
+                    "member-detail.ledger-entry.amount"
+                    (tr [:ledger.entry/amount])
+                    {:inputmode        "decimal"
+                     :placeholder      "42,05"
+                     :required         true
+                     :data-on:wa-input "$member-detail.ledger-entry.amount = evt.target.value"})]
+       [:div {:class "wa-cluster wa-justify-content-end"}
+        [:wa-button {:appearance  "outlined"
+                     :type        "button"
+                     :data-id     "member-ledger-entry-create-cancel"
+                     :data-action (d*/act req ::actions/close-ledger-entry-create)}
+         (tr [:action/cancel])]
+        [:wa-button {:appearance         "filled"
+                     :variant            "brand"
+                     :type               "submit"
+                     :data-attr:disabled "!!$loading && $loading !== 'member-ledger-entry-create'"
+                     :data-attr:loading  "$loading === 'member-ledger-entry-create'"}
+         (tr [:action/save])]]]
+      [:div {:class     "wa-cluster wa-justify-content-end"
+             :data-show "$_ledgerDirection === ''"}
+       [:wa-button {:appearance  "outlined"
+                    :type        "button"
+                    :data-id     "member-ledger-entry-create-cancel"
+                    :data-action (d*/act req ::actions/close-ledger-entry-create)}
+        (tr [:action/cancel])]]]]))
+
+(defn- ledger-entry-remove-dialog [{:keys [tr] :as req} {:ledger.entry/keys [entry-id description]}]
+  [:wa-dialog {:id    (ui2/remove-dialog-id "ledger-entry" entry-id)
+               :label (tr [:action/confirm-generic])
+               :data-preserve-attr "open"}
+   [:p (str (tr [:action/delete]) " " description "?")]
+   [:wa-button {:slot        "footer"
+                :appearance  "outlined"
+                :data-dialog "close"}
+    (tr [:action/cancel])]
+   [:wa-button {:slot               "footer"
+                :appearance         "filled"
+                :variant            "danger"
+                :data-dialog        "close"
+                :data-id            entry-id
+                :data-action        (d*/act req ::actions/delete-ledger-entry)}
+    (tr [:action/confirm-delete])]])
+
+(defn- ledger-entry-row [{:keys [tr]} {:ledger.entry/keys [amount description tx-date entry-id]}]
+  [:tr {:id (str "ledger-entry-" entry-id)}
+   [:td {:class "align-middle"}
+    [:time {:datetime (str tx-date)} (date-value tx-date)]]
+   [:td {:class "align-middle"} description]
+   [:td {:class "align-middle text-right"} (ledger-amount-badge amount)]
+   [:td {:class "align-middle text-right"}
+    [:wa-button {:appearance  "plain"
+                 :variant     "danger"
+                 :size        "small"
+                 :type        "button"
+                 :data-dialog (format "open %s" (ui2/remove-dialog-id "ledger-entry" entry-id))}
+     (tr [:action/delete])]]])
+
+(defn- ledger-entries-table [{:keys [tr] :as req} entries]
+  (if (seq entries)
+    (ui2/table-shell
+     [:table {:id "member-ledger-table"}
+      [:thead
+       [:tr
+        [:th (tr [:ledger.entry/tx-date])]
+        [:th (tr [:ledger.entry/description])]
+        [:th {:class "text-right"} (tr [:ledger.entry/amount])]
+        [:th]]]
+      [:tbody
+       (for [entry entries]
+         (ledger-entry-row req entry))]])
+    [:div {:id "member-ledger-table"}
+     (ui2/empty-state
+      (tr [:no-transactions-yet])
+      "Ledger entries will appear here after a debt or payment is recorded.")]))
+
+(defn- member-ledger-panel [{:keys [db page-state tr] :as req} member]
+  (let [create-state (get-in page-state [:member-detail :ledger-entry])
+        ledger       (q/retrieve-ledger db (:member/member-id member))
+        entries      (:ledger/entries ledger)]
+    [:div {:class "wa-stack wa-gap-l"}
+     (for [entry entries]
+       (ledger-entry-remove-dialog req entry))
+     (ui2/section-card
+      {:title    "Money Stuff"
+       :subtitle [:span "What "
+                  [:span {:class "text-danger"} "you owe the band (+)"]
+                  " and what "
+                  [:span {:class "text-success"} "the band owes you (-)"]]
+       :actions  (when-not create-state
+                   [[:wa-button {:appearance  "outlined"
+                                 :variant     "brand"
+                                 :type        "button"
+                                 :data-id     (:member/member-id member)
+                                 :data-action (d*/act req ::actions/open-ledger-debt-create)}
+                     (tr [:ledger/add-debt])]
+                    [:wa-button {:appearance  "outlined"
+                                 :variant     "brand"
+                                 :type        "button"
+                                 :data-id     (:member/member-id member)
+                                 :data-action (d*/act req ::actions/open-ledger-payment-create)}
+                     (tr [:ledger/add-payment])]])}
+      (ledger-balance-card req member ledger)
+      (when create-state
+        [:div {:class "wa-stack wa-gap-s"}
+         [:wa-divider]
+         (ledger-entry-create-form req member create-state)])
+      [:wa-divider]
+      (ledger-entries-table req entries))]))
 
 (defn- profile-summary [{:keys [tr] :as req} member]
   (let [src (avatar-src member)]
@@ -404,13 +708,15 @@
         contact-signals                 (form-state->signals form-state)
         active-tab                      (active-tab page-state)
         travel-discount-create-signals  (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))
-        travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))]
+        travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))
+        ledger-entry-signals            (form-state->signals (get-in page-state [:member-detail :ledger-entry]))]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
             :data-signals (d*/->signals {:member-detail {:active-tab             active-tab
                                                          :contact                contact-signals
                                                          :travel-discount-create travel-discount-create-signals
-                                                         :travel-discount        travel-discount-signals}})}
+                                                         :travel-discount        travel-discount-signals
+                                                         :ledger-entry           ledger-entry-signals}})}
       (member-header req member)
       (when-not form-state
         [:wa-tab-group {:id "member-detail-tabs"
@@ -423,7 +729,7 @@
          (tab-panel active-tab "discounts"
                     (travel-discounts-panel req member))
          (tab-panel active-tab "ledger"
-                    (placeholder-panel "Ledger" "Member ledger activity will move here next."))
+                    (member-ledger-panel req member))
          (tab-panel active-tab "insurance"
                     (placeholder-panel (tr [:member/insurance-title]) "Insurance and instrument details will move here next."))
          (tab-panel active-tab "activity"

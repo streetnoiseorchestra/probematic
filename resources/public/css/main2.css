@@ -261,4 +261,20 @@
   .bg-sno-orange-300 {
     background-color: var(--color-sno-orange-300) !important;
   }
+
+  .align-middle {
+    vertical-align: middle;
+  }
+
+  .text-right {
+    text-align: end;
+  }
+
+  .text-danger {
+    color: var(--wa-color-danger-on-quiet);
+  }
+
+  .text-success {
+    color: var(--wa-color-success-on-quiet);
+  }
 }
