@@ -207,10 +207,10 @@
 
 (deftest set-active-tab-action-test
   (is (= [support/clear-loading
-          [:app.datastar/assoc-state [:member-detail :active-tab] "ledger"]]
+          [:app.datastar/assoc-state [:member-detail :active-tab] "money"]]
          (actions/set-active-tab-action
           {}
-          {:targetid "ledger"})))
+          {:targetid "money"})))
 
   (is (= [support/clear-loading
           [:app.datastar/assoc-state [:member-detail :active-tab] "insurance"]]
@@ -219,7 +219,7 @@
           {:member-detail {:active-tab "insurance"}})))
 
   (is (= [support/clear-loading
-          [:app.datastar/assoc-state [:member-detail :active-tab] "discounts"]]
+          [:app.datastar/assoc-state [:member-detail :active-tab] "travel"]]
          (actions/set-active-tab-action
           {}
           {:targetid "unknown"}))))

@@ -25,6 +25,8 @@
 
 (defn link-dashboard [] "/")
 (def link-member (partial link-helper "/member/" :member/member-id))
+(defn link-member-detail-tab [member-or-member-id tab]
+  (str (link-member member-or-member-id "/") tab))
 (def link-member-ledger #(link-member % "/#member-ledger-panel"))
 (def link-member-ledger-table #(link-member % "/#member-ledger-table"))
 

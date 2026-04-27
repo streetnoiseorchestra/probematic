@@ -746,11 +746,28 @@
                          (contact-form req form-state sections))
        (profile-summary req member))]))
 
-(defn- active-tab [page-state]
-  (let [active-tab (get-in page-state [:member-detail :active-tab] "discounts")]
-    (if (contains? actions/allowed-tabs active-tab)
-      active-tab
-      "discounts")))
+(def default-active-tab "travel")
+
+(defn- normalize-active-tab [active-tab]
+  (if (contains? actions/allowed-tabs active-tab)
+    active-tab
+    default-active-tab))
+
+(defn- route-active-tab [req]
+  (normalize-active-tab (http.util/path-param req :member-detail-tab)))
+
+(defn- active-tab [req page-state]
+  (normalize-active-tab
+   (or (get-in page-state [:member-detail :active-tab])
+       (route-active-tab req))))
+
+(defn- tab-url-effect [member]
+  (let [tab-urls (into {}
+                       (for [tab actions/allowed-tabs]
+                         [tab (urls/link-member-detail-tab member tab)]))]
+    (format "window.history.replaceState({}, '', ((%s)[$member-detail.active-tab] || %s))"
+            (d*/->signals tab-urls)
+            (pr-str (urls/link-member-detail-tab member default-active-tab)))))
 
 (defn- tab [req active-tab panel label]
   [:wa-tab (cond-> {:panel panel
@@ -774,12 +791,13 @@
         member                          (q/retrieve-member db member-id)
         form-state                      (get-in page-state [:member-detail :contact])
         contact-signals                 (form-state->signals form-state)
-        active-tab                      (active-tab page-state)
+        active-tab                      (active-tab req page-state)
         travel-discount-create-signals  (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))
         travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))
         ledger-entry-signals            (form-state->signals (get-in page-state [:member-detail :ledger-entry]))]
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
+            :data-effect  (tab-url-effect member)
             :data-signals (d*/->signals {:member-detail {:active-tab             active-tab
                                                          :contact                contact-signals
                                                          :travel-discount-create travel-discount-create-signals
@@ -789,18 +807,15 @@
       (when-not form-state
         [:wa-tab-group {:id "member-detail-tabs"
                         :active active-tab}
-         (tab req active-tab "discounts" (tr [:travel-discounts/title]))
-         (tab req active-tab "ledger" "Money Stuff")
+         (tab req active-tab "travel" (tr [:travel-discounts/title]))
+         (tab req active-tab "money" "Money Stuff")
          (tab req active-tab "insurance" (tr [:member/insurance-title]))
-         #_(tab req active-tab "activity" "Gigs & Probes")
 
-         (tab-panel active-tab "discounts"
+         (tab-panel active-tab "travel"
                     (travel-discounts-panel req member))
-         (tab-panel active-tab "ledger"
+         (tab-panel active-tab "money"
                     (member-ledger-panel req member))
          (tab-panel active-tab "insurance"
-                    (member-insurance-panel req member))
-         #_(tab-panel active-tab "activity"
-                      (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next."))])])))
+                    (member-insurance-panel req member))])])))
 
 (d*/refresh-all!)

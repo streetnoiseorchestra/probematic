@@ -24,12 +24,12 @@
   [:app.datastar/assoc-state [:member-detail :ledger-entry] false])
 
 (def allowed-tabs
-  #{"discounts" "ledger" "insurance" "activity"})
+  #{"travel" "money" "insurance"})
 
 (defn- normalize-active-tab [active-tab]
   (if (contains? allowed-tabs active-tab)
     active-tab
-    "discounts"))
+    "travel"))
 
 (defn- normalize-bool [v default]
   (cond

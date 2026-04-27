@@ -25,6 +25,11 @@
                    :path      "/member/{member-id}/"
                    :view-ns   'app.members.detail.views}))
 
+(defn members-detail-tab []
+  (ds/page-routes {:page-name ::detail-tab
+                   :path      "/member/{member-id}/{member-detail-tab}"
+                   :view-ns   'app.members.detail.views}))
+
 (defn legacy-members-detail []
   (ctmx/make-routes
    "/member-old/{member-id}"
@@ -62,6 +67,7 @@
     (member-vcard-download)
     (members-detail)
     (members-detail-trailing-slash)
+    (members-detail-tab)
     (legacy-members-detail)]
    (legacy-members-index)])
 
