@@ -273,22 +273,14 @@
      (tr [:action/save])]]])
 
 (defn- travel-discount-remove-dialog [{:keys [tr] :as req} {:travel.discount/keys [discount-id discount-type]}]
-  (let [discount-type-name (:travel.discount.type/discount-type-name discount-type)]
-    [:wa-dialog {:id    (ui2/remove-dialog-id "travel-discount" discount-id)
-                 :label (tr [:action/confirm-generic])
-                 :data-preserve-attr "open"}
-     [:p (str (tr [:action/delete]) " " discount-type-name "?")]
-     [:wa-button {:slot        "footer"
-                  :appearance  "outlined"
-                  :data-dialog "close"}
-      (tr [:action/cancel])]
-     [:wa-button {:slot               "footer"
-                  :appearance         "filled"
-                  :variant            "danger"
-                  :data-dialog        "close"
-                  :data-id            discount-id
-                  :data-action        (d*/act req ::actions/delete-travel-discount)}
-      (tr [:action/confirm-delete])]]))
+  (ui2/remove-dialog
+   {:id            (ui2/remove-dialog-id "travel-discount" discount-id)
+    :label         (tr [:action/confirm-generic])
+    :cancel-label  (tr [:action/cancel])
+    :confirm-label (tr [:action/confirm-delete])
+    :confirm-attrs {:data-id     discount-id
+                    :data-action (d*/act req ::actions/delete-travel-discount)}}
+   [:p (str (tr [:action/delete]) " " (:travel.discount.type/discount-type-name discount-type) "?")]))
 
 (defn- travel-discount-row [{:keys [tr] :as req} edit-state {:travel.discount/keys [discount-id discount-type] :as discount}]
   (let [editing? (= discount-id (:discount-id edit-state))]
@@ -338,8 +330,6 @@
         discount-types (q/retrieve-all-discount-types db)
         discounts      (q/member-travel-discounts member)]
     [:div {:class "wa-stack wa-gap-l"}
-     (for [discount discounts]
-       (travel-discount-remove-dialog req discount))
      (ui2/section-card
       {:subtitle (tr [:travel-discounts/subtitle])
        :actions  (when-not create-state
@@ -353,7 +343,9 @@
         [:div {:class "wa-stack wa-gap-s"}
          (travel-discount-create-form req create-state discount-types)
          [:wa-divider]])
-      (travel-discounts-table req edit-state discounts))]))
+      (travel-discounts-table req edit-state discounts)
+      (for [discount discounts]
+        (travel-discount-remove-dialog req discount)))]))
 
 (defn- currency-format [cents]
   (.format (NumberFormat/getCurrencyInstance Locale/GERMANY) (/ (or cents 0) 100.0)))
@@ -553,21 +545,14 @@
         (tr [:action/cancel])]]]]))
 
 (defn- ledger-entry-remove-dialog [{:keys [tr] :as req} {:ledger.entry/keys [entry-id description]}]
-  [:wa-dialog {:id    (ui2/remove-dialog-id "ledger-entry" entry-id)
-               :label (tr [:action/confirm-generic])
-               :data-preserve-attr "open"}
-   [:p (str (tr [:action/delete]) " " description "?")]
-   [:wa-button {:slot        "footer"
-                :appearance  "outlined"
-                :data-dialog "close"}
-    (tr [:action/cancel])]
-   [:wa-button {:slot               "footer"
-                :appearance         "filled"
-                :variant            "danger"
-                :data-dialog        "close"
-                :data-id            entry-id
-                :data-action        (d*/act req ::actions/delete-ledger-entry)}
-    (tr [:action/confirm-delete])]])
+  (ui2/remove-dialog
+   {:id            (ui2/remove-dialog-id "ledger-entry" entry-id)
+    :label         (tr [:action/confirm-generic])
+    :cancel-label  (tr [:action/cancel])
+    :confirm-label (tr [:action/confirm-delete])
+    :confirm-attrs {:data-id     entry-id
+                    :data-action (d*/act req ::actions/delete-ledger-entry)}}
+   [:p (str (tr [:action/delete]) " " description "?")]))
 
 (defn- ledger-entry-row [{:keys [tr]} {:ledger.entry/keys [amount description tx-date entry-id]}]
   [:tr {:id (str "ledger-entry-" entry-id)}
@@ -606,8 +591,6 @@
         ledger       (q/retrieve-ledger db (:member/member-id member))
         entries      (:ledger/entries ledger)]
     [:div {:class "wa-stack wa-gap-l"}
-     (for [entry entries]
-       (ledger-entry-remove-dialog req entry))
      (ui2/section-card
       {:title    "Money Stuff"
        :subtitle [:span "What "
@@ -633,7 +616,9 @@
          [:wa-divider]
          (ledger-entry-create-form req member create-state)])
       [:wa-divider]
-      (ledger-entries-table req entries))]))
+      (ledger-entries-table req entries)
+      (for [entry entries]
+        (ledger-entry-remove-dialog req entry)))]))
 
 (defn- profile-summary [{:keys [tr] :as req} member]
   (let [src (avatar-src member)]

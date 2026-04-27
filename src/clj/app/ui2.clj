@@ -34,6 +34,23 @@
              actions))]]
    children))
 
+(defn remove-dialog [{:keys [id label cancel-label confirm-label dialog-attrs confirm-attrs]} body]
+  [:wa-dialog (merge {:id                 id
+                      :label              label
+                      :data-preserve-attr "open"}
+                     dialog-attrs)
+   body
+   [:wa-button {:slot        "footer"
+                :appearance  "outlined"
+                :data-dialog "close"}
+    cancel-label]
+   [:wa-button (merge {:slot        "footer"
+                       :appearance  "filled"
+                       :variant     "danger"
+                       :data-dialog "close"}
+                      confirm-attrs)
+    confirm-label]])
+
 (defn row-action-menu [{:keys [button-id disabled? items]}]
   (list
    [:wa-dropdown {:placement "bottom-end"}
