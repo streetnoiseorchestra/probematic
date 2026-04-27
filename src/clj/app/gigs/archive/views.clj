@@ -1,0 +1,49 @@
+(ns app.gigs.archive.views
+  (:require
+   [app.datastar :as d*]
+   [app.gigs.archive.queries :as queries]
+   [app.gigs.ui :as gigs.ui]
+   [app.ui2 :as ui2]
+   [app.urls :as urls]
+   [app.util.http :as http.util]))
+
+(defn- year-button [selected-year year]
+  [:wa-button (cond-> {:appearance "outlined"
+                       :size       "small"
+                       :href       (urls/link-gig-archive-year year)}
+                (= selected-year year) (assoc :appearance "filled"
+                                              :variant "brand"))
+   year])
+
+(defn- year-selector [selected-year years]
+  (into
+   [:div {:class "wa-cluster wa-gap-2xs gigs-archive-year-selector"
+          :aria-label "Archive years"}]
+   (map (partial year-button selected-year) years)))
+
+(defn- archive-tools [{:keys [tr]} selected-year years]
+  [:div {:class "wa-stack wa-gap-s gigs-archive-tools"}
+   (year-selector selected-year years)
+   [:wa-input {:type        "search"
+               :label       (tr [:action/search])
+               :placeholder "Search gig titles"
+               :with-clear  true}]])
+
+(defn page [{:keys [db tr] :as req}]
+  (let [{:keys [selected-year years gigs]} (queries/page-data db (http.util/path-param req :year))]
+    (ui2/plain-page
+     [:div {:class "wa-stack wa-gap-l gigs-archive-page"}
+      [:div {:class "wa-flank:end wa-align-items-end wa-gap-s gigs-archive-toolbar"}
+       [:div {:class "wa-stack wa-gap-2xs"}
+        [:h1 (tr [:gigs/title])]
+        [:span {:class "wa-caption-s"} selected-year]]
+       [:wa-button {:appearance "filled"
+                    :variant    "brand"
+                    :href       (urls/link-gig-create)}
+        (tr [:action/create])]]
+      (archive-tools req selected-year years)
+      (gigs.ui/gig-section {:title         selected-year
+                            :empty-message (tr [:gigs/no-past])
+                            :gigs          gigs})])))
+
+(d*/refresh-all!)

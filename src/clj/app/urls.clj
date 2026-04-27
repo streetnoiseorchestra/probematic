@@ -58,7 +58,8 @@
 (defn link-calendar [] "/calendar/")
 (defn link-probeplan-home [] "/probeplan")
 (defn link-gig-create [] "/gigs-legacy/new/")
-(defn link-gig-archive [] "/gigs-legacy/archive/")
+(defn link-gig-archive [] "/gigs/archive")
+(defn link-gig-archive-year [year] (str "/gigs/archive/" year))
 (defn link-polls-create [] "/polls/new/")
 (defn link-insurance [] "/insurance/")
 

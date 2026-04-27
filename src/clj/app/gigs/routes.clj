@@ -1,6 +1,7 @@
 (ns app.gigs.routes
   (:require
    [app.datomic.shim :as d]
+   [app.gigs.archive.views]
    [app.gigs.index.views]
    [app.gigs.views :as view]
    [app.layout :as layout]
@@ -64,6 +65,12 @@
    (ds/page-routes {:page-name ::index
                     :path      "/gigs"
                     :view-ns   'app.gigs.index.views})
+   (ds/page-routes {:page-name ::archive
+                    :path      "/gigs/archive"
+                    :view-ns   'app.gigs.archive.views})
+   (ds/page-routes {:page-name ::archive-year
+                    :path      "/gigs/archive/{year}"
+                    :view-ns   'app.gigs.archive.views})
    ["/gigs-legacy"
     (gig-create-route)
     (gigs-list-route)

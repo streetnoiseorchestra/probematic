@@ -104,19 +104,27 @@
     (is (= :app.gigs.routes/index
            (get-in (r/match-by-path router "/gigs") [:data :name])))
     (is (= :app/gigs
+           (get-in (r/match-by-path router "/gigs/archive") [:data :app.route/name])))
+    (is (= :app.gigs.routes/archive
+           (get-in (r/match-by-path router "/gigs/archive") [:data :name])))
+    (is (= :app.gigs.routes/archive-year
+           (get-in (r/match-by-path router "/gigs/archive/2025") [:data :name])))
+    (is (= :app/gigs
            (get-in (r/match-by-path router "/gigs-legacy") [:data :app.route/name])))
     (is (= :app/gigs
            (get-in (r/match-by-path router "/gigs-legacy/new") [:data :app.route/name])))
     (is (= :app/gigs
            (get-in (r/match-by-path router "/gigs-legacy/archive") [:data :app.route/name])))))
 
-(deftest gig-helpers-point-to-public-index-and-legacy-create-archive-during-the-index-port
+(deftest gig-helpers-point-to-public-index-archive-and-legacy-create-during-the-archive-port
   (is (= "/gigs"
          (urls/link-gigs-home)))
   (is (= "/gigs-legacy/new/"
          (urls/link-gig-create)))
-  (is (= "/gigs-legacy/archive/"
-         (urls/link-gig-archive))))
+  (is (= "/gigs/archive"
+         (urls/link-gig-archive)))
+  (is (= "/gigs/archive/2025"
+         (urls/link-gig-archive-year 2025))))
 
 (deftest members-routes-expose-the-datastar-index-invite-and-legacy-compatibility-paths
   (let [router (http/router ["" (members.routes/routes)])]
