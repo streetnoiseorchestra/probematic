@@ -174,10 +174,6 @@
      (detail-item (tr [:member/keycloak-id]) (keycloak-link req keycloak-id))
      (detail-item (tr [:sno-id]) (sno-id-badge keycloak-id))]))
 
-(defn- placeholder-panel [title body]
-  [:div {:class "wa-stack wa-gap-m"}
-   (ui2/empty-state title body)])
-
 (defn- form-state->signals [form-state]
   (if (map? form-state)
     (dissoc form-state :_error)
@@ -619,6 +615,94 @@
       (for [entry entries]
         (ledger-entry-remove-dialog req entry)))]))
 
+(defn- money-value [value]
+  (if (nil? value)
+    (muted nil)
+    (.format (NumberFormat/getCurrencyInstance Locale/GERMANY) value)))
+
+(defn- insurance-kind-badge [{:keys [tr]} private?]
+  [:wa-badge {:appearance "outlined"
+              :pill       true
+              :variant    (if private? "neutral" "success")}
+   (if private?
+     (tr [:instrument.coverage/private])
+     (tr [:instrument.coverage/band]))])
+
+(defn- insurance-policy-summary [{:keys [tr]} policy]
+  (if policy
+    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
+     [:span {:class "wa-caption-s"} (tr [:insurance/insurance-policy])]
+     [:a {:href (urls/link-policy policy)}
+      (:insurance.policy/name policy)]
+     [:wa-badge {:appearance "outlined" :pill true}
+      (tr [(:insurance.policy/status policy)])]
+     (when-let [effective-until (:insurance.policy/effective-until policy)]
+       [:span {:class "wa-caption-s"}
+        (str (tr [:insurance/effective-until]) ": " (date-value effective-until))])]
+    [:wa-callout {:appearance "outlined" :variant "warning"}
+     (tr [:none])]))
+
+(defn- insurance-coverage-row [{:keys [tr] :as req} coverage]
+  (let [{:instrument.coverage/keys [private? value]
+         {:instrument/keys [name category] :as instrument} :instrument.coverage/instrument}
+        coverage
+        category-name (:instrument.category/name category)
+        kind-badge    (insurance-kind-badge req private?)]
+    [:tr
+     [:td {:class "align-middle"}
+      [:div {:class "wa-stack wa-gap-3xs"}
+       [:a {:href (urls/link-instrument instrument)} name]
+       [:div {:class "member-insurance-row-meta wa-cluster wa-gap-xs"}
+        [:span (muted category-name)]
+        kind-badge]]]
+     [:td {:class "member-insurance-col align-middle"}
+      (muted category-name)]
+     [:td {:class "align-middle text-right"}
+      (money-value value)]
+     [:td {:class "member-insurance-col align-middle"}
+      kind-badge]
+     [:td {:class "align-middle text-right"}
+      [:wa-button {:appearance "plain"
+                   :size       "small"
+                   :href       (urls/link-coverage coverage)}
+       (tr [:action/view])]]]))
+
+(defn- insurance-coverages-table [{:keys [tr] :as req} coverages]
+  (if (seq coverages)
+    (ui2/table-shell
+     [:table
+      [:thead
+       [:tr
+        [:th (tr [:instrument/name])]
+        [:th {:class "member-insurance-col"}
+         (tr [:instrument/category])]
+        [:th {:class "text-right"}
+         (tr [:instrument.coverage/value])]
+        [:th {:class "member-insurance-col"}
+         (tr [:band-private])]
+        [:th]]]
+      [:tbody
+       (for [coverage coverages]
+         (insurance-coverage-row req coverage))]])
+    (ui2/empty-state
+     (tr [:none])
+     (tr [:member/insurance-subtitle]))))
+
+(defn- member-insurance-panel [{:keys [db tr] :as req} member]
+  (let [policy    (q/insurance-policy-effective-as-of db (t/inst) q/policy-pattern)
+        coverages (q/instruments-for-member-covered-by db member policy q/instrument-coverage-detail-pattern)]
+    [:div {:class "wa-stack wa-gap-l"}
+     (ui2/section-card
+      {:subtitle (tr [:member/insurance-subtitle])
+       :actions  (when policy
+                   [[:wa-button {:appearance "outlined"
+                                 :variant    "brand"
+                                 :href       (urls/link-coverage-create (:insurance.policy/policy-id policy))}
+                     (tr [:instrument.coverage/create-button])]])}
+      [:div {:class "wa-stack wa-gap-m"}
+       (insurance-policy-summary req policy)
+       (insurance-coverages-table req coverages)])]))
+
 (defn- profile-summary [{:keys [tr] :as req} member]
   (let [src (avatar-src member)]
     [:section {:class "wa-stack wa-gap-l"}
@@ -715,7 +799,7 @@
          (tab-panel active-tab "ledger"
                     (member-ledger-panel req member))
          (tab-panel active-tab "insurance"
-                    (placeholder-panel (tr [:member/insurance-title]) "Insurance and instrument details will move here next."))
+                    (member-insurance-panel req member))
          #_(tab-panel active-tab "activity"
                       (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next."))])])))
 

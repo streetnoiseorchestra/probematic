@@ -1,8 +1,7 @@
 #+title: Todo List for the Probematic
 
 
-*
-
+* Backlog
 ** DONE mark as  change doesnt ask for confirm
 ** DONE create *band* instrument should get all coverages
 ** DONE coverage type description field
@@ -17,5 +16,38 @@
 ** TODO exclude removed instruments from total
 ** TODO remove images
 ** TODO save excel to filestore for download again
-* Datastar refactor
+* 2026 d* port, cleanups and slimming down
+** DONE members index
+** DONE members detail - profile
+** DONE members detail - travel discounts
+** DONE members detail - travel ledger
+** DONE members detail - travel insurance
+** TODO gig index
+** TODO gig create
+** TODO gig detail - gig info
+** TODO gig detail - probeplan
+** TODO gig detail - setlist
+** TODO gig detail - attendance
+** TODO gig detail - attendance send reminders
+** TODO gig detail - forum embed
+** TODO gig edit - should be similiar/same to gig create
+** TODO gig detail - log plays
+** TODO gig archive
+** TODO repertoire index
+** TODO repertoire create/edit
+** TODO repertoire detail w/out sheet music
+** TODO file browser/picker
+** TODO repertoire detail add sheet music
+* 2026 cleanups and slimming down
 ** TODO move new member invitation storage from redis to datomic (we dont do renders on redis key changes)
+** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
+** TODO investigate insurance query slowness and speed it up
+** TODO member invite fields should validate as you type/move between the fields
+** TODO remove active field from member invite form, just default to true
+** TODO remove Create SNO ID field from member invite form, just default to true
+** TODO member invite acceptance - > remove password creation
+** DONE member profile edit fields should validate as you type/move between the fields
+** TODO aria-current='page' on nav items
+** TODO create admin team
+** TODO member profile -> show SNO UUID related things only to "admin" team
+** TODO on gig detail page add a "travel mode" feature which switches view to those attending and shows their travel discount details

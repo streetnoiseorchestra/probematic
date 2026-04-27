@@ -68,7 +68,7 @@
 
 (defn table-shell [& children]
   (into
-   [:div {:style "overflow-x: auto; background-color: var(--wa-color-neutral-fill-quiet); border-radius: var(--wa-panel-border-radius);"}]
+   [:div {:class "table-shell"}]
    children))
 
 (defn empty-state [title body]

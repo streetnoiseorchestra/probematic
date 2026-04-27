@@ -2496,6 +2496,18 @@ msgctxt ":instrument.coverage/private?"
 msgid "Private?"
 msgstr "Privat?"
 
+#: :instrument.coverage/private
+#, ycp-format
+msgctxt ":instrument.coverage/private"
+msgid "Private"
+msgstr "Privat"
+
+#: :instrument.coverage/band
+#, ycp-format
+msgctxt ":instrument.coverage/band"
+msgid "Band"
+msgstr "Band"
+
 #: :instrument.coverage/instrument
 #, ycp-format
 msgctxt ":instrument.coverage/instrument"

@@ -507,6 +507,8 @@
   :one-week "1 Woche"},
  :instrument.coverage
  {:private? "Privat?",
+  :private "Privat",
+  :band "Band",
   :instrument "Instrument",
   :cost-hint
   "Die Kosten für die Versicherung des Instruments. Wenn privat, muss der Besitzer diese bezahlen.",

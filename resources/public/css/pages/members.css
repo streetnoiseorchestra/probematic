@@ -106,6 +106,12 @@
 }
 
 @media (--sno-viewport-below-s) {
+  @scope (.members-detail-page) {
+    .member-insurance-col {
+      display: none;
+    }
+  }
+
   @scope (.members-index-page) {
     .members-index-col {
       display: none;
@@ -114,6 +120,12 @@
 }
 
 @media (--sno-viewport-s) {
+  @scope (.members-detail-page) {
+    .member-insurance-row-meta {
+      display: none;
+    }
+  }
+
   @scope (.members-index-page) {
     .members-index-toolbar-controls {
       grid-template-columns:
