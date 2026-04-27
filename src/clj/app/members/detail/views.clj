@@ -709,7 +709,7 @@
          (tab req active-tab "discounts" (tr [:travel-discounts/title]))
          (tab req active-tab "ledger" "Ledger")
          (tab req active-tab "insurance" (tr [:member/insurance-title]))
-         (tab req active-tab "activity" "Gigs & Probes")
+         #_(tab req active-tab "activity" "Gigs & Probes")
 
          (tab-panel active-tab "discounts"
                     (travel-discounts-panel req member))
@@ -717,7 +717,7 @@
                     (member-ledger-panel req member))
          (tab-panel active-tab "insurance"
                     (placeholder-panel (tr [:member/insurance-title]) "Insurance and instrument details will move here next."))
-         (tab-panel active-tab "activity"
-                    (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next."))])])))
+         #_(tab-panel active-tab "activity"
+                      (placeholder-panel "Gigs & Probes" "Attendance statistics will move here next."))])])))
 
 (d*/refresh-all!)
