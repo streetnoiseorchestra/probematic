@@ -7,6 +7,7 @@
    [app.urls :as urls]
    [app.util :as util]
    [clojure.string :as str]
+   [com.yetanalytics.squuid :as sq]
    [tick.core :as t]))
 
 (defn- keywordize-param-keys [m]
@@ -65,6 +66,7 @@
       [:post-gig-plans #(or % "")]
       [:topic-id trim-value]
       [:notify? normalize-bool]
+      [:thread? normalize-bool]
       [:takeover-topic? normalize-bool]])))
 
 (defn- label [tr field]
@@ -155,6 +157,9 @@
     [(merge (domain/gig->db (util/remove-nils gig))
             nil-attrs)]))
 
+(defn create-gig-tx-data [params]
+  [(domain/gig->db (util/remove-nils (gig-update-map params)))])
+
 (defn- admin? [{:keys [current-user-roles]}]
   (contains? current-user-roles :admin))
 
@@ -164,6 +169,11 @@
 
 (defn- top-error [message]
   {:_top {:error message}})
+
+(defn- with-generic-top-error [tr errors]
+  (cond-> errors
+    (and (seq errors) (nil? (:_top errors)))
+    (assoc :_top {:error (tr [:error/form-has-errors])})))
 
 (defn validation-errors
   [{:keys [tr]}
@@ -210,12 +220,14 @@
   (let [params          (normalize-form (form-params signals))
         gig-id          (util/ensure-uuid! (:gig-id params))
         gig             (q/retrieve-gig db gig-id)
-        errors          (merge
-                         (when-not gig
-                           (top-error (tr [:error/gig-edit-not-found])))
-                         (when (and gig (not (can-edit-gig? state gig)))
-                           (top-error (tr [:error/gig-edit-not-allowed])))
-                         (validation-errors {:tr tr} params))
+        errors          (with-generic-top-error
+                          tr
+                          (merge
+                           (when-not gig
+                             (top-error (tr [:error/gig-edit-not-found])))
+                           (when (and gig (not (can-edit-gig? state gig)))
+                             (top-error (tr [:error/gig-edit-not-allowed])))
+                           (validation-errors {:tr tr} params)))
         notify?         (normalize-bool (:notify? params))
         takeover-topic? (normalize-bool (:takeover-topic? params))]
     (tap> [:update-gig-action :params params :errors errors])
@@ -228,6 +240,22 @@
           gig-tx-data
           {:transact-w-nils? true
            :on-success       [[:app.gigs/trigger-gig-details-edited gig-id notify? takeover-topic?]]}]
+         [:app.datastar/redirect (urls/link-gig gig-id)]]))))
+
+(defn create-gig-action
+  [{:keys [tr]} signals]
+  (let [params  (normalize-form (form-params signals))
+        errors  (with-generic-top-error tr (validation-errors {:tr tr} params))
+        notify? (normalize-bool (:notify? params))
+        thread? (normalize-bool (:thread? params))]
+    (if (seq errors)
+      [support/clear-loading
+       [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]
+      (let [gig-id (sq/generate-squuid)
+            params (assoc params :gig-id (str gig-id))]
+        [[:db/transact
+          (create-gig-tx-data params)
+          {:on-success [[:app.gigs/trigger-gig-created gig-id notify? thread?]]}]
          [:app.datastar/redirect (urls/link-gig gig-id)]]))))
 
 (defn delete-gig-tx-data [db gig-id]
@@ -272,5 +300,6 @@
 
 (def actions
   {::validate-gig-field #'validate-gig-field-action
+   ::create-gig         #'create-gig-action
    ::update-gig         #'update-gig-action
    ::delete-gig         #'delete-gig-action})

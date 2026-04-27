@@ -33,6 +33,11 @@
                                    (when-let [class (:class attrs)]
                                      (str " " class)))})]))
 
+(defn gig-breadcrumb-label [{:gig/keys [title gig-type] :as gig}]
+  (if (#{:gig.type/probe :gig.type/extra-probe} gig-type)
+    (str title " " (ui/gig-date gig))
+    title))
+
 (defn- date-value [dt]
   (when dt
     (t/date (if (inst? dt)

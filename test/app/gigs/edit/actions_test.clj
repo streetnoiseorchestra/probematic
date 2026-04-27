@@ -24,6 +24,7 @@
     :error/gig-rehearsal-leaders-same "Probeleitung 2 must be different from Probeleitung 1."
     :error/gig-edit-not-allowed "You are not allowed to edit this gig."
     :error/gig-edit-not-found "Gig not found."
+    :error/form-has-errors "Please fix the errors in the form."
     (name k)))
 
 (defn valid-signals [gig-id]
@@ -154,7 +155,8 @@
                 :rehearsal-leader2 "00000000-0000-0000-0000-000000000001"
                 :notify?           false
                 :more-details      ""
-                :_error            {:end-date          {:error "End date must be on or after date."}
+                :_error            {:_top             {:error "Please fix the errors in the form."}
+                                    :end-date          {:error "End date must be on or after date."}
                                     :set-time          {:error "Set time must be at or after call time."}
                                     :end-time          {:error "End time must be at or after set time."}
                                     :rehearsal-leader2 {:error "Probeleitung 2 must be different from Probeleitung 1."}}}]]
@@ -175,7 +177,8 @@
     (let [{:keys [conn]} (tc/new-system "gig-edit-update-end-time-action")
           gig-id         (random-uuid)]
       (seed-gig! conn gig-id (t/date "2026-05-01"))
-      (is (= {:end-time {:error "End time must be at or after call time."}}
+      (is (= {:_top     {:error "Please fix the errors in the form."}
+              :end-time {:error "End time must be at or after call time."}}
              (-> (actions/update-gig-action
                   (action-state conn)
                   (merge (valid-signals gig-id)
@@ -208,6 +211,53 @@
                         :call-time      "18:00"
                         :set-time       "17:00"
                         :validate-field "set-time"}})))))
+
+(deftest create-gig-action-test
+  (testing "returns a Datomic transaction effect, creation side effect, and redirect"
+    (let [[transact redirect :as effects] (actions/create-gig-action
+                                           {:tr tr}
+                                           (assoc (valid-signals "00000000-0000-0000-0000-000000000000")
+                                                  "thread?" true))
+          [_ [tx] opts] transact
+          gig-id (:gig/gig-id tx)]
+      (is (= :db/transact (first transact)))
+      (is (uuid? gig-id))
+      (is (= "Street Gig" (:gig/title tx)))
+      (is (= :gig.type/gig (:gig/gig-type tx)))
+      (is (= :gig.status/confirmed (:gig/status tx)))
+      (is (= {:on-success [[:app.gigs/trigger-gig-created gig-id true true]]}
+             opts))
+      (is (= [:app.datastar/redirect (urls/link-gig gig-id)]
+             redirect))
+      (is (= 2 (count effects)))))
+
+  (testing "returns validation errors"
+    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+            [:app.datastar/assoc-state
+             [:gig-edit]
+             {:gig-id    "00000000-0000-0000-0000-000000000000"
+              :title     ""
+              :date      ""
+              :location  ""
+              :gig-type  ""
+              :status    ""
+              :call-time ""
+              :_error    {:_top     {:error "Please fix the errors in the form."}
+                          :title    {:error "Title is required."}
+                          :date     {:error "Date is required."}
+                          :location {:error "Location is required."}
+                          :gig-type {:error "Type is required."}
+                          :status   {:error "Status is required."}
+                          :call-time {:error "Call Time is required."}}}]]
+           (actions/create-gig-action
+            {:tr tr}
+            {"gig-id"    "00000000-0000-0000-0000-000000000000"
+             "title"     ""
+             "date"      ""
+             "location"  ""
+             "gig-type"  ""
+             "status"    ""
+             "call-time" ""})))))
 
 (deftest delete-gig-action-test
   (testing "returns a Datomic retract transaction effect and redirects to the gigs list"

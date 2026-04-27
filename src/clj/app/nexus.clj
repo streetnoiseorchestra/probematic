@@ -213,6 +213,7 @@
                          :app.datastar/merge-state            merge-page-state-fx
                          :app.datastar/redirect               redirect-fx
                          :app.gigs/trigger-gig-details-edited gigs.effects/trigger-gig-details-edited-fx
+                         :app.gigs/trigger-gig-created        gigs.effects/trigger-gig-created-fx
                          :app.gigs/trigger-gig-deleted        gigs.effects/trigger-gig-deleted-fx
                          :app.members/send-user-invitation    send-user-invitation-fx
                          :app.members/update-keycloak-meta    update-keycloak-meta-fx

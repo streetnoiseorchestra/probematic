@@ -71,7 +71,7 @@
     [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
     [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
      (tr [:nav/gigs])]
-    [:wa-breadcrumb-item title]]
+    [:wa-breadcrumb-item (gigs.ui/gig-breadcrumb-label gig)]]
    [:section {:class "wa-stack wa-gap-l"}
     [:div {:class "wa-flank:end wa-align-items-start"}
      [:div {:class "wa-stack wa-gap-2xs"}

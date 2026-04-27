@@ -122,6 +122,10 @@
              (get-in (r/match-by-path router (str "/gig/" gig-id "/edit")) [:data :app.route/name])))
       (is (= :app.gigs.routes/edit
              (get-in (r/match-by-path router (str "/gig/" gig-id "/edit")) [:data :name])))
+      (is (= :app/gigs
+             (get-in (r/match-by-path router "/gigs/create") [:data :app.route/name])))
+      (is (= :app.gigs.routes/create
+             (get-in (r/match-by-path router "/gigs/create") [:data :name])))
       (is (seq (get-in (r/match-by-path router (str "/gig/" gig-id "/edit")) [:data :extra-head])))
       (is (= :app/gigs
              (get-in (r/match-by-path router (str "/gig-legacy/" gig-id "/")) [:data :app.route/name])))
@@ -134,10 +138,10 @@
     (is (= :app/gigs
            (get-in (r/match-by-path router "/gigs-legacy/archive") [:data :app.route/name])))))
 
-(deftest gig-helpers-point-to-public-index-archive-and-legacy-create-during-the-archive-port
+(deftest gig-helpers-point-to-public-index-archive-and-create
   (is (= "/gigs"
          (urls/link-gigs-home)))
-  (is (= "/gigs-legacy/new/"
+  (is (= "/gigs/create"
          (urls/link-gig-create)))
   (is (= "/gigs/archive"
          (urls/link-gig-archive)))

@@ -2285,6 +2285,12 @@ msgctxt ":error/member-unique-username"
 msgid "A member already has that username"
 msgstr ""
 
+#: :error/form-has-errors
+#, ycp-format
+msgctxt ":error/form-has-errors"
+msgid "Please fix the errors in the form."
+msgstr ""
+
 #: :error/gig-end-date-before-date
 #, ycp-format
 msgctxt ":error/gig-end-date-before-date"
