@@ -38,6 +38,18 @@
 ** TODO repertoire detail w/out sheet music
 ** TODO file browser/picker
 ** TODO repertoire detail add sheet music
+** TODO stats view
+** TODO insurance - index
+** TODO insurance - create policy
+** TODO insurance - policy detail read-only, no survey
+** TODO insurance - edit policy data
+** TODO insurance - covered instruments actions
+** TODO insurance - covered instruments add wizard
+** TODO insurance - covered instruments edit
+** TODO insurance - policy survey admin
+** TODO insurance - member survey wizard
+** TODO insurance - send changes
+** TODO user home / dashboard
 * 2026 cleanups and slimming down
 ** TODO move new member invitation storage from redis to datomic (we dont do renders on redis key changes)
 ** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
