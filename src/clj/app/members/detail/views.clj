@@ -592,8 +592,7 @@
         entries      (:ledger/entries ledger)]
     [:div {:class "wa-stack wa-gap-l"}
      (ui2/section-card
-      {:title    "Money Stuff"
-       :subtitle [:span "What "
+      {:subtitle [:span "What "
                   [:span {:class "text-danger"} "you owe the band (+)"]
                   " and what "
                   [:span {:class "text-success"} "the band owes you (-)"]]
@@ -707,7 +706,7 @@
         [:wa-tab-group {:id "member-detail-tabs"
                         :active active-tab}
          (tab req active-tab "discounts" (tr [:travel-discounts/title]))
-         (tab req active-tab "ledger" "Ledger")
+         (tab req active-tab "ledger" "Money Stuff")
          (tab req active-tab "insurance" (tr [:member/insurance-title]))
          #_(tab req active-tab "activity" "Gigs & Probes")
 
