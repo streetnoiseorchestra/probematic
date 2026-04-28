@@ -2,6 +2,7 @@
   (:require
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
+   [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]))
 
@@ -76,13 +77,23 @@
     (button current-filter "old" ((:tr req) [:gig/probeplan-repertoire-old]))
     (button current-filter "all" ((:tr req) [:gig/probeplan-repertoire-all]))]])
 
-(defn song-choice [{:keys [checked? id-prefix on-change effect song-id title]}]
+(defn last-played-subtitle [{:keys [tr]} last-played-on]
+  (when last-played-on
+    [:span
+     (str (tr [:song/last-played]) ": ")
+     (ui/humanize-dt last-played-on)]))
+
+(defn song-choice [{:keys [checked? id-prefix on-change effect song-id subtitle title]}]
   [:wa-checkbox (cond-> {:id                 (str id-prefix (ui2/safe-dom-id song-id))
                          :data-effect        effect
                          :data-on:change     on-change
                          :data-preserve-attr "class data-last-selected"}
                   checked? (assoc :checked true))
-   [:span title]])
+   [:span {:class "gigs-probeplan-editor-choice-label"}
+    [:span {:class "gigs-probeplan-editor-choice-title"} title]
+    (when subtitle
+      [:span {:class "gigs-probeplan-editor-choice-subtitle"}
+       subtitle])]])
 
 (defn song-choices [{:keys [req title-kw guidance-kw songs repertoire-filter selected-songs filter-control choice]}]
   (let [selected-ids (selected-song-ids selected-songs)

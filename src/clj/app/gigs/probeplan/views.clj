@@ -66,11 +66,12 @@
                                  (@post ~(d*/act req ::actions/set-repertoire-filter)))}
    label])
 
-(defn- song-choice [req gig-id selected-ids {:song/keys [song-id title]}]
+(defn- song-choice [req gig-id selected-ids {:song/keys [last-played-on song-id title]}]
   (plan.views/song-choice
    {:id-prefix "gig-probeplan-choice-"
     :song-id   song-id
     :title     title
+    :subtitle  (plan.views/last-played-subtitle req last-played-on)
     :checked?  (selected-ids song-id)
     :effect    (song-choice-pop-effect-js song-id)
     :on-change (toggle-song-client-js req gig-id song-id)}))
