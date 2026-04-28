@@ -38,7 +38,7 @@
     (is (contains? (:nexus/actions nexus-config)
                    :app.gigs.detail.actions/toggle-attendance-committed))
     (is (contains? (:nexus/actions nexus-config)
-                   :app.gigs.probeplan.actions/save-probeplan))
+                   :app.gigs.probeplan.actions/toggle-probeplan-song))
     (is (contains? (:nexus/effects nexus-config) :db/transact))
     (is (contains? (:nexus/effects nexus-config) :app.datastar/redirect))
     (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-details-edited))

@@ -2,19 +2,13 @@
   (:require
    [app.gigs.domain :as gig.domain]
    [app.gigs.probeplan.actions :as actions]
-   [app.probeplan.domain :as probeplan.domain]
    [app.test-common :as tc]
-   [app.urls :as urls]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [tick.core :as t]))
 
 (defn tr [path]
-  (case path
-    [:error/probeplan-too-many-songs] "Choose at most 5 songs."
-    [:error/probeplan-too-many-intensive] "Mark at most 2 songs as intensive."
-    [:error/probeplan-empty] "Choose at least one song."
-    (name (last path))))
+  (name (last path)))
 
 (defn seed-gig! [conn gig-id]
   @(d/transact conn [(gig.domain/gig->db {:gig/gig-id    gig-id
@@ -38,72 +32,74 @@
                                     [[:song/song-id song-id] position emphasis])
                                   songs)})]))
 
-(defn state [conn page-state]
-  {:db         (d/db conn)
-   :tr         tr
-   :page-state page-state})
+(defn state [conn]
+  {:db (d/db conn)
+   :tr tr})
 
 (defn params [m]
   {:gig-probeplan m})
 
-(defn selected-state [songs]
-  {:gig-probeplan {:songs songs}})
-
 (defn edited-effect [gig-id]
   {:on-success [[:app.gigs/trigger-gig-edited gig-id :probeplan]]})
 
+(defn tx-effect [gig-id tx-data]
+  [:db/transact tx-data (edited-effect gig-id)])
+
 (deftest toggle-probeplan-song-action-test
-  (testing "adds a selected song at the end"
+  (testing "persists an added song immediately"
     (let [{:keys [conn]} (tc/new-system "probeplan-toggle-add")
           gig-id         (random-uuid)
           song-id        (random-uuid)]
       (seed-gig! conn gig-id)
       (seed-song! conn song-id "Alpha")
-      (is (= [[:app.datastar/assoc-state
-               [:gig-probeplan]
-               {:songs [{:song-id (str song-id)
-                         :position 0
-                         :emphasis "none"}]}]]
+      (is (= [(tx-effect
+               gig-id
+               [{:probeplan/gig     [:gig/gig-id gig-id]
+                 :db/id             "probeplan"
+                 :probeplan/version :probeplan.version/classic}
+                [:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-id] 0 :probeplan.emphasis/none]]])]
              (actions/toggle-probeplan-song-action
-              (state conn {})
+              (state conn)
               (params {:gig-id (str gig-id) :song-id (str song-id) :selected true}))))))
 
-  (testing "removes a song and renumbers remaining rows"
+  (testing "persists a removed song immediately"
     (let [{:keys [conn]} (tc/new-system "probeplan-toggle-remove")
           gig-id         (random-uuid)
-          song-a         (random-uuid)
-          song-b         (random-uuid)]
+          song-id        (random-uuid)]
       (seed-gig! conn gig-id)
-      (seed-song! conn song-a "Alpha")
-      (seed-song! conn song-b "Beta")
-      (is (= [[:app.datastar/assoc-state
-               [:gig-probeplan]
-               {:songs [{:song-id (str song-b)
-                         :position 0
-                         :emphasis "intensive"}]}]]
+      (seed-song! conn song-id "Alpha")
+      (seed-probeplan! conn gig-id [[song-id 0 :probeplan.emphasis/none]])
+      (is (= [(tx-effect
+               gig-id
+               [{:probeplan/gig     [:gig/gig-id gig-id]
+                 :db/id             "probeplan"
+                 :probeplan/version :probeplan.version/classic}
+                [:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-id] 0 :probeplan.emphasis/none]]])]
              (actions/toggle-probeplan-song-action
-              (state conn (selected-state [{:song-id (str song-a) :position 0 :emphasis "none"}
-                                           {:song-id (str song-b) :position 1 :emphasis "intensive"}]))
-              (params {:gig-id (str gig-id) :song-id (str song-a) :selected false})))))))
+              (state conn)
+              (params {:gig-id (str gig-id) :song-id (str song-id) :selected false})))))))
 
 (deftest toggle-probeplan-intensive-action-test
-  (testing "toggles a song intensive"
+  (testing "persists intensive toggle immediately"
     (let [{:keys [conn]} (tc/new-system "probeplan-toggle-intensive")
           gig-id         (random-uuid)
           song-id        (random-uuid)]
       (seed-gig! conn gig-id)
       (seed-song! conn song-id "Alpha")
-      (is (= [[:app.datastar/assoc-state
-               [:gig-probeplan]
-               {:songs [{:song-id (str song-id)
-                         :position 0
-                         :emphasis "intensive"}]}]]
+      (seed-probeplan! conn gig-id [[song-id 0 :probeplan.emphasis/none]])
+      (is (= [(tx-effect
+               gig-id
+               [{:probeplan/gig     [:gig/gig-id gig-id]
+                 :db/id             "probeplan"
+                 :probeplan/version :probeplan.version/classic}
+                [:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-id] 0 :probeplan.emphasis/intensive]]
+                [:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-id] 0 :probeplan.emphasis/none]]])]
              (actions/toggle-probeplan-intensive-action
-              (state conn (selected-state [{:song-id (str song-id) :position 0 :emphasis "none"}]))
+              (state conn)
               (params {:gig-id (str gig-id) :song-id (str song-id)}))))))
 
-  (testing "prevents more than the maximum intensive songs"
-    (let [{:keys [conn]} (tc/new-system "probeplan-toggle-intensive-max")
+  (testing "allows more than two intensive songs"
+    (let [{:keys [conn]} (tc/new-system "probeplan-toggle-intensive-unlimited")
           gig-id         (random-uuid)
           song-a         (random-uuid)
           song-b         (random-uuid)
@@ -111,24 +107,33 @@
       (seed-gig! conn gig-id)
       (doseq [[id title] [[song-a "Alpha"] [song-b "Beta"] [song-c "Gamma"]]]
         (seed-song! conn id title))
-      (is (= [[:app.datastar/assoc-state
-               [:gig-probeplan :_error]
-               {:error "Choose at most 5 songs."}]]
-             (actions/toggle-probeplan-song-action
-              (state conn (selected-state (mapv (fn [idx]
-                                                  {:song-id (str (random-uuid))
-                                                   :position idx
-                                                   :emphasis "none"})
-                                                (range probeplan.domain/MAX-SONGS))))
-              (params {:gig-id (str gig-id) :song-id (str song-c) :selected true}))))
-      (is (= [[:app.datastar/assoc-state
-               [:gig-probeplan :_error]
-               {:error "Mark at most 2 songs as intensive."}]]
-             (actions/toggle-probeplan-intensive-action
-              (state conn (selected-state [{:song-id (str song-a) :position 0 :emphasis "intensive"}
-                                           {:song-id (str song-b) :position 1 :emphasis "intensive"}
-                                           {:song-id (str song-c) :position 2 :emphasis "none"}]))
-              (params {:gig-id (str gig-id) :song-id (str song-c)})))))))
+      (seed-probeplan! conn gig-id [[song-a 0 :probeplan.emphasis/intensive]
+                                    [song-b 1 :probeplan.emphasis/intensive]
+                                    [song-c 2 :probeplan.emphasis/none]])
+      (let [[effect] (actions/toggle-probeplan-intensive-action
+                      (state conn)
+                      (params {:gig-id (str gig-id) :song-id (str song-c)}))]
+        (is (= :db/transact (first effect)))
+        (is (some #{[:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-c] 2 :probeplan.emphasis/intensive]]}
+                  (second effect)))))))
+
+(deftest toggle-probeplan-song-no-limit-test
+  (testing "allows more than five songs"
+    (let [{:keys [conn]} (tc/new-system "probeplan-toggle-song-unlimited")
+          gig-id         (random-uuid)
+          song-ids       (repeatedly 6 random-uuid)]
+      (seed-gig! conn gig-id)
+      (doseq [[idx song-id] (map-indexed vector song-ids)]
+        (seed-song! conn song-id (str "Song " idx)))
+      (seed-probeplan! conn gig-id (map-indexed (fn [idx song-id]
+                                                  [song-id idx :probeplan.emphasis/none])
+                                                (take 5 song-ids)))
+      (let [[effect] (actions/toggle-probeplan-song-action
+                      (state conn)
+                      (params {:gig-id (str gig-id) :song-id (str (last song-ids)) :selected true}))]
+        (is (= :db/transact (first effect)))
+        (is (some #{[:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id (last song-ids)] 5 :probeplan.emphasis/none]]}
+                  (second effect)))))))
 
 (deftest reorder-probeplan-songs-action-test
   (let [{:keys [conn]} (tc/new-system "probeplan-reorder")
@@ -139,59 +144,19 @@
     (seed-gig! conn gig-id)
     (doseq [[id title] [[song-a "Alpha"] [song-b "Beta"] [song-c "Gamma"]]]
       (seed-song! conn id title))
-    (is (= [[:app.datastar/assoc-state
-             [:gig-probeplan]
-             {:songs [{:song-id (str song-c) :position 0 :emphasis "none"}
-                      {:song-id (str song-a) :position 1 :emphasis "none"}
-                      {:song-id (str song-b) :position 2 :emphasis "intensive"}]}]]
-           (actions/reorder-probeplan-songs-action
-            (state conn (selected-state [{:song-id (str song-a) :position 0 :emphasis "none"}
-                                         {:song-id (str song-b) :position 1 :emphasis "intensive"}
-                                         {:song-id (str song-c) :position 2 :emphasis "none"}]))
-            (params {:gig-id (str gig-id)
-                     :order  [(str song-c) (str song-a) (str song-b)]}))))))
-
-(deftest save-probeplan-action-test
-  (testing "returns a reconciliation transaction and redirects to the gig"
-    (let [{:keys [conn]} (tc/new-system "probeplan-save")
-          gig-id         (random-uuid)
-          song-a         (random-uuid)
-          song-b         (random-uuid)
-          song-c         (random-uuid)]
-      (seed-gig! conn gig-id)
-      (doseq [[id title] [[song-a "Alpha"] [song-b "Beta"] [song-c "Gamma"]]]
-        (seed-song! conn id title))
-      (seed-probeplan! conn gig-id [[song-a 0 :probeplan.emphasis/none]
-                                    [song-b 1 :probeplan.emphasis/intensive]])
-      (is (= [[:db/transact
-               [{:probeplan/gig [:gig/gig-id gig-id]
-                 :db/id "probeplan"
-                 :probeplan/version :probeplan.version/classic}
-                [:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-b] 0 :probeplan.emphasis/intensive]]
-                [:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-c] 1 :probeplan.emphasis/none]]
-                [:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-a] 0 :probeplan.emphasis/none]]
-                [:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-b] 1 :probeplan.emphasis/intensive]]]
-               (edited-effect gig-id)]
-              [:app.datastar/redirect (urls/link-gig gig-id)]]
-             (actions/save-probeplan-action
-              (state conn (selected-state [{:song-id (str song-b) :position 0 :emphasis "intensive"}
-                                           {:song-id (str song-c) :position 1 :emphasis "none"}]))
-              (params {:gig-id (str gig-id)}))))))
-
-  (testing "rejects an empty probeplan"
-    (let [{:keys [conn]} (tc/new-system "probeplan-save-empty")
-          gig-id         (random-uuid)]
-      (seed-gig! conn gig-id)
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
-              [:app.datastar/assoc-state
-               [:gig-probeplan :_error]
-               {:error "Choose at least one song."}]]
-             (actions/save-probeplan-action
-              (state conn (selected-state []))
-              (params {:gig-id (str gig-id)})))))))
+    (seed-probeplan! conn gig-id [[song-a 0 :probeplan.emphasis/none]
+                                  [song-b 1 :probeplan.emphasis/intensive]
+                                  [song-c 2 :probeplan.emphasis/none]])
+    (let [[effect] (actions/reorder-probeplan-songs-action
+                    (state conn)
+                    (params {:gig-id (str gig-id)
+                             :order  [(str song-c) (str song-a) (str song-b)]}))]
+      (is (= :db/transact (first effect)))
+      (is (some #{[:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-c] 0 :probeplan.emphasis/none]]}
+                (second effect))))))
 
 (deftest selected-songs-for-page-test
-  (testing "uses page state before stored probeplan songs"
+  (testing "uses stored probeplan songs as the multiplayer source of truth"
     (let [{:keys [conn]} (tc/new-system "probeplan-page-songs")
           gig-id         (random-uuid)
           song-a         (random-uuid)
@@ -200,11 +165,11 @@
       (seed-song! conn song-a "Alpha")
       (seed-song! conn song-b "Beta")
       (seed-probeplan! conn gig-id [[song-a 0 :probeplan.emphasis/none]])
-      (is (= [{:song/song-id song-b
-               :song/title "Beta"
+      (is (= [{:song/song-id song-a
+               :song/title   "Alpha"
                :song/active? true
-               :position 0
-               :emphasis :probeplan.emphasis/intensive}]
+               :position     0
+               :emphasis     :probeplan.emphasis/none}]
              (mapv #(select-keys % [:song/song-id :song/title :song/active? :position :emphasis])
                    (actions/selected-songs-for-page
                     (d/db conn)

@@ -53,7 +53,7 @@
              [:input {:type "hidden" :value idx :data-sort-order section-name}]
              [:strong section-name]]]))]]
      (html/squint-inline
-      (require '["/js/sortable@1.15.7-esm.js" :as s])
+      (require '["sortable" :as s])
       (new s/Sortable
            sortContainer
            {:animation  100

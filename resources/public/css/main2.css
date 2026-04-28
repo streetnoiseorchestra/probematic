@@ -31,6 +31,18 @@
 }
 
 @layer sno-global {
+  /* view always wrap d* morphs with view transition
+   * here we disable the global/root animation and instead opt in
+   * on a per page/widget basis
+   */
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
   :root {
     --sno-brand-green: #22c55e;
     --sno-brand-orange: #f97316;

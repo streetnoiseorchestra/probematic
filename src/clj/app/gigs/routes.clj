@@ -84,10 +84,9 @@
    (ds/page-routes {:page-name ::detail-trailing-slash
                     :path      "/gig/{gig/gig-id}/"
                     :view-ns   'app.gigs.detail.views})
-   (ds/page-routes {:page-name  ::probeplan
-                    :path       "/gig/{gig/gig-id}/probeplan"
-                    :view-ns    'app.gigs.probeplan.views
-                    :extra-head app.gigs.probeplan.views/extra-head})
+   (ds/page-routes {:page-name ::probeplan
+                    :path      "/gig/{gig/gig-id}/probeplan"
+                    :view-ns   'app.gigs.probeplan.views})
    (ds/page-routes {:page-name  ::edit
                     :path       "/gig/{gig/gig-id}/edit"
                     :view-ns    'app.gigs.edit.views
