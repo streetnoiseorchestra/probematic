@@ -3,11 +3,13 @@
 }
 
 .sno-section-header,
+.sno-page-header-main,
 .sno-action-bar {
   display: grid;
 }
 
-.sno-section-header {
+.sno-section-header,
+.sno-page-header-main {
   gap: var(--wa-space-s);
 }
 
@@ -21,10 +23,19 @@
 }
 
 @media (--sno-viewport-s) {
-  .sno-section-header {
+  .sno-section-header,
+  .sno-page-header-main {
     display: flex;
     align-items: start;
     justify-content: space-between;
+  }
+
+  .sno-page-header-main > .sno-title-block {
+    min-inline-size: var(--sno-size-none);
+  }
+
+  .sno-page-actions {
+    flex: none;
   }
 
   .sno-action-bar {

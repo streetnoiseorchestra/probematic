@@ -77,12 +77,11 @@
   [:header (merge {:class (cs "sno-page-header" "wa-stack" "wa-gap-m" class)}
                   (dissoc attrs :actions :breadcrumb :class :heading :subtitle :title))
    breadcrumb
-   [:section {:class "wa-stack wa-gap-l"}
-    [:div {:class "wa-stack wa-gap-m"}
-     (title-block {:heading  heading
-                   :subtitle subtitle
-                   :title    title})
-     (action-bar {} actions)]]])
+   [:section {:class "sno-page-header-main"}
+    (title-block {:heading  heading
+                  :subtitle subtitle
+                  :title    title})
+    (action-bar {:class "sno-page-actions"} actions)]])
 
 (defn section-card
   "Renders a Web Awesome card section with optional header actions.
