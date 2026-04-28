@@ -9,12 +9,10 @@
    [app.members.controller :as controller]
    [app.members.domain :as members.domain]
    [app.queries :as q]
-   [app.sardine :as sardine]
    [app.settings.domain :as settings.domain]
    [app.ui :as ui]
    [app.urls :as url]
    [app.util :as util]
-   [app.util.http :as http.util]
    [clojure.set :as set]
    [clojure.string :as str]
    [ctmx.core :as ctmx]
@@ -622,16 +620,6 @@
           nil (throw e)
           :code-expired (invite-invalid req)
           (invite-accept-form req (->  e ex-data :invite-data) ((i18n/tr-from-req req) [reason])))))))
-
-(defn member-vcard [{:keys [db] :as req}]
-  (let [member-id (http.util/path-param-uuid! req :member-id)
-        member (q/retrieve-member db member-id)
-        nick (:member/nick member)
-        vcard (members.domain/generate-vcard member)]
-    {:status 200
-     :headers {"Content-Disposition" (sardine/content-disposition-filename "attachment" (str nick ".vcf"))
-               "Content-Type" "text/x-vcard"}
-     :body vcard}))
 
 (comment
 

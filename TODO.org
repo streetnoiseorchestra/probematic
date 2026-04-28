@@ -32,7 +32,9 @@
 ** DONE gig detail - attendance send reminders
 ** DONE gig detail - forum embed
 ** DONE gig edit - should be similiar/same to gig create
-** TODO gig detail - log plays
+** DONE gig detail - log plays
+** TODO members invite accept
+** TODO members vcard download
 ** TODO repertoire index
 ** TODO repertoire create/edit
 ** TODO repertoire detail w/out sheet music

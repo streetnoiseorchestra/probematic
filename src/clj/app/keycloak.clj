@@ -50,7 +50,7 @@
 
 (defn match-members [members kc]
   (let [users (list-users kc)
-        all (for [{:member/keys [email username member-id] :as m} members]
+        all (for [{:member/keys [email] :as m} members]
               (if-let [matched-user (m/find-first #(= (str/lower-case email)  (str/lower-case (:user/email %))) users)]
                 (-> m
                     (assoc :member/keycloak-id  (:user/user-id matched-user))
@@ -111,7 +111,7 @@
       (.update (user-for-update (util/remove-nils person))))
   (get-user! kc keycloak-id))
 
-(defn update-user-meta! [kc {:member/keys [username email name keycloak-id] :as member}]
+(defn update-user-meta! [kc {:member/keys [username email name keycloak-id]}]
   (assert (not (str/blank? email)))
   (assert (not (str/blank? username)))
   (assert (not (str/blank? name)))
@@ -147,7 +147,7 @@
     (subs (str loc) (+ (str/last-index-of (str loc) "/") 1))))
 
 (defn- create-user! [{:keys [client realm] :as kc} person]
-  (let [resp (-> client (.realm realm) (.users) (.create (user/user-for-creation person)) parse-response)]
+  (let [resp (-> client (.realm realm) (.users) (.create (user/user-for-update person)) parse-response)]
     (if-not (= 201 (:status resp))
       (throw (ex-info "Create Keycloak User Failed" {:response (:body resp)}))
       (let [group-id (admin/get-group-id client realm (:group person))
@@ -155,19 +155,22 @@
         (admin/add-user-to-group! client realm group-id user-id)
         (update-user kc user-id {:enabled (:enabled person) :email-verified true})))))
 
-(defn create-new-member! [kc {:member/keys [email username name] :as member} password can-login?]
-  (assert (not (str/blank? email)))
-  (assert (not (str/blank? username)))
-  (assert (not (str/blank? name)))
-  (assert (not (str/blank? password)))
-  (let [new-user (create-user! kc
-                               {:username username
-                                :email email
-                                :password password
-                                :enabled can-login?
-                                :group "Mitglieder"
-                                :first-name name})]
-    new-user))
+(defn create-new-member!
+  ([kc member can-login?]
+   (create-new-member! kc member nil can-login?))
+  ([kc {:member/keys [email username name]} password can-login?]
+   (assert (not (str/blank? email)))
+   (assert (not (str/blank? username)))
+   (assert (not (str/blank? name)))
+   (let [new-user (create-user! kc
+                                (cond-> {:username username
+                                         :email email
+                                         :enabled can-login?
+                                         :group "Mitglieder"
+                                         :first-name name}
+                                  (not (str/blank? password))
+                                  (assoc :password password)))]
+     new-user)))
 
 (defn kc-from-req [req]
   (-> req :system :keycloak))

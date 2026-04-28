@@ -1,19 +1,28 @@
 (ns app.members.routes
   (:require [app.datomic.shim :as d]
-            [app.layout :as layout]
             [app.members.detail.views]
+            [app.members.domain :as members.domain]
             [app.members.index.views]
+            [app.members.invite-accept.views :as invite-accept]
             [app.members.invite.views]
-            [app.members.views :as view]
             [app.queries :as q]
             [app.routes.datastar :as ds]
-            [app.util.http :as http.util]
-            [ctmx.core :as ctmx]))
+            [app.sardine :as sardine]
+            [app.util.http :as http.util]))
+
+(defn member-vcard [{:keys [db] :as req}]
+  (let [member-id (http.util/path-param-uuid! req :member-id)
+        member    (q/retrieve-member db member-id)
+        nick      (:member/nick member)
+        vcard     (members.domain/generate-vcard member)]
+    {:status  200
+     :headers {"Content-Disposition" (sardine/content-disposition-filename "attachment" (str nick ".vcf"))
+               "Content-Type"        "text/x-vcard"}
+     :body    vcard}))
 
 (defn member-vcard-download []
   ["/member-vcard/{member-id}" {:app.route/name :app/member-vcard
-                                :get (fn [req]
-                                       (view/member-vcard req))}])
+                                :get            member-vcard}])
 
 (defn members-detail []
   (ds/page-routes {:page-name ::detail
@@ -29,20 +38,6 @@
   (ds/page-routes {:page-name ::detail-tab
                    :path      "/member/{member-id}/{member-detail-tab}"
                    :view-ns   'app.members.detail.views}))
-
-(defn legacy-members-detail []
-  (ctmx/make-routes
-   "/member-old/{member-id}"
-   (fn [req]
-     (layout/app-shell req
-                       (view/members-detail-page req false)))))
-
-(defn legacy-members-index []
-  (ctmx/make-routes
-   "/members-old"
-   (fn [req]
-     (layout/app-shell req
-                       (view/members-index-page req false)))))
 
 (def members-interceptors [{:name ::members--interceptor
                             :enter (fn [ctx]
@@ -67,12 +62,10 @@
     (member-vcard-download)
     (members-detail)
     (members-detail-trailing-slash)
-    (members-detail-tab)
-    (legacy-members-detail)]
-   (legacy-members-index)])
+    (members-detail-tab)]])
 
 (defn unauthenticated-routes []
   [""
    ["/invite-accept" {:app.route/name :app/invite-accept
-                      :get            (fn [req] (view/invite-accept req))
-                      :post           (fn [req] (view/invite-accept-post req))}]])
+                      :get            invite-accept/invite-accept
+                      :post           invite-accept/invite-accept-post}]])

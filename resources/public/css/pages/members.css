@@ -6,6 +6,27 @@
   inline-size: min(var(--sno-size-full), var(--sno-narrow-form-max-inline-size));
 }
 
+.members-invite-accept-page {
+  display: grid;
+  place-items: center;
+  min-block-size: 100vh;
+  padding: var(--wa-space-l);
+  background-color: var(--wa-color-surface-lowered);
+}
+
+.members-invite-accept-card {
+  inline-size: min(var(--sno-size-full), var(--sno-narrow-form-max-inline-size));
+  padding: var(--wa-space-xl);
+  background-color: var(--wa-color-surface-default);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  border-radius: var(--wa-panel-border-radius);
+}
+
+.members-invite-accept-logo {
+  font-size: var(--sno-brand-logotype-size);
+}
+
 /* Size the host before Web Awesome upgrades it to prevent avatar FOUC. */
 .member-detail-header wa-avatar {
   --size: var(--sno-member-detail-avatar-size);

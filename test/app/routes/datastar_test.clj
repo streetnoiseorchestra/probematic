@@ -165,7 +165,7 @@
     (is (= (str "/gig/" gig-id "/log-plays")
            (urls/link-gig-log-plays gig-id)))))
 
-(deftest members-routes-expose-the-datastar-index-invite-and-legacy-compatibility-paths
+(deftest members-routes-expose-the-datastar-index-invite-and-detail-paths
   (let [router (http/router ["" (members.routes/routes)])]
     (is (= :app/members
            (get-in (r/match-by-path router "/members") [:data :app.route/name])))
@@ -175,8 +175,7 @@
            (get-in (r/match-by-path router "/members/invite") [:data :app.route/name])))
     (is (= :app.members.routes/invite
            (get-in (r/match-by-path router "/members/invite") [:data :name])))
-    (is (= :app/members
-           (get-in (r/match-by-path router "/members-old") [:data :app.route/name])))
+    (is (nil? (r/match-by-path router "/members-old")))
     (let [member-id (random-uuid)]
       (is (= :app/members
              (get-in (r/match-by-path router (str "/member/" member-id)) [:data :app.route/name])))
@@ -185,6 +184,10 @@
       (is (= :app/members
              (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :app.route/name])))
       (is (= :app.members.routes/detail-trailing-slash
-             (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :name]))))
-    (is (= :app/members
-           (get-in (r/match-by-path router (str "/member-old/" (random-uuid))) [:data :app.route/name])))))
+             (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :name])))
+      (is (nil? (r/match-by-path router (str "/member-old/" member-id)))))))
+
+(deftest members-unauthenticated-routes-expose-invite-accept
+  (let [router (http/router ["" (members.routes/unauthenticated-routes)])]
+    (is (= :app/invite-accept
+           (get-in (r/match-by-path router "/invite-accept") [:data :app.route/name])))))
