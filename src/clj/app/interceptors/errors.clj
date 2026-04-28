@@ -3,7 +3,6 @@
   (:require [malli.core :as m]
             [malli.experimental.lite :as l]
             [app.interceptors.options :as options]
-            [reitit.coercion :as coercion]
             [reitit.ring :as ring]))
 
 ;; --------------------------------------------------------------------------------------------
@@ -17,45 +16,54 @@
     (vector? k)  k
     :else        (throw (ex-info "Invalid pattern" {:pattern k}))))
 
-(defn ->patterns [m]
-  (into []
-        (concat [:altn]
-                (map-indexed (fn [i [k v]] [i [:altn [v (->pattern k)]]]) m)
-                [[(count m) [:altn [:default :any]]]])))
+(defn ->compiled-pattern [pattern handler]
+  (let [schema (->pattern pattern)]
+    {:schema  schema
+     :match?  (m/validator schema)
+     :handler handler}))
+
+(defn ->patterns [handlers]
+  (mapv (fn [[pattern handler]]
+          (->compiled-pattern pattern handler))
+        handlers))
 
 (defn prepare-handlers [handlers]
   (let [default  (::default handlers)
         wrap     (::wrap handlers)
         patterns (->patterns (dissoc handlers ::default ::wrap))]
-    {:patterns (m/schema patterns)
+    {:patterns patterns
      :default  default
      :wrap     wrap}))
 
-(defn parse [patterns e]
-  (nth
-   (nth (m/parse patterns [e]) 1)
-   0))
-
 (defn match-handler [{:keys [patterns default]} e]
-  (let [handler (parse patterns (or (ex-data e) e))]
-    (if (= :default handler)
-      default
-      handler)))
+  (let [match-value (or (ex-data e) e)]
+    (or (some (fn [{:keys [match? handler]}]
+                (when (match? match-value)
+                  handler))
+              patterns)
+        default)))
 
 ;; --------------------------------------------------------------------------------------------
 ;;; Invoking handlers
 
-(defn call-handler [matching-opts handler {:keys [request error]}]
+(defn call-handler [matching-opts handler error request]
   (if-let [wrapping-handler (:wrap matching-opts)]
     (wrapping-handler handler error request)
     (handler error request)))
 
-(defn handle-exceptions [matching-opts {:keys [error] :as ctx}]
+(defn handle-exceptions-int [matching-opts {:keys [error request] :as ctx}]
   (let [handler      (match-handler matching-opts error)
-        new-response (call-handler matching-opts handler ctx)]
+        new-response (call-handler matching-opts handler error request)]
     (if (instance? Exception new-response)
       (-> ctx (assoc :error new-response) (dissoc :response))
       (-> ctx (assoc :response new-response) (dissoc :error)))))
+
+(defn handle-exceptions [matching-opts error request]
+  (let [handler      (match-handler matching-opts error)
+        new-response (call-handler matching-opts handler error request)]
+    (if (instance? Exception new-response)
+      (throw new-response)
+      new-response)))
 
 ;; --------------------------------------------------------------------------------------------
 ;;; Default Handlers
@@ -66,11 +74,11 @@
 (defn default-exception-handler
   [^Exception _e _]
   {:status  500
-   :headers {"Content-Type" "text/plain"}
-   :body    "Internal Server Error"})
+   :headers {"Content-Type"           "text/plain"}
+   :body    "Internal server error"})
 
 (defn default-not-found-handler
-  [^Exception e _]
+  [^Exception _e _]
   {:status 404
    :body   "404 Page not found"})
 
@@ -90,41 +98,45 @@
    :body    (str "Malformed " (-> e ex-data :format pr-str) " request")})
 
 (def default-exception-handlers
-  {::default                                 default-exception-handler
-   ::wrap                                    (fn [handler e req]
-                                               (tap> e)
-                                               (handler e req))
-   {:type [:= ::ring/response]}              http-response-handler
-   {:type [:= :muuntaja/decode]}             request-parsing-handler
-   {:type [:= ::coercion/request-coercion]}  (create-status-handler 400 "Request coercion failed")
-   {:type [:= ::coercion/response-coercion]} (create-status-handler 500 "Response coercion failed")})
+  {::default                                       default-exception-handler
+   ::wrap                                          (fn [handler e req]
+                                                     (handler e req))
+   {:type [:= ::ring/response]}                    http-response-handler
+   {:type [:= :muuntaja/decode]}                   request-parsing-handler
+   {:type [:= :reitit.coercion/request-coercion]}  (create-status-handler 400 "Request coercion failed")
+   {:type [:= :reitit.coercion/response-coercion]} (create-status-handler 500 "Response coercion failed")})
 
 ;; --------------------------------------------------------------------------------------------
 ;;; Interceptor
 
-(defn debug-error! [ctx]
-  ;; TODO: implement a proper pretty printer
-  (tap> [:debug-error (:error ctx)]))
+(defn debug-error! [_request e]
+  (tap> e))
+
+(defn- on-exception [handlers debug-errors? {:keys [request error] :as ctx}]
+  (tap> [:on-exception debug-errors? error])
+  (when debug-errors?
+    (debug-error! request error))
+  (handle-exceptions-int handlers ctx))
 
 (defn exception-interceptor
   ([] (exception-interceptor {}))
   ([opts]
-   (let [{:keys [debug-errors? error-handlers pretty-exceptions-opts]} (options/coerce options/ErrorInterceptorOptions (or opts {}))
-         prepared-handlers                                             (prepare-handlers (or error-handlers default-exception-handlers))]
+   (let [{:keys [debug-errors? error-handlers]} (options/coerce options/ErrorInterceptorOptions (or opts {}))
+         prepared-handlers                         (prepare-handlers (or error-handlers default-exception-handlers))]
      {:name           ::errors-interceptor
       :options-schema options/ErrorInterceptorOptions
-      :enter          (fn [ctx]
-                        ctx)
-      :error          (fn [{:keys [request] :as ctx}]
+      :enter          identity
+      :error          (fn [ctx]
                         (try
-                          (when debug-errors?
-                            (debug-error! ctx))
-                          (handle-exceptions prepared-handlers ctx)
+                          (on-exception prepared-handlers debug-errors? ctx)
                           (catch Throwable t
                             (tap> [:error-handler-threw t :orig-error (:error ctx)])
-                            (assoc ctx :response
-                                   {:status 500
-                                    :body   "Broken error handler"}))))})))
+                            (-> ctx
+                                (assoc :response
+                                       {:status  500
+                                        :headers {"Content-Type" "text/plain"}
+                                        :body    "Broken error handler"})
+                                (dissoc :error)))))})))
 
 (defn exception-backstop-interceptor
   "Creates an interceptor that serves as the final safety mechanism to prevent
