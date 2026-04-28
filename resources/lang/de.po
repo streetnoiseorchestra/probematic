@@ -2907,10 +2907,8 @@ msgstr "Beginn"
 #: :gig/probeplan-sort
 #, ycp-format
 msgctxt ":gig/probeplan-sort"
-msgid "Drag the songs into probeplan order, and mark at most 2 as intensive."
-msgstr ""
-"Ziehen Sie die Songs in die Probeplan-Reihenfolge und markieren Sie "
-"höchstens 2 als intensiv."
+msgid "Order"
+msgstr "Reihenfolge"
 
 #: :gig/play-log-subtitle
 #, ycp-format
@@ -2927,8 +2925,20 @@ msgstr "Titel"
 #: :gig/probeplan-choose
 #, ycp-format
 msgctxt ":gig/probeplan-choose"
-msgid "Choose 5 songs."
-msgstr "Wählen Sie 5 Lieder aus."
+msgid "Choose songs"
+msgstr "Songs auswählen"
+
+#: :gig/probeplan-guidance
+#, ycp-format
+msgctxt ":gig/probeplan-guidance"
+msgid "Suggestion: choose around 5 songs and mark up to 2 as intensive, but add as many songs and intensive marks as this probe needs. Changes are saved immediately and shown to everyone viewing this page."
+msgstr "Vorschlag: Wähle ungefähr 5 Songs und markiere bis zu 2 als intensiven Fokus, aber füge so viele Songs und intensive Markierungen hinzu, wie diese Probe braucht. Änderungen werden sofort gespeichert und allen angezeigt, die diese Seite ansehen."
+
+#: :gig/probeplan-order-guidance
+#, ycp-format
+msgctxt ":gig/probeplan-order-guidance"
+msgid "Drag songs into rehearsal order and use the fist to mark intensive focus."
+msgstr "Ziehe Songs in die Probenreihenfolge und verwende die Faust, um intensiven Fokus zu markieren."
 
 #: :gig/gig-type
 #, ycp-format
@@ -3485,8 +3495,8 @@ msgstr "Komposition von"
 #: :song/probe-count
 #, ycp-format
 msgctxt ":song/probe-count"
-msgid "Probe Count"
-msgstr "Probe zählen"
+msgid "Rehearsal Count"
+msgstr "Probenanzahl"
 
 #: :song/choose-sheet-music-subtitle
 #, ycp-format
@@ -3521,14 +3531,14 @@ msgstr "Log-Play"
 #: :song/last-played-probe
 #, ycp-format
 msgctxt ":song/last-played-probe"
-msgid "Last Played Probe"
-msgstr "Zuletzt gespielte Probe"
+msgid "Last Played Rehearsal"
+msgstr "Zuletzt in Probe gespielt"
 
 #: :song/total-rehearsals
 #, ycp-format
 msgctxt ":song/total-rehearsals"
-msgid "Total Proben"
-msgstr "Insgesamt Proben"
+msgid "Total Rehearsals"
+msgstr "Proben insgesamt"
 
 #: :song/lyrics
 #, ycp-format
