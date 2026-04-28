@@ -1,6 +1,7 @@
 (ns app.gigs.ui
   (:require
    [app.ui :as ui]
+   [app.ui2 :as ui2]
    [app.urls :as urls]
    [clojure.string :as str]
    [tick.core :as t])
@@ -118,19 +119,16 @@
           [:span {:class "gigs-song-note"} (str " (" solo-info ")")])])]
     [:div {:class "gigs-empty"} "—"]))
 
-(defn probeplan-list [tr songs]
+(defn probeplan-list [_tr songs]
   (if (seq songs)
-    [:div {:class "gigs-probeplan-grid"}
-     (for [{:song/keys [last-played-on title] :keys [emphasis] :as song} songs]
+    [:ol {:class "gigs-probeplan-list"}
+     (for [{:song/keys [song-id title] :keys [emphasis]} songs]
        (let [intensive? (= emphasis :probeplan.emphasis/intensive)]
-         [:a {:href  (urls/link-song song)
-              :class (str "gigs-probeplan-card"
-                          (when intensive? " gigs-probeplan-card--intensive"))}
+         [:li {:id             (str "gig-detail-probeplan-" (ui2/safe-dom-id song-id))
+               :data-intensive (if intensive? "true" "false")}
+          [:span {:class "gigs-probeplan-song-title"} title]
           (when intensive?
             [:wa-icon {:library "snoico"
                        :name    "fist-punch"
-                       :class   "gigs-probeplan-intensive-icon"}])
-          [:span {:class "gigs-probeplan-song-title"} title]
-          [:span {:class "gigs-probeplan-song-meta"}
-           (str (tr [:song/last-played]) ": " (ui/humanize-dt last-played-on))]]))]
+                       :class   "gigs-probeplan-intensive-icon"}])]))]
     [:div {:class "gigs-empty"} "—"]))

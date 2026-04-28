@@ -46,6 +46,9 @@
   :root {
     --sno-brand-green: #22c55e;
     --sno-brand-orange: #f97316;
+    --sno-probeplan-intensive-fill: #e9d5ff;
+    --sno-probeplan-intensive-border: #a855f7;
+    --sno-probeplan-intensive-icon: #9333ea;
     --color-sno-orange-100: #ffedd5;
     --color-sno-orange-200: #fed7aa;
     --color-sno-orange-300: #fdba74;
