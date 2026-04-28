@@ -346,12 +346,55 @@
         (archived-attendance-row req attendance)
         (editable-attendance-row req attendance)))]])
 
-(defn- attendance-actions [req archived? show-committed?]
+(defn- recent-reminder? [sent-at]
+  (when sent-at
+    (< (- (System/currentTimeMillis) (inst-ms sent-at))
+       (* 24 60 60 1000))))
+
+(defn- remind-all-button [{:keys [tr page-state]} _gig-id]
+  (let [sent-at       (get-in page-state actions/remind-all-sent-at-path)
+        recent?       (recent-reminder? sent-at)
+        button-id     "gig-detail-remind-all-button"
+        dialog-id     "gig-detail-remind-all-dialog"
+        button        [:wa-button (cond-> {:id          button-id
+                                           :appearance  (if recent? "filled" "outlined")
+                                           :variant     "neutral"
+                                           :size        "small"
+                                           :data-dialog (str "open " dialog-id)}
+                                    recent? (assoc :class "gigs-remind-all-button--sent"))
+                       (when recent?
+                         [:wa-icon {:slot    "start"
+                                    :library "snoico"
+                                    :name    "circle-check"}])
+                       (tr [:reminders/remind-all])]]
+    (if recent?
+      [:span
+       [:wa-tooltip {:for button-id :placement "top"}
+        [:span (str (tr [:reminders/reminded-all-at]) " ")
+         (ui/timestamp sent-at)]]
+       button]
+      button)))
+
+(defn- remind-all-dialog [{:keys [tr] :as req} gig-id]
+  [:wa-dialog {:id    "gig-detail-remind-all-dialog"
+               :label (tr [:reminders/confirm-remind-all-title])}
+   [:p (tr [:reminders/confirm-remind-all])]
+   [:wa-button {:slot        "footer"
+                :appearance  "outlined"
+                :data-dialog "close"}
+    (tr [:action/cancel])]
+   [:wa-button {:slot          "footer"
+                :appearance    "filled"
+                :variant       "brand"
+                :data-dialog   "close"
+                :data-on:click (action-js req
+                                          ::actions/send-reminder-to-all
+                                          {:gig-id gig-id})}
+    (tr [:reminders/confirm])]])
+
+(defn- attendance-actions [req archived? gig-id show-committed?]
   (when-not archived?
-    [[:wa-button {:appearance "outlined"
-                  :size       "small"
-                  :disabled   true}
-      ((:tr req) [:reminders/remind-all])]
+    [(remind-all-button req gig-id)
      [:wa-button (merge {:appearance "filled"
                          :variant    "brand"
                          :size       "small"}
@@ -370,7 +413,9 @@
       :title    (tr [:gig/attendance])
       :class    "gigs-attendance-card"
       :divider? true
-      :actions  (attendance-actions req archived? show-committed?)}
+      :actions  (attendance-actions req archived? gig-id show-committed?)}
+     (when-not archived?
+       (remind-all-dialog req gig-id))
      (summary-counts tr summary)
      [:div {:class "gigs-attendance-sections"}
       (map-indexed (fn [idx section]

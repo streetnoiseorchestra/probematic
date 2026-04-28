@@ -257,6 +257,17 @@
                                 :next-member-id    (str next-member-id)
                                 :next-comment      ""}}))))))
 
+(deftest send-reminder-to-all-action-test
+  (let [gig-id #uuid "01844740-3eed-856d-84c1-c26f07068210"
+        now    #inst "2026-04-28T10:00:00.000-00:00"]
+    (is (= [[:app.gigs/send-reminder-to-all gig-id]
+            [:app.datastar/assoc-state
+             [:gig-detail :attendance :remind-all-sent-at]
+             now]]
+           (actions/send-reminder-to-all-action
+            {:tr tr :now now}
+            {:gig-attendance {:gig-id (str gig-id)}})))))
+
 (deftest toggle-attendance-committed-action-test
   (is (= [[:app.datastar/assoc-state
            [:gig-detail :attendance :show-committed?]

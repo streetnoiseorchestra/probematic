@@ -222,6 +222,7 @@
                          :app.gigs/trigger-gig-created        gigs.effects/trigger-gig-created-fx
                          :app.gigs/trigger-gig-deleted        gigs.effects/trigger-gig-deleted-fx
                          :app.gigs/trigger-gig-edited         gigs.effects/trigger-gig-edited-fx
+                         :app.gigs/send-reminder-to-all       gigs.effects/send-reminder-to-all-fx
                          :app.members/send-user-invitation    send-user-invitation-fx
                          :app.members/update-keycloak-meta    update-keycloak-meta-fx
                          :app.members.index/resend-invitation resend-invitation-fx

@@ -9,6 +9,7 @@
 (def attendance-error-path [:gig-detail :attendance :_error])
 (def comment-edit-path [:gig-detail :attendance :comment-edit])
 (def show-committed-path [:gig-detail :attendance :show-committed?])
+(def remind-all-sent-at-path [:gig-detail :attendance :remind-all-sent-at])
 
 (defn- keywordize-keys [x]
   (cond
@@ -159,6 +160,12 @@
                                           show-committed))]
     [[:app.datastar/assoc-state show-committed-path show-committed?]]))
 
+(defn send-reminder-to-all-action [{:keys [now]} signals]
+  (let [{:keys [gig-id]} (params signals)
+        gig-id (util/ensure-uuid! gig-id)]
+    [[:app.gigs/send-reminder-to-all gig-id]
+     [:app.datastar/assoc-state remind-all-sent-at-path now]]))
+
 (def actions
   {::update-attendance-plan       #'update-attendance-plan-action
    ::update-attendance-motivation #'update-attendance-motivation-action
@@ -166,4 +173,5 @@
    ::close-attendance-comment     #'close-attendance-comment-action
    ::update-attendance-comment    #'update-attendance-comment-action
    ::switch-attendance-comment    #'switch-attendance-comment-action
-   ::toggle-attendance-committed  #'toggle-attendance-committed-action})
+   ::toggle-attendance-committed  #'toggle-attendance-committed-action
+   ::send-reminder-to-all         #'send-reminder-to-all-action})

@@ -454,6 +454,7 @@
  :login     "Login"
  :reminders {:remind-me-in             "Remind me in"
              :remind-all               "Remind all"
+             :reminded-all-at          "Reminded everyone at:"
              :confirm-remind-all-title "Remind everyone?"
              :confirm-remind-all       "This will email everyone who hasn't responded yet. Are you sure?"
              :confirm                  "Yes, email everyone"

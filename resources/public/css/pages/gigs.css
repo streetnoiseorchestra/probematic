@@ -25,6 +25,18 @@
   margin: var(--sno-size-none);
 }
 
+.gigs-remind-all-button--sent {
+  &::part(base) {
+    color: var(--sno-reminder-sent-text);
+    background-color: var(--sno-reminder-sent-fill);
+    border-color: var(--sno-reminder-sent-border);
+  }
+
+  & wa-icon {
+    color: var(--sno-reminder-sent-border);
+  }
+}
+
 .gigs-detail-status-icon {
   flex: none;
   font-size: var(--sno-gig-detail-status-icon-size);

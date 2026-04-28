@@ -506,6 +506,7 @@
  :reminders
  {:remind-me-in "Erinnere mich in",
   :remind-all "Erinnern alle",
+  :reminded-all-at "Alle erinnert um:",
   :confirm-remind-all-title "Alle daran erinnern?",
   :confirm-remind-all
   "Dadurch wird eine E-Mail an alle gesendet, die noch nicht geantwortet haben. Bist du sicher?",

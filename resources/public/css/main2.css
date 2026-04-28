@@ -46,6 +46,9 @@
   :root {
     --sno-brand-green: #22c55e;
     --sno-brand-orange: #f97316;
+    --sno-reminder-sent-fill: #dbeafe;
+    --sno-reminder-sent-border: #2563eb;
+    --sno-reminder-sent-text: #1e3a8a;
     --sno-probeplan-intensive-fill: #e9d5ff;
     --sno-probeplan-intensive-border: #a855f7;
     --sno-probeplan-intensive-icon: #9333ea;

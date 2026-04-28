@@ -2465,6 +2465,12 @@ msgctxt ":reminders/remind-all"
 msgid "Remind all"
 msgstr ""
 
+#: :reminders/reminded-all-at
+#, ycp-format
+msgctxt ":reminders/reminded-all-at"
+msgid "Reminded everyone at:"
+msgstr ""
+
 #: :reminders/confirm-remind-all-title
 #, ycp-format
 msgctxt ":reminders/confirm-remind-all-title"
