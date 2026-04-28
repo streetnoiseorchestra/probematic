@@ -70,3 +70,10 @@
   (when-let [member (q/retrieve-member (db-from-req req) member-id)]
     (when (:member/keycloak-id member)
       (keycloak/update-user-meta! (get-in req [:system :keycloak]) member))))
+
+(defn set-keycloak-account-enabled! [req member-id enabled?]
+  (when-let [member (q/retrieve-member (db-from-req req) member-id)]
+    (when (:member/keycloak-id member)
+      (if enabled?
+        (keycloak/unlock-account! (get-in req [:system :keycloak]) member)
+        (keycloak/lock-account! (get-in req [:system :keycloak]) member)))))

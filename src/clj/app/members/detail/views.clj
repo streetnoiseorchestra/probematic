@@ -1,9 +1,11 @@
 (ns app.members.detail.views
   (:require
+   [app.auth :as auth]
    [app.config :as config]
    [app.datastar :as d*]
    [app.keycloak :as keycloak]
    [app.members.detail.actions :as actions]
+   [app.members.ui :as members.ui]
    [app.qrcode :as qr]
    [app.queries :as q]
    [app.ui2 :as ui2]
@@ -49,6 +51,22 @@
    (if active?
      (tr [:Active])
      (tr [:Inactive]))])
+
+(defn- keycloak-enabled? [{:keys [system]} keycloak-id]
+  (when (seq keycloak-id)
+    (try
+      (keycloak/user-account-enabled? (:keycloak system) keycloak-id)
+      (catch Throwable _
+        false))))
+
+(defn- sno-id-enabled-badge [tr enabled?]
+  [:wa-badge (cond-> {:appearance "outlined"
+                      :pill       true}
+               enabled? (assoc :variant "success")
+               (not enabled?) (assoc :variant "danger"))
+   (if enabled?
+     (tr [:member/sno-id-enabled])
+     (tr [:member/sno-id-disabled]))])
 
 (defn- sno-id-badge [keycloak-id]
   [:wa-badge (cond-> {:appearance "outlined"
@@ -107,6 +125,32 @@
      (for [{:section/keys [name]} sections]
        [:wa-option {:value name} name]))))
 
+(defn- sno-id-admin-fields [{:keys [tr] :as req} form-state]
+  [:div {:class "member-detail-sno-id-admin-fields wa-stack wa-gap-m"}
+   [:wa-divider]
+   [:div {:class "wa-stack wa-gap-2xs"}
+    [:strong (tr [:sno-id])]
+    [:span {:class "wa-caption-s"}
+     (tr [:member/sno-id-enable-disabled-tooltip])]]
+   [:div {:class "wa-grid wa-gap-m"}
+    (form-input form-state
+                "member-detail.contact.username"
+                (tr [:member/username])
+                (validate-field-on-keydown req :username))
+    (form-input form-state
+                "member-detail.contact.keycloak-id"
+                (tr [:member/keycloak-id])
+                (validate-field-on-keydown req :keycloak-id))
+    [:div {:class "wa-stack wa-gap-2xs"}
+     [:span {:class "wa-caption-s"} (tr [:member/sno-id-enabled-disabled])]
+     [:wa-switch {:size           "medium"
+                  :checked        (:sno-id-enabled form-state)
+                  :data-bind      "member-detail.contact.sno-id-enabled"
+                  :data-on:change "$member-detail.contact.sno-id-enabled = !$member-detail.contact.sno-id-enabled"}
+      (if (:sno-id-enabled form-state)
+        (tr [:member/sno-id-enabled])
+        (tr [:member/sno-id-disabled]))]]]])
+
 (defn- contact-form [{:keys [tr] :as req} form-state sections]
   (let [validate-on-keydown #(validate-field-on-keydown req %)]
     [:form {:id             "member-contact-form"
@@ -143,6 +187,8 @@
                      :data-bind      "member-detail.contact.active"
                      :data-on:change "$member-detail.contact.active = !$member-detail.contact.active"}
          (tr [:Active])]]]
+      (when (auth/current-user-admin? req)
+        (sno-id-admin-fields req form-state))
       (ui2/action-bar
        {}
        [[:wa-button {:appearance  "outlined"
@@ -164,7 +210,9 @@
 
 (defn- profile-details [{:keys [tr] :as req} member]
   (let [{:member/keys [email phone username keycloak-id active? nick]} member
-        section-name (get-in member [:member/section :section/name])]
+        section-name (get-in member [:member/section :section/name])
+        current-user-admin? (auth/current-user-admin? req)
+        enabled?     (when current-user-admin? (keycloak-enabled? req keycloak-id))]
     [:dl {:class "particulars"}
      (detail-item (tr [:section]) (muted section-name))
      (detail-item (tr [:member/nick]) (muted nick))
@@ -173,7 +221,9 @@
      (detail-item (tr [:member/active?]) (status-badge tr active?))
      (detail-item (tr [:member/username]) (muted username))
      (detail-item (tr [:member/keycloak-id]) (keycloak-link req keycloak-id))
-     (detail-item (tr [:sno-id]) (sno-id-badge keycloak-id))]))
+     (detail-item (tr [:sno-id]) (if (and current-user-admin? keycloak-id)
+                                   (sno-id-enabled-badge tr enabled?)
+                                   (sno-id-badge keycloak-id)))]))
 
 (defn- form-state->signals [form-state]
   (if (map? form-state)
@@ -181,16 +231,10 @@
     form-state))
 
 (defn- date-value [value]
-  (some-> value t/date str))
+  (members.ui/date-value value))
 
-(defn- discount-current? [{:travel.discount/keys [expiry-date]}]
-  (not (t/< (t/date expiry-date) (t/date))))
-
-(defn- expiry-badge [discount]
-  [:wa-badge {:appearance "outlined"
-              :pill       true
-              :variant    (if (discount-current? discount) "success" "danger")}
-   (date-value (:travel.discount/expiry-date discount))])
+(defn- expiry-badge [{:keys [tr]} discount]
+  (members.ui/travel-discount-badge tr discount (date-value (:travel.discount/expiry-date discount))))
 
 (defn- discount-type-select [{:keys [tr]} form-state discount-types]
   (let [error (field-error form-state :discount-type-id)]
@@ -288,7 +332,7 @@
      [:td {:class "align-middle"}
       (if editing?
         (travel-discount-edit-form req edit-state)
-        (expiry-badge discount))]
+        (expiry-badge req discount))]
      [:td {:class "align-middle text-right"}
       (when-not editing?
         [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
@@ -732,8 +776,17 @@
          (tr [:action/edit])]])]
      (profile-details req member)]))
 
-(defn- member-header [{:keys [db page-state tr] :as req} member]
-  (let [form-state (get-in page-state [:member-detail :contact])
+(defn- contact-form-state [{:keys [page-state] :as req} member]
+  (let [form-state (get-in page-state [:member-detail :contact])]
+    (cond-> form-state
+      (and form-state (auth/current-user-admin? req) (not (contains? form-state :sno-id-enabled)))
+      (assoc :sno-id-enabled (boolean (keycloak-enabled? req (:member/keycloak-id member))))
+
+      (and form-state (auth/current-user-admin? req) (not (contains? form-state :sno-id-enabled-original)))
+      (assoc :sno-id-enabled-original (boolean (keycloak-enabled? req (:member/keycloak-id member)))))))
+
+(defn- member-header [{:keys [db tr] :as req} member]
+  (let [form-state (contact-form-state req member)
         sections   (when form-state (q/retrieve-sections db))]
     [:header {:class "member-detail-header wa-stack wa-gap-m"}
      [:wa-breadcrumb
@@ -793,7 +846,7 @@
 (defn page [{:keys [db page-state tr] :as req}]
   (let [member-id                       (http.util/path-param-uuid! req :member-id)
         member                          (q/retrieve-member db member-id)
-        form-state                      (get-in page-state [:member-detail :contact])
+        form-state                      (contact-form-state req member)
         contact-signals                 (form-state->signals form-state)
         active-tab                      (active-tab req page-state)
         travel-discount-create-signals  (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))

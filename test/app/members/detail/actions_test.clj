@@ -10,8 +10,12 @@
   (tc/new-system "members-detail-actions"))
 
 (defn state-for [{:keys [conn member-id]}]
-  {:db                (d/db conn)
-   :current-member-id member-id})
+  {:db                 (d/db conn)
+   :current-member-id  member-id
+   :current-user-roles #{}})
+
+(defn admin-state-for [system]
+  (assoc (state-for system) :current-user-roles #{:admin}))
 
 (defn seed-section! [conn section-name]
   @(d/transact conn [{:section/name section-name
@@ -66,6 +70,8 @@
     [:error/member-unique-nick] "A member already has that nick"
     [:error/member-unique-phone] "A member already has that phone number"
     [:error/member-section-invalid] "Please choose a valid section."
+    [:error/member-unique-username] "A member already has that username"
+    [:error/member-username-format] "Username format is invalid."
     (str path)))
 
 (defn contact-signals [member-id overrides]
@@ -105,6 +111,22 @@
                 :_error       {}}]]
              (actions/open-contact-edit-action
               (state-for system)
+              {:targetid (str member-id)})))
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :contact]
+               {:member-id    (str member-id)
+                :name         "Alice Admin"
+                :nick         "ally"
+                :email        "alice@example.com"
+                :phone        "+43677123456"
+                :section-name "Trumpets"
+                :active       true
+                :username     nil
+                :keycloak-id  nil
+                :_error       {}}]]
+             (actions/open-contact-edit-action
+              (admin-state-for system)
               {:targetid (str member-id)}))))))
 
 (deftest close-contact-edit-action-test
@@ -631,6 +653,108 @@
              (actions/update-contact-action
               (assoc (state-for system) :tr tr)
               (contact-signals edited-member-id {}))))))
+
+  (testing "admin updates username, keycloak id, and SNO ID enabled state from the contact form"
+    (let [{:keys [conn member-id] :as system} (new-system)
+          edited-member-id                    (random-uuid)]
+      (seed-section! conn "Trumpets")
+      (seed-member! conn {:member/member-id edited-member-id
+                          :member/name "Alice Old"
+                          :member/nick "old"
+                          :member/email "old@example.com"
+                          :member/phone "+431111111"
+                          :member/username "alice.old"
+                          :member/keycloak-id "kc-123"
+                          :member/section [:section/name "Trumpets"]
+                          :member/active? true})
+      (is (= [[:db/transact [{:db/id              [:member/member-id edited-member-id]
+                              :member/name        "Alice Admin"
+                              :member/nick        "ally"
+                              :member/email       "alice@example.com"
+                              :member/phone       "+43677123456"
+                              :member/section     [:section/name "Trumpets"]
+                              :member/active?     true
+                              :member/username    "alice.new"
+                              :member/keycloak-id "kc-456"}
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? true}]
+              [:app.members/update-keycloak-meta edited-member-id]
+              [:app.members/set-keycloak-account-enabled edited-member-id false]
+              support/clear-loading
+              [:app.datastar/assoc-state [:member-detail :contact] false]]
+             (actions/update-contact-action
+              (assoc (admin-state-for system) :tr tr)
+              (contact-signals edited-member-id {:username "Alice.New  "
+                                                 :keycloak-id "kc-456"
+                                                 :sno-id-enabled false
+                                                 :sno-id-enabled-original true}))))))
+
+  (testing "non-admin contact updates ignore submitted SNO ID fields"
+    (let [{:keys [conn member-id] :as system} (new-system)
+          edited-member-id                    (random-uuid)]
+      (seed-section! conn "Trumpets")
+      (seed-member! conn {:member/member-id edited-member-id
+                          :member/name "Alice Old"
+                          :member/nick "old"
+                          :member/email "old@example.com"
+                          :member/phone "+431111111"
+                          :member/username "alice.old"
+                          :member/keycloak-id "kc-123"
+                          :member/section [:section/name "Trumpets"]
+                          :member/active? true})
+      (is (= [[:db/transact [{:db/id            [:member/member-id edited-member-id]
+                              :member/name      "Alice Admin"
+                              :member/nick      "ally"
+                              :member/email     "alice@example.com"
+                              :member/phone     "+43677123456"
+                              :member/section   [:section/name "Trumpets"]
+                              :member/active?   true}
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               {:transact-w-nils? true}]
+              [:app.members/update-keycloak-meta edited-member-id]
+              support/clear-loading
+              [:app.datastar/assoc-state [:member-detail :contact] false]]
+             (actions/update-contact-action
+              (assoc (state-for system) :tr tr)
+              (contact-signals edited-member-id {:username "malicious"
+                                                 :keycloak-id "kc-456"
+                                                 :sno-id-enabled false
+                                                 :sno-id-enabled-original true}))))))
+
+  (testing "admin contact updates validate duplicate usernames"
+    (let [{:keys [conn] :as system} (new-system)
+          edited-member-id          (random-uuid)]
+      (seed-section! conn "Trumpets")
+      (seed-member! conn {:member/member-id edited-member-id
+                          :member/email "old@example.com"
+                          :member/phone "+431111111"
+                          :member/username "alice.old"})
+      (seed-member! conn {:member/member-id (random-uuid)
+                          :member/name "Existing Member"
+                          :member/nick "taken-nick"
+                          :member/email "taken@example.com"
+                          :member/phone "+43999999999"
+                          :member/username "taken"
+                          :member/section [:section/name "Trumpets"]
+                          :member/active? true})
+      (is (= [support/clear-loading
+              [:app.datastar/assoc-state
+               [:member-detail :contact]
+               {:member-id               (str edited-member-id)
+                :name                    "Alice Admin"
+                :nick                    "ally"
+                :email                   "alice@example.com"
+                :phone                   "+43677123456"
+                :section-name            "Trumpets"
+                :active                  true
+                :username                "taken"
+                :keycloak-id             nil
+                :sno-id-enabled          false
+                :sno-id-enabled-original false
+                :_error                  {:username {:error "A member already has that username"}}}]]
+             (actions/update-contact-action
+              (assoc (admin-state-for system) :tr tr)
+              (contact-signals edited-member-id {:username "taken"}))))))
 
   (testing "returns validation errors"
     (let [{:keys [conn] :as system} (new-system)

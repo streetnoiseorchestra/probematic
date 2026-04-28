@@ -1,5 +1,6 @@
 (ns app.members.detail.actions
   (:require
+   [app.auth :as auth]
    [app.ledger.domain :as ledger.domain]
    [app.members.domain :as members.domain]
    [app.queries :as q]
@@ -45,15 +46,23 @@
       (and (seq phone) (members.domain/phone-valid? phone))
       members.domain/clean-phone-number)))
 
-(defn- normalize-contact [contact]
-  (let [email-raw (some-> (:email contact) str/trim)]
-    {:member-id    (some-> (:member-id contact) str)
-     :name         (some-> (:name contact) str/trim)
-     :nick         (some-> (:nick contact) str/trim)
-     :email        (some-> email-raw members.domain/clean-email)
-     :phone        (clean-phone (:phone contact))
-     :section-name (some-> (:section-name contact) str/trim)
-     :active       (normalize-bool (:active contact) true)}))
+(defn- normalize-contact
+  ([contact]
+   (normalize-contact contact false))
+  ([contact current-user-admin?]
+   (let [email-raw (some-> (:email contact) str/trim)]
+     (cond-> {:member-id    (some-> (:member-id contact) str)
+              :name         (some-> (:name contact) str/trim)
+              :nick         (some-> (:nick contact) str/trim)
+              :email        (some-> email-raw members.domain/clean-email)
+              :phone        (clean-phone (:phone contact))
+              :section-name (some-> (:section-name contact) str/trim)
+              :active       (normalize-bool (:active contact) true)}
+       current-user-admin?
+       (assoc :username                (some-> (:username contact) members.domain/clean-username)
+              :keycloak-id             (some-> (:keycloak-id contact) str/trim not-empty)
+              :sno-id-enabled          (normalize-bool (:sno-id-enabled contact) false)
+              :sno-id-enabled-original (normalize-bool (:sno-id-enabled-original contact) false))))))
 
 (defn- section-exists? [db section-name]
   (boolean
@@ -83,7 +92,22 @@
     (not (members.domain/phone-valid? phone))
     {:error (tr [:error/member-phone-format])}))
 
-(defn- validation-errors [{:keys [db tr member-ref]} {:keys [name nick email phone section-name] :as contact}]
+(defn- sno-id-validation-errors [{:keys [db tr member-ref admin?]} {:keys [username keycloak-id]}]
+  (when admin?
+    (merge
+     (when (str/blank? username)
+       {:username (required-error tr (tr [:member/username]))})
+     (when (and (seq username)
+                (not (re-matches members.domain/username-regex username)))
+       {:username {:error (tr [:error/member-username-format])}})
+     (when (and (seq username)
+                (support/lookup-taken-by-other? db [:member/username username] member-ref))
+       {:username {:error (tr [:error/member-unique-username])}})
+     (when (and (seq keycloak-id)
+                (support/lookup-taken-by-other? db [:member/keycloak-id keycloak-id] member-ref))
+       {:keycloak-id {:error "Another member already has that SNO UUID."}}))))
+
+(defn- validation-errors [{:keys [db tr member-ref admin?] :as ctx} {:keys [name nick email phone section-name] :as contact}]
   (merge
    (when (str/blank? name)
      {:name (required-error tr (tr [:member/name]))})
@@ -97,57 +121,77 @@
      {:section-name (required-error tr (tr [:section]))})
    (when (and (seq section-name) (not (section-exists? db section-name)))
      {:section-name {:error (tr [:error/member-section-invalid])}})
-   (duplicate-errors db tr member-ref contact)))
+   (duplicate-errors db tr member-ref contact)
+   (sno-id-validation-errors (assoc ctx :admin? admin?) contact)))
 
-(defn- member->contact-form [member]
-  {:member-id    (str (:member/member-id member))
-   :name         (:member/name member)
-   :nick         (or (:member/nick member) "")
-   :email        (:member/email member)
-   :phone        (:member/phone member)
-   :section-name (get-in member [:member/section :section/name])
-   :active       (boolean (:member/active? member))
-   :_error       {}})
+(defn- member->contact-form [member current-user-admin?]
+  (cond-> {:member-id    (str (:member/member-id member))
+           :name         (:member/name member)
+           :nick         (or (:member/nick member) "")
+           :email        (:member/email member)
+           :phone        (:member/phone member)
+           :section-name (get-in member [:member/section :section/name])
+           :active       (boolean (:member/active? member))
+           :_error       {}}
+    current-user-admin?
+    (assoc :username    (:member/username member)
+           :keycloak-id (:member/keycloak-id member))))
 
-(defn- contact-tx [member-id {:keys [name nick email phone section-name active]}]
-  {:db/id            [:member/member-id member-id]
-   :member/name      name
-   :member/nick      (when (seq nick) nick)
-   :member/email     email
-   :member/phone     phone
-   :member/section   [:section/name section-name]
-   :member/active?   active})
+(defn- contact-tx [current-user-admin? member-id {:keys [name nick email phone section-name active username keycloak-id]}]
+  (cond-> {:db/id            [:member/member-id member-id]
+           :member/name      name
+           :member/nick      (when (seq nick) nick)
+           :member/email     email
+           :member/phone     phone
+           :member/section   [:section/name section-name]
+           :member/active?   active}
+    current-user-admin?
+    (assoc :member/username username
+           :member/keycloak-id keycloak-id)))
 
-(defn- keycloak-sync-needed? [current-member contact]
-  (and (:member/keycloak-id current-member)
+(defn- keycloak-sync-needed? [current-user-admin? current-member contact]
+  (and (or (:member/keycloak-id current-member)
+           (and current-user-admin? (:keycloak-id contact)))
        (not=
-        {:member/name    (:member/name current-member)
-         :member/email   (:member/email current-member)
-         :member/active? (:member/active? current-member)}
-        {:member/name    (:name contact)
-         :member/email   (:email contact)
-         :member/active? (:active contact)})))
+        (cond-> {:member/name    (:member/name current-member)
+                 :member/email   (:member/email current-member)
+                 :member/active? (:member/active? current-member)}
+          current-user-admin?
+          (assoc :member/username (:member/username current-member)
+                 :member/keycloak-id (:member/keycloak-id current-member)))
+        (cond-> {:member/name    (:name contact)
+                 :member/email   (:email contact)
+                 :member/active? (:active contact)}
+          current-user-admin?
+          (assoc :member/username (:username contact)
+                 :member/keycloak-id (:keycloak-id contact))))))
+
+(defn- keycloak-enabled-changed? [contact]
+  (and (contains? contact :sno-id-enabled)
+       (not= (:sno-id-enabled contact)
+             (:sno-id-enabled-original contact))))
 
 (defn open-contact-edit-action
-  [{:keys [db]} {:keys [targetid]}]
+  [{:keys [db] :as state} {:keys [targetid]}]
   (let [member-id (util/ensure-uuid! targetid)
         member    (q/retrieve-member db member-id)]
     [support/clear-loading
      [:app.datastar/assoc-state
       [:member-detail :contact]
-      (member->contact-form member)]]))
+      (member->contact-form member (auth/admin? (:current-user-roles state)))]]))
 
 (defn close-contact-edit-action [_state _signals]
   [support/clear-loading clear-contact])
 
 (defn validate-contact-field-action
-  [{:keys [db tr]} {:keys [member-detail]}]
+  [{:keys [db tr] :as state} {:keys [member-detail]}]
   (let [raw        (:contact member-detail)
         field      (some-> (:validate-field raw) keyword)
-        contact    (normalize-contact raw)
+        current-user-admin? (auth/admin? (:current-user-roles state))
+        contact    (normalize-contact raw current-user-admin?)
         member-id  (util/ensure-uuid! (:member-id contact))
         member-ref [:member/member-id member-id]
-        error      (get (validation-errors {:db db :tr tr :member-ref member-ref} contact) field)]
+        error      (get (validation-errors {:db db :tr tr :member-ref member-ref :admin? current-user-admin?} contact) field)]
     (tap> [:field field :error error :raw raw])
     (cond-> [[:app.datastar/merge-state [:member-detail :contact] contact]]
       field (conj [:app.datastar/assoc-state
@@ -155,23 +199,27 @@
                    error]))))
 
 (defn update-contact-action
-  [{:keys [db current-member-id tr]} {:keys [member-detail]}]
-  (let [contact        (normalize-contact (:contact member-detail))
+  [{:keys [db current-member-id tr] :as state} {:keys [member-detail]}]
+  (let [current-user-admin? (auth/admin? (:current-user-roles state))
+        contact        (normalize-contact (:contact member-detail) current-user-admin?)
         member-id      (util/ensure-uuid! (:member-id contact))
         member-ref     [:member/member-id member-id]
         current-member (q/retrieve-member db member-id)
-        errors         (validation-errors {:db db :tr tr :member-ref member-ref} contact)]
+        errors         (validation-errors {:db db :tr tr :member-ref member-ref :admin? current-user-admin?} contact)]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state
         [:member-detail :contact]
         (assoc contact :_error errors)]]
       (cond-> [[:db/transact
-                (support/with-audit [(contact-tx member-id contact)]
+                (support/with-audit [(contact-tx current-user-admin? member-id contact)]
                   current-member-id)
                 {:transact-w-nils? true}]]
-        (keycloak-sync-needed? current-member contact)
+        (keycloak-sync-needed? current-user-admin? current-member contact)
         (conj [:app.members/update-keycloak-meta member-id])
+
+        (and current-user-admin? (keycloak-enabled-changed? contact))
+        (conj [:app.members/set-keycloak-account-enabled member-id (:sno-id-enabled contact)])
 
         true
         (conj support/clear-loading clear-contact)))))

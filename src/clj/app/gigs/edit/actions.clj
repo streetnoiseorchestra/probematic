@@ -1,9 +1,10 @@
 (ns app.gigs.edit.actions
   (:require
+   [app.auth :as auth]
    [app.discourse :as discourse]
    [app.gigs.domain :as domain]
-   [app.queries :as q]
    [app.nexus.actions :as support]
+   [app.queries :as q]
    [app.urls :as urls]
    [app.util :as util]
    [clojure.string :as str]
@@ -160,11 +161,8 @@
 (defn create-gig-tx-data [params]
   [(domain/gig->db (util/remove-nils (gig-update-map params)))])
 
-(defn- admin? [{:keys [current-user-roles]}]
-  (contains? current-user-roles :admin))
-
 (defn- can-edit-gig? [state gig]
-  (or (admin? state)
+  (or (auth/admin? (:current-user-roles state))
       (not (domain/gig-archived? gig))))
 
 (defn- top-error [message]

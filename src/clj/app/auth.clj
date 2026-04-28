@@ -80,7 +80,7 @@
   "Handle single-sign-out. Clears the local session and redirects to the IDP to perform sign-out there too.
    Docs:
      * spec:  https://openid.net/specs/openid-connect-rpinitiated-1_0.html"
-  [env {:keys [openid-config client-id callback-uri]} request]
+  [env {:keys [openid-config client-id _callback-uri]} request]
   (let [id-token (-> request :session :session/id-token)
         idp-logout-uri (str (:end_session_endpoint openid-config)
                             "?post_logout_redirect_uri=" (util/url-encode (str (config/app-base-url env)))
@@ -147,7 +147,7 @@
    (m/find-first #(= "RS256" (:alg %)))
    (buddy-keys/jwk->public-key)))
 
-(defn oauth2-callback-handler [env oauth2 {:keys [session params] :as request}]
+(defn oauth2-callback-handler [env oauth2 {:keys [_session params] :as request}]
   (try
     (let [{:keys [state code]} params
           oauth2-cookie (secret-box/decrypt (get-in request [:cookies "oauth2" :value]) (config/app-secret-key env))
@@ -218,9 +218,12 @@
   [req]
   (-> req :session :session/email))
 
+(defn admin? [roles]
+  (contains? roles :admin))
+
 (defn current-user-admin?
   [req]
-  (has-roles? #{:admin} req))
+  (admin? (get-in req [:session :session/roles])))
 
 (def require-authenticated-user
   "Redirects to the login page when there is no authenticated user"

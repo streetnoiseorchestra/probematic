@@ -53,6 +53,7 @@
 
  :travel-discounts {:discount-type-name "Discount Type"
                     :expiry-date        "Expires On"
+                    :expires            "Expires:"
                     :title              "Travel Discounts"
                     :subtitle           "Add your ÖBB travel discounts"
                     :none               "No travel discounts"

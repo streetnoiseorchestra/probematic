@@ -3,6 +3,7 @@
    [app.datastar :as d*]
    [app.members.index.actions :as actions]
    [app.members.index.queries :as queries]
+   [app.members.ui :as members.ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [clojure.string :as str]
@@ -25,14 +26,12 @@
      (tr [:Active])
      (tr [:Inactive]))])
 
-(defn- travel-discount-tags [member]
-  (let [discount-names (->> (:member/travel-discounts member)
-                            (map (comp :travel.discount.type/discount-type-name :travel.discount/discount-type))
-                            (remove str/blank?))]
-    (if (seq discount-names)
+(defn- travel-discount-tags [{:keys [tr]} member id-suffix]
+  (let [discounts (:member/travel-discounts member)]
+    (if (seq discounts)
       [:span {:class "members-index-discounts"}
-       (for [discount-name discount-names]
-         [:wa-tag {:size "small"} discount-name])]
+       (for [discount discounts]
+         (members.ui/travel-discount-badge tr discount (members.ui/travel-discount-name discount) id-suffix))]
       [:span {:class "members-index-muted"} "—"])))
 
 (defn- sort-indicator [{:keys [sort-field sort-order]} field]
@@ -140,8 +139,9 @@
 
 (defn- member-row [req member]
   (let [{:member/keys [email phone active?]} member
-        section-name (member-section-name member)
-        discounts    (travel-discount-tags member)]
+        section-name       (member-section-name member)
+        mobile-discounts   (travel-discount-tags req member "mobile")
+        desktop-discounts  (travel-discount-tags req member "desktop")]
     [:tr
      [:td
       [:div {:class "wa-stack wa-gap-3xs"}
@@ -149,14 +149,14 @@
             :class "members-index-member-link"}
         (member-name member)]
        [:div {:class "members-index-row-meta"}
-        [:span {:class "members-index-row-meta__discounts"} discounts]
+        [:span {:class "members-index-row-meta__discounts"} mobile-discounts]
         [:span {:class "members-index-row-meta__email"} email]
         [:span {:class "members-index-row-meta__section"} section-name]
         (when (seq phone)
           [:span {:class "members-index-row-meta__phone"} phone])
         [:span {:class "members-index-row-meta__status"}
          (status-badge req active?)]]]]
-     [:td {:class "members-index-col members-index-col--discount"} discounts]
+     [:td {:class "members-index-col members-index-col--discount"} desktop-discounts]
      [:td {:class "members-index-col members-index-col--md"} email]
      [:td {:class "members-index-col members-index-col--lg"} (or phone "—")]
      [:td {:class "members-index-col members-index-col--sm"} section-name]

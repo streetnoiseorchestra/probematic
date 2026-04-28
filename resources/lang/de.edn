@@ -183,6 +183,7 @@
  :travel-discounts
  {:discount-type-name "Rabatttyp",
   :expiry-date "Läuft aus am",
+  :expires "Läuft aus:",
   :title "Reiserabatte",
   :subtitle "Fügen Sie Ihre ÖBB-Reiserabatte hinzu",
   :none "Keine Reiseermäßigungen",

@@ -946,6 +946,12 @@ msgctxt ":travel-discounts/expiry-date"
 msgid "Expires On"
 msgstr "Läuft aus am"
 
+#: :travel-discounts/expires
+#, ycp-format
+msgctxt ":travel-discounts/expires"
+msgid "Expires:"
+msgstr "Läuft aus:"
+
 #: :travel-discounts/title
 #, ycp-format
 msgctxt ":travel-discounts/title"

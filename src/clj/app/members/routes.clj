@@ -20,25 +20,6 @@
                "Content-Type"        "text/x-vcard"}
      :body    vcard}))
 
-(defn member-vcard-download []
-  ["/member-vcard/{member-id}" {:app.route/name :app/member-vcard
-                                :get            member-vcard}])
-
-(defn members-detail []
-  (ds/page-routes {:page-name ::detail
-                   :path      "/member/{member-id}"
-                   :view-ns   'app.members.detail.views}))
-
-(defn members-detail-trailing-slash []
-  (ds/page-routes {:page-name ::detail-trailing-slash
-                   :path      "/member/{member-id}/"
-                   :view-ns   'app.members.detail.views}))
-
-(defn members-detail-tab []
-  (ds/page-routes {:page-name ::detail-tab
-                   :path      "/member/{member-id}/{member-detail-tab}"
-                   :view-ns   'app.members.detail.views}))
-
 (def members-interceptors [{:name ::members--interceptor
                             :enter (fn [ctx]
                                      (let [conn (-> ctx :request :datomic-conn)
@@ -59,10 +40,17 @@
                     :path      "/members/invite"
                     :view-ns   'app.members.invite.views})
    ["" {:interceptors members-interceptors}
-    (member-vcard-download)
-    (members-detail)
-    (members-detail-trailing-slash)
-    (members-detail-tab)]])
+    ["/member-vcard/{member-id}" {:app.route/name :app/member-vcard
+                                  :get            member-vcard}]
+    (ds/page-routes {:page-name ::detail
+                     :path      "/member/{member-id}"
+                     :view-ns   'app.members.detail.views})
+    (ds/page-routes {:page-name ::detail-trailing-slash
+                     :path      "/member/{member-id}/"
+                     :view-ns   'app.members.detail.views})
+    (ds/page-routes {:page-name ::detail-tab
+                     :path      "/member/{member-id}/{member-detail-tab}"
+                     :view-ns   'app.members.detail.views})]])
 
 (defn unauthenticated-routes []
   [""

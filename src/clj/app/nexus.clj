@@ -170,6 +170,9 @@
 (defn update-keycloak-meta-fx [_ {req :request} member-id]
   (members.effects/update-keycloak-meta! req member-id))
 
+(defn set-keycloak-account-enabled-fx [_ {req :request} member-id enabled?]
+  (members.effects/set-keycloak-account-enabled! req member-id enabled?))
+
 (defn response? [x]
   (and (map? x) (contains? x :status)))
 
@@ -224,9 +227,10 @@
                          :app.gigs/trigger-gig-edited         gigs.effects/trigger-gig-edited-fx
                          :app.gigs/recalc-play-stats          gigs.effects/recalc-play-stats-fx
                          :app.gigs/send-reminder-to-all       gigs.effects/send-reminder-to-all-fx
-                         :app.members/send-user-invitation    send-user-invitation-fx
-                         :app.members/update-keycloak-meta    update-keycloak-meta-fx
-                         :app.members.index/resend-invitation resend-invitation-fx
+                         :app.members/send-user-invitation          send-user-invitation-fx
+                         :app.members/update-keycloak-meta          update-keycloak-meta-fx
+                         :app.members/set-keycloak-account-enabled set-keycloak-account-enabled-fx
+                         :app.members.index/resend-invitation       resend-invitation-fx
                          :app.members.index/delete-invitation delete-invitation-fx}
    :nexus/actions       (merge app.settings.actions/actions
                                app.members.actions/actions
