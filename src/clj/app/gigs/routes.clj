@@ -103,8 +103,6 @@
     (gig-create-route)
     (gigs-list-route)
     (gigs-archive-route)]
-   ["/gig" {:interceptors [gigs-interceptors]}
-    (gig-log-play-route)]
    ["/gig-legacy" {:interceptors [gigs-interceptors]}
     (gig-detail-route)
     (gig-log-play-route)]])

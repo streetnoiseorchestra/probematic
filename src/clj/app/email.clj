@@ -179,7 +179,7 @@
                                        (tr [:email/subject-log-plays])
                                        (tr [:email/body-log-plays] [(ui/gig-date-plain gig)])
                                        (tr [:email/cta-log-plays])
-                                       (url/absolute-link-gig env (:gig/gig-id gig))))))
+                                       (url/absolute-link-gig-log-plays env (:gig/gig-id gig))))))
 
 (defn build-insurance-debt-notification-emails [{:keys [tr] :as sys} sender-name time-range member-data]
   (assert tr)
