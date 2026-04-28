@@ -42,6 +42,7 @@ datastar-inspector*.js
 prompts/
 extra/
 .agents
-resources/public/wa/skills
-resources/public/wa/react
-resources/public/wa/llms*
+resources/public/vendor/webawesome@*/
+webawesome-*.zip
+webawesome-*.tgz
+awesome.me-webawesome-*.tgz

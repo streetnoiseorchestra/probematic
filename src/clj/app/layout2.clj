@@ -151,32 +151,33 @@
         --wa-border-width-scale: 1;
         --wa-space-scale: 1;
       }")]
-    (stylesheet req "wa/styles/themes" "active.css")
-    (stylesheet req "wa/styles/color/palettes" "vogue.css")
-    (stylesheet req "wa/styles" "native.css")
-    (stylesheet req "wa/styles" "utilities.css")
+    (stylesheet req "vendor/webawesome@3.5.0/styles/themes" "active.css")
+    (stylesheet req "vendor/webawesome@3.5.0/styles/color/palettes" "vogue.css")
+    (stylesheet req "vendor/webawesome@3.5.0/styles" "native.css")
+    (stylesheet req "vendor/webawesome@3.5.0/styles" "utilities.css")
     (stylesheet req "css/compiled" "main2.css")
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=IBM+Plex+Sans+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"}]
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Grotesk:wght@300..700&display=swap"}]
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"}]
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Podkova:wght@400..800&display=swap"}]
-    [:script {:type :importmap}
-     (html/raw (j/write-value-as-string {:imports {"squint-cljs/core.js"   (asset-url req "js/squint/core.js")
-                                                   "squint-cljs/string.js" (asset-url req "js/squint/string.js")}}))]
-    [:script {:type "module" :src "/wa/webawesome.loader.js"}]
+    [:script {:type :importmap} (html/raw (j/write-value-as-string
+                                           {:imports {"squint-cljs/" "/vendor/squint/"
+                                                      "wa/" "/vendor/webawesome@3.5.0/"}}))]
+    [:script {:type "module" :src "/vendor/webawesome@3.5.0/webawesome.loader.js"}]
     [:script {:type "module"}
      (html/raw "
-  import { registerIconLibrary } from '/wa/webawesome.js';
+  import { registerIconLibrary } from 'wa/webawesome.js';
   // these imports ensure that webcomonents custom elements are defined
   // before datastar inits so that d* can properly interact with their value and change attrs
-  import '/wa/components/button/button.js';
-  import '/wa/components/input/input.js';
-  import '/wa/components/avatar/avatar.js';
-  import '/wa/components/dialog/dialog.js';
-  import '/wa/components/checkbox/checkbox.js';
-  import '/wa/components/select/select.js';
-  import '/wa/components/switch/switch.js';
-  import '/wa/components/callout/callout.js';
+  import 'wa/components/icon/icon.js';
+  import 'wa/components/button/button.js';
+  import 'wa/components/input/input.js';
+  import 'wa/components/avatar/avatar.js';
+  import 'wa/components/dialog/dialog.js';
+  import 'wa/components/checkbox/checkbox.js';
+  import 'wa/components/select/select.js';
+  import 'wa/components/switch/switch.js';
+  import 'wa/components/callout/callout.js';
   registerIconLibrary('default', {
     resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
     //mutator: svg => svg.setAttribute('fill', 'currentColor'),
