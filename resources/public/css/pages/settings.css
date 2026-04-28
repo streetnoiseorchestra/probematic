@@ -1,0 +1,58 @@
+div.band-settings-index-grid {
+  --min-column-size: var(--sno-settings-index-min-column-size);
+}
+
+wa-divider.band-settings-index-divider {
+  padding-bottom: var(--spacing);
+}
+
+wa-button.band-settings-index-card-button {
+  &::part(base) {
+    height: auto;
+    justify-content: start;
+    padding: var(--wa-form-control-padding-block)
+      var(--wa-form-control-padding-inline);
+  }
+
+  .wa-flank {
+    inline-size: var(--sno-size-full);
+    min-inline-size: var(--sno-size-none);
+  }
+
+  wa-avatar {
+    flex: none;
+  }
+
+  .band-settings-index-card-body {
+    flex: 1 1 var(--sno-size-none);
+    min-inline-size: var(--sno-size-none);
+    white-space: normal;
+  }
+
+  .band-settings-index-card-body p {
+    margin: var(--sno-size-none);
+    white-space: normal;
+  }
+}
+
+.settings-team-member-row {
+  padding-block: var(--wa-space-2xs);
+  border-block-end: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-quiet);
+}
+
+div[data-drag-item-id] {
+  cursor: grab;
+  padding: var(--wa-space-xs) var(--wa-space-s);
+  border-radius: var(--wa-border-radius-m);
+}
+
+div[data-drag-item-id].inactive {
+  background-color: var(--wa-color-neutral-fill-normal);
+  color: var(--wa-color-text-quiet);
+}
+
+div[data-drag-item-id].active {
+  background-color: var(--wa-color-success-fill-quiet);
+  color: var(--wa-color-text-normal);
+}

@@ -1,0 +1,30 @@
+wa-dialog wa-callout {
+  margin-block-end: var(--wa-space-m);
+}
+
+wa-input:state(user-invalid),
+wa-input[data-invalid]:not([data-invalid=""]) {
+  --wa-form-control-border-color: var(--sno-invalid-color);
+  --wa-color-focus: var(--sno-invalid-color);
+}
+
+wa-input:state(user-invalid)::part(input):hover,
+wa-input[data-invalid]:not([data-invalid=""])::part(input):hover {
+  --wa-form-control-border-color: var(--sno-invalid-color);
+  --wa-color-focus: var(--sno-invalid-color);
+}
+
+wa-input:state(user-invalid)::part(hint),
+wa-input[data-invalid]:not([data-invalid=""])::part(hint),
+wa-select:state(user-invalid)::part(hint),
+wa-select[data-invalid]:not([data-invalid=""])::part(hint),
+wa-switch:state(user-invalid)::part(hint),
+wa-switch[data-invalid]:not([data-invalid=""])::part(hint) {
+  color: var(--sno-invalid-color);
+}
+
+wa-select:state(user-invalid)::part(combobox),
+wa-select[data-invalid]:not([data-invalid=""])::part(combobox) {
+  --wa-form-control-border-color: var(--sno-invalid-color);
+  --wa-color-focus: var(--sno-invalid-color);
+}

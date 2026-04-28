@@ -1,0 +1,74 @@
+@custom-media --sno-viewport-s (min-width: 640px);
+@custom-media --sno-viewport-below-s (max-width: calc(640px - 1px));
+@custom-media --sno-viewport-l (min-width: 960px);
+@custom-media --sno-viewport-s-to-l (min-width: 640px) and (max-width: calc(960px - 1px));
+@custom-media --sno-index-collapsed (max-width: calc(1152px - 1px));
+@custom-media --sno-index-expanded (min-width: 1152px);
+@custom-media --sno-index-collapsed-wide (min-width: 960px) and (max-width: calc(1152px - 1px));
+@custom-media --sno-particulars-wide (min-width: 60rem);
+
+:root {
+  --wa-font-family-body: "Space Grotesk", sans-serif;
+  --wa-font-family-heading: "IBM Plex Sans Condensed", sans-serif;
+  --wa-font-family-code: "Space Mono", monospace;
+  --wa-font-family-longform: Podkova, serif;
+  --wa-font-weight-body: 400;
+  --wa-font-weight-heading: 650;
+  --wa-font-weight-code: 400;
+  --wa-font-weight-longform: 400;
+  --wa-border-radius-scale: 1.75;
+  --wa-border-width-scale: 1;
+  --wa-space-scale: 1;
+}
+
+@layer sno-tokens {
+  :root {
+    --sno-brand-green: #22c55e;
+    --sno-brand-orange: #f97316;
+    --sno-reminder-sent-fill: #dbeafe;
+    --sno-reminder-sent-border: #2563eb;
+    --sno-reminder-sent-text: #1e3a8a;
+    --sno-probeplan-intensive-fill: #e9d5ff;
+    --sno-probeplan-intensive-border: #a855f7;
+    --sno-probeplan-intensive-icon: #9333ea;
+    --color-sno-orange-100: #ffedd5;
+    --color-sno-orange-200: #fed7aa;
+    --color-sno-orange-300: #fdba74;
+    --color-sno-orange-400: #fb923c;
+    --color-sno-orange-500: #f97316;
+    --color-sno-orange-600: #ea580c;
+    --color-sno-orange-700: #c2410c;
+    --color-sno-orange-800: #9a3412;
+    --color-sno-orange-900: #7c2d12;
+    --color-sno-green-300: #86efac;
+    --color-sno-green-400: #4ade80;
+    --color-sno-green-500: #22c55e;
+    --color-sno-green-600: #16a34a;
+    --color-sno-green-700: #15803d;
+    --sno-size-none: 0;
+    --sno-size-full: 100%;
+    --sno-grid-track-min: 0;
+    --sno-grid-track-max: 1fr;
+    --sno-content-max-inline-size: 80rem;
+    --sno-narrow-form-max-inline-size: 28rem;
+    --sno-particulars-min-column-size: 18rem;
+    --sno-particulars-max-column-count: 3;
+    --sno-settings-index-min-column-size: 32ch;
+    --sno-members-index-search-min-inline-size: 16rem;
+    --sno-members-index-filter-inline-size: 14rem;
+    --sno-member-detail-avatar-size: 3.5rem;
+    --sno-member-detail-avatar-size-wide: 4rem;
+    --sno-member-detail-heading-fluid-size: 8vw;
+    --sno-line-height-tight: 1.05;
+    --sno-font-weight-semibold: 600;
+    --sno-nav-icon-size: var(--wa-font-size-l);
+    --sno-nav-toggle-icon-size: var(--wa-font-size-2xl);
+    --sno-brand-logotype-size: var(--wa-font-size-2xl);
+    --sno-subheader-logo-size: var(--wa-font-size-xl);
+    --sno-opacity-muted: 50%;
+    --sno-opacity-subtle: 25%;
+    --sno-invalid-color: var(--wa-color-danger-border-loud);
+    --sno-table-cell-padding: 0.5em;
+    --sno-table-border-radius: calc(1.75 * 0.5rem);
+  }
+}

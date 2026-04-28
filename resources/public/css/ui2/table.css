@@ -1,0 +1,11 @@
+/* Web Awesome native table styles are too spacious for our dense data tables. */
+td,
+th {
+  padding: var(--sno-table-cell-padding);
+}
+
+.table-shell {
+  overflow-x: auto;
+  background-color: var(--wa-color-neutral-fill-quiet);
+  border-radius: var(--sno-table-border-radius);
+}

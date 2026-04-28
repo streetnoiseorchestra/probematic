@@ -1,0 +1,72 @@
+wa-page [slot="navigation"] wa-button::part(base) {
+  justify-content: start;
+}
+
+/* Custom snoico wa-icons size from font-size, so style the host element.
+   flex: none keeps them from being squeezed inside wa-button's flex row. */
+wa-page wa-icon.nav-icon,
+wa-page wa-icon.menu-icon {
+  font-size: var(--sno-nav-icon-size);
+  flex: none;
+}
+
+/* The hamburger is icon-only, so bump it up for visual weight and tap target. */
+wa-page wa-icon.nav-toggle-icon {
+  font-size: var(--sno-nav-toggle-icon-size);
+}
+
+a.brand-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  & wa-icon.brand-logotype {
+    font-size: var(--sno-brand-logotype-size);
+    color: inherit;
+  }
+}
+
+wa-page [slot="navigation"] wa-button#account-dropdown-button {
+  inline-size: var(--sno-size-full);
+
+  &::part(base) {
+    justify-content: start;
+  }
+
+  &::part(caret) {
+    flex: auto;
+    justify-content: end;
+  }
+}
+
+.page-subheader {
+  align-items: center;
+  padding: var(--wa-space-xs) var(--wa-space-m);
+  border-bottom: var(--wa-border-style) var(--wa-panel-border-width)
+    var(--wa-color-surface-border);
+  background-color: var(--wa-color-surface-default);
+
+  & .subheader-logo .subheader-snoman {
+    font-size: var(--sno-subheader-logo-size);
+  }
+
+  & .subheader-user wa-button#account-dropdown-button {
+    & .member-nick,
+    &::part(caret) {
+      display: none;
+    }
+  }
+}
+
+wa-page[view="desktop"] [data-toggle-nav] {
+  display: none;
+}
+
+wa-page[view="mobile"] {
+  --menu-width: auto;
+
+  [slot*="main"],
+  main {
+    padding: var(--wa-space-s);
+  }
+}

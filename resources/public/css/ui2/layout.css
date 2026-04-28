@@ -1,0 +1,41 @@
+.sno-title-block :where(h1, h2, h3) {
+  margin: var(--sno-size-none);
+}
+
+.sno-section-header,
+.sno-action-bar {
+  display: grid;
+}
+
+.sno-section-header {
+  gap: var(--wa-space-s);
+}
+
+.sno-action-bar {
+  gap: var(--wa-space-xs);
+
+  & > wa-button,
+  & > wa-button::part(base) {
+    inline-size: var(--sno-size-full);
+  }
+}
+
+@media (--sno-viewport-s) {
+  .sno-section-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+  }
+
+  .sno-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: end;
+
+    & > wa-button,
+    & > wa-button::part(base) {
+      inline-size: auto;
+    }
+  }
+}

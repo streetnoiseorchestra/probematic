@@ -1,0 +1,22 @@
+/* Datastar wraps morphs with view transitions.
+   Disable global/root animation and opt in per page/widget instead. */
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html,
+body {
+  min-height: var(--sno-size-full);
+  padding: var(--sno-size-none);
+  margin: var(--sno-size-none);
+}
+
+#main {
+  inline-size: min(var(--sno-size-full), var(--sno-content-max-inline-size));
+  max-inline-size: var(--sno-content-max-inline-size);
+  margin-inline: auto;
+}
