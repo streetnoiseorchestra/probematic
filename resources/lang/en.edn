@@ -393,6 +393,9 @@
                                   :gig-rehearsal-leaders-same   "Probeleitung 2 must be different from Probeleitung 1."
                                   :gig-edit-not-allowed         "You are not allowed to edit this gig."
                                   :gig-edit-not-found           "Gig not found."
+                                  :probeplan-empty              "Choose at least one song."
+                                  :probeplan-too-many-songs     "Choose at most 5 songs."
+                                  :probeplan-too-many-intensive "Mark at most 2 songs as intensive."
                                   :phone-number-invalid          "Phone number is not valid"}
  :updating                       "Updating…"
  :email-subject                  {:gig-created      "New Gig: %1"

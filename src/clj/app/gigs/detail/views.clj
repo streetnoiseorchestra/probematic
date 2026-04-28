@@ -76,13 +76,11 @@
     [:wa-breadcrumb-item (gigs.ui/gig-breadcrumb-label gig)]]
    [:section {:class "wa-stack wa-gap-l"}
     [:div {:class "wa-flank:end wa-align-items-start"}
-     [:div {:class "wa-stack wa-gap-2xs"}
-      [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-       [:h1 title]
-       (when status
-         (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
-      [:span {:class "wa-caption-s"}
-       (tr [gig-type])]]
+     [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+      (when status
+        (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
+      [:h1 title]
+      [:wa-badge {:appearance "outlined" :style "font-size: var(--wa-font-size-xs);"} (tr [gig-type])]]
      (header-actions req gig)]]])
 
 (defn- gig-info-section [{:keys [tr]} {:gig/keys [call-time contact end-time leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time setlist] :as gig}]
@@ -128,8 +126,12 @@
     (ui2/section-card
      {:title    (tr [:gig/probeplan])
       :divider? true
-      :actions  (when-not (seq songs)
-                  [(disabled-create-button (tr [:gig/create-probeplan]))])}
+      :actions  [[:wa-button {:appearance "outlined"
+                              :variant    "brand"
+                              :href       (urls/link-gig-probeplan gig-id)}
+                  (if (seq songs)
+                    (tr [:action/edit])
+                    (tr [:gig/create-probeplan]))]]}
      (gigs.ui/probeplan-list tr songs))))
 
 (defn- planned-songs-section [req {:gig/keys [gig-id] :as gig}]

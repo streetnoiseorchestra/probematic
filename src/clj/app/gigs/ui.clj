@@ -27,6 +27,8 @@
   ([status attrs]
    [:wa-icon (merge attrs
                     {:library "snoico"
+                     ;; todo plumb in tr for accessability label
+                     #_:label    #_(tr [status])
                      :name    (status-icon-name status)
                      :class   (str "gigs-status-icon "
                                    (status-class status)

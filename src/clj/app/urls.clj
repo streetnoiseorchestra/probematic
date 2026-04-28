@@ -33,6 +33,8 @@
 (def link-gig (partial link-helper "/gig/" :gig/gig-id))
 (defn link-gig-edit [gig-or-gig-id]
   (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/edit"))
+(defn link-gig-probeplan [gig-or-gig-id]
+  (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/probeplan"))
 (def link-song (partial link-helper "/song/" :song/song-id))
 
 (def link-policy (partial link-helper "/insurance-policy/" :insurance.policy/policy-id))

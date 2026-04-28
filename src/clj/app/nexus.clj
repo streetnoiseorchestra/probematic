@@ -108,11 +108,17 @@
 (defn current-user-roles [request]
   (get-in request [:session :session/roles] #{}))
 
+(defn- request-page-state [request]
+  (when-let [tab-id (or (-> request :body-params :tab-id)
+                        (get-in request [:parameters :body :tab-id]))]
+    (get @datastar/!page-state tab-id {})))
+
 (defn system->state
   [{:keys [system request]}]
   (cond-> {:now                (java.util.Date.)
            :tr                 (:tr request)
            :db                 (d/db (-> system :datomic :conn))
+           :page-state         (request-page-state request)
            :current-user-roles (current-user-roles request)}
     (current-member-id request) (assoc :current-member-id (current-member-id request))))
 

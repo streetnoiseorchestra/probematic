@@ -15,6 +15,7 @@
   --sno-gigs-attendance-row-padding-inline: var(--wa-space-l);
   --sno-gigs-attendance-row-padding-block: 0.05rem;
   --sno-gigs-attendance-link-blue: #2563eb;
+  --sno-gigs-probeplan-editor-font-size: var(--wa-font-size-s);
 }
 
 .gigs-index-toolbar h1,
@@ -115,6 +116,154 @@
   font-size: var(--wa-font-size-s);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.gigs-probeplan-editor-header h1 {
+  margin: var(--sno-size-none);
+}
+
+.gigs-probeplan-editor-count {
+  color: var(--wa-color-text-quiet);
+  font-size: var(--wa-font-size-s);
+}
+
+.gigs-probeplan-editor-selected {
+  display: grid;
+  gap: var(--wa-space-xs);
+  max-inline-size: 24rem;
+  padding: var(--sno-size-none);
+  margin: var(--sno-size-none);
+  list-style: none;
+}
+
+.gigs-probeplan-editor-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 3.25rem;
+  gap: var(--wa-space-s);
+  align-items: center;
+  min-block-size: 3.6rem;
+  padding: var(--wa-space-2xs) var(--wa-space-xs);
+  background-color: var(--wa-color-surface-default);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  border-radius: var(--wa-border-radius-s);
+}
+
+.gigs-probeplan-editor-row--intensive {
+  border-color: var(--wa-color-surface-border);
+}
+
+.gigs-probeplan-editor-row--ghost {
+  background-color: var(--wa-color-brand-fill-quiet);
+}
+
+.gigs-probeplan-editor-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: var(--wa-space-2xs);
+  color: var(--wa-color-text-quiet);
+  appearance: none;
+  cursor: grab;
+  background: transparent;
+  border: 0;
+  border-radius: var(--sno-size-none);
+  box-shadow: none;
+}
+
+.gigs-probeplan-editor-drag-handle:active {
+  cursor: grabbing;
+}
+
+.gigs-probeplan-editor-drag-handle wa-icon {
+  font-size: 1.25rem;
+}
+
+.gigs-probeplan-editor-row-main {
+  min-inline-size: var(--sno-size-none);
+  text-align: start;
+}
+
+.gigs-probeplan-editor-row-main .gigs-song-link {
+  display: block;
+  overflow: hidden;
+  color: var(--wa-color-text-normal);
+  font-size: var(--sno-gigs-probeplan-editor-font-size);
+  font-weight: var(--wa-font-weight-body);
+  line-height: var(--wa-line-height-normal);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gigs-probeplan-editor-row-action {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  min-block-size: 2.4rem;
+  padding-inline-start: var(--wa-space-s);
+  border-inline-start: var(--wa-border-width-l) var(--wa-border-style)
+    var(--wa-color-surface-border);
+}
+
+.gigs-probeplan-editor-intensive-button::part(base) {
+  padding: var(--wa-space-3xs);
+}
+
+.gigs-probeplan-editor-intensive-button wa-icon {
+  color: #a855f7;
+  font-size: 1.9rem;
+}
+
+.gigs-probeplan-editor-row--intensive .gigs-probeplan-editor-intensive-button wa-icon {
+  color: #7e22ce;
+  border-block-end: 2px solid #7e22ce;
+}
+
+.gigs-probeplan-editor-choices {
+  display: grid;
+  gap: var(--wa-space-2xs) var(--wa-space-s);
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--sno-size-full), 16rem), 1fr)
+  );
+}
+
+@media (--sno-viewport-l) {
+  .gigs-probeplan-editor-choices {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.gigs-probeplan-editor-choice {
+  min-inline-size: var(--sno-size-none);
+  font-size: var(--sno-gigs-probeplan-editor-font-size);
+  line-height: var(--wa-line-height-normal);
+}
+
+.gigs-probeplan-editor-choice::part(base) {
+  align-items: center;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  min-block-size: 2.65rem;
+  padding: var(--wa-space-2xs) var(--wa-space-xs);
+  background-color: var(--wa-color-surface-default);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  border-radius: var(--wa-border-radius-s);
+}
+
+.gigs-probeplan-editor-choice::part(label) {
+  min-inline-size: var(--sno-size-none);
+  overflow: hidden;
+  line-height: var(--wa-line-height-normal);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gigs-probeplan-editor-save {
+  padding-block-end: var(--wa-space-xl);
 }
 
 .gigs-edit-form-grid {
