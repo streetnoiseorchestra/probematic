@@ -160,6 +160,9 @@
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Grotesk:wght@300..700&display=swap"}]
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"}]
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Podkova:wght@400..800&display=swap"}]
+    [:script {:type :importmap}
+     (html/raw (j/write-value-as-string {:imports {"squint-cljs/core.js"   (asset-url req "js/squint/core.js")
+                                                   "squint-cljs/string.js" (asset-url req "js/squint/string.js")}}))]
     [:script {:type "module" :src "/wa/webawesome.loader.js"}]
     [:script {:type "module"}
      (html/raw "
@@ -185,9 +188,6 @@
       svg.querySelectorAll('.logotype-snoman').forEach(node => node.setAttribute('fill', '#22c55e'));
     },
   });")]
-    [:script {:type :importmap}
-     (html/raw (j/write-value-as-string {:imports {"squint-cljs/core.js" (asset-url req "js/squint/core.js")
-                                                   "squint-cljs/string.js" (asset-url req "js/squint/string.js")}}))]
     (script req "datastar@1.0.1.js" :type "module")
     (when (config/dev-mode? (-> req :system :env))
       (script req "datastar-inspector@1.1.4.js" :type "module"))]
