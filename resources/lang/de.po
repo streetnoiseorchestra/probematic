@@ -2940,6 +2940,30 @@ msgctxt ":gig/probeplan-order-guidance"
 msgid "Drag songs into rehearsal order and use the fist to mark intensive focus."
 msgstr "Ziehe Songs in die Probenreihenfolge und verwende die Faust, um intensiven Fokus zu markieren."
 
+#: :gig/probeplan-repertoire
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire"
+msgid "Repertoire"
+msgstr "Repertoire"
+
+#: :gig/probeplan-repertoire-current
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire-current"
+msgid "Current"
+msgstr "Aktuell"
+
+#: :gig/probeplan-repertoire-old
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire-old"
+msgid "Old"
+msgstr "Alt"
+
+#: :gig/probeplan-repertoire-all
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire-all"
+msgid "All"
+msgstr "Alle"
+
 #: :gig/gig-type
 #, ycp-format
 msgctxt ":gig/gig-type"

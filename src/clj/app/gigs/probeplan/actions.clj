@@ -6,6 +6,15 @@
 
 (def probeplan-path [:gig-probeplan])
 (def error-path (conj probeplan-path :_error))
+(def repertoire-filter-path (conj probeplan-path :repertoire-filter))
+(def default-repertoire-filter "current")
+(def repertoire-filters #{"current" "old" "all"})
+
+(defn normalize-repertoire-filter [filter]
+  (let [filter (str filter)]
+    (if (repertoire-filters filter)
+      filter
+      default-repertoire-filter)))
 
 (defn- keywordize-keys [x]
   (cond
@@ -55,10 +64,6 @@
 (defn current-songs [{:keys [db]} gig-id]
   (db-songs db gig-id))
 
-(defn- signal-songs [params]
-  (when (contains? params :songs)
-    (renumber (:songs params))))
-
 (defn selected-songs-for-page [db _page-state gig-id]
   (let [songs        (db-songs db gig-id)
         song-details (into {}
@@ -80,12 +85,11 @@
 (declare persist-probeplan-effect)
 
 (defn toggle-probeplan-song-action [{:keys [db] :as state} signals]
-  (let [{:keys [gig-id song-id selected] :as params} (params signals)
+  (let [{:keys [gig-id song-id selected]} (params signals)
         gig-id         (util/ensure-uuid! gig-id)
         song-id        (str (util/ensure-uuid! song-id))
         selected?      (normalize-bool selected)
-        songs          (or (signal-songs params)
-                           (current-songs state gig-id))
+        songs          (current-songs state gig-id)
         selected-song? (some #(= song-id (:song-id %)) songs)]
     (cond
       (and selected? selected-song?)
@@ -103,11 +107,10 @@
       [(persist-probeplan-effect db gig-id (remove #(= song-id (:song-id %)) songs))])))
 
 (defn toggle-probeplan-intensive-action [{:keys [db] :as state} signals]
-  (let [{:keys [gig-id song-id] :as params} (params signals)
+  (let [{:keys [gig-id song-id]} (params signals)
         gig-id     (util/ensure-uuid! gig-id)
         song-id    (str (util/ensure-uuid! song-id))
-        songs      (or (signal-songs params)
-                       (current-songs state gig-id))
+        songs      (current-songs state gig-id)
         target     (some #(when (= song-id (:song-id %)) %) songs)
         intensive? (= "intensive" (:emphasis target))]
     (if-not target
@@ -137,6 +140,10 @@
       (if (and idx swap-idx (<= 0 swap-idx) (< swap-idx (count songs)))
         (assoc songs idx (nth songs swap-idx) swap-idx (nth songs idx))
         songs))]))
+
+(defn set-repertoire-filter-action [_state signals]
+  (let [{:keys [repertoire-filter]} (params signals)]
+    [[:app.datastar/assoc-state repertoire-filter-path (normalize-repertoire-filter repertoire-filter)]]))
 
 (defn reorder-probeplan-songs-action [{:keys [db] :as state} signals]
   (let [{:keys [gig-id order]} (params signals)
@@ -180,7 +187,8 @@
    {:on-success [[:app.gigs/trigger-gig-edited gig-id :probeplan]]}])
 
 (def actions
-  {::toggle-probeplan-song      #'toggle-probeplan-song-action
+  {::set-repertoire-filter      #'set-repertoire-filter-action
+   ::toggle-probeplan-song      #'toggle-probeplan-song-action
    ::toggle-probeplan-intensive #'toggle-probeplan-intensive-action
    ::move-probeplan-song        #'move-probeplan-song-action
    ::reorder-probeplan-songs    #'reorder-probeplan-songs-action})

@@ -63,3 +63,5 @@
 ** TODO create admin team
 ** TODO member profile -> show SNO UUID related things only to "admin" team
 ** TODO on gig detail page add a "travel mode" feature which switches view to those attending and shows their travel discount details
+* 2026 post d* cool new features
+** User page presence avatars

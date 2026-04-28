@@ -592,6 +592,10 @@
   "Vorschlag: Wähle ungefähr 5 Songs und markiere bis zu 2 als intensiven Fokus, aber füge so viele Songs und intensive Markierungen hinzu, wie diese Probe braucht. Änderungen werden sofort gespeichert und allen angezeigt, die diese Seite ansehen.",
   :probeplan-order-guidance
   "Ziehe Songs in die Probenreihenfolge und verwende die Faust, um intensiven Fokus zu markieren.",
+  :probeplan-repertoire "Repertoire",
+  :probeplan-repertoire-current "Aktuell",
+  :probeplan-repertoire-old "Alt",
+  :probeplan-repertoire-all "Alle",
   :gig-type "Art",
   :more-details "Mehr Details",
   :was-planned-to-play "Es war geplant, diese Lieder zu spielen:",

@@ -19,10 +19,13 @@
                                           :gig/location  "Room"
                                           :gig/call-time (t/time "18:00")})]))
 
-(defn seed-song! [conn song-id title]
-  @(d/transact conn [{:song/song-id song-id
-                      :song/title   title
-                      :song/active? true}]))
+(defn seed-song!
+  ([conn song-id title]
+   (seed-song! conn song-id title true))
+  ([conn song-id title active?]
+   @(d/transact conn [{:song/song-id song-id
+                       :song/title   title
+                       :song/active? active?}])))
 
 (defn seed-probeplan! [conn gig-id songs]
   @(d/transact conn [(into {:probeplan/gig     [:gig/gig-id gig-id]
@@ -77,7 +80,28 @@
                 [:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-id] 0 :probeplan.emphasis/none]]])]
              (actions/toggle-probeplan-song-action
               (state conn)
-              (params {:gig-id (str gig-id) :song-id (str song-id) :selected false})))))))
+              (params {:gig-id (str gig-id) :song-id (str song-id) :selected false}))))))
+
+  (testing "uses stored songs instead of a filtered or stale client signal"
+    (let [{:keys [conn]} (tc/new-system "probeplan-toggle-stale-signal")
+          gig-id         (random-uuid)
+          existing-song  (random-uuid)
+          added-song     (random-uuid)]
+      (seed-gig! conn gig-id)
+      (seed-song! conn existing-song "Existing")
+      (seed-song! conn added-song "Added")
+      (seed-probeplan! conn gig-id [[existing-song 0 :probeplan.emphasis/none]])
+      (let [[effect] (actions/toggle-probeplan-song-action
+                      (state conn)
+                      (params {:gig-id   (str gig-id)
+                               :song-id  (str added-song)
+                               :selected true
+                               :songs    []}))]
+        (is (= :db/transact (first effect)))
+        (is (some #{[:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id added-song] 1 :probeplan.emphasis/none]]}
+                  (second effect)))
+        (is (not-any? #{[:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id existing-song] 0 :probeplan.emphasis/none]]}
+                      (second effect)))))))
 
 (deftest toggle-probeplan-intensive-action-test
   (testing "persists intensive toggle immediately"
@@ -115,6 +139,22 @@
                       (params {:gig-id (str gig-id) :song-id (str song-c)}))]
         (is (= :db/transact (first effect)))
         (is (some #{[:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-c] 2 :probeplan.emphasis/intensive]]}
+                  (second effect))))))
+
+  (testing "uses stored songs instead of a filtered or stale client signal"
+    (let [{:keys [conn]} (tc/new-system "probeplan-toggle-intensive-stale-signal")
+          gig-id         (random-uuid)
+          song-id        (random-uuid)]
+      (seed-gig! conn gig-id)
+      (seed-song! conn song-id "Alpha")
+      (seed-probeplan! conn gig-id [[song-id 0 :probeplan.emphasis/none]])
+      (let [[effect] (actions/toggle-probeplan-intensive-action
+                      (state conn)
+                      (params {:gig-id  (str gig-id)
+                               :song-id (str song-id)
+                               :songs   []}))]
+        (is (= :db/transact (first effect)))
+        (is (some #{[:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-id] 0 :probeplan.emphasis/intensive]]}
                   (second effect)))))))
 
 (deftest toggle-probeplan-song-no-limit-test
@@ -134,6 +174,16 @@
         (is (= :db/transact (first effect)))
         (is (some #{[:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id (last song-ids)] 5 :probeplan.emphasis/none]]}
                   (second effect)))))))
+
+(deftest set-repertoire-filter-action-test
+  (is (= [[:app.datastar/assoc-state [:gig-probeplan :repertoire-filter] "old"]]
+         (actions/set-repertoire-filter-action
+          {}
+          (params {:repertoire-filter "old"}))))
+  (is (= [[:app.datastar/assoc-state [:gig-probeplan :repertoire-filter] "current"]]
+         (actions/set-repertoire-filter-action
+          {}
+          (params {:repertoire-filter "nonsense"})))))
 
 (deftest reorder-probeplan-songs-action-test
   (let [{:keys [conn]} (tc/new-system "probeplan-reorder")
