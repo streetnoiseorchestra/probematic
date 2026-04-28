@@ -5,6 +5,7 @@
    [app.gigs.detail.views]
    [app.gigs.edit.views]
    [app.gigs.index.views]
+   [app.gigs.log-plays.views]
    [app.gigs.probeplan.views]
    [app.gigs.setlist.views]
    [app.gigs.views :as view]
@@ -91,6 +92,9 @@
    (ds/page-routes {:page-name ::setlist
                     :path      "/gig/{gig/gig-id}/setlist"
                     :view-ns   'app.gigs.setlist.views})
+   (ds/page-routes {:page-name ::log-plays
+                    :path      "/gig/{gig/gig-id}/log-plays"
+                    :view-ns   'app.gigs.log-plays.views})
    (ds/page-routes {:page-name  ::edit
                     :path       "/gig/{gig/gig-id}/edit"
                     :view-ns    'app.gigs.edit.views

@@ -126,6 +126,8 @@
              (get-in (r/match-by-path router (str "/gig/" gig-id "/probeplan")) [:data :name])))
       (is (= :app.gigs.routes/setlist
              (get-in (r/match-by-path router (str "/gig/" gig-id "/setlist")) [:data :name])))
+      (is (= :app.gigs.routes/log-plays
+             (get-in (r/match-by-path router (str "/gig/" gig-id "/log-plays")) [:data :name])))
       (is (= :app/gigs
              (get-in (r/match-by-path router "/gigs/create") [:data :app.route/name])))
       (is (= :app.gigs.routes/create
@@ -159,7 +161,9 @@
     (is (= (str "/gig/" gig-id "/probeplan")
            (urls/link-gig-probeplan gig-id)))
     (is (= (str "/gig/" gig-id "/setlist")
-           (urls/link-gig-setlist gig-id)))))
+           (urls/link-gig-setlist gig-id)))
+    (is (= (str "/gig/" gig-id "/log-plays")
+           (urls/link-gig-log-plays gig-id)))))
 
 (deftest members-routes-expose-the-datastar-index-invite-and-legacy-compatibility-paths
   (let [router (http/router ["" (members.routes/routes)])]

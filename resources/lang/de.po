@@ -3076,8 +3076,8 @@ msgstr "Reihenfolge"
 #: :gig/play-log-subtitle
 #, ycp-format
 msgctxt ":gig/play-log-subtitle"
-msgid "Here you can record what was played at this gig/probe."
-msgstr "Hier kannst du aufnehmen, was bei diesem Gig/Probe gespielt wurde."
+msgid "Choose a result for each song. Use the fist to mark intensive work."
+msgstr "Wähle für jeden Song ein Ergebnis. Verwende die Faust, um intensiven Fokus zu markieren."
 
 #: :gig/title
 #, ycp-format

@@ -586,7 +586,7 @@
   :call-time "Beginn",
   :probeplan-sort "Reihenfolge",
   :play-log-subtitle
-  "Hier kannst du aufnehmen, was bei diesem Gig/Probe gespielt wurde.",
+  "Wähle für jeden Song ein Ergebnis. Verwende die Faust, um intensiven Fokus zu markieren.",
   :title "Titel",
   :probeplan-choose "Songs auswählen",
   :probeplan-guidance

@@ -64,7 +64,7 @@
     (tr [:action/edit])]
    [:wa-button {:appearance "outlined"
                 :variant    "brand"
-                :disabled   true}
+                :href       (urls/link-gig-log-plays gig)}
     "Log Plays"]])
 
 (defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]

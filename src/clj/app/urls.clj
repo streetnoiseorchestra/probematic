@@ -37,6 +37,8 @@
   (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/probeplan"))
 (defn link-gig-setlist [gig-or-gig-id]
   (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/setlist"))
+(defn link-gig-log-plays [gig-or-gig-id]
+  (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/log-plays"))
 (def link-song (partial link-helper "/song/" :song/song-id))
 
 (def link-policy (partial link-helper "/insurance-policy/" :insurance.policy/policy-id))

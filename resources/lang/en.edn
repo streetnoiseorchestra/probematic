@@ -112,7 +112,7 @@
                     :probe-info               "Probe Info"
                     :show-all                 "Show All"
                     :show-committed           "Show Committed"
-                    :play-log-subtitle        "Here you can record what was played at this gig/probe."
+                    :play-log-subtitle        "Choose a result for each song. Use the fist to mark intensive work."
                     :probeplan-sort           "Order"
                     :probeplan                "Probeplan"
                     :probeplan-choose         "Choose songs"

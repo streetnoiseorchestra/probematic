@@ -35,6 +35,11 @@
   (gig.events/trigger-gig-edited request gig-id edit-type)
   nil)
 
+(defn recalc-play-stats-fx
+  [_ context]
+  (stats/calc-play-stats-in-bg! (conn context))
+  nil)
+
 (defn send-reminder-to-all-fx
   [_ {:keys [request]} gig-id]
   (gigs.service/send-reminder-to-all! request gig-id)
