@@ -28,3 +28,8 @@
     (stats/calc-play-stats-in-bg! (conn context)))
   (gig.events/trigger-gig-deleted (:request context) gig-id)
   nil)
+
+(defn trigger-gig-edited-fx
+  [_ {:keys [request]} gig-id edit-type]
+  (gig.events/trigger-gig-edited request gig-id edit-type)
+  nil)

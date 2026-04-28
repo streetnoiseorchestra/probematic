@@ -32,7 +32,7 @@
      (when actions
        (into [:div {:class "wa-cluster wa-gap-xs"}]
              actions))]
-    (when divider? [:wa-divider {:style "padding-bottom: var(--spacing)"}])]
+    (when divider? [:wa-divider])]
    children))
 
 (defn remove-dialog [{:keys [id label cancel-label confirm-label dialog-attrs confirm-attrs]} body]

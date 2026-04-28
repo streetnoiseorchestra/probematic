@@ -58,7 +58,7 @@
     txes)))
 
 (defn generated-value-replacer []
-  (let [now             (java.time.Instant/now)
+  (let [now             (java.util.Date.)
         named-squuid->v (atom {})]
     (fn [x]
       (cond
@@ -215,6 +215,7 @@
                          :app.gigs/trigger-gig-details-edited gigs.effects/trigger-gig-details-edited-fx
                          :app.gigs/trigger-gig-created        gigs.effects/trigger-gig-created-fx
                          :app.gigs/trigger-gig-deleted        gigs.effects/trigger-gig-deleted-fx
+                         :app.gigs/trigger-gig-edited         gigs.effects/trigger-gig-edited-fx
                          :app.members/send-user-invitation    send-user-invitation-fx
                          :app.members/update-keycloak-meta    update-keycloak-meta-fx
                          :app.members.index/resend-invitation resend-invitation-fx

@@ -24,14 +24,14 @@
 ** DONE members detail - travel insurance
 ** DONE gig index
 ** DONE gig archive
-** TODO gig create
-** TODO gig detail - gig info
-** TODO gig detail - attendance
+** DONE gig create
+** DONE gig detail - gig info
+** DONE gig detail - attendance
 ** TODO gig detail - probeplan
 ** TODO gig detail - setlist
 ** TODO gig detail - attendance send reminders
 ** TODO gig detail - forum embed
-** TODO gig edit - should be similiar/same to gig create
+** DONE gig edit - should be similiar/same to gig create
 ** TODO gig detail - log plays
 ** TODO repertoire index
 ** TODO repertoire create/edit
