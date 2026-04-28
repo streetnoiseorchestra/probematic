@@ -4,32 +4,13 @@
    [app.gigs.domain :as gig.domain]
    [app.gigs.probeplan.actions :as actions]
    [app.gigs.song-plan.views :as plan.views]
-   [app.gigs.ui :as gigs.ui]
-   [app.html :as html]
    [app.queries :as q]
    [app.ui2 :as ui2]
-   [app.urls :as urls]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn- intensive? [{:keys [emphasis]}]
   (= :probeplan.emphasis/intensive emphasis))
-
-(defn- page-summary [{:keys [tr]} gig]
-  [:header {:class "gigs-probeplan-editor-header wa-stack wa-gap-m"}
-   [:wa-breadcrumb
-    [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-    [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-     (tr [:nav/gigs])]
-    [:wa-breadcrumb-item {:href (urls/link-gig gig)}
-     (gigs.ui/gig-breadcrumb-label gig)]
-    [:wa-breadcrumb-item (tr [:gig/probeplan])]]
-   [:div {:class "wa-flank:end wa-align-items-start"}
-    [:div {:class "wa-stack wa-gap-2xs"}
-     [:h1 (tr [:gig/probeplan])]]
-    [:wa-button {:appearance "outlined"
-                 :href       (urls/link-gig gig)}
-     (tr [:action/back])]]])
 
 (defn- selected-song-signals [songs]
   (mapv (fn [idx {:song/keys [song-id] :keys [emphasis]}]
@@ -85,36 +66,28 @@
                                  (@post ~(d*/act req ::actions/set-repertoire-filter)))}
    label])
 
-(defn- repertoire-filter-control [req current-filter]
-  [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
-   [:span {:class "gigs-probeplan-editor-guidance"}
-    (str ((:tr req) [:gig/probeplan-repertoire]) ":")]
-   [:wa-button-group {:label ((:tr req) [:gig/probeplan-repertoire])}
-    (repertoire-filter-button req current-filter "current" ((:tr req) [:gig/probeplan-repertoire-current]))
-    (repertoire-filter-button req current-filter "old" ((:tr req) [:gig/probeplan-repertoire-old]))
-    (repertoire-filter-button req current-filter "all" ((:tr req) [:gig/probeplan-repertoire-all]))]])
-
 (defn- song-choice [req gig-id selected-ids {:song/keys [song-id title]}]
-  [:wa-checkbox (cond-> {:id                 (str "gig-probeplan-choice-" (ui2/safe-dom-id song-id))
-                         :data-effect        (song-choice-pop-effect-js song-id)
-                         :data-on:change     (toggle-song-client-js req gig-id song-id)
-                         :data-preserve-attr "class data-last-selected"}
-                  (selected-ids song-id) (assoc :checked true))
-   [:span title]])
+  (plan.views/song-choice
+   {:id-prefix "gig-probeplan-choice-"
+    :song-id   song-id
+    :title     title
+    :checked?  (selected-ids song-id)
+    :effect    (song-choice-pop-effect-js song-id)
+    :on-change (toggle-song-client-js req gig-id song-id)}))
 
 (defn- song-choices [req gig-id songs repertoire-filter selected-songs]
-  (let [selected-ids (plan.views/selected-song-ids selected-songs)
-        songs        (plan.views/visible-song-choices songs repertoire-filter)]
-    (ui2/section-card
-     {:title    ((:tr req) [:gig/probeplan-choose])
-      :divider? true
-      :actions  [(plan.views/selected-count selected-songs)]}
-     [:p {:class "gigs-probeplan-editor-guidance"}
-      ((:tr req) [:gig/probeplan-guidance])]
-     (repertoire-filter-control req repertoire-filter)
-     [:div {:class "gigs-probeplan-editor-choices"}
-      (for [song songs]
-        (song-choice req gig-id selected-ids song))])))
+  (plan.views/song-choices
+   {:req               req
+    :title-kw          [:gig/probeplan-choose]
+    :guidance-kw       [:gig/probeplan-guidance]
+    :songs             songs
+    :repertoire-filter repertoire-filter
+    :selected-songs    selected-songs
+    :filter-control    (plan.views/repertoire-filter-control
+                        {:req            req
+                         :current-filter repertoire-filter
+                         :button         (partial repertoire-filter-button req)})
+    :choice            (partial song-choice req gig-id)}))
 
 (defn- intensive-button [req gig-id {:song/keys [song-id]}]
   [:wa-button {:appearance    "plain"
@@ -138,52 +111,23 @@
                 :data-effect        (intensive-pop-effect-js song-id)
                 :data-preserve-attr "data-last-emphasis"}
          (intensive? song) (assoc :data-intensive "true"))
-   [:div {:data-drag-zone true}
-    [:button {:type       "button"
-              :aria-label "Drag to reorder"}
-     [:wa-icon {:library "snoico"
-                :name    "bars"}]]
-    [:span title]]
+   (plan.views/drag-zone title)
    [:div
     (intensive-button req gig-id song)]])
 
 (defn- selected-songs-list [req gig-id selected-songs]
-  (ui2/section-card
-   {:title    ((:tr req) [:gig/probeplan-sort])
-    :divider? true}
-   [:p {:class "gigs-probeplan-editor-guidance"}
-    ((:tr req) [:gig/probeplan-order-guidance])]
-   (if (seq selected-songs)
-     (list
-      [:ol {:id                          "gig-probeplan-selected-songs"
-            :class                       "gigs-song-plan-selected gigs-song-plan-selected--with-actions"
-            :data-on:probeplan-reordered (->expr
-                                          (set! $gig-probeplan.gig-id ~(str gig-id))
-                                          (set! $gig-probeplan.order evt.detail.order)
-                                          (@post ~(d*/act req ::actions/reorder-probeplan-songs)))}
-       (for [song selected-songs]
-         (selected-song-row req gig-id song))]
-      (html/squint-inline
-       (require '["sortable" :as s])
-       (let [sort-container (.getElementById js/document "gig-probeplan-selected-songs")]
-         (when sort-container
-           (new s/Sortable
-                sort-container
-                {:animation  150
-                 :ghostClass "gigs-probeplan-editor-ghost"
-                 :handle     "[data-drag-zone]"
-                 :onEnd
-                 (fn []
-                   (let [order (new js/Array)]
-                     (.forEach
-                      (.querySelectorAll sort-container "[data-song-id]")
-                      (fn [row]
-                        (.push order (.-songId (.-dataset row)))))
-                     (.dispatchEvent sort-container
-                                     (new js/CustomEvent "probeplan-reordered"
-                                          {:bubbles true
-                                           :detail  {:order order}}))))})))))
-     [:div {:class "gigs-empty"} "—"])))
+  (plan.views/selected-songs-list
+   {:req            req
+    :title-kw       [:gig/probeplan-sort]
+    :guidance-kw    [:gig/probeplan-order-guidance]
+    :selected-songs selected-songs
+    :list-id        "gig-probeplan-selected-songs"
+    :list-class     "gigs-song-plan-selected gigs-song-plan-selected--with-actions"
+    :on-reordered   (->expr
+                     (set! $gig-probeplan.gig-id ~(str gig-id))
+                     (set! $gig-probeplan.order evt.detail.order)
+                     (@post ~(d*/act req ::actions/reorder-probeplan-songs)))
+    :row            (partial selected-song-row req gig-id)}))
 
 (defn page [{:keys [db page-state] :as req}]
   (let [gig-id            (http.util/path-param-uuid! req :gig/gig-id)
@@ -209,7 +153,7 @@
                                                            :repertoire-filter repertoire-filter
                                                            :songs             (selected-song-signals selected-songs)
                                                            :order             []}})}
-        (page-summary req gig)
+        (plan.views/page-summary req gig [:gig/probeplan])
         (plan.views/error-callout error)
         (plan.views/pop-helper-script)
         (song-choices req gig-id songs repertoire-filter selected-songs)
