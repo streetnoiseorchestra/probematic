@@ -161,7 +161,7 @@
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"}]
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Podkova:wght@400..800&display=swap"}]
     [:script {:type :importmap} (html/raw (j/write-value-as-string
-                                           {:imports {"squint-cljs/" "/vendor/squint/"
+                                           {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
                                                       "wa/" "/vendor/webawesome@3.5.0/"}}))]
     [:script {:type "module" :src "/vendor/webawesome@3.5.0/webawesome.loader.js"}]
     [:script {:type "module"}
