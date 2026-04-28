@@ -33,14 +33,13 @@
   (let [{:keys [selected-year years gigs]} (queries/page-data db (http.util/path-param req :year))]
     (ui2/plain-page
      [:div {:class "wa-stack wa-gap-l gigs-archive-page"}
-      [:div {:class "wa-flank:end wa-align-items-end wa-gap-s gigs-archive-toolbar"}
-       [:div {:class "wa-stack wa-gap-2xs"}
-        [:h1 (tr [:gigs/title])]
-        [:span {:class "wa-caption-s"} selected-year]]
-       [:wa-button {:appearance "filled"
-                    :variant    "brand"
-                    :href       (urls/link-gig-create)}
-        (tr [:action/create])]]
+      (ui2/page-header
+       {:title    (tr [:gigs/title])
+        :subtitle selected-year
+        :actions  [[:wa-button {:appearance "filled"
+                                :variant    "brand"
+                                :href       (urls/link-gig-create)}
+                    (tr [:action/create])]]})
       (archive-tools req selected-year years)
       (gigs.ui/gig-section {:title         selected-year
                             :empty-message (tr [:gigs/no-past])

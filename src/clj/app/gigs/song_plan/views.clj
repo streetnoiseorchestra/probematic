@@ -32,20 +32,18 @@
                              duration))))))))
 
 (defn page-summary [{:keys [tr]} gig title-kw]
-  [:header {:class "gigs-probeplan-editor-header wa-stack wa-gap-m"}
-   [:wa-breadcrumb
-    [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-    [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-     (tr [:nav/gigs])]
-    [:wa-breadcrumb-item {:href (urls/link-gig gig)}
-     (gigs.ui/gig-breadcrumb-label gig)]
-    [:wa-breadcrumb-item (tr title-kw)]]
-   [:div {:class "wa-flank:end wa-align-items-start"}
-    [:div {:class "wa-stack wa-gap-2xs"}
-     [:h1 (tr title-kw)]]
-    [:wa-button {:appearance "outlined"
-                 :href       (urls/link-gig gig)}
-     (tr [:action/back])]]])
+  (ui2/page-header
+   {:breadcrumb [:wa-breadcrumb
+                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
+                 [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
+                  (tr [:nav/gigs])]
+                 [:wa-breadcrumb-item {:href (urls/link-gig gig)}
+                  (gigs.ui/gig-breadcrumb-label gig)]
+                 [:wa-breadcrumb-item (tr title-kw)]]
+    :title      (tr title-kw)
+    :actions    [[:wa-button {:appearance "outlined"
+                              :href       (urls/link-gig gig)}
+                  (tr [:action/back])]]}))
 
 (defn selected-song-ids [songs]
   (set (map :song/song-id songs)))

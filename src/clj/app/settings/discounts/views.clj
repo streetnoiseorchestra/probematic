@@ -105,9 +105,9 @@
 (defn travel-discount-type-table-row [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name enabled?]}]
   (let [button-id (str "discount-type-actions-" discount-type-id)]
     [:tr {:id (str "dt-container-" discount-type-id)}
-     [:td {:style "vertical-align: middle"} discount-type-name]
-     [:td {:style "vertical-align: middle"} (ui2/active-badge enabled?)]
-     [:td {:style "vertical-align: top; text-align: end"}
+     [:td {:class "align-middle"} discount-type-name]
+     [:td {:class "align-middle"} (ui2/active-badge tr enabled?)]
+     [:td {:class "align-top text-right"}
       (ui2/row-action-menu
        {:button-id button-id
         :items     [{:label              (tr [:action/update])
@@ -156,14 +156,13 @@
   (let [title (tr [:travel-discounts/title])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
-      [:div {:class "wa-stack wa-gap-2xs"}
-       [:wa-breadcrumb
-        [:wa-breadcrumb-item {:href "/band-settings"}
-         (tr [:nav/band-settings])]
-        [:wa-breadcrumb-item title]]
-       [:h1 title]
-       [:span {:class "wa-caption-s"}
-        "Manage the reusable travel discount types members can choose."]]
+      (ui2/page-header
+       {:breadcrumb [:wa-breadcrumb
+                     [:wa-breadcrumb-item {:href "/band-settings"}
+                      (tr [:nav/band-settings])]
+                     [:wa-breadcrumb-item title]]
+        :title      title
+        :subtitle   "Manage the reusable travel discount types members can choose."})
       (travel-discount-types req)])))
 
 (d*/refresh-all!)

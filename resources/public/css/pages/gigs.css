@@ -18,9 +18,6 @@
   --sno-gigs-probeplan-editor-font-size: var(--wa-font-size-s);
 }
 
-.gigs-index-toolbar h1,
-.gigs-archive-toolbar h1,
-.gigs-detail-header h1,
 .gigs-section-heading h2 {
   margin: var(--sno-size-none);
 }
@@ -40,6 +37,19 @@
 .gigs-detail-status-icon {
   flex: none;
   font-size: var(--sno-gig-detail-status-icon-size);
+}
+
+dl.gigs-detail-info-list {
+  grid-template-columns: repeat(2, minmax(var(--sno-grid-track-min), var(--sno-grid-track-max)));
+}
+
+@media (--sno-particulars-wide) {
+  dl.gigs-detail-info-list {
+    grid-template-columns: repeat(
+      var(--sno-particulars-max-column-count),
+      minmax(var(--sno-grid-track-min), var(--sno-grid-track-max))
+    );
+  }
 }
 
 .gigs-detail-wide {
@@ -177,10 +187,6 @@
 
 .gigs-probeplan-editor-page .confirm-pop {
   animation: confirm-pop 0.2s ease-out;
-}
-
-.gigs-probeplan-editor-header h1 {
-  margin: var(--sno-size-none);
 }
 
 .gigs-probeplan-editor-count,

@@ -29,27 +29,10 @@
          (let [section-name (:section/name section)
                active?      (:section/active? section)]
            [:div {:data-drag-item-id section-name
-                  :class (str  "wa-flank " (if active? "active" "inactive"))
-                  #_#_:style             (str ""
-                                              " background-color: "
-                                              (if active?
-                                                "var(--wa-color-success-fill-quiet)"
-                                                "var(--wa-color-neutral-fill-normal)")
-                                              "; color: "
-                                              (if active?
-                                                "var(--wa-color-text-normal)"
-                                                "var(--wa-color-text-quiet)")
-                                              "; opacity: "
-                                              (if active? "1" "0.65")
-                                              ";")}
-            [:div {:class "drag-handle"
-                   :style (str "font-weight: 700; letter-spacing: 0.15em; color: "
-                               #_(if active?
-                                   "var(--wa-color-success-on-quiet)"
-                                   "var(--wa-color-text-quiet)")
-                               ";")}
+                  :class (str  "wa-flank " (if active? "active" "inactive"))}
+            [:div {:class "drag-handle wa-font-weight-bold wa-color-text-quiet"}
              "≡"]
-            [:div {:style "min-inline-size: 0;"}
+            [:div {:class "min-inline-size-0"}
              [:input {:type "hidden" :value idx :data-sort-order section-name}]
              [:strong section-name]]]))]]
      (html/squint-inline
@@ -176,9 +159,9 @@
   (let [button-id  (str "section-actions-" name)
         loading-id (pr-str (str name))]
     [:tr {:id (str "section-container-" name)}
-     [:td {:style "vertical-align: middle"} name]
-     [:td {:style "vertical-align: middle"} (ui2/active-badge active?)]
-     [:td {:style "vertical-align: top; text-align: end"}
+     [:td {:class "align-middle"} name]
+     [:td {:class "align-middle"} (ui2/active-badge tr active?)]
+     [:td {:class "align-top text-right"}
       (ui2/row-action-menu
        {:button-id button-id
         :items     [{:label              (tr [:action/update])
@@ -234,14 +217,13 @@
   (let [title (tr [:sections])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
-      [:div {:class "wa-stack wa-gap-2xs"}
-       [:wa-breadcrumb
-        [:wa-breadcrumb-item {:href "/band-settings"}
-         (tr [:nav/band-settings])]
-        [:wa-breadcrumb-item title]]
-       [:h1 title]
-       [:span {:class "wa-caption-s"}
-        "Choose which sections are available and how they are ordered."]]
+      (ui2/page-header
+       {:breadcrumb [:wa-breadcrumb
+                     [:wa-breadcrumb-item {:href "/band-settings"}
+                      (tr [:nav/band-settings])]
+                     [:wa-breadcrumb-item title]]
+        :title      title
+        :subtitle   "Choose which sections are available and how they are ordered."})
       (sections-panel req)])))
 
 (d*/refresh-all!)

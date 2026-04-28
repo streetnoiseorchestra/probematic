@@ -81,10 +81,8 @@
 
 (defn- members-toolbar [{:keys [tr] :as req} page-state total]
   [:div {:class "members-index-toolbar"}
-   [:div {:class "wa-stack wa-gap-2xs"}
-    [:h1 (tr [:nav/members])]
-    [:span {:class "wa-caption-s"}
-     (str (tr [:total]) ": " total)]]
+   (ui2/title-block {:title    (tr [:nav/members])
+                     :subtitle (str (tr [:total]) ": " total)})
    [:div {:class "members-index-toolbar-controls"}
     (search-control req page-state)
     (filter-control req page-state)
@@ -112,10 +110,9 @@
 (defn- open-invitations-panel [{:keys [tr] :as req} open-invitations]
   (when (seq open-invitations)
     [:section {:class "wa-stack wa-gap-s"}
-     [:div {:class "wa-stack wa-gap-2xs"}
-      [:h2 (tr [:member/open-invitations])]
-      [:span {:class "wa-caption-s"}
-       (tr [:member/open-invitations-subtitle])]]
+     (ui2/title-block {:level    2
+                       :title    (tr [:member/open-invitations])
+                       :subtitle (tr [:member/open-invitations-subtitle])})
      [:div {:class "members-index-table-shell"}
       [:table {:class "members-index-table"}
        [:thead

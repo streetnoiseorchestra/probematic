@@ -10,13 +10,12 @@
   (let [{:keys [future-gigs past-gigs]} (queries/page-data db)]
     (ui2/plain-page
      [:div {:class "wa-stack wa-gap-l gigs-index-page"}
-      [:div {:class "wa-flank:end wa-align-items-end wa-gap-s gigs-index-toolbar"}
-       [:div {:class "wa-stack wa-gap-2xs"}
-        [:h1 (tr [:gigs/title])]]
-       [:wa-button {:appearance "filled"
-                    :variant    "brand"
-                    :href       (urls/link-gig-create)}
-        (tr [:action/create])]]
+      (ui2/page-header
+       {:title   (tr [:gigs/title])
+        :actions [[:wa-button {:appearance "filled"
+                               :variant    "brand"
+                               :href       (urls/link-gig-create)}
+                   (tr [:action/create])]]})
       [:div {:class "wa-grid wa-gap-m gigs-index-columns"}
        (gigs.ui/gig-section {:title         (tr [:gigs/upcoming])
                              :empty-message (tr [:gigs/no-future])

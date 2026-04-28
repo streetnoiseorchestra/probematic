@@ -105,8 +105,7 @@
               [:div {:class "wa-stack wa-gap-2xs"}]
               (for [{:member/keys [member-id name] :as member} (:team/members team)]
                 (let [loading-id (pr-str (str member-id))]
-                  [:div {:class "wa-flank:end wa-align-items-center wa-gap-xs"
-                         :style "padding: var(--wa-space-2xs) 0; border-bottom: 1px solid var(--wa-color-neutral-border-quiet);"}
+                  [:div {:class "settings-team-member-row wa-flank:end wa-align-items-center wa-gap-xs"}
                    [:a {:href (urls/link-member member)} name]
                    [:wa-button {:appearance         "plain"
                                 :variant            "danger"
@@ -118,8 +117,7 @@
                                 :data-attr:loading  (str "$loading === " loading-id)
                                 :data-on:mousedown  (->expr (set! $team.remove-member-id ~(str member-id)))}
                     (tr [:action/remove])]])))
-             [:span {:class "wa-caption-s"
-                     :style "color: var(--wa-color-text-quiet); font-style: italic;"}
+             [:span {:class "wa-caption-s wa-color-text-quiet italic"}
               (tr [:team/no-members])])]
           [:div {:class "wa-cluster wa-align-items-end"}
            (into
@@ -176,17 +174,17 @@
   (let [button-id  (str "team-actions-" team-id)
         loading-id (pr-str (str team-id))]
     [:tr {:id (str "team-container-" team-id)}
-     [:td {:style "vertical-align: middle"} team-name]
-     [:td {:style "vertical-align: middle"}
+     [:td {:class "align-middle"} team-name]
+     [:td {:class "align-middle"}
       (if (seq members)
         [:div {:class "wa-cluster wa-gap-2xs"}
          (for [{:member/keys [name] :as member} members]
            [:a {:href (urls/link-member member)}
             name])]
-        [:span {:style "color: var(--wa-color-text-quiet); font-style: italic;"}
+        [:span {:class "wa-color-text-quiet italic"}
          (tr [:team/no-members])])]
-     [:td {:style "vertical-align: middle"} (team-type-label tr team-type)]
-     [:td {:style "vertical-align: top; text-align: end"}
+     [:td {:class "align-middle"} (team-type-label tr team-type)]
+     [:td {:class "align-top text-right"}
       (ui2/row-action-menu
        {:button-id button-id
         :items     [{:label              (tr [:action/update])
@@ -236,14 +234,13 @@
   (let [title "Teams"]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
-      [:div {:class "wa-stack wa-gap-2xs"}
-       [:wa-breadcrumb
-        [:wa-breadcrumb-item {:href "/band-settings"}
-         (tr [:nav/band-settings])]
-        [:wa-breadcrumb-item title]]
-       [:h1 title]
-       [:span {:class "wa-caption-s"}
-        "Create teams and manage their members."]]
+      (ui2/page-header
+       {:breadcrumb [:wa-breadcrumb
+                     [:wa-breadcrumb-item {:href "/band-settings"}
+                      (tr [:nav/band-settings])]
+                     [:wa-breadcrumb-item title]]
+        :title      title
+        :subtitle   "Create teams and manage their members."})
       (teams-panel req)])))
 
 (d*/refresh-all!)

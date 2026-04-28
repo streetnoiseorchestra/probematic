@@ -258,56 +258,51 @@
    (tr [:action/save])])
 
 (defn- edit-form-actions [{:keys [tr]} gig]
-  [:div {:class "wa-cluster wa-gap-xs wa-justify-content-end"}
-   [:wa-button {:appearance "outlined"
-                :href       (urls/link-gig gig)}
-    (tr [:action/cancel])]
-   [:wa-button {:appearance  "outlined"
-                :variant     "danger"
-                :type        "button"
-                :data-dialog (str "open " (gig-remove-dialog-id gig))}
-    (tr [:action/delete])]
-   (save-button tr)])
+  (ui2/action-bar
+   {}
+   [[:wa-button {:appearance "outlined"
+                 :href       (urls/link-gig gig)}
+     (tr [:action/cancel])]
+    [:wa-button {:appearance  "outlined"
+                 :variant     "danger"
+                 :type        "button"
+                 :data-dialog (str "open " (gig-remove-dialog-id gig))}
+     (tr [:action/delete])]
+    (save-button tr)]))
 
 (defn- create-form-actions [{:keys [tr]}]
-  [:div {:class "wa-cluster wa-gap-xs wa-justify-content-end"}
-   [:wa-button {:appearance "outlined"
-                :href       (urls/link-gigs-home)}
-    (tr [:action/cancel])]
-   (save-button tr)])
+  (ui2/action-bar
+   {}
+   [[:wa-button {:appearance "outlined"
+                 :href       (urls/link-gigs-home)}
+     (tr [:action/cancel])]
+    (save-button tr)]))
 
 (defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
-  [:header {:class "gigs-detail-header wa-stack wa-gap-m"}
-   (into
-    [:wa-breadcrumb
-     [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-     [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-      (tr [:nav/gigs])]]
-    breadcrumb-items)
-   [:section {:class "wa-stack wa-gap-l"}
-    [:div {:class "wa-stack wa-gap-2xs"}
-     [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-      [:h1 title]]
-     (when subtitle
-       [:span {:class "wa-caption-s"} subtitle])]]])
+  (ui2/page-header
+   {:breadcrumb (into
+                 [:wa-breadcrumb
+                  [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
+                  [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
+                   (tr [:nav/gigs])]]
+                 breadcrumb-items)
+    :title      title
+    :subtitle   subtitle}))
 
 (defn- edit-header [{:keys [tr]} {:gig/keys [title gig-type status] :as gig}]
-  [:header {:class "gigs-detail-header wa-stack wa-gap-m"}
-   [:wa-breadcrumb
-    [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-    [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-     (tr [:nav/gigs])]
-    [:wa-breadcrumb-item {:href (urls/link-gig gig)}
-     (gigs.ui/gig-breadcrumb-label gig)]
-    [:wa-breadcrumb-item (tr [:action/edit])]]
-   [:section {:class "wa-stack wa-gap-l"}
-    [:div {:class "wa-stack wa-gap-2xs"}
-     [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-      [:h1 (tr [:action/edit])]
-      (when status
-        (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
-     [:span {:class "wa-caption-s"}
-      (str title " · " (tr [gig-type]))]]]])
+  (ui2/page-header
+   {:breadcrumb [:wa-breadcrumb
+                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
+                 [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
+                  (tr [:nav/gigs])]
+                 [:wa-breadcrumb-item {:href (urls/link-gig gig)}
+                  (gigs.ui/gig-breadcrumb-label gig)]
+                 [:wa-breadcrumb-item (tr [:action/edit])]]
+    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+                 [:h1 (tr [:action/edit])]
+                 (when status
+                   (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
+    :subtitle   (str title " · " (tr [gig-type]))}))
 
 (defn- create-header [{:keys [tr] :as req}]
   (page-header req
@@ -375,6 +370,29 @@
 (defn- probe-form? [form-state]
   (#{"probe" "extra-probe"} (:gig-type form-state)))
 
+(defn- checkbox-input [label name checked? signal]
+  [:label {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-edit-wide"}
+   [:input (cond-> {:type      "checkbox"
+                    :name      name
+                    :value     "true"
+                    :data-bind signal}
+             checked? (assoc :checked true))]
+   [:span label]])
+
+(defn- notification-fields [tr form-state create?]
+  (list
+   (checkbox-input (tr [(if create?
+                          :gig/email-about-new?
+                          :gig/email-about-change?)])
+                   "notify?"
+                   (:notify? form-state)
+                   "gig-edit.notify?")
+   (when create?
+     (checkbox-input (tr [:gig/create-a-forum-thread?])
+                     "thread?"
+                     (:thread? form-state)
+                     "gig-edit.thread?"))))
+
 (defn- main-fields
   ([req form-state]
    (main-fields req form-state {:create? false}))
@@ -408,47 +426,23 @@
                                                                                                      :class       "gigs-edit-textarea markdown-editor hidden gigs-edit-wide"}
                                                                                                     (field :more-details)))
        (textarea (tr [:gig/description]) "description" (:description form-state) (merge {:class "gigs-edit-textarea gigs-edit-wide"}
-                                                                                        (field :description)))]))))
-
-(defn- checkbox-input [label name checked? signal]
-  [:label {:class "wa-cluster wa-gap-xs wa-align-items-center"}
-   [:input (cond-> {:type      "checkbox"
-                    :name      name
-                    :value     "true"
-                    :data-bind signal}
-             checked? (assoc :checked true))]
-   [:span label]])
-
-(defn- notification-fields [{:keys [tr]} form-state create?]
-  (ui2/section-card
-   {:title    "Notifications"
-    :divider? true}
-   [:div {:class "wa-stack wa-gap-s"}
-    (checkbox-input (tr [(if create?
-                           :gig/email-about-new?
-                           :gig/email-about-change?)])
-                    "notify?"
-                    (:notify? form-state)
-                    "gig-edit.notify?")
-    (when create?
-      (checkbox-input (tr [:gig/create-a-forum-thread?])
-                      "thread?"
-                      (:thread? form-state)
-                      "gig-edit.thread?"))]))
+                                                                                        (field :description)))
+       (notification-fields tr form-state create?)]))))
 
 (defn- forum-fields [req form-state create?]
-  (ui2/section-card
-   {:title    "Advanced"
-    :subtitle "Forum topic controls."
-    :divider? true}
-   [:div {:class "gigs-edit-form-grid"}
-    (when-not create?
-      (checkbox-input "Takeover Forum Topic"
-                      "takeover-topic?"
-                      (:takeover-topic? form-state)
-                      "gig-edit.takeover-topic?"))
-    (input "Forum Topic ID" "topic-id" (:topic-id form-state) (merge {:class "gigs-edit-wide"}
-                                                                     (validate-field-attrs req form-state :topic-id)))]))
+  [:wa-details {:summary            "Advanced"
+                :data-preserve-attr "open"}
+   [:div {:class "wa-stack wa-gap-m"}
+    [:p {:class "wa-caption-m wa-color-text-quiet"}
+     "Forum topic controls."]
+    [:div {:class "gigs-edit-form-grid"}
+     (when-not create?
+       (checkbox-input "Takeover Forum Topic"
+                       "takeover-topic?"
+                       (:takeover-topic? form-state)
+                       "gig-edit.takeover-topic?"))
+     (input "Forum Topic ID" "topic-id" (:topic-id form-state) (merge {:class "gigs-edit-wide"}
+                                                                      (validate-field-attrs req form-state :topic-id)))]]])
 
 (defn- gig-form [{:keys [action create? form-state req]} & children]
   (into
@@ -471,7 +465,6 @@
                :action     ::actions/update-gig
                :form-state form-state}
               (main-fields req form-state)
-              (notification-fields req form-state false)
               (forum-fields req form-state false)
               (when-let [top-error (field-error form-state :_top)]
                 [:wa-callout {:appearance "outlined"
@@ -486,7 +479,6 @@
                :create?    true
                :form-state form-state}
               (main-fields req form-state {:create? true})
-              (notification-fields req form-state true)
               (forum-fields req form-state true)
               (when-let [top-error (field-error form-state :_top)]
                 [:wa-callout {:appearance "outlined"

@@ -80,16 +80,17 @@
                   (tr [:Active])
                   nil
                   (:active form-state))
-    [:div {:class "wa-cluster wa-justify-content-end"}
-     [:wa-button {:appearance "outlined"
-                  :href       "/members"}
-      (tr [:action/cancel])]
-     [:wa-button {:appearance         "filled"
-                  :variant            "brand"
-                  :type               "submit"
-                  :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
-                  :data-attr:loading  "$loading === 'member-invite'"}
-      (tr [:member/invite-member])]]]])
+    (ui2/action-bar
+     {}
+     [[:wa-button {:appearance "outlined"
+                   :href       "/members"}
+       (tr [:action/cancel])]
+      [:wa-button {:appearance         "filled"
+                   :variant            "brand"
+                   :type               "submit"
+                   :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
+                   :data-attr:loading  "$loading === 'member-invite'"}
+       (tr [:member/invite-member])]])]])
 
 (defn page [{:keys [db page-state tr] :as req}]
   (let [form-state (merge (default-form-state) (:member-invite page-state))
@@ -97,15 +98,14 @@
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-invite-page"
             :data-signals (d*/->signals {:member-invite form-state})}
-      [:div {:class "wa-stack wa-gap-2xs"}
-       [:wa-breadcrumb
-        [:wa-breadcrumb-item {:href "/members"}
-         (tr [:nav/members])]
-        [:wa-breadcrumb-item
-         (tr [:member/invite-member])]]
-       [:h1 (tr [:member/invite-member])]
-       [:span {:class "wa-caption-s"}
-        (tr [:member/invite-member-page-description])]]
+      (ui2/page-header
+       {:breadcrumb [:wa-breadcrumb
+                     [:wa-breadcrumb-item {:href "/members"}
+                      (tr [:nav/members])]
+                     [:wa-breadcrumb-item
+                      (tr [:member/invite-member])]]
+        :title      (tr [:member/invite-member])
+        :subtitle   (tr [:member/invite-member-page-description])})
       (ui2/section-card
        {:title    (tr [:member/invite-member])
         :subtitle (tr [:member/invite-member-form-subtitle])}

@@ -20,7 +20,8 @@
 (defn page [{:keys [tr]}]
   (ui2/plain-page
    [:div {:class "wa-grid band-settings-index-grid"}
-    [:h1 {:class "wa-span-grid"} (tr [:nav/band-settings])]
+    (ui2/page-header {:class "wa-span-grid"
+                      :title (tr [:nav/band-settings])})
     [:wa-divider {:class "wa-span-grid band-settings-index-divider"}]
     (settings-link-card {:href  "/band-settings/teams"
                          :icon  "users-outline"

@@ -48,8 +48,7 @@
 (defn- optional-lines-item [label text]
   (when-not (str/blank? text)
     (detail-item label
-                 (interpose [:br] (str/split-lines text))
-                 {:class "gigs-detail-wide"})))
+                 (interpose [:br] (str/split-lines text)))))
 
 (defn- gig-date [{:gig/keys [date end-date]}]
   (cond
@@ -58,8 +57,7 @@
     :else               (muted nil)))
 
 (defn- header-actions [{:keys [tr]} gig]
-  [:div {:class "wa-cluster wa-gap-xs"}
-   [:wa-button {:appearance "outlined"
+  [[:wa-button {:appearance "outlined"
                 :href       (urls/link-gig-edit gig)}
     (tr [:action/edit])]
    [:wa-button {:appearance "outlined"
@@ -68,25 +66,23 @@
     "Log Plays"]])
 
 (defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
-  [:header {:class "gigs-detail-header wa-stack wa-gap-m"}
-   [:wa-breadcrumb
-    [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-    [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-     (tr [:nav/gigs])]
-    [:wa-breadcrumb-item (gigs.ui/gig-breadcrumb-label gig)]]
-   [:section {:class "wa-stack wa-gap-l"}
-    [:div {:class "wa-flank:end wa-align-items-start"}
-     [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-      (when status
-        (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
-      [:h1 title]
-      [:wa-badge {:appearance "outlined" :style "font-size: var(--wa-font-size-xs);"} (tr [gig-type])]]
-     (header-actions req gig)]]])
+  (ui2/page-header
+   {:breadcrumb [:wa-breadcrumb
+                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
+                 [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
+                  (tr [:nav/gigs])]
+                 [:wa-breadcrumb-item (gigs.ui/gig-breadcrumb-label gig)]]
+    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+                 (when status
+                   (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
+                 [:h1 title]
+                 [:wa-badge {:appearance "outlined" :class "wa-font-size-xs"} (tr [gig-type])]]
+    :actions    (header-actions req gig)}))
 
 (defn- gig-info-section [{:keys [tr]} {:gig/keys [call-time contact end-time leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time setlist] :as gig}]
   (ui2/section-card
    {:title (tr [:gig/gig-info])}
-   [:dl {:class "particulars"}
+   [:dl {:class "particulars gigs-detail-info-list"}
     (detail-item (tr [:gig/date]) (gig-date gig))
     (detail-item (tr [:gig/location]) (if (str/blank? location)
                                         (muted nil)
@@ -104,7 +100,7 @@
     (optional-item (tr [:gig/outfit]) outfit)
     (optional-markdown-item (tr [:gig/more-details]) more-details)
     (optional-lines-item (tr [:gig/setlist]) setlist)
-    (optional-item (tr [:gig/post-gig-plans]) post-gig-plans {:class "gigs-detail-wide"})]))
+    (optional-item (tr [:gig/post-gig-plans]) post-gig-plans)]))
 
 (defn- setlist-section [{:keys [db tr]} gig-id]
   (let [songs (q/setlist-songs-for-gig db gig-id)]

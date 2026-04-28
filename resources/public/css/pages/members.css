@@ -22,10 +22,6 @@
     gap: var(--wa-space-s) var(--wa-space-l);
   }
 
-  .members-index-toolbar h1 {
-    margin: var(--sno-size-none);
-  }
-
   .members-index-toolbar-controls {
     display: grid;
     gap: var(--wa-space-s);
