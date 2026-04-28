@@ -16,19 +16,6 @@
       filter
       default-repertoire-filter)))
 
-(defn- keywordize-keys [x]
-  (cond
-    (map? x) (into {}
-                   (map (fn [[k v]]
-                          [(if (keyword? k) k (keyword k))
-                           (keywordize-keys v)]))
-                   x)
-    (vector? x) (mapv keywordize-keys x)
-    :else x))
-
-(defn- params [signals]
-  (-> signals keywordize-keys :gig-probeplan))
-
 (defn- normalize-bool [v]
   (cond
     (true? v) true
@@ -61,10 +48,7 @@
 (defn- db-songs [db gig-id]
   (renumber (q/probeplan-songs-for-gig db gig-id)))
 
-(defn current-songs [{:keys [db]} gig-id]
-  (db-songs db gig-id))
-
-(defn selected-songs-for-page [db _page-state gig-id]
+(defn selected-songs-for-page [db gig-id]
   (let [songs        (db-songs db gig-id)
         song-details (into {}
                            (map (juxt :song/song-id identity))
@@ -84,12 +68,12 @@
 
 (declare persist-probeplan-effect)
 
-(defn toggle-probeplan-song-action [{:keys [db] :as state} signals]
-  (let [{:keys [gig-id song-id selected]} (params signals)
+(defn toggle-probeplan-song-action [{:keys [db]} {:keys [gig-probeplan]}]
+  (let [{:keys [gig-id song-id selected]} gig-probeplan
         gig-id         (util/ensure-uuid! gig-id)
         song-id        (str (util/ensure-uuid! song-id))
         selected?      (normalize-bool selected)
-        songs          (current-songs state gig-id)
+        songs          (db-songs db gig-id)
         selected-song? (some #(= song-id (:song-id %)) songs)]
     (cond
       (and selected? selected-song?)
@@ -106,11 +90,11 @@
       :else
       [(persist-probeplan-effect db gig-id (remove #(= song-id (:song-id %)) songs))])))
 
-(defn toggle-probeplan-intensive-action [{:keys [db] :as state} signals]
-  (let [{:keys [gig-id song-id]} (params signals)
+(defn toggle-probeplan-intensive-action [{:keys [db]} {:keys [gig-probeplan]}]
+  (let [{:keys [gig-id song-id]} gig-probeplan
         gig-id     (util/ensure-uuid! gig-id)
         song-id    (str (util/ensure-uuid! song-id))
-        songs      (current-songs state gig-id)
+        songs      (db-songs db gig-id)
         target     (some #(when (= song-id (:song-id %)) %) songs)
         intensive? (= "intensive" (:emphasis target))]
     (if-not target
@@ -124,31 +108,14 @@
                   song))
               songs))])))
 
-(defn move-probeplan-song-action [{:keys [db] :as state} signals]
-  (let [{:keys [direction gig-id song-id]} (params signals)
-        gig-id   (util/ensure-uuid! gig-id)
-        song-id  (str (util/ensure-uuid! song-id))
-        songs    (current-songs state gig-id)
-        idx      (first (keep-indexed #(when (= song-id (:song-id %2)) %1) songs))
-        swap-idx (case direction
-                   "up"   (some-> idx dec)
-                   "down" (some-> idx inc)
-                   nil)]
-    [(persist-probeplan-effect
-      db
-      gig-id
-      (if (and idx swap-idx (<= 0 swap-idx) (< swap-idx (count songs)))
-        (assoc songs idx (nth songs swap-idx) swap-idx (nth songs idx))
-        songs))]))
-
-(defn set-repertoire-filter-action [_state signals]
-  (let [{:keys [repertoire-filter]} (params signals)]
+(defn set-repertoire-filter-action [_state {:keys [gig-probeplan]}]
+  (let [{:keys [repertoire-filter]} gig-probeplan]
     [[:app.datastar/assoc-state repertoire-filter-path (normalize-repertoire-filter repertoire-filter)]]))
 
-(defn reorder-probeplan-songs-action [{:keys [db] :as state} signals]
-  (let [{:keys [gig-id order]} (params signals)
+(defn reorder-probeplan-songs-action [{:keys [db]} {:keys [gig-probeplan]}]
+  (let [{:keys [gig-id order]} gig-probeplan
         gig-id      (util/ensure-uuid! gig-id)
-        songs       (current-songs state gig-id)
+        songs       (db-songs db gig-id)
         by-id       (into {} (map (juxt :song-id identity)) songs)
         ordered     (->> order
                          (map str)
@@ -190,5 +157,4 @@
   {::set-repertoire-filter      #'set-repertoire-filter-action
    ::toggle-probeplan-song      #'toggle-probeplan-song-action
    ::toggle-probeplan-intensive #'toggle-probeplan-intensive-action
-   ::move-probeplan-song        #'move-probeplan-song-action
    ::reorder-probeplan-songs    #'reorder-probeplan-songs-action})

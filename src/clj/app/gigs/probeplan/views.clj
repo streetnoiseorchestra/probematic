@@ -235,7 +235,7 @@
         songs             (q/retrieve-all-songs db)
         repertoire-filter (actions/normalize-repertoire-filter
                            (get-in page-state [:gig-probeplan :repertoire-filter]))
-        selected-songs    (actions/selected-songs-for-page db page-state gig-id)
+        selected-songs    (actions/selected-songs-for-page db gig-id)
         error             (get-in page-state [:gig-probeplan :_error])]
     (cond
       (nil? gig)

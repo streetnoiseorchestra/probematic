@@ -206,7 +206,7 @@
                 (second effect))))))
 
 (deftest selected-songs-for-page-test
-  (testing "uses stored probeplan songs as the multiplayer source of truth"
+  (testing "uses stored probeplan songs as the source of truth"
     (let [{:keys [conn]} (tc/new-system "probeplan-page-songs")
           gig-id         (random-uuid)
           song-a         (random-uuid)
@@ -223,5 +223,4 @@
              (mapv #(select-keys % [:song/song-id :song/title :song/active? :position :emphasis])
                    (actions/selected-songs-for-page
                     (d/db conn)
-                    {:gig-probeplan {:songs [{:song-id (str song-b) :position 0 :emphasis "intensive"}]}}
                     gig-id)))))))
