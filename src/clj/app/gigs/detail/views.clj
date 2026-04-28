@@ -1,10 +1,12 @@
 (ns app.gigs.detail.views
   (:require
+   [app.config :as config]
    [app.datastar :as d*]
    [app.gigs.detail.actions :as actions]
    [app.gigs.detail.queries :as detail.queries]
    [app.gigs.domain :as domain]
    [app.gigs.ui :as gigs.ui]
+   [app.html :as html]
    [app.markdown :as markdown]
    [app.queries :as q]
    [app.ui :as ui]
@@ -418,6 +420,38 @@
                      (attendance-section-view (assoc req :gig-id gig-id) archived? idx section))
                    sections)])))
 
+(defn- discourse-url [forum-url]
+  (cond-> forum-url
+    (not (str/ends-with? forum-url "/")) (str "/")))
+
+(defn- discourse-embed-script [forum-url topic-id]
+  (html/raw
+   (format
+    "
+window.DiscourseEmbed = %s;
+
+(function() {
+  var d = document.createElement('script');
+  d.type = 'text/javascript';
+  d.async = true;
+  d.src = window.DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
+})();
+"
+    (d*/->signals {"discourseUrl" (discourse-url forum-url)
+                   "topicId"      topic-id}))))
+
+(defn- discourse-comments-section [{:keys [system]} {:forum.topic/keys [topic-id]}]
+  (when-let [forum-url (and topic-id (config/discourse-forum-url (:env system)))]
+    (ui2/section-card
+     {:id       "gig-forum-comments"
+      :title    "Comments"
+      :divider? true}
+     [:div {:id                "discourse-comments"
+            :data-ignore-morph ""}]
+     [:script {:type "text/javascript"}
+      (discourse-embed-script forum-url topic-id)])))
+
 (defn- attendance-signals [{:keys [page-state]}]
   (let [{:keys [comment gig-id member-id]} (get-in page-state [:gig-detail :attendance :comment-edit])]
     {:gig-attendance {:comment           (or comment "")
@@ -435,7 +469,8 @@
         (gig-summary req gig)
         (gig-info-section req gig)
         (planned-songs-section req gig)
-        (attendance-section req gig)])
+        (attendance-section req gig)
+        (discourse-comments-section req gig)])
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id})))))
 

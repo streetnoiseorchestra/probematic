@@ -30,7 +30,7 @@
 ** DONE gig detail - probeplan
 ** DONE gig detail - setlist
 ** DONE gig detail - attendance send reminders
-** TODO gig detail - forum embed
+** DONE gig detail - forum embed
 ** DONE gig edit - should be similiar/same to gig create
 ** TODO gig detail - log plays
 ** TODO repertoire index
