@@ -163,7 +163,7 @@
     [:script {:type :importmap} (html/raw (j/write-value-as-string
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
                                                       "wa/" "/vendor/webawesome@3.5.0/"
-                                                      "sortable" "/js/sortable@1.15.7-esm.js"}}))]
+                                                      "sortable" "/vendor/sortable@1.15.7-esm.js"}}))]
     [:script {:type "module" :src "/vendor/webawesome@3.5.0/webawesome.loader.js"}]
     [:script {:type "module"}
      (html/raw "
