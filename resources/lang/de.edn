@@ -604,6 +604,11 @@
   :leader "Dirigent",
   :status "Status",
   :setlist "Setliste",
+  :setlist-choose "Songs auswählen",
+  :setlist-guidance
+  "Wähle die Songs für diese Setliste. Änderungen werden sofort gespeichert und allen angezeigt, die diese Seite ansehen.",
+  :setlist-sort "Reihenfolge",
+  :setlist-order-guidance "Ziehe Songs in die Setlisten-Reihenfolge.",
   :end-day "Enddatum",
   :create-a-forum-thread? "Einen Thread im Forum erstellen?",
   :post-gig-plans "Nach dem Auftritt",

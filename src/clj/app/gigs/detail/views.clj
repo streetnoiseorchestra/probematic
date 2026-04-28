@@ -106,19 +106,17 @@
     (optional-lines-item (tr [:gig/setlist]) setlist)
     (optional-item (tr [:gig/post-gig-plans]) post-gig-plans {:class "gigs-detail-wide"})]))
 
-(defn- disabled-create-button [label]
-  [:wa-button {:appearance "outlined"
-               :variant    "brand"
-               :disabled   true}
-   label])
-
 (defn- setlist-section [{:keys [db tr]} gig-id]
   (let [songs (q/setlist-songs-for-gig db gig-id)]
     (ui2/section-card
      {:title    (tr [:gig/setlist])
       :divider? true
-      :actions  (when-not (seq songs)
-                  [(disabled-create-button (tr [:gig/create-setlist]))])}
+      :actions  [[:wa-button {:appearance "outlined"
+                              :variant    "brand"
+                              :href       (urls/link-gig-setlist gig-id)}
+                  (if (seq songs)
+                    (tr [:action/edit])
+                    (tr [:gig/create-setlist]))]]}
      (gigs.ui/setlist-list songs))))
 
 (defn- probeplan-section [{:keys [db tr]} gig-id]

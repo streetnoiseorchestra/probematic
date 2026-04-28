@@ -6,6 +6,7 @@
    [app.gigs.edit.views]
    [app.gigs.index.views]
    [app.gigs.probeplan.views]
+   [app.gigs.setlist.views]
    [app.gigs.views :as view]
    [app.layout :as layout]
    [app.queries :as q]
@@ -87,6 +88,9 @@
    (ds/page-routes {:page-name ::probeplan
                     :path      "/gig/{gig/gig-id}/probeplan"
                     :view-ns   'app.gigs.probeplan.views})
+   (ds/page-routes {:page-name ::setlist
+                    :path      "/gig/{gig/gig-id}/setlist"
+                    :view-ns   'app.gigs.setlist.views})
    (ds/page-routes {:page-name  ::edit
                     :path       "/gig/{gig/gig-id}/edit"
                     :view-ns    'app.gigs.edit.views

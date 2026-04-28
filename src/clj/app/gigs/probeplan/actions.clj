@@ -66,7 +66,34 @@
 (defn- error-effect [message]
   [[:app.datastar/assoc-state error-path {:error message}]])
 
-(declare persist-probeplan-effect)
+(defn- probeplan-song-tuple [{:keys [song-id position emphasis]}]
+  [[:song/song-id (util/ensure-uuid! song-id)]
+   position
+   (str->emphasis emphasis)])
+
+(defn- reconcile-probeplan [eid new-song-tuples current-song-tuples]
+  (let [new-set     (set new-song-tuples)
+        current-set (set current-song-tuples)
+        add-tx      (for [song-tuple new-song-tuples
+                          :when (not (current-set song-tuple))]
+                      [:db/add eid :probeplan.classic/ordered-songs song-tuple])
+        remove-tx   (for [song-tuple current-song-tuples
+                          :when (not (new-set song-tuple))]
+                      [:db/retract eid :probeplan.classic/ordered-songs song-tuple])]
+    (vec (concat add-tx remove-tx))))
+
+(defn probeplan-tx-data [db gig-id songs]
+  (let [song-tuples (mapv probeplan-song-tuple (renumber songs))
+        current     (sort-by second (q/probeplan-song-tuples-for-gig db gig-id))]
+    (into [{:probeplan/gig     [:gig/gig-id gig-id]
+            :db/id             "probeplan"
+            :probeplan/version :probeplan.version/classic}]
+          (reconcile-probeplan "probeplan" song-tuples current))))
+
+(defn persist-probeplan-effect [db gig-id songs]
+  [:db/transact
+   (probeplan-tx-data db gig-id songs)
+   {:on-success [[:app.gigs/trigger-gig-edited gig-id :probeplan]]}])
 
 (defn toggle-probeplan-song-action [{:keys [db]} {:keys [gig-probeplan]}]
   (let [{:keys [gig-id song-id selected]} gig-probeplan
@@ -123,35 +150,6 @@
         ordered-ids (set (map :song-id ordered))
         missing     (remove #(ordered-ids (:song-id %)) songs)]
     [(persist-probeplan-effect db gig-id (concat ordered missing))]))
-
-(defn- probeplan-song-tuple [{:keys [song-id position emphasis]}]
-  [[:song/song-id (util/ensure-uuid! song-id)]
-   position
-   (str->emphasis emphasis)])
-
-(defn- reconcile-probeplan [eid new-song-tuples current-song-tuples]
-  (let [new-set     (set new-song-tuples)
-        current-set (set current-song-tuples)
-        add-tx      (for [song-tuple new-song-tuples
-                          :when (not (current-set song-tuple))]
-                      [:db/add eid :probeplan.classic/ordered-songs song-tuple])
-        remove-tx   (for [song-tuple current-song-tuples
-                          :when (not (new-set song-tuple))]
-                      [:db/retract eid :probeplan.classic/ordered-songs song-tuple])]
-    (vec (concat add-tx remove-tx))))
-
-(defn probeplan-tx-data [db gig-id songs]
-  (let [song-tuples (mapv probeplan-song-tuple (renumber songs))
-        current     (sort-by second (q/probeplan-song-tuples-for-gig db gig-id))]
-    (into [{:probeplan/gig     [:gig/gig-id gig-id]
-            :db/id             "probeplan"
-            :probeplan/version :probeplan.version/classic}]
-          (reconcile-probeplan "probeplan" song-tuples current))))
-
-(defn persist-probeplan-effect [db gig-id songs]
-  [:db/transact
-   (probeplan-tx-data db gig-id songs)
-   {:on-success [[:app.gigs/trigger-gig-edited gig-id :probeplan]]}])
 
 (def actions
   {::set-repertoire-filter      #'set-repertoire-filter-action

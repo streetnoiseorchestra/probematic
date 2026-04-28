@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2024-05-17 11:52+0200\n"
+"POT-Creation-Date: 2026-04-28 08:52+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -1141,8 +1141,8 @@ msgstr "Oder scanne diesen QR-Code mit deiner Banking-App"
 #: :Active
 #, ycp-format
 msgctxt ":Active"
-msgid "Active?"
-msgstr "Aktiv?"
+msgid "Active"
+msgstr ""
 
 #: :insurance.survey/edit-survey
 #, ycp-format
@@ -1717,6 +1717,12 @@ msgctxt ":member/active?"
 msgid "Active?"
 msgstr "Aktiv?"
 
+#: :member/browse-empty
+#, ycp-format
+msgctxt ":member/browse-empty"
+msgid "No members found."
+msgstr ""
+
 #: :member/email
 #, ycp-format
 msgctxt ":member/email"
@@ -1735,17 +1741,35 @@ msgctxt ":member/filter-sno-id-disabled"
 msgid "SNO ID Disabled"
 msgstr "SNO-ID deaktiviert"
 
+#: :member/invite-member-form-subtitle
+#, ycp-format
+msgctxt ":member/invite-member-form-subtitle"
+msgid "All fields from the legacy invite flow are available here."
+msgstr ""
+
 #: :member/open-invitations
 #, ycp-format
 msgctxt ":member/open-invitations"
 msgid "Open Invitations"
 msgstr "Einladungen öffnen"
 
+#: :member/invite-member-page-description
+#, ycp-format
+msgctxt ":member/invite-member-page-description"
+msgid "Create a member and optionally send a SNO ID invitation."
+msgstr ""
+
 #: :member/gigs-attended
 #, ycp-format
 msgctxt ":member/gigs-attended"
 msgid "Gigs Attended"
 msgstr "Gigs besucht"
+
+#: :member/browse-members
+#, ycp-format
+msgctxt ":member/browse-members"
+msgid "Browse Members"
+msgstr ""
 
 #: :member/phone
 #, ycp-format
@@ -1821,6 +1845,12 @@ msgstr ""
 "Wenn die Option deaktiviert ist, kann sich der Benutzer nicht bei SNO-"
 "Systemen anmelden."
 
+#: :member/invite-member
+#, ycp-format
+msgctxt ":member/invite-member"
+msgid "Invite Member"
+msgstr ""
+
 #: :member/phone-validation
 #, ycp-format
 msgctxt ":member/phone-validation"
@@ -1850,13 +1880,8 @@ msgstr ""
 #: :member/create-sno-id-description
 #, ycp-format
 msgctxt ":member/create-sno-id-description"
-msgid ""
-"An invitation to make a SNO ID will be e-mailed to the person so they can "
-"make an account an access all SNO online systems."
+msgid "An invitation to set their password will be e-mailed to the person."
 msgstr ""
-"Eine Einladung zum Erstellen einer SNO-ID wird an die Person per E-Mail "
-"gesendet, damit sie ein Konto erstellen und auf alle SNO-Online-Systeme "
-"zugreifen kann."
 
 #: :member/probes-attended
 #, ycp-format
@@ -1870,11 +1895,23 @@ msgctxt ":member/new-member"
 msgid "New Member"
 msgstr "Neues Mitglied"
 
+#: :member/browse-empty-subtitle
+#, ycp-format
+msgctxt ":member/browse-empty-subtitle"
+msgid "Try a different search phrase or filter."
+msgstr ""
+
 #: :member/sno-id-enabled-disabled
 #, ycp-format
 msgctxt ":member/sno-id-enabled-disabled"
 msgid "SNO ID Enabled/Disabled"
 msgstr "SNO-ID aktiviert/deaktiviert"
+
+#: :member/open-invitations-subtitle
+#, ycp-format
+msgctxt ":member/open-invitations-subtitle"
+msgid "Pending invitations can be resent or deleted."
+msgstr ""
 
 #: :instruments
 #, ycp-format
@@ -1930,11 +1967,23 @@ msgctxt ":team/add-member"
 msgid "Add Member"
 msgstr "Mitglied hinzufügen"
 
+#: :team/choose-add-member
+#, ycp-format
+msgctxt ":team/choose-add-member"
+msgid "Choose member to add"
+msgstr ""
+
 #: :team/choose-remove-members
 #, ycp-format
 msgctxt ":team/choose-remove-members"
 msgid "Choose members to remove"
 msgstr "Wähle Mitglieder zum Entfernen aus"
+
+#: :team/no-members
+#, ycp-format
+msgctxt ":team/no-members"
+msgid "No members"
+msgstr ""
 
 #: :team/team-type
 #, ycp-format
@@ -2040,6 +2089,12 @@ msgctxt ":sno-id"
 msgid "SNO ID"
 msgstr "SNO ID"
 
+#: :Inactive
+#, ycp-format
+msgctxt ":Inactive"
+msgid "Inactive"
+msgstr ""
+
 #: :band-owes-you
 #, ycp-format
 msgctxt ":band-owes-you"
@@ -2067,8 +2122,8 @@ msgstr "Register hinzufügen"
 #: :action/confirm-open-poll
 #, ycp-format
 msgctxt ":action/confirm-open-poll"
-msgid "Yes, open the poll."
-msgstr "Ja, öffnen die Umfrage."
+msgid "Yes, open the poll"
+msgstr ""
 
 #: :action/confirm-delete-instrument
 #, ycp-format
@@ -2112,6 +2167,12 @@ msgctxt ":action/done"
 msgid "Done"
 msgstr "Fertig"
 
+#: :action/confirm-delete-section
+#, ycp-format
+msgctxt ":action/confirm-delete-section"
+msgid "Are you sure you want to delete the section %1?"
+msgstr "Bist du sicher, dass du das Register %1 löschen möchtest?"
+
 #: :action/continue
 #, ycp-format
 msgctxt ":action/continue"
@@ -2141,6 +2202,12 @@ msgstr "Sind Sie sicher, dass Sie die Versicherungspolice %1 löschen möchten?"
 msgctxt ":action/create"
 msgid "Create"
 msgstr "Erstellen"
+
+#: :action/resend-invite
+#, ycp-format
+msgctxt ":action/resend-invite"
+msgid "Resend Invite"
+msgstr ""
 
 #: :action/create-gig
 #, ycp-format
@@ -2175,8 +2242,8 @@ msgstr "Löschen"
 #: :action/confirm-delete
 #, ycp-format
 msgctxt ":action/confirm-delete"
-msgid "Yes, delete it."
-msgstr "Ja, löschen es."
+msgid "Yes, delete it"
+msgstr ""
 
 #: :action/save
 #, ycp-format
@@ -2238,6 +2305,12 @@ msgctxt ":action/quick-edit"
 msgid "Quick Edit"
 msgstr "Schnellbearbeitung"
 
+#: :action/filter
+#, ycp-format
+msgctxt ":action/filter"
+msgid "Filter"
+msgstr ""
+
 #: :action/mark-as
 #, ycp-format
 msgctxt ":action/mark-as"
@@ -2250,6 +2323,12 @@ msgctxt ":action/next"
 msgid "Next"
 msgstr "Nächste"
 
+#: :action/confirm-delete-discount-type
+#, ycp-format
+msgctxt ":action/confirm-delete-discount-type"
+msgid "Are you sure you want to delete the discount type %1?"
+msgstr "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?"
+
 #: :action/back
 #, ycp-format
 msgctxt ":action/back"
@@ -2261,18 +2340,6 @@ msgstr "Zurück"
 msgctxt ":action/confirm-delete-team"
 msgid "Are you sure you want to delete the team %1?"
 msgstr "Bist du sicher, dass du das Team %1 löschen möchtest?"
-
-#: :action/confirm-delete-discount-type
-#, ycp-format
-msgctxt ":action/confirm-delete-discount-type"
-msgid "Are you sure you want to delete the discount type %1?"
-msgstr "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?"
-
-#: :action/confirm-delete-section
-#, ycp-format
-msgctxt ":action/confirm-delete-section"
-msgid "Are you sure you want to delete the section %1?"
-msgstr "Bist du sicher, dass du das Register %1 löschen möchtest?"
 
 #: :action/comment
 #, ycp-format
@@ -2352,11 +2419,41 @@ msgctxt ":action/open-poll"
 msgid "Open Poll"
 msgstr "Umfrage öffnen"
 
+#: :error/is-required
+#, ycp-format
+msgctxt ":error/is-required"
+msgid "%1 is required."
+msgstr ""
+
 #: :error/go-home
 #, ycp-format
 msgctxt ":error/go-home"
 msgid "Go Home"
 msgstr "Go Home"
+
+#: :error/member-username-format
+#, ycp-format
+msgctxt ":error/member-username-format"
+msgid "should have only letters, numbers and _.@-'"
+msgstr ""
+
+#: :error/gig-edit-not-found
+#, ycp-format
+msgctxt ":error/gig-edit-not-found"
+msgid "Gig not found."
+msgstr "Probe oder Gig wurde nicht gefunden."
+
+#: :error/member-unique-nick
+#, ycp-format
+msgctxt ":error/member-unique-nick"
+msgid "A member already has that nick"
+msgstr ""
+
+#: :error/gig-end-time-before-set-time
+#, ycp-format
+msgctxt ":error/gig-end-time-before-set-time"
+msgid "End time must be at or after set time."
+msgstr "Die Endzeit muss gleich oder nach der Auftrittszeit sein."
 
 #: :error/unauthorized-message
 #, ycp-format
@@ -2383,6 +2480,18 @@ msgctxt ":error/unknown-title"
 msgid "Something went wrong"
 msgstr "Ein Fehler ist aufgetreten"
 
+#: :error/member-phone-format
+#, ycp-format
+msgctxt ":error/member-phone-format"
+msgid "should start with + and the country code"
+msgstr ""
+
+#: :error/gig-end-time-before-call-time
+#, ycp-format
+msgctxt ":error/gig-end-time-before-call-time"
+msgid "End time must be at or after call time."
+msgstr "Die Endzeit muss gleich oder nach dem Beginn sein."
+
 #: :error/member-unique-email
 #, ycp-format
 msgctxt ":error/member-unique-email"
@@ -2395,6 +2504,18 @@ msgctxt ":error/unauthorized-title"
 msgid "Authentication failed"
 msgstr "Authentifizierung fehlgeschlagen"
 
+#: :error/gig-end-date-before-date
+#, ycp-format
+msgctxt ":error/gig-end-date-before-date"
+msgid "End date must be on or after date."
+msgstr "Das Enddatum muss am oder nach dem Datum liegen."
+
+#: :error/form-has-errors
+#, ycp-format
+msgctxt ":error/form-has-errors"
+msgid "Please fix the errors in the form."
+msgstr "Bitte behebe die Fehler im Formular."
+
 #: :error/unknown-message
 #, ycp-format
 msgctxt ":error/unknown-message"
@@ -2405,11 +2526,29 @@ msgstr ""
 "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und "
 "teilen Sie ihm diesen Fehlercode mit:"
 
+#: :error/phone-number-invalid
+#, ycp-format
+msgctxt ":error/phone-number-invalid"
+msgid "Phone number is not valid"
+msgstr ""
+
 #: :error/not-found-title
 #, ycp-format
 msgctxt ":error/not-found-title"
 msgid "Not Found"
 msgstr "Nicht gefunden"
+
+#: :error/unique-unknown
+#, ycp-format
+msgctxt ":error/unique-unknown"
+msgid "Something already has that"
+msgstr ""
+
+#: :error/gig-set-time-before-call-time
+#, ycp-format
+msgctxt ":error/gig-set-time-before-call-time"
+msgid "Set time must be at or after call time."
+msgstr "Die Auftrittszeit muss gleich oder nach dem Beginn sein."
 
 #: :error/not-found-message
 #, ycp-format
@@ -2434,41 +2573,17 @@ msgctxt ":error/notify"
 msgid "Click to notify Casey"
 msgstr "Click to notify Casey"
 
-#: :error/member-unique-username
+#: :error/gig-edit-not-allowed
 #, ycp-format
-msgctxt ":error/member-unique-username"
-msgid "A member already has that username"
-msgstr "Ein Mitglied hat bereits diesen Benutzernamen"
+msgctxt ":error/gig-edit-not-allowed"
+msgid "You are not allowed to edit this gig."
+msgstr "Du darfst diese Probe oder diesen Gig nicht bearbeiten."
 
-#: :error/form-has-errors
+#: :error/member-section-invalid
 #, ycp-format
-msgctxt ":error/form-has-errors"
-msgid "Please fix the errors in the form."
-msgstr "Bitte behebe die Fehler im Formular."
-
-#: :error/gig-end-date-before-date
-#, ycp-format
-msgctxt ":error/gig-end-date-before-date"
-msgid "End date must be on or after date."
-msgstr "Das Enddatum muss am oder nach dem Datum liegen."
-
-#: :error/gig-set-time-before-call-time
-#, ycp-format
-msgctxt ":error/gig-set-time-before-call-time"
-msgid "Set time must be at or after call time."
-msgstr "Die Auftrittszeit muss gleich oder nach dem Beginn sein."
-
-#: :error/gig-end-time-before-set-time
-#, ycp-format
-msgctxt ":error/gig-end-time-before-set-time"
-msgid "End time must be at or after set time."
-msgstr "Die Endzeit muss gleich oder nach der Auftrittszeit sein."
-
-#: :error/gig-end-time-before-call-time
-#, ycp-format
-msgctxt ":error/gig-end-time-before-call-time"
-msgid "End time must be at or after call time."
-msgstr "Die Endzeit muss gleich oder nach dem Beginn sein."
+msgctxt ":error/member-section-invalid"
+msgid "Please choose a valid section."
+msgstr ""
 
 #: :error/gig-rehearsal-leaders-same
 #, ycp-format
@@ -2476,17 +2591,19 @@ msgctxt ":error/gig-rehearsal-leaders-same"
 msgid "Probeleitung 2 must be different from Probeleitung 1."
 msgstr "Probeleitung 2 muss sich von Probeleitung 1 unterscheiden."
 
-#: :error/gig-edit-not-allowed
+#: :error/member-unique-username
 #, ycp-format
-msgctxt ":error/gig-edit-not-allowed"
-msgid "You are not allowed to edit this gig."
-msgstr "Du darfst diese Probe oder diesen Gig nicht bearbeiten."
+msgctxt ":error/member-unique-username"
+msgid "A member already has that username"
+msgstr "Ein Mitglied hat bereits diesen Benutzernamen"
 
-#: :error/gig-edit-not-found
+#: :error/unknown-form-error
 #, ycp-format
-msgctxt ":error/gig-edit-not-found"
-msgid "Gig not found."
-msgstr "Probe oder Gig wurde nicht gefunden."
+msgctxt ":error/unknown-form-error"
+msgid ""
+"Something went wrong! It's not your fault, send Casey a screenshot of this "
+"error! error code:"
+msgstr ""
 
 #: :reminders/remind-me-in
 #, ycp-format
@@ -2544,23 +2661,17 @@ msgctxt ":instrument.coverage/private?"
 msgid "Private?"
 msgstr "Privat?"
 
-#: :instrument.coverage/private
-#, ycp-format
-msgctxt ":instrument.coverage/private"
-msgid "Private"
-msgstr "Privat"
-
-#: :instrument.coverage/band
-#, ycp-format
-msgctxt ":instrument.coverage/band"
-msgid "Band"
-msgstr "Band"
-
 #: :instrument.coverage/instrument
 #, ycp-format
 msgctxt ":instrument.coverage/instrument"
 msgid "Instrument"
 msgstr "Instrument"
+
+#: :instrument.coverage/insurer-id
+#, ycp-format
+msgctxt ":instrument.coverage/insurer-id"
+msgid "Harmonia ID"
+msgstr ""
 
 #: :instrument.coverage/cost-hint
 #, ycp-format
@@ -2569,6 +2680,12 @@ msgid "The cost to insure the instrument. If private, the owner must pay this."
 msgstr ""
 "Die Kosten für die Versicherung des Instruments. Wenn privat, muss der "
 "Besitzer diese bezahlen."
+
+#: :instrument.coverage/private
+#, ycp-format
+msgctxt ":instrument.coverage/private"
+msgid "Private"
+msgstr "Privat"
 
 #: :instrument.coverage/create-button
 #, ycp-format
@@ -2581,6 +2698,12 @@ msgstr "Instrument hinzufügen"
 msgctxt ":instrument.coverage/value"
 msgid "Versicherungswert"
 msgstr "Versicherungswert"
+
+#: :instrument.coverage/band
+#, ycp-format
+msgctxt ":instrument.coverage/band"
+msgid "Band"
+msgstr "Band"
 
 #: :instrument.coverage/cost-hint-direct
 #, ycp-format
@@ -2856,6 +2979,12 @@ msgctxt ":gig/end-date"
 msgid "End Date"
 msgstr "Enddatum"
 
+#: :gig/setlist-sort
+#, ycp-format
+msgctxt ":gig/setlist-sort"
+msgid "Order"
+msgstr "Reihenfolge"
+
 #: :gig/show-committed
 #, ycp-format
 msgctxt ":gig/show-committed"
@@ -2874,6 +3003,16 @@ msgctxt ":gig/answer-link-submitted"
 msgid "Your answer has been submitted - thanks!"
 msgstr "Deine Antwort wurde gesendet - danke!"
 
+#: :gig/setlist-guidance
+#, ycp-format
+msgctxt ":gig/setlist-guidance"
+msgid ""
+"Choose the songs for this set list. Changes are saved immediately and shown "
+"to everyone viewing this page."
+msgstr ""
+"Wähle die Songs für diese Setliste. Änderungen werden sofort gespeichert und "
+"allen angezeigt, die diese Seite ansehen."
+
 #: :gig/pay-deal
 #, ycp-format
 msgctxt ":gig/pay-deal"
@@ -2886,11 +3025,23 @@ msgctxt ":gig/comment-placeholder"
 msgid "Say your piece!"
 msgstr "Melde dich zu Wort!"
 
+#: :gig/probeplan-repertoire-old
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire-old"
+msgid "Old"
+msgstr "Alt"
+
 #: :gig/end-time
 #, ycp-format
 msgctxt ":gig/end-time"
 msgid "End Time"
 msgstr "Ende"
+
+#: :gig/probeplan-repertoire-all
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire-all"
+msgid "All"
+msgstr "Alle"
 
 #: :gig/probe-info
 #, ycp-format
@@ -2903,6 +3054,12 @@ msgstr "Probeninfos"
 msgctxt ":gig/call-time"
 msgid "Call Time"
 msgstr "Beginn"
+
+#: :gig/setlist-order-guidance
+#, ycp-format
+msgctxt ":gig/setlist-order-guidance"
+msgid "Drag songs into set list order."
+msgstr "Ziehe Songs in die Setlisten-Reihenfolge."
 
 #: :gig/probeplan-sort
 #, ycp-format
@@ -2927,42 +3084,6 @@ msgstr "Titel"
 msgctxt ":gig/probeplan-choose"
 msgid "Choose songs"
 msgstr "Songs auswählen"
-
-#: :gig/probeplan-guidance
-#, ycp-format
-msgctxt ":gig/probeplan-guidance"
-msgid "Suggestion: choose around 5 songs and mark up to 2 as intensive, but add as many songs and intensive marks as this probe needs. Changes are saved immediately and shown to everyone viewing this page."
-msgstr "Vorschlag: Wähle ungefähr 5 Songs und markiere bis zu 2 als intensiven Fokus, aber füge so viele Songs und intensive Markierungen hinzu, wie diese Probe braucht. Änderungen werden sofort gespeichert und allen angezeigt, die diese Seite ansehen."
-
-#: :gig/probeplan-order-guidance
-#, ycp-format
-msgctxt ":gig/probeplan-order-guidance"
-msgid "Drag songs into rehearsal order and use the fist to mark intensive focus."
-msgstr "Ziehe Songs in die Probenreihenfolge und verwende die Faust, um intensiven Fokus zu markieren."
-
-#: :gig/probeplan-repertoire
-#, ycp-format
-msgctxt ":gig/probeplan-repertoire"
-msgid "Repertoire"
-msgstr "Repertoire"
-
-#: :gig/probeplan-repertoire-current
-#, ycp-format
-msgctxt ":gig/probeplan-repertoire-current"
-msgid "Current"
-msgstr "Aktuell"
-
-#: :gig/probeplan-repertoire-old
-#, ycp-format
-msgctxt ":gig/probeplan-repertoire-old"
-msgid "Old"
-msgstr "Alt"
-
-#: :gig/probeplan-repertoire-all
-#, ycp-format
-msgctxt ":gig/probeplan-repertoire-all"
-msgid "All"
-msgstr "Alle"
 
 #: :gig/gig-type
 #, ycp-format
@@ -3006,6 +3127,19 @@ msgctxt ":gig/status"
 msgid "Status"
 msgstr "Status"
 
+#: :gig/probeplan-guidance
+#, ycp-format
+msgctxt ":gig/probeplan-guidance"
+msgid ""
+"Suggestion: choose around 5 songs and mark up to 2 as intensive, but add as "
+"many songs and intensive marks as this probe needs. Changes are saved "
+"immediately and shown to everyone viewing this page."
+msgstr ""
+"Vorschlag: Wähle ungefähr 5 Songs und markiere bis zu 2 als intensiven "
+"Fokus, aber füge so viele Songs und intensive Markierungen hinzu, wie diese "
+"Probe braucht. Änderungen werden sofort gespeichert und allen angezeigt, die "
+"diese Seite ansehen."
+
 #: :gig/setlist
 #, ycp-format
 msgctxt ":gig/setlist"
@@ -3023,6 +3157,12 @@ msgstr "Enddatum"
 msgctxt ":gig/create-a-forum-thread?"
 msgid "Create a thread in the forum?"
 msgstr "Einen Thread im Forum erstellen?"
+
+#: :gig/probeplan-repertoire
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire"
+msgid "Repertoire"
+msgstr "Repertoire"
 
 #: :gig/post-gig-plans
 #, ycp-format
@@ -3060,11 +3200,26 @@ msgctxt ":gig/create-probeplan"
 msgid "Make Probeplan"
 msgstr "Probeplan erstellen"
 
+#: :gig/setlist-choose
+#, ycp-format
+msgctxt ":gig/setlist-choose"
+msgid "Choose songs"
+msgstr "Songs auswählen"
+
 #: :gig/show-all
 #, ycp-format
 msgctxt ":gig/show-all"
 msgid "Show All"
 msgstr "Zeige alle"
+
+#: :gig/probeplan-order-guidance
+#, ycp-format
+msgctxt ":gig/probeplan-order-guidance"
+msgid ""
+"Drag songs into rehearsal order and use the fist to mark intensive focus."
+msgstr ""
+"Ziehe Songs in die Probenreihenfolge und verwende die Faust, um intensiven "
+"Fokus zu markieren."
 
 #: :gig/location
 #, ycp-format
@@ -3077,6 +3232,12 @@ msgstr "Ort"
 msgctxt ":gig/contact"
 msgid "Contact"
 msgstr "Kontakt"
+
+#: :gig/probeplan-repertoire-current
+#, ycp-format
+msgctxt ":gig/probeplan-repertoire-current"
+msgid "Current"
+msgstr "Aktuell"
 
 #: :gig/email-about-new?
 #, ycp-format
@@ -3677,6 +3838,31 @@ msgstr "Hintergrund"
 msgctxt ":song/list-title"
 msgid "Repertoire"
 msgstr "Repertoire"
+
+#, ycp-format
+#~ msgctxt ":Active"
+#~ msgid "Active?"
+#~ msgstr "Aktiv?"
+
+#, ycp-format
+#~ msgctxt ":member/create-sno-id-description"
+#~ msgid ""
+#~ "An invitation to make a SNO ID will be e-mailed to the person so they can "
+#~ "make an account an access all SNO online systems."
+#~ msgstr ""
+#~ "Eine Einladung zum Erstellen einer SNO-ID wird an die Person per E-Mail "
+#~ "gesendet, damit sie ein Konto erstellen und auf alle SNO-Online-Systeme "
+#~ "zugreifen kann."
+
+#, ycp-format
+#~ msgctxt ":action/confirm-open-poll"
+#~ msgid "Yes, open the poll."
+#~ msgstr "Ja, öffnen die Umfrage."
+
+#, ycp-format
+#~ msgctxt ":action/confirm-delete"
+#~ msgid "Yes, delete it."
+#~ msgstr "Ja, löschen es."
 
 #, ycp-format
 #~ msgctxt ":instrument/create-subtitle"

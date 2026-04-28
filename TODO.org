@@ -28,7 +28,7 @@
 ** DONE gig detail - gig info
 ** DONE gig detail - attendance
 ** DONE gig detail - probeplan
-** TODO gig detail - setlist
+** DONE gig detail - setlist
 ** TODO gig detail - attendance send reminders
 ** TODO gig detail - forum embed
 ** DONE gig edit - should be similiar/same to gig create
