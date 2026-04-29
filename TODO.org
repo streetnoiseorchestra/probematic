@@ -42,10 +42,10 @@
 ** TODO dashboard insurance survey banana
 ** DONE dashboard insurance todos for insurance team
 ** DONE dashboard payment required
-** TODO repertoire index
-** TODO repertoire create/edit
-** TODO repertoire detail w/out sheet music
-** TODO file browser/picker
+** DONE repertoire index
+** DONE repertoire detail
+** DONE repertoire create/edit
+** DONE file browser/picker
 ** TODO repertoire detail add sheet music
 ** TODO stats view
 ** DONE insurance - index

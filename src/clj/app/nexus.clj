@@ -1,6 +1,7 @@
 (ns app.nexus
   (:require
    [app.datastar :as datastar]
+   [app.file-browser.actions]
    [app.gigs.actions]
    [app.gigs.effects :as gigs.effects]
    [app.insurance.actions]
@@ -242,4 +243,5 @@
                                app.members.actions/actions
                                app.gigs.actions/actions
                                app.insurance.actions/actions
+                               app.file-browser.actions/actions
                                app.songs.actions/actions)})

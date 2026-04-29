@@ -79,7 +79,8 @@
 
 (defn handle-song-edited [req song-id]
   (μ/log ::handle-song-edited :song-id song-id)
-  (cms/sync-song! (update-system req) song-id))
+  (when (config/prod-mode? (-> req :system :env))
+    (cms/sync-song! (update-system req) song-id)))
 
 (defn trigger-song-edited
   [req song-id]

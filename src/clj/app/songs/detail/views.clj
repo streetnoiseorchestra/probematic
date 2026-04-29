@@ -3,14 +3,18 @@
    [app.auth :as auth]
    [app.config :as config]
    [app.datastar :as d*]
+   [app.file-browser.actions :as file-browser.actions]
+   [app.file-browser.views :as file-browser.view]
    [app.html :as html]
    [app.markdown :as markdown]
    [app.queries :as q]
+   [app.songs.detail.actions :as actions]
    [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util.http :as http.util]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn- blankish? [value]
   (str/blank? (str value)))
@@ -133,22 +137,48 @@
        (file-extension (or webdav-path title))
        "file-solid"))
 
-(defn- sheet-link [tr {:sheet-music/keys [title]
-                       :file/keys        [webdav-path]
-                       :as               sheet}]
-  [:div {:class "songs-detail-sheet-row"}
-   [:wa-icon {:library "snoico"
-              :name    (filetype-icon-name sheet)}]
-   [:a {:href  (urls/link-file-download webdav-path)
-        :class "songs-detail-sheet-title"}
-    title]
-   [:wa-button {:appearance "plain"
-                :size       "small"
-                :href       (urls/link-file-download webdav-path)
-                :class      "songs-detail-sheet-download"
-                :aria-label (tr [:action/download])}
-    [:wa-icon {:library "default"
-               :name    "download"}]]])
+(defn- sheet-remove-dialog-id [sheet-id]
+  (ui2/remove-dialog-id "sheet-music" sheet-id))
+
+(defn- sheet-remove-dialog [req {:sheet-music/keys [sheet-id title]}]
+  (let [tr (:tr req)]
+    (ui2/remove-dialog
+     {:id            (sheet-remove-dialog-id sheet-id)
+      :label         (tr [:action/confirm-generic])
+      :cancel-label  (tr [:action/cancel])
+      :confirm-label (tr [:action/confirm-delete])
+      :confirm-attrs {:data-id     sheet-id
+                      :data-action (d*/act req ::actions/remove-sheet-music)}}
+     [:p (str (tr [:action/remove]) " " title "?")])))
+
+(defn- sheet-link [req {:sheet-music/keys [sheet-id title]
+                        :file/keys        [webdav-path]
+                        :as               sheet}]
+  (let [tr (:tr req)]
+    (list
+     [:div {:class "songs-detail-sheet-row"}
+      [:wa-icon {:library "snoico"
+                 :name    (filetype-icon-name sheet)}]
+      [:a {:href  (urls/link-file-download webdav-path)
+           :class "songs-detail-sheet-title"}
+       title]
+      [:wa-button {:appearance "plain"
+                   :size       "small"
+                   :href       (urls/link-file-download webdav-path)
+                   :class      "songs-detail-sheet-download"
+                   :aria-label (tr [:action/download])}
+       [:wa-icon {:library "default"
+                  :name    "download"}]]
+      [:wa-button {:appearance  "plain"
+                   :variant     "danger"
+                   :size        "small"
+                   :type        "button"
+                   :class       "songs-detail-sheet-remove"
+                   :aria-label  (tr [:action/remove])
+                   :data-dialog (str "open " (sheet-remove-dialog-id sheet-id))}
+       [:wa-icon {:library "snoico"
+                  :name    "xmark"}]]]
+     (sheet-remove-dialog req sheet))))
 
 (defn- current-member-section-name [req]
   (get-in (auth/get-current-member req) [:member/section :section/name]))
@@ -157,28 +187,85 @@
   (and (seq name)
        (= name (current-member-section-name req))))
 
-(defn- sheet-section [req section]
+(defn- open-sheet-music-picker-action [req song-id section-name root-dir current-dir]
+  (->expr
+   (evt.preventDefault)
+   (set! $file-browser.picker-id ~(name actions/sheet-music-picker-id))
+   (set! $file-browser.root-dir ~root-dir)
+   (set! $file-browser.current-dir ~current-dir)
+   (set! $file-browser.target {"song-id" ~(str song-id)
+                               "section-name" ~section-name})
+   (@post ~(d*/act req ::file-browser.actions/open-picker))))
+
+(defn- sheet-add-button [req {:section/keys [name]} song-id root-dir current-dir]
+  [:a {:href          "#"
+       :class         "songs-detail-sheet-add"
+       :data-on:click (open-sheet-music-picker-action req song-id name root-dir current-dir)}
+   [:wa-icon {:library "snoico" :name "circle-plus-solid"}]
+   ((:tr req) [:action/add])])
+
+(defn- sheet-section [req song-id root-dir current-dir section]
   (let [tr (:tr req)]
     [:section {:class (ui2/cs "songs-detail-sheet-section"
                               (when (current-member-section? req section)
                                 "songs-detail-sheet-section--current"))}
-     [:h3 {:class "songs-detail-sheet-section-title"}
-      (sheet-section-title tr section)]
+     [:div {:class "songs-detail-sheet-section-header"}
+      [:h3 {:class "songs-detail-sheet-section-title"}
+       (sheet-section-title tr section)]
+      (sheet-add-button req section song-id root-dir current-dir)]
      [:div {:class "songs-detail-sheet-rows"}
-      (for [sheet (:sheet-music/_section section)]
-        (sheet-link tr sheet))]]))
+      (if (seq (:sheet-music/_section section))
+        (for [sheet (:sheet-music/_section section)]
+          (sheet-link req (assoc sheet :song/song-id song-id)))
+        [:a {:href          "#"
+             :class         "songs-detail-sheet-empty-state"
+             :data-on:click (open-sheet-music-picker-action req song-id (:section/name section) root-dir current-dir)}
+         [:wa-icon {:library "snoico" :name "circle-plus-solid"}]
+         [:span ((:tr req) [:action/add])]])]]))
 
-(defn- sheet-music-section [{:keys [db tr] :as req} {:song/keys [song-id]}]
-  (let [sections (->> (q/sheet-music-for-song db song-id)
-                      (filter (comp seq :sheet-music/_section)))]
+(defn- sheet-music-content
+  ([req song-id root-dir current-dir sections picker]
+   (sheet-music-content req song-id root-dir current-dir sections picker file-browser.view/file-picker-panel))
+  ([req song-id root-dir current-dir sections picker render-picker]
+   (let [tr (:tr req)]
+     (if (:open? picker)
+       (render-picker
+        req
+        {:picker-id     actions/sheet-music-picker-id
+         :state         picker
+         :title         (tr [:song/choose-sheet-music-title])
+         :subtitle      (some->> picker :target :section-name vector (tr [:song/choose-sheet-music-subtitle]))
+         :select-action ::actions/add-sheet-music})
+       (if (seq sections)
+         [:div {:class "wa-grid songs-detail-sheet-grid"}
+          (for [section sections]
+            (sheet-section req song-id root-dir current-dir section))]
+         [:div {:class "songs-detail-empty"} "—"])))))
+
+(defn- nextcloud-env [req]
+  (-> req :system :env))
+
+(defn- sheet-music-section [{:keys [db page-state tr] :as req} {:song/keys [song-id]}]
+  (let [sections    (q/sheet-music-for-song db song-id)
+        root-dir    (or (config/nextcloud-path-sheet-music (nextcloud-env req)) "/")
+        current-dir (or (q/sheet-music-dir-for-song db song-id)
+                        (config/nextcloud-path-current-songs (nextcloud-env req))
+                        root-dir)
+        picker      (get-in page-state [:file-browser actions/sheet-music-picker-id])]
     (ui2/section-card
      {:title    (tr [:song/sheet-music-title])
       :divider? true}
-     (if (seq sections)
-       [:div {:class "wa-grid songs-detail-sheet-grid"}
-        (for [section sections]
-          (sheet-section req section))]
-       [:div {:class "songs-detail-empty"} "—"]))))
+     [:div {:class        "wa-stack wa-gap-m"
+            :data-signals (d*/->signals {:file-browser {:picker-id     nil
+                                                        :root-dir      root-dir
+                                                        :current-dir   current-dir
+                                                        :target-dir    nil
+                                                        :selected-path nil
+                                                        :song-id       nil
+                                                        :sheet-id      nil
+                                                        :target        nil}
+                                         :song-detail  {:song-id (str song-id)}})}
+      (sheet-music-content req song-id root-dir current-dir sections picker)])))
 
 (defn- discourse-url [forum-url]
   (cond-> forum-url

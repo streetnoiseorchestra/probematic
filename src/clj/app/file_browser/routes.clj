@@ -1,16 +1,13 @@
 (ns app.file-browser.routes
   (:require
-   [app.layout :as layout]
-   [app.file-browser.views :as view]
-   [ctmx.core :as ctmx]))
+   [app.file-browser.views]
+   [app.routes.datastar :as ds]))
 
 (defn choose-file-page []
-  (ctmx/make-routes
-   "/choose-file"
-   (fn [req]
-     (layout/app-shell req
-                       (view/choose-file-page req)))))
+  (ds/page-routes {:page-name ::choose-file
+                   :path      "/choose-file"
+                   :view-ns   'app.file-browser.views}))
 
 (defn routes []
-  ["" {:app.route/name :app/songs}
+  ["" {:app.route/name :app/file-browser}
    (choose-file-page)])

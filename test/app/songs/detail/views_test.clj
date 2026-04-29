@@ -4,11 +4,18 @@
    [app.test-common :as tc]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [hiccup2.core :as h]
+   [reitit.core :as r]))
 
 (def translations
-  {[:action/back]                    "Back"
+  {[:action/add]                     "Add"
+   [:action/back]                    "Back"
+   [:action/cancel]                  "Cancel"
    [:action/download]                "Download"
+   [:action/confirm-delete]          "Yes, delete it"
+   [:action/confirm-generic]         "Are you sure?"
+   [:action/remove]                  "Remove"
    [:nav/songs]                      "Repertoire"
    [:nav/forum]                      "Forum"
    [:song/active]                    "Active?"
@@ -27,6 +34,8 @@
    [:song/probe-count]               "Rehearsal Count"
    [:song/score]                     "Score"
    [:song/sheet-music-title]         "Sheet Music"
+   [:song/choose-sheet-music-title]  "Choose Sheet Music File"
+   [:song/choose-sheet-music-subtitle] "For section: %1"
    [:song/solo-count]                "# Solos"
    [:song/total-plays]               "Total Play Count"
    [:song/total-performances]        "Total Performances"
@@ -49,12 +58,19 @@
 (defn seed-sheet-music! [conn sheet]
   @(d/transact conn [sheet]))
 
+(def router
+  (r/router ["/act" {:name :app.routes.datastar/act}]))
+
 (defn req
   ([conn song-id]
    (req conn song-id nil))
   ([conn song-id current-section]
-   (cond-> {:db          (d/db conn)
+   (cond-> {::r/router   router
+            :db          (d/db conn)
             :tr          tr
+            :system      {:env {:nextcloud {:sheet-music-path   "/Noten - Scores"
+                                            :current-songs-path "/Noten - Scores/aktuelle Stücke"}}}
+            :page-state  {}
             :path-params {:song-id (str song-id)}}
      current-section
      (assoc-in [:session :session/member :member/section :section/name]
@@ -125,7 +141,15 @@
       (is (not (str/includes? html "songs-detail-sheet-card")))
       (is (not (str/includes? html "<wa-card")))
       (is (str/includes? html "Trumpets"))
-      (is (str/includes? html "Bella Ciao Trumpet.pdf")))))
+      (is (str/includes? html "Bella Ciao Trumpet.pdf"))
+      (is (str/includes? html "songs-detail-sheet-add"))
+      (is (str/includes? html "data-on:click"))
+      (is (str/includes? html "/act?ns=app.file-browser.actions&amp;kw=open-picker"))
+      (is (str/includes? html "songs-detail-sheet-remove"))
+      (is (str/includes? html "variant=\"danger\""))
+      (is (str/includes? html "data-dialog=\"open sheet-music-remove-"))
+      (is (str/includes? html "<wa-dialog"))
+      (is (str/includes? html "/act?ns=app.songs.detail.actions&amp;kw=remove-sheet-music")))))
 
 (deftest song-detail-page-does-not-highlight-when-current-section-has-no-box
   (let [{:keys [conn]} (tc/new-system "song-detail-sheet-music-no-current")
@@ -145,6 +169,43 @@
     (let [html (views/page (req conn song-id "Flutes"))]
       (is (str/includes? html "songs-detail-sheet-section"))
       (is (not (str/includes? html "songs-detail-sheet-section--current"))))))
+
+(deftest sheet-section-empty-state-test
+  (let [{:keys [conn]} (tc/new-system "song-detail-sheet-music-empty")
+        song-id        (random-uuid)]
+    (seed-song! conn {:song/song-id song-id
+                      :song/title   "Bella Ciao"
+                      :song/active? true})
+    (seed-section! conn {:section/name     "percussion"
+                         :section/active?  true
+                         :section/position 1})
+    (let [html (views/page (req conn song-id "percussion"))]
+      (is (str/includes? html "songs-detail-sheet-empty-state"))
+      (is (str/includes? html "songs-detail-sheet-add"))
+      (is (str/includes? html "/act?ns=app.file-browser.actions&amp;kw=open-picker"))
+      (is (not (str/includes? html "&gt;—&lt;"))))))
+
+(deftest song-detail-picker-targeting-test
+  (testing "open picker replaces the sheet music grid"
+    (let [song-id (random-uuid)
+          picker  {:open? true
+                   :target {:section-name "percussion"}}
+          content ((ns-resolve 'app.songs.detail.views 'sheet-music-content)
+                   {:tr tr}
+                   song-id
+                   "/Noten - Scores"
+                   "/Noten - Scores/1_aktuelle Stücke"
+                   [{:section/name "percussion"}
+                    {:section/name "Trumpets"
+                     :sheet-music/_section [{:sheet-music/title "Trumpet.pdf"}]}]
+                   picker
+                   (fn [_req {:keys [subtitle]}]
+                     [:div {:class "fake-file-picker"} subtitle]))
+          html    (str (h/html content))]
+      (is (str/includes? html "fake-file-picker"))
+      (is (str/includes? html "For section"))
+      (is (not (str/includes? html "songs-detail-sheet-section")))
+      (is (not (str/includes? html "Trumpet.pdf"))))))
 
 (deftest song-detail-page-throws-for-missing-song
   (let [{:keys [conn]} (tc/new-system "song-detail-missing")
