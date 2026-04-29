@@ -191,6 +191,7 @@
   "Das Passwort ist zu kurz. Es muss mindestens 8 Zeichen lang sein.",
   :does-not-match "Die Passwörter stimmen nicht überein."},
  :outstanding-balance "Offener Saldo",
+ :why "Warum?",
  :travel-discounts
  {:discount-type-name "Rabatttyp",
   :expiry-date "Läuft aus am",

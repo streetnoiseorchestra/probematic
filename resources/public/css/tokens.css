@@ -34,6 +34,13 @@
     --sno-gig-row-icon-size: 1.25rem;
     --sno-gig-row-gray-400: #9ca3af;
     --sno-gig-row-red-500: #ef4444;
+    --sno-dashboard-insurance-todo-link-color: #2563eb;
+    --sno-dashboard-insurance-todo-text-color: #6b7280;
+    --sno-dashboard-insurance-todo-needs-review-color: #fb923c;
+    --sno-dashboard-insurance-todo-changed-color: #fb923c;
+    --sno-dashboard-insurance-todo-new-color: #4ade80;
+    --sno-dashboard-insurance-todo-removed-color: #f87171;
+    --sno-dashboard-insurance-todo-icon-size: 1.25rem;
     --sno-gig-detail-status-icon-size: 1.5rem;
     --sno-gigs-attendance-icon-size: 1.15rem;
     --sno-gigs-attendance-control-icon-size: 0.72rem;

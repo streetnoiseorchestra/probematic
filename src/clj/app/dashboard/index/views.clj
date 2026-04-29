@@ -46,10 +46,27 @@
      [:time {:datetime (str end-date)} (formatted-date end-date)]]
     [:time {:datetime (str date)} (formatted-date date)]))
 
+(defn- dashboard-list [class rows]
+  (into [:div {:class (ui2/cs "dashboard-list" class)}]
+        rows))
+
+(defn- dashboard-section [section-class list-class title rows]
+  (when (seq rows)
+    [:section {:class section-class}
+     (ui2/section-divider title)
+     (dashboard-list list-class rows)]))
+
+(defn- dashboard-row [tag attrs class & children]
+  (into [tag (update attrs :class #(ui2/cs "dashboard-row" class %))]
+        children))
+
 (defn- gig-row [req {:gig/keys [gig-id title status call-time end-date] :as gig}]
   (let [{:attendance/keys [plan motivation comment member]} (:attendance gig)
         member-id (:member/member-id member)]
-    [:div {:class "dashboard-gig-row"}
+    (dashboard-row
+     :div
+     {}
+     "dashboard-gig-row"
      [:div {:class "dashboard-gig-status-cell"}
       (gigs.ui/gig-status-icon status {:class "dashboard-gig-status"})]
      [:div {:class "dashboard-gig-date"}
@@ -65,15 +82,62 @@
       (attendance.ui/motivation-select req gig-id member-id motivation)]
      [:div {:class (ui2/cs "dashboard-gig-comment"
                            (attendance.ui/comment-class req gig-id member-id comment))}
-      (attendance.ui/comment-control req gig-id member-id comment)]]))
+      (attendance.ui/comment-control req gig-id member-id comment)])))
 
 (defn- gig-section [req title gigs]
-  (when (seq gigs)
-    [:section {:class "dashboard-gig-section"}
-     (ui2/section-divider title)
-     [:div {:class "dashboard-gig-list"}
-      (for [gig gigs]
-        (gig-row req gig))]]))
+  (dashboard-section "dashboard-gig-section"
+                     "dashboard-gig-list"
+                     title
+                     (mapv #(gig-row req %) gigs)))
+
+(defn- insurance-todo-metric [tr policy-id status icon-name tooltip-key count]
+  (when (pos? count)
+    (let [metric-id (str "dashboard-insurance-todo-"
+                         (ui2/safe-dom-id policy-id)
+                         "-"
+                         status)]
+      (list
+       [:span {:id    metric-id
+               :class (ui2/cs "dashboard-insurance-todo-metric"
+                              (str "dashboard-insurance-todo-metric--" status))}
+        [:wa-icon {:library "snoico"
+                   :name    icon-name}]
+        [:span {:class "dashboard-insurance-todo-count"} count]]
+       [:wa-tooltip {:for metric-id}
+        (tr tooltip-key)]))))
+
+(defn- insurance-todo-row [{:keys [tr]} {:insurance.policy/keys [name policy-id] :keys [total-needs-review total-changed total-new total-removed] :as policy}]
+  (dashboard-row
+   :a
+   {:href (urls/link-policy policy)}
+   "dashboard-insurance-todo-row"
+   [:div {:class       "dashboard-insurance-todo-status-cell"
+          :aria-hidden true}]
+   [:div {:class "dashboard-insurance-todo-name"}
+    [:span name]]
+   [:div {:class "dashboard-insurance-todo-metrics"}
+    (insurance-todo-metric tr policy-id "needs-review"
+                           "circle-question-outline"
+                           [:insurance/total-needs-review-tooltip]
+                           total-needs-review)
+    (insurance-todo-metric tr policy-id "changed"
+                           "circle-exclamation"
+                           [:insurance/total-total-changed-tooltip]
+                           total-changed)
+    (insurance-todo-metric tr policy-id "new"
+                           "circle-plus-solid"
+                           [:insurance/total-total-new-tooltip]
+                           total-new)
+    (insurance-todo-metric tr policy-id "removed"
+                           "circle-xmark"
+                           [:insurance/total-total-removed-tooltip]
+                           total-removed)]))
+
+(defn- insurance-todos-section [{:keys [tr] :as req} policies]
+  (dashboard-section "dashboard-insurance-todo-section"
+                     "dashboard-insurance-todo-list"
+                     (tr [:dashboard/insurance-todo])
+                     (mapv #(insurance-todo-row req %) policies)))
 
 (defn- currency-format [cents]
   (.format (NumberFormat/getCurrencyInstance Locale/GERMANY) (/ (or cents 0) 100.0)))
@@ -108,8 +172,8 @@
         [:span {:class "wa-caption-s"} (tr [:outstanding-balance])]
         [:div {:class "dashboard-ledger-balance text-danger"}
          (currency-format balance)]
-        [:a {:href (urls/link-member-ledger-table owner)}
-         (tr [:outstanding-balance])]]
+        [:a {:href (urls/link-member-money owner)}
+         (tr [:why])]]
        [:div {:class "wa-stack wa-gap-s"}
         [:p (tr [:please-pay-to-band] [(currency-format balance)])]
         (when (and account-name iban bic)
@@ -184,7 +248,7 @@
 (defn page [{:keys [db tr] :as req}]
   (let [member (auth/get-current-member req)
         _      (assert member)
-        {:keys [answered ledger unanswered]} (queries/dashboard-data db member)]
+        {:keys [answered insurance-todos ledger unanswered]} (queries/dashboard-data db member)]
     (ui2/datastar-page
      [:div {:class        "dashboard-page wa-stack wa-gap-l"
             :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
@@ -194,6 +258,7 @@
         :actions (page-actions req)})
       (when (and ledger (pos? (:ledger/balance ledger)))
         (ledger-widget req ledger))
+      (insurance-todos-section req insurance-todos)
       (gig-section req (tr [:dashboard/unanswered]) unanswered)
       (gig-section req (tr [:dashboard/upcoming]) answered)
       (when-not (or (seq answered) (seq unanswered))

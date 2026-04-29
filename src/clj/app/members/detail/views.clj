@@ -470,7 +470,7 @@
       [:span {:class "wa-caption-s"} (tr [:outstanding-balance])]
       [:div {:class (str "wa-heading-xl " (ledger-amount-color-class balance))}
        (currency-format balance)]
-      [:a {:href (urls/link-member-ledger-table member)} "Why?"]]
+      [:a {:href (urls/link-member-money member)} "Why?"]]
      (ledger-balance-status req balance entries)]))
 
 (defn- ledger-entry-direction-options [{:keys [tr]} member kind]

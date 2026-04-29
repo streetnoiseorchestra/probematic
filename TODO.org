@@ -33,10 +33,10 @@
 ** DONE gig detail - forum embed
 ** DONE gig edit - should be similiar/same to gig create
 ** DONE gig detail - log plays
-** DONE dashboard gigs need attention/upcoming
 ** DONE gig email answer link
 ** DONE members invite accept
 ** DONE members vcard download
+** DONE dashboard gigs need attention/upcoming
 ** DONE dashboard add to calendar
 ** TODO dashboard gig snoozing
 ** TODO dashboard insurance survey banana

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-04-29 06:37+0000\n"
+"POT-Creation-Date: 2026-04-29 11:24+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -933,6 +933,12 @@ msgstr "Das Passwort ist zu kurz. Es muss mindestens 8 Zeichen lang sein."
 msgctxt ":password/does-not-match"
 msgid "The passwords do not match."
 msgstr "Die Passwörter stimmen nicht überein."
+
+#: :why
+#, ycp-format
+msgctxt ":why"
+msgid "Why?"
+msgstr "Warum?"
 
 #: :outstanding-balance
 #, ycp-format
@@ -2133,8 +2139,8 @@ msgid ""
 "include the email shown above."
 msgstr ""
 "Starte den Login-Vorgang neu. Wenn diese Seite wieder erscheint, kontaktiere "
-"eine Administratorin oder einen Administrator und gib die oben angezeigte "
-"E-Mail-Adresse an."
+"eine Administratorin oder einen Administrator und gib die oben angezeigte E-"
+"Mail-Adresse an."
 
 #: :identity-mismatch/page-title
 #, ycp-format
@@ -2680,23 +2686,11 @@ msgid ""
 "error! error code:"
 msgstr ""
 
-#: :reminders/remind-me-in
+#: :reminders/confirm
 #, ycp-format
-msgctxt ":reminders/remind-me-in"
-msgid "Remind me in"
-msgstr "Erinnere mich in"
-
-#: :reminders/remind-all
-#, ycp-format
-msgctxt ":reminders/remind-all"
-msgid "Remind all"
-msgstr "Erinnern alle"
-
-#: :reminders/reminded-all-at
-#, ycp-format
-msgctxt ":reminders/reminded-all-at"
-msgid "Reminded everyone at:"
-msgstr "Alle erinnert um:"
+msgctxt ":reminders/confirm"
+msgid "Yes, email everyone"
+msgstr "Ja, senden allen eine E-Mail"
 
 #: :reminders/confirm-remind-all-title
 #, ycp-format
@@ -2712,11 +2706,23 @@ msgstr ""
 "Dadurch wird eine E-Mail an alle gesendet, die noch nicht geantwortet haben. "
 "Bist du sicher?"
 
-#: :reminders/confirm
+#: :reminders/remind-all
 #, ycp-format
-msgctxt ":reminders/confirm"
-msgid "Yes, email everyone"
-msgstr "Ja, senden allen eine E-Mail"
+msgctxt ":reminders/remind-all"
+msgid "Remind all"
+msgstr "Erinnern alle"
+
+#: :reminders/reminded-all-at
+#, ycp-format
+msgctxt ":reminders/reminded-all-at"
+msgid "Reminded everyone at:"
+msgstr "Alle erinnert um:"
+
+#: :reminders/remind-me-in
+#, ycp-format
+msgctxt ":reminders/remind-me-in"
+msgid "Remind me in"
+msgstr "Erinnere mich in"
 
 #: :reminders/one-day
 #, ycp-format
@@ -3152,7 +3158,9 @@ msgstr "Reihenfolge"
 #, ycp-format
 msgctxt ":gig/play-log-subtitle"
 msgid "Choose a result for each song. Use the fist to mark intensive work."
-msgstr "Wähle für jeden Song ein Ergebnis. Verwende die Faust, um intensiven Fokus zu markieren."
+msgstr ""
+"Wähle für jeden Song ein Ergebnis. Verwende die Faust, um intensiven Fokus "
+"zu markieren."
 
 #: :gig/title
 #, ycp-format

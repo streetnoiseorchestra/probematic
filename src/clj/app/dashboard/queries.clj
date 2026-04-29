@@ -74,6 +74,29 @@
   {:answered   (answered-gigs db member)
    :unanswered (unanswered-gigs db member)})
 
+(defn- policy-totals [{:insurance.policy/keys [covered-instruments]}]
+  {:total-needs-review (count (filter #(= :instrument.coverage.status/needs-review
+                                          (:instrument.coverage/status %))
+                                      covered-instruments))
+   :total-changed      (count (filter #(= :instrument.coverage.change/changed
+                                          (:instrument.coverage/change %))
+                                      covered-instruments))
+   :total-removed      (count (filter #(= :instrument.coverage.change/removed
+                                          (:instrument.coverage/change %))
+                                      covered-instruments))
+   :total-new          (count (filter #(= :instrument.coverage.change/new
+                                          (:instrument.coverage/change %))
+                                      covered-instruments))})
+
+(defn policies-with-todos [db]
+  (->> (q/policies db)
+       (mapv (fn [policy]
+               (merge policy (policy-totals policy))))
+       (filterv #(pos? (:total-needs-review %)))))
+
 (defn dashboard-data [db member]
   (assoc (gig-buckets db member)
-         :ledger (q/retrieve-ledger db (:member/member-id member))))
+         :ledger (q/retrieve-ledger db (:member/member-id member))
+         :insurance-todos (if (q/insurance-team-member? db member)
+                            (policies-with-todos db)
+                            [])))

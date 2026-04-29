@@ -7,14 +7,28 @@
   container-type: inline-size;
 }
 
-.dashboard-gig-list {
+.dashboard-list {
   overflow: hidden;
   background: var(--wa-color-surface-default);
-  border: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-quiet);
   border-radius: var(--wa-border-radius-m);
 }
 
-.dashboard-gig-row {
+.dashboard-row {
+  align-items: center;
+  min-block-size: 2.8rem;
+  padding: var(--wa-space-2xs) var(--wa-space-l);
+  border-block-end: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-quiet);
+}
+
+.dashboard-row:last-child {
+  border-block-end: 0;
+}
+
+.dashboard-gig-row,
+.dashboard-insurance-todo-row {
   display: grid;
   grid-template-columns:
     auto
@@ -24,14 +38,6 @@
     minmax(10rem, 14rem)
     minmax(0, 1fr);
   gap: var(--wa-space-2xs) var(--wa-space-m);
-  align-items: center;
-  min-block-size: 2.8rem;
-  padding: var(--wa-space-2xs) var(--wa-space-l);
-  border-block-end: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
-}
-
-.dashboard-gig-row:last-child {
-  border-block-end: 0;
 }
 
 .dashboard-gig-status-cell,
@@ -102,6 +108,71 @@
   justify-self: center;
 }
 
+.dashboard-insurance-todo-row {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dashboard-insurance-todo-status-cell {
+  inline-size: var(--sno-gig-row-icon-size);
+}
+
+.dashboard-insurance-todo-row:hover .dashboard-insurance-todo-name span {
+  text-decoration: underline;
+}
+
+.dashboard-insurance-todo-name {
+  grid-column: 2 / 4;
+  min-inline-size: 0;
+  color: var(--sno-dashboard-insurance-todo-link-color);
+  font-weight: var(--wa-font-weight-semibold);
+}
+
+.dashboard-insurance-todo-name span {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-insurance-todo-metrics {
+  display: flex;
+  grid-column: 4 / -1;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wa-space-s);
+}
+
+.dashboard-insurance-todo-metric {
+  display: inline-flex;
+  gap: var(--wa-space-2xs);
+  align-items: center;
+  color: var(--sno-dashboard-insurance-todo-text-color);
+  font-size: var(--wa-font-size-s);
+}
+
+.dashboard-insurance-todo-metric wa-icon {
+  inline-size: var(--sno-dashboard-insurance-todo-icon-size);
+  block-size: var(--sno-dashboard-insurance-todo-icon-size);
+}
+
+.dashboard-insurance-todo-metric--needs-review wa-icon {
+  color: var(--sno-dashboard-insurance-todo-needs-review-color);
+}
+
+.dashboard-insurance-todo-metric--changed wa-icon {
+  color: var(--sno-dashboard-insurance-todo-changed-color);
+}
+
+.dashboard-insurance-todo-metric--new wa-icon {
+  color: var(--sno-dashboard-insurance-todo-new-color);
+}
+
+.dashboard-insurance-todo-metric--removed wa-icon {
+  color: var(--sno-dashboard-insurance-todo-removed-color);
+}
+
+.dashboard-insurance-todo-count {
+  font-weight: var(--wa-font-weight-bold);
+}
+
 .dashboard-calendar-frame {
   display: block;
   border: 0;
@@ -115,7 +186,7 @@
 }
 
 .dashboard-calendar-service-icon--copy {
-  color: #d42f87;
+  color: var(--sno-copy-link);
 }
 
 .dashboard-calendar-service-icon--apple {
@@ -124,7 +195,8 @@
 }
 
 @container (max-width: 1050px) {
-  .dashboard-gig-row {
+  .dashboard-gig-row,
+  .dashboard-insurance-todo-row {
     grid-template-columns: auto minmax(10rem, 16rem) minmax(0, 1fr);
     gap: var(--wa-space-2xs) var(--wa-space-s);
   }
@@ -158,14 +230,34 @@
     grid-column: 3;
     grid-row: 2;
   }
+
+  .dashboard-insurance-todo-status-cell {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .dashboard-insurance-todo-name {
+    grid-column: 2 / -1;
+    grid-row: 1;
+  }
+
+  .dashboard-insurance-todo-metrics {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    justify-content: flex-start;
+  }
 }
 
 @container (max-width: 720px) {
-  .dashboard-gig-row {
-    grid-template-columns: auto auto minmax(8rem, 10rem) minmax(0, 1fr);
-    gap: var(--wa-space-2xs) var(--wa-space-xs);
+  .dashboard-row {
     min-block-size: 0;
     padding: var(--wa-space-s) var(--wa-space-m);
+  }
+
+  .dashboard-gig-row,
+  .dashboard-insurance-todo-row {
+    grid-template-columns: auto auto minmax(8rem, 10rem) minmax(0, 1fr);
+    gap: var(--wa-space-2xs) var(--wa-space-xs);
   }
 
   .dashboard-gig-date {
@@ -207,5 +299,18 @@
 
   .dashboard-ledger-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-insurance-todo-status-cell {
+    display: none;
+  }
+
+  .dashboard-insurance-todo-name,
+  .dashboard-insurance-todo-metrics {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-insurance-todo-metrics {
+    justify-content: flex-start;
   }
 }

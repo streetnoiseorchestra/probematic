@@ -277,6 +277,7 @@
  :private-instrument-description "A private instrument is an instrument that the owner will insure at their own expense."
  :private-instrument-payment     "Die Kosten der Versicherung privater Instrumente werden nicht von Street Noise übernommen."
  :outstanding-balance            "Outstanding Balance"
+ :why                            "Why?"
  :no-transactions-yet            "No transactions yet"
  :please-pay-to-band             "Please send %1 to the band account."
  :band-owes-you                  "The band owes you %1! Please contact the treasurer."
