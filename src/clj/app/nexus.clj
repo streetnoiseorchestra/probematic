@@ -7,6 +7,7 @@
    [app.members.actions]
    [app.members.effects :as members.effects]
    [app.settings.actions]
+   [app.songs.actions]
    [clojure.walk :as walk]
    [com.yetanalytics.squuid :as sq]
    [datomic.api :as d]
@@ -236,4 +237,5 @@
    :nexus/actions       (merge app.settings.actions/actions
                                app.members.actions/actions
                                app.gigs.actions/actions
-                               app.insurance.actions/actions)})
+                               app.insurance.actions/actions
+                               app.songs.actions/actions)})

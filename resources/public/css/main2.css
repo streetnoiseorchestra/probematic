@@ -13,6 +13,7 @@
 @import "pages/insurance.css" layer(sno-page);
 @import "pages/members.css" layer(sno-page);
 @import "pages/settings.css" layer(sno-page);
+@import "pages/songs.css" layer(sno-page);
 @import "shell.css" layer(sno-overrides);
 @import "webawesome-overrides.css" layer(sno-overrides);
 @import "utilities.css" layer(wa-utilities);

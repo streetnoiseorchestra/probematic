@@ -1,6 +1,8 @@
 (ns app.songs.routes
   (:require
    [app.layout :as layout]
+   [app.routes.datastar :as ds]
+   [app.songs.index.views]
    [app.songs.views :as view]
    [ctmx.core :as ctmx]
    [reitit.ring.malli :as reitit.ring.malli]))
@@ -11,11 +13,14 @@
                           (view/songs-sync req))}])
 
 (defn songs-list-routes []
-  (ctmx/make-routes
-   "/songs"
-   (fn [req]
-     (layout/app-shell req
-                       (view/songs-page req)))))
+  (ds/page-routes {:page-name ::index
+                   :path      "/songs"
+                   :view-ns   'app.songs.index.views}))
+
+(defn songs-list-trailing-slash-routes []
+  (ds/page-routes {:page-name ::index-trailing-slash
+                   :path      "/songs/"
+                   :view-ns   'app.songs.index.views}))
 
 (defn songs-new-routes []
   (ctmx/make-routes
@@ -36,6 +41,7 @@
    (songs-sync)
    (song-detail-routes)
    (songs-list-routes)
+   (songs-list-trailing-slash-routes)
    (songs-new-routes)
    ["/song-media/{song-id}"
     {:post {:summary "Upload media for an song"
