@@ -35,6 +35,25 @@
 
 (def  old-tuple-attrs {})
 
+(defn- tuple-ref-indexes [tuple-types]
+  (into #{}
+        (keep-indexed (fn [idx tuple-type]
+                        (when (= :db.type/ref tuple-type)
+                          idx)))
+        tuple-types))
+
+(defn- tuple-ref-attrs [db]
+  (into {}
+        (keep (fn [[attr tuple-types]]
+                (when-let [ref-indexes (not-empty (tuple-ref-indexes tuple-types))]
+                  [attr ref-indexes])))
+        (datomic/q '[:find ?id ?types
+                     :where
+                     [?attr :db/ident ?id]
+                     [?attr :db/valueType :db.type/tuple]
+                     [?attr :db/tupleTypes ?types]]
+                   db)))
+
 (defn- all-transactions
   "Returns all tx identifiers in time order.
   Skips the initial transactions empty databases have."
@@ -92,12 +111,14 @@
                                              [?attr :db/ident ?id]
                                              [?attr :db/tupleAttrs ?ta]]
                                            db))
+        tuple-ref-attrs   (tuple-ref-attrs db)
         ignore-attributes (into ignore-attributes
                                 (keys tuple-attrs))
         progress!         (progress-fn "backup transactions written")]
 
     (out! {:ref-attrs        ref-attrs
            :tuple-attrs      tuple-attrs
+           :tuple-ref-attrs  tuple-ref-attrs
            :backup-timestamp (java.util.Date.)})
     (doseq [tx    (all-transactions backup-start conn)
             :let  [tx-map (output-tx (delay (datomic/as-of db (:t tx))) attr-ident-cache tx
@@ -110,6 +131,26 @@
 ;; --------------------------------------------------
 ;; Restore
 
+(defn- ->mapped-id [old->new id]
+  (let [s (str id)]
+    (or (old->new s) s)))
+
+(defn- rewrite-tuple-refs [old->new tuple-ref-attrs attr value]
+  (if-let [ref-indexes (tuple-ref-attrs attr)]
+    (mapv (fn [idx tuple-value]
+            (if (contains? ref-indexes idx)
+              (->mapped-id old->new tuple-value)
+              tuple-value))
+          (range)
+          value)
+    value))
+
+(defn- prepare-restore-value [old->new ref-attrs tuple-ref-attrs attr value]
+  (cond
+    (ref-attrs attr)       (->mapped-id old->new value)
+    (tuple-ref-attrs attr) (rewrite-tuple-refs old->new tuple-ref-attrs attr value)
+    :else                  value))
+
 (defn prepare-restore-tx
   "Prepare transaction for restore.
 
@@ -117,47 +158,43 @@
   Returns sequence of new datoms for the restore tx.
 
   Looks up entity ids and reference values from the old->new mapping."
-  [tx-data old->new ref-attrs cardinality-many-attrs]
-  (let [->id                     #(let [s (str %)]
-                                    (or (old->new s) s))
-        {card-many-datoms true
-         card-one-datoms  false} (group-by (comp boolean cardinality-many-attrs
-                                                 second)
-                                           tx-data)]
-    (concat
-     ;; Output map tx for all cardinality one values, filtering out retractions
-     ;; that have an assertion for the same attribute
-     (mapcat (fn [[e datoms]]
-               (let [e (->id e)
+  ([tx-data old->new ref-attrs cardinality-many-attrs]
+   (prepare-restore-tx tx-data old->new ref-attrs {} cardinality-many-attrs))
+  ([tx-data old->new ref-attrs tuple-ref-attrs cardinality-many-attrs]
+   (let [{card-many-datoms true
+          card-one-datoms  false} (group-by (comp boolean cardinality-many-attrs
+                                                  second)
+                                            tx-data)
+         ->value (partial prepare-restore-value old->new ref-attrs tuple-ref-attrs)]
+     (concat
+      ;; Output map tx for all cardinality one values, filtering out retractions
+      ;; that have an assertion for the same attribute
+      (mapcat (fn [[e datoms]]
+                (let [e (->mapped-id old->new e)
 
-                     ;; Group by assertions and retractions
-                     {asserted  true
-                      retracted false}
-                     (group-by #(nth % 3) datoms)
+                      ;; Group by assertions and retractions
+                      {asserted  true
+                       retracted false}
+                      (group-by #(nth % 3) datoms)
 
-                     asserted-map (when (seq asserted)
-                                    (into {:db/id e}
-                                          (map (fn [[_ a v _]]
-                                                 [a (if (ref-attrs a)
-                                                      (->id v) v)]))
-                                          asserted))]
-                 (into (if asserted-map
-                         [asserted-map]
-                         [])
-                       (for [[_ a v _] retracted
-                             :when     (not (contains? asserted-map a))]
-                         [:db/retract e a (if (ref-attrs a)
-                                            (->id v) v)]))))
-             (group-by first card-one-datoms))
+                      asserted-map (when (seq asserted)
+                                     (into {:db/id e}
+                                           (map (fn [[_ a v _]]
+                                                  [a (->value a v)]))
+                                           asserted))]
+                  (into (if asserted-map
+                          [asserted-map]
+                          [])
+                        (for [[_ a v _] retracted
+                              :when     (not (contains? asserted-map a))]
+                          [:db/retract e a (->value a v)]))))
+              (group-by first card-one-datoms))
 
-     ;; Output add or retract clauses for any many cardinality values
-     (for [[e a v add?] card-many-datoms
-           :let         [ref? (ref-attrs a)
-                         e (->id e)
-                         v (if ref?
-                             (->id v)
-                             v)]]
-       [(if add? :db/add :db/retract) e a v]))))
+      ;; Output add or retract clauses for any many cardinality values
+      (for [[e a v add?] card-many-datoms
+            :let         [e (->mapped-id old->new e)
+                          v (->value a v)]]
+        [(if add? :db/add :db/retract) e a v])))))
 
 (defn read-seq
   "Lazy sequence of forms read from the given reader... don't let it escape with-open!"
@@ -215,14 +252,21 @@
              (tap> [:fatal-ex e (ex-data e)])
              (throw (ex-info "Unretryable exception thrown" {:exception e})))))))))
 
-(defn make-tx-data [{:keys [old->new ref-attrs cardinality-many-attrs txs] :as ctx} tx]
-  (into [(merge (:tx tx) {:db/id "datomic.tx"})]
+(defn- prepare-tx-metadata [{:keys [old->new ref-attrs tuple-ref-attrs]} tx-metadata]
+  (into {}
+        (map (fn [[attr value]]
+               [attr (prepare-restore-value old->new ref-attrs tuple-ref-attrs attr value)]))
+        tx-metadata))
+
+(defn make-tx-data [{:keys [old->new ref-attrs tuple-ref-attrs cardinality-many-attrs] :as ctx} tx]
+  (into [(merge (prepare-tx-metadata ctx (:tx tx)) {:db/id "datomic.tx"})]
         (prepare-restore-tx (:data tx)
                             old->new
                             ref-attrs
+                            tuple-ref-attrs
                             @cardinality-many-attrs)))
 
-(defn do-step [{:keys [conn progress! old->new ref-attrs cardinality-many-attrs txs] :as ctx} tx]
+(defn do-step [{:keys [conn progress! old->new cardinality-many-attrs txs] :as ctx} tx]
   (let [tx-data            (make-tx-data ctx tx)
         {tempids :tempids} (with-retry #(datomic/transact conn {:tx-data tx-data}))]
     (add-cardinality-many-attrs! cardinality-many-attrs tx-data)
@@ -236,7 +280,8 @@
 
 (defn restore-ctx [conn rdr]
   (merge
-   (select-keys (read rdr) [:backup-timestamp :ref-attrs :tuple-attrs])
+   {:tuple-ref-attrs {}}
+   (select-keys (read rdr) [:backup-timestamp :ref-attrs :tuple-attrs :tuple-ref-attrs])
    {:progress!              (progress-fn "transactions restored")
     :conn                   conn
     :max-steps              ##Inf
@@ -253,9 +298,10 @@
     :txs                    (read-seq rdr)
     :old->new               {}}))
 
-(defn sanity-check [{:keys [ref-attrs tuple-attrs backup-timestamp] :as ctx}]
+(defn sanity-check [{:keys [ref-attrs tuple-attrs tuple-ref-attrs backup-timestamp] :as ctx}]
   (assert (set? ref-attrs) "Expected set of :ref-attrs in 1st backup form")
   (assert (map? tuple-attrs) "Expected map of :tuple-attrs in 1st backup form")
+  (assert (map? tuple-ref-attrs) "Expected map of :tuple-ref-attrs in 1st backup form")
   (assert (inst? backup-timestamp) "Expected :backup-timestamp in 1st backup form")
   ctx)
 
@@ -267,7 +313,7 @@
       (nil? (first txs))))
 
 (defn restore-loop [o-ctx]
-  (loop [{:keys [step max-steps txs] :as ctx} o-ctx]
+  (loop [{:keys [txs] :as ctx} o-ctx]
     (if (should-return? ctx)
       ctx
       (recur (do-step ctx (first txs))))))

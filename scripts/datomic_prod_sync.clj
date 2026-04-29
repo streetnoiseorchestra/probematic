@@ -307,6 +307,7 @@
   '[(require '[app.datomic.shim :as d]
              '[clojure.edn :as edn]
              '[clojure.java.io :as io]
+             '[clojure.set :as set]
              '[datomic.api :as d-peer])
 
     (def cfg (edn/read-string (slurp (first *command-line-args*))))
@@ -323,38 +324,93 @@
 
     (def attr-set (set attrs))
 
+    (def old->new (edn/read-string (slurp (:mapping-file cfg))))
+
+    (def missing-mappings* (atom #{}))
+
     (defn write-edn! [path value]
       (spit path (with-out-str (prn value))))
 
+    (defn mapped-id [id]
+      (if-let [mapped (get old->new (str id))]
+        mapped
+        (do
+          (swap! missing-mappings* conj id)
+          id)))
+
+    (defn rewrite-tuple-value [tuple-ref-attrs attr value]
+      (if-let [ref-indexes (tuple-ref-attrs attr)]
+        (mapv (fn [idx tuple-value]
+                (if (contains? ref-indexes idx)
+                  (mapped-id tuple-value)
+                  tuple-value))
+              (range)
+              value)
+        value))
+
+    (defn compact-current-values [current-values]
+      (into {}
+            (map (fn [[attr e->values]]
+                   [attr (into {}
+                               (keep (fn [[e values]]
+                                       (when (seq values)
+                                         [e values])))
+                               e->values)]))
+            current-values))
+
+    (defn count-current-values [current-values]
+      (into {}
+            (for [[attr e->values] current-values]
+              [attr (count (keep (fn [[_ values]]
+                                   (when (seq values) true))
+                                 e->values))])))
+
+    (defn update-current-values [current-values e attr v added?]
+      (update-in current-values [attr e]
+                 (fnil (if added? conj disj) #{})
+                 v))
+
     (defn export-info [path]
+      (reset! missing-mappings* #{})
       (with-open [rdr (java.io.PushbackReader. (io/reader path))]
-        (let [header (read rdr false :sync/eof)]
+        (let [header          (read rdr false :sync/eof)
+              tuple-ref-attrs (or (:tuple-ref-attrs header) {})]
           (loop [tx-count       0
                  last-tx-instant nil
-                 current-values (zipmap attrs (repeat {}))]
+                 current-values (zipmap attrs (repeat {}))
+                 tuple-values   (zipmap (keys tuple-ref-attrs) (repeat {}))]
             (let [tx (read rdr false :sync/eof)]
               (if (= :sync/eof tx)
-                {:header-ok?        (and (set? (:ref-attrs header))
-                                         (map? (:tuple-attrs header))
-                                         (inst? (:backup-timestamp header)))
-                 :backup-timestamp (:backup-timestamp header)
-                 :tx-count         tx-count
-                 :last-tx-instant  last-tx-instant
-                 :counts           (into {}
-                                         (for [[attr e->values] current-values]
-                                           [attr (count (keep (fn [[_ values]]
-                                                                (when (seq values) true))
-                                                              e->values))]))}
-                (recur (inc tx-count)
-                       (get-in tx [:tx :db/txInstant])
-                       (reduce (fn [acc [e attr v added?]]
-                                 (if (attr-set attr)
-                                   (update-in acc [attr e]
-                                              (fnil (if added? conj disj) #{})
-                                              v)
-                                   acc))
-                               current-values
-                               (:data tx)))))))))
+                {:header-ok?             (and (set? (:ref-attrs header))
+                                              (map? (:tuple-attrs header))
+                                              (map? tuple-ref-attrs)
+                                              (inst? (:backup-timestamp header)))
+                 :backup-timestamp      (:backup-timestamp header)
+                 :tuple-ref-attrs       tuple-ref-attrs
+                 :tx-count              tx-count
+                 :last-tx-instant       last-tx-instant
+                 :counts                (count-current-values current-values)
+                 :tuple-values          (compact-current-values tuple-values)
+                 :missing-mapping-count (count @missing-mappings*)
+                 :missing-mapping-sample (vec (take 20 @missing-mappings*))}
+                (let [[current-values tuple-values]
+                      (reduce (fn [[current-values tuple-values] [e attr v added?]]
+                                [(if (attr-set attr)
+                                   (update-current-values current-values e attr v added?)
+                                   current-values)
+                                 (if (tuple-ref-attrs attr)
+                                   (update-current-values tuple-values
+                                                          (mapped-id e)
+                                                          attr
+                                                          (rewrite-tuple-value tuple-ref-attrs attr v)
+                                                          added?)
+                                   tuple-values)])
+                              [current-values tuple-values]
+                              (:data tx))]
+                  (recur (inc tx-count)
+                         (get-in tx [:tx :db/txInstant])
+                         current-values
+                         tuple-values))))))))
 
     (defn entity-count [db attr]
       (d/q '[:find (count ?e) .
@@ -373,26 +429,79 @@
     (defn schema-present? [db attr]
       (boolean (d/pull db [:db/ident] attr)))
 
+    (defn target-tuple-values [db tuple-ref-attrs]
+      (into {}
+            (for [attr (keys tuple-ref-attrs)]
+              [attr (reduce (fn [acc [e v]]
+                              (update acc e (fnil conj #{}) v))
+                            {}
+                            (d/q '[:find ?e ?v
+                                   :in $ ?attr
+                                   :where [?e ?attr ?v]]
+                                 db attr))])))
+
+    (defn tuple-mismatch-samples [expected actual]
+      (vec
+       (take 20
+             (for [attr (sort-by str (set/union (set (keys expected))
+                                                (set (keys actual))))
+                   e    (sort (set/union (set (keys (get expected attr)))
+                                         (set (keys (get actual attr)))))
+                   :let [expected-values (get-in expected [attr e] #{})
+                         actual-values   (get-in actual [attr e] #{})]
+                   :when (not= expected-values actual-values)]
+               {:attr          attr
+                :entity        e
+                :expected-only (vec (take 10 (set/difference expected-values actual-values)))
+                :actual-only   (vec (take 10 (set/difference actual-values expected-values)))}))))
+
+    (defn audit-user-validation [db]
+      (let [rows   (d/q '[:find ?tx ?user
+                          :where [?tx :audit/user ?user]]
+                        db)
+            broken (vec (keep (fn [[tx user]]
+                                (let [member (d/pull db [:member/member-id :member/name] user)]
+                                  (when-not (:member/member-id member)
+                                    {:tx         tx
+                                     :audit-user user
+                                     :pull       member})))
+                              rows))]
+        {:count         (count rows)
+         :broken-count  (count broken)
+         :broken-sample (vec (take 20 broken))
+         :ok?           (zero? (count broken))}))
+
     (try
       (let [export (export-info (:export-file cfg))
             target (d/with-datomic-mode :peer
                      (let [conn (d/connect target-uri)
                            db   (d/db conn)]
                        {:counts         (attr-counts db)
+                        :tuple-values   (target-tuple-values db (:tuple-ref-attrs export))
+                        :audit-users    (audit-user-validation db)
                         :max-tx-instant (max-tx-instant db)
                         :basis-t        (d-peer/basis-t db)
                         :schema-present (into {}
                                               (for [attr attrs]
                                                 [attr (schema-present? db attr)]))}))
+            tuple-mismatch-sample (tuple-mismatch-samples (:tuple-values export)
+                                                          (:tuple-values target))
             result {:target-key                 target-key
                     :target-uri                 target-uri
                     :export                     export
                     :target                     target
                     :counts-match?              (= (:counts export) (:counts target))
                     :tx-instant-matches-export? (= (:last-tx-instant export)
-                                                   (:max-tx-instant target))}
+                                                   (:max-tx-instant target))
+                    :tuple-ref-values-match?    (empty? tuple-mismatch-sample)
+                    :tuple-mismatch-sample      tuple-mismatch-sample
+                    :audit-users-ok?            (get-in target [:audit-users :ok?])
+                    :missing-mappings-ok?       (zero? (:missing-mapping-count export))}
             ok?    (and (:counts-match? result)
-                        (:tx-instant-matches-export? result))]
+                        (:tx-instant-matches-export? result)
+                        (:tuple-ref-values-match? result)
+                        (:audit-users-ok? result)
+                        (:missing-mappings-ok? result))]
         (prn result)
         (write-edn! validation-file result)
         (shutdown-agents)
@@ -433,9 +542,11 @@
     (when-not (and (map? header)
                    (set? (:ref-attrs header))
                    (map? (:tuple-attrs header))
+                   (map? (:tuple-ref-attrs header))
                    (inst? (:backup-timestamp header)))
       (throw (ex-info "Export header did not have expected shape" {:header header})))
     (say "export line count:" line-count)
+    (say "tuple ref attrs:" (:tuple-ref-attrs header))
     {:line-count line-count
      :header     header}))
 
@@ -468,6 +579,7 @@
             "-e" "DATOMIC_JAVA_OPTS=-Xmx4g -Xms4g -Dlogback.configurationFile=/config/logback.xml"
             "-e" "DATOMIC_HEALTHCHECK_HOST=127.0.0.1"
             "-e" "DATOMIC_HEALTHCHECK_PORT=9999"
+            "-e" "DATOMIC_HEARTBEAT_INTERVAL_MSEC=60000"
             "-e" "DATOMIC_PORT=4434"
             "-e" (str "DATOMIC_HOST=" (:staging-container plan))
             "-e" "DATOMIC_ALT_HOST=127.0.0.1"

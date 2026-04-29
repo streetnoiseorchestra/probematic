@@ -1,8 +1,6 @@
 (ns app.datomic.decant
   (:require [app.datomic.client-backup :as backup]
             [app.datomic.shim :as shim]
-            [clojure.java.io :as io]
-            [datomic.api :as d-peer]
             #_[datomic.client.api :as d-client]))
 
 #_(def org-conn
@@ -38,12 +36,14 @@
   ;;
   )
 (comment
-  ;; Backup
-  (backup/backup-to org-conn "txns.edn")
+  ;; Backup.
+  ;; Tuple ref rewriting and transaction metadata ref rewriting are handled by
+  ;; app.datomic.client-backup during restore.
+  (backup/backup-to org-conn "txns.edn" #inst "2023-01-01T00:00:00.000-00:00")
   ;; Restore
   (restore-from dst-conn "txns.edn")
 
-  (reset! abort? true)
+  (reset! backup/*abort?* true)
   ;;
   )
 (defn restore-from [conn f]

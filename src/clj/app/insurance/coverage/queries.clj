@@ -3,11 +3,7 @@
    [app.datomic :as datomic]
    [app.insurance.domain :as domain]
    [app.queries :as q]
-   [app.urls :as urls]
-   [clojure.edn :as edn]
-   [clojure.java.io :as io])
-  (:import
-   [java.io PushbackReader]))
+   [app.urls :as urls]))
 
 (defn policy-editable?
   [{:insurance.policy/keys [status]}]
@@ -22,49 +18,6 @@
 (defn image-uris
   [req {:instrument/keys [images] :as instrument}]
   (keep #(image-uri req instrument %) images))
-
-(def member-pull
-  [:member/member-id :member/username :member/name :member/nick])
-
-;; Some imported audit refs still point at pre-import member entity ids.
-;; The current database cannot resolve those refs, but the transaction export can map them back to member names.
-
-(def legacy-member-attrs
-  #{:member/member-id :member/username :member/name :member/nick})
-
-(defn- reduce-legacy-member-datom
-  [acc [eid attr value added?]]
-  (if (legacy-member-attrs attr)
-    (if added?
-      (assoc-in acc [eid attr] value)
-      (cond-> acc
-        (= value (get-in acc [eid attr])) (update eid dissoc attr)))
-    acc))
-
-(defn- read-legacy-member-map*
-  []
-  (let [file (io/file "txns.edn")]
-    (if (.exists file)
-      (with-open [reader (PushbackReader. (io/reader file))]
-        (loop [acc {}]
-          (let [form (edn/read {:eof ::eof} reader)]
-            (if (= ::eof form)
-              (into {}
-                    (keep (fn [[eid member]]
-                            (when (:member/name member)
-                              [eid (select-keys member member-pull)])))
-                    acc)
-              (recur (reduce reduce-legacy-member-datom acc (:data form)))))))
-      {})))
-
-(def legacy-member-map
-  (memoize read-legacy-member-map*))
-
-(defn- recover-audit-member
-  [{:audit/keys [member user] :as audit}]
-  (let [user-id (:db/id user)]
-    (cond-> audit
-      (and (nil? member) user-id) (assoc :audit/member ((legacy-member-map) user-id)))))
 
 (defn coverage
   [db coverage-id]
@@ -86,7 +39,7 @@
                           (-> acc
                               (assoc :tx-id tx-id)
                               (assoc :timestamp timestamp)
-                              (assoc :audit (recover-audit-member audit))
+                              (assoc :audit audit)
                               (update :changes concat changes)))
                         {}
                         txs)))
