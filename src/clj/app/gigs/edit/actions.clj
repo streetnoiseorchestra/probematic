@@ -2,73 +2,48 @@
   (:require
    [app.auth :as auth]
    [app.discourse :as discourse]
+   [app.form :as form]
    [app.gigs.domain :as domain]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.urls :as urls]
    [app.util :as util]
    [clojure.string :as str]
-   [com.yetanalytics.squuid :as sq]
-   [tick.core :as t]))
-
-(defn- keywordize-param-keys [m]
-  (into {}
-        (map (fn [[k v]]
-               [(if (keyword? k) k (keyword k)) v]))
-        m))
+   [com.yetanalytics.squuid :as sq]))
 
 (defn- form-params [signals]
-  (let [signals (keywordize-param-keys signals)
-        params  (if-let [gig-edit (:gig-edit signals)]
-                  (keywordize-param-keys gig-edit)
-                  signals)]
+  (let [params (or (:gig-edit signals) signals)]
     (dissoc params :tab-id :_error :validate-field)))
 
-(defn- normalize-bool [v]
-  (cond
-    (true? v) true
-    (false? v) false
-    (string? v) (= "true" (str/lower-case v))
-    :else false))
-
-(defn- trim-value [v]
-  (some-> v str str/trim))
-
-(defn- update-present [m k f]
-  (if (contains? m k)
-    (update m k f)
-    m))
-
 (defn- normalize-form [params]
-  (let [params (keywordize-param-keys params)]
-    (reduce
-     (fn [params [k f]]
-       (update-present params k f))
-     params
-     [[:gig-id #(some-> % str)]
-      [:title trim-value]
-      [:date trim-value]
-      [:end-date trim-value]
-      [:location trim-value]
-      [:contact trim-value]
-      [:gig-type trim-value]
-      [:status trim-value]
-      [:call-time trim-value]
-      [:set-time trim-value]
-      [:end-time trim-value]
-      [:leader trim-value]
-      [:rehearsal-leader1 trim-value]
-      [:rehearsal-leader2 trim-value]
-      [:pay-deal trim-value]
-      [:outfit trim-value]
-      [:more-details #(or % "")]
-      [:description #(or % "")]
-      [:setlist #(or % "")]
-      [:post-gig-plans #(or % "")]
-      [:topic-id trim-value]
-      [:notify? normalize-bool]
-      [:thread? normalize-bool]
-      [:takeover-topic? normalize-bool]])))
+  (reduce
+   (fn [params [k f]]
+     (form/update-present params k f))
+   params
+   [[:gig-id #(some-> % str)]
+    [:title form/trim-value]
+    [:date form/trim-value]
+    [:end-date form/trim-value]
+    [:location form/trim-value]
+    [:contact form/trim-value]
+    [:gig-type form/trim-value]
+    [:status form/trim-value]
+    [:call-time form/trim-value]
+    [:set-time form/trim-value]
+    [:end-time form/trim-value]
+    [:leader form/trim-value]
+    [:rehearsal-leader1 form/trim-value]
+    [:rehearsal-leader2 form/trim-value]
+    [:pay-deal form/trim-value]
+    [:outfit form/trim-value]
+    [:more-details #(or % "")]
+    [:description #(or % "")]
+    [:setlist #(or % "")]
+    [:post-gig-plans #(or % "")]
+    [:topic-id form/trim-value]
+    [:notify? form/normalize-bool]
+    [:thread? form/normalize-bool]
+    [:takeover-topic? form/normalize-bool]]))
 
 (defn- label [tr field]
   (case field
@@ -86,20 +61,6 @@
 (defn- after? [a b]
   (pos? (compare a b)))
 
-(defn- blank->nil [v]
-  (if (and (string? v) (str/blank? v))
-    nil
-    v))
-
-(defn- optional-text [v]
-  (blank->nil (trim-value v)))
-
-(defn- parse-date [v]
-  (some-> v blank->nil t/date))
-
-(defn- parse-time [v]
-  (some-> v blank->nil t/time))
-
 (defn- str->status [status]
   (some->> status (keyword "gig.status")))
 
@@ -107,7 +68,7 @@
   (some->> gig-type (keyword "gig.type")))
 
 (defn- member-ref [member-id]
-  (when-let [member-id (blank->nil member-id)]
+  (when-let [member-id (form/blank->nil member-id)]
     [:member/member-id (util/ensure-uuid! member-id)]))
 
 (defn- gig-update-map
@@ -115,24 +76,24 @@
   {:gig/gig-id             (util/ensure-uuid! gig-id)
    :gig/title              title
    :gig/status             (str->status status)
-   :gig/date               (parse-date date)
-   :gig/end-date           (parse-date end-date)
+   :gig/date               (form/parse-date date)
+   :gig/end-date           (form/parse-date end-date)
    :gig/gig-type           (str->gig-type gig-type)
    :gig/location           location
    :gig/contact            (member-ref contact)
-   :gig/call-time          (parse-time call-time)
-   :gig/set-time           (parse-time set-time)
-   :gig/end-time           (parse-time end-time)
-   :gig/leader             (optional-text leader)
+   :gig/call-time          (form/parse-time call-time)
+   :gig/set-time           (form/parse-time set-time)
+   :gig/end-time           (form/parse-time end-time)
+   :gig/leader             (form/optional-text leader)
    :gig/rehearsal-leader1  (member-ref rehearsal-leader1)
    :gig/rehearsal-leader2  (member-ref rehearsal-leader2)
-   :gig/pay-deal           (optional-text pay-deal)
-   :gig/outfit             (optional-text outfit)
-   :gig/more-details       (optional-text more-details)
-   :gig/setlist            (optional-text setlist)
-   :gig/description        (optional-text description)
-   :gig/post-gig-plans     (optional-text post-gig-plans)
-   :forum.topic/topic-id   (some-> topic-id optional-text discourse/parse-topic-id)})
+   :gig/pay-deal           (form/optional-text pay-deal)
+   :gig/outfit             (form/optional-text outfit)
+   :gig/more-details       (form/optional-text more-details)
+   :gig/setlist            (form/optional-text setlist)
+   :gig/description        (form/optional-text description)
+   :gig/post-gig-plans     (form/optional-text post-gig-plans)
+   :forum.topic/topic-id   (some-> topic-id form/optional-text discourse/parse-topic-id)})
 
 (def retractable-attrs
   [:gig/end-date
@@ -204,7 +165,7 @@
 
 (defn validate-gig-field-action
   [{:keys [tr]} signals]
-  (let [raw   (or (:gig-edit (keywordize-param-keys signals)) {})
+  (let [raw   (or (:gig-edit signals) {})
         field (some-> (:validate-field raw) keyword)
         form  (dissoc (normalize-form raw) :_error :validate-field)
         error (get (validation-errors {:tr tr} form) field)]
@@ -226,8 +187,8 @@
                            (when (and gig (not (can-edit-gig? state gig)))
                              (top-error (tr [:error/gig-edit-not-allowed])))
                            (validation-errors {:tr tr} params)))
-        notify?         (normalize-bool (:notify? params))
-        takeover-topic? (normalize-bool (:takeover-topic? params))]
+        notify?         (form/normalize-bool (:notify? params))
+        takeover-topic? (form/normalize-bool (:takeover-topic? params))]
     (tap> [:update-gig-action :params params :errors errors])
     (if (seq errors)
       [support/clear-loading
@@ -244,8 +205,8 @@
   [{:keys [tr]} signals]
   (let [params  (normalize-form (form-params signals))
         errors  (with-generic-top-error tr (validation-errors {:tr tr} params))
-        notify? (normalize-bool (:notify? params))
-        thread? (normalize-bool (:thread? params))]
+        notify? (form/normalize-bool (:notify? params))
+        thread? (form/normalize-bool (:thread? params))]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]

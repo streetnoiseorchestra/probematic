@@ -1,11 +1,9 @@
 (ns app.members.ui
   (:require
+   [app.form :as form]
    [app.ui2 :as ui2]
    [clojure.string :as str]
    [tick.core :as t]))
-
-(defn date-value [value]
-  (some-> value t/date str))
 
 (defn current-travel-discount? [{:travel.discount/keys [expiry-date]}]
   (not (t/< (t/date expiry-date) (t/date))))
@@ -30,4 +28,4 @@
                   :variant    (if (current-travel-discount? discount) "success" "danger")}
        (or (some-> label str/trim not-empty) "—")]
       [:wa-tooltip {:for tooltip-id :placement "top"}
-       (str (tr [:travel-discounts/expires]) " " (date-value expiry-date))]])))
+       (str (tr [:travel-discounts/expires]) " " (form/date-value expiry-date))]])))

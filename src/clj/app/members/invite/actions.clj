@@ -1,33 +1,26 @@
 (ns app.members.invite.actions
   (:require
+   [app.form :as form]
    [app.members.domain :as members.domain]
    [app.nexus.actions :as support]
    [app.util :as util]
    [clojure.string :as str]
    [datomic.api :as d]))
 
-(defn- normalize-bool [v default]
-  (cond
-    (true? v) true
-    (false? v) false
-    (string? v) (= "true" (str/lower-case v))
-    (nil? v) default
-    :else (boolean v)))
-
 (defn- normalize-form [member-invite]
-  (let [email-raw (some-> (:email member-invite) str/trim)
-        phone-raw (some-> (:phone member-invite) str/trim)]
+  (let [email-raw (form/trim-value (:email member-invite))
+        phone-raw (form/trim-value (:phone member-invite))]
     {:member-id     (some-> (:member-id member-invite) str)
-     :name          (some-> (:name member-invite) str/trim)
-     :nick          (some-> (:nick member-invite) str/trim)
+     :name          (form/trim-value (:name member-invite))
+     :nick          (form/trim-value (:nick member-invite))
      :email         (some-> email-raw members.domain/clean-email)
      :username      (some-> (:username member-invite) members.domain/clean-username)
      :phone         (cond-> phone-raw
                       (and (seq phone-raw) (members.domain/phone-valid? phone-raw))
                       members.domain/clean-phone-number)
-     :section-name  (some-> (:section-name member-invite) str/trim)
-     :active        (normalize-bool (:active member-invite) true)
-     :create-sno-id (normalize-bool (:create-sno-id member-invite) true)}))
+     :section-name  (form/trim-value (:section-name member-invite))
+     :active        (form/normalize-bool (:active member-invite) true)
+     :create-sno-id (form/normalize-bool (:create-sno-id member-invite) true)}))
 
 (defn- existing-entity? [db lookup-ref]
   (boolean

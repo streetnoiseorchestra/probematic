@@ -1,6 +1,7 @@
 (ns app.members.detail.actions
   (:require
    [app.auth :as auth]
+   [app.form :as form]
    [app.ledger.domain :as ledger.domain]
    [app.members.domain :as members.domain]
    [app.queries :as q]
@@ -32,16 +33,8 @@
     active-tab
     "travel"))
 
-(defn- normalize-bool [v default]
-  (cond
-    (true? v) true
-    (false? v) false
-    (string? v) (= "true" (str/lower-case v))
-    (nil? v) default
-    :else (boolean v)))
-
 (defn- clean-phone [phone]
-  (let [phone (some-> phone str/trim)]
+  (let [phone (form/trim-value phone)]
     (cond-> phone
       (and (seq phone) (members.domain/phone-valid? phone))
       members.domain/clean-phone-number)))
@@ -50,19 +43,19 @@
   ([contact]
    (normalize-contact contact false))
   ([contact current-user-admin?]
-   (let [email-raw (some-> (:email contact) str/trim)]
+   (let [email-raw (form/trim-value (:email contact))]
      (cond-> {:member-id    (some-> (:member-id contact) str)
-              :name         (some-> (:name contact) str/trim)
-              :nick         (some-> (:nick contact) str/trim)
+              :name         (form/trim-value (:name contact))
+              :nick         (form/trim-value (:nick contact))
               :email        (some-> email-raw members.domain/clean-email)
               :phone        (clean-phone (:phone contact))
-              :section-name (some-> (:section-name contact) str/trim)
-              :active       (normalize-bool (:active contact) true)}
+              :section-name (form/trim-value (:section-name contact))
+              :active       (form/normalize-bool (:active contact) true)}
        current-user-admin?
        (assoc :username                (some-> (:username contact) members.domain/clean-username)
-              :keycloak-id             (some-> (:keycloak-id contact) str/trim not-empty)
-              :sno-id-enabled          (normalize-bool (:sno-id-enabled contact) false)
-              :sno-id-enabled-original (normalize-bool (:sno-id-enabled-original contact) false))))))
+              :keycloak-id             (some-> (:keycloak-id contact) form/trim-value not-empty)
+              :sno-id-enabled          (form/normalize-bool (:sno-id-enabled contact) false)
+              :sno-id-enabled-original (form/normalize-bool (:sno-id-enabled-original contact) false))))))
 
 (defn- section-exists? [db section-name]
   (boolean
@@ -224,40 +217,27 @@
         true
         (conj support/clear-loading clear-contact)))))
 
-(defn- trim-string [v]
-  (some-> v str str/trim))
-
-(defn- parse-date [value]
-  (when (seq (trim-string value))
-    (try
-      (t/date (trim-string value))
-      (catch Exception _
-        nil))))
-
 (defn- date->db-inst [date]
   (t/inst (t/in (t/at date (t/midnight)) "UTC")))
 
 (defn- expiry-date->db-inst [value]
-  (some-> value parse-date date->db-inst))
+  (some-> value form/parse-date date->db-inst))
 
-(defn- expiry-date->form-value [value]
-  (some-> value t/date str))
+(defn- normalize-travel-discount-create [form-state]
+  {:member-id        (form/trim-value (:member-id form-state))
+   :discount-type-id (form/trim-value (:discount-type-id form-state))
+   :expiry-date      (form/trim-value (:expiry-date form-state))})
 
-(defn- normalize-travel-discount-create [form]
-  {:member-id        (trim-string (:member-id form))
-   :discount-type-id (trim-string (:discount-type-id form))
-   :expiry-date      (trim-string (:expiry-date form))})
-
-(defn- normalize-travel-discount-edit [form]
-  {:discount-id (some-> (:discount-id form) util/ensure-uuid!)
-   :expiry-date (trim-string (:expiry-date form))})
+(defn- normalize-travel-discount-edit [form-state]
+  {:discount-id (some-> (:discount-id form-state) util/ensure-uuid!)
+   :expiry-date (form/trim-value (:expiry-date form-state))})
 
 (defn- expiry-date-error [expiry-date]
   (cond
     (str/blank? expiry-date)
     {:error "Expiry date is required."}
 
-    (nil? (parse-date expiry-date))
+    (nil? (form/parse-date expiry-date))
     {:error "Please enter a valid expiry date."}))
 
 (defn- discount-type-exists? [db discount-type-id]
@@ -344,7 +324,7 @@
      [:app.datastar/assoc-state
       [:member-detail :travel-discount]
       {:discount-id discount-id
-       :expiry-date (expiry-date->form-value (:travel.discount/expiry-date discount))
+       :expiry-date (form/date-value (:travel.discount/expiry-date discount))
        :_error      {}}]]))
 
 (defn close-travel-discount-edit-action [_state _signals]
@@ -418,12 +398,12 @@
   [support/clear-loading clear-ledger-entry-create])
 
 (defn- normalize-ledger-entry-create [form]
-  {:member-id    (trim-string (:member-id form))
+  {:member-id    (form/trim-value (:member-id form))
    :tx-kind      (normalize-ledger-entry-kind (:tx-kind form))
-   :tx-direction (trim-string (:tx-direction form))
-   :tx-date      (trim-string (:tx-date form))
-   :description  (trim-string (:description form))
-   :amount       (trim-string (:amount form))})
+   :tx-direction (form/trim-value (:tx-direction form))
+   :tx-date      (form/trim-value (:tx-date form))
+   :description  (form/trim-value (:description form))
+   :amount       (form/trim-value (:amount form))})
 
 (defn- decimal-cents [s]
   (try
@@ -435,7 +415,7 @@
       nil)))
 
 (defn- parse-ledger-cents [value]
-  (let [s (trim-string value)]
+  (let [s (form/trim-value value)]
     (when (seq s)
       (if (re-matches #"[+]?[0-9]+(\.[0-9]{1,2})?" s)
         (decimal-cents s)
@@ -446,7 +426,7 @@
     (str/blank? tx-date)
     {:error "Transaction date is required."}
 
-    (nil? (parse-date tx-date))
+    (nil? (form/parse-date tx-date))
     {:error "Please enter a valid transaction date."}))
 
 (defn- ledger-amount-error [amount]
@@ -482,7 +462,7 @@
 (defn- ledger-entry-tx [form amount posting-date]
   {:db/id                     "new-ledger-entry"
    :ledger.entry/entry-id     :db/gen-uuid
-   :ledger.entry/tx-date      (str (parse-date (:tx-date form)))
+   :ledger.entry/tx-date      (str (form/parse-date (:tx-date form)))
    :ledger.entry/posting-date posting-date
    :ledger.entry/description  (:description form)
    :ledger.entry/amount       amount})

@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.html :as html]
+   [app.form :as form]
    [app.gigs.edit.actions :as actions]
    [app.gigs.domain :as domain]
    [app.gigs.ui :as gigs.ui]
@@ -10,8 +11,7 @@
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util.http :as http.util]
-   [clojure.string :as str]
-   [tick.core :as t]))
+   [clojure.string :as str]))
 
 (def extra-head
   [[:link {:rel "stylesheet" :href "/css/easymde.min@2.18.0.css"}]
@@ -111,22 +111,11 @@
         root.querySelectorAll('textarea.markdown-editor').forEach(window.MarkdownEditor);
       };")]])
 
-(defn- date-value [value]
-  (some-> value t/date str))
-
-(defn- time-value [value]
-  (some-> value str))
-
-(defn- text-value [value]
-  (or value ""))
 
 (defn- option [value label selected-value]
   [:wa-option {:value    value
                :selected (= value selected-value)}
    label])
-
-(defn- field-error [form-state field]
-  (-> form-state :_error field :error))
 
 (defn- validate-field-action [req field]
   (str "$gig-edit.validate-field = '"
@@ -136,7 +125,7 @@
        "')"))
 
 (defn- validate-field-attrs [req form-state field]
-  (let [error (field-error form-state field)]
+  (let [error (form/field-error form-state field)]
     {:hint                            error
      :data-invalid                    (when error "true")
      :data-bind                       (str "gig-edit." (name field))
@@ -144,7 +133,7 @@
      :data-on:keydown__debounce.500ms (validate-field-action req field)}))
 
 (defn- validate-select-attrs [req form-state field]
-  (let [error (field-error form-state field)]
+  (let [error (form/field-error form-state field)]
     {:hint           error
      :data-invalid   (when error "true")
      :data-bind      (str "gig-edit." (name field))
@@ -202,7 +191,7 @@
 (defn- input [label name value attrs]
   [:wa-input (merge {:label      label
                      :name       name
-                     :value      (text-value value)
+                     :value      (form/text-value value)
                      :appearance "outlined"}
                     attrs)])
 
@@ -218,7 +207,7 @@
                         :rows           6
                         :data-auto-size "true"}
                        attrs)
-      (text-value value)]
+      (form/text-value value)]
      (when error
        [:span {:class "wa-caption-s text-danger"}
         error])]))
@@ -313,27 +302,27 @@
 (defn- gig->form [{:gig/keys [call-time contact date description end-date end-time gig-id gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title]
                    :forum.topic/keys [topic-id]}]
   {:gig-id            (str gig-id)
-   :title             (text-value title)
+   :title             (form/text-value title)
    :status            (some-> status name)
    :gig-type          (some-> gig-type name)
-   :date              (date-value date)
-   :end-date          (date-value end-date)
-   :contact           (text-value (some-> contact :member/member-id str))
-   :call-time         (time-value call-time)
-   :set-time          (time-value set-time)
-   :end-time          (time-value end-time)
-   :location          (text-value location)
-   :outfit            (text-value outfit)
-   :pay-deal          (text-value pay-deal)
-   :leader            (text-value leader)
-   :rehearsal-leader1 (text-value (some-> rehearsal-leader1 :member/member-id str))
-   :rehearsal-leader2 (text-value (some-> rehearsal-leader2 :member/member-id str))
-   :post-gig-plans    (text-value post-gig-plans)
-   :more-details      (text-value more-details)
-   :description       (text-value description)
+   :date              (form/date-value date)
+   :end-date          (form/date-value end-date)
+   :contact           (form/text-value (some-> contact :member/member-id str))
+   :call-time         (form/time-value call-time)
+   :set-time          (form/time-value set-time)
+   :end-time          (form/time-value end-time)
+   :location          (form/text-value location)
+   :outfit            (form/text-value outfit)
+   :pay-deal          (form/text-value pay-deal)
+   :leader            (form/text-value leader)
+   :rehearsal-leader1 (form/text-value (some-> rehearsal-leader1 :member/member-id str))
+   :rehearsal-leader2 (form/text-value (some-> rehearsal-leader2 :member/member-id str))
+   :post-gig-plans    (form/text-value post-gig-plans)
+   :more-details      (form/text-value more-details)
+   :description       (form/text-value description)
    :notify?           false
    :takeover-topic?   false
-   :topic-id          (text-value topic-id)
+   :topic-id          (form/text-value topic-id)
    :_error            {}})
 
 (defn- create->form [{:keys [tr]}]
@@ -466,7 +455,7 @@
                :form-state form-state}
               (main-fields req form-state)
               (forum-fields req form-state false)
-              (when-let [top-error (field-error form-state :_top)]
+              (when-let [top-error (form/field-error form-state :_top)]
                 [:wa-callout {:appearance "outlined"
                               :variant    "danger"}
                  top-error])
@@ -480,7 +469,7 @@
                :form-state form-state}
               (main-fields req form-state {:create? true})
               (forum-fields req form-state true)
-              (when-let [top-error (field-error form-state :_top)]
+              (when-let [top-error (form/field-error form-state :_top)]
                 [:wa-callout {:appearance "outlined"
                               :variant    "danger"}
                  top-error])

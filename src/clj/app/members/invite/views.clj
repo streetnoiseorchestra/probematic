@@ -1,10 +1,10 @@
 (ns app.members.invite.views
   (:require
    [app.datastar :as d*]
+   [app.form :as form]
    [app.members.invite.actions :as actions]
    [app.queries :as q]
-   [app.ui2 :as ui2]
-   [clojure.string :as str]))
+   [app.ui2 :as ui2]))
 
 (defn- default-form-state []
   {:member-id     (str (random-uuid))
@@ -18,12 +18,9 @@
    :create-sno-id true
    :error         {}})
 
-(defn- field-error [form-state field]
-  (get-in form-state [:error field :error]))
-
 (defn- form-input [form-state signal label attrs]
-  (let [field (keyword (last (str/split signal #"\.")))
-        error (field-error form-state field)]
+  (let [field (form/signal-field signal)
+        error (form/field-error form-state :error field)]
     [:wa-input (merge {:label        label
                        :appearance   "outlined"
                        :size         "medium"
@@ -34,7 +31,7 @@
                       attrs)]))
 
 (defn- section-select [{:keys [tr]} form-state sections]
-  (let [error (field-error form-state :section-name)]
+  (let [error (form/field-error form-state :error :section-name)]
     (into
      [:wa-select {:label          (tr [:section])
                   :appearance     "outlined"
@@ -63,7 +60,7 @@
           :data-action    (d*/act req ::actions/submit-member-invite)
           :data-on:submit "evt.preventDefault();"}
    [:div {:class "wa-stack wa-gap-l"}
-    (when-let [top-error (field-error form-state :_top)]
+    (when-let [top-error (form/field-error form-state :error :_top)]
       [:wa-callout {:appearance "outlined" :variant "danger"}
        top-error])
     (form-input form-state "member-invite.name" (tr [:member/name]) {:required true :autofocus true})

@@ -1,5 +1,6 @@
 (ns app.gigs.detail.actions
   (:require
+   [app.form :as form]
    [app.gigs.domain :as domain]
    [app.nexus.actions :as support]
    [app.queries :as q]
@@ -31,13 +32,6 @@
 (defn- str->motivation [motivation]
   (when (seq (str motivation))
     ((set domain/motivations) (keyword "motivation" (str motivation)))))
-
-(defn- normalize-bool [v]
-  (cond
-    (true? v) true
-    (false? v) false
-    (string? v) (= "true" (str/lower-case v))
-    :else (boolean v)))
 
 (defn- ids [{:keys [gig-id member-id]}]
   {:gig-id    (some-> gig-id util/ensure-uuid!)
@@ -155,9 +149,9 @@
 
 (defn toggle-attendance-committed-action [_state signals]
   (let [{:keys [show-committed? show-committed]} (params signals)
-        show-committed? (normalize-bool (if (some? show-committed?)
-                                          show-committed?
-                                          show-committed))]
+        show-committed? (form/normalize-bool (if (some? show-committed?)
+                                               show-committed?
+                                               show-committed))]
     [[:app.datastar/assoc-state show-committed-path show-committed?]]))
 
 (defn send-reminder-to-all-action [{:keys [now]} signals]

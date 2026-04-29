@@ -28,18 +28,18 @@
     (name k)))
 
 (defn valid-signals [gig-id]
-  {"gig-id"       (str gig-id)
-   "title"        "Street Gig"
-   "date"         "2026-05-01"
-   "location"     "Somewhere"
-   "gig-type"     "gig"
-   "status"       "confirmed"
-   "call-time"    "18:00"
-   "set-time"     "19:00"
-   "end-time"     "20:00"
-   "notify?"      "true"
-   "more-details" "Details"
-   "tab-id"       "ignored"})
+  {:gig-id       (str gig-id)
+   :title        "Street Gig"
+   :date         "2026-05-01"
+   :location     "Somewhere"
+   :gig-type     "gig"
+   :status       "confirmed"
+   :call-time    "18:00"
+   :set-time     "19:00"
+   :end-time     "20:00"
+   :notify?      "true"
+   :more-details "Details"
+   :tab-id       "ignored"})
 
 (defn seed-gig! [conn gig-id date]
   @(d/transact conn [(domain/gig->db {:gig/gig-id   gig-id
@@ -98,11 +98,9 @@
               :gig/rehearsal-leader1 [:member/member-id leader1-id]
               :gig/rehearsal-leader2 [:member/member-id leader2-id]}
              (-> (valid-signals gig-id)
-                 (assoc "contact" (str contact-id)
-                        "rehearsal-leader1" (str leader1-id)
-                        "rehearsal-leader2" (str leader2-id))
-                 (->> (map (fn [[k v]] [(keyword k) v]))
-                      (into {}))
+                 (assoc :contact (str contact-id)
+                        :rehearsal-leader1 (str leader1-id)
+                        :rehearsal-leader2 (str leader2-id))
                  actions/update-gig-tx-data
                  first
                  (select-keys [:gig/contact
@@ -163,15 +161,15 @@
              (actions/update-gig-action
               (action-state conn)
               (merge (valid-signals gig-id)
-                     {"date"              "2026-05-02"
-                      "end-date"          "2026-05-01"
-                      "set-time"          "17:00"
-                      "end-time"          "16:00"
-                      "rehearsal-leader1" "00000000-0000-0000-0000-000000000001"
-                      "rehearsal-leader2" "00000000-0000-0000-0000-000000000001"
-                      "notify?"           nil
-                      "more-details"      nil
-                      "tab-id"            "ignored"}))))))
+                     {:date              "2026-05-02"
+                      :end-date          "2026-05-01"
+                      :set-time          "17:00"
+                      :end-time          "16:00"
+                      :rehearsal-leader1 "00000000-0000-0000-0000-000000000001"
+                      :rehearsal-leader2 "00000000-0000-0000-0000-000000000001"
+                      :notify?           nil
+                      :more-details      nil
+                      :tab-id            "ignored"}))))))
 
   (testing "checks end time against call time when set time is absent"
     (let [{:keys [conn]} (tc/new-system "gig-edit-update-end-time-action")
@@ -182,8 +180,8 @@
              (-> (actions/update-gig-action
                   (action-state conn)
                   (merge (valid-signals gig-id)
-                         {"set-time" ""
-                          "end-time" "17:00"}))
+                         {:set-time ""
+                          :end-time "17:00"}))
                  second
                  last
                  :_error)))))
@@ -217,7 +215,7 @@
     (let [[transact redirect :as effects] (actions/create-gig-action
                                            {:tr tr}
                                            (assoc (valid-signals "00000000-0000-0000-0000-000000000000")
-                                                  "thread?" true))
+                                                  :thread? true))
           [_ [tx] opts] transact
           gig-id (:gig/gig-id tx)]
       (is (= :db/transact (first transact)))
@@ -251,13 +249,13 @@
                           :call-time {:error "Call Time is required."}}}]]
            (actions/create-gig-action
             {:tr tr}
-            {"gig-id"    "00000000-0000-0000-0000-000000000000"
-             "title"     ""
-             "date"      ""
-             "location"  ""
-             "gig-type"  ""
-             "status"    ""
-             "call-time" ""})))))
+            {:gig-id    "00000000-0000-0000-0000-000000000000"
+             :title     ""
+             :date      ""
+             :location  ""
+             :gig-type  ""
+             :status    ""
+             :call-time ""})))))
 
 (deftest delete-gig-action-test
   (testing "returns a Datomic retract transaction effect and redirects to the gigs list"
@@ -278,8 +276,8 @@
               [:app.datastar/redirect (urls/link-gigs-home)]]
              (actions/delete-gig-action
               (action-state conn)
-              {"gig-id" (str gig-id)
-               "tab-id" "ignored"})))))
+              {:gig-id (str gig-id)
+               :tab-id "ignored"})))))
 
   (testing "returns a top error when the current user cannot delete an archived gig"
     (let [{:keys [conn]} (tc/new-system "gig-edit-delete-archived-action")
@@ -293,5 +291,5 @@
               {:tr tr
                :db (d/db conn)
                :current-user-roles #{}}
-              {"gig-id" (str gig-id)
-               "tab-id" "ignored"}))))))
+              {:gig-id (str gig-id)
+               :tab-id "ignored"}))))))

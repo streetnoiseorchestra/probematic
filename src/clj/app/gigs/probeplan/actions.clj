@@ -1,8 +1,8 @@
 (ns app.gigs.probeplan.actions
   (:require
+   [app.form :as form]
    [app.queries :as q]
-   [app.util :as util]
-   [clojure.string :as str]))
+   [app.util :as util]))
 
 (def probeplan-path [:gig-probeplan])
 (def error-path (conj probeplan-path :_error))
@@ -15,13 +15,6 @@
     (if (repertoire-filters filter)
       filter
       default-repertoire-filter)))
-
-(defn- normalize-bool [v]
-  (cond
-    (true? v) true
-    (false? v) false
-    (string? v) (= "true" (str/lower-case v))
-    :else (boolean v)))
 
 (defn- str->emphasis [emphasis]
   (cond
@@ -99,7 +92,7 @@
   (let [{:keys [gig-id song-id selected]} gig-probeplan
         gig-id         (util/ensure-uuid! gig-id)
         song-id        (str (util/ensure-uuid! song-id))
-        selected?      (normalize-bool selected)
+        selected?      (form/normalize-bool selected)
         songs          (db-songs db gig-id)
         selected-song? (some #(= song-id (:song-id %)) songs)]
     (cond

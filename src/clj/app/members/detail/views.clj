@@ -2,6 +2,7 @@
   (:require
    [app.auth :as auth]
    [app.config :as config]
+   [app.form :as form]
    [app.datastar :as d*]
    [app.keycloak :as keycloak]
    [app.members.detail.actions :as actions]
@@ -82,12 +83,9 @@
    [:dt label]
    [:dd value]])
 
-(defn- field-error [form-state field]
-  (get-in form-state [:_error field :error]))
-
 (defn- form-input [form-state signal label attrs]
-  (let [field (keyword (last (str/split signal #"\.")))
-        error (field-error form-state field)]
+  (let [field (form/signal-field signal)
+        error (form/field-error form-state field)]
     [:wa-input (merge {:label        label
                        :appearance   "outlined"
                        :size         "medium"
@@ -111,7 +109,7 @@
   {:data-on:keydown__debounce.500ms (validate-field-action req field)})
 
 (defn- section-select [{:keys [tr] :as req} form-state sections]
-  (let [error (field-error form-state :section-name)]
+  (let [error (form/field-error form-state :section-name)]
     (into
      [:wa-select {:label        (tr [:section])
                   :appearance   "outlined"
@@ -158,7 +156,7 @@
             :data-action    (d*/act req ::actions/update-contact)
             :data-on:submit "evt.preventDefault();"}
      [:div {:class "wa-stack wa-gap-l"}
-      (when-let [top-error (field-error form-state :_top)]
+      (when-let [top-error (form/field-error form-state :_top)]
         [:wa-callout {:appearance "outlined" :variant "danger"}
          top-error])
       [:input {:type "hidden" :data-bind "member-detail.contact.member-id"}]
@@ -230,14 +228,11 @@
     (dissoc form-state :_error)
     form-state))
 
-(defn- date-value [value]
-  (members.ui/date-value value))
-
 (defn- expiry-badge [{:keys [tr]} discount]
-  (members.ui/travel-discount-badge tr discount (date-value (:travel.discount/expiry-date discount))))
+  (members.ui/travel-discount-badge tr discount (form/date-value (:travel.discount/expiry-date discount))))
 
 (defn- discount-type-select [{:keys [tr]} form-state discount-types]
-  (let [error (field-error form-state :discount-type-id)]
+  (let [error (form/field-error form-state :discount-type-id)]
     (into
      [:wa-select {:label             (tr [:travel-discounts/discount-type-name])
                   :appearance        "outlined"
@@ -258,7 +253,7 @@
             :data-action    (d*/act req ::actions/add-travel-discount)
             :data-on:submit "evt.preventDefault();"}
      [:div {:class "wa-stack wa-gap-m"}
-      (when-let [top-error (field-error form-state :_top)]
+      (when-let [top-error (form/field-error form-state :_top)]
         [:wa-callout {:appearance "outlined" :variant "danger"}
          top-error])
       [:input {:type      "hidden"
@@ -291,7 +286,7 @@
           :data-action    (d*/act req ::actions/update-travel-discount)
           :data-on:submit "evt.preventDefault();"}
    [:div {:class "wa-cluster wa-gap-s wa-align-items-end wa-justify-content-end"}
-    (when-let [top-error (field-error form-state :_top)]
+    (when-let [top-error (form/field-error form-state :_top)]
       [:wa-callout {:appearance "outlined" :variant "danger"}
        top-error])
     [:input {:type      "hidden"
@@ -492,7 +487,7 @@
 (defn- ledger-direction-choice [req member form-state]
   [:div {:class     "wa-stack wa-gap-s"
          :data-show "$_ledgerDirection === ''"}
-   (when-let [error (field-error form-state :tx-direction)]
+   (when-let [error (form/field-error form-state :tx-direction)]
      [:wa-callout {:appearance "outlined" :variant "danger"}
       error])
    [:div {:class "wa-stack wa-gap-2xs"}
@@ -521,7 +516,7 @@
        [:strong title]
        [:span {:class "wa-caption-s"}
         "Record money owed by or paid to the band."]]
-      (when-let [top-error (field-error form-state :_top)]
+      (when-let [top-error (form/field-error form-state :_top)]
         [:wa-callout {:appearance "outlined" :variant "danger"}
          top-error])
       [:input {:type      "hidden"
@@ -600,7 +595,7 @@
 (defn- ledger-entry-row [{:keys [tr]} {:ledger.entry/keys [amount description tx-date entry-id]}]
   [:tr {:id (str "ledger-entry-" entry-id)}
    [:td {:class "align-middle"}
-    [:time {:datetime (str tx-date)} (date-value tx-date)]]
+    [:time {:datetime (str tx-date)} (form/date-value tx-date)]]
    [:td {:class "align-middle"} description]
    [:td {:class "align-middle text-right"} (ledger-amount-badge amount)]
    [:td {:class "align-middle text-right"}
@@ -685,7 +680,7 @@
       (tr [(:insurance.policy/status policy)])]
      (when-let [effective-until (:insurance.policy/effective-until policy)]
        [:span {:class "wa-caption-s"}
-        (str (tr [:insurance/effective-until]) ": " (date-value effective-until))])]
+        (str (tr [:insurance/effective-until]) ": " (form/date-value effective-until))])]
     [:wa-callout {:appearance "outlined" :variant "warning"}
      (tr [:none])]))
 
