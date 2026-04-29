@@ -3,10 +3,20 @@ set -euo pipefail
 
 echo "Creating SQLite database and schema..."
 sqlite3 ./data.dev/datomic/data/datomic-sqlite.db "
-      CREATE TABLE IF NOT EXISTS datomic_kvs (
-        id TEXT NOT NULL PRIMARY KEY,
-        rev INTEGER,
-        map TEXT,
-        val BLOB
-      );"
+-- same as Rails 8.0
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA mmap_size = 134217728; -- 128 megabytes
+PRAGMA journal_size_limit = 67108864; -- 64 megabytes
+PRAGMA cache_size = 2000;
+
+-- datomic schema
+CREATE TABLE IF NOT EXISTS datomic_kvs (
+    id TEXT NOT NULL,
+    rev INTEGER,
+    map TEXT,
+    val BYTEA,
+    CONSTRAINT pk_id PRIMARY KEY (id)
+);"
 echo "Database initialization complete."
