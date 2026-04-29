@@ -1,6 +1,7 @@
 (ns app.ui2
   (:require
    [app.html :as html]
+   [app.icons :as icons]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -162,6 +163,45 @@
    [:div {:class "wa-stack wa-gap-2xs"}
     [:strong title]
     [:span body]]])
+
+(def standalone-page-style
+  ":root { --sno-brand-green: #22c55e; --sno-brand-orange: #f97316; }
+   body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f7f7f7; color: #1f2933; line-height: 1.5; }
+   main { max-width: 42rem; margin: 4rem auto; padding: 0 1.5rem; }
+   main > header { display: flex; justify-content: center; margin: 0 0 1.25rem; }
+   main > header svg { display: block; width: min(16rem, 70vw); height: auto; }
+   main > header svg .logotype-snoman { fill: var(--sno-brand-green); }
+   main > header svg .logotype-text { fill: var(--sno-brand-orange); }
+   main > section { background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 2rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); }
+   section > header > p { margin: 0 0 0.5rem; color: #ea580c; font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+   section > header.danger > p { color: #b91c1c; }
+   h1 { margin: 0; font-size: 1.875rem; line-height: 1.2; color: #111827; }
+   section > p { margin: 1rem 0 0; color: #4b5563; }
+   dl { margin: 1.5rem 0; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; }
+   dt { font-weight: 700; color: #111827; }
+   dt + dd + dt { margin-top: 1rem; }
+   dd { margin: 0.25rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #374151; }
+   footer { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+   button { background: #ea580c; color: white; border: 0; border-radius: 0.375rem; padding: 0.625rem 1rem; font: inherit; font-weight: 700; cursor: pointer; }
+   button:hover { background: #c2410c; }
+   footer a { color: #374151; font-weight: 700; text-decoration: none; }
+   footer a:hover { color: #7c2d12; }
+   code { overflow-wrap: anywhere; }")
+
+(defn standalone-page [{:keys [description lang status title]} & body]
+  {:status  (or status 200)
+   :headers {"Content-Type" "text/html"}
+   :body    (html/->str
+             (html/html-document
+              {:title       title
+               :description description
+               :lang        lang
+               :head        [:style (html/raw standalone-page-style)]}
+              [:main {:id "main"}
+               [:header {:aria-label "SNOrga"}
+                (icons/logotype {:aria-hidden "true"})]
+               (into [:section]
+                     body)]))})
 
 (defn datastar-main-attrs
   "Returns the standard `main` attrs for Nexus-backed Datastar pages.

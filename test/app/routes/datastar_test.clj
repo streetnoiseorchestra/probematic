@@ -188,6 +188,26 @@
              (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :name])))
       (is (nil? (r/match-by-path router (str "/member-old/" member-id)))))))
 
+(deftest gigs-unauthenticated-routes-expose-answer-link
+  (let [router (http/router ["" (gigs.routes/unauthenticated-routes)])]
+    (is (= :app/gig-answer-link
+           (get-in (r/match-by-path router "/answer-link") [:data :app.route/name])))
+    (is (= :app/gig-answer-link
+           (get-in (r/match-by-path router "/answer-link/") [:data :app.route/name])))
+    (is (nil? (r/match-by-path router "/dev/answer-link/")))))
+
+(deftest gigs-dev-routes-expose-answer-link-preview-only-in-dev
+  (let [dev-system  {:env {:ig/system {:app.ig/profile :dev}}}
+        prod-system {:env {:ig/system {:app.ig/profile :prod}}}
+        dev-router  (http/router ["" (gigs.routes/unauthenticated-routes dev-system)])
+        prod-router (http/router ["" (gigs.routes/unauthenticated-routes prod-system)])]
+    (is (= :app/gig-answer-link-dev
+           (get-in (r/match-by-path dev-router "/dev/answer-link") [:data :app.route/name])))
+    (is (= :app/gig-answer-link-dev
+           (get-in (r/match-by-path dev-router "/dev/answer-link/") [:data :app.route/name])))
+    (is (nil? (r/match-by-path prod-router "/dev/answer-link")))
+    (is (nil? (r/match-by-path prod-router "/dev/answer-link/")))))
+
 (deftest members-unauthenticated-routes-expose-invite-accept
   (let [router (http/router ["" (members.routes/unauthenticated-routes)])]
     (is (= :app/invite-accept

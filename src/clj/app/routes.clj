@@ -34,7 +34,7 @@
                                        (ds/datastar-refresh-interceptor system)]))}
 
    (auth/routes system)
-   (gigs/unauthenticated-routes)
+   (gigs/unauthenticated-routes system)
    (insurance/unauthenticated-routes)
    (members/unauthenticated-routes)
 
