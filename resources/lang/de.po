@@ -3991,11 +3991,6 @@ msgstr "Repertoire"
 #~ msgstr "Ja, öffnen die Umfrage."
 
 #, ycp-format
-#~ msgctxt ":action/confirm-delete"
-#~ msgid "Yes, delete it."
-#~ msgstr "Ja, löschen es."
-
-#, ycp-format
 #~ msgctxt ":instrument/create-subtitle"
 #~ msgid "Enter details for the Instrument"
 #~ msgstr "Details zum Instrument"

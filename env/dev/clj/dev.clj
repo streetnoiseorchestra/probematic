@@ -84,10 +84,19 @@
                   :no-reload '#{dev user integrant.repl.state}})
 
 (comment
+  ;; normal reload
+  (reset) ;; rcf
+
+  ;; when the above fails
+  (do
+    (clj-reload/reload {:only :loaded})
+    (reset))
+
+  ;; other
   (clj-reload/reload)
   (clj-reload/reload {:only :loaded})
   (stop)
-  (reset) ;; rcf
+  (reset)
   (restart)
   (reload-all)
   ;; much
