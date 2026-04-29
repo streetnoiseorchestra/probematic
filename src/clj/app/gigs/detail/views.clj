@@ -4,7 +4,7 @@
    [app.datastar :as d*]
    [app.gigs.attendance.ui :as attendance.ui]
    [app.gigs.detail.actions :as actions]
-   [app.gigs.detail.queries :as detail.queries]
+   [app.gigs.queries :as gigs.queries]
    [app.gigs.domain :as domain]
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
@@ -214,7 +214,7 @@
 
 (defn- attendance-section [{:keys [db page-state tr] :as req} {:gig/keys [gig-id] :as gig}]
   (let [show-committed? (boolean (get-in page-state [:gig-detail :attendance :show-committed?]))
-        {:keys [archived? sections summary]} (detail.queries/attendance-data db gig show-committed?)]
+        {:keys [archived? sections summary]} (gigs.queries/attendance-data db gig show-committed?)]
     (ui2/section-card
      {:id       "gig-attendance"
       :title    (tr [:gig/attendance])

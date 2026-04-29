@@ -1,7 +1,7 @@
 (ns app.gigs.archive.views
   (:require
    [app.datastar :as d*]
-   [app.gigs.archive.queries :as queries]
+   [app.gigs.queries :as queries]
    [app.gigs.ui :as gigs.ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
@@ -30,7 +30,7 @@
                :with-clear  true}]])
 
 (defn page [{:keys [db tr] :as req}]
-  (let [{:keys [selected-year years gigs]} (queries/page-data db (http.util/path-param req :year))]
+  (let [{:keys [selected-year years gigs]} (queries/archive-page-data db (http.util/path-param req :year))]
     (ui2/plain-page
      [:div {:class "wa-stack wa-gap-l gigs-archive-page"}
       (ui2/page-header

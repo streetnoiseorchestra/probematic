@@ -1,13 +1,13 @@
 (ns app.gigs.index.views
   (:require
    [app.datastar :as d*]
-   [app.gigs.index.queries :as queries]
+   [app.gigs.queries :as queries]
    [app.gigs.ui :as gigs.ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]))
 
 (defn page [{:keys [db tr]}]
-  (let [{:keys [future-gigs past-gigs]} (queries/page-data db)]
+  (let [{:keys [future-gigs past-gigs]} (queries/index-page-data db)]
     (ui2/plain-page
      [:div {:class "wa-stack wa-gap-l gigs-index-page"}
       (ui2/page-header

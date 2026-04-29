@@ -1,6 +1,6 @@
 (ns app.gigs.effects
   (:require
-   [app.gigs.service :as gigs.service]
+   [app.email :as email]
    [app.jobs.gig-events :as gig.events]
    [app.probeplan.stats :as stats]
    [app.queries :as q]))
@@ -42,5 +42,5 @@
 
 (defn send-reminder-to-all-fx
   [_ {:keys [request]} gig-id]
-  (gigs.service/send-reminder-to-all! request gig-id)
+  (email/send-gig-reminder-to-all! request gig-id)
   nil)
