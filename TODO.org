@@ -34,14 +34,14 @@
 ** DONE gig edit - should be similiar/same to gig create
 ** DONE gig detail - log plays
 ** DONE dashboard gigs need attention/upcoming
+** DONE gig email answer link
+** DONE members invite accept
+** DONE members vcard download
+** DONE dashboard add to calendar
 ** TODO dashboard gig snoozing
 ** TODO dashboard insurance survey banana
 ** TODO dashboard insurance todos for insurance team
 ** TODO dashboard payment required
-** TODO dashboard add to calendar
-** TODO gig email answer link
-** TODO members invite accept
-** TODO members vcard download
 ** TODO repertoire index
 ** TODO repertoire create/edit
 ** TODO repertoire detail w/out sheet music
@@ -74,5 +74,6 @@
 ** TODO member profile -> show SNO UUID related things only to "admin" team
 ** TODO on gig detail page add a "travel mode" feature which switches view to those attending and shows their travel discount details
 * 2026 post d* cool new features
+** View transitions to animated in gig attendance/gig details in dashboard and gig detail page
 ** Ledger bookkeping view for finanz team members
 ** User page presence avatars

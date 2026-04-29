@@ -6,7 +6,6 @@
    [app.datastar :as d*]
    [app.gigs.attendance.ui :as attendance.ui]
    [app.gigs.ui :as gigs.ui]
-   [app.icons :as icon]
    [app.qrcode :as qr]
    [app.ui2 :as ui2]
    [app.urls :as urls]
@@ -137,11 +136,13 @@
                           "&url=" encoded-webcal "&name=SNO-Kalender")})))
 
 (defn- calendar-menu-icon
-  ([icon-fn]
-   (calendar-menu-icon icon-fn nil))
-  ([icon-fn extra-class]
-   (icon-fn {:slot  "icon"
-             :class (ui2/cs "dashboard-calendar-service-icon" extra-class)})))
+  ([icon-name]
+   (calendar-menu-icon icon-name nil))
+  ([icon-name extra-class]
+   [:wa-icon {:slot    "icon"
+              :library "snoico"
+              :name    icon-name
+              :class   (ui2/cs "dashboard-calendar-service-icon" extra-class)}]))
 
 (defn- calendar-subscribe-button [{:keys [tr system]}]
   (when-let [{:keys [https webcal google outlook-365 outlook-live]} (calendar-url-data (:env system))]
@@ -154,23 +155,23 @@
                  :slot    "start"}]
       (tr [:action/add-to-calendar])]
      [:wa-dropdown-item {:data-on:click (str "navigator.clipboard.writeText(" (js-value https) ")")}
-      (calendar-menu-icon icon/copy "dashboard-calendar-service-icon--copy")
+      (calendar-menu-icon "copy" "dashboard-calendar-service-icon--copy")
       (tr [:action/copy-link])]
      [:wa-dropdown-item {:value   outlook-365
                          :onclick "window.location = this.value"}
-      (calendar-menu-icon icon/microsoft-365)
+      (calendar-menu-icon "microsoft-365")
       "Microsoft 365"]
      [:wa-dropdown-item {:value   outlook-live
                          :onclick "window.location = this.value"}
-      (calendar-menu-icon icon/outlook)
+      (calendar-menu-icon "outlook")
       "Outlook Live"]
      [:wa-dropdown-item {:value   google
                          :onclick "window.location = this.value"}
-      (calendar-menu-icon icon/google-calendar)
+      (calendar-menu-icon "google-calendar")
       "Google Calendar"]
      [:wa-dropdown-item {:value   webcal
                          :onclick "window.location = this.value"}
-      (calendar-menu-icon icon/apple-calendar "dashboard-calendar-service-icon--apple")
+      (calendar-menu-icon "apple-calendar" "dashboard-calendar-service-icon--apple")
       "Apple Calendar"]]))
 
 (defn- page-actions [req]
