@@ -3,6 +3,7 @@
    [app.interceptors.util :as int]
    [app.interceptors.session :as session]
    [app.config :as config]
+   [app.html :as html]
    [app.render :as render]
    [app.errors :as errors]
    [app.secret-box :as secret-box]
@@ -104,6 +105,7 @@
 
     :session/username - the preferred username of the authenticated user
     :session/email - the email of the user
+    :session/keycloak-id - the stable Keycloak subject claim
     :session/groups - a set of groups in the claims (if included)
     :session/roles - a set of roles that the user has, filtered to only include those in known-roles
     :session/access-token - the access token
@@ -122,6 +124,7 @@
       (jwt/unsign (:id_token token) certificate {:alg :rs256})
       {:session/username (:preferred_username access-token-claims)
        :session/email (:email access-token-claims)
+       :session/keycloak-id (:sub access-token-claims)
        :session/access-token (:access_token token)
        :session/refresh-token (:refresh_token token)
        :session/id-token (:id_token token)
@@ -138,6 +141,46 @@
 (defn restart-login [env]
   {:status 302 :headers {"location" "/login"} :body "" :cookies {"oauth2" (expire-oauth2-cookie env)}})
 
+(defn restart-login-handler [env]
+  (assoc (restart-login env) :session nil))
+
+(defn identity-mismatch-response [req]
+  (let [tr (:tr req)]
+    {:status  403
+     :headers {"Content-Type" "text/html"}
+     :body    (html/->str
+               (html/html-document
+                {:title       (tr [:identity-mismatch/page-title])
+                 :description (tr [:identity-mismatch/body])
+                 :body-attrs  {:style "font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f7f7f7; color: #1f2933; line-height: 1.5;"}
+                 :head        [:style "code { overflow-wrap: anywhere; } button:hover { background: #c2410c; } a:hover { color: #7c2d12; }"]}
+                [:main {:style "max-width: 42rem; margin: 4rem auto; padding: 0 1.5rem;"}
+                 [:section {:style "background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 2rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);"}
+                  [:p {:style "margin: 0 0 0.5rem; color: #ea580c; font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;"}
+                   (tr [:identity-mismatch/eyebrow])]
+                  [:h1 {:style "margin: 0; font-size: 1.875rem; line-height: 1.2; color: #111827;"}
+                   (tr [:identity-mismatch/title])]
+                  [:p {:style "margin: 1rem 0 0; color: #4b5563;"}
+                   (tr [:identity-mismatch/body])]
+                  (into [:dl {:style "margin: 1.5rem 0; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;"}
+                         [:dt {:style "font-weight: 700; color: #111827;"} (tr [:identity-mismatch/signed-in-email])]
+                         [:dd {:style "margin: 0.25rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #374151;"}
+                          [:code (or (get-in req [:session :session/email]) (tr [:unknown]))]]]
+                        (when-let [keycloak-id (get-in req [:session :session/keycloak-id])]
+                          [[:dt {:style "margin-top: 1rem; font-weight: 700; color: #111827;"} (tr [:identity-mismatch/sno-id-subject])]
+                           [:dd {:style "margin: 0.25rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #374151;"}
+                            [:code keycloak-id]]]))
+                  [:p {:style "margin: 0 0 1.5rem; color: #4b5563;"}
+                   (tr [:identity-mismatch/retry-guidance])]
+                  [:div {:style "display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;"}
+                   [:form {:method "post" :action "/login/restart"}
+                    [:button {:type  "submit"
+                              :style "background: #ea580c; color: white; border: 0; border-radius: 0.375rem; padding: 0.625rem 1rem; font-weight: 700; cursor: pointer;"}
+                     (tr [:identity-mismatch/restart-login])]]
+                   [:a {:href  "/logout"
+                        :style "color: #374151; font-weight: 700; text-decoration: none;"}
+                    (tr [:identity-mismatch/log-out])]]]]))}))
+
 (defn oauth2-load-certificate [{:keys [openid-config]}]
   (->>
    (some-> @(http/get (:jwks_uri openid-config))
@@ -146,6 +189,11 @@
            :keys)
    (m/find-first #(= "RS256" (:alg %)))
    (buddy-keys/jwk->public-key)))
+
+(defn identity-mismatch-preview-handler [env req]
+  (if (config/dev-mode? env)
+    (identity-mismatch-response req)
+    {:status 404 :headers {"Content-Type" "text/plain"} :body "Not found"}))
 
 (defn oauth2-callback-handler [env oauth2 {:keys [_session params] :as request}]
   (try
@@ -169,11 +217,15 @@
       (restart-login env))))
 
 (defn routes [system]
-  [""
-   ["/login" {:handler (fn [req] (login-page-handler (:env system) (:oauth2 system) req))}]
-   ["/logout" {:handler (fn [req] (logout-page-handler (:env system) (:oauth2 system) req))}]
-   ["/oauth2"
-    ["/callback" {:handler (fn [req] (oauth2-callback-handler (:env system) (:oauth2 system) req))}]]])
+  (cond-> [""
+           ["/login" {:handler (fn [req] (login-page-handler (:env system) (:oauth2 system) req))}]
+           ["/login/restart" {:post {:handler (fn [_req] (restart-login-handler (:env system)))}
+                              :get  {:handler (fn [_req] (restart-login-handler (:env system)))}}]
+           ["/logout" {:handler (fn [req] (logout-page-handler (:env system) (:oauth2 system) req))}]
+           ["/oauth2"
+            ["/callback" {:handler (fn [req] (oauth2-callback-handler (:env system) (:oauth2 system) req))}]]]
+    (config/dev-mode? (:env system))
+    (conj ["/dev/identity-mismatch" {:handler (fn [req] (identity-mismatch-preview-handler (:env system) req))}])))
 
 (defn session-interceptor
   [{:keys [env redis]}]
@@ -230,12 +282,18 @@
   {:name  ::require-authenticated-user
    :enter (fn [ctx]
             (let [{:keys [uri query-string] :as req} (:request ctx)]
-              (if (get-current-email req)
-                ctx
+              (cond
+                (not (get-current-email req))
                 (int/terminate ctx
                                {:status  302
                                 :headers {"location" (str "/login?next=" (util/url-encode (str uri "?" query-string)))}
-                                :body    ""}))))})
+                                :body    ""})
+
+                (get-current-member req)
+                ctx
+
+                :else
+                (int/terminate ctx (identity-mismatch-response req)))))})
 
 (def demo-auth-interceptor
   {:name  ::demo-auth-interceptor

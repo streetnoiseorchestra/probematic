@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-04-28 08:52+0000\n"
+"POT-Creation-Date: 2026-04-29 06:37+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -881,6 +881,12 @@ msgstr "Band/Privat"
 msgctxt ":Contact-Information"
 msgid "Contact Information"
 msgstr "Kontakt Informationen"
+
+#: :unknown
+#, ycp-format
+msgctxt ":unknown"
+msgid "unknown"
+msgstr "unbekannt"
 
 #: :instrument.coverage.change/new
 #, ycp-format
@@ -2088,6 +2094,69 @@ msgstr "Menschen können mehrere Optionen wählen."
 msgctxt ":poll.type/single-hint"
 msgid "People can only choose one option."
 msgstr "Menschen können nur eine Option wählen."
+
+#: :identity-mismatch/restart-login
+#, ycp-format
+msgctxt ":identity-mismatch/restart-login"
+msgid "Restart login"
+msgstr "Login neu starten"
+
+#: :identity-mismatch/log-out
+#, ycp-format
+msgctxt ":identity-mismatch/log-out"
+msgid "Log out"
+msgstr "Abmelden"
+
+#: :identity-mismatch/eyebrow
+#, ycp-format
+msgctxt ":identity-mismatch/eyebrow"
+msgid "Account mismatch"
+msgstr "Kontoproblem"
+
+#: :identity-mismatch/sno-id-subject
+#, ycp-format
+msgctxt ":identity-mismatch/sno-id-subject"
+msgid "SNO ID subject"
+msgstr "SNO-ID-Subjekt"
+
+#: :identity-mismatch/title
+#, ycp-format
+msgctxt ":identity-mismatch/title"
+msgid "SNOrga cannot match your SNO ID account"
+msgstr "SNOrga kann dein SNO-ID-Konto nicht zuordnen"
+
+#: :identity-mismatch/retry-guidance
+#, ycp-format
+msgctxt ":identity-mismatch/retry-guidance"
+msgid ""
+"Try restarting the login flow. If this page returns, contact an admin and "
+"include the email shown above."
+msgstr ""
+"Starte den Login-Vorgang neu. Wenn diese Seite wieder erscheint, kontaktiere "
+"eine Administratorin oder einen Administrator und gib die oben angezeigte "
+"E-Mail-Adresse an."
+
+#: :identity-mismatch/page-title
+#, ycp-format
+msgctxt ":identity-mismatch/page-title"
+msgid "SNOrga account mismatch"
+msgstr "SNOrga-Kontoproblem"
+
+#: :identity-mismatch/body
+#, ycp-format
+msgctxt ":identity-mismatch/body"
+msgid ""
+"You are signed in with SNO ID, but SNOrga could not match that account to a "
+"member record."
+msgstr ""
+"Du bist mit SNO ID angemeldet, aber SNOrga konnte dieses Konto keinem "
+"Mitglied zuordnen."
+
+#: :identity-mismatch/signed-in-email
+#, ycp-format
+msgctxt ":identity-mismatch/signed-in-email"
+msgid "Signed-in email"
+msgstr "Angemeldete E-Mail-Adresse"
 
 #: :sno-id
 #, ycp-format

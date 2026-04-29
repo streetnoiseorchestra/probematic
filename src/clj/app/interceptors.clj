@@ -21,6 +21,17 @@
    [reitit.http.interceptors.parameters :as parameters]
    [ring.middleware.keyword-params :as keyword-params]))
 
+(defn- matching-session-member [db {:session/keys [email keycloak-id]}]
+  (let [member-by-keycloak-id (when (seq keycloak-id)
+                                (q/member-by-keycloak-id db keycloak-id))
+        member-by-email (when (and email (nil? member-by-keycloak-id))
+                          (q/member-by-email db email))]
+    (or member-by-keycloak-id
+        (when (or (nil? keycloak-id)
+                  (nil? (:member/keycloak-id member-by-email))
+                  (= keycloak-id (:member/keycloak-id member-by-email)))
+          member-by-email))))
+
 (defn current-user-interceptor
   "Fetches the current user from the request (see app.auth/auth-interceptor),
    looks up the member and attaches the member info to the request under :session :session/member.
@@ -29,11 +40,12 @@
   (assert system)
   {:name  ::current-user-interceptor
    :enter (fn [ctx]
-            (if-let [member-email (-> ctx :request :session :session/email)]
-              (if-let [member (q/member-by-email (d/db (-> system :datomic :conn)) member-email)]
-                (assoc-in ctx  [:request :session :session/member] member)
-                ctx)
-              ctx))})
+            (let [session (-> ctx :request :session)]
+              (if (:session/email session)
+                (if-let [member (matching-session-member (d/db (-> system :datomic :conn)) session)]
+                  (assoc-in ctx [:request :session :session/member] member)
+                  ctx)
+                ctx)))})
 
 (def keyword-params-interceptor
   "Keywordizes request parameter keys. CTMX expects this."

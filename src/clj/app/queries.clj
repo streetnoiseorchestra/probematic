@@ -48,7 +48,7 @@
    :travel.discount/discount-id
    :travel.discount/expiry-date])
 
-(def member-pattern [:member/member-id :member/username :member/name :member/nick :member/active? :member/phone :member/email :member/avatar-template
+(def member-pattern [:member/member-id :member/username :member/name :member/nick :member/active? :member/phone :member/email :member/keycloak-id :member/avatar-template
                      {:member/section [:section/name]}])
 
 (def member-detail-pattern [:member/member-id :member/name :member/nick :member/active? :member/phone :member/email
@@ -635,6 +635,9 @@
 
 (defn member-by-email [db email]
   (d/find-by db :member/email email member-pattern))
+
+(defn member-by-keycloak-id [db keycloak-id]
+  (d/find-by db :member/keycloak-id keycloak-id member-pattern))
 
 (defn setlist-for-gig [db gig-id]
   (-> (d/find-by db :setlist/gig [:gig/gig-id gig-id] setlist-v1-pattern)
