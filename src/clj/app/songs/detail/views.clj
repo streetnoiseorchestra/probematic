@@ -53,7 +53,10 @@
                  (ui2/active-badge tr active?)]
     :actions    [[:wa-button {:appearance "outlined"
                               :href       (urls/link-songs-home)}
-                  (tr [:action/back])]]}))
+                  (tr [:action/back])]
+                 [:wa-button {:appearance "outlined"
+                              :href       (urls/link-song-edit _song)}
+                  (tr [:action/edit])]]}))
 
 (defn- background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
   (ui2/section-card

@@ -42,6 +42,9 @@
 (defn link-gig-log-plays [gig-or-gig-id]
   (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/log-plays"))
 (def link-song (partial link-helper "/song/" :song/song-id))
+(defn link-song-edit [song-or-song-id]
+  (link-helper "/song/" :song/song-id song-or-song-id "/edit"))
+(defn link-song-create [] "/songs/new")
 
 (def link-policy (partial link-helper "/insurance-policy/" :insurance.policy/policy-id))
 (def link-policy-send-notifications (partial link-helper "/insurance-policy-notify/" :insurance.policy/policy-id))

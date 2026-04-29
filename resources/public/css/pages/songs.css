@@ -277,6 +277,62 @@
   }
 }
 
+.songs-edit-page {
+  max-inline-size: var(--sno-size-full);
+}
+
+@scope (.songs-edit-page) {
+  .songs-edit-title h1 {
+    margin: var(--sno-size-none);
+  }
+
+  .songs-edit-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--wa-space-m);
+    align-items: start;
+  }
+
+  .songs-edit-wide,
+  .songs-edit-textarea-field {
+    grid-column: 1 / -1;
+  }
+
+  .songs-edit-active {
+    min-block-size: 2.75rem;
+    padding-block-start: var(--wa-space-m);
+  }
+
+  .songs-edit-textarea-field {
+    display: grid;
+    gap: var(--wa-space-2xs);
+  }
+
+  .songs-edit-textarea-field label {
+    color: var(--wa-form-control-label-color);
+    font-size: var(--wa-form-control-label-font-size);
+    font-weight: var(--wa-form-control-label-font-weight);
+  }
+
+  .songs-edit-textarea {
+    inline-size: var(--sno-size-full);
+    min-block-size: 9rem;
+    padding: var(--wa-form-control-padding-block) var(--wa-form-control-padding-inline);
+    background: var(--wa-form-control-background-color);
+    border: var(--wa-form-control-border-width) var(--wa-form-control-border-style)
+      var(--wa-form-control-border-color);
+    border-radius: var(--wa-form-control-border-radius);
+    color: var(--wa-form-control-value-color);
+    font: inherit;
+  }
+
+  .songs-edit-textarea:focus {
+    border-color: var(--wa-form-control-focus-border-color);
+    box-shadow: 0 0 0 var(--wa-focus-ring-width) var(--wa-focus-ring-color);
+    outline: none;
+  }
+}
+
 @media (--sno-particulars-wide) {
   @scope (.songs-detail-page) {
     .songs-detail-info-list,

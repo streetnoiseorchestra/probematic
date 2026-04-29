@@ -1,11 +1,10 @@
 (ns app.songs.routes
   (:require
-   [app.layout :as layout]
    [app.routes.datastar :as ds]
    [app.songs.detail.views]
+   [app.songs.edit.views]
    [app.songs.index.views]
    [app.songs.views :as view]
-   [ctmx.core :as ctmx]
    [reitit.ring.malli :as reitit.ring.malli]))
 
 (defn songs-sync []
@@ -24,11 +23,16 @@
                    :view-ns   'app.songs.index.views}))
 
 (defn songs-new-routes []
-  (ctmx/make-routes
-   "/songs/new"
-   (fn [req]
-     (layout/app-shell req
-                       (view/song-new req)))))
+  (ds/page-routes {:page-name  ::create
+                   :path       "/songs/new"
+                   :view-ns    'app.songs.edit.views
+                   :extra-head app.songs.edit.views/extra-head}))
+
+(defn song-edit-routes []
+  (ds/page-routes {:page-name  ::edit
+                   :path       "/song/{song-id}/edit"
+                   :view-ns    'app.songs.edit.views
+                   :extra-head app.songs.edit.views/extra-head}))
 
 (defn song-detail-routes []
   (ds/page-routes {:page-name ::detail
@@ -45,6 +49,7 @@
    (songs-sync)
    (song-detail-routes)
    (song-detail-no-slash-routes)
+   (song-edit-routes)
    (songs-list-routes)
    (songs-list-trailing-slash-routes)
    (songs-new-routes)

@@ -727,7 +727,13 @@
       (probeplan-songs-for-gig db gig-id))))
 
 (defn sheet-music-by-song [db song-id]
-  (->> (d/find-all-by db :sheet-music/song  [:song/song-id song-id] play-pattern)
+  (->> (d/find-all-by db
+                      :sheet-music/song
+                      [:song/song-id song-id]
+                      [:sheet-music/sheet-id
+                       :sheet-music/title
+                       :file/webdav-path
+                       {:sheet-music/section section-pattern}])
        (mapv first)))
 
 (defn sheet-music-dir-for-song [db song-id]

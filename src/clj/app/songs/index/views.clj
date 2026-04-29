@@ -96,7 +96,7 @@
     (tr [:action/update])]
    [:wa-button {:appearance "filled"
                 :variant    "brand"
-                :href       "/songs/new"}
+                :href       (urls/link-song-create)}
     (tr [:song/create-title])]])
 
 (defn- toolbar [{:keys [tr] :as req} page-state total]

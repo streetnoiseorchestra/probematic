@@ -52,6 +52,106 @@
     [:span {:class "wa-color-text-quiet"} html/emdash]
     value))
 
+(defn markdown-editor-extra-head
+  "Returns the shared EasyMDE assets and Datastar-safe markdown editor initializer."
+  []
+  [[:link {:rel "stylesheet" :href "/css/easymde.min@2.18.0.css"}]
+   [:script {:src "/js/easymde.min@2.18.0.js"}]
+   [:script
+    (html/raw
+     "window.MarkdownEditor = function MarkdownEditor(target) {
+        if (!target || target.dataset.easymdeInitialized === 'true') return;
+        target.dataset.easymdeInitialized = 'true';
+        const imageUploadEndpoint = target.getAttribute('data-image-upload-endpoint');
+        const hasUpload = !!imageUploadEndpoint;
+        const maxSizeMB = 10;
+        const maxSizeB = 1024 * 1024 * maxSizeMB;
+        const easyMDE = new EasyMDE({
+          element: target,
+          spellChecker: false,
+          forceSync: true,
+          promptURLs: true,
+          uploadImage: hasUpload,
+          autoDownloadFontAwesome: false,
+          previewImagesInEditor: true,
+          toolbar: [
+            'bold',
+            'italic',
+            'strikethrough',
+            'heading',
+            '|',
+            'quote',
+            'code',
+            'unordered-list',
+            'ordered-list',
+            'clean-block',
+            '|',
+            'link',
+            'upload-image',
+            'table',
+            'horizontal-rule',
+            '|',
+            'preview',
+            'side-by-side',
+            'fullscreen',
+          ],
+          imageUploadFunction: (file, onSuccess, onError) => {
+            if (file.size > maxSizeB) {
+              onError(`File is too big! Maximum size is ${maxSizeMB}MB.`);
+              return;
+            }
+
+            const validMimeTypes = [
+              'image/jpeg',
+              'image/png',
+              'image/gif',
+              'image/jpg',
+            ];
+            if (!validMimeTypes.includes(file.type)) {
+              onError('Invalid file type. Only JPG, PNG, and GIF files are allowed.');
+              return;
+            }
+
+            let formData = new FormData();
+            formData.append('file', file);
+
+            let xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = function () {
+              if (xhr.readyState !== 4) return;
+              if (xhr.status === 201) {
+                const response = JSON.parse(xhr.responseText);
+                onSuccess(response['file-url']);
+              } else {
+                const response = JSON.parse(xhr.responseText);
+                onError(response.error);
+              }
+            };
+
+            xhr.onerror = function () {
+              onError('XMLHttpRequest error.');
+            };
+
+            xhr.open('POST', imageUploadEndpoint, true);
+            xhr.send(formData);
+          },
+        });
+        easyMDE.codemirror.on('change', function () {
+          target.value = easyMDE.value();
+          target.dispatchEvent(new Event('input', {bubbles: true}));
+        });
+        const container = target.parentElement && target.parentElement.querySelector('.EasyMDEContainer');
+        if (container) {
+          container.setAttribute('data-ignore-morph', '');
+        }
+        return easyMDE;
+      };
+
+      window.InitializeMarkdownEditors = function InitializeMarkdownEditors(target) {
+        const root = target || document;
+        root.querySelectorAll('textarea.markdown-editor').forEach(window.MarkdownEditor);
+      };")]])
+
 (def currency-default-locale
   {:EUR Locale/GERMANY
    :USD Locale/US})

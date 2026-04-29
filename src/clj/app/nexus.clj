@@ -8,6 +8,7 @@
    [app.members.effects :as members.effects]
    [app.settings.actions]
    [app.songs.actions]
+   [app.songs.effects :as songs.effects]
    [clojure.walk :as walk]
    [com.yetanalytics.squuid :as sq]
    [datomic.api :as d]
@@ -19,6 +20,7 @@
     :user-account/email
     :user-account/username
     :gig/gig-id
+    :song/song-id
     :team/team-id
     :team/name
     :section/name
@@ -229,6 +231,8 @@
                          :app.gigs/trigger-gig-edited         gigs.effects/trigger-gig-edited-fx
                          :app.gigs/recalc-play-stats          gigs.effects/recalc-play-stats-fx
                          :app.gigs/send-reminder-to-all       gigs.effects/send-reminder-to-all-fx
+                         :app.songs/trigger-song-edited       songs.effects/trigger-song-edited-fx
+                         :app.songs/recalc-play-stats         songs.effects/recalc-play-stats-fx
                          :app.members/send-user-invitation          send-user-invitation-fx
                          :app.members/update-keycloak-meta          update-keycloak-meta-fx
                          :app.members/set-keycloak-account-enabled set-keycloak-account-enabled-fx
