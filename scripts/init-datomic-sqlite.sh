@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Creating SQLite database and schema..."
-sqlite3 ./data.dev/datomic/data/datomic-sqlite.db "
+if [[ $# -ne 1 ]]; then
+  echo "Usage: $0 DATOMIC_SQLITE_DB_PATH" >&2
+  exit 2
+fi
+
+db_path="$1"
+mkdir -p "$(dirname "$db_path")"
+
+echo "Creating SQLite database and schema at $db_path..."
+sqlite3 "$db_path" "
 -- same as Rails 8.0
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
