@@ -3,11 +3,11 @@
    [app.interceptors.util :as int]
    [app.interceptors.session :as session]
    [app.config :as config]
-   [app.html :as html]
    [app.render :as render]
    [app.errors :as errors]
    [app.secret-box :as secret-box]
    [app.session :refer [redis-store]]
+   [app.ui2 :as ui2]
    [app.util :as util]
    [buddy.core.codecs :as codecs]
    [buddy.core.keys :as buddy-keys]
@@ -146,40 +146,27 @@
 
 (defn identity-mismatch-response [req]
   (let [tr (:tr req)]
-    {:status  403
-     :headers {"Content-Type" "text/html"}
-     :body    (html/->str
-               (html/html-document
-                {:title       (tr [:identity-mismatch/page-title])
-                 :description (tr [:identity-mismatch/body])
-                 :body-attrs  {:style "font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f7f7f7; color: #1f2933; line-height: 1.5;"}
-                 :head        [:style "code { overflow-wrap: anywhere; } button:hover { background: #c2410c; } a:hover { color: #7c2d12; }"]}
-                [:main {:style "max-width: 42rem; margin: 4rem auto; padding: 0 1.5rem;"}
-                 [:section {:style "background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 2rem; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);"}
-                  [:p {:style "margin: 0 0 0.5rem; color: #ea580c; font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;"}
-                   (tr [:identity-mismatch/eyebrow])]
-                  [:h1 {:style "margin: 0; font-size: 1.875rem; line-height: 1.2; color: #111827;"}
-                   (tr [:identity-mismatch/title])]
-                  [:p {:style "margin: 1rem 0 0; color: #4b5563;"}
-                   (tr [:identity-mismatch/body])]
-                  (into [:dl {:style "margin: 1.5rem 0; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;"}
-                         [:dt {:style "font-weight: 700; color: #111827;"} (tr [:identity-mismatch/signed-in-email])]
-                         [:dd {:style "margin: 0.25rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #374151;"}
-                          [:code (or (get-in req [:session :session/email]) (tr [:unknown]))]]]
-                        (when-let [keycloak-id (get-in req [:session :session/keycloak-id])]
-                          [[:dt {:style "margin-top: 1rem; font-weight: 700; color: #111827;"} (tr [:identity-mismatch/sno-id-subject])]
-                           [:dd {:style "margin: 0.25rem 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: #374151;"}
-                            [:code keycloak-id]]]))
-                  [:p {:style "margin: 0 0 1.5rem; color: #4b5563;"}
-                   (tr [:identity-mismatch/retry-guidance])]
-                  [:div {:style "display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;"}
-                   [:form {:method "post" :action "/login/restart"}
-                    [:button {:type  "submit"
-                              :style "background: #ea580c; color: white; border: 0; border-radius: 0.375rem; padding: 0.625rem 1rem; font-weight: 700; cursor: pointer;"}
-                     (tr [:identity-mismatch/restart-login])]]
-                   [:a {:href  "/logout"
-                        :style "color: #374151; font-weight: 700; text-decoration: none;"}
-                    (tr [:identity-mismatch/log-out])]]]]))}))
+    (ui2/standalone-page
+     {:status      403
+      :title       (tr [:identity-mismatch/page-title])
+      :description (tr [:identity-mismatch/body])}
+     [:header
+      [:p (tr [:identity-mismatch/eyebrow])]
+      [:h1 (tr [:identity-mismatch/title])]]
+     [:p (tr [:identity-mismatch/body])]
+     (into [:dl
+            [:dt (tr [:identity-mismatch/signed-in-email])]
+            [:dd [:code (or (get-in req [:session :session/email]) (tr [:unknown]))]]]
+           (when-let [keycloak-id (get-in req [:session :session/keycloak-id])]
+             [[:dt (tr [:identity-mismatch/sno-id-subject])]
+              [:dd [:code keycloak-id]]]))
+     [:p (tr [:identity-mismatch/retry-guidance])]
+     [:footer
+      [:form {:method "post" :action "/login/restart"}
+       [:button {:type "submit"}
+        (tr [:identity-mismatch/restart-login])]]
+      [:a {:href "/logout"}
+       (tr [:identity-mismatch/log-out])]])))
 
 (defn oauth2-load-certificate [{:keys [openid-config]}]
   (->>
