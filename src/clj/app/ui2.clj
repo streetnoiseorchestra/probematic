@@ -68,6 +68,15 @@
                          (dissoc attrs :class))]
             actions))))
 
+(defn section-divider
+  "Renders a section title with a trailing divider.
+
+  Required: `title`."
+  [title]
+  [:div {:class "sno-section-divider"}
+   [:h2 title]
+   [:wa-divider]])
+
 (defn page-header
   "Renders a standard page header.
 

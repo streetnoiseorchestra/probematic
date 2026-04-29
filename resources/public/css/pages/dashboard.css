@@ -1,0 +1,211 @@
+.dashboard-page,
+.dashboard-calendar-page {
+  max-inline-size: var(--sno-size-full);
+}
+
+.dashboard-page {
+  container-type: inline-size;
+}
+
+.dashboard-gig-list {
+  overflow: hidden;
+  background: var(--wa-color-surface-default);
+  border: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
+  border-radius: var(--wa-border-radius-m);
+}
+
+.dashboard-gig-row {
+  display: grid;
+  grid-template-columns:
+    auto
+    minmax(9rem, 17rem)
+    minmax(12rem, 1fr)
+    auto
+    minmax(10rem, 14rem)
+    minmax(0, 1fr);
+  gap: var(--wa-space-2xs) var(--wa-space-m);
+  align-items: center;
+  min-block-size: 2.8rem;
+  padding: var(--wa-space-2xs) var(--wa-space-l);
+  border-block-end: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
+}
+
+.dashboard-gig-row:last-child {
+  border-block-end: 0;
+}
+
+.dashboard-gig-status-cell,
+.dashboard-gig-date,
+.dashboard-gig-plan,
+.dashboard-gig-motivation,
+.dashboard-gig-comment {
+  min-inline-size: 0;
+}
+
+.dashboard-gig-status-cell {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-gig-date {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wa-space-3xs);
+  align-items: center;
+  font-size: var(--wa-font-size-s);
+  color: var(--wa-color-text-normal);
+}
+
+.dashboard-gig-title {
+  min-inline-size: 0;
+  color: var(--wa-color-brand-on-normal);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.dashboard-gig-title:hover {
+  text-decoration: underline;
+}
+
+.dashboard-gig-status {
+  flex: none;
+}
+
+.dashboard-gig-comment .gigs-attendance-comment-input {
+  inline-size: 100%;
+}
+
+.dashboard-gig-comment .gigs-attendance-comment-link::part(label) {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.dashboard-ledger-card::part(body) {
+  padding: var(--wa-space-m);
+}
+
+.dashboard-ledger-grid {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 2fr) auto;
+  gap: var(--wa-space-l);
+  align-items: start;
+}
+
+.dashboard-ledger-balance {
+  font-size: var(--wa-font-size-2xl);
+  font-weight: var(--wa-font-weight-bold);
+}
+
+.dashboard-ledger-qr {
+  justify-self: center;
+}
+
+.dashboard-calendar-frame {
+  display: block;
+  border: 0;
+  min-block-size: 70vh;
+}
+
+.dashboard-calendar-service-icon {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  flex: none;
+}
+
+.dashboard-calendar-service-icon--copy {
+  color: #d42f87;
+}
+
+.dashboard-calendar-service-icon--apple {
+  border: 1px solid var(--wa-color-neutral-border-normal);
+  border-radius: var(--wa-border-radius-xs);
+}
+
+@container (max-width: 1050px) {
+  .dashboard-gig-row {
+    grid-template-columns: auto minmax(10rem, 16rem) minmax(0, 1fr);
+    gap: var(--wa-space-2xs) var(--wa-space-s);
+  }
+
+  .dashboard-gig-status-cell {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .dashboard-gig-date {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .dashboard-gig-title {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .dashboard-gig-plan {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .dashboard-gig-motivation {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .dashboard-gig-comment {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}
+
+@container (max-width: 720px) {
+  .dashboard-gig-row {
+    grid-template-columns: auto auto minmax(8rem, 10rem) minmax(0, 1fr);
+    gap: var(--wa-space-2xs) var(--wa-space-xs);
+    min-block-size: 0;
+    padding: var(--wa-space-s) var(--wa-space-m);
+  }
+
+  .dashboard-gig-date {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    font-size: var(--wa-font-size-s);
+  }
+
+  .dashboard-gig-title {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .dashboard-gig-status-cell {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .dashboard-gig-plan {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .dashboard-gig-motivation {
+    grid-column: 3;
+    grid-row: 3;
+  }
+
+  .dashboard-gig-comment {
+    grid-column: 4;
+    grid-row: 3;
+  }
+
+  .dashboard-gig-comment.gigs-attendance-comment--filled,
+  .dashboard-gig-comment.gigs-attendance-comment--editing {
+    grid-column: 2 / -1;
+    grid-row: 4;
+  }
+
+  .dashboard-ledger-grid {
+    grid-template-columns: 1fr;
+  }
+}

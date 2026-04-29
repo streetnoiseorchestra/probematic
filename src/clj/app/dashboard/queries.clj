@@ -1,0 +1,79 @@
+(ns app.dashboard.queries
+  (:require
+   [app.datomic :as d]
+   [app.queries :as q]))
+
+(defn- attach-attendance [db member {:gig/keys [gig-id] :as gig}]
+  (assoc gig :attendance
+         (q/attendance-for-gig db gig-id (:member/member-id member))))
+
+(defn answered-gigs
+  "Returns future non-cancelled gigs where `member` has supplied a concrete plan."
+  [db member]
+  (assert member)
+  (->>
+   (q/results->gigs (d/q '[:find (pull ?gig pattern)
+                           :in $ ?member ?reference-time pattern
+                           :where
+                           [?gig :gig/date ?date]
+                           [(>= ?date ?reference-time)]
+                           (not [?gig :gig/status :gig.status/cancelled])
+                           [?a :attendance/gig ?gig]
+                           [?a :attendance/member ?member]
+                           [?a :attendance/plan ?plan]
+                           [(!= ?plan :plan/no-response)]
+                           [(!= ?plan :plan/unknown)]]
+                         db (d/ref member) (q/date-midnight-today!) q/gig-pattern))
+   (mapv (partial attach-attendance db member))))
+
+(defn unanswered-gigs
+  "Returns future non-cancelled gigs where `member` still needs to answer."
+  [db member]
+  (assert member)
+  (let [gigs-with-no-attendance
+        (->>
+         (d/q '[:find (pull ?gig pattern)
+                :in $ ?member ?reference-time pattern
+                :where
+                [?gig :gig/date ?date]
+                [(>= ?date ?reference-time)]
+                [?gig :gig/gig-id ?gig-id]
+                (not [?gig :gig/status :gig.status/cancelled])
+                (not-join [?gig ?member]
+                          [?a :attendance/gig ?gig]
+                          [?a :attendance/member ?member])]
+              db (d/ref member) (q/date-midnight-today!) q/gig-detail-pattern)
+         q/results->gigs
+         (map (fn [gig]
+                (assoc gig :attendance {:attendance/section (:member/section member)
+                                        :attendance/member  member
+                                        :attendance/plan    :plan/no-response}))))
+        gigs-with-unknown-attendance
+        (->>
+         (d/q '[:find (pull ?gig pattern)
+                :in $ ?member ?reference-time pattern
+                :where
+                [?gig :gig/date ?date]
+                (not [?gig :gig/status :gig.status/cancelled])
+                [(>= ?date ?reference-time)]
+                [?a :attendance/gig ?gig]
+                [?a :attendance/member ?member]
+                (or
+                 [(missing? $ ?a :attendance/plan)]
+                 [?a :attendance/plan :plan/no-response]
+                 [?a :attendance/plan :plan/unknown])]
+              db (d/ref member) (q/date-midnight-today!) q/gig-detail-pattern)
+         q/results->gigs
+         (map (partial attach-attendance db member)))]
+    (->> (concat gigs-with-no-attendance gigs-with-unknown-attendance)
+         (sort-by :gig/call-time)
+         (sort-by :gig/date)
+         vec)))
+
+(defn gig-buckets [db member]
+  {:answered   (answered-gigs db member)
+   :unanswered (unanswered-gigs db member)})
+
+(defn dashboard-data [db member]
+  (assoc (gig-buckets db member)
+         :ledger (q/retrieve-ledger db (:member/member-id member))))

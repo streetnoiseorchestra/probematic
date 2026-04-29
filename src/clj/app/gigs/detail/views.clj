@@ -2,6 +2,7 @@
   (:require
    [app.config :as config]
    [app.datastar :as d*]
+   [app.gigs.attendance.ui :as attendance.ui]
    [app.gigs.detail.actions :as actions]
    [app.gigs.detail.queries :as detail.queries]
    [app.gigs.domain :as domain]
@@ -136,201 +137,9 @@
     (domain/gig? gig)   (setlist-section req gig-id)
     :else               nil))
 
-(def plan-display-order domain/plan-priority-sorting)
-(def selectable-plans [:plan/definitely :plan/unknown :plan/definitely-not :plan/not-interested])
-
-(defn- plan-icon-data [plan]
-  (case plan
-    :plan/definitely     {:icon "circle" :class "gigs-attendance-plan-icon--yes"}
-    :plan/probably       {:icon "circle-outline" :class "gigs-attendance-plan-icon--yes"}
-    :plan/unknown        {:icon "question" :class "gigs-attendance-plan-icon--unknown"}
-    :plan/probably-not   {:icon "square-outline" :class "gigs-attendance-plan-icon--no"}
-    :plan/definitely-not {:icon "square" :class "gigs-attendance-plan-icon--no"}
-    :plan/not-interested {:icon "xmark" :class "gigs-attendance-plan-icon--not-interested"}
-    {:icon "minus" :class "gigs-attendance-plan-icon--unknown"}))
-
-(defn- plan-label [tr plan]
-  (tr [(or plan :plan/no-response)]))
-
-(defn- plan-icon
-  ([plan]
-   (plan-icon plan nil))
-  ([plan attrs]
-   (let [{:keys [icon class]} (plan-icon-data (or plan :plan/no-response))]
-     [:wa-icon (merge attrs
-                      {:library "snoico"
-                       :name    icon
-                       :class   (str "gigs-attendance-plan-icon " class
-                                     (when-let [extra (:class attrs)]
-                                       (str " " extra)))})])))
-
 (defn- section-name-wrappable [{:section/keys [name]}]
   (interpose [:span "/" [:wbr]]
              (str/split name #"/")))
-
-(defn- js-value [value]
-  (pr-str (str value)))
-
-(defn- set-attendance-js [m]
-  (str/join "; "
-            (for [[k v] m]
-              (str "$gig-attendance." (name k) " = " (js-value v)))))
-
-(defn- action-js [req action m]
-  (str (set-attendance-js m)
-       "; @post('" (d*/act req action) "')"))
-
-(defn- action-attrs [req action m]
-  {:data-on:mousedown (action-js req action m)})
-
-(defn- comment-open-js [req gig-id member-id comment]
-  (str "if ($gig-attendance.comment-member-id) {"
-       "$gig-attendance.switching-comment = true; "
-       (set-attendance-js {:next-gig-id    gig-id
-                           :next-member-id member-id
-                           :next-comment   (or comment "")})
-       "; @post('" (d*/act req ::actions/switch-attendance-comment) "')"
-       " } else { "
-       (action-js req
-                  ::actions/open-attendance-comment
-                  {:gig-id    gig-id
-                   :member-id member-id
-                   :comment   (or comment "")})
-       " }"))
-
-(defn- summary-counts [tr summary]
-  [:div {:class "gigs-attendance-summary"}
-   (for [plan plan-display-order
-         :let [count (get summary plan 0)]
-         :when (not (and (zero? count)
-                         (contains? domain/plan-priority-optional-display plan)))]
-     [:div {:class "gigs-attendance-summary-item"}
-      (plan-icon plan)
-      [:span count]
-      [:span {:class "wa-visually-hidden"} (plan-label tr plan)]])])
-
-(defn- plan-dropdown [{:keys [tr] :as req} gig-id member-id plan]
-  (let [plan (or plan :plan/no-response)]
-    [:wa-dropdown {:class             "gigs-attendance-plan-dropdown"
-                   :placement         "bottom-start"
-                   :data-preserve-attr    "open"
-                   :data-on:wa-select (str "if (!evt.detail.item.value) return"
-                                           "; " (set-attendance-js {:gig-id    gig-id
-                                                                    :member-id member-id})
-                                           "; $gig-attendance.plan = evt.detail.item.value"
-                                           "; @post('" (d*/act req ::actions/update-attendance-plan) "')")}
-     [:wa-button {:slot       "trigger"
-                  :appearance "outlined"
-                  :size       "small"
-                  :class      "gigs-attendance-plan-button"
-                  :title      (plan-label tr plan)
-                  :aria-label (plan-label tr plan)}
-      (plan-icon plan)
-      [:wa-icon {:library "snoico"
-                 :name    "chevron-down"
-                 :class   "gigs-attendance-plan-caret"}]]
-     (for [option selectable-plans]
-       [:wa-dropdown-item {:value (name option)}
-        (plan-icon option {:slot "icon"})
-        (plan-label tr option)])]))
-
-(defn- motivation-select [{:keys [tr] :as req} gig-id member-id motivation]
-  [:wa-select {:size           "small"
-               :data-preserve-attr    "open"
-               :class          "gigs-attendance-motivation-select"
-               :value          (name (or motivation :motivation/none))
-               :data-on:change (str (set-attendance-js {:gig-id    gig-id
-                                                        :member-id member-id})
-                                    "; $gig-attendance.motivation = evt.target.value"
-                                    "; @post('" (d*/act req ::actions/update-attendance-motivation) "')")}
-   (for [motivation domain/motivations]
-     [:wa-option {:value (name motivation)}
-      (tr [motivation])])])
-
-(defn- comment-editing? [req gig-id member-id]
-  (let [comment-edit (get-in req [:page-state :gig-detail :attendance :comment-edit])]
-    (and (= (str gig-id) (:gig-id comment-edit))
-         (= (str member-id) (:member-id comment-edit)))))
-
-(defn- comment-control [req gig-id member-id comment]
-  (if (comment-editing? req gig-id member-id)
-    [:wa-input {:class           "gigs-attendance-comment-input"
-                :size            "small"
-                :autofocus       true
-                :value           comment
-                :data-bind       "gig-attendance.comment"
-                :data-ref        "_gigAttendanceCommentEl"
-                :data-init__delay.1ms       "$_gigAttendanceCommentEl.focus()"
-                :data-on:keydown (str "if (evt.key == 'Escape') { evt.preventDefault();"
-                                      " @post('" (d*/act req ::actions/close-attendance-comment) "')"
-                                      " } else if (evt.key == 'Enter') { evt.preventDefault(); "
-                                      (set-attendance-js {:gig-id    gig-id
-                                                          :member-id member-id})
-                                      "; $gig-attendance.comment = evt.target.value"
-                                      "; @post('" (d*/act req ::actions/update-attendance-comment) "')"
-                                      " }")
-                :data-on:blur    (str "if ($gig-attendance.switching-comment) return; "
-                                      (set-attendance-js {:gig-id    gig-id
-                                                          :member-id member-id})
-                                      "; $gig-attendance.comment = evt.target.value"
-                                      "; @post('" (d*/act req ::actions/update-attendance-comment) "')")}]
-    (if (seq comment)
-      [:wa-button {:appearance        "plain"
-                   :size              "small"
-                   :class             "gigs-attendance-comment-link"
-                   :data-on:mousedown (comment-open-js req gig-id member-id comment)}
-       comment]
-      [:wa-button {:appearance        "plain"
-                   :size              "small"
-                   :class             "gigs-attendance-comment-button"
-                   :aria-label        "Add comment"
-                   :data-on:mousedown (comment-open-js req gig-id member-id "")}
-       [:wa-icon {:library "snoico"
-                  :name    "comment-outline"}]])))
-
-(defn- member-link [member]
-  (let [{:member/keys [member-id]} member]
-    [:a {:href  (urls/link-member member-id)
-         :class "gigs-attendance-member-link"}
-     (ui/member-nick member)]))
-
-(defn- attendance-row-id [gig-id member-id]
-  (str "gig-attendance-row-"
-       (ui2/safe-dom-id gig-id)
-       "-"
-       (ui2/safe-dom-id member-id)))
-
-(defn- editable-attendance-row [{:keys [gig-id] :as req} attendance]
-  (let [{:member/keys [member-id] :as member} (:attendance/member attendance)]
-    [:div {:id    (attendance-row-id gig-id member-id)
-           :class "gigs-attendance-row gigs-attendance-row--editable"}
-     [:div {:class "gigs-attendance-member"}
-      (member-link member)]
-     [:div {:class "gigs-attendance-plan"}
-      (plan-dropdown req gig-id member-id (:attendance/plan attendance))]
-     [:div {:class "gigs-attendance-motivation"}
-      (motivation-select req gig-id member-id (:attendance/motivation attendance))]
-     [:div {:class (str "gigs-attendance-comment"
-                        (when (seq (:attendance/comment attendance))
-                          " gigs-attendance-comment--filled")
-                        (when (comment-editing? req gig-id member-id)
-                          " gigs-attendance-comment--editing"))}
-      (comment-control req gig-id member-id (:attendance/comment attendance))]]))
-
-(defn- archived-attendance-row [{:keys [gig-id]} attendance]
-  (let [{:member/keys [member-id] :as member} (:attendance/member attendance)]
-    [:div {:id    (attendance-row-id gig-id member-id)
-           :class "gigs-attendance-row gigs-attendance-row--archived"}
-     [:div {:class "gigs-attendance-member"}
-      [:a {:href  (urls/link-member member-id)
-           :class "gigs-attendance-member-link"}
-       (ui/member-nick member)]]
-     [:div {:class "gigs-attendance-plan"}
-      (plan-icon (:attendance/plan attendance))]
-     [:div {:class "gigs-attendance-motivation-readonly"}
-      (some-> (:attendance/motivation attendance) name)]
-     [:div {:class "gigs-attendance-comment-readonly"}
-      (:attendance/comment attendance)]]))
 
 (defn- attendance-section-view [req archived? idx section]
   [:div {:class (str "gigs-attendance-section"
@@ -341,8 +150,8 @@
    [:div {:class "gigs-attendance-section-members"}
     (for [attendance (:members section)]
       (if archived?
-        (archived-attendance-row req attendance)
-        (editable-attendance-row req attendance)))]])
+        (attendance.ui/archived-attendance-row req attendance)
+        (attendance.ui/editable-attendance-row req attendance)))]])
 
 (defn- recent-reminder? [sent-at]
   (when sent-at
@@ -385,9 +194,9 @@
                 :appearance    "filled"
                 :variant       "brand"
                 :data-dialog   "close"
-                :data-on:click (action-js req
-                                          ::actions/send-reminder-to-all
-                                          {:gig-id gig-id})}
+                :data-on:click (attendance.ui/action-js req
+                                                        ::actions/send-reminder-to-all
+                                                        {:gig-id gig-id})}
     (tr [:reminders/confirm])]])
 
 (defn- attendance-actions [req archived? gig-id show-committed?]
@@ -396,9 +205,9 @@
      [:wa-button (merge {:appearance "filled"
                          :variant    "brand"
                          :size       "small"}
-                        (action-attrs req
-                                      ::actions/toggle-attendance-committed
-                                      {:show-committed (not show-committed?)}))
+                        (attendance.ui/action-attrs req
+                                                    ::actions/toggle-attendance-committed
+                                                    {:show-committed (not show-committed?)}))
       (if show-committed?
         ((:tr req) [:gig/show-all])
         ((:tr req) [:gig/show-committed]))]]))
@@ -414,7 +223,7 @@
       :actions  (attendance-actions req archived? gig-id show-committed?)}
      (when-not archived?
        (remind-all-dialog req gig-id))
-     (summary-counts tr summary)
+     (attendance.ui/summary-counts tr summary)
      [:div {:class "gigs-attendance-sections"}
       (map-indexed (fn [idx section]
                      (attendance-section-view (assoc req :gig-id gig-id) archived? idx section))
@@ -452,20 +261,13 @@ window.DiscourseEmbed = %s;
      [:script {:type "text/javascript"}
       (discourse-embed-script forum-url topic-id)])))
 
-(defn- attendance-signals [{:keys [page-state]}]
-  (let [{:keys [comment gig-id member-id]} (get-in page-state [:gig-detail :attendance :comment-edit])]
-    {:gig-attendance {:comment           (or comment "")
-                      :comment-gig-id    (or gig-id "")
-                      :comment-member-id (or member-id "")
-                      :switching-comment false}}))
-
 (defn page [{:keys [db] :as req}]
   (let [gig-id (http.util/path-param-uuid! req :gig/gig-id)
         gig    (q/retrieve-gig db gig-id)]
     (if gig
       (ui2/datastar-page
        [:div {:class        "wa-stack wa-gap-2xl gigs-detail-page"
-              :data-signals (d*/->signals (attendance-signals req))}
+              :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
         (gig-summary req gig)
         (gig-info-section req gig)
         (planned-songs-section req gig)

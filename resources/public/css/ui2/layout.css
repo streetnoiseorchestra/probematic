@@ -2,6 +2,20 @@
   margin: var(--sno-size-none);
 }
 
+.sno-section-divider {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--wa-space-s);
+  align-items: center;
+  margin-block-end: var(--wa-space-xs);
+}
+
+.sno-section-divider h2 {
+  margin: 0;
+  font-size: var(--wa-font-size-l);
+  line-height: var(--sno-line-height-tight);
+}
+
 .sno-section-header,
 .sno-page-header-main,
 .sno-action-bar {
