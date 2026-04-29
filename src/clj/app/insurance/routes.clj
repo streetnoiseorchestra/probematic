@@ -1,5 +1,6 @@
 (ns app.insurance.routes
   (:require
+   [app.insurance.coverage.views]
    [app.insurance.index.views]
    [app.insurance.views :as view]
    [app.layout :as layout]
@@ -33,11 +34,9 @@
                        (view/insurance-policy-changes-review req)))))
 
 (defn insurance-coverage-detail []
-  (ctmx/make-routes
-   "/insurance-coverage/{coverage-id}/"
-   (fn [req]
-     (layout/app-shell req
-                       (view/insurance-coverage-detail-page req)))))
+  (ds/page-routes {:page-name ::coverage-detail
+                   :path      "/insurance-coverage/{coverage-id}/"
+                   :view-ns   'app.insurance.coverage.views}))
 (defn insurance-coverage-detail-edit []
   (ctmx/make-routes
    "/insurance-coverage-edit/{coverage-id}/"

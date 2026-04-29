@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-04-29 11:24+0000\n"
+"POT-Creation-Date: 2026-04-29 12:37+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -113,6 +113,12 @@ msgstr ""
 msgctxt ":insurance/total-needs-review-tooltip"
 msgid "Total instruments that need review"
 msgstr "Insgesamt zu überprüfende Instrumente"
+
+#: :insurance/no-photos
+#, ycp-format
+msgctxt ":insurance/no-photos"
+msgid "No photos have been uploaded yet."
+msgstr "Es wurden noch keine Fotos hochgeladen."
 
 #: :insurance/coverage-for
 #, ycp-format
@@ -1108,23 +1114,17 @@ msgctxt ":dashboard/evening"
 msgid "Good evening, %1"
 msgstr "Guten Abend, %1"
 
-#: :history/title
+#: :history/no-changes
 #, ycp-format
-msgctxt ":history/title"
-msgid "History of Changes"
-msgstr "Änderungsverlauf"
+msgctxt ":history/no-changes"
+msgid "No changes yet."
+msgstr "Noch keine Änderungen."
 
 #: :history/subtitle-coverage
 #, ycp-format
 msgctxt ":history/subtitle-coverage"
 msgid "Changes to the coverage of this instrument"
 msgstr "Änderungen des Versicherungsschutzes dieses Instruments"
-
-#: :history/retracted
-#, ycp-format
-msgctxt ":history/retracted"
-msgid "Retracted"
-msgstr "Zurückgezogen"
 
 #: :history/updated
 #, ycp-format
@@ -1137,6 +1137,48 @@ msgstr "Aktualisiert"
 msgctxt ":history/added"
 msgid "Added"
 msgstr "Hinzugefügt"
+
+#: :history/image-deleted
+#, ycp-format
+msgctxt ":history/image-deleted"
+msgid "Image deleted."
+msgstr "Bild gelöscht."
+
+#: :history/field
+#, ycp-format
+msgctxt ":history/field"
+msgid "Field"
+msgstr "Feld"
+
+#: :history/title
+#, ycp-format
+msgctxt ":history/title"
+msgid "History of Changes"
+msgstr "Änderungsverlauf"
+
+#: :history/retracted
+#, ycp-format
+msgctxt ":history/retracted"
+msgid "Retracted"
+msgstr "Zurückgezogen"
+
+#: :history/after
+#, ycp-format
+msgctxt ":history/after"
+msgid "After"
+msgstr "Nachher"
+
+#: :history/editor
+#, ycp-format
+msgctxt ":history/editor"
+msgid "Editor"
+msgstr "Editor"
+
+#: :history/before
+#, ycp-format
+msgctxt ":history/before"
+msgid "Before"
+msgstr "Vorher"
 
 #: :oebb-discount
 #, ycp-format
@@ -2758,7 +2800,7 @@ msgstr "Instrument"
 #, ycp-format
 msgctxt ":instrument.coverage/insurer-id"
 msgid "Harmonia ID"
-msgstr ""
+msgstr "Harmonia ID"
 
 #: :instrument.coverage/cost-hint
 #, ycp-format

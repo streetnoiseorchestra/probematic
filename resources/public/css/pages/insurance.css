@@ -142,9 +142,161 @@
   color: var(--sno-gig-row-gray-400);
 }
 
+.insurance-coverage-detail-page {
+  padding: var(--wa-space-l);
+}
+
+.insurance-coverage-breadcrumb a {
+  color: var(--wa-color-text-link);
+  text-decoration: none;
+}
+
+.insurance-coverage-page-header .sno-page-header-main {
+  align-items: start;
+}
+
+.insurance-coverage-page-header .sno-title-block {
+  min-inline-size: 0;
+}
+
+.insurance-coverage-page-header h1 {
+  overflow-wrap: anywhere;
+}
+
+.insurance-coverage-icon {
+  margin-inline-end: var(--wa-space-2xs);
+}
+
+.insurance-coverage-detail-page dl.particulars {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.insurance-coverage-detail-page dl.particulars dd {
+  overflow-wrap: anywhere;
+}
+
+.insurance-history-icon--updated {
+  color: var(--sno-dashboard-insurance-todo-changed-color);
+}
+
+.insurance-history-icon--added {
+  color: var(--sno-dashboard-insurance-todo-new-color);
+}
+
+.insurance-history-icon--retracted {
+  color: var(--sno-dashboard-insurance-todo-removed-color);
+}
+
+.insurance-photo-grid {
+  --min-column-size: 8rem;
+  max-inline-size: 34rem;
+}
+
+.insurance-photo-link {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 1;
+  max-inline-size: 10rem;
+  border-radius: var(--wa-border-radius-l);
+  background: var(--wa-color-neutral-fill-quiet);
+}
+
+.insurance-photo-link img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.insurance-coverage-type-table {
+  min-width: 36rem;
+}
+
+.insurance-coverage-type-total {
+  border-block-start: var(--wa-border-width-l) double var(--wa-color-neutral-border-normal);
+  font-weight: var(--wa-font-weight-bold);
+}
+
+.insurance-history-table {
+  display: grid;
+  overflow-x: auto;
+  font-size: var(--wa-font-size-s);
+}
+
+.insurance-history-head,
+.insurance-history-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: var(--wa-space-xs);
+  align-items: start;
+  min-inline-size: 36rem;
+}
+
+.insurance-history-head {
+  padding: var(--wa-space-2xs) var(--wa-space-xs);
+  background: var(--wa-color-neutral-fill-normal);
+  color: var(--wa-color-text-normal);
+  font-weight: var(--wa-font-weight-bold);
+}
+
+.insurance-history-date-row {
+  min-inline-size: 36rem;
+  padding: var(--wa-space-xs);
+  background: var(--wa-color-neutral-fill-quiet);
+  border-block-start: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
+  border-block-end: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
+  font-weight: var(--wa-font-weight-semibold);
+}
+
+.insurance-history-row {
+  padding: var(--wa-space-xs);
+}
+
+.insurance-history-editor,
+.insurance-history-time {
+  display: flex;
+  gap: var(--wa-space-2xs);
+  align-items: start;
+}
+
+.insurance-history-editor > wa-icon {
+  flex: none;
+  margin-block-start: 0.15em;
+}
+
+.insurance-history-editor-text {
+  display: grid;
+  gap: var(--wa-space-3xs);
+  min-inline-size: 0;
+}
+
+.insurance-history-time {
+  color: var(--wa-color-text-normal);
+}
+
+.insurance-history-time-separator::before {
+  content: "";
+  display: block;
+  inline-size: var(--wa-border-width-s);
+  block-size: 1em;
+  background: var(--wa-color-neutral-border-normal);
+}
+
+.insurance-history-row > div,
+.insurance-history-head > div {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.insurance-history-image {
+  inline-size: 5rem;
+  block-size: 5rem;
+  object-fit: cover;
+  border-radius: var(--wa-border-radius-m);
+}
+
 @media (max-width: 48rem) {
-  .insurance-index-page {
+  .insurance-index-page,
+  .insurance-coverage-detail-page {
     padding: var(--wa-space-m);
   }
-
 }

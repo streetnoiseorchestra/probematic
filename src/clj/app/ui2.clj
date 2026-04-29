@@ -1,9 +1,14 @@
 (ns app.ui2
   (:require
    [app.html :as html]
+   [app.humanize :as humanize]
    [app.icons :as icons]
    [clojure.string :as str]
-   [starfederation.datastar.clojure.expressions :refer [->expr]]))
+   [starfederation.datastar.clojure.expressions :refer [->expr]]
+   [tick.core :as t])
+  (:import
+   [java.text NumberFormat]
+   [java.util Locale]))
 
 (defn safe-dom-id
   "Returns `value` as a safe DOM id fragment.
@@ -39,6 +44,57 @@
   Optional: zero or more `names`."
   [& names]
   (str/join " " (filter identity names)))
+
+(defn muted
+  "Renders `value`, or an em dash when `value` is blank."
+  [value]
+  (if (str/blank? (str value))
+    [:span {:class "wa-color-text-quiet"} html/emdash]
+    value))
+
+(def currency-default-locale
+  {:EUR Locale/GERMANY
+   :USD Locale/US})
+
+(defn money-format
+  "Formats numeric `value` for `currency` using the default project locale."
+  [value currency]
+  (when value
+    (.format (NumberFormat/getCurrencyInstance (get currency-default-locale currency Locale/GERMANY)) value)))
+
+(defn money
+  "Renders formatted numeric `value` for `currency`, or an em dash when blank."
+  [value currency]
+  (muted (money-format value currency)))
+
+(defn date-time-value
+  "Formats `value` with `pattern`, accepting `java.util.Date` instants or tick temporal values."
+  [pattern value]
+  (when value
+    (t/format (t/formatter pattern) (if (inst? value) (t/date-time value) value))))
+
+(defn date-value
+  "Formats `value` as `yyyy-MM-dd`."
+  [value]
+  (date-time-value "yyyy-MM-dd" value))
+
+(defn time-value
+  "Formats `value` as `HH:mm`."
+  [value]
+  (date-time-value "HH:mm" value))
+
+(defn relative-time-value
+  "Formats `value` as a relative time such as `2 days ago`."
+  [value]
+  (when value
+    (humanize/from (if (inst? value) (t/date-time value) value))))
+
+(defn detail-item
+  "Renders a `dl` item using the shared particulars styling."
+  [label value]
+  [:div
+   [:dt label]
+   [:dd (muted value)]])
 
 (defn title-block
   "Renders a reusable title/subtitle block.

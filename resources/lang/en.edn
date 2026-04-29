@@ -164,6 +164,7 @@
                                   :value-abbrev                "V.S."
                                   :value-hint                  "Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben"
                                   :total                       "Total"
+                                  :no-photos                   "No photos have been uploaded yet."
                                   :insurance-policy            "Insurance Policy"
                                   :effective-at                "Effective At"
                                   :effective-until             "Effective Until"
@@ -224,6 +225,12 @@
                                   :changed "Modified"}
  :history                        {:title             "History of Changes"
                                   :subtitle-coverage "Changes to the coverage of this instrument"
+                                  :editor            "Editor"
+                                  :field             "Field"
+                                  :before            "Before"
+                                  :after             "After"
+                                  :no-changes        "No changes yet."
+                                  :image-deleted     "Image deleted."
                                   :retracted         "Retracted"
                                   :updated           "Updated"
                                   :added             "Added"}

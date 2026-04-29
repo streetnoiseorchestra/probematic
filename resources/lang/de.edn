@@ -52,6 +52,7 @@
   :dashboard-title "Insurance TODOs",
   :value-abbrev "V.S.",
   :total "Gesamt",
+  :no-photos "Es wurden noch keine Fotos hochgeladen.",
   :create-title "Neue Versicherungspolice",
   :confirm-skip-send "Bestätigen ohne zu senden",
   :send-payment-notifications "Zahlungsbenachrichtigungen senden",
@@ -227,6 +228,12 @@
  {:title "Änderungsverlauf",
   :subtitle-coverage
   "Änderungen des Versicherungsschutzes dieses Instruments",
+  :editor "Editor",
+  :field "Feld",
+  :before "Vorher",
+  :after "Nachher",
+  :no-changes "Noch keine Änderungen.",
+  :image-deleted "Bild gelöscht.",
   :retracted "Zurückgezogen",
   :updated "Aktualisiert",
   :added "Hinzugefügt"},
@@ -544,6 +551,7 @@
   "Der geschätzte Marktwert des Artikels, also wie viel es kosten würde, ihn zu ersetzen, falls er verloren geht.",
   :cost "Kosten",
   :change "Status ändern",
+  :insurer-id "Harmonia ID",
   :coverage-id "Coverage ID",
   :private?-hint
   "Ist dieses Instrument ein Bandinstrument oder ein Privatinstrument?"},

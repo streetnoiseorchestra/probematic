@@ -40,9 +40,9 @@
 (def tr (partial tempura/tr {:dict humanize-messages} [:en]))
 
 (defn- plural-msg [n singular plural]
-  (if (> n 0)
-    (tr [plural] [n])
-    (tr [singular] [n])))
+  (if (= n 1)
+    (tr [singular] [n])
+    (tr [plural] [n])))
 
 (defn from
   "Given a local date time or a local date, return a human-friendly representation of the amount of time difference relative
