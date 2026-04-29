@@ -29,6 +29,29 @@
                                     :fqn-function "user/tap-publisher"
                                     :transform    error/redact-mulog-events}))
 
+(defn logs
+  "Query debug log: (logs), (logs 5), (logs :label), (logs :label 3)"
+  ([] @portal-helpers/my-taps)
+  ([n-or-label]
+   (if (number? n-or-label)
+     (vec (take-last n-or-label @portal-helpers/my-taps))
+     (vec (filter #(= n-or-label (first %)) @portal-helpers/my-taps))))
+  ([label n]
+   (vec (take-last n (filter #(= label (first %)) @portal-helpers/my-taps)))))
+
+(defn log-values
+  "Like logs, but returns just the values"
+  ([] (mapv :value @portal-helpers/my-taps))
+  ([n-or-label] (mapv :value (logs n-or-label)))
+  ([label n] (mapv :value (logs label n))))
+
+(defn clear-logs! [] (reset! portal-helpers/my-taps []))
+
+(defn last-log
+  "Most recent entry, or just value with (last-log :v)"
+  ([] (last @portal-helpers/my-taps))
+  ([_] (:value (last @portal-helpers/my-taps))))
+
 ;; --------------------------------------------------------------------------------------------
 ;; System Control
 
@@ -71,3 +94,9 @@
   (clojure.repl.deps/sync-deps)
   ;;
   )
+
+(comment
+
+  (tap> 2)
+
+  (first @portal-helpers/my-taps))
