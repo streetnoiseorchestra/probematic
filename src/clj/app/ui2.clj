@@ -147,7 +147,7 @@
                  :appearance "plain"
                  :disabled   disabled?
                  :aria-label "More actions"}
-     "More"]
+     [:wa-icon {:name "ellipsis" :library "snoico"}]]
     (for [{:keys [label] :as item} items]
       [:wa-dropdown-item (dissoc item :icon)
        label])]

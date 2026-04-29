@@ -1,0 +1,150 @@
+.insurance-index-page {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: var(--wa-space-l);
+}
+
+.insurance-faq-question--green {
+  color: var(--color-sno-green-600);
+}
+
+.insurance-faq-question--red {
+  color: var(--wa-color-red-50);
+}
+
+.insurance-faq wa-details::part(base) {
+  padding-block: var(--wa-space-s);
+}
+
+.insurance-faq-answer {
+  color: var(--wa-color-text-normal);
+  line-height: var(--wa-line-height-normal);
+  max-width: 62rem;
+  padding-block-start: var(--wa-space-xs);
+}
+
+.insurance-faq-answer p,
+.insurance-faq-answer ol,
+.insurance-faq-answer ul {
+  margin-block: 0;
+}
+
+.insurance-faq-answer ol,
+.insurance-faq-answer ul {
+  padding-inline-start: var(--wa-space-xl);
+}
+
+.insurance-faq-answer a,
+.insurance-policy-name {
+  color: var(--wa-color-text-link);
+  text-decoration: none;
+}
+
+.insurance-faq-answer a:hover,
+.insurance-policy-name:hover {
+  text-decoration: underline;
+}
+
+.insurance-policy-table {
+  min-width: 48rem;
+}
+
+.insurance-policy-table :is(th, td) {
+  padding-block: var(--wa-space-m);
+}
+
+.insurance-policy-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wa-space-xs);
+  font-size: var(--wa-font-size-m);
+  font-weight: var(--wa-font-weight-semibold);
+}
+
+.insurance-policy-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wa-space-xs);
+  color: var(--wa-color-text-quiet);
+  font-size: var(--wa-font-size-s);
+  margin-block-start: var(--wa-space-3xs);
+}
+
+.insurance-policy-col,
+.insurance-policy-actions {
+  white-space: nowrap;
+}
+
+.insurance-policy-col--count {
+  text-align: right;
+  width: 7rem;
+}
+
+.insurance-policy-col--metrics {
+  width: 18rem;
+}
+
+.insurance-policy-actions {
+  text-align: right;
+  width: 1%;
+}
+
+.insurance-policy-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wa-space-xs);
+}
+
+.insurance-policy-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wa-space-2xs);
+  color: var(--sno-dashboard-insurance-todo-text-color);
+  font-size: var(--wa-font-size-m);
+}
+
+.insurance-policy-metric wa-icon,
+.insurance-policy-status-icon {
+  inline-size: var(--wa-font-size-l);
+  block-size: var(--wa-font-size-l);
+  font-size: var(--wa-font-size-l);
+}
+
+.insurance-policy-metric--needs-review wa-icon {
+  color: var(--sno-dashboard-insurance-todo-needs-review-color);
+}
+
+.insurance-policy-metric--changed wa-icon {
+  color: var(--sno-dashboard-insurance-todo-changed-color);
+}
+
+.insurance-policy-metric--new wa-icon {
+  color: var(--sno-dashboard-insurance-todo-new-color);
+}
+
+.insurance-policy-metric--removed wa-icon {
+  color: var(--sno-dashboard-insurance-todo-removed-color);
+}
+
+.insurance-policy-count {
+  font-weight: var(--wa-font-weight-bold);
+}
+
+.insurance-policy-status-icon--active {
+  color: var(--sno-dashboard-insurance-todo-new-color);
+}
+
+.insurance-policy-status-icon--sent {
+  color: var(--sno-dashboard-insurance-todo-changed-color);
+}
+
+.insurance-policy-status-icon--draft {
+  color: var(--sno-gig-row-gray-400);
+}
+
+@media (max-width: 48rem) {
+  .insurance-index-page {
+    padding: var(--wa-space-m);
+  }
+
+}

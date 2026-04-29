@@ -6,6 +6,7 @@
    [app.datastar :as d*]
    [app.gigs.attendance.ui :as attendance.ui]
    [app.gigs.ui :as gigs.ui]
+   [app.insurance.ui :as insurance.ui]
    [app.qrcode :as qr]
    [app.ui2 :as ui2]
    [app.urls :as urls]
@@ -90,22 +91,6 @@
                      title
                      (mapv #(gig-row req %) gigs)))
 
-(defn- insurance-todo-metric [tr policy-id status icon-name tooltip-key count]
-  (when (pos? count)
-    (let [metric-id (str "dashboard-insurance-todo-"
-                         (ui2/safe-dom-id policy-id)
-                         "-"
-                         status)]
-      (list
-       [:span {:id    metric-id
-               :class (ui2/cs "dashboard-insurance-todo-metric"
-                              (str "dashboard-insurance-todo-metric--" status))}
-        [:wa-icon {:library "snoico"
-                   :name    icon-name}]
-        [:span {:class "dashboard-insurance-todo-count"} count]]
-       [:wa-tooltip {:for metric-id}
-        (tr tooltip-key)]))))
-
 (defn- insurance-todo-row [{:keys [tr]} {:insurance.policy/keys [name policy-id] :keys [total-needs-review total-changed total-new total-removed] :as policy}]
   (dashboard-row
    :a
@@ -116,22 +101,26 @@
    [:div {:class "dashboard-insurance-todo-name"}
     [:span name]]
    [:div {:class "dashboard-insurance-todo-metrics"}
-    (insurance-todo-metric tr policy-id "needs-review"
-                           "circle-question-outline"
-                           [:insurance/total-needs-review-tooltip]
-                           total-needs-review)
-    (insurance-todo-metric tr policy-id "changed"
-                           "circle-exclamation"
-                           [:insurance/total-total-changed-tooltip]
-                           total-changed)
-    (insurance-todo-metric tr policy-id "new"
-                           "circle-plus-solid"
-                           [:insurance/total-total-new-tooltip]
-                           total-new)
-    (insurance-todo-metric tr policy-id "removed"
-                           "circle-xmark"
-                           [:insurance/total-total-removed-tooltip]
-                           total-removed)]))
+    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                  :class-prefix "dashboard-insurance-todo"
+                                  :policy-id    policy-id
+                                  :status       :needs-review
+                                  :count        total-needs-review})
+    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                  :class-prefix "dashboard-insurance-todo"
+                                  :policy-id    policy-id
+                                  :status       :changed
+                                  :count        total-changed})
+    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                  :class-prefix "dashboard-insurance-todo"
+                                  :policy-id    policy-id
+                                  :status       :new
+                                  :count        total-new})
+    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                  :class-prefix "dashboard-insurance-todo"
+                                  :policy-id    policy-id
+                                  :status       :removed
+                                  :count        total-removed})]))
 
 (defn- insurance-todos-section [{:keys [tr] :as req} policies]
   (dashboard-section "dashboard-insurance-todo-section"

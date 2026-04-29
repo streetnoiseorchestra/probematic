@@ -40,15 +40,15 @@
 ** DONE dashboard add to calendar
 ** TODO dashboard gig snoozing
 ** TODO dashboard insurance survey banana
-** TODO dashboard insurance todos for insurance team
-** TODO dashboard payment required
+** DONE dashboard insurance todos for insurance team
+** DONE dashboard payment required
 ** TODO repertoire index
 ** TODO repertoire create/edit
 ** TODO repertoire detail w/out sheet music
 ** TODO file browser/picker
 ** TODO repertoire detail add sheet music
 ** TODO stats view
-** TODO insurance - index
+** DONE insurance - index
 ** TODO insurance - create policy
 ** TODO insurance - policy detail read-only, no survey
 ** TODO insurance - edit policy data

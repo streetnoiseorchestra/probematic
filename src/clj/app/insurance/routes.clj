@@ -1,8 +1,10 @@
 (ns app.insurance.routes
   (:require
+   [app.insurance.index.views]
    [app.insurance.views :as view]
    [app.layout :as layout]
    [app.queries :as q]
+   [app.routes.datastar :as ds]
    [ctmx.core :as ctmx]
    [app.datomic.shim :as d]
    [reitit.ring.malli :as reitit.ring.malli]))
@@ -84,11 +86,9 @@
                        (view/insurance-create-page req)))))
 
 (defn insurance-index []
-  (ctmx/make-routes
-   "/insurance"
-   (fn [req]
-     (layout/app-shell req
-                       (view/insurance-index-page req)))))
+  (ds/page-routes {:page-name ::index
+                   :path      "/insurance"
+                   :view-ns   'app.insurance.index.views}))
 
 (defn instrument-create []
   (ctmx/make-routes

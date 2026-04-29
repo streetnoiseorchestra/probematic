@@ -3,6 +3,7 @@
    [app.datastar :as datastar]
    [app.gigs.actions]
    [app.gigs.effects :as gigs.effects]
+   [app.insurance.actions]
    [app.members.actions]
    [app.members.effects :as members.effects]
    [app.settings.actions]
@@ -234,4 +235,5 @@
                          :app.members.index/delete-invitation delete-invitation-fx}
    :nexus/actions       (merge app.settings.actions/actions
                                app.members.actions/actions
-                               app.gigs.actions/actions)})
+                               app.gigs.actions/actions
+                               app.insurance.actions/actions)})
