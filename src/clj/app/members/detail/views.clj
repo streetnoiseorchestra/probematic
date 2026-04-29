@@ -691,14 +691,14 @@
 
 (defn- insurance-coverage-row [{:keys [tr] :as req} coverage]
   (let [{:instrument.coverage/keys [private? value]
-         {:instrument/keys [name category] :as instrument} :instrument.coverage/instrument}
+         {:instrument/keys [name category]} :instrument.coverage/instrument}
         coverage
         category-name (:instrument.category/name category)
         kind-badge    (insurance-kind-badge req private?)]
     [:tr
      [:td {:class "align-middle"}
       [:div {:class "wa-stack wa-gap-3xs"}
-       [:a {:href (urls/link-instrument instrument)} name]
+       [:a {:href (urls/link-coverage coverage)} name]
        [:div {:class "member-insurance-row-meta wa-cluster wa-gap-xs"}
         [:span (muted category-name)]
         kind-badge]]]
