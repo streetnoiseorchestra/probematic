@@ -2,6 +2,7 @@
   (:require
    [app.layout :as layout]
    [app.routes.datastar :as ds]
+   [app.songs.detail.views]
    [app.songs.index.views]
    [app.songs.views :as view]
    [ctmx.core :as ctmx]
@@ -30,16 +31,20 @@
                        (view/song-new req)))))
 
 (defn song-detail-routes []
-  (ctmx/make-routes
-   "/song/{song-id}/"
-   (fn [req]
-     (layout/app-shell req
-                       (view/song-detail-page req false)))))
+  (ds/page-routes {:page-name ::detail
+                   :path      "/song/{song-id}/"
+                   :view-ns   'app.songs.detail.views}))
+
+(defn song-detail-no-slash-routes []
+  (ds/page-routes {:page-name ::detail-no-slash
+                   :path      "/song/{song-id}"
+                   :view-ns   'app.songs.detail.views}))
 
 (defn routes []
   ["" {:app.route/name :app/songs}
    (songs-sync)
    (song-detail-routes)
+   (song-detail-no-slash-routes)
    (songs-list-routes)
    (songs-list-trailing-slash-routes)
    (songs-new-routes)
