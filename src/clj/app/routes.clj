@@ -73,6 +73,7 @@
                                  #_#_:reitit.interceptor/transform diff/print-context-diffs})
    (ring/routes
     (ring/create-resource-handler {:path "/"})
+    (ring/redirect-trailing-slash-handler)
     (ring/create-default-handler))
    {:executor     sieppari/executor
     :interceptors [compression/compress-response-interceptor]}))
