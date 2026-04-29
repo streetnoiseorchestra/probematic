@@ -1,6 +1,7 @@
 (ns app.jobs.gig-events
   (:require
    [com.brunobonacci.mulog :as μ]
+   [app.config :as config]
    [app.cms :as cms]
    [app.caldav :as caldav]
    [app.discourse :as discourse]
@@ -17,34 +18,38 @@
   (assoc system :db (datomic/db (-> system :datomic :conn))))
 
 (defn handle-gig-details-edited
-  [req notify? takeover-topic? gig-id {:keys [gig-before gig db-after]}]
+  [req notify? takeover-topic? gig-id {:keys [gig-before gig _db-after]}]
   (let [new-system (update-system req)]
-    (when notify?
-      (email/send-gig-updated! req gig-id
-                               (keys (second (clojure.data/diff gig-before gig)))))
-    (discourse/update-topic-for-gig! new-system gig-id takeover-topic?)
-    (caldav/update-gig-event! new-system gig-id)))
+    (when (config/prod-mode? (:env new-system))
+      (when notify?
+        (email/send-gig-updated! req gig-id
+                                 (keys (second (clojure.data/diff gig-before gig)))))
+      (discourse/update-topic-for-gig! new-system gig-id takeover-topic?)
+      (caldav/update-gig-event! new-system gig-id))))
 
 (defn handle-gig-edited
-  [req gig-id edit-type]
+  [req gig-id _edit-type]
   (let [new-system (update-system req)]
-    (discourse/update-topic-for-gig! new-system gig-id false)
-    (caldav/update-gig-event! new-system gig-id)))
+    (when (config/prod-mode? (:env new-system))
+      (discourse/update-topic-for-gig! new-system gig-id false)
+      (caldav/update-gig-event! new-system gig-id))))
 
 (defn handle-gig-created
   [req notify? thread? gig-id]
   (let [new-system (update-system req)]
-    (when notify?
-      (email/send-gig-created! req gig-id))
-    (when thread?
-      (discourse/create-topic-for-gig! new-system gig-id))
-    (caldav/create-gig-event! new-system gig-id)))
+    (when (config/prod-mode? (:env new-system))
+      (when notify?
+        (email/send-gig-created! req gig-id))
+      (when thread?
+        (discourse/create-topic-for-gig! new-system gig-id))
+      (caldav/create-gig-event! new-system gig-id))))
 
 (defn handle-gig-deleted
   [req gig-id]
   (let [new-system (update-system req)]
-    (discourse/maybe-delete-topic-for-gig! new-system gig-id)
-    (caldav/delete-gig-event! new-system gig-id)))
+    (when (config/prod-mode? (:env new-system))
+      (discourse/maybe-delete-topic-for-gig! new-system gig-id)
+      (caldav/delete-gig-event! new-system gig-id))))
 
 (defn exec-later
   [fn-name & args]
