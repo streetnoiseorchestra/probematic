@@ -820,15 +820,17 @@
   (let [survey-tempid (d/tempid)
         members (members-for-policy-survey db policy)
         policy-id (:insurance.policy/policy-id policy)
-        response-txs (mapcat (fn [{:keys [coverages] :member/keys [member-id]}]
-                               (let [report-txs (map (fn [{:instrument.coverage/keys [coverage-id] :as cov}]
-                                                       (domain/tx-new-survey-report (d/tempid) coverage-id))
-                                                     coverages)
-                                     report-tempids (map :db/id report-txs)]
-                                 (conj report-txs
-                                       (domain/tx-new-survey-response (d/tempid) member-id report-tempids))))
-                             members)
-        response-tempids (map :db/id response-txs)
+        member-survey-txs (mapv (fn [{:keys [coverages] :member/keys [member-id]}]
+                                  (let [report-txs (mapv (fn [{:instrument.coverage/keys [coverage-id]}]
+                                                           (domain/tx-new-survey-report (d/tempid) coverage-id))
+                                                         coverages)
+                                        report-tempids (mapv :db/id report-txs)
+                                        response-tx (domain/tx-new-survey-response (d/tempid) member-id report-tempids)]
+                                    {:txs (conj report-txs response-tx)
+                                     :response-tempid (:db/id response-tx)}))
+                                members)
+        response-txs (mapcat :txs member-survey-txs)
+        response-tempids (map :response-tempid member-survey-txs)
         survey-tx (domain/tx-new-survey survey-tempid survey-name policy-id closes-at response-tempids)]
     (conj response-txs survey-tx)))
 
