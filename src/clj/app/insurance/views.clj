@@ -3,6 +3,7 @@
    [app.auth :as auth]
    [app.config :as config]
    [app.email :as email]
+   [app.errors :as errors]
    [app.filestore.image :as filestore.image]
    [app.i18n :as i18n]
    [app.icons :as icon]
@@ -2137,34 +2138,48 @@ document.addEventListener('DOMContentLoaded', function() {
       (controller/dismiss-insurance-widget! req policy-id)
       (response/hx-redirect (urls/link-insurance-survey-start policy-id)))))
 
+(defn dashboard-widget-error [{:keys [tr]}]
+  [:div {:class "rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900"}
+   (tr [:error/item-load-failed])])
+
 (defn dashboard-survey-widget [{:keys [tr db] :as req} survey-response]
-  (let [{:member/keys [name] :as member} (:insurance.survey.response/member survey-response)
-        {:insurance.policy/keys [policy-id] :as policy} (-> survey-response :survey :insurance.survey/policy)
-        open-items (q/open-survey-for-member-items db member policy)
-        has-open-items? (not= 0 open-items)
-        time-dur (java.lang.String/format java.util.Locale/GERMAN "%.2f" (to-array [(float (* open-items 0.75))]))]
-    [:div {:class "flex items-center justify-center space-x-4"}
-     [:div
-      [:img {:class "cursor-pointer pbj-frozen hidden w-32 sm:w-16" :src "/img/peanut_butter_jelly_time_still.gif"
-             :_ "on click remove .hidden from .pbj-live then add .hidden to me"}]
-      [:img {:class "cursor-pointer pbj-live w-32 sm:w-16" :src "/img/peanut_butter_jelly_time.gif"
-             :_ "on click remove .hidden from .pbj-frozen then add .hidden to me"}]]
-     [:div
-      [:p (tr [:insurance.survey/cta-p1] [name])]
-      (if has-open-items?
-        [:p (tr [:insurance.survey/cta-p2] [open-items time-dur])]
-        [:p (tr [:insurance.survey/cta-p2-none])])
-      [:div {:class "mt-2 flex items-center space-x-4"}
-       (if has-open-items?
-         (ui/link-button
-          :href (urls/link-insurance-survey-start policy-id)
-          :label (tr [:insurance.survey/start-button]) :priority :primary :icon icon/arrow-right)
-         (ui/link-button
-          :href (urls/link-coverage-create policy-id (urls/absolute-link-insurance-survey-start (-> req :system :env) policy-id))
-          :label (tr [:instrument.coverage/create-button]) :priority :primary))
-       (when-not has-open-items?
-         (ui/button :label (tr [:action/im-finished]) :priority :white
-                    :hx-post (util/endpoint-path survey-dismiss-response) :hx-vals {:policy-id policy-id}))]]]))
+  (try
+    (let [{:member/keys [name] :as member} (:insurance.survey.response/member survey-response)
+          {:insurance.policy/keys [policy-id] :as policy} (-> survey-response :survey :insurance.survey/policy)]
+      (if-not policy
+        (do
+          (errors/log-error! req (ex-info "Dashboard widget missing policy"
+                                          {:response-id (:insurance.survey.response/response-id survey-response)
+                                           :survey-id (-> survey-response :survey :insurance.survey/survey-id)}))
+          (dashboard-widget-error req))
+        (let [open-items (q/open-survey-for-member-items db member policy)
+              has-open-items? (not= 0 open-items)
+              time-dur (java.lang.String/format java.util.Locale/GERMAN "%.2f" (to-array [(float (* open-items 0.75))]))]
+          [:div {:class "flex items-center justify-center space-x-4"}
+           [:div
+            [:img {:class "cursor-pointer pbj-frozen hidden w-32 sm:w-16" :src "/img/peanut_butter_jelly_time_still.gif"
+                   :_ "on click remove .hidden from .pbj-live then add .hidden to me"}]
+            [:img {:class "cursor-pointer pbj-live w-32 sm:w-16" :src "/img/peanut_butter_jelly_time.gif"
+                   :_ "on click remove .hidden from .pbj-frozen then add .hidden to me"}]]
+           [:div
+            [:p (tr [:insurance.survey/cta-p1] [name])]
+            (if has-open-items?
+              [:p (tr [:insurance.survey/cta-p2] [open-items time-dur])]
+              [:p (tr [:insurance.survey/cta-p2-none])])
+            [:div {:class "mt-2 flex items-center space-x-4"}
+             (if has-open-items?
+               (ui/link-button
+                :href (urls/link-insurance-survey-start policy-id)
+                :label (tr [:insurance.survey/start-button]) :priority :primary :icon icon/arrow-right)
+               (ui/link-button
+                :href (urls/link-coverage-create policy-id (urls/absolute-link-insurance-survey-start (-> req :system :env) policy-id))
+                :label (tr [:instrument.coverage/create-button]) :priority :primary))
+             (when-not has-open-items?
+               (ui/button :label (tr [:action/im-finished]) :priority :white
+                          :hx-post (util/endpoint-path survey-dismiss-response) :hx-vals {:policy-id policy-id}))]]])))
+    (catch Throwable t
+      (errors/log-error! req t)
+      (dashboard-widget-error req))))
 
 (defn prepare-next-active-report [{:keys [db] :as req} policy]
   (let [{:insurance.survey.response/keys [member response-id coverage-reports survey completed-at] :as survey-response} (controller/survey-response-for-member req policy)

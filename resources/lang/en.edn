@@ -358,6 +358,7 @@
          :not-found-message "The thing you were looking for wasn't found. If you think it should exist, please contact Casey and tell him this error code:"
          :unauthorized-title "Authentication failed"
          :unauthorized-message "Your identity is unknown to the system.. something probably went wrong. Please contact Casey and tell him this error code:"
+         :item-load-failed "Something went wrong loading this item. Please contact the team."
          :go-home "Go Home"
          :notify "Click to notify Casey"
          :member-unique-username "A member already has that username"

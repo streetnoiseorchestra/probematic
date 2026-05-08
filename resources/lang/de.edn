@@ -464,6 +464,8 @@
   :open-poll "Umfrage öffnen"},
  :error
  {:go-home "Go Home",
+  :item-load-failed
+  "Beim Laden dieses Elements ist etwas schiefgelaufen. Bitte kontaktiere das Team.",
   :unauthorized-message
   "Ihre Identität ist dem System unbekannt. Wahrscheinlich ist etwas schief gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
   :unknown-title "Ein Fehler ist aufgetreten",

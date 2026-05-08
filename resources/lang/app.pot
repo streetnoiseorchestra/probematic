@@ -2213,6 +2213,12 @@ msgctxt ":error/unauthorized-message"
 msgid "Your identity is unknown to the system.. something probably went wrong. Please contact Casey and tell him this error code:"
 msgstr ""
 
+#: :error/item-load-failed
+#, ycp-format
+msgctxt ":error/item-load-failed"
+msgid "Something went wrong loading this item. Please contact the team."
+msgstr ""
+
 #: :error/unknown-title
 #, ycp-format
 msgctxt ":error/unknown-title"

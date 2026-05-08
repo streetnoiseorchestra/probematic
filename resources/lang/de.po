@@ -2357,6 +2357,14 @@ msgstr ""
 "gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode "
 "mit:"
 
+#: :error/item-load-failed
+#, ycp-format
+msgctxt ":error/item-load-failed"
+msgid "Something went wrong loading this item. Please contact the team."
+msgstr ""
+"Beim Laden dieses Elements ist etwas schiefgelaufen. Bitte kontaktiere das "
+"Team."
+
 #: :error/unknown-title
 #, ycp-format
 msgctxt ":error/unknown-title"
