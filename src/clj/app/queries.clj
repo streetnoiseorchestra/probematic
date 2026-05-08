@@ -1066,6 +1066,7 @@
                 :where
                 [?response :insurance.survey.response/member ?member]
                 [?survey :insurance.survey/responses ?response]
+                [?survey :insurance.survey/policy ?policy]
                 [(missing? $ ?survey :insurance.survey/closed-at)]]
               db (d/ref member) insurance-survey-response-pattern-backwards)
    (map first)
