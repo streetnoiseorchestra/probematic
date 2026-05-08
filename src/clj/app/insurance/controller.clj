@@ -146,12 +146,12 @@
 
 (defn delete-policy! [{:keys [db datomic-conn] :as req}]
   (try
-    (let
-     [params (util.http/unwrap-params req)
-      policy-id (util.http/ensure-uuid (:policy-id params))
-      policy-ref     [:insurance.policy/policy-id policy-id]]
-      (datomic/transact datomic-conn {:tx-data [[:db/retractEntity policy-ref]]})
-      true)
+    (let [params (util.http/unwrap-params req)
+          policy-id (util.http/ensure-uuid (:policy-id params))
+          policy-ref [:insurance.policy/policy-id policy-id]]
+      (when-not (q/policy-has-open-surveys? db policy-id)
+        (datomic/transact datomic-conn {:tx-data [[:db/retractEntity policy-ref]]})
+        true))
     (catch Throwable t
       (if
        (re-find #".*Cannot resolve key.*" (ex-message t))

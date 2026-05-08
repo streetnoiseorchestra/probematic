@@ -1023,6 +1023,17 @@
    (map first)
    (map insurance.domain/db->survey)))
 
+(defn policy-has-open-surveys? [db policy-id]
+  (boolean
+   (seq
+    (datomic/q '[:find ?survey
+                 :in $ ?policy-id
+                 :where
+                 [?policy :insurance.policy/policy-id ?policy-id]
+                 [?survey :insurance.survey/policy ?policy]
+                 [(missing? $ ?survey :insurance.survey/closed-at)]]
+               db policy-id))))
+
 (defn open-survey-for-member-items [db member policy]
   (or
    (->>
