@@ -7,7 +7,7 @@
    [app.errors :as error]
    [com.brunobonacci.mulog :as mu]
    [clj-reload.core :as clj-reload]
-   [portal-helpers :as portal-repl]
+   [ol.dev.portal :as portal]
    [app.ui.core :as ui-core]
    [com.fulcrologic.guardrails.malli.core]
    [app.system :as system]
@@ -24,33 +24,29 @@
 ;; --------------------------------------------------------------------------------------------
 ;; Portal & Logging
 
-(add-tap portal-repl/submit)
+(defonce portal! (portal/open-portals))
 (defonce pub! (mu/start-publisher! {:type         :custom
                                     :fqn-function "user/tap-publisher"
                                     :transform    error/redact-mulog-events}))
 
 (defn logs
   "Query debug log: (logs), (logs 5), (logs :label), (logs :label 3)"
-  ([] @portal-helpers/my-taps)
-  ([n-or-label]
-   (if (number? n-or-label)
-     (vec (take-last n-or-label @portal-helpers/my-taps))
-     (vec (filter #(= n-or-label (first %)) @portal-helpers/my-taps))))
-  ([label n]
-   (vec (take-last n (filter #(= label (first %)) @portal-helpers/my-taps)))))
+  ([] (portal/logs))
+  ([n-or-label] (portal/logs n-or-label))
+  ([label n] (portal/logs label n)))
 
 (defn log-values
-  "Like logs, but returns just the values"
-  ([] (mapv :value @portal-helpers/my-taps))
-  ([n-or-label] (mapv :value (logs n-or-label)))
-  ([label n] (mapv :value (logs label n))))
+  "Like logs, but returns just the values."
+  ([] (portal/log-values))
+  ([n-or-label] (portal/log-values n-or-label))
+  ([label n] (portal/log-values label n)))
 
-(defn clear-logs! [] (reset! portal-helpers/my-taps []))
+(defn clear-logs! [] (portal/clear-logs!))
 
 (defn last-log
-  "Most recent entry, or just value with (last-log :v)"
-  ([] (last @portal-helpers/my-taps))
-  ([_] (:value (last @portal-helpers/my-taps))))
+  "Most recent entry, or just value with (last-log :v)."
+  ([] (portal/last-log))
+  ([_] (portal/last-log :v)))
 
 ;; --------------------------------------------------------------------------------------------
 ;; System Control
@@ -108,4 +104,4 @@
 
   (tap> 2)
 
-  (first @portal-helpers/my-taps))
+  (first @(portal/my-taps)))
