@@ -1,20 +1,37 @@
 (ns app.insurance.actions-test
   (:require
    [app.insurance.actions :as actions]
+   [app.insurance.test-support :as insurance-support]
    [app.nexus.actions :as support]
    [app.test-common :as tc]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
 
 (deftest delete-policy-action-test
-  (let [policy-id (random-uuid)]
-    (is (= [[:db/transact
-             [[:db/retractEntity [:insurance.policy/policy-id policy-id]]]
-             {}]
-            support/clear-loading]
-           (actions/delete-policy-action
-            {}
-            {:targetid (str policy-id)})))))
+  (testing "returns a retract effect when the policy has no open surveys"
+    (let [{:keys [conn]} (tc/new-system "insurance-delete-action")
+          policy-id      (random-uuid)]
+      (insurance-support/seed-policy! conn policy-id)
+      (is (= [[:db/transact
+               [[:db/retractEntity [:insurance.policy/policy-id policy-id]]]
+               {}]
+              support/clear-loading]
+             (actions/delete-policy-action
+              {:db (d/db conn)}
+              {:targetid (str policy-id)}))))))
+
+(deftest delete-policy-action-does-not-retract-policy-with-open-survey-test
+  (testing "keeps the policy when an open survey still references it"
+    (let [{:keys [conn member-id]} (tc/new-system "insurance-delete-action-open-survey")
+          policy-id                (random-uuid)]
+      (insurance-support/seed-policy! conn policy-id)
+      (insurance-support/seed-survey! conn {:member-id member-id
+                                            :policy-id policy-id})
+      (let [effects (actions/delete-policy-action
+                     {:db (d/db conn)}
+                     {:targetid (str policy-id)})]
+        (is (= [support/clear-loading] effects))
+        (is (not-any? #(= :db/transact (first %)) effects))))))
 
 (deftest duplicate-policy-action-uses-targetid-test
   (let [{:keys [conn]} (tc/new-system "insurance-duplicate-action")

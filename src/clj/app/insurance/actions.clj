@@ -2,6 +2,7 @@
   (:require
    [app.insurance.index.queries :as queries]
    [app.nexus.actions :as support]
+   [app.queries :as q]
    [app.urls :as urls]
    [app.util :as util]
    [com.yetanalytics.squuid :as sq]
@@ -71,13 +72,15 @@
   (util/ensure-uuid! targetid))
 
 (defn delete-policy-action
-  [{:keys [current-member-id]} signals]
+  [{:keys [current-member-id db]} signals]
   (let [policy-id (target-policy-id signals)]
-    [[:db/transact
-      (support/with-audit [[:db/retractEntity [:insurance.policy/policy-id policy-id]]]
-        current-member-id)
-      {}]
-     support/clear-loading]))
+    (if (q/policy-has-open-surveys? db policy-id)
+      [support/clear-loading]
+      [[:db/transact
+        (support/with-audit [[:db/retractEntity [:insurance.policy/policy-id policy-id]]]
+          current-member-id)
+        {}]
+       support/clear-loading])))
 
 (defn duplicate-policy-action
   [{:keys [current-member-id db tr]} signals]
