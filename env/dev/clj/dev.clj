@@ -77,7 +77,7 @@
 ;; Code Reloading
 
 (clj-reload/init {:dirs      ["src" "dev" "test"]
-                  :no-reload '#{dev user integrant.repl.state}})
+                  :no-reload '#{user integrant.repl.state}})
 
 (comment
   ;; normal reload
@@ -95,6 +95,8 @@
   (reset)
   (restart)
   (reload-all)
+  (stop)
+  (start)
   ;; much
   (clojure.repl.deps/sync-deps)
   ;;

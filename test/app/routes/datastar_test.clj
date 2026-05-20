@@ -77,11 +77,16 @@
                 :nexus/actions       {::ping (fn [_state body]
                                                [[::record body]
                                                 [::respond {:ok true}]])}}
-        req    {:system  {:nexus config}
+        req    {:system       {:nexus config}
                 :query-params (datastar/action-query-params ::ping)
-                :body-params {:received true}}]
+                :body-params  {:received true}}]
     (is (= [[::ping {:received true}]]
            (dsr/act-handler req)))
+    (is (= [[::ping {:received true
+                     :query-params {"q" "Wedding"}}]]
+           (dsr/act-handler
+            (assoc req :query-params (assoc (datastar/action-query-params ::ping)
+                                            "q" "Wedding")))))
     (is (= {:status 200
             :body   {:ok true}}
            (tc/dispatch-with-nexus dsr/act-handler config (:system req) req)))
@@ -106,7 +111,7 @@
     (is (= "/act?ns=app.routes.datastar-test&kw=ping"
            (datastar/act req ::ping)))))
 
-(deftest gigs-routes-expose-the-datastar-index-and-legacy-compatibility-paths
+(deftest gigs-routes-expose-the-datastar-index-and-detail-paths
   (let [router (http/router ["" (gigs.routes/routes)])]
     (is (= :app/gigs
            (get-in (r/match-by-path router "/gigs") [:data :app.route/name])))
@@ -142,15 +147,7 @@
       (is (= :app.gigs.routes/create
              (get-in (r/match-by-path router "/gigs/create") [:data :name])))
       (is (seq (get-in (r/match-by-path router (str "/gig/" gig-id "/edit")) [:data :extra-head])))
-      (is (= :app/gigs
-             (get-in (r/match-by-path router (str "/gig-legacy/" gig-id "/")) [:data :app.route/name])))
-      (is (nil? (r/match-by-path router (str "/gig/" gig-id "/log-play")))))
-    (is (= :app/gigs
-           (get-in (r/match-by-path router "/gigs-legacy") [:data :app.route/name])))
-    (is (= :app/gigs
-           (get-in (r/match-by-path router "/gigs-legacy/new") [:data :app.route/name])))
-    (is (= :app/gigs
-           (get-in (r/match-by-path router "/gigs-legacy/archive") [:data :app.route/name])))))
+      (is (nil? (r/match-by-path router (str "/gig/" gig-id "/log-play")))))))
 
 (deftest gig-helpers-point-to-public-index-archive-and-create
   (is (= "/gigs"

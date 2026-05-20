@@ -28,9 +28,14 @@
       (:params req)))
 
 (defn- action-body [req]
-  (or (:body-params req)
-      (get-in req [:parameters :body])
-      {}))
+  (let [body         (or (:body-params req)
+                         (get-in req [:parameters :body])
+                         {})
+        query-params (not-empty (apply dissoc
+                                       (action-query-params req)
+                                       [:ns :kw "ns" "kw"]))]
+    (cond-> body
+      query-params (assoc :query-params query-params))))
 
 (defn act-handler [req]
   (let [action-key   (d*/action-key (action-query-params req))

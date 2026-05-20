@@ -1,6 +1,7 @@
 (ns app.gigs.queries
   (:require
    [app.datomic :as d]
+   [app.gigs.archive.actions :as archive.actions]
    [app.gigs.domain :as domain]
    [app.queries :as q]
    [clojure.string :as str]
@@ -8,6 +9,9 @@
    [tick.core :as t]))
 
 (def past-gigs-limit 20)
+
+(def default-archive-page-state
+  {:search ""})
 
 (defn- page [offset limit coll]
   (if (= limit ##Inf)
@@ -66,12 +70,34 @@
 (defn gigs-for-year [past-gigs selected-year]
   (filter #(= selected-year (year-string %)) past-gigs))
 
-(defn archive-page-data [db ?year]
-  (let [selected-year (normalize-year ?year)
-        past-gigs     (past-gigs db)]
-    {:selected-year selected-year
-     :years         (archive-years past-gigs selected-year)
-     :gigs          (gigs-for-year past-gigs selected-year)}))
+(defn normalize-archive-page-state [page-state]
+  (-> default-archive-page-state
+      (merge page-state)
+      (update :search archive.actions/normalize-search)))
+
+(defn- normalize-search-term [search]
+  (some-> search str/trim str/lower-case not-empty))
+
+(defn- matches-gig-search? [search gig]
+  (if-let [search (normalize-search-term search)]
+    (str/includes? (str/lower-case (or (:gig/title gig) "")) search)
+    true))
+
+(defn gigs-for-search [gigs search]
+  (filter #(matches-gig-search? search %) gigs))
+
+(defn archive-page-data
+  ([db ?year]
+   (archive-page-data db ?year nil))
+  ([db ?year page-state]
+   (let [page-state    (normalize-archive-page-state page-state)
+         selected-year (normalize-year ?year)
+         past-gigs     (past-gigs db)]
+     {:selected-year selected-year
+      :years         (archive-years past-gigs selected-year)
+      :page-state    page-state
+      :gigs          (-> (gigs-for-year past-gigs selected-year)
+                         (gigs-for-search (:search page-state)))})))
 
 (defn attendance-data [db {:gig/keys [gig-id] :as gig} show-committed?]
   (let [archived?   (domain/gig-archived? gig)
