@@ -2,7 +2,10 @@
   (:require
    [app.queries :as q]
    [app.songs.index.actions :as actions]
-   [clojure.string :as str]))
+   [clojure.string :as str])
+  (:import
+   [java.text Normalizer Normalizer$Form]
+   [java.util Locale]))
 
 (def default-page-state
   {:search            ""
@@ -20,12 +23,17 @@
     "old"     (not (:song/active? song))
     "all"     true))
 
+(defn- normalize-search-text [s]
+  (let [normalized (Normalizer/normalize (str s) Normalizer$Form/NFD)
+        folded     (str/replace normalized #"\p{M}+" "")]
+    (.toLowerCase ^String folded Locale/ROOT)))
+
 (defn- normalize-search-term [search]
-  (some-> search str/trim str/lower-case not-empty))
+  (some-> search str/trim normalize-search-text not-empty))
 
 (defn- matches-search? [search song]
   (if-let [search (normalize-search-term search)]
-    (str/includes? (str/lower-case (or (:song/title song) "")) search)
+    (str/includes? (normalize-search-text (:song/title song)) search)
     true))
 
 (defn songs [db page-state]

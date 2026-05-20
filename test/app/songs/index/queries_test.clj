@@ -41,6 +41,7 @@
   (let [{:keys [conn]} (tc/new-system "songs-index-search")]
     (seed-song! conn (random-uuid) "Watermelon Man" true)
     (seed-song! conn (random-uuid) "Bella Ciao" true)
+    (seed-song! conn (random-uuid) "Burkan Čoček" true)
     (seed-song! conn (random-uuid) "Old Water" false)
     (let [db (d/db conn)]
       (testing "search is case-insensitive and trimmed"
@@ -53,7 +54,13 @@
         (is (= ["Old Water"]
                (mapv :song/title
                      (queries/songs db {:repertoire-filter "old"
-                                        :search            "water"}))))))))
+                                        :search            "water"})))))
+
+      (testing "search is diacritic-insensitive"
+        (is (= ["Burkan Čoček"]
+               (mapv :song/title
+                     (queries/songs db {:repertoire-filter "current"
+                                        :search            "cocek"}))))))))
 
 (deftest normalize-page-state-test
   (is (= {:search ""
