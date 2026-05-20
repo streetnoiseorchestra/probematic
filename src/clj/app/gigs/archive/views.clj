@@ -41,8 +41,8 @@
                                 :href       (urls/link-gig-create)}
                     (tr [:action/create])]]})
       (archive-tools req selected-year years)
-      (gigs.ui/gig-section {:title         selected-year
-                            :empty-message (tr [:gigs/no-past])
-                            :gigs          gigs})])))
+      (gigs.ui/gig-section req {:title         selected-year
+                                :empty-message (tr [:gigs/no-past])
+                                :gigs          gigs})])))
 
 (d*/refresh-all!)

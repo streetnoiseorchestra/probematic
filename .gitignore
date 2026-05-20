@@ -1,3 +1,4 @@
+.direnv
 archive
 !src/clj/app/gigs/archive/
 !src/clj/app/gigs/archive/*.clj

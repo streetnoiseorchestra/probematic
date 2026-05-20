@@ -2,12 +2,15 @@
   (:require
    [app.html :as html]
    [app.humanize :as humanize]
+   [app.i18n :as i18n]
    [app.icons :as icons]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]
    [tick.core :as t])
   (:import
    [java.text NumberFormat]
+   [java.time.chrono IsoChronology]
+   [java.time.format DateTimeFormatter DateTimeFormatterBuilder FormatStyle]
    [java.util Locale]))
 
 (defn safe-dom-id
@@ -167,21 +170,150 @@
   [value currency]
   (muted (money-format value currency)))
 
-(defn date-time-value
-  "Formats `value` with `pattern`, accepting `java.util.Date` instants or tick temporal values."
-  [pattern value]
+(def ^:private date-format-styles
+  {:short        FormatStyle/SHORT
+   :medium       FormatStyle/MEDIUM
+   :long         FormatStyle/LONG
+   :full         FormatStyle/FULL
+   :with-weekday FormatStyle/FULL})
+
+(def ^:private date-time-format-styles
+  {:short        FormatStyle/SHORT
+   :medium       FormatStyle/MEDIUM
+   :long         FormatStyle/LONG
+   :full         FormatStyle/FULL
+   :with-weekday FormatStyle/FULL})
+
+(def ^:private time-format-styles
+  {:short  FormatStyle/SHORT
+   :medium FormatStyle/MEDIUM})
+
+(defn- localized-format-style [styles style]
+  (or (get styles style)
+      (throw (ex-info "Unknown date/time format style"
+                      {:style style :available-styles (sort (keys styles))}))))
+
+(defn- temporal-value [value]
   (when value
-    (t/format (t/formatter pattern) (if (inst? value) (t/date-time value) value))))
+    (if (inst? value)
+      (t/date-time value)
+      value)))
 
-(defn date-value
-  "Formats `value` as `yyyy-MM-dd`."
-  [value]
-  (date-time-value "yyyy-MM-dd" value))
+(defn- date-temporal [value]
+  (some-> value temporal-value t/date))
 
-(defn time-value
-  "Formats `value` as `HH:mm`."
+(defn- localized-formatter [locale formatter]
+  (.withLocale ^DateTimeFormatter formatter locale))
+
+(def ^:private month-day-pattern
+  (memoize
+   (fn [^Locale locale]
+     (let [short-pattern (DateTimeFormatterBuilder/getLocalizedDateTimePattern
+                          FormatStyle/SHORT
+                          nil
+                          IsoChronology/INSTANCE
+                          locale)
+           month-idx     (.indexOf short-pattern "M")
+           day-idx       (.indexOf short-pattern "d")]
+       (if (and (not= -1 month-idx)
+                (not= -1 day-idx)
+                (< month-idx day-idx))
+         "MM.dd"
+         "dd.MM")))))
+
+(def ^:private date-formatter
+  (memoize
+   (fn [locale style]
+     (localized-formatter
+      locale
+      (if (= :month-day style)
+        (DateTimeFormatter/ofPattern (month-day-pattern locale))
+        (DateTimeFormatter/ofLocalizedDate (localized-format-style date-format-styles style)))))))
+
+(def ^:private date-time-formatter
+  (memoize
+   (fn [locale style]
+     (localized-formatter
+      locale
+      (DateTimeFormatter/ofLocalizedDateTime
+       (localized-format-style date-time-format-styles style)
+       FormatStyle/SHORT)))))
+
+(def ^:private time-formatter
+  (memoize
+   (fn [locale style]
+     (localized-formatter
+      locale
+      (DateTimeFormatter/ofLocalizedTime (localized-format-style time-format-styles style))))))
+
+(defn format-date
+  "Formats `value` as a localized date for `style`.
+  Date styles are `:month-day`, `:short`, `:medium`, `:long`, `:full`, and `:with-weekday`."
+  [req style value]
+  (when-let [date (date-temporal value)]
+    (t/format (date-formatter (i18n/req-locale req) style) date)))
+
+(defn format-date-time
+  "Formats `value` as a localized date and time for `style`.
+  Date-time styles are `:short`, `:medium`, `:long`, `:full`, and `:with-weekday`."
+  [req style value]
+  (when-let [date-time (temporal-value value)]
+    (t/format (date-time-formatter (i18n/req-locale req) style) date-time)))
+
+(defn format-time
+  "Formats `value` as a localized time for `style`.
+  Time styles are `:short` and `:medium`."
+  [req style value]
+  (when-let [time (temporal-value value)]
+    (t/format (time-formatter (i18n/req-locale req) style) time)))
+
+(defn format-date-range
+  "Formats `start` and optional `end` as a localized date range for `style`."
+  [req style start end]
+  (when-let [start-label (format-date req style start)]
+    (if-let [end-label (format-date req style end)]
+      (str start-label " – " end-label)
+      start-label)))
+
+(defn date-display
+  "Renders `value` as a localized `<time>` element for `style`."
+  [req style value]
+  (if-let [date (date-temporal value)]
+    [:time {:datetime (str date)} (format-date req style date)]
+    html/emdash))
+
+(defn date-range-display
+  "Renders `start` and optional `end` as localized `<time>` elements for `style`."
+  [req style start end]
+  (let [start-date (date-temporal start)
+        end-date   (date-temporal end)]
+    (cond
+      (and start-date end-date)
+      [:span
+       (date-display req style start-date)
+       [:span {:aria-hidden true} " – "]
+       (date-display req style end-date)]
+
+      start-date
+      (date-display req style start-date)
+
+      end-date
+      (date-display req style end-date)
+
+      :else
+      html/emdash)))
+
+(defn date-input-value
+  "Formats `value` as an HTML date input value."
   [value]
-  (date-time-value "HH:mm" value))
+  (when-let [date (date-temporal value)]
+    (t/format (DateTimeFormatter/ofPattern "yyyy-MM-dd") date)))
+
+(defn time-input-value
+  "Formats `value` as an HTML time input value."
+  [value]
+  (when-let [time (temporal-value value)]
+    (t/format (DateTimeFormatter/ofPattern "HH:mm") time)))
 
 (defn relative-time-value
   "Formats `value` as a relative time such as `2 days ago`."

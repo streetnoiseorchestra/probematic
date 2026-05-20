@@ -1,12 +1,8 @@
 (ns app.gigs.ui
   (:require
-   [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
-   [clojure.string :as str]
-   [tick.core :as t])
-  (:import
-   (java.util Locale)))
+   [clojure.string :as str]))
 
 (defn- status-icon-name [status]
   (case status
@@ -36,40 +32,17 @@
                                    (when-let [class (:class attrs)]
                                      (str " " class)))})]))
 
-(defn gig-breadcrumb-label [{:gig/keys [title gig-type] :as gig}]
+(defn gig-breadcrumb-label [req {:gig/keys [date title gig-type] :as _gig}]
   (if (#{:gig.type/probe :gig.type/extra-probe} gig-type)
-    (str title " " (ui/gig-date gig))
+    (str title " " (ui2/format-date req :short date))
     title))
-
-(defn- date-value [dt]
-  (when dt
-    (t/date (if (inst? dt)
-              (t/date-time dt)
-              dt))))
-
-(defn- formatted-date [dt]
-  (when-let [date (date-value dt)]
-    (t/format (t/formatter "E dd MMM yyyy" Locale/GERMAN) date)))
-
-(defn- gig-date [dt]
-  (if dt
-    [:time {:datetime (str dt)} (formatted-date dt)]
-    "—"))
-
-(defn- gig-date-range [start end]
-  (if end
-    [:span
-     (gig-date start)
-     [:span {:aria-hidden true} " – "]
-     (gig-date end)]
-    (gig-date start)))
 
 (defn- gig-location [location]
   (if (seq location)
     location
     "—"))
 
-(defn gig-row [{:gig/keys [title status location date end-date] :as gig}]
+(defn gig-row [req {:gig/keys [title status location date end-date] :as gig}]
   [:a {:href  (urls/link-gig gig)
        :class "gigs-row"}
    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-row-title"}
@@ -85,7 +58,7 @@
      [:wa-icon {:library "snoico"
                 :name    "calendar"
                 :class   "gigs-row-meta-icon"}]
-     [:span (gig-date-range date end-date)]]]])
+     [:span (ui2/date-range-display req :with-weekday date end-date)]]]])
 
 (defn section-heading [title]
   [:div {:class "gigs-section-heading"}
@@ -93,14 +66,14 @@
     [:h2 title]]
    [:wa-divider {:class "gigs-section-divider"}]])
 
-(defn gig-section [{:keys [empty-message footer gigs id title]}]
+(defn gig-section [req {:keys [empty-message footer gigs id title]}]
   [:section {:id    id
              :class "wa-stack wa-gap-xs"}
    (section-heading title)
    [:wa-card {:class "gigs-list-card"}
     (if (seq gigs)
       (for [gig gigs]
-        (gig-row gig))
+        (gig-row req gig))
       [:div {:class "gigs-empty"} empty-message])
     footer]])
 

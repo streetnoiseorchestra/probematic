@@ -4,20 +4,7 @@
    [app.songs.index.actions :as actions]
    [app.songs.index.queries :as queries]
    [app.ui2 :as ui2]
-   [app.urls :as urls]
-   [tick.core :as t])
-  (:import
-   (java.util Locale)))
-
-(defn- date-value [dt]
-  (when dt
-    (t/date (if (inst? dt)
-              (t/date-time dt)
-              dt))))
-
-(defn- formatted-date [dt]
-  (when-let [date (date-value dt)]
-    (t/format (t/formatter "E dd MMM yyyy" Locale/GERMAN) date)))
+   [app.urls :as urls]))
 
 (defn- song-stat [{:keys [icon label value]}]
   [:span {:class "songs-index-stat"}
@@ -50,7 +37,7 @@
    [:div {:class "songs-index-row-date"}
     (song-stat {:icon  "calendar"
                 :label (tr [:song/last-played])
-                :value (or (formatted-date last-played-on) "—")})]])
+                :value (or (ui2/format-date req :with-weekday last-played-on) "—")})]])
 
 (defn- songs-list [req songs]
   (if (seq songs)

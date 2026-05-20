@@ -9,7 +9,7 @@
   (name k))
 
 (deftest how-it-works-renders-collapsed-web-awesome-details
-  (let [[tag attrs & body] (#'views/how-it-works {:tr tr})]
+  (let [[tag attrs & body] (views/how-it-works {:tr tr})]
     (is (= {:tag        :wa-details
             :summary    "how-it-works-title"
             :open?      false
@@ -48,7 +48,7 @@
                   :emphasis     :probeplan.emphasis/none}]})
 
 (defn normalized-one-intensive-row []
-  (update (one-intensive-row) :songs #'views/songs-by-position))
+  (update (one-intensive-row) :songs views/songs-by-position))
 
 (defn hiccup-text [form]
   (->> (tree-seq #(and (coll? %) (not (map? %))) seq form)
@@ -63,7 +63,7 @@
        (vec)))
 
 (defn song-cells [row]
-  (let [[_tag _attrs _number-cell _date-cell _gigs-cell & cells] (#'views/probe-row [] false 6 0 row)]
+  (let [[_tag _attrs _number-cell _date-cell _gigs-cell & cells] (views/probe-row {:current-locale :de} [] false 6 0 row)]
     (if (and (= 1 (count cells))
              (sequential? (first cells)))
       (vec (first cells))
@@ -91,4 +91,4 @@
           "s2" {:position 2, :emphasis "none"}
           "s3" {:position 3, :emphasis "none"}
           "s4" {:position 4, :emphasis "none"}}
-         (signal-emphases (#'views/editable-signals [(normalized-one-intensive-row)])))))
+         (signal-emphases (views/editable-signals [(normalized-one-intensive-row)])))))

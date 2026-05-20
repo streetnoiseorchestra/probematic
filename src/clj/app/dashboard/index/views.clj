@@ -11,41 +11,13 @@
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util :as util]
-   [clojure.string :as str]
-   [tick.core :as t])
-  (:import
-   (java.text NumberFormat)
-   (java.util Locale)))
+   [clojure.string :as str]))
 
 (defn- member-nick [{:member/keys [name nick]}]
   (if (str/blank? nick) name nick))
 
 (defn- js-value [value]
   (d*/->signals value))
-
-(defn- date-value [dt]
-  (when dt
-    (t/date (if (inst? dt)
-              (t/date-time dt)
-              dt))))
-
-(defn- formatted-date [dt]
-  (if-let [date (date-value dt)]
-    (t/format (t/formatter "E dd MMM yyyy" Locale/GERMAN) date)
-    "—"))
-
-(defn- formatted-time [time]
-  (if time
-    (t/format (t/formatter "HH:mm") time)
-    "—"))
-
-(defn- gig-date-range [{:gig/keys [date end-date]}]
-  (if end-date
-    [:span
-     [:time {:datetime (str date)} (formatted-date date)]
-     [:span {:aria-hidden true} " – "]
-     [:time {:datetime (str end-date)} (formatted-date end-date)]]
-    [:time {:datetime (str date)} (formatted-date date)]))
 
 (defn- dashboard-list [class rows]
   (into [:div {:class (ui2/cs "dashboard-list" class)}]
@@ -61,7 +33,7 @@
   (into [tag (update attrs :class #(ui2/cs "dashboard-row" class %))]
         children))
 
-(defn- gig-row [req {:gig/keys [gig-id title status call-time end-date] :as gig}]
+(defn- gig-row [req {:gig/keys [gig-id title status call-time date end-date] :as gig}]
   (let [{:attendance/keys [plan motivation comment member]} (:attendance gig)
         member-id (:member/member-id member)]
     (dashboard-row
@@ -71,9 +43,9 @@
      [:div {:class "dashboard-gig-status-cell"}
       (gigs.ui/gig-status-icon status {:class "dashboard-gig-status"})]
      [:div {:class "dashboard-gig-date"}
-      [:span (gig-date-range gig)]
+      [:span (ui2/date-range-display req :with-weekday date end-date)]
       (when-not end-date
-        [:span (formatted-time call-time)])]
+        [:span (or (ui2/format-time req :short call-time) "—")])]
      [:a {:href  (urls/link-gig gig)
           :class "dashboard-gig-title"}
       title]
@@ -129,7 +101,7 @@
                      (mapv #(insurance-todo-row req %) policies)))
 
 (defn- currency-format [cents]
-  (.format (NumberFormat/getCurrencyInstance Locale/GERMANY) (/ (or cents 0) 100.0)))
+  (ui2/money-format (/ (or cents 0) 100.0) :EUR))
 
 (defn- iban-format [iban]
   (when iban

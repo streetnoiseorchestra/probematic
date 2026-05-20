@@ -7,9 +7,39 @@
    [clojure.set :refer [intersection]]
    [clojure.string :as str]
    [taoensso.encore :as enc]
-   [taoensso.tempura :as tempura :refer [tr]]))
+   [taoensso.tempura :as tempura :refer [tr]])
+  (:import
+   [java.util Locale]))
 
 (def default-locale :en)
+
+(defn java-locale
+  "Returns a [[java.util.Locale]] for `locale`, defaulting to English when blank."
+  [locale]
+  (cond
+    (instance? Locale locale) locale
+    (nil? locale) Locale/ENGLISH
+    :else
+    (let [tag (-> (cond
+                    (keyword? locale) (name locale)
+                    (string? locale)  locale
+                    :else             (str locale))
+                  (str/replace "_" "-"))]
+      (case tag
+        ""      Locale/ENGLISH
+        "en"    Locale/ENGLISH
+        "de"    Locale/GERMAN
+        "en-US" Locale/US
+        "de-DE" Locale/GERMANY
+        (let [parsed (Locale/forLanguageTag tag)]
+          (if (str/blank? (.getLanguage parsed))
+            Locale/ENGLISH
+            parsed))))))
+
+(defn req-locale
+  "Returns the request [[java.util.Locale]], defaulting to English when blank."
+  [req]
+  (java-locale (:current-locale req)))
 
 (defn load-resource [filename & second]
   (try
@@ -21,7 +51,7 @@
            (ex-info "Failed to load dictionary resource"
                     {:filename filename})))
         content))
-    (catch Exception e
+    (catch Exception _
       (throw
        (ex-info "Failed to load dictionary resource"
                 {:filename filename})))))
@@ -192,7 +222,7 @@ msgstr \"\"
                            [[k sub-m]])))
                [])
        ;;  Cannot have blank msgids
-       (filter (fn [[k untranslated-str]]
+       (filter (fn [[_k untranslated-str]]
                  (not (str/blank? untranslated-str))))))
 
 (defn gen-pot [fname dname]
@@ -209,7 +239,7 @@ msgstr \"\"
         po-contents (slurp fname)
         parsed (parse-from-string po-contents)
         translated-map (->> parsed
-                            (reduce (fn [acc {:keys [comments keys]}]
+                            (reduce (fn [acc {:keys [keys]}]
                                       (let [{:keys [msgid msgstr msgctxt]} keys]
                                         (if msgid
                                           (let [kw (edn/read-string msgctxt)

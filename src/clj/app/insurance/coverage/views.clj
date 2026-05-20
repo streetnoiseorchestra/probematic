@@ -218,20 +218,21 @@
    [:div {:class "insurance-history-before"} (ui2/muted before)]
    [:div {:class "insurance-history-after"} (ui2/muted after)]])
 
-(defn- history-date-row [timestamp]
-  [:div {:class "insurance-history-date-row"}
-   [:time {:class      "insurance-history-time"
-           :datetime   (str timestamp)
-           :title      (str (ui2/date-value timestamp) " " (ui2/time-value timestamp))
-           :aria-label (str (ui2/date-value timestamp) " " (ui2/time-value timestamp))}
-    (ui2/relative-time-value timestamp)]])
+(defn- history-date-row [req timestamp]
+  (let [label (ui2/format-date-time req :medium timestamp)]
+    [:div {:class "insurance-history-date-row"}
+     [:time {:class      "insurance-history-time"
+             :datetime   (str timestamp)
+             :title      label
+             :aria-label label}
+      (ui2/relative-time-value timestamp)]]))
 
 (defn- history-entry [req coverage {:keys [audit changes timestamp]}]
   (let [change-rows     (history-changes req coverage changes)
         audit-user-name (get-in audit [:audit/member :member/name])]
     (when (seq change-rows)
       (list
-       (history-date-row timestamp)
+       (history-date-row req timestamp)
        (for [change-row change-rows]
          (history-change-row req audit-user-name change-row))))))
 

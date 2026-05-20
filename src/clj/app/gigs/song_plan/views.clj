@@ -31,14 +31,14 @@
                                (.remove target.classList animation-class))
                              duration))))))))
 
-(defn page-summary [{:keys [tr]} gig title-kw]
+(defn page-summary [{:keys [tr] :as req} gig title-kw]
   (ui2/page-header
    {:breadcrumb [:wa-breadcrumb
                  [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
                  [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
                   (tr [:nav/gigs])]
                  [:wa-breadcrumb-item {:href (urls/link-gig gig)}
-                  (gigs.ui/gig-breadcrumb-label gig)]
+                  (gigs.ui/gig-breadcrumb-label req gig)]
                  [:wa-breadcrumb-item (tr title-kw)]]
     :title      (tr title-kw)
     :actions    [[:wa-button {:appearance "outlined"

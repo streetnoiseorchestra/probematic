@@ -181,14 +181,14 @@
     :title      title
     :subtitle   subtitle}))
 
-(defn- edit-header [{:keys [tr]} {:gig/keys [title gig-type status] :as gig}]
+(defn- edit-header [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
   (ui2/page-header
    {:breadcrumb [:wa-breadcrumb
                  [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
                  [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
                   (tr [:nav/gigs])]
                  [:wa-breadcrumb-item {:href (urls/link-gig gig)}
-                  (gigs.ui/gig-breadcrumb-label gig)]
+                  (gigs.ui/gig-breadcrumb-label req gig)]
                  [:wa-breadcrumb-item (tr [:action/edit])]]
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
                  [:h1 (tr [:action/edit])]

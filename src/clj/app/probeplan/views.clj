@@ -4,13 +4,7 @@
    [app.probeplan.actions :as actions]
    [app.probeplan.queries :as queries]
    [app.ui2 :as ui2]
-   [app.urls :as urls]
-   [tick.core :as t])
-  (:import
-   (java.util Locale)))
-
-(defn- formatted-date [date]
-  (t/format (t/formatter "dd.MM" Locale/GERMAN) date))
+   [app.urls :as urls]))
 
 (defn- intensive-position? [position]
   (< position 2))
@@ -56,7 +50,7 @@
               (map-indexed #(assoc %2 :probeplan/slot-position (+ 2 %1)) normal))))
       (mapv #(assoc % :probeplan/slot-position (:probeplan/position %)) positioned))))
 
-(defn- songs-by-position [songs]
+(defn songs-by-position [songs]
   (assign-slot-positions songs))
 
 (defn- row-key [row-idx]
@@ -76,7 +70,7 @@
                            :emphasis (song-emphasis-signal song)}]))
                   (:songs row))}])
 
-(defn- editable-signals [rows]
+(defn editable-signals [rows]
   {:probeplan
    {:rows (into {}
                 (keep-indexed (fn [idx row]
@@ -141,20 +135,20 @@
      :else
      [:span {:class "probeplan-cell-empty"} "—"])])
 
-(defn- date-cell [{:keys [fixed? gig-id date]}]
+(defn- date-cell [req {:keys [fixed? gig-id date]}]
   [:td {:class "probeplan-cell probeplan-cell--date"}
-   (let [date-label (formatted-date date)]
+   (let [date-label (ui2/format-date req :month-day date)]
      (if fixed?
        [:a {:href  (urls/link-gig gig-id)
             :class "probeplan-date-link"}
         date-label]
        date-label))])
 
-(defn- probe-row [all-songs editing? song-count row-idx {:keys [idx songs num-gigs] :as row}]
+(defn probe-row [req all-songs editing? song-count row-idx {:keys [idx songs num-gigs] :as row}]
   (let [songs (songs-by-position songs)]
     [:tr {:class (row-class row)}
      [:td {:class "probeplan-cell probeplan-cell--number"} (inc (or idx row-idx))]
-     (date-cell row)
+     (date-cell req row)
      [:td {:class "probeplan-cell probeplan-cell--gigs"} num-gigs]
      (for [slot-position (range song-count)]
        (song-cell all-songs
@@ -168,7 +162,7 @@
   (max 5
        (inc (reduce max -1 (mapcat (comp (partial map :probeplan/slot-position) :songs) rows)))))
 
-(defn- probe-table [{:keys [tr] :as _req} all-songs editing? rows]
+(defn- probe-table [{:keys [tr] :as req} all-songs editing? rows]
   (let [rows       (mapv #(update % :songs songs-by-position) rows)
         song-count (max-song-count rows)]
     [:div {:class "probeplan-table-shell"}
@@ -179,9 +173,9 @@
           [:th {:scope "col"} header])]]
       [:tbody
        (for [[row-idx row] (map-indexed vector rows)]
-         (probe-row all-songs editing? song-count row-idx row))]]]))
+         (probe-row req all-songs editing? song-count row-idx row))]]]))
 
-(defn- how-it-works [{:keys [tr]}]
+(defn how-it-works [{:keys [tr]}]
   [:wa-details {:class      "probeplan-how-it-works"
                 :summary    (tr [:probeplan/how-it-works-title])
                 :appearance "outlined"}

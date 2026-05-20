@@ -74,7 +74,7 @@
                  [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
                  [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
                   (tr [:nav/gigs])]
-                 [:wa-breadcrumb-item (gigs.ui/gig-breadcrumb-label gig)]]
+                 [:wa-breadcrumb-item (gigs.ui/gig-breadcrumb-label req gig)]]
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
                  (when status
                    (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
