@@ -2,11 +2,10 @@
   (:require
    [app.datastar :as d*]
    [app.form :as form]
-   [app.gigs.edit.actions :as actions]
    [app.gigs.domain :as domain]
+   [app.gigs.edit.actions :as actions]
    [app.gigs.ui :as gigs.ui]
    [app.queries :as q]
-   [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -72,7 +71,7 @@
 (defn- member-option [selected-member-id member]
   (let [member-id (:member/member-id member)
         value     (str member-id)]
-    (option value (ui/member-nick member) (some-> selected-member-id str))))
+    (option value (ui2/member-nick member) (some-> selected-member-id str))))
 
 (defn- selected-member-id [selected-member]
   (if (map? selected-member)

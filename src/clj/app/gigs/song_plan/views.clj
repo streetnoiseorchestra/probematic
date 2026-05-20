@@ -2,7 +2,6 @@
   (:require
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
-   [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]))
 
@@ -75,11 +74,15 @@
     (button current-filter "old" ((:tr req) [:gig/probeplan-repertoire-old]))
     (button current-filter "all" ((:tr req) [:gig/probeplan-repertoire-all]))]])
 
-(defn last-played-subtitle [{:keys [tr]} last-played-on]
+(defn last-played-subtitle [{:keys [tr] :as req} last-played-on]
   (when last-played-on
-    [:span
-     (str (tr [:song/last-played]) ": ")
-     (ui/humanize-dt last-played-on)]))
+    (let [label (ui2/format-date-time req :medium last-played-on)]
+      [:span
+       (str (tr [:song/last-played]) ": ")
+       [:time {:datetime   (str last-played-on)
+               :title      label
+               :aria-label label}
+        (ui2/relative-time-value last-played-on)]])))
 
 (defn song-choice [{:keys [checked? id-prefix on-change effect song-id subtitle title]}]
   [:wa-checkbox (cond-> {:id                 (str id-prefix (ui2/safe-dom-id song-id))

@@ -539,3 +539,10 @@
   [& children]
   (html/->str
    (into [:main {:id "main"}] children)))
+
+(defn member-nick
+  "Renders the nickname of the member, if available, otherwise renders the name."
+  [{:member/keys [name nick]}]
+  (if (str/blank? nick)
+    name
+    nick))

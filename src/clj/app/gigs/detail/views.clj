@@ -4,13 +4,12 @@
    [app.datastar :as d*]
    [app.gigs.attendance.ui :as attendance.ui]
    [app.gigs.detail.actions :as actions]
-   [app.gigs.queries :as gigs.queries]
    [app.gigs.domain :as domain]
+   [app.gigs.queries :as gigs.queries]
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
    [app.markdown :as markdown]
    [app.queries :as q]
-   [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -30,7 +29,7 @@
           [:dd value]])))
 
 (defn- member-name [member]
-  (muted (some-> member ui/member-nick)))
+  (muted (some-> member ui2/member-nick)))
 
 (defn- blankish? [value]
   (str/blank? (str value)))
@@ -53,11 +52,10 @@
     (detail-item label
                  (interpose [:br] (str/split-lines text)))))
 
-(defn- gig-date [{:gig/keys [date end-date]}]
-  (cond
-    (and date end-date) (ui/daterange date end-date)
-    date                (ui/datetime date)
-    :else               (muted nil)))
+(defn- gig-date [req {:gig/keys [date end-date]}]
+  (if date
+    (ui2/date-range-display req :with-weekday date end-date)
+    (muted nil)))
 
 (defn- header-actions [{:keys [tr]} gig]
   [[:wa-button {:appearance "outlined"
@@ -82,23 +80,26 @@
                  [:wa-badge {:appearance "outlined" :class "wa-font-size-xs"} (tr [gig-type])]]
     :actions    (header-actions req gig)}))
 
-(defn- gig-info-section [{:keys [tr]} {:gig/keys [call-time contact end-time leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time setlist] :as gig}]
+(defn- gig-info-section
+  [{:keys [tr] :as req}
+   {:gig/keys [call-time contact end-time leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time setlist]
+    :as       gig}]
   (ui2/section-card
    {:title (tr [:gig/gig-info])}
    [:dl {:class "particulars gigs-detail-info-list"}
-    (detail-item (tr [:gig/date]) (gig-date gig))
+    (detail-item (tr [:gig/date]) (gig-date req gig))
     (detail-item (tr [:gig/location]) (if (str/blank? location)
                                         (muted nil)
                                         (markdown/render-one-line location)))
     (detail-item (tr [:gig/contact]) (member-name contact))
-    (detail-item (tr [:gig/call-time]) (muted (ui/time call-time)))
-    (optional-item (tr [:gig/set-time]) (ui/time set-time))
-    (optional-item (tr [:gig/end-time]) (ui/time end-time))
+    (detail-item (tr [:gig/call-time]) (muted (ui2/format-time req :short call-time)))
+    (optional-item (tr [:gig/set-time]) (ui2/format-time req :short set-time))
+    (optional-item (tr [:gig/end-time]) (ui2/format-time req :short end-time))
     (optional-item (tr [:gig/leader]) leader)
     (when (domain/probe? gig)
       (list
-       (optional-item (tr [:gig/rehearsal-leader1]) (some-> rehearsal-leader1 ui/member-nick))
-       (optional-item (tr [:gig/rehearsal-leader2]) (some-> rehearsal-leader2 ui/member-nick))))
+       (optional-item (tr [:gig/rehearsal-leader1]) (some-> rehearsal-leader1 ui2/member-nick))
+       (optional-item (tr [:gig/rehearsal-leader2]) (some-> rehearsal-leader2 ui2/member-nick))))
     (optional-item (tr [:gig/pay-deal]) pay-deal)
     (optional-item (tr [:gig/outfit]) outfit)
     (optional-markdown-item (tr [:gig/more-details]) more-details)
@@ -158,7 +159,7 @@
     (< (- (System/currentTimeMillis) (inst-ms sent-at))
        (* 24 60 60 1000))))
 
-(defn- remind-all-button [{:keys [tr page-state]} _gig-id]
+(defn- remind-all-button [{:keys [tr page-state] :as req} _gig-id]
   (let [sent-at       (get-in page-state actions/remind-all-sent-at-path)
         recent?       (recent-reminder? sent-at)
         button-id     "gig-detail-remind-all-button"
@@ -178,7 +179,7 @@
       [:span
        [:wa-tooltip {:for button-id :placement "top"}
         [:span (str (tr [:reminders/reminded-all-at]) " ")
-         (ui/timestamp sent-at)]]
+         (ui2/format-date-time req :medium sent-at)]]
        button]
       button)))
 

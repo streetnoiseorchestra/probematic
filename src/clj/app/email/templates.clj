@@ -3,7 +3,7 @@
    [app.config :as config]
    [app.markdown :as markdown]
    [app.secret-box :as secret-box]
-   [app.ui :as ui]
+   [app.ui2 :as ui2]
    [app.urls :as url]
    [app.util :as util]
    [clojure.string :as str]
@@ -11,6 +11,21 @@
    [selmer.parser :as selmer]
    [selmer.util :as selmer.util]
    [tick.core :as t]))
+
+(def ^:private email-format-req
+  {:current-locale :de})
+
+(defn- format-date [value]
+  (ui2/format-date email-format-req :with-weekday value))
+
+(defn- format-date-time [value]
+  (ui2/format-date-time email-format-req :medium value))
+
+(defn- format-time [value]
+  (ui2/format-time email-format-req :short value))
+
+(defn- money-cents-format [value currency]
+  (ui2/money-format (/ value 100) currency))
 
 (def plans-template-key {:plan/no-response "noresponse"
                          :plan/definitely "definitely"
@@ -59,15 +74,15 @@
    [:ul
     [:li (tr [:gig/gig-type]) ": " (tr [gig-type])]
     [:li (tr [:gig/status]) ": " (tr [status])]
-    [:li (tr [:gig/date]) ": " (ui/format-dt date)]
+    [:li (tr [:gig/date]) ": " (format-date date)]
     (when end-date
-      [:li (tr [:gig/end-date]) ": " (ui/format-dt end-date)])
+      [:li (tr [:gig/end-date]) ": " (format-date end-date)])
     (when call-time
-      [:li (tr [:gig/call-time]) ": " (ui/format-time call-time)])
+      [:li (tr [:gig/call-time]) ": " (format-time call-time)])
     (when set-time
-      [:li (tr [:gig/set-time]) ": " (ui/format-time set-time)])
+      [:li (tr [:gig/set-time]) ": " (format-time set-time)])
     (when end-time
-      [:li (tr [:gig/end-time]) ": " (ui/format-time end-time)])
+      [:li (tr [:gig/end-time]) ": " (format-time end-time)])
     (when location
       [:li (tr [:gig/location]) ": " (markdown/render-one-line location)])
     (when-not (str/blank? pay-deal)
@@ -91,15 +106,15 @@
     :gig-details (util/remove-nils [;
                                     {:name (tr [:gig/gig-type]) :value (tr [gig-type])}
                                     {:name (tr [:gig/status]) :value (tr [status])}
-                                    {:name (tr [:gig/date]) :value  (ui/format-dt date)}
+                                    {:name (tr [:gig/date]) :value  (format-date date)}
                                     (when end-date
-                                      {:name (tr [:gig/end-date]) :value (ui/format-dt end-date)})
+                                      {:name (tr [:gig/end-date]) :value (format-date end-date)})
                                     (when call-time
-                                      {:name (tr [:gig/call-time]) :value (ui/format-time call-time)})
+                                      {:name (tr [:gig/call-time]) :value (format-time call-time)})
                                     (when set-time
-                                      {:name (tr [:gig/set-time]) :value (ui/format-time set-time)})
+                                      {:name (tr [:gig/set-time]) :value (format-time set-time)})
                                     (when end-time
-                                      {:name (tr [:gig/end-time]) :value (ui/format-time end-time)})
+                                      {:name (tr [:gig/end-time]) :value (format-time end-time)})
                                     (when location
                                       {:name (tr [:gig/location]) :value location})
                                     (when-not (str/blank? pay-deal)
@@ -283,11 +298,11 @@
     {:member-name name
      :sender-name sender-name
      :time-range time-range
-     :amount (if (string? amount-cents) amount-cents (ui/money-cents-format amount-cents :EUR))
+     :amount (if (string? amount-cents) amount-cents (money-cents-format amount-cents :EUR))
      :private-instruments (map (fn [{:instrument.coverage/keys [cost instrument description value]}]
                                  {:instrument-summary (summarize-instrument-str  instrument)
-                                  :value (ui/money-format value :EUR)
-                                  :cost (ui/money-format cost :EUR)
+                                  :value (ui2/money-format value :EUR)
+                                  :cost (ui2/money-format cost :EUR)
                                   :description description})
                                private-coverages)
      :account-name account-name
@@ -448,13 +463,13 @@ Versicherungsteam StreetNoise Orchestra
       :description description
       :options (map :poll.option/value (:poll/options poll))
       :closes-at-label (tr [:poll/closes-at])
-      :closes-at (str (ui/format-time closes-at) " " (ui/format-dt closes-at))})))
+      :closes-at (format-date-time closes-at)})))
 
 (defn poll-created-email-html-body [tr poll]
   (markdown/render (poll-created-email-plain-body tr poll)))
 
 (defn insurance-survey-created-email-plain-body [tr {:keys [closes-at member-most-instruments member-most-instrument-count]}]
-  (let [closes-at-str (str (ui/format-time closes-at) " " (ui/format-dt closes-at))
+  (let [closes-at-str (format-date-time closes-at)
         closes-at-str-bolded (str "**" closes-at-str "**")
         closes-at-days (-> (t/instant)
                            (t/between  closes-at)

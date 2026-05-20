@@ -3,7 +3,6 @@
    [app.datastar :as d*]
    [app.gigs.detail.actions :as actions]
    [app.gigs.domain :as domain]
-   [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [clojure.string :as str]))
@@ -176,7 +175,7 @@
   (let [{:member/keys [member-id]} member]
     [:a {:href  (urls/link-member member-id)
          :class "gigs-attendance-member-link"}
-     (ui/member-nick member)]))
+     (ui2/member-nick member)]))
 
 (defn attendance-row-id [gig-id member-id]
   (str "gig-attendance-row-"

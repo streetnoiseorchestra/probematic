@@ -5,7 +5,7 @@
    [app.html :as html]
    [app.i18n :as i18n]
    [app.secret-box :as secret-box]
-   [app.ui :as ui]
+   [app.ui2 :as ui2]
    [app.urls :as url]
    [app.util :as util]
    [clojure.string :as str]
@@ -68,7 +68,7 @@
                    :appearance "plain"
                    :with-caret true}
        [:wa-avatar (cond-> {:slot  "start"
-                            :label (ui/member-nick member)
+                            :label (ui2/member-nick member)
                             :shape "rounded"
                             :style "--size: 2rem"}
                      src (assoc :image src))
@@ -76,7 +76,7 @@
           [:wa-icon {:library "snoico"
                      :name    "user"
                      :slot    "icon"}])]
-       [:span {:class "member-nick"} (ui/member-nick member)]]]
+       [:span {:class "member-nick"} (ui2/member-nick member)]]]
      [:wa-dropdown-item {:value   (url/link-member member)
                          :onclick "window.location = this.value"}
       [:wa-icon (merge {:library "snoico"

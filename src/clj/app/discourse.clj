@@ -4,7 +4,7 @@
    [app.datomic :as d]
    [app.gigs.domain :as domain]
    [app.queries :as q]
-   [app.ui :as ui]
+   [app.ui2 :as ui2]
    [app.urls :as url]
    [clojure.set :as set]
    [clojure.string :as str]
@@ -15,6 +15,14 @@
    [medley.core :as m]
    [org.httpkit.client :as client]
    [selmer.parser :as selmer]))
+
+(defn- gig-date-plain [{:gig/keys [date end-date]}]
+  (ui2/format-date-range {:current-locale :de} :with-weekday date end-date))
+
+(defn- gig-time [{:gig/keys [call-time set-time end-time]}]
+  (when-let [start-time (or call-time set-time)]
+    (cond-> (ui2/format-time {:current-locale :de} :short start-time)
+      end-time (str " - " (ui2/format-time {:current-locale :de} :short end-time)))))
 
 (defn add-authentication-header [api-key username]
   {:name ::add-authentication-header
@@ -166,8 +174,8 @@ GO TO SNORGA!!
       :gig.status/unconfirmed ":gig_unconfirmed:"
       :gig.status/cancelled ":gig_cancelled:")
     :probematic-link (url/absolute-link-gig env (:gig/gig-id gig))
-    :date (ui/gig-date-plain gig)
-    :time (ui/gig-time gig)
+    :date (gig-date-plain gig)
+    :time (gig-time gig)
     :location location
     :details  (markdown-quote more-details)
     :leader leader
@@ -230,7 +238,7 @@ GO TO SNORGA!!
              :headers {"content-type" "application/json"}}))
 
 (defn format-topic-title [gig]
-  (str (:gig/title gig) " " (ui/gig-date-plain gig)))
+  (str (:gig/title gig) " " (gig-date-plain gig)))
 
 (defn category-for [dev-mode? {:gig/keys [gig-type gig-id]}]
   (if-let [[_ v] (find {:gig.type/probe 7

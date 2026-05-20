@@ -9,7 +9,6 @@
    [app.markdown :as markdown]
    [app.queries :as q]
    [app.songs.detail.actions :as actions]
-   [app.ui :as ui]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -73,23 +72,23 @@
     (optional-markdown-item (tr [:song/arrangement-notes]) arrangement-notes)
     (optional-markdown-item (tr [:song/lyrics]) lyrics)]))
 
-(defn- gig-link [gig]
+(defn- gig-link [req gig]
   (when gig
     [:a {:href  (urls/link-gig gig)
          :class "songs-detail-link"}
      (or (:gig/title gig)
-         (some-> gig :gig/date ui/datetime))]))
+         (ui2/format-date req :with-weekday (:gig/date gig)))]))
 
-(defn- play-stats-section [{:keys [tr]} {:song/keys [last-played-on last-performance last-rehearsal total-performances total-plays total-rehearsals]}]
+(defn- play-stats-section [{:keys [tr] :as req} {:song/keys [last-played-on last-performance last-rehearsal total-performances total-plays total-rehearsals]}]
   (ui2/section-card
    {:title (tr [:song/play-stats-title])}
    [:dl {:class "particulars songs-detail-stats-list"}
     (detail-item (tr [:song/total-plays]) (muted total-plays))
     (detail-item (tr [:song/gig-count]) (muted total-performances))
     (detail-item (tr [:song/probe-count]) (muted total-rehearsals))
-    (detail-item (tr [:song/last-played]) (muted (some-> last-played-on ui/datetime)))
-    (detail-item (tr [:song/last-played-gig]) (muted (gig-link last-performance)))
-    (detail-item (tr [:song/last-played-probe]) (muted (gig-link last-rehearsal)))]))
+    (detail-item (tr [:song/last-played]) (muted (ui2/format-date req :with-weekday last-played-on)))
+    (detail-item (tr [:song/last-played-gig]) (muted (gig-link req last-performance)))
+    (detail-item (tr [:song/last-played-probe]) (muted (gig-link req last-rehearsal)))]))
 
 (defn- sheet-section-title [tr {:section/keys [default? name]}]
   (if default?

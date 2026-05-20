@@ -4,12 +4,15 @@
    [app.email.templates :as tmpl]
    [app.i18n :as i18n]
    [app.queries :as q]
-   [app.ui :as ui]
+   [app.ui2 :as ui2]
    [app.urls :as url]
    [app.util :as util]
    [com.yetanalytics.squuid :as sq]
    [app.datomic.shim :as datomic]
    [tick.core :as t]))
+
+(defn- gig-date-plain [{:gig/keys [date end-date]}]
+  (ui2/format-date-range {:current-locale :de} :with-weekday date end-date))
 
 (defn queue-email! [sys email]
   (email-worker/queue-mail! (:redis sys) email))
@@ -177,7 +180,7 @@
                   (build-generic-email sys
                                        (:member/email leader-member)
                                        (tr [:email/subject-log-plays])
-                                       (tr [:email/body-log-plays] [(ui/gig-date-plain gig)])
+                                       (tr [:email/body-log-plays] [(gig-date-plain gig)])
                                        (tr [:email/cta-log-plays])
                                        (url/absolute-link-gig-log-plays env (:gig/gig-id gig))))))
 
