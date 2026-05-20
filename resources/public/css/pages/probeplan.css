@@ -1,0 +1,134 @@
+.probeplan-page {
+  max-inline-size: var(--sno-size-full);
+}
+
+@scope (.probeplan-page) {
+  .probeplan-how-it-works {
+    max-inline-size: 52rem;
+  }
+
+  .probeplan-how-it-works p {
+    margin-block: 0 var(--wa-space-s);
+  }
+
+  .probeplan-how-it-works ul {
+    margin-block: 0;
+    padding-inline-start: 1.25rem;
+  }
+
+  .probeplan-how-it-works li + li {
+    margin-block-start: var(--wa-space-2xs);
+  }
+
+  .probeplan-table-shell {
+    position: relative;
+    overflow-x: auto;
+  }
+
+  .probeplan-table-shell::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset-block-end: 0;
+    inset-inline-start: -1px;
+    pointer-events: none;
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--wa-color-surface-default) 0%, transparent),
+      var(--wa-color-surface-default) 90%
+    );
+    inline-size: 101%;
+    block-size: 20em;
+  }
+
+  .probeplan-table {
+    min-inline-size: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .probeplan-table th {
+    padding: 0.25rem 0.5rem;
+    color: oklch(0.21 0.034 264.665);
+    font-weight: var(--sno-font-weight-semibold);
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  .probeplan-cell {
+    border-inline: 1px solid black;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .probeplan-cell--number,
+  .probeplan-cell--gigs {
+    padding: 0.25rem 0.5rem;
+    text-align: end;
+  }
+
+  .probeplan-cell--date {
+    padding: 0.25rem 0.5rem;
+    background-color: oklch(0.962 0.044 156.743);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .probeplan-cell--song {
+    min-inline-size: 11rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .probeplan-cell--intensive {
+    background-color: oklch(0.954 0.038 75.164);
+  }
+
+  .probeplan-cell--normal {
+    background-color: oklch(0.932 0.032 255.585);
+  }
+
+  .probeplan-row {
+    border-block-end: 1px solid oklch(0.872 0.01 258.338);
+  }
+
+  .probeplan-row--fixed {
+    border-block-end-style: solid;
+  }
+
+  .probeplan-row--last-fixed {
+    border-block-end-color: black;
+  }
+
+  .probeplan-row--future {
+    border-block-end-style: dashed;
+  }
+
+  .probeplan-date-link {
+    color: var(--wa-color-text-link);
+    text-decoration: underline;
+    text-underline-offset: 0.125rem;
+  }
+
+  .probeplan-cell-empty {
+    color: var(--wa-color-text-quiet);
+  }
+
+  .probeplan-select {
+    inline-size: 100%;
+    min-inline-size: 10rem;
+    max-inline-size: 16rem;
+    min-block-size: 1.75rem;
+    padding: 0.125rem 1.5rem 0.125rem 0.25rem;
+    background-color: color-mix(in srgb, white 72%, transparent);
+    border: 1px solid color-mix(in srgb, oklch(0.872 0.01 258.338) 80%, black);
+    border-radius: var(--wa-border-radius-s);
+    color: inherit;
+    font: inherit;
+  }
+
+  .probeplan-select:focus-visible {
+    outline: var(--wa-focus-ring-width) solid var(--wa-focus-ring-color);
+    outline-offset: var(--wa-focus-ring-offset);
+  }
+}

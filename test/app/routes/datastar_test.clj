@@ -4,6 +4,7 @@
    [app.gigs.routes :as gigs.routes]
    [app.members.routes :as members.routes]
    [app.nexus :as app-nexus]
+   [app.probeplan.routes :as probeplan.routes]
    [app.routes.datastar :as dsr]
    [app.settings.routes :as settings.routes]
    [app.urls :as urls]
@@ -54,6 +55,14 @@
            (get-in (r/match-by-path router "/band-settings/travel-discounts") [:data :name])))
     (is (= :app.settings.routes/sections
            (get-in (r/match-by-path router "/band-settings/sections") [:data :name])))))
+
+(deftest probeplan-route-exposes-the-datastar-index
+  (let [router (http/router ["" (probeplan.routes/routes)])
+        match  (r/match-by-path router "/probeplan")]
+    (is (= {:route-name :app/probeplan
+            :page-name  :app.probeplan.routes/index}
+           {:route-name (get-in match [:data :app.route/name])
+            :page-name  (get-in match [:data :name])}))))
 
 (deftest act-handler-dispatches-the-registered-action-from-query-params
   (let [calls  (atom [])

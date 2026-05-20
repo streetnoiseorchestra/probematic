@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-04-29 12:37+0000\n"
+"POT-Creation-Date: 2026-05-20 13:06+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -1997,6 +1997,98 @@ msgctxt ":youve-completed-plural"
 msgid "You've completed %1 items! %2 left to go!"
 msgstr "Du hast %1 Aufgaben erledigt! Noch %2 übrig!"
 
+#: :probeplan/header-number
+#, ycp-format
+msgctxt ":probeplan/header-number"
+msgid "Nr"
+msgstr "Nr"
+
+#: :probeplan/how-it-works-human-edit
+#, ycp-format
+msgctxt ":probeplan/how-it-works-human-edit"
+msgid "You can manually edit the plans for those next four rehearsals."
+msgstr "Du kannst die Pläne für diese nächsten vier Proben manuell bearbeiten."
+
+#: :probeplan/header-intensive
+#, ycp-format
+msgctxt ":probeplan/header-intensive"
+msgid "Intensive"
+msgstr "Intensiv"
+
+#: :probeplan/how-it-works-title
+#, ycp-format
+msgctxt ":probeplan/how-it-works-title"
+msgid "How this works"
+msgstr "So funktioniert es"
+
+#: :probeplan/header-playthrough
+#, ycp-format
+msgctxt ":probeplan/header-playthrough"
+msgid "Durchspielen"
+msgstr "Durchspielen"
+
+#: :probeplan/how-it-works-intro
+#, ycp-format
+msgctxt ":probeplan/how-it-works-intro"
+msgid "The probeplan generator works like this:"
+msgstr "Der Probenplan-Generator funktioniert so:"
+
+#: :probeplan/header-date
+#, ycp-format
+msgctxt ":probeplan/header-date"
+msgid "Date"
+msgstr "Datum"
+
+#: :probeplan/how-it-works-fixed
+#, ycp-format
+msgctxt ":probeplan/how-it-works-fixed"
+msgid ""
+"The next four rehearsals get fixed probeplans and are not changed "
+"automatically by the system."
+msgstr "Die nächsten vier Proben erhalten feste Probenpläne und werden nicht automatisch vom System geändert."
+
+#: :probeplan/empty-body
+#, ycp-format
+msgctxt ":probeplan/empty-body"
+msgid "Create upcoming rehearsals to generate a probeplan."
+msgstr "Lege zukünftige Proben an, um einen Probenplan zu erzeugen."
+
+#: :probeplan/header-gigs
+#, ycp-format
+msgctxt ":probeplan/header-gigs"
+msgid "Gigs"
+msgstr "Gigs"
+
+#: :probeplan/how-it-works-future-update
+#, ycp-format
+msgctxt ":probeplan/how-it-works-future-update"
+msgid ""
+"Probeplans after the next four rehearsals are regenerated from the current "
+"statistics."
+msgstr "Probenpläne nach den nächsten vier Proben werden aus den aktuellen Statistiken neu erzeugt."
+
+#: :probeplan/empty-title
+#, ycp-format
+msgctxt ":probeplan/empty-title"
+msgid "No probeplans found"
+msgstr "Keine Probenpläne gefunden"
+
+#: :probeplan/how-it-works-gigs-column
+#, ycp-format
+msgctxt ":probeplan/how-it-works-gigs-column"
+msgid ""
+"The gigs column shows how many gigs happen after that rehearsal and before "
+"the next one."
+msgstr "Die Gigs-Spalte zeigt, wie viele Gigs nach dieser Probe und vor der nächsten stattfinden."
+
+#: :probeplan/how-it-works-generate
+#, ycp-format
+msgctxt ":probeplan/how-it-works-generate"
+msgid ""
+"SNOrga generates future probeplans from play statistics such as number of "
+"plays and days since the last play."
+msgstr "SNOrga erzeugt zukünftige Probenpläne aus Spielstatistiken wie Anzahl der Spiele und Tage seit dem letzten Spiel."
+
 #: :Phone
 #, ycp-format
 msgctxt ":Phone"
@@ -2589,14 +2681,6 @@ msgstr ""
 "gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode "
 "mit:"
 
-#: :error/item-load-failed
-#, ycp-format
-msgctxt ":error/item-load-failed"
-msgid "Something went wrong loading this item. Please contact the team."
-msgstr ""
-"Beim Laden dieses Elements ist etwas schiefgelaufen. Bitte kontaktiere das "
-"Team."
-
 #: :error/unknown-title
 #, ycp-format
 msgctxt ":error/unknown-title"
@@ -2632,6 +2716,14 @@ msgstr "Authentifizierung fehlgeschlagen"
 msgctxt ":error/gig-end-date-before-date"
 msgid "End date must be on or after date."
 msgstr "Das Enddatum muss am oder nach dem Datum liegen."
+
+#: :error/item-load-failed
+#, ycp-format
+msgctxt ":error/item-load-failed"
+msgid "Something went wrong loading this item. Please contact the team."
+msgstr ""
+"Beim Laden dieses Elements ist etwas schiefgelaufen. Bitte kontaktiere das "
+"Team."
 
 #: :error/form-has-errors
 #, ycp-format

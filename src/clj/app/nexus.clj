@@ -7,6 +7,7 @@
    [app.insurance.actions]
    [app.members.actions]
    [app.members.effects :as members.effects]
+   [app.probeplan.actions]
    [app.settings.actions]
    [app.songs.actions]
    [app.songs.effects :as songs.effects]
@@ -242,6 +243,7 @@
    :nexus/actions       (merge app.settings.actions/actions
                                app.members.actions/actions
                                app.gigs.actions/actions
+                               app.probeplan.actions/actions
                                app.insurance.actions/actions
                                app.file-browser.actions/actions
                                app.songs.actions/actions)})
