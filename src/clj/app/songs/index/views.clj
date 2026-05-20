@@ -76,11 +76,14 @@
    [:wa-option {:value "old"} (tr [:gig/probeplan-repertoire-old])]
    [:wa-option {:value "all"} (tr [:gig/probeplan-repertoire-all])]])
 
-(defn- toolbar-actions [{:keys [tr]}]
-  [[:wa-button {:appearance "outlined"
-                :type       "button"
-                :disabled   true}
-    (tr [:action/update])]
+(defn- toolbar-actions [{:keys [tr] :as req}]
+  [[:wa-button {:appearance         "plain"
+                :type               "button"
+                :data-indicator     "songsIndexSyncing"
+                :data-attr:loading  "$songsIndexSyncing"
+                :data-attr:disabled "$songsIndexSyncing"
+                :data-on:click      (str "@post('" (d*/act req ::actions/force-sync-songs) "')")}
+    (tr [:song/sync-songs])]
    [:wa-button {:appearance "filled"
                 :variant    "brand"
                 :href       (urls/link-song-create)}

@@ -23,6 +23,11 @@
   [[:app.datastar/assoc-state [:songs-index :repertoire-filter]
     (normalize-repertoire-filter (:repertoire-filter songs-index))]])
 
+(defn force-sync-songs-action
+  [_state _signals]
+  [[:app.songs/trigger-sync-all-songs]])
+
 (def actions
   {::set-search-phrase     #'set-search-phrase-action
-   ::set-repertoire-filter #'set-repertoire-filter-action})
+   ::set-repertoire-filter #'set-repertoire-filter-action
+   ::force-sync-songs      #'force-sync-songs-action})

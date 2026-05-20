@@ -779,4 +779,5 @@
   :play-stats-title "Statistiken spielen",
   :sheet-music-title "Noten",
   :background-title "Hintergrund",
+  :sync-songs "Lieder synchronisieren",
   :list-title "Repertoire"}}

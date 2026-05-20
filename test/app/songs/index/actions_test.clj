@@ -24,3 +24,10 @@
          (actions/set-repertoire-filter-action
           {}
           {:songs-index {:repertoire-filter "nonsense"}}))))
+
+(deftest force-sync-songs-action-test
+  (let [action (get actions/actions ::actions/force-sync-songs)]
+    (is (some? action))
+    (is (= [[:app.songs/trigger-sync-all-songs]]
+           (when action
+             (action {} {}))))))

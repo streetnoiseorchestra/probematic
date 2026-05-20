@@ -380,6 +380,7 @@
                                   :search                      "Search Songs"
                                   :search-empty                "No songs found"
                                   :list-title                  "Repertoire"
+                                  :sync-songs                 "Sync songs"
                                   :title                       "Song Title"
                                   :active                      "Active?"
                                   :play-stats-title            "Play Stats"

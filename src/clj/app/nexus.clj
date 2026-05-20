@@ -219,27 +219,28 @@
 
 (defn nexus []
   {:nexus/system->state system->state
-   :nexus/effects       {:db/transact                         (with-meta db-transact-fx {:nexus/batch true})
-                         :app.datastar/merge-signals          merge-signals-fx
-                         :app.datastar/remove-signals         remove-signals-fx
-                         :app.datastar/open-form              open-form-fx
-                         :app.datastar/close-form             close-form-fx
-                         :app.datastar/assoc-state            assoc-page-state-fx
-                         :app.datastar/merge-state            merge-page-state-fx
-                         :app.datastar/redirect               redirect-fx
-                         :app.gigs/trigger-gig-details-edited gigs.effects/trigger-gig-details-edited-fx
-                         :app.gigs/trigger-gig-created        gigs.effects/trigger-gig-created-fx
-                         :app.gigs/trigger-gig-deleted        gigs.effects/trigger-gig-deleted-fx
-                         :app.gigs/trigger-gig-edited         gigs.effects/trigger-gig-edited-fx
-                         :app.gigs/recalc-play-stats          gigs.effects/recalc-play-stats-fx
-                         :app.gigs/send-reminder-to-all       gigs.effects/send-reminder-to-all-fx
-                         :app.songs/trigger-song-edited       songs.effects/trigger-song-edited-fx
-                         :app.songs/recalc-play-stats         songs.effects/recalc-play-stats-fx
-                         :app.members/send-user-invitation          send-user-invitation-fx
-                         :app.members/update-keycloak-meta          update-keycloak-meta-fx
+   :nexus/effects       {:db/transact                              (with-meta db-transact-fx {:nexus/batch true})
+                         :app.datastar/merge-signals               merge-signals-fx
+                         :app.datastar/remove-signals              remove-signals-fx
+                         :app.datastar/open-form                   open-form-fx
+                         :app.datastar/close-form                  close-form-fx
+                         :app.datastar/assoc-state                 assoc-page-state-fx
+                         :app.datastar/merge-state                 merge-page-state-fx
+                         :app.datastar/redirect                    redirect-fx
+                         :app.gigs/trigger-gig-details-edited      gigs.effects/trigger-gig-details-edited-fx
+                         :app.gigs/trigger-gig-created             gigs.effects/trigger-gig-created-fx
+                         :app.gigs/trigger-gig-deleted             gigs.effects/trigger-gig-deleted-fx
+                         :app.gigs/trigger-gig-edited              gigs.effects/trigger-gig-edited-fx
+                         :app.gigs/recalc-play-stats               gigs.effects/recalc-play-stats-fx
+                         :app.gigs/send-reminder-to-all            gigs.effects/send-reminder-to-all-fx
+                         :app.songs/trigger-song-edited            songs.effects/trigger-song-edited-fx
+                         :app.songs/trigger-sync-all-songs         songs.effects/trigger-sync-all-songs-fx
+                         :app.songs/recalc-play-stats              songs.effects/recalc-play-stats-fx
+                         :app.members/send-user-invitation         send-user-invitation-fx
+                         :app.members/update-keycloak-meta         update-keycloak-meta-fx
                          :app.members/set-keycloak-account-enabled set-keycloak-account-enabled-fx
-                         :app.members.index/resend-invitation       resend-invitation-fx
-                         :app.members.index/delete-invitation delete-invitation-fx}
+                         :app.members.index/resend-invitation      resend-invitation-fx
+                         :app.members.index/delete-invitation      delete-invitation-fx}
    :nexus/actions       (merge app.settings.actions/actions
                                app.members.actions/actions
                                app.gigs.actions/actions
