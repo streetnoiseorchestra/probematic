@@ -95,13 +95,15 @@
 (defn probeplan-list [_tr songs]
   (if (seq songs)
     [:ol {:class "gigs-probeplan-list"}
-     (for [{:song/keys [song-id title] :keys [emphasis]} songs]
+     (for [{:song/keys [song-id title] :keys [emphasis] :as song} songs]
        (let [intensive? (= emphasis :probeplan.emphasis/intensive)]
          [:li {:id             (str "gig-detail-probeplan-" (ui2/safe-dom-id song-id))
                :data-intensive (if intensive? "true" "false")}
-          [:span {:class "gigs-probeplan-song-title"} title]
-          (when intensive?
-            [:wa-icon {:library "snoico"
-                       :name    "fist-punch"
-                       :class   "gigs-probeplan-intensive-icon"}])]))]
+          [:a {:href  (urls/link-song song)
+               :class "gigs-probeplan-link"}
+           [:span {:class "gigs-probeplan-song-title"} title]
+           (when intensive?
+             [:wa-icon {:library "snoico"
+                        :name    "fist-punch"
+                        :class   "gigs-probeplan-intensive-icon"}])]]))]
     [:div {:class "gigs-empty"} "—"]))

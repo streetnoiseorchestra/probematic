@@ -77,14 +77,9 @@ dl.gigs-detail-info-list {
   max-inline-size: 21.25rem;
   padding-inline-start: 0;
   margin: var(--sno-size-none);
+  list-style: none;
 
   & > li {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 2rem;
-    gap: var(--wa-space-s);
-    align-items: center;
-    min-block-size: 2.3rem;
-    padding: var(--wa-space-3xs) var(--wa-space-xs);
     margin-inline-start: 0;
     background-color: var(--wa-color-surface-default);
     border: var(--wa-border-width-s) var(--wa-border-style)
@@ -92,13 +87,24 @@ dl.gigs-detail-info-list {
     border-radius: var(--wa-border-radius-s);
   }
 
-  & > li::marker {
-    color: var(--wa-color-text-quiet);
-  }
-
   & > li[data-intensive="true"] {
     background-color: var(--sno-probeplan-intensive-fill);
     border-color: var(--sno-probeplan-intensive-border);
+  }
+
+  & .gigs-probeplan-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2rem;
+    gap: var(--wa-space-s);
+    align-items: center;
+    min-block-size: 2.3rem;
+    padding: var(--wa-space-3xs) var(--wa-space-xs);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  & .gigs-probeplan-link:hover .gigs-probeplan-song-title {
+    text-decoration: underline;
   }
 
   & .gigs-probeplan-song-title {
