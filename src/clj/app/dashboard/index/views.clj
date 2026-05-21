@@ -30,7 +30,7 @@
      (dashboard-list list-class rows)]))
 
 (defn- dashboard-row [tag attrs class & children]
-  (into [tag (update attrs :class #(ui2/cs "dashboard-row" class %))]
+  (into [tag (update attrs :class #(ui2/cs "dashboard-row" "sno-no-visited" class %))]
         children))
 
 (defn- gig-row [req {:gig/keys [gig-id title status call-time date end-date] :as gig}]
