@@ -136,9 +136,9 @@
             :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
     [:link {:rel "shortcut icon" :href "/img/megaphone-icon.png"}]
     [:title (or title "SNOrga")]
-    (stylesheet req "vendor/webawesome@3.5.0/styles/themes" "active.css")
-    (stylesheet req "vendor/webawesome@3.5.0/styles" "native.css")
-    (stylesheet req "vendor/webawesome@3.5.0/styles" "utilities.css")
+    (stylesheet req "vendor/webawesome@3.7.0/styles/themes" "active.css")
+    (stylesheet req "vendor/webawesome@3.7.0/styles" "native.css")
+    (stylesheet req "vendor/webawesome@3.7.0/styles" "utilities.css")
     (stylesheet req "css/compiled" "main2.css")
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=IBM+Plex+Sans+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"}]
     [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Grotesk:wght@300..700&display=swap"}]
@@ -161,9 +161,9 @@
       }")]
     [:script {:type :importmap} (html/raw (j/write-value-as-string
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
-                                                      "wa/"          "/vendor/webawesome@3.5.0/"
+                                                      "wa/"          "/vendor/webawesome@3.7.0/"
                                                       "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
-    [:script {:type "module" :src "/vendor/webawesome@3.5.0/webawesome.loader.js"}]
+    [:script {:type "module" :src "/vendor/webawesome@3.7.0/webawesome.loader.js"}]
     [:script {:type "module"}
      (html/raw "
   import { registerIconLibrary } from 'wa/webawesome.js';
