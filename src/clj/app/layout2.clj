@@ -194,11 +194,14 @@
       (script req "datastar-inspector@1.1.4.js" :type "module"))]
    extra-head))
 
+(defn- html-lang [req]
+  (name (or (:current-locale req) "en")))
+
 (defn html5
   [req opts body]
   (html/->str
    [html/doctype-html5
-    [:html {:lang  "en"  ;; TODO figure out where to grab lang from (or lang "en")
+    [:html {:lang  (html-lang req)
             :class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-orange"}
      (head req opts)
      body]]))
@@ -210,50 +213,76 @@
     :headers {"Content-Type" "text/html"}
     :body (html5 req opts body)}))
 
+(def on-load-js
+  ;; Quirk with browsers is that cache settings are per URL not per
+  ;; URL + METHOD this means that GET and POST cache headers can
+  ;; mess with each other. To get around this an unused query param
+  ;; is added to the url.
+
+  ;; Retry Infinity means we always try to reconnect. The other defaults
+  ;; mean that this will at most take 30s (default max backoff).
+  "@post(window.location.pathname + (window.location.search + '&u=').replace(/^&/,'?'), {retryMaxCount: Infinity, openWhenHidden: false, retry: 'error'})")
+
+(def tabid-js
+  ;; Higher collision risk is acceptable here as it only needs to be
+  ;; unique against a given users other tabs.
+  "self.crypto.randomUUID().substring(0,8)")
+
+(defn shim-html
+  [req opts]
+  (html5 req (merge {:title "SNOrga"} opts)
+         [:body
+          [:div {:data-init on-load-js
+                 :id        "long-lived-sse"}]
+          [:div {:data-signals:tabid tabid-js}]
+          [:main {:id "morph"}]]))
+
+(defn app-shell-body
+  [req body]
+  (let [member (auth/get-current-member req)
+        body   (if (string? body) (html/raw body) body)]
+    [:div {:id "morph"}
+     [:wa-page {:mobile-breakpoint         "1152"
+                :disable-navigation-toggle true}
+      [:header {:slot "navigation-header"}
+       (brand-link)]
+
+      [:div {:slot "navigation" :style "padding-top: 0"}
+       [:div {:class "wa-desktop-only"}
+        (navigation-header req member)]
+       (navigation req)]
+
+      [:div {:slot "subheader" :class "page-subheader wa-split wa-mobile-only"}
+       [:wa-button {:data-toggle-nav true
+                    :appearance       "plain"
+                    :aria-label       "Toggle navigation"}
+        [:wa-icon {:library "snoico"
+                   :name    "bars"
+                   :slot    "start"
+                   :class   "nav-toggle-icon"}]]
+       [:a {:href "/" :class "subheader-logo" :aria-label "Home"}
+        [:wa-icon {:library "snoico"
+                   :name    "snoman"
+                   :class   "subheader-brand-icon"}]
+        #_[:wa-icon {:library    "snoico"
+                     :name       "sno-trumpet"
+                     :class      "subheader-brand-icon"
+                     :auto-width true}]]
+       [:div {:class "subheader-user"}
+        (navigation-header req member)]]
+
+      body]
+     (when (config/dev-mode? (-> req :system :env))
+       [:datastar-inspector])]))
+
 (defn app-shell-html
   ([req body]
    (app-shell-html req body nil))
   ([req body opts]
-   (let [member (auth/get-current-member req)]
-     (html5
-      req (merge {:title "SNOrga"} opts)
-      [:body
-       [:div {:data-init "@post(window.location.pathname + window.location.search)"
-              :id        "long-lived-sse"}]
-       [:wa-page {:mobile-breakpoint         "1152"
-                  :disable-navigation-toggle true}
-        [:header {:slot "navigation-header"}
-         (brand-link)]
-
-        [:div {:slot "navigation" :style "padding-top: 0"}
-         [:div {:class "wa-desktop-only"}
-          (navigation-header req member)]
-         (navigation req)]
-
-        [:div {:slot "subheader" :class "page-subheader wa-split wa-mobile-only"}
-         [:wa-button {:data-toggle-nav true
-                      :appearance       "plain"
-                      :aria-label       "Toggle navigation"}
-          [:wa-icon {:library "snoico"
-                     :name    "bars"
-                     :slot    "start"
-                     :class   "nav-toggle-icon"}]]
-         [:a {:href "/" :class "subheader-logo" :aria-label "Home"}
-          [:wa-icon {:library "snoico"
-                     :name    "snoman"
-                     :class   "subheader-brand-icon"}]
-          #_[:wa-icon {:library    "snoico"
-                       :name       "sno-trumpet"
-                       :class      "subheader-brand-icon"
-                       :auto-width true}]]
-         [:div {:class "subheader-user"}
-          (navigation-header req member)]]
-
-        (if (= :main (first body))
-          body
-          [:main {:id "main"} body])]
-       (when (config/dev-mode? (-> req :system :env))
-         [:datastar-inspector])]))))
+   (html5
+    req (merge {:title "SNOrga"} opts)
+    [:body
+     (app-shell-body req body)])))
 
 (defn app-shell
   ([req body]

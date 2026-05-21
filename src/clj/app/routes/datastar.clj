@@ -2,8 +2,8 @@
   (:require
    [app.brotli :as br]
    [app.datastar :as d*]
+   [app.html :as html]
    [app.interceptors.compression :as compression]
-   #_[app.layout :as layout]
    [app.layout2 :as layout2]
    [app.nexus :as nexus])
   (:import
@@ -11,21 +11,11 @@
    (java.nio.charset StandardCharsets)
    (java.util.zip GZIPOutputStream)))
 
-(defn- shim-opts [req]
-  (select-keys (-> req :reitit.core/match :data) [:extra-head]))
-
 (defn- shim-html [req]
-  (layout2/app-shell-html req nil (shim-opts req)))
+  (layout2/shim-html req nil))
 
 (defn- shim-cache-key [req]
-  (let [route-data (-> req :reitit.core/match :data)
-        member     (get-in req [:session :session/member])]
-    {:current-locale (:current-locale req)
-     :route-name     (:app.route/name route-data)
-     :member         (select-keys member [:member/member-id
-                                          :member/name
-                                          :member/nick
-                                          :member/avatar-template])}))
+  {:current-locale (:current-locale req)})
 
 (defn- gzip-bytes [^bytes body]
   (let [out (ByteArrayOutputStream.)]
@@ -131,13 +121,18 @@
            :interceptors [(nexus/nexus-interceptor (:nexus system) system)]
            :post       {:handler act-handler}}])
 
+(defn- wrap-render-fn [render-fn]
+  (fn [req]
+    (html/->str (layout2/app-shell-body req (render-fn req)))))
+
 (defn page-routes
   [{:keys [extra-head path page-name route-data view-ns]}]
   (assert path "path is required")
-  (let [render-fn    (resolve-from-kw view-ns :page)
-        route-data   (cond-> (merge {:name page-name} route-data)
-                       extra-head (assoc :extra-head extra-head))
-        child-routes (into [["" {:get  shim
-                                 :post (d*/render-handler render-fn)}]])]
+  (let [render-fn     (resolve-from-kw view-ns :page)
+        wrapped-render (some-> render-fn wrap-render-fn)
+        route-data     (cond-> (merge {:name page-name} route-data)
+                         extra-head (assoc :extra-head extra-head))
+        child-routes   (into [["" {:get  shim
+                                   :post (d*/render-handler wrapped-render)}]])]
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     (into [path route-data] child-routes)))
