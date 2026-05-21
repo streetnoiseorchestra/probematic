@@ -143,6 +143,7 @@
                                            "; @post('" (d*/act req ::actions/update-attendance-comment) "')")}]
     (if (seq comment)
       [:wa-button {:appearance        "plain"
+                   :variant           "brand"
                    :size              "small"
                    :class             "gigs-attendance-comment-link"
                    :data-on:mousedown (comment-open-js req gig-id member-id comment)}

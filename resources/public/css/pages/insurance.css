@@ -99,7 +99,6 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wa-space-2xs);
-  color: var(--sno-dashboard-insurance-todo-text-color);
   font-size: var(--wa-font-size-m);
 }
 
@@ -212,7 +211,8 @@
 }
 
 .insurance-coverage-type-total {
-  border-block-start: var(--wa-border-width-l) double var(--wa-color-neutral-border-normal);
+  border-block-start: var(--wa-border-width-l) double
+    var(--wa-color-neutral-border-normal);
   font-weight: var(--wa-font-weight-bold);
 }
 
@@ -225,7 +225,10 @@
 .insurance-history-head,
 .insurance-history-row {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr) minmax(
+      0,
+      0.8fr
+    ) minmax(0, 1fr);
   gap: var(--wa-space-xs);
   align-items: start;
   min-inline-size: 36rem;
@@ -242,8 +245,10 @@
   min-inline-size: 36rem;
   padding: var(--wa-space-xs);
   background: var(--wa-color-neutral-fill-quiet);
-  border-block-start: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
-  border-block-end: var(--wa-border-width-s) var(--wa-border-style) var(--wa-color-neutral-border-quiet);
+  border-block-start: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-quiet);
+  border-block-end: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-quiet);
   font-weight: var(--wa-font-weight-semibold);
 }
 

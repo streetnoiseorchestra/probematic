@@ -203,7 +203,7 @@
     :body (html/->str
            [html/doctype-html5
             [:html {:lang  "en"  ;; TODO figure out where to grab lang from (or lang "en")
-                    :class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-green"}
+                    :class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-orange"}
              (head req opts)
              body]])}))
 

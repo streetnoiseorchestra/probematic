@@ -105,12 +105,6 @@
   min-inline-size: var(--sno-size-none);
 }
 
-.gigs-attendance-member-link,
-.gigs-attendance-comment-link {
-  color: var(--sno-gigs-attendance-link-blue);
-  text-decoration: none;
-}
-
 .gigs-attendance-member-link:hover,
 .gigs-attendance-comment-link:hover {
   text-decoration: underline;

@@ -1,3 +1,29 @@
+:root,
+.wa-light,
+.wa-dark .wa-invert {
+  --wa-color-text-link: var(--wa-color-blue-40);
+  --wa-link-decoration-default: none;
+  --wa-link-decoration-hover: underline;
+}
+
+.wa-dark,
+.wa-light .wa-invert {
+  --wa-color-text-link: var(--wa-color-blue-70);
+}
+
+a:visited:not(:where(.wa-button, .wa-link-plain, .sno-no-visited)) {
+  color: var(--wa-color-purple-40);
+  text-decoration-color: color-mix(in oklab, currentColor 70%, transparent);
+}
+
+.wa-dark a:not(.wa-button, .wa-link-plain):visited,
+.wa-light .wa-invert a:not(.wa-button, .wa-link-plain):visited {
+  color: var(--wa-color-purple-70);
+}
+
+*:is([appearance~="accent"], .wa-accent) a:visited {
+  color: currentColor;
+}
 wa-dialog wa-callout {
   margin-block-end: var(--wa-space-m);
 }
