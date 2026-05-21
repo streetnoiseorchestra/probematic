@@ -182,6 +182,7 @@
   import { registerIconLibrary } from 'wa/webawesome.js';
   // these imports ensure that webcomonents custom elements are defined
   // before datastar inits so that d* can properly interact with their value and change attrs
+  import 'wa/components/page/page.js';
   import 'wa/components/icon/icon.js';
   import 'wa/components/button/button.js';
   import 'wa/components/input/input.js';
@@ -191,6 +192,10 @@
   import 'wa/components/select/select.js';
   import 'wa/components/switch/switch.js';
   import 'wa/components/callout/callout.js';
+  import 'wa/components/divider/divider.js';
+  import 'wa/components/badge/badge.js';
+  import 'wa/components/dropdown/dropdown.js';
+  import 'wa/components/tooltip/tooltip.js';
   const snoicoSpriteUrl = " (j/write-value-as-string snoico-sprite-url) ";
   const snoicoViewBoxes = " snoico-viewboxes ";
   registerIconLibrary('default', {
