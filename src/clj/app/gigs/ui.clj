@@ -37,28 +37,28 @@
     (str title " " (ui2/format-date req :short date))
     title))
 
-(defn- gig-location [location]
-  (if (seq location)
-    location
-    "—"))
+(defn- present-location [location]
+  (some-> location str/trim not-empty))
 
 (defn gig-row [req {:gig/keys [title status location date end-date] :as gig}]
-  [:a {:href  (urls/link-gig gig)
-       :class "gigs-row"}
-   [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-row-title"}
-    (gig-status-icon status)
-    [:span {:class "gigs-row-title-text"} title]]
-   [:div {:class "gigs-row-meta"}
-    [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-location"}
-     [:wa-icon {:library "snoico"
-                :name    "location-dot"
-                :class   "gigs-row-meta-icon"}]
-     [:span (gig-location location)]]
-    [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-date"}
-     [:wa-icon {:library "snoico"
-                :name    "calendar"
-                :class   "gigs-row-meta-icon"}]
-     [:span (ui2/date-range-display req :with-weekday date end-date)]]]])
+  (let [location (present-location location)]
+    [:a {:href  (urls/link-gig gig)
+         :class "gigs-row"}
+     [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-row-title"}
+      (gig-status-icon status)
+      [:span {:class "gigs-row-title-text"} title]]
+     [:div {:class "gigs-row-meta"}
+      (when location
+        [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-location"}
+         [:wa-icon {:library "snoico"
+                    :name    "location-dot"
+                    :class   "gigs-row-meta-icon"}]
+         [:span location]])
+      [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-date"}
+       [:wa-icon {:library "snoico"
+                  :name    "calendar"
+                  :class   "gigs-row-meta-icon"}]
+       [:span (ui2/date-range-display req :compact-with-weekday date end-date)]]]]))
 
 (defn section-heading [title]
   [:div {:class "gigs-section-heading"}

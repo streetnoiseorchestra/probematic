@@ -584,6 +584,7 @@ dl.gigs-detail-info-list {
   text-decoration: none;
   border-block-end: var(--wa-border-width-s) var(--wa-border-style)
     var(--wa-color-surface-border);
+  overflow: hidden;
 }
 
 .gigs-row:last-of-type {
@@ -644,6 +645,8 @@ dl.gigs-detail-info-list {
   margin-block-start: var(--wa-space-xs);
   color: var(--wa-color-text-quiet);
   font-size: var(--wa-font-size-s);
+  min-inline-size: var(--sno-size-none);
+  overflow: hidden;
 }
 
 .gigs-row-meta-item {
@@ -652,7 +655,7 @@ dl.gigs-detail-info-list {
 }
 
 .gigs-row-location {
-  flex: 1 1 auto;
+  flex: 1 1 var(--sno-size-none);
 }
 
 .gigs-row-location span:last-child {
@@ -662,7 +665,17 @@ dl.gigs-detail-info-list {
 }
 
 .gigs-row-date {
-  flex: none;
+  flex: 0 1 auto;
+  max-inline-size: var(--sno-size-full);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.gigs-row-date > span:last-child {
+  display: block;
+  min-inline-size: var(--sno-size-none);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

@@ -43,7 +43,7 @@
      [:div {:class "dashboard-gig-status-cell"}
       (gigs.ui/gig-status-icon status {:class "dashboard-gig-status"})]
      [:div {:class "dashboard-gig-date"}
-      [:span (ui2/date-range-display req :with-weekday date end-date)]
+      [:span (ui2/date-range-display req :compact-with-weekday date end-date)]
       (when-not end-date
         [:span (or (ui2/format-time req :short call-time) "—")])]
      [:a {:href  (urls/link-gig gig)

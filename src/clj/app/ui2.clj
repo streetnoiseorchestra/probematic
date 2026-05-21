@@ -9,6 +9,7 @@
    [tick.core :as t])
   (:import
    [java.text NumberFormat]
+   [java.time LocalDate]
    [java.time.chrono IsoChronology]
    [java.time.format DateTimeFormatter DateTimeFormatterBuilder FormatStyle]
    [java.util Locale]))
@@ -171,11 +172,12 @@
   (muted (money-format value currency)))
 
 (def ^:private date-format-styles
-  {:short        FormatStyle/SHORT
-   :medium       FormatStyle/MEDIUM
-   :long         FormatStyle/LONG
-   :full         FormatStyle/FULL
-   :with-weekday FormatStyle/FULL})
+  {:short                FormatStyle/SHORT
+   :medium               FormatStyle/MEDIUM
+   :long                 FormatStyle/LONG
+   :full                 FormatStyle/FULL
+   :with-weekday         FormatStyle/FULL
+   :compact-with-weekday :app.ui2/compact-with-weekday})
 
 (def ^:private date-time-format-styles
   {:short        FormatStyle/SHORT
@@ -221,13 +223,20 @@
          "MM.dd"
          "dd.MM")))))
 
+(def ^:private compact-weekday-date-pattern "E dd MMM yyyy")
+
 (def ^:private date-formatter
   (memoize
    (fn [locale style]
      (localized-formatter
       locale
-      (if (= :month-day style)
+      (case style
+        :month-day
         (DateTimeFormatter/ofPattern (month-day-pattern locale))
+
+        :compact-with-weekday
+        (DateTimeFormatter/ofPattern compact-weekday-date-pattern)
+
         (DateTimeFormatter/ofLocalizedDate (localized-format-style date-format-styles style)))))))
 
 (def ^:private date-time-formatter
@@ -246,9 +255,44 @@
       locale
       (DateTimeFormatter/ofLocalizedTime (localized-format-style time-format-styles style))))))
 
+(def ^:private compact-date-range-formatters
+  (memoize
+   (fn [locale]
+     {:same-month-start (localized-formatter locale (DateTimeFormatter/ofPattern "E dd"))
+      :same-month-end   (localized-formatter locale (DateTimeFormatter/ofPattern compact-weekday-date-pattern))
+      :same-year-start  (localized-formatter locale (DateTimeFormatter/ofPattern "E dd MMM"))
+      :same-year-end    (localized-formatter locale (DateTimeFormatter/ofPattern compact-weekday-date-pattern))
+      :full             (localized-formatter locale (DateTimeFormatter/ofPattern compact-weekday-date-pattern))})))
+
+(defn- same-year? [^LocalDate start-date ^LocalDate end-date]
+  (= (.getYear start-date) (.getYear end-date)))
+
+(defn- same-month? [^LocalDate start-date ^LocalDate end-date]
+  (and (same-year? start-date end-date)
+       (= (.getMonthValue start-date) (.getMonthValue end-date))))
+
+(defn- format-with [formatter date]
+  (t/format formatter date))
+
+(defn- compact-date-range-labels [req start-date end-date]
+  (let [{:keys [full same-month-end same-month-start same-year-end same-year-start]}
+        (compact-date-range-formatters (i18n/req-locale req))]
+    (cond
+      (same-month? start-date end-date)
+      [(format-with same-month-start start-date)
+       (format-with same-month-end end-date)]
+
+      (same-year? start-date end-date)
+      [(format-with same-year-start start-date)
+       (format-with same-year-end end-date)]
+
+      :else
+      [(format-with full start-date)
+       (format-with full end-date)])))
+
 (defn format-date
   "Formats `value` as a localized date for `style`.
-  Date styles are `:month-day`, `:short`, `:medium`, `:long`, `:full`, and `:with-weekday`."
+  Date styles are `:month-day`, `:short`, `:medium`, `:long`, `:full`, `:with-weekday`, and `:compact-with-weekday`."
   [req style value]
   (when-let [date (date-temporal value)]
     (t/format (date-formatter (i18n/req-locale req) style) date)))
@@ -270,10 +314,15 @@
 (defn format-date-range
   "Formats `start` and optional `end` as a localized date range for `style`."
   [req style start end]
-  (when-let [start-label (format-date req style start)]
-    (if-let [end-label (format-date req style end)]
-      (str start-label " – " end-label)
-      start-label)))
+  (when-let [start-date (date-temporal start)]
+    (if-let [end-date (date-temporal end)]
+      (if (= :compact-with-weekday style)
+        (let [[start-label end-label] (compact-date-range-labels req start-date end-date)]
+          (str start-label "–" end-label))
+        (str (format-date req style start-date)
+             " – "
+             (format-date req style end-date)))
+      (format-date req style start-date))))
 
 (defn date-display
   "Renders `value` as a localized `<time>` element for `style`."
@@ -282,12 +331,22 @@
     [:time {:datetime (str date)} (format-date req style date)]
     html/emdash))
 
+(defn- compact-date-range-display [req start-date end-date]
+  (let [[start-label end-label] (compact-date-range-labels req start-date end-date)]
+    [:span
+     [:time {:datetime (str start-date)} start-label]
+     [:span {:aria-hidden true} "–"]
+     [:time {:datetime (str end-date)} end-label]]))
+
 (defn date-range-display
   "Renders `start` and optional `end` as localized `<time>` elements for `style`."
   [req style start end]
   (let [start-date (date-temporal start)
         end-date   (date-temporal end)]
     (cond
+      (and (= :compact-with-weekday style) start-date end-date)
+      (compact-date-range-display req start-date end-date)
+
       (and start-date end-date)
       [:span
        (date-display req style start-date)
