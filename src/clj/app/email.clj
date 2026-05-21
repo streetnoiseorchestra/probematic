@@ -12,7 +12,7 @@
    [tick.core :as t]))
 
 (defn- gig-date-plain [{:gig/keys [date end-date]}]
-  (ui2/format-date-range {:current-locale :de} :with-weekday date end-date))
+  (ui2/format-date-range {:current-locale :de} :compact-with-weekday date end-date))
 
 (defn queue-email! [sys email]
   (email-worker/queue-mail! (:redis sys) email))
@@ -93,7 +93,7 @@
      (tmpl/generic-email-plain sys (tmpl/poll-created-email-plain-body tr poll) (tr [:poll/vote-now])  url)
      nil)))
 
-(defn build-new-user-invite [{:keys [tr] :as sys} {:member/keys [email] :as member} invite-code]
+(defn build-new-user-invite [{:keys [tr] :as sys} {:member/keys [email]} invite-code]
   (build-email email
                (tr [:email-subject/new-invite])
                (tmpl/new-user-invite-html sys invite-code)
@@ -119,7 +119,7 @@
         sys (sys-from-req req)]
     (queue-email! sys  (build-gig-created-email sys gig members))))
 
-(defn send-gig-reminder-to! [{:keys [datomic-conn i18n-langs env redis] :as sys} gig-id members]
+(defn send-gig-reminder-to! [{:keys [datomic-conn i18n-langs env redis]} gig-id members]
   (assert datomic-conn)
   (assert env)
   (assert redis)
@@ -186,7 +186,7 @@
 
 (defn build-insurance-debt-notification-emails [{:keys [tr] :as sys} sender-name time-range member-data]
   (assert tr)
-  (map (fn [{:keys [member private-cost-total count-private private-coverages]}]
+  (map (fn [{:keys [member private-cost-total private-coverages]}]
          (assert private-cost-total)
          (assert time-range)
          (assert (:member/email member))
@@ -204,7 +204,7 @@
     (doseq [email emails]
       (queue-email! sys email))))
 
-(defn render-insurance-debt-email-template [{:keys [tr system] :as req} sender-name time-range sample-data]
+(defn render-insurance-debt-email-template [req sender-name time-range sample-data]
   (let [sys (sys-from-req req)]
     (tmpl/insurance-debt-hiccup sys
                                 (tmpl/build-insurance-debt-args sys {:member/name (:member/name (:member sample-data))
@@ -232,7 +232,7 @@
                                                "\n" (tr [:email/sign-off-insurance-team]))})
      nil)))
 
-(defn send-survey-notifications! [{:keys [tr system] :as req} sender-name policy members email-data]
+(defn send-survey-notifications! [req sender-name policy members email-data]
   (queue-email! (sys-from-req req)
                 (build-survey-notifications req sender-name policy members email-data)))
 

@@ -6,17 +6,17 @@
    [clojure.test :refer [deftest is testing]]
    [tick.core :as t]))
 
-(deftest format-date-uses-request-locale
+(deftest format-compact-date-uses-request-locale
   (let [date (t/date "2026-05-20")]
     (testing "German request locale"
-      (is (= "Mittwoch, 20. Mai 2026"
-             (ui2/format-date {:current-locale :de} :with-weekday date))))
+      (is (= "Mi. 20 Mai 2026"
+             (ui2/format-date {:current-locale :de} :compact-with-weekday date))))
     (testing "English request locale"
-      (is (= "Wednesday, May 20, 2026"
-             (ui2/format-date {:current-locale :en} :with-weekday date))))
+      (is (= "Wed 20 May 2026"
+             (ui2/format-date {:current-locale :en} :compact-with-weekday date))))
     (testing "nil request locale defaults to English"
-      (is (= "Wednesday, May 20, 2026"
-             (ui2/format-date {:current-locale nil} :with-weekday date))))))
+      (is (= "Wed 20 May 2026"
+             (ui2/format-date {:current-locale nil} :compact-with-weekday date))))))
 
 (deftest format-date-supports-shared-display-styles
   (let [date (t/date "2026-05-20")]

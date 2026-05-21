@@ -54,7 +54,7 @@
 
 (defn- gig-date [req {:gig/keys [date end-date]}]
   (if date
-    (ui2/date-range-display req :with-weekday date end-date)
+    (ui2/date-range-display req :compact-with-weekday date end-date)
     (muted nil)))
 
 (defn- header-actions [{:keys [tr]} gig]

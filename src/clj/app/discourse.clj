@@ -17,7 +17,7 @@
    [selmer.parser :as selmer]))
 
 (defn- gig-date-plain [{:gig/keys [date end-date]}]
-  (ui2/format-date-range {:current-locale :de} :with-weekday date end-date))
+  (ui2/format-date-range {:current-locale :de} :compact-with-weekday date end-date))
 
 (defn- gig-time [{:gig/keys [call-time set-time end-time]}]
   (when-let [start-time (or call-time set-time)]
@@ -58,7 +58,7 @@
                  (map #(update % :id str))
                  (map #(set/rename-keys % {:avatar_template :member/avatar-template :id :member/discourse-id :username :member/nick})))]
     (d/transact conn {:tx-data txs})))
-(defn wrap-auth [req {:keys [discourse] :as env}]
+(defn wrap-auth [req {:keys [discourse]}]
   (-> req
       (assoc-in [:headers "Api-Key"] (:api-key discourse))
       (assoc-in [:headers "Api-Username"] (:username discourse))))
@@ -83,7 +83,7 @@
                 (str "> " line)))
          (str/join "\n"))))
 
-(defn gig->markdown-post [env {:gig/keys [attendance-summary status planned-songs title more-details location contact leader date end-date] :as gig}]
+(defn gig->markdown-post [env {:gig/keys [attendance-summary status planned-songs more-details location leader] :as gig}]
   (selmer/render
    "
 <!--- DO NOT EDIT THIS POST,
@@ -226,7 +226,7 @@ GO TO SNORGA!!
 (defn reset-bump-date! [env topic-id]
   (request! env
             {:method :put
-             :url (format "/topics/bulk")
+             :url "/topics/bulk"
              :headers {"content-type" "application/x-www-form-urlencoded; charset=UTF-8"
                        "accept" "application/json"}
              :form-params {"topic_ids[]" topic-id
@@ -288,7 +288,7 @@ GO TO SNORGA!!
                 {:href (url/absolute-link-song env song-id)
                  :label title
                  :position (when position (inc position))
-                 :extra (when (= :probeplan.emphasis/intensive emphasis) (str " (intensive)"))})
+                 :extra (when (= :probeplan.emphasis/intensive emphasis) " (intensive)")})
               (q/planned-songs-for-gig db (:gig/gig-id gig)))))
 (defn create-topic-for-gig!
   "Creates a new topic for the gig, returns the topic id."
@@ -342,7 +342,7 @@ GO TO SNORGA!!
      ;; only one post.. our post!
      (= highest_post_number 1))))
 
-(defn maybe-delete-topic-for-gig! [{:keys [env db] :as sys} gig-id]
+(defn maybe-delete-topic-for-gig! [{:keys [env] :as sys} gig-id]
   (let [topic (topic-for-gig sys gig-id)]
     (when (and topic (should-delete-topic? (-> env :discourse :username) topic))
       (delete-topic! env (:id topic)))))

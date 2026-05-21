@@ -5,7 +5,8 @@
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [datomic.api :as d]
-   [reitit.core :as r]))
+   [reitit.core :as r]
+   [tick.core :as t]))
 
 (def translations
   {[:action/search]                    "Search"
@@ -48,3 +49,13 @@
     (is (str/includes? html "data-indicator=\"songsIndexSyncing\""))
     (is (str/includes? html "data-attr:loading=\"$songsIndexSyncing\""))
     (is (str/includes? html "data-attr:disabled=\"$songsIndexSyncing\""))))
+
+(deftest song-row-uses-compact-last-played-date
+  (let [html (str (#'views/song-row
+                   {:current-locale :en :tr tr}
+                   {:song/song-id        (random-uuid)
+                    :song/title          "Watermelon Man"
+                    :song/active?        true
+                    :song/last-played-on (t/date "2026-06-04")}))]
+    (is (str/includes? html "Thu 04 Jun 2026"))
+    (is (not (str/includes? html "Thursday, June 4, 2026")))))

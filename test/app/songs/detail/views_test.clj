@@ -6,7 +6,8 @@
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [hiccup2.core :as h]
-   [reitit.core :as r]))
+   [reitit.core :as r]
+   [tick.core :as t]))
 
 (def translations
   {[:action/add]                     "Add"
@@ -110,6 +111,17 @@
         (is (str/includes? html "22"))
         (is (str/includes? html "7"))
         (is (str/includes? html "15"))))))
+
+(deftest song-detail-play-stats-use-compact-dates
+  (let [html (str (h/html (#'views/play-stats-section
+                           {:current-locale :en :tr tr}
+                           {:song/last-played-on (t/date "2026-06-04")
+                            :song/last-rehearsal {:gig/gig-id (random-uuid)
+                                                  :gig/date   (t/date "2026-06-07")}})))]
+    (is (str/includes? html "Thu 04 Jun 2026"))
+    (is (str/includes? html "Sun 07 Jun 2026"))
+    (is (not (str/includes? html "Thursday, June 4, 2026")))
+    (is (not (str/includes? html "Sunday, June 7, 2026")))))
 
 (deftest song-detail-page-renders-sheet-music-grid
   (let [{:keys [conn]} (tc/new-system "song-detail-sheet-music")

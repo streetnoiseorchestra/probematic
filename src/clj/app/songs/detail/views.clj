@@ -77,7 +77,7 @@
     [:a {:href  (urls/link-gig gig)
          :class "songs-detail-link"}
      (or (:gig/title gig)
-         (ui2/format-date req :with-weekday (:gig/date gig)))]))
+         (ui2/format-date req :compact-with-weekday (:gig/date gig)))]))
 
 (defn- play-stats-section [{:keys [tr] :as req} {:song/keys [last-played-on last-performance last-rehearsal total-performances total-plays total-rehearsals]}]
   (ui2/section-card
@@ -86,7 +86,7 @@
     (detail-item (tr [:song/total-plays]) (muted total-plays))
     (detail-item (tr [:song/gig-count]) (muted total-performances))
     (detail-item (tr [:song/probe-count]) (muted total-rehearsals))
-    (detail-item (tr [:song/last-played]) (muted (ui2/format-date req :with-weekday last-played-on)))
+    (detail-item (tr [:song/last-played]) (muted (ui2/format-date req :compact-with-weekday last-played-on)))
     (detail-item (tr [:song/last-played-gig]) (muted (gig-link req last-performance)))
     (detail-item (tr [:song/last-played-probe]) (muted (gig-link req last-rehearsal)))]))
 

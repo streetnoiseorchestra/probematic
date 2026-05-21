@@ -37,7 +37,7 @@
    [:div {:class "songs-index-row-date"}
     (song-stat {:icon  "calendar"
                 :label (tr [:song/last-played])
-                :value (or (ui2/format-date req :with-weekday last-played-on) "—")})]])
+                :value (or (ui2/format-date req :compact-with-weekday last-played-on) "—")})]])
 
 (defn- songs-list [req songs]
   (if (seq songs)

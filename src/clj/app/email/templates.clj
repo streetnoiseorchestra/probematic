@@ -16,7 +16,7 @@
   {:current-locale :de})
 
 (defn- format-date [value]
-  (ui2/format-date email-format-req :with-weekday value))
+  (ui2/format-date email-format-req :compact-with-weekday value))
 
 (defn- format-date-time [value]
   (ui2/format-date-time email-format-req :medium value))
@@ -68,7 +68,7 @@
 
           {} members))
 
-(defn template-snippet-gig-details [{:keys [tr env]} {:gig/keys [date end-date title set-time call-time end-time status location more-details pay-deal gig-type]}]
+(defn template-snippet-gig-details [{:keys [tr]} {:gig/keys [date end-date title set-time call-time end-time status location more-details pay-deal gig-type]}]
   [:div
    [:p [:strong title]]
    [:ul
@@ -92,7 +92,7 @@
      [:p (tr [:gig/more-details]) ": " [:br]
       (markdown/render more-details)])])
 
-(defn template-snippet-gig-details-plain [{:keys [tr env]} {:gig/keys [date end-date title set-time call-time end-time status location more-details pay-deal gig-type]}]
+(defn template-snippet-gig-details-plain [{:keys [tr]} {:gig/keys [date end-date title set-time call-time end-time status location more-details pay-deal gig-type]}]
   (selmer/render
    "# {{title}}
 
@@ -254,7 +254,7 @@
 (defn gig-updated-recipient-variables [{:keys [env]} gig members]
   (template-values-gig-attendance env (:gig/gig-id gig) members))
 
-(defn new-user-invite-html [{:keys [tr env] :as sys} invite-code]
+(defn new-user-invite-html [{:keys [tr env]} invite-code]
   (str (html
         [:div
          [:p
@@ -266,7 +266,7 @@
          [:p]
          [:p (tr [:email/sign-off])]])))
 
-(defn new-user-invite-plain [{:keys [tr env] :as sys} invite-code]
+(defn new-user-invite-plain [{:keys [tr env]} invite-code]
   (selmer.util/without-escaping
    (let [invite-link (url/absolute-link-new-user-invite env invite-code)]
      (selmer/render
@@ -293,7 +293,7 @@
        (when (not (str/blank? serial-number)) (str " - " serial-number))
        (when (not (str/blank? build-year)) (str " - " build-year))))
 
-(defn build-insurance-debt-args [{:keys [env] :as sys} {:member/keys [name member-id]} private-coverages sender-name time-range amount-cents]
+(defn build-insurance-debt-args [{:keys [env]} {:member/keys [name member-id]} private-coverages sender-name time-range amount-cents]
   (let [{:keys [iban bic account-name]} (config/band-bank-info env)]
     {:member-name name
      :sender-name sender-name
@@ -310,7 +310,7 @@
      :bic bic
      :insurance-link (url/absolute-link-member-ledger env member-id)}))
 
-(defn insurance-debt-hiccup [{:keys [tr env] :as sys} {:keys [member-name private-instruments time-range amount account-name iban bic insurance-link sender-name] :as data}]
+(defn insurance-debt-hiccup [{:keys [tr]} {:keys [member-name private-instruments time-range amount account-name iban bic insurance-link sender-name]}]
   [:div
    [:p
     (tr [:email/greeting-personal] [member-name])]
@@ -352,7 +352,7 @@
 (defn insurance-debt-html [sys args]
   (str (html (insurance-debt-hiccup sys args))))
 
-(defn insurance-debt-plain [{:keys [tr env] :as sys} {:keys [member-name private-instruments time-range amount account-name iban bic insurance-link sender-name]}]
+(defn insurance-debt-plain [{:keys [tr]} {:keys [member-name private-instruments time-range amount account-name iban bic insurance-link sender-name]}]
   (selmer.util/without-escaping
    (selmer/render
     "{{greeting}}
@@ -387,7 +387,7 @@ Versicherungsteam StreetNoise Orchestra
      :p2 (tr [:insurance/email-p2] [member-name])
      :amount (str (tr [:total]) ": " amount)
      :instruments (str/join "\n"
-                            (map (fn [{:keys [value description instrument-summary cost]}]
+                            (map (fn [{:keys [value instrument-summary cost]}]
                                    (str "- " instrument-summary " (" (tr [:insurance/value]) ": " value ")"  " - " cost))
                                  private-instruments))
      :please-pay (tr [:please-pay-to-band] [amount])
@@ -405,7 +405,7 @@ Versicherungsteam StreetNoise Orchestra
 (defn generic-email-plain
   ([sys body-text cta-text cta-url]
    (generic-email-plain sys body-text cta-text cta-url nil))
-  ([{:keys [tr env] :as sys} body-text cta-text cta-url {:keys [sign-off greeting]}]
+  ([{:keys [tr]} body-text cta-text cta-url {:keys [sign-off greeting]}]
    (selmer.util/without-escaping
     (selmer/render
      "{{greeting}}
