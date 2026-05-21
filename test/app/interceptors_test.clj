@@ -65,3 +65,24 @@
     (is (= {:session/email "missing@example.com"
             :session/keycloak-id "missing-kc"}
            (get-in result [:request :session])))))
+
+(defn- apply-cache-control [ctx]
+  ((:leave interceptors/cache-control-interceptor) ctx))
+
+(deftest cache-control-interceptor-adds-cache-headers
+  (testing "long-lived cache headers for static asset content types"
+    (is (= "max-age=31536000,immutable,public"
+           (get-in (apply-cache-control {:response {:headers {"Content-Type" "text/css; charset=utf-8"}}})
+                   [:response :headers "Cache-Control"])))
+    (is (= "max-age=31536000,immutable,public"
+           (get-in (apply-cache-control {:response {:headers {"content-type" "application/javascript"}}})
+                   [:response :headers "Cache-Control"]))))
+  (testing "no-cache for non-asset content types"
+    (is (= "no-cache"
+           (get-in (apply-cache-control {:response {:headers {"Content-Type" "text/html; charset=utf-8"}}})
+                   [:response :headers "Cache-Control"]))))
+  (testing "existing cache-control header is preserved"
+    (is (= "private"
+           (get-in (apply-cache-control {:response {:headers {"content-type" "text/css"
+                                                              "cache-control" "private"}}})
+                   [:response :headers "cache-control"])))))

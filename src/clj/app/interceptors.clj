@@ -351,21 +351,43 @@
      {:name  ::cache-control
       :enter (fn [ctx] (asset-hash-rewrite-interceptor-enter ctx))}))
 
-#_(def cache-control-interceptor
-    (interceptor/interceptor
-     {:name  ::cache-control
-      :leave (fn [ctx]
-               (if-not (get-in ctx [:response :headers "Cache-Control"])
-                 (if-let [content-type (get-in ctx [:response :headers "Content-Type"])]
-                   (let [cacheable-content-type? (fn [content-type]
-                                                   (some
-                                                    #(contains? #{"text/css" "text/javascript" "image/svg+xml"
-                                                                  "image/png" "image/x-icon" "text/xml"} %)
-                                                    (str/split content-type #";")))]
-                     (assoc-in ctx [:response :headers "Cache-Control"]
-                               (if (cacheable-content-type? content-type) "max-age=31536000,immutable,public" "no-cache")))
-                   ctx)
-                 ctx))}))
+(def ^:private cacheable-content-types
+  #{"application/javascript"
+    "application/font-woff"
+    "application/x-font-woff"
+    "font/ttf"
+    "font/woff"
+    "font/woff2"
+    "image/png"
+    "image/svg+xml"
+    "image/x-icon"
+    "text/css"
+    "text/javascript"
+    "text/xml"})
+
+(defn- response-header
+  [headers header-name]
+  (some (fn [[k v]]
+          (when (= (str/lower-case (name k)) (str/lower-case header-name))
+            v))
+        headers))
+
+(defn- cacheable-content-type?
+  [content-type]
+  (some #(contains? cacheable-content-types (str/lower-case (str/trim %)))
+        (str/split content-type #";")))
+
+(def cache-control-interceptor
+  {:name  ::cache-control
+   :leave (fn [ctx]
+            (if-not (response-header (get-in ctx [:response :headers]) "Cache-Control")
+              (if-let [content-type (response-header (get-in ctx [:response :headers]) "Content-Type")]
+                (assoc-in ctx [:response :headers "Cache-Control"]
+                          (if (cacheable-content-type? content-type)
+                            "max-age=31536000,immutable,public"
+                            "no-cache"))
+                ctx)
+              ctx))})
 
 ;; TODO after removing pedestal
 ;;  - add etag interceptor (maybe?)
