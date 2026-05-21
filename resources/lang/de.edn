@@ -650,7 +650,10 @@
   :more-details-placeholder "wer? was? wo? wann? wieso den?",
   :create-setlist "Setliste erstellen"},
  :stats
- {:least-active-probe-count-tooltip
+ {:title "SNO Stats",
+  :current-range "Aktuell: %1 — %2",
+  :timespan-label "Statistik-Zeitraum",
+  :least-active-probe-count-tooltip
   "Die Probe mit den wenigsten Teilnehmern hatte so viele Leute",
   :probe-attendance-rate-tooltip
   "Prozentsatz der aktiven Bandmitglieder, die im Zeitraum an den Proben teilnehmen.",
@@ -659,6 +662,9 @@
   :gigs-attended "Gigs besucht",
   :gigs-percent-tootlip
   "Der Prozentsatz der Veranstaltungen, die das Mitglied im Zeitraum besucht hat",
+  :gigs-percent-tooltip
+  "Der Prozentsatz der Veranstaltungen, die das Mitglied im Zeitraum besucht hat",
+  :gigs-short "Gigs",
   :mean-attendance-probe "Durchschnittliche Anwesenheit Proben",
   :total-gigs-tooltip
   "Die Gesamtanzahl der Gigs, die in dem Zeitraum stattgefunden haben",
@@ -688,6 +694,7 @@
   "Durchschnittliche Anzahl von Mitgliedern, die Gigs besuchen.",
   :probes-percent-tooltip
   "Der Prozentsatz der Proben, an denen das Mitglied im Zeitraum teilgenommen hat",
+  :probes-short "Proben",
   :mean-attendance-probe-tooltip
   "Durchschnittliche Anzahl der Mitglieder bei Proben.",
   :total-probes "Anzahl Proben",
@@ -707,7 +714,20 @@
   :most-active-gig-count "Meistens bei Gig",
   :gigs-attended-tooltip
   "Die Anzahl der Gigs, die das Mitglied in dem Zeitraum besucht hat",
-  :probes-percent "Proben (%)"},
+  :probes-percent "Proben (%)",
+  :methodology-title "Hinweise zur Methodik",
+  :methodology-rates-title "Gig- und Proben-Anwesenheitsraten",
+  :methodology-rates-body "Das Dashboard zeigt die Gig-Anwesenheitsrate und Proben-Anwesenheitsrate als Prozentsätze, berechnet aus besuchten Terminen im Verhältnis zu allen Terminen, die ein Mitglied hätte besuchen können.",
+  :methodology-active-members-title "Gig-Anwesenheitsrate und aktive Mitglieder",
+  :methodology-active-members-body "Die Anwesenheitsrate wird mit der Anzahl der Mitglieder berechnet, die zum Zeitpunkt des jeweiligen Gigs oder der jeweiligen Probe als aktiv markiert waren.",
+  :methodology-histograms-title "Anwesenheits-Histogramme",
+  :methodology-histograms-body "Die Histogramme zeigen Anwesenheitsraten in Prozent-Bins auf der x-Achse und die Anzahl der Mitglieder in jedem Bin auf der y-Achse.",
+  :methodology-accuracy-title "Hinweis zur Datengenauigkeit",
+  :methodology-accuracy-body "Die Genauigkeit dieser Anwesenheitsstatistiken hängt von vollständigen Eingaben der Mitglieder ab. Fehlende Rückmeldungen können die angezeigten Raten und Summen verzerren.",
+  :member-table-title "Anwesenheit nach Mitglied",
+  :member-table-subtitle "Anwesenheitszahlen und Raten für Mitglieder, die im gewählten Zeitraum mindestens einen Gig oder eine Probe besucht haben.",
+  :member-table-empty-title "Keine Anwesenheitsdaten",
+  :member-table-empty-body "Im gewählten Zeitraum wurde keine Anwesenheit erfasst."}
  :nav
  {:insurance "Versicherung",
   :polls "Umfragen",

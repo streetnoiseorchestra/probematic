@@ -1,0 +1,124 @@
+.stats-page {
+  max-inline-size: var(--sno-size-full);
+}
+
+.stats-summary-card [class*="wa-grid"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stats-metric-value {
+  color: var(--wa-color-text-normal);
+  line-height: var(--sno-line-height-tight);
+}
+
+.stats-timespan-controls {
+  justify-content: end;
+}
+
+.stats-chart-grid {
+  --min-column-size: min(30rem, 100%);
+}
+
+.stats-chart-card::part(body) {
+  min-block-size: 24rem;
+}
+
+.stats-chart-container {
+  position: relative;
+  block-size: min(24rem, 60vh);
+  min-block-size: 18rem;
+}
+
+.stats-chart-container canvas {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.stats-methodology {
+  max-inline-size: 60rem;
+}
+
+.stats-methodology-body p {
+  margin: 0;
+}
+
+.stats-member-table {
+  min-inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.stats-member-table th {
+  text-align: start;
+  white-space: nowrap;
+}
+
+.stats-member-table th a {
+  color: var(--wa-color-text-link);
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
+}
+
+.stats-sort-header-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wa-space-2xs);
+}
+
+.stats-member-table tbody tr {
+  border-block-start: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-quiet);
+}
+
+.stats-member-cell {
+  min-inline-size: 14rem;
+}
+
+.stats-member-link {
+  color: var(--wa-color-text-link);
+  text-decoration: none;
+}
+
+.stats-member-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
+}
+
+.stats-member {
+  flex-wrap: nowrap;
+}
+
+.stats-member-avatar {
+  flex: none;
+  --size: 2rem;
+}
+
+.stats-table-col--desktop {
+  display: none;
+}
+
+.stats-table-col--mobile {
+  display: table-cell;
+}
+
+.stats-mobile-stat-label {
+  display: block;
+  color: var(--wa-color-text-quiet);
+  font-size: var(--wa-font-size-s);
+}
+
+@media (min-width: 48rem) {
+  .stats-summary-card [class*="wa-grid"] {
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(var(--min-column-size, 20ch), 100%), 1fr)
+    );
+  }
+
+  .stats-table-col--desktop {
+    display: table-cell;
+  }
+
+  .stats-table-col--mobile {
+    display: none;
+  }
+}

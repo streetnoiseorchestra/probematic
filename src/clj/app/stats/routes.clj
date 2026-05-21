@@ -1,16 +1,11 @@
 (ns app.stats.routes
   (:require
-   [app.layout :as layout]
-   [app.stats.views :as view]
-   [ctmx.core :as ctmx]))
-
-(defn stats-index []
-  (ctmx/make-routes
-   "/stats"
-   (fn [req]
-     (layout/app-shell req
-                       (view/stats-index-page req)))))
+   [app.routes.datastar :as ds]
+   [app.stats.views]))
 
 (defn routes []
   ["" {:app.route/name :app/stats}
-   (stats-index)])
+   (ds/page-routes {:page-name  ::index
+                    :path       "/stats"
+                    :view-ns    'app.stats.views
+                    :extra-head app.stats.views/extra-head})])

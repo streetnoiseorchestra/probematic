@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-05-20 15:26+0000\n"
+"POT-Creation-Date: 2026-05-21 09:18+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -2045,7 +2045,9 @@ msgctxt ":probeplan/how-it-works-fixed"
 msgid ""
 "The next four rehearsals get fixed probeplans and are not changed "
 "automatically by the system."
-msgstr "Die nächsten vier Proben erhalten feste Probenpläne und werden nicht automatisch vom System geändert."
+msgstr ""
+"Die nächsten vier Proben erhalten feste Probenpläne und werden nicht "
+"automatisch vom System geändert."
 
 #: :probeplan/empty-body
 #, ycp-format
@@ -2065,7 +2067,9 @@ msgctxt ":probeplan/how-it-works-future-update"
 msgid ""
 "Probeplans after the next four rehearsals are regenerated from the current "
 "statistics."
-msgstr "Probenpläne nach den nächsten vier Proben werden aus den aktuellen Statistiken neu erzeugt."
+msgstr ""
+"Probenpläne nach den nächsten vier Proben werden aus den aktuellen "
+"Statistiken neu erzeugt."
 
 #: :probeplan/empty-title
 #, ycp-format
@@ -2079,7 +2083,9 @@ msgctxt ":probeplan/how-it-works-gigs-column"
 msgid ""
 "The gigs column shows how many gigs happen after that rehearsal and before "
 "the next one."
-msgstr "Die Gigs-Spalte zeigt, wie viele Gigs nach dieser Probe und vor der nächsten stattfinden."
+msgstr ""
+"Die Gigs-Spalte zeigt, wie viele Gigs nach dieser Probe und vor der nächsten "
+"stattfinden."
 
 #: :probeplan/how-it-works-generate
 #, ycp-format
@@ -2087,7 +2093,9 @@ msgctxt ":probeplan/how-it-works-generate"
 msgid ""
 "SNOrga generates future probeplans from play statistics such as number of "
 "plays and days since the last play."
-msgstr "SNOrga erzeugt zukünftige Probenpläne aus Spielstatistiken wie Anzahl der Spiele und Tage seit dem letzten Spiel."
+msgstr ""
+"SNOrga erzeugt zukünftige Probenpläne aus Spielstatistiken wie Anzahl der "
+"Spiele und Tage seit dem letzten Spiel."
 
 #: :Phone
 #, ycp-format
@@ -3502,6 +3510,12 @@ msgctxt ":stats/least-active-probe-count-tooltip"
 msgid "Probe with least attendance had this many people"
 msgstr "Die Probe mit den wenigsten Teilnehmern hatte so viele Leute"
 
+#: :stats/gigs-short
+#, ycp-format
+msgctxt ":stats/gigs-short"
+msgid "Gigs"
+msgstr "Gigs"
+
 #: :stats/probe-attendance-rate-tooltip
 #, ycp-format
 msgctxt ":stats/probe-attendance-rate-tooltip"
@@ -3509,6 +3523,14 @@ msgid "Percentage of the active band attending rehearsals in the timeframe."
 msgstr ""
 "Prozentsatz der aktiven Bandmitglieder, die im Zeitraum an den Proben "
 "teilnehmen."
+
+#: :stats/methodology-histograms-body
+#, ycp-format
+msgctxt ":stats/methodology-histograms-body"
+msgid ""
+"The histograms show attendance-rate percentage bins on the x-axis and the "
+"number of members in each bin on the y-axis."
+msgstr "Die Histogramme zeigen Anwesenheitsraten in Prozent-Bins auf der x-Achse und die Anzahl der Mitglieder in jedem Bin auf der y-Achse."
 
 #: :stats/last-six-months
 #, ycp-format
@@ -3527,6 +3549,12 @@ msgstr "Alle Gigs"
 msgctxt ":stats/gigs-attended"
 msgid "Gigs Attended"
 msgstr "Gigs besucht"
+
+#: :stats/member-table-title
+#, ycp-format
+msgctxt ":stats/member-table-title"
+msgid "Member Attendance"
+msgstr "Anwesenheit nach Mitglied"
 
 #: :stats/gigs-percent-tootlip
 #, ycp-format
@@ -3553,6 +3581,18 @@ msgctxt ":stats/total-plays"
 msgid "Total Plays"
 msgstr "Gesamtspiele"
 
+#: :stats/probes-short
+#, ycp-format
+msgctxt ":stats/probes-short"
+msgid "Probes"
+msgstr "Proben"
+
+#: :stats/methodology-title
+#, ycp-format
+msgctxt ":stats/methodology-title"
+msgid "Some Notes on Methodology"
+msgstr "Hinweise zur Methodik"
+
 #: :stats/active-members-count-tooltip
 #, ycp-format
 msgctxt ":stats/active-members-count-tooltip"
@@ -3562,6 +3602,12 @@ msgid ""
 msgstr ""
 "Die Anzahl der Mitglieder, die im Zeitraum als \"aktiv\" in SNOrga markiert "
 "wurden"
+
+#: :stats/member-table-empty-title
+#, ycp-format
+msgctxt ":stats/member-table-empty-title"
+msgid "No attendance data"
+msgstr "Keine Anwesenheitsdaten"
 
 #: :stats/probe-attendance
 #, ycp-format
@@ -3574,6 +3620,12 @@ msgstr "Proben besucht"
 msgctxt ":stats/least-active-probe-count"
 msgid "Least at Probe"
 msgstr "Mindestens bei der Probe"
+
+#: :stats/methodology-histograms-title
+#, ycp-format
+msgctxt ":stats/methodology-histograms-title"
+msgid "Attendance Histograms"
+msgstr "Anwesenheits-Histogramme"
 
 #: :stats/total-probes-tooltip
 #, ycp-format
@@ -3617,6 +3669,12 @@ msgctxt ":stats/mean-attendance-gig"
 msgid "Average Attendance Gigs"
 msgstr "Duchschnittliche Anwesenheit / Gigs"
 
+#: :stats/title
+#, ycp-format
+msgctxt ":stats/title"
+msgid "SNO Stats"
+msgstr "SNO Stats"
+
 #: :stats/gig-attendance-rate-tooltip
 #, ycp-format
 msgctxt ":stats/gig-attendance-rate-tooltip"
@@ -3625,11 +3683,38 @@ msgstr ""
 "Prozentsatz der aktiven Bandmitglieder, die im Zeitraum an Auftritten "
 "teilnehmen."
 
+#: :stats/methodology-rates-body
+#, ycp-format
+msgctxt ":stats/methodology-rates-body"
+msgid ""
+"The dashboard displays gig attendance rate and probe attendance rate as "
+"percentages calculated from attended events relative to the total events a "
+"member could have attended."
+msgstr "Das Dashboard zeigt die Gig-Anwesenheitsrate und Proben-Anwesenheitsrate als Prozentsätze, berechnet aus besuchten Terminen im Verhältnis zu allen Terminen, die ein Mitglied hätte besuchen können."
+
+#: :stats/member-table-empty-body
+#, ycp-format
+msgctxt ":stats/member-table-empty-body"
+msgid "No member attendance was recorded in the selected timeframe."
+msgstr "Im gewählten Zeitraum wurde keine Anwesenheit erfasst."
+
 #: :stats/gigs-percent
 #, ycp-format
 msgctxt ":stats/gigs-percent"
 msgid "Gigs %"
 msgstr "Gigs %"
+
+#: :stats/current-range
+#, ycp-format
+msgctxt ":stats/current-range"
+msgid "Current: %1 — %2"
+msgstr "Aktuell: %1 — %2"
+
+#: :stats/methodology-active-members-title
+#, ycp-format
+msgctxt ":stats/methodology-active-members-title"
+msgid "Gig Attendance Rate and Active Members"
+msgstr "Gig-Anwesenheitsrate und aktive Mitglieder"
 
 #: :stats/attendance-rate
 #, ycp-format
@@ -3681,6 +3766,20 @@ msgctxt ":stats/total-probes"
 msgid "Total Probes"
 msgstr "Anzahl Proben"
 
+#: :stats/timespan-label
+#, ycp-format
+msgctxt ":stats/timespan-label"
+msgid "Stats timespan"
+msgstr "Statistik-Zeitraum"
+
+#: :stats/methodology-active-members-body
+#, ycp-format
+msgctxt ":stats/methodology-active-members-body"
+msgid ""
+"Attendance rate is calculated using the number of members who were marked "
+"active at the time each gig or rehearsal occurred."
+msgstr "Die Anwesenheitsrate wird mit der Anzahl der Mitglieder berechnet, die zum Zeitpunkt des jeweiligen Gigs oder der jeweiligen Probe als aktiv markiert waren."
+
 #: :stats/last-seen-tooltip
 #, ycp-format
 msgctxt ":stats/last-seen-tooltip"
@@ -3701,11 +3800,23 @@ msgctxt ":stats/gig-attendance-rate"
 msgid "Attendance Rate Gigs"
 msgstr "Teilnahmerate Gigs"
 
+#: :stats/methodology-rates-title
+#, ycp-format
+msgctxt ":stats/methodology-rates-title"
+msgid "Gig and Probe Attendance Rates"
+msgstr "Gig- und Proben-Anwesenheitsraten"
+
 #: :stats/least-active-gig-count-tooltip
 #, ycp-format
 msgctxt ":stats/least-active-gig-count-tooltip"
 msgid "Gig with least attendance had this many people"
 msgstr "Das am schlechtesten besuchte Gig hatte so viele Leute"
+
+#: :stats/methodology-accuracy-title
+#, ycp-format
+msgctxt ":stats/methodology-accuracy-title"
+msgid "Data Accuracy Disclaimer"
+msgstr "Hinweis zur Datengenauigkeit"
 
 #: :stats/probe-attendance-rate
 #, ycp-format
@@ -3738,11 +3849,34 @@ msgctxt ":stats/active-members-count"
 msgid "Active Members"
 msgstr "Aktive Mitglieder"
 
+#: :stats/gigs-percent-tooltip
+#, ycp-format
+msgctxt ":stats/gigs-percent-tooltip"
+msgid "The percentage of gigs the member attended in the timeframe"
+msgstr "Der Prozentsatz der Veranstaltungen, die das Mitglied im Zeitraum besucht hat"
+
 #: :stats/last-year
 #, ycp-format
 msgctxt ":stats/last-year"
 msgid "Last Year"
 msgstr "Letztes Jahr"
+
+#: :stats/methodology-accuracy-body
+#, ycp-format
+msgctxt ":stats/methodology-accuracy-body"
+msgid ""
+"The accuracy of these attendance statistics depends on complete input from "
+"members. Missing attendance responses can skew the rates and totals shown "
+"here."
+msgstr "Die Genauigkeit dieser Anwesenheitsstatistiken hängt von vollständigen Eingaben der Mitglieder ab. Fehlende Rückmeldungen können die angezeigten Raten und Summen verzerren."
+
+#: :stats/member-table-subtitle
+#, ycp-format
+msgctxt ":stats/member-table-subtitle"
+msgid ""
+"Attendance counts and rates for members who attended at least one gig or "
+"rehearsal in the selected timeframe."
+msgstr "Anwesenheitszahlen und Raten für Mitglieder, die im gewählten Zeitraum mindestens einen Gig oder eine Probe besucht haben."
 
 #: :stats/most-active-gig-count
 #, ycp-format

@@ -7,6 +7,7 @@
    [app.probeplan.routes :as probeplan.routes]
    [app.routes.datastar :as dsr]
    [app.settings.routes :as settings.routes]
+   [app.stats.routes :as stats.routes]
    [app.urls :as urls]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is]]
@@ -61,6 +62,14 @@
         match  (r/match-by-path router "/probeplan")]
     (is (= {:route-name :app/probeplan
             :page-name  :app.probeplan.routes/index}
+           {:route-name (get-in match [:data :app.route/name])
+            :page-name  (get-in match [:data :name])}))))
+
+(deftest stats-route-exposes-the-datastar-index
+  (let [router (http/router ["" (stats.routes/routes)])
+        match  (r/match-by-path router "/stats")]
+    (is (= {:route-name :app/stats
+            :page-name  :app.stats.routes/index}
            {:route-name (get-in match [:data :app.route/name])
             :page-name  (get-in match [:data :name])}))))
 

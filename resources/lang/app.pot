@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Probematic\n"
-"POT-Creation-Date: 2026-05-20 15:26+0000\n"
+"POT-Creation-Date: 2026-05-21 09:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -3305,10 +3305,22 @@ msgctxt ":stats/least-active-probe-count-tooltip"
 msgid "Probe with least attendance had this many people"
 msgstr ""
 
+#: :stats/gigs-short
+#, ycp-format
+msgctxt ":stats/gigs-short"
+msgid "Gigs"
+msgstr ""
+
 #: :stats/probe-attendance-rate-tooltip
 #, ycp-format
 msgctxt ":stats/probe-attendance-rate-tooltip"
 msgid "Percentage of the active band attending rehearsals in the timeframe."
+msgstr ""
+
+#: :stats/methodology-histograms-body
+#, ycp-format
+msgctxt ":stats/methodology-histograms-body"
+msgid "The histograms show attendance-rate percentage bins on the x-axis and the number of members in each bin on the y-axis."
 msgstr ""
 
 #: :stats/last-six-months
@@ -3327,6 +3339,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":stats/gigs-attended"
 msgid "Gigs Attended"
+msgstr ""
+
+#: :stats/member-table-title
+#, ycp-format
+msgctxt ":stats/member-table-title"
+msgid "Member Attendance"
 msgstr ""
 
 #: :stats/gigs-percent-tootlip
@@ -3353,10 +3371,28 @@ msgctxt ":stats/total-plays"
 msgid "Total Plays"
 msgstr ""
 
+#: :stats/probes-short
+#, ycp-format
+msgctxt ":stats/probes-short"
+msgid "Probes"
+msgstr ""
+
+#: :stats/methodology-title
+#, ycp-format
+msgctxt ":stats/methodology-title"
+msgid "Some Notes on Methodology"
+msgstr ""
+
 #: :stats/active-members-count-tooltip
 #, ycp-format
 msgctxt ":stats/active-members-count-tooltip"
 msgid "The number of members that were marked as \"active\" in SNOrga during the timeframe"
+msgstr ""
+
+#: :stats/member-table-empty-title
+#, ycp-format
+msgctxt ":stats/member-table-empty-title"
+msgid "No attendance data"
 msgstr ""
 
 #: :stats/probe-attendance
@@ -3369,6 +3405,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":stats/least-active-probe-count"
 msgid "Least at Probe"
+msgstr ""
+
+#: :stats/methodology-histograms-title
+#, ycp-format
+msgctxt ":stats/methodology-histograms-title"
+msgid "Attendance Histograms"
 msgstr ""
 
 #: :stats/total-probes-tooltip
@@ -3407,16 +3449,46 @@ msgctxt ":stats/mean-attendance-gig"
 msgid "Average Attendance Gigs"
 msgstr ""
 
+#: :stats/title
+#, ycp-format
+msgctxt ":stats/title"
+msgid "SNO Stats"
+msgstr ""
+
 #: :stats/gig-attendance-rate-tooltip
 #, ycp-format
 msgctxt ":stats/gig-attendance-rate-tooltip"
 msgid "Percentage of the active band attending gigs in the timeframe."
 msgstr ""
 
+#: :stats/methodology-rates-body
+#, ycp-format
+msgctxt ":stats/methodology-rates-body"
+msgid "The dashboard displays gig attendance rate and probe attendance rate as percentages calculated from attended events relative to the total events a member could have attended."
+msgstr ""
+
+#: :stats/member-table-empty-body
+#, ycp-format
+msgctxt ":stats/member-table-empty-body"
+msgid "No member attendance was recorded in the selected timeframe."
+msgstr ""
+
 #: :stats/gigs-percent
 #, ycp-format
 msgctxt ":stats/gigs-percent"
 msgid "Gigs %"
+msgstr ""
+
+#: :stats/current-range
+#, ycp-format
+msgctxt ":stats/current-range"
+msgid "Current: %1 — %2"
+msgstr ""
+
+#: :stats/methodology-active-members-title
+#, ycp-format
+msgctxt ":stats/methodology-active-members-title"
+msgid "Gig Attendance Rate and Active Members"
 msgstr ""
 
 #: :stats/attendance-rate
@@ -3467,6 +3539,18 @@ msgctxt ":stats/total-probes"
 msgid "Total Probes"
 msgstr ""
 
+#: :stats/timespan-label
+#, ycp-format
+msgctxt ":stats/timespan-label"
+msgid "Stats timespan"
+msgstr ""
+
+#: :stats/methodology-active-members-body
+#, ycp-format
+msgctxt ":stats/methodology-active-members-body"
+msgid "Attendance rate is calculated using the number of members who were marked active at the time each gig or rehearsal occurred."
+msgstr ""
+
 #: :stats/last-seen-tooltip
 #, ycp-format
 msgctxt ":stats/last-seen-tooltip"
@@ -3485,10 +3569,22 @@ msgctxt ":stats/gig-attendance-rate"
 msgid "Attendance Rate Gigs"
 msgstr ""
 
+#: :stats/methodology-rates-title
+#, ycp-format
+msgctxt ":stats/methodology-rates-title"
+msgid "Gig and Probe Attendance Rates"
+msgstr ""
+
 #: :stats/least-active-gig-count-tooltip
 #, ycp-format
 msgctxt ":stats/least-active-gig-count-tooltip"
 msgid "Gig with least attendance had this many people"
+msgstr ""
+
+#: :stats/methodology-accuracy-title
+#, ycp-format
+msgctxt ":stats/methodology-accuracy-title"
+msgid "Data Accuracy Disclaimer"
 msgstr ""
 
 #: :stats/probe-attendance-rate
@@ -3521,10 +3617,28 @@ msgctxt ":stats/active-members-count"
 msgid "Active Members"
 msgstr ""
 
+#: :stats/gigs-percent-tooltip
+#, ycp-format
+msgctxt ":stats/gigs-percent-tooltip"
+msgid "The percentage of gigs the member attended in the timeframe"
+msgstr ""
+
 #: :stats/last-year
 #, ycp-format
 msgctxt ":stats/last-year"
 msgid "Last Year"
+msgstr ""
+
+#: :stats/methodology-accuracy-body
+#, ycp-format
+msgctxt ":stats/methodology-accuracy-body"
+msgid "The accuracy of these attendance statistics depends on complete input from members. Missing attendance responses can skew the rates and totals shown here."
+msgstr ""
+
+#: :stats/member-table-subtitle
+#, ycp-format
+msgctxt ":stats/member-table-subtitle"
+msgid "Attendance counts and rates for members who attended at least one gig or rehearsal in the selected timeframe."
 msgstr ""
 
 #: :stats/most-active-gig-count
