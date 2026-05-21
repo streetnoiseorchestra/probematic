@@ -8,11 +8,6 @@
    [clojure.string :as str]
    [jsonista.core :as j]))
 
-(def extra-head
-  [[:script {:src "/js/chart@4.4.0.js" :defer true}]
-   [:script {:src "/js/chartjs-plugin-datalabels.min.js" :defer true}]
-   [:script {:src "/js/widgets/stats-chart.js" :defer true}]])
-
 (defn- fmt-double [value]
   (if (some? value)
     (format "%.1f" (double value))
@@ -278,6 +273,9 @@
   (let [{:keys [from to]} (state/selected-range req)
         stats            (stats/stats-for db from to (state/sort-spec req))]
     (ui2/datastar-page
+     [:script {:src "/js/chart@4.4.0.js"}]
+     [:script {:src "/js/chartjs-plugin-datalabels.min.js"}]
+     [:script {:src "/js/widgets/stats-chart.js"}]
      [:div {:class "stats-page wa-stack wa-gap-xl"}
       (ui2/page-header
        {:title    (tr [:stats/title])

@@ -155,7 +155,6 @@
              (get-in (r/match-by-path router "/gigs/create") [:data :app.route/name])))
       (is (= :app.gigs.routes/create
              (get-in (r/match-by-path router "/gigs/create") [:data :name])))
-      (is (seq (get-in (r/match-by-path router (str "/gig/" gig-id "/edit")) [:data :extra-head])))
       (is (nil? (r/match-by-path router (str "/gig/" gig-id "/log-play")))))))
 
 (deftest gig-helpers-point-to-public-index-archive-and-create

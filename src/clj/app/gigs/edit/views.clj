@@ -11,9 +11,6 @@
    [app.util.http :as http.util]
    [clojure.string :as str]))
 
-(def extra-head
-  (ui2/markdown-editor-extra-head))
-
 (defn- option [value label selected-value]
   [:wa-option {:value    value
                :selected (= value selected-value)}
@@ -385,7 +382,8 @@
        [:div {:class "wa-stack wa-gap-2xl gigs-edit-page"}
         (edit-header req gig)
         (edit-form req gig)
-        (gig-remove-dialog req gig)])
+        (gig-remove-dialog req gig)]
+       (ui2/markdown-editor-scripts))
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id})))))
 
@@ -393,7 +391,8 @@
   (ui2/datastar-page
    [:div {:class "wa-stack wa-gap-2xl gigs-edit-page"}
     (create-header req)
-    (create-form req)]))
+    (create-form req)]
+   (ui2/markdown-editor-scripts)))
 
 (defn page [req]
   (if (http.util/path-param req :gig/gig-id)

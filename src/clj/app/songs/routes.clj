@@ -20,14 +20,12 @@
 (defn songs-new-routes []
   (ds/page-routes {:page-name  ::create
                    :path       "/songs/new"
-                   :view-ns    'app.songs.edit.views
-                   :extra-head app.songs.edit.views/extra-head}))
+                   :view-ns 'app.songs.edit.views}))
 
 (defn song-edit-routes []
   (ds/page-routes {:page-name  ::edit
                    :path       "/song/{song-id}/edit"
-                   :view-ns    'app.songs.edit.views
-                   :extra-head app.songs.edit.views/extra-head}))
+                   :view-ns 'app.songs.edit.views}))
 
 (defn song-detail-routes []
   (ds/page-routes {:page-name ::detail

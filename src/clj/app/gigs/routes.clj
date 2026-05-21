@@ -24,8 +24,7 @@
                     :view-ns   'app.gigs.archive.views})
    (ds/page-routes {:page-name  ::create
                     :path       "/gigs/create"
-                    :view-ns    'app.gigs.edit.views
-                    :extra-head app.gigs.edit.views/extra-head})
+                    :view-ns    'app.gigs.edit.views})
    (ds/page-routes {:page-name ::detail
                     :path      "/gig/{gig/gig-id}"
                     :view-ns   'app.gigs.detail.views})
@@ -43,8 +42,7 @@
                     :view-ns   'app.gigs.log-plays.views})
    (ds/page-routes {:page-name  ::edit
                     :path       "/gig/{gig/gig-id}/edit"
-                    :view-ns    'app.gigs.edit.views
-                    :extra-head app.gigs.edit.views/extra-head})])
+                    :view-ns 'app.gigs.edit.views})])
 
 (defn unauthenticated-routes
   ([]

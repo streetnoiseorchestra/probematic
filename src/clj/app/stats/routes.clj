@@ -7,5 +7,4 @@
   ["" {:app.route/name :app/stats}
    (ds/page-routes {:page-name  ::index
                     :path       "/stats"
-                    :view-ns    'app.stats.views
-                    :extra-head app.stats.views/extra-head})])
+                    :view-ns 'app.stats.views})])

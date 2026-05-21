@@ -56,14 +56,16 @@
     [:span {:class "wa-color-text-quiet"} html/emdash]
     value))
 
-(defn markdown-editor-extra-head
+(defn markdown-editor-scripts
   "Returns the shared EasyMDE assets and Datastar-safe markdown editor initializer."
   []
   [[:link {:rel "stylesheet" :href "/css/easymde.min@2.18.0.css"}]
-   [:script {:src "/js/easymde.min@2.18.0.js"}]
    [:script
     (html/raw
-     "window.MarkdownEditor = function MarkdownEditor(target) {
+     "
+     window.EasyMDEReady ||= import('/js/easymde.min@2.18.0.js');
+     window.MarkdownEditor = async function MarkdownEditor(target) {
+        await window.EasyMDEReady;
         if (!target || target.dataset.easymdeInitialized === 'true') return;
         target.dataset.easymdeInitialized = 'true';
         const imageUploadEndpoint = target.getAttribute('data-image-upload-endpoint');

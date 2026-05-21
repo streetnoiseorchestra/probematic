@@ -9,9 +9,6 @@
    [app.util.http :as http.util]
    [clojure.string :as str]))
 
-(def extra-head
-  (ui2/markdown-editor-extra-head))
-
 (defn- validate-field-action [req field]
   (str "$song-edit.validate-field = '"
        (name field)
@@ -261,7 +258,8 @@
        [:div {:class "wa-stack wa-gap-2xl songs-edit-page"}
         (edit-header req song)
         (edit-form req song)
-        (song-remove-dialog req song)])
+        (song-remove-dialog req song)
+        (ui2/markdown-editor-scripts)])
       (throw (ex-info "Song not found" {:app/error-type :app.error.type/not-found
                                         :song/song-id   song-id})))))
 
@@ -269,7 +267,8 @@
   (ui2/datastar-page
    [:div {:class "wa-stack wa-gap-2xl songs-edit-page"}
     (create-header req)
-    (create-form req)]))
+    (create-form req)]
+   (ui2/markdown-editor-scripts)))
 
 (defn page [req]
   (if (http.util/path-param req :song-id)
