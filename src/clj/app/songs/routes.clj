@@ -2,9 +2,9 @@
   (:require
    [app.routes.datastar :as ds]
    [app.songs.detail.views]
+   [app.songs.edit.api :as edit.api]
    [app.songs.edit.views]
    [app.songs.index.views]
-   [app.songs.views :as view]
    [reitit.ring.malli :as reitit.ring.malli]))
 
 (defn songs-list-routes []
@@ -51,7 +51,7 @@
     {:post {:summary "Upload media for an song"
             :parameters {:multipart [:map [:file reitit.ring.malli/temp-file-part]]
                          :path [:map [:song-id :uuid]]}
-            :handler (fn [req] (view/image-upload-handler req))}}]])
+            :handler (fn [req] (edit.api/image-upload-handler req))}}]])
 
 (defn unauthenticated-routes []
   [""
@@ -61,4 +61,4 @@
                                [:song-id :uuid]
                                [:filename :string]]}
            :handler (fn [req]
-                      (view/image-fetch-handler req))}}]])
+                      (edit.api/image-fetch-handler req))}}]])
