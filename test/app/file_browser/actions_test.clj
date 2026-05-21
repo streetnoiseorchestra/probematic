@@ -3,6 +3,29 @@
    [app.file-browser.actions :as actions]
    [clojure.test :refer [deftest is testing]]))
 
+(deftest remote-path-test
+  (is (= {nil                "/"
+          ""                 "/"
+          "/"                "/"
+          "foo/bar"          "/foo/bar"
+          "/foo/../bar/"     "/bar"
+          "/foo//bar"        "/foo//bar"
+          "/foo/./bar"       "/foo/bar"
+          "/../foo"          "foo"
+          "/foo/../../bar"   "bar"}
+         (into {}
+               (map (fn [path] [path (actions/remote-path path)]))
+               [nil "" "/" "foo/bar" "/foo/../bar/" "/foo//bar" "/foo/./bar"
+                "/../foo" "/foo/../../bar"]))))
+
+(deftest within-root-test
+  (is (= [true true false false]
+         (mapv #(apply actions/within-root? %)
+               [["/root" "/root"]
+                ["/root" "/root/child"]
+                ["/root" "/root-other"]
+                ["/root" "/other/root"]]))))
+
 (deftest open-picker-action-test
   (testing "opens a picker with normalized root and current directories"
     (is (= [[:app.datastar/assoc-state

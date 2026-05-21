@@ -7,11 +7,6 @@
    [app.songs.views :as view]
    [reitit.ring.malli :as reitit.ring.malli]))
 
-(defn songs-sync []
-  ["/songs-sync" {:app.route/name :app/songs-sync
-                  :post (fn [req]
-                          (view/songs-sync req))}])
-
 (defn songs-list-routes []
   (ds/page-routes {:page-name ::index
                    :path      "/songs"
@@ -46,7 +41,6 @@
 
 (defn routes []
   ["" {:app.route/name :app/songs}
-   (songs-sync)
    (song-detail-routes)
    (song-detail-no-slash-routes)
    (song-edit-routes)

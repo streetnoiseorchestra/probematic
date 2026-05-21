@@ -3,10 +3,10 @@
    [app.config :as config]
    [app.datastar :as d*]
    [app.file-browser.actions :as actions]
-   [app.file-utils :as fu]
    [app.humanize :as humanize]
    [app.sardine :as sardine]
    [app.ui2 :as ui2]
+   [babashka.fs :as fs]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -42,7 +42,7 @@
 
 (defn- extension [filename]
   (some-> filename
-          fu/ext
+          fs/extension
           str/lower-case))
 
 (defn file-icon-name [{:keys [content-type directory? name]}]
@@ -55,8 +55,12 @@
 (defn- directory-target-dir [{:keys [path]}]
   (actions/remote-path path))
 
+(defn- strip-leading-slash [path]
+  (when path
+    (str/replace path #"^/" "")))
+
 (defn- selected-file-path [{:keys [path]}]
-  (fu/strip-leading-slash (actions/remote-path path)))
+  (strip-leading-slash (actions/remote-path path)))
 
 (defn- directory-action [req picker-id target-dir]
   (->expr
@@ -106,16 +110,24 @@
    (set! $file-browser.target-dir ~target-dir)
    (@post ~(d*/act req ::actions/set-current-dir))))
 
+(defn- component-paths [path]
+  (assert (str/starts-with? path "/") "Path must be absolute")
+  (assert (not (str/ends-with? path "/")) "Path must not end with slash")
+  (let [sub (str/split path #"/")]
+    (map (fn [i]
+           (str "/" (str/join "/" (subvec sub 1 (inc i)))))
+         (range 1 (inc (count (re-seq #"/" path)))))))
+
 (defn file-breadcrumb [req picker-id root-dir current-dir]
   (into
    [:wa-breadcrumb]
    (cons
     [:span {:slot "separator"} "/"]
     (for [path (filter #(actions/within-root? root-dir %)
-                       (fu/component-paths current-dir))]
+                       (component-paths current-dir))]
       [:wa-breadcrumb-item {:href          "#"
                             :data-on:click (breadcrumb-action req picker-id path)}
-       (fu/basename path)]))))
+       (fs/file-name path)]))))
 
 (defn- picker-files [req root-dir current-dir]
   (let [current-dir-exists? (sardine/dir-exists? (:webdav req) current-dir)

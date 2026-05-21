@@ -1,25 +1,30 @@
 (ns app.songs.detail.actions
   (:require
    [app.file-browser.actions :as file-browser.actions]
-   [app.file-utils :as fu]
    [app.queries :as q]
-   [app.util :as util]))
+   [app.util :as util]
+   [babashka.fs :as fs]
+   [clojure.string :as str]))
 
 (def sheet-music-picker-id :song-sheet-music)
 
 (defn- picker-key [signals]
   (file-browser.actions/picker-key (get-in signals [:file-browser :picker-id])))
 
+(defn- root-relative-path [path]
+  (when path
+    (str/replace path #"^/" "")))
+
 (defn- selected-path [signals]
   (some-> (get-in signals [:file-browser :selected-path])
           file-browser.actions/remote-path
-          fu/strip-leading-slash))
+          root-relative-path))
 
 (defn add-sheet-music-tx-data [song-id section-name selected-path]
   [{:sheet-music/sheet-id :db/gen-uuid
     :sheet-music/song     [:song/song-id song-id]
     :sheet-music/section  [:section/name section-name]
-    :sheet-music/title    (fu/basename selected-path)
+    :sheet-music/title    (fs/file-name selected-path)
     :file/webdav-path     selected-path}])
 
 (defn add-sheet-music-action

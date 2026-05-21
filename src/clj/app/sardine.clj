@@ -1,7 +1,7 @@
 (ns app.sardine
   (:require
-   [app.file-utils :as fu]
    [app.routes.errors :as errors]
+   [babashka.fs :as fs]
    [clojure.java.io :as io]
    [clojure.string :as string])
   (:import
@@ -10,9 +10,37 @@
    (java.net URLEncoder)
    (org.apache.http.client.utils URIBuilder)))
 
+(defn- strip-leading-slash [path]
+  (when path
+    (string/replace path #"^/" "")))
+
+(defn- path-join [& paths]
+  (let [paths' (remove empty? paths)]
+    (if (empty? paths')
+      ""
+      (str (apply io/file paths')))))
+
+(defn- add-trailing-slash [path]
+  (if (string/ends-with? path "/")
+    path
+    (str path "/")))
+
+(defn- component-paths [path]
+  (assert (string/starts-with? path "/") "Path must be absolute")
+  (assert (not (string/ends-with? path "/")) "Path must not end with slash")
+  (let [sub (string/split path #"/")]
+    (map (fn [i]
+           (str "/" (string/join "/" (subvec sub 1 (inc i)))))
+         (range 1 (inc (count (re-seq #"/" path)))))))
+
+(defn- validate-base-path! [base-path full-path]
+  (when-not (string/starts-with? (str (fs/canonicalize full-path)) base-path)
+    (throw (ex-info "Path traversal attack detected" {:base-path base-path
+                                                      :full-path full-path}))))
+
 (defn build-full-path [{:keys [webdav-base-path]} remote-path]
   (assert (string/starts-with? webdav-base-path "/") "webdav base path must start and end with a slash")
-  (fu/path-join webdav-base-path (fu/strip-leading-slash remote-path)))
+  (path-join webdav-base-path (strip-leading-slash remote-path)))
 
 (defn build-uri [{:keys [host]} full-path]
   (-> (URIBuilder.)
@@ -63,14 +91,14 @@
             (->dav-resource webdav-config r))
           (remove (fn [{:keys [path]}] (some #(re-find % path) excluded-folder-patterns)))
           ;; the directory we listed is included in the results, so lets remove it
-          (remove #(= (fu/add-trailing-slash full-path) (get % :full-path)))
+          (remove #(= (add-trailing-slash full-path) (get % :full-path)))
           (sort-by (juxt :file? :name))))))
 
 (defn dir-exists? [webdav dir]
   (try
     (list-directory webdav dir)
     true
-    (catch com.github.sardine.impl.SardineException e
+    (catch com.github.sardine.impl.SardineException _e
       false)))
 
 (defn stream-file [{:keys [client] :as webdav-config} remote-path]
@@ -102,35 +130,35 @@
     (fetch-file-response req path inline?)))
 
 (defn mkdirs [{:keys [client] :as webdav-config} remote-path]
-  (doseq [component (fu/component-paths remote-path)]
+  (doseq [component (component-paths remote-path)]
     (when-not (dir-exists? webdav-config component)
       (-> client (.createDirectory (build-uri webdav-config (build-full-path webdav-config component)))))))
 
 (defn- upload-file [{:keys [client] :as webdav-config} remote-path in content-type]
   (assert (string/starts-with? remote-path "/") "remote-path must start with a slash")
-  (when-not (dir-exists? webdav-config (fu/dirname remote-path))
-    (mkdirs webdav-config (fu/dirname remote-path)))
+  (let [parent-path (fs/unixify (fs/parent remote-path))]
+    (when-not (dir-exists? webdav-config parent-path)
+      (mkdirs webdav-config parent-path)))
   (try
     (-> client (.put (build-uri webdav-config (build-full-path webdav-config remote-path))
                      in content-type))
-    (catch Exception e
+    (catch Exception _e
       ;; ignoring exceptions until this bug is fixed because an exception is always being throwed even on success
       ;; https://github.com/nextcloud/server/issues/35931
       ))
   :ok)
 
 (defn upload [webdav base-path {:keys [filename tempfile content-type]}]
-  (let [remote-path (fu/path-join base-path filename)]
-    (fu/validate-base-path! base-path remote-path)
+  (let [remote-path (path-join base-path filename)]
+    (validate-base-path! base-path remote-path)
     (upload-file webdav remote-path (io/input-stream tempfile) content-type)))
 
 (defn list-photos [webdav remote-path]
   (try
     (->> (list-directory webdav remote-path)
          (filter #(string/starts-with? (:content-type %) "image/"))
-         (map #(str "/" (:path %)))
-         (map fu/basename))
-    (catch SardineException e
+         (map (comp fs/file-name :path)))
+    (catch SardineException _e
       [])))
 
 (comment

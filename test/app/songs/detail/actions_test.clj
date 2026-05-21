@@ -20,6 +20,27 @@
                       :section/active?  true
                       :section/position 1}]))
 
+(deftest add-sheet-music-tx-data-test
+  (is (= [{:sheet-music/sheet-id :db/gen-uuid
+           :sheet-music/song     [:song/song-id #uuid "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]
+           :sheet-music/section  [:section/name "Trumpets"]
+           :sheet-music/title    "Bella Ciao Trumpet.pdf"
+           :file/webdav-path     "Noten - Scores/Bella Ciao/Bella Ciao Trumpet.pdf"}]
+         (actions/add-sheet-music-tx-data
+          #uuid "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+          "Trumpets"
+          "Noten - Scores/Bella Ciao/Bella Ciao Trumpet.pdf"))))
+
+(deftest selected-path-test
+  (is (= {"/foo/bar"        "foo/bar"
+          "/foo//bar"       "foo//bar"
+          "/../foo"         "foo"
+          "/foo/../../bar"  "bar"}
+         (into {}
+               (map (fn [path]
+                      [path (@#'actions/selected-path {:file-browser {:selected-path path}})]))
+               ["/foo/bar" "/foo//bar" "/../foo" "/foo/../../bar"]))))
+
 (deftest add-sheet-music-action-test
   (testing "adds the selected file to the picker target section and closes the picker"
     (let [{:keys [conn] :as system} (new-system)

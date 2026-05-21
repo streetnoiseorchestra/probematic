@@ -1,6 +1,5 @@
 (ns app.file-browser.actions
   (:require
-   [app.file-utils :as fu]
    [clojure.string :as str]))
 
 (def default-picker-id :default)
@@ -15,15 +14,30 @@
     (seq (str picker-id)) (keyword (str picker-id))
     :else default-picker-id))
 
+(defn- strip-trailing-slash [s]
+  (if (and (str/ends-with? s "/") (> (count s) 0))
+    (subs s 0 (dec (count s)))
+    s))
+
+(defn- normalize-remote-path [file-path]
+  (loop [dest [] src (str/split file-path #"/")]
+    (if (empty? src)
+      (str/join "/" dest)
+      (let [curr (first src)]
+        (cond
+          (= curr ".") (recur dest (rest src))
+          (= curr "..") (recur (vec (butlast dest)) (rest src))
+          :else (recur (conj dest curr) (rest src)))))))
+
 (defn remote-path [path]
   (let [path (str/trim (str (or path "/")))
         path (if (str/starts-with? path "/")
                path
                (str "/" path))
-        path (fu/normalize-path path)
+        path (normalize-remote-path path)
         path (if (= path "/")
                path
-               (fu/strip-trailing-slash path))]
+               (strip-trailing-slash path))]
     (if (str/blank? path)
       "/"
       path)))
