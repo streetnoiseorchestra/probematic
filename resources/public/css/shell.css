@@ -46,8 +46,9 @@ wa-page [slot="navigation"] wa-button#account-dropdown-button {
     var(--wa-color-surface-border);
   background-color: var(--wa-color-surface-default);
 
-  & .subheader-logo .subheader-snoman {
-    font-size: var(--sno-subheader-logo-size);
+  & .subheader-logo .subheader-brand-icon {
+    font-size: var(--wa-font-size-xl);
+    color: var(--sno-brand-green);
   }
 
   & .subheader-user wa-button#account-dropdown-button {

@@ -237,7 +237,11 @@
          [:a {:href "/" :class "subheader-logo" :aria-label "Home"}
           [:wa-icon {:library "snoico"
                      :name    "snoman"
-                     :class   "subheader-snoman"}]]
+                     :class   "subheader-brand-icon"}]
+          #_[:wa-icon {:library    "snoico"
+                       :name       "sno-trumpet"
+                       :class      "subheader-brand-icon"
+                       :auto-width true}]]
          [:div {:class "subheader-user"}
           (navigation-header req member)]]
 
