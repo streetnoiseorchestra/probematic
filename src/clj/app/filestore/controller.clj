@@ -1,14 +1,14 @@
 (ns app.filestore.controller
   (:require
    [app.datomic :as d]
-   [app.file-utils :as fs]
+   [app.datomic.shim :as datomic]
    [app.filestore :as filestore]
    [app.filestore.domain :as domain]
    [app.filestore.image :as img]
    [app.queries :as q]
    [app.util :as util]
-   [com.yetanalytics.squuid :as sq]
-   [app.datomic.shim :as datomic]))
+   [babashka.fs :as bfs]
+   [com.yetanalytics.squuid :as sq]))
 
 "
 We rarely want to add a file to the store without also adding some reference to it in another identity.
@@ -40,7 +40,7 @@ So here we provide functions to store the content and generate datoms for use in
   If the image is already stored, it will not be stored again, but the tx-data will still be returned.
   If the tx-data is not transacted, then the content might be garbage collected at some point.
   "
-  [{:keys [filestore] :as req} {:keys [file-name file mime-type]}]
+  [{:keys [filestore]} {:keys [file-name file mime-type]}]
   (assert filestore "filestore service required")
   (assert file-name "file-name required")
   (assert mime-type "mime-type required")
@@ -57,7 +57,7 @@ So here we provide functions to store the content and generate datoms for use in
      :tx-data (concat file-txs image-txs)}))
 
 (defn -load-image
-  [filestore {:image/keys [source-file] :as image}]
+  [filestore {:image/keys [source-file]}]
   (let [{:filestore.file/keys [size hash mime-type file-name mtime]} source-file]
     {:mime-type mime-type
      :file-name file-name
@@ -70,12 +70,12 @@ So here we provide functions to store the content and generate datoms for use in
   "Load the image from the store
   The image content can be lazily loaded by calling the content-thunk function.
   "
-  [{:keys [db filestore] :as req} image-id]
+  [{:keys [db filestore]} image-id]
   (let [image (q/retrieve-image db (util/ensure-uuid! image-id))]
     (-load-image filestore image)))
 
 (defn build-rendition-filename [{:image/keys [source-file image-id]} {:keys [width height thumbnail-mode]} ext]
-  (let [base (or (fs/base (:filestore.file/file-name source-file)) image-id)
+  (let [base (or (some-> (:filestore.file/file-name source-file) bfs/strip-ext str) image-id)
         suffix (format "-%s-%dx%d" (name thumbnail-mode) width height)]
     (str base suffix ext)))
 
@@ -93,7 +93,7 @@ So here we provide functions to store the content and generate datoms for use in
         txs                                           (concat file-txs rendition-txs)
         {:keys [db-after]} (datomic/transact datomic-conn {:tx-data txs})]
     (filestore/put-sync! filestore prepared)
-    (fs/delete-if-exists out-file)
+    (bfs/delete-if-exists out-file)
     (q/retrieve-image db-after rendition-id)))
 
 (defn load-image-rendition

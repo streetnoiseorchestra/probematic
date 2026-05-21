@@ -1,12 +1,10 @@
 (ns app.filestore.image-test
   (:require
-   [app.file-utils :as fs]
    [app.filestore.image :as image]
-   [clojure.java.io :as io]
+   [babashka.fs :as bfs]
    [clojure.test :refer [deftest is testing]])
   (:import
-   [java.io FileInputStream]
-   [java.nio.file Files StandardCopyOption]))
+   [java.io FileInputStream]))
 
 (def jpeg-path "resources/public/img/tuba-robot-boat-1000.jpg")
 (def png-path "resources/public/img/default-avatar.png")
@@ -20,15 +18,13 @@
    "xmp-data"])
 
 (defn- copy-to-temp-file [source suffix]
-  (let [target (fs/tempfile :prefix "probematic.image-test." :suffix suffix)]
-    (Files/copy (.toPath (io/file source))
-                (.toPath target)
-                (into-array StandardCopyOption [StandardCopyOption/REPLACE_EXISTING]))
+  (let [target (bfs/create-temp-file {:prefix "probematic.image-test." :suffix suffix})]
+    (bfs/copy source target {:replace-existing true})
     target))
 
 (defn- delete-result-file! [{:keys [out-file]}]
   (when out-file
-    (fs/delete-if-exists out-file)))
+    (bfs/delete-if-exists out-file)))
 
 (defn- has-metadata-marker? [info]
   (boolean (some #(contains? info %) metadata-marker-keys)))
@@ -110,4 +106,4 @@
                  (select-keys after [:format :mime-type :width :height])))
           (is (not (has-metadata-marker? after)))))
       (finally
-        (fs/delete-if-exists copy)))))
+        (bfs/delete-if-exists copy)))))

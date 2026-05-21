@@ -1,16 +1,16 @@
 (ns app.filestore
   (:require
-   [app.file-utils :as fs]
    [app.filestore.image :as im]
+   [babashka.fs :as bfs]
    [blocks.core :as block]
    [blocks.store.file :as blocks.store.file]
    [com.stuartsierra.component :as component]
    [multiformats.hash :as mhash]))
 
 (defn system-check! [store-path]
-  (when-not (fs/exists? store-path)
+  (when-not (bfs/exists? store-path)
     (throw (ex-info "Filestore path does not exist" {:store-path store-path})))
-  (when-not (fs/writeable? store-path)
+  (when-not (bfs/writable? store-path)
     (throw (ex-info "Filestore path is not writeable" {:store-path store-path})))
   (try
     (im/initialize!)

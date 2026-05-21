@@ -42,6 +42,7 @@
         com.outskirtslabs/vips-native-linux-x86-64-gnu {:local/root "/home/ramblurr/src/github.com/outskirtslabs/vips/native/linux-x86-64-gnu"}
         com.googlecode.libphonenumber/libphonenumber   {:mvn/version "9.0.30"}
         ;; Documents + Files
+        babashka/fs                                    {:mvn/version "0.5.33"}
         dk.ative/docjure                               {:mvn/version "1.22.0"}
         mvxcvi/blocks                                  {:mvn/version "2.1.0"}
         ;; Text

@@ -1,14 +1,11 @@
 (ns app.filestore.image
   (:require
-   [app.file-utils :as fs]
+   [babashka.fs :as bfs]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [medley.core :as m]
    [ol.vips :as v]
-   [ol.vips.operations :as ops])
-  (:import
-   [java.io File]
-   [java.nio.file Files StandardCopyOption]))
+   [ol.vips.operations :as ops]))
 
 (def supported-formats [{:format :gif :ext ".gif" :mime-type "image/gif" :im-tag "GIF"}
                         {:format :jpeg :ext ".jpeg" :mime-type "image/jpeg" :im-tag "JPEG"}
@@ -45,21 +42,21 @@
 (defn- prepare-input [{:keys [path content-thunk]}]
   (if path
     [path nil]
-    (let [tmp (fs/tempfile)]
+    (let [tmp (bfs/file (bfs/create-temp-file {:prefix "probematic." :suffix ".tmp"}))]
       (assert content-thunk "input path or content-thunk required")
       (with-open [stream (content-thunk)]
         (io/copy stream tmp))
-      [(.getPath ^File tmp) tmp])))
+      [(str tmp) tmp])))
 
 (def quality-option-formats #{:jpeg :png :heic :webp})
 
-(defn- save-options [format quality]
+(defn- thumbnail-save-options [format quality]
   (cond-> {:strip true}
     (and quality (quality-option-formats format))
     (assoc :Q (int quality))))
 
-(defn- write-image-to-file! [image path format quality]
-  (v/write-to-file image path (save-options format quality)))
+(defn- write-thumbnail-to-file! [image path format quality]
+  (v/write-to-file image path (thumbnail-save-options format quality)))
 
 (defn- generic-process
   [{:keys [input format quality width height] :as params}]
@@ -67,23 +64,23 @@
         _ (assert path "input path required")
         _ (assert format "output format required")
         ext (format->extension format)
-        tmp (fs/tempfile :prefix "snorga." :suffix ext)]
+        tmp (bfs/file (bfs/create-temp-file {:prefix "snorga." :suffix ext}))]
     (try
       (with-open [thumbnail (ops/thumbnail path
                                            (int width)
                                            {:height      (int height)
                                             :size        :down
                                             :auto-rotate true})]
-        (write-image-to-file! thumbnail (.getPath tmp) format quality))
+        (write-thumbnail-to-file! thumbnail tmp format quality))
       (finally
         (when input-temp
-          (fs/delete-if-exists input-temp))))
+          (bfs/delete-if-exists input-temp))))
 
     (assoc params
            :ext ext
            :format format
            :mime-type (format->mime format)
-           :size (fs/size tmp)
+           :size (bfs/size tmp)
            :out-file tmp)))
 
 (defn process-thumbnail-down
@@ -106,15 +103,16 @@
       :else nil)))
 
 (def ext-format-overrides
-  {".jpg" :jpeg
-   ".jpe" :jpeg
-   ".heif" :heic})
+  {"jpg" :jpeg
+   "jpe" :jpeg
+   "heif" :heic})
 
 (defn- path->format [path]
-  (let [[_ ext] (fs/split-ext path)
+  (let [[_ ext] (bfs/split-ext path)
         ext (some-> ext str/lower-case)]
     (or (get ext-format-overrides ext)
-        (-> ext ext-lookup :format))))
+        (when ext
+          (-> (str "." ext) ext-lookup :format)))))
 
 (defn- image->format [image path]
   (or (loader->format (or (v/field image "vips-loader")
@@ -122,24 +120,22 @@
       (path->format path)))
 
 (defn- move-file! [source target]
-  (Files/move (fs/to-path source)
-              (fs/to-path target)
-              (into-array StandardCopyOption [StandardCopyOption/REPLACE_EXISTING])))
+  (bfs/move source target {:replace-existing true}))
 
 (defn strip-metadata-in-place!
   "Strip all metadata from the image in place."
   [{:keys [input]}]
   (let [path (:path input)
         _ (assert path "In place operations require a path on disk, not a stream")
-        [_ suffix] (fs/split-ext path)
-        tmp (fs/tempfile :prefix "snorga.strip." :suffix (or suffix ".img"))]
+        [_ suffix] (bfs/split-ext path)
+        tmp (bfs/file (bfs/create-temp-file {:prefix "snorga.strip." :suffix (if suffix (str "." suffix) ".img")}))]
     (try
       (with-open [image (v/from-file path {:access :sequential})
                   oriented (ops/autorot image)]
-        (write-image-to-file! oriented (.getPath tmp) (path->format path) nil))
+        (v/write-to-file oriented tmp {:strip true}))
       (move-file! tmp path)
       (finally
-        (fs/delete-if-exists tmp)))))
+        (bfs/delete-if-exists tmp)))))
 
 (defn process-thumbnail [{:keys [thumbnail-mode] :as params}]
   (condp = thumbnail-mode
