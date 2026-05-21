@@ -12,12 +12,10 @@
     (throw (ex-info "Filestore path does not exist" {:store-path store-path})))
   (when-not (fs/writeable? store-path)
     (throw (ex-info "Filestore path is not writeable" {:store-path store-path})))
-  (when-not (fs/program-exists? "convert")
-    (throw (ex-info "ImageMagick convert program not found in PATH" {})))
-  (when-not (fs/program-exists? "mogrify")
-    (throw (ex-info "ImageMagick mogrify program not found in PATH" {})))
-  (when-not (fs/program-exists? "identify")
-    (throw (ex-info "ImageMagick identify program not found in PATH" {}))))
+  (try
+    (im/initialize!)
+    (catch Throwable t
+      (throw (ex-info "libvips image processing runtime unavailable" {} t)))))
 
 (defn start! [{:keys [store-path]}]
   (system-check! store-path)
@@ -64,7 +62,7 @@
   "Strips metadata from the image (in place!) and returns a map with the hash, size, width, height, format, and mime-type."
   [file]
   (im/strip-metadata-in-place! {:input {:path file}})
-  (let [{:keys [width height format mime-type] :as info} (im/identify-detailed file)
+  (let [{:keys [width height format mime-type]} (im/identify-detailed file)
         {:keys [id size] :as block} (block/read! file)]
     {:hash (mhash/hex id)
      :block block

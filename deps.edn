@@ -38,7 +38,8 @@
         metosin/muuntaja                               {:mvn/version "0.6.11"}
         org.babashka/sci                               {:mvn/version "0.12.51"}
         com.taoensso/nippy                             {:mvn/version "3.6.2"}
-        org.im4java/im4java                            {:git/tag "1.4.0-penpot-2" :git/sha "e2b3e16" :git/url "https://github.com/penpot/im4java"}
+        com.outskirtslabs/vips                         {:local/root "/home/ramblurr/src/github.com/outskirtslabs/vips"}
+        com.outskirtslabs/vips-native-linux-x86-64-gnu {:local/root "/home/ramblurr/src/github.com/outskirtslabs/vips/native/linux-x86-64-gnu"}
         com.googlecode.libphonenumber/libphonenumber   {:mvn/version "9.0.30"}
         ;; Documents + Files
         dk.ative/docjure                               {:mvn/version "1.22.0"}
@@ -122,8 +123,12 @@
               ;; "--add-opens=java.base/java.nio=ALL-UNNAMED"
               ;; "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
               ]}
-  :run-m {:main-opts ["-m" "app.main"] :jvm-opts ["-XX:-OmitStackTraceInFastThrow"]}
-  :run-x {:ns-default app.main :jvm-opts ["-XX:-OmitStackTraceInFastThrow"]}
+  :run-m {:main-opts ["-m" "app.main"]
+          :jvm-opts ["-XX:-OmitStackTraceInFastThrow"
+                     "--enable-native-access=ALL-UNNAMED"]}
+  :run-x {:ns-default app.main
+          :jvm-opts ["-XX:-OmitStackTraceInFastThrow"
+                     "--enable-native-access=ALL-UNNAMED"]}
   :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.10.13"
                                                       :git/sha "ae52edfedef4ca72e699e9c86abfe0940e97dc26"}}
           :ns-default build}}}

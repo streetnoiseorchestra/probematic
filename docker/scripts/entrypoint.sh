@@ -13,6 +13,7 @@ check_vars()
 check_vars APP_SECRETS_FILE
 
 JAVA_AGENT=""
+JAVA_OPTS="--enable-native-access=ALL-UNNAMED ${JAVA_OPTS:-}"
 
 echo "execing: " "java ${JAVA_OPTS} ${JAVA_AGENT} -jar /app/probematic.jar"
 exec /usr/sbin/gosu probematic java ${JAVA_OPTS} ${JAVA_AGENT} -jar /app/probematic.jar

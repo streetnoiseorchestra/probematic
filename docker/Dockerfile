@@ -1,12 +1,12 @@
-FROM docker.io/azul/zulu-openjdk-debian:17-latest
+FROM docker.io/azul/zulu-openjdk-debian:25-latest
 MAINTAINER Casey Link <casey@outskirtslabs.com>
 
 RUN set -ex; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
     apt-get update; \
-    apt-get install -y --no-install-recommends gosu ca-certificates imagemagick; \
-    /usr/sbin/update-ca-certificates \
+    apt-get install -y --no-install-recommends gosu ca-certificates; \
+    /usr/sbin/update-ca-certificates; \
     apt-get autoremove -y; \
     rm -rf /var/lib/apt/lists/*
 
