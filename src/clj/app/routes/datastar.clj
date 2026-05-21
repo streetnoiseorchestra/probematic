@@ -1,13 +1,84 @@
 (ns app.routes.datastar
   (:require
+   [app.brotli :as br]
    [app.datastar :as d*]
+   [app.interceptors.compression :as compression]
    #_[app.layout :as layout]
    [app.layout2 :as layout2]
-   [app.nexus :as nexus]))
+   [app.nexus :as nexus])
+  (:import
+   (java.io ByteArrayInputStream ByteArrayOutputStream)
+   (java.nio.charset StandardCharsets)
+   (java.util.zip GZIPOutputStream)))
+
+(defn- shim-opts [req]
+  (select-keys (-> req :reitit.core/match :data) [:extra-head]))
+
+(defn- shim-html [req]
+  (layout2/app-shell-html req nil (shim-opts req)))
+
+(defn- shim-cache-key [req]
+  (let [route-data (-> req :reitit.core/match :data)
+        member     (get-in req [:session :session/member])]
+    {:current-locale (:current-locale req)
+     :route-name     (:app.route/name route-data)
+     :member         (select-keys member [:member/member-id
+                                          :member/name
+                                          :member/nick
+                                          :member/avatar-template])}))
+
+(defn- gzip-bytes [^bytes body]
+  (let [out (ByteArrayOutputStream.)]
+    (with-open [gzip (GZIPOutputStream. out)]
+      (.write gzip body))
+    (.toByteArray out)))
+
+(defn- brotli-bytes [^bytes body]
+  (br/compress body))
+
+(defn- precompressed-shim [html]
+  (let [body (.getBytes ^String html StandardCharsets/UTF_8)]
+    {:identity body
+     :gzip     (gzip-bytes body)
+     :br       (brotli-bytes body)}))
+
+(def ^:private shim-cache_ (atom {}))
+
+(defn- cached-precompressed-shim [req]
+  (let [cache-key (shim-cache-key req)]
+    (if-let [cached (get @shim-cache_ cache-key)]
+      (do
+        (tap> [:shim:hit cache-key])
+        cached)
+      (let [created (precompressed-shim (shim-html req))]
+        (tap> [:shim:miss cache-key])
+        (get (swap! shim-cache_
+                    #(if (contains? % cache-key)
+                       %
+                       (assoc % cache-key created)))
+             cache-key)))))
+
+(defn- accepted-shim-encoding [req]
+  (cond
+    (compression/accepts-brotli? req) :br
+    (compression/accepts-gzip? req)   :gzip
+    :else                             :identity))
+
+(defn- precompressed-shim-response [req precompressed]
+  (let [encoding (accepted-shim-encoding req)
+        body     (get precompressed encoding)
+        headers  (cond-> {"Content-Type"   "text/html"
+                          "Content-Length" (str (alength ^bytes body))
+                          "Vary"           "Accept-Encoding"}
+                   (= :br encoding)   (assoc "content-encoding" "br")
+                   (= :gzip encoding) (assoc "content-encoding" "gzip"))]
+    {:status 200
+     :headers headers
+     :body    (ByteArrayInputStream. body)}))
 
 (defn shim [req]
   #_(layout/app-shell req nil)
-  (layout2/app-shell req nil (select-keys (-> req :reitit.core/match :data) [:extra-head])))
+  (precompressed-shim-response req (cached-precompressed-shim req)))
 
 (defn resolve-from-kw
   "Resolves a namespace-qualified keyword to a symbol and then resolves that symbol to a var."

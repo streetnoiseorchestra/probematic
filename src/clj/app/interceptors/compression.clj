@@ -5,14 +5,14 @@
   (:import (java.io Closeable File InputStream PipedInputStream PipedOutputStream)
            (java.util.zip GZIPOutputStream)))
 
-(defn- accepts-gzip?
+(defn accepts-gzip?
   [req]
   (when-let [accepts (get-in req [:headers "accept-encoding"])]
     (re-seq
      #"(gzip\s*,?\s*(gzip|deflate)?|X{4,13}|~{4,13}|\-{4,13})"
      accepts)))
 
-(defn- accepts-brotli?
+(defn accepts-brotli?
   [req]
   (when-let [accepts (get-in req [:headers "accept-encoding"])]
     (re-seq #"(br\s*)" accepts)))

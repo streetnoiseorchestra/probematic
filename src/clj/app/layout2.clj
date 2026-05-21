@@ -194,24 +194,28 @@
       (script req "datastar-inspector@1.1.4.js" :type "module"))]
    extra-head))
 
+(defn html5
+  [req opts body]
+  (html/->str
+   [html/doctype-html5
+    [:html {:lang  "en"  ;; TODO figure out where to grab lang from (or lang "en")
+            :class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-orange"}
+     (head req opts)
+     body]]))
+
 (defn html5-response
   ([req body] (html5-response req nil body))
   ([req opts body]
    {:status 200
     :headers {"Content-Type" "text/html"}
-    :body (html/->str
-           [html/doctype-html5
-            [:html {:lang  "en"  ;; TODO figure out where to grab lang from (or lang "en")
-                    :class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-orange"}
-             (head req opts)
-             body]])}))
+    :body (html5 req opts body)}))
 
-(defn app-shell
+(defn app-shell-html
   ([req body]
-   (app-shell req body nil))
+   (app-shell-html req body nil))
   ([req body opts]
    (let [member (auth/get-current-member req)]
-     (html5-response
+     (html5
       req (merge {:title "SNOrga"} opts)
       [:body
        [:div {:data-init "@post(window.location.pathname + window.location.search)"
@@ -250,3 +254,11 @@
           [:main {:id "main"} body])]
        (when (config/dev-mode? (-> req :system :env))
          [:datastar-inspector])]))))
+
+(defn app-shell
+  ([req body]
+   (app-shell req body nil))
+  ([req body opts]
+   {:status 200
+    :headers {"Content-Type" "text/html"}
+    :body (app-shell-html req body opts)}))
