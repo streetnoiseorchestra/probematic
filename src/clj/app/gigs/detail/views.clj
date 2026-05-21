@@ -167,7 +167,7 @@
         button        [:wa-button (cond-> {:id          button-id
                                            :appearance  (if recent? "filled" "outlined")
                                            :variant     "neutral"
-                                           :size        "small"
+                                           :size        "s"
                                            :data-dialog (str "open " dialog-id)}
                                     recent? (assoc :class "gigs-remind-all-button--sent"))
                        (when recent?
@@ -205,7 +205,7 @@
     [(remind-all-button req gig-id)
      [:wa-button (merge {:appearance "filled"
                          :variant    "brand"
-                         :size       "small"}
+                         :size       "s"}
                         (attendance.ui/action-attrs req
                                                     ::actions/toggle-attendance-committed
                                                     {:show-committed (not show-committed?)}))

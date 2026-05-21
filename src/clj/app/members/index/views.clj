@@ -54,7 +54,7 @@
   [:wa-input {:label                        (tr [:action/search])
               :placeholder                  (tr [:action/search])
               :appearance                   "outlined"
-              :size                         "medium"
+              :size                         "m"
               :value                        search
               :with-clear                   true
               :data-bind                    "members-index.search"
@@ -64,7 +64,7 @@
 (defn- filter-control [{:keys [tr] :as req} {:keys [filter-preset]}]
   [:wa-select {:label          (tr [:action/filter])
                :appearance     "outlined"
-               :size           "medium"
+               :size           "m"
                :value          filter-preset
                :data-bind      "members-index.filter-preset"
                :data-on:change (str "@post('" (d*/act req ::actions/set-filter-preset) "')")}
@@ -95,7 +95,7 @@
 (defn- invite-action-button [req {:keys [invite-code action label variant action-key]}]
   [:wa-button {:appearance         "outlined"
                :variant            variant
-               :size               "small"
+               :size               "s"
                :type               "button"
                :data-attr:loading  (invite-loading? invite-code action)
                :data-attr:disabled "$invite.inflight"

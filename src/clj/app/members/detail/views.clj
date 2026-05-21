@@ -88,7 +88,7 @@
         error (form/field-error form-state field)]
     [:wa-input (merge {:label        label
                        :appearance   "outlined"
-                       :size         "medium"
+                       :size         "m"
                        :value        (get form-state field "")
                        :hint         error
                        :data-invalid (when error "true")
@@ -113,7 +113,7 @@
     (into
      [:wa-select {:label        (tr [:section])
                   :appearance   "outlined"
-                  :size         "medium"
+                  :size         "m"
                   :value        (:section-name form-state)
                   :hint         error
                   :data-invalid (when error "true")
@@ -141,7 +141,7 @@
                 (validate-field-on-keydown req :keycloak-id))
     [:div {:class "wa-stack wa-gap-2xs"}
      [:span {:class "wa-caption-s"} (tr [:member/sno-id-enabled-disabled])]
-     [:wa-switch {:size           "medium"
+     [:wa-switch {:size           "m"
                   :checked        (:sno-id-enabled form-state)
                   :data-bind      "member-detail.contact.sno-id-enabled"
                   :data-on:change "$member-detail.contact.sno-id-enabled = !$member-detail.contact.sno-id-enabled"}
@@ -180,7 +180,7 @@
        (section-select req form-state sections)
        [:div {:class "wa-stack wa-gap-2xs"}
         [:span {:class "wa-caption-s"} (tr [:member/active?])]
-        [:wa-switch {:size           "medium"
+        [:wa-switch {:size           "m"
                      :checked        (:active form-state)
                      :data-bind      "member-detail.contact.active"
                      :data-on:change "$member-detail.contact.active = !$member-detail.contact.active"}
@@ -236,7 +236,7 @@
     (into
      [:wa-select {:label             (tr [:travel-discounts/discount-type-name])
                   :appearance        "outlined"
-                  :size              "medium"
+                  :size              "m"
                   :value             (:discount-type-id form-state)
                   :hint              error
                   :data-invalid      (when error "true")
@@ -333,14 +333,14 @@
         [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
          [:wa-button {:appearance  "outlined"
                       :variant     "brand"
-                      :size        "small"
+                      :size        "s"
                       :type        "button"
                       :data-id     discount-id
                       :data-action (d*/act req ::actions/open-travel-discount-edit)}
           (tr [:action/update])]
          [:wa-button {:appearance  "outlined"
                       :variant     "danger"
-                      :size        "small"
+                      :size        "s"
                       :type        "button"
                       :data-dialog (format "open %s" (ui2/remove-dialog-id "travel-discount" discount-id))}
           (tr [:action/delete])]])]]))
@@ -601,7 +601,7 @@
    [:td {:class "align-middle text-right"}
     [:wa-button {:appearance  "plain"
                  :variant     "danger"
-                 :size        "small"
+                 :size        "s"
                  :type        "button"
                  :data-dialog (format "open %s" (ui2/remove-dialog-id "ledger-entry" entry-id))}
      (tr [:action/delete])]]])
@@ -705,7 +705,7 @@
       kind-badge]
      [:td {:class "align-middle text-right"}
       [:wa-button {:appearance "plain"
-                   :size       "small"
+                   :size       "s"
                    :href       (urls/link-coverage coverage)}
        (tr [:action/view])]]]))
 

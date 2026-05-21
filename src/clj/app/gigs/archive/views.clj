@@ -10,7 +10,7 @@
 
 (defn- year-button [selected-year year]
   [:wa-button (cond-> {:appearance "outlined"
-                       :size       "small"
+                       :size       "s"
                        :href       (urls/link-gig-archive-year year)}
                 (= selected-year year) (assoc :appearance "filled"
                                               :variant "brand"))

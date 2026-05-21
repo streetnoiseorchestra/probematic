@@ -133,7 +133,7 @@
        :subtitle "Reusable labels for member travel discounts."
        :actions  [[:wa-button {:appearance  "outlined"
                                :variant     "brand"
-                               :size        "medium"
+                               :size        "m"
                                :data-id     "discount-type-create"
                                :data-action (d*/act req ::actions/open-discount-type-create)}
                    (tr [:travel-discounts/add-discount-type])]]}

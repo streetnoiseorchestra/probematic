@@ -59,7 +59,7 @@
 (defn- repertoire-filter-button [req current-filter value label]
   [:wa-button {:appearance      (if (= current-filter value) "filled" "outlined")
                :variant         (when (= current-filter value) "brand")
-               :size            "small"
+               :size            "s"
                :aria-pressed    (if (= current-filter value) "true" "false")
                :data-on:click   (->expr
                                  (set! $gig-probeplan.repertoire-filter ~value)
@@ -92,7 +92,7 @@
 
 (defn- intensive-button [req gig-id {:song/keys [song-id]}]
   [:wa-button {:appearance    "plain"
-               :size          "small"
+               :size          "s"
                :aria-label    "Toggle intensive"
                :data-on:click (->expr
                                (let [icon (.querySelector evt.currentTarget "wa-icon[name='fist-punch']")]

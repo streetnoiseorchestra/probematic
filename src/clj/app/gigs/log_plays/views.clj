@@ -76,7 +76,7 @@
 (defn- repertoire-filter-button [req current-filter value label]
   [:wa-button {:appearance    (if (= current-filter value) "filled" "outlined")
                :variant       (when (= current-filter value) "brand")
-               :size          "small"
+               :size          "s"
                :aria-pressed  (if (= current-filter value) "true" "false")
                :data-on:click (->expr
                                (set! $gig-log-plays.repertoire-filter ~value)
@@ -112,7 +112,7 @@
 (defn- rating-button [req gig-id {:song/keys [song-id]} play {:keys [class icon label rating]}]
   (let [selected? (= (actions/normalize-rating rating) (play-rating play))]
     [:wa-button {:appearance         "plain"
-                 :size               "small"
+                 :size               "s"
                  :aria-label         ((:tr req) label)
                  :aria-pressed       (if selected? "true" "false")
                  :data-rating        (rating-signal rating)
@@ -133,7 +133,7 @@
 (defn- intensive-button [req gig-id {:song/keys [song-id]} play]
   (let [disabled? (not (active-play? play))]
     [:wa-button {:appearance         "plain"
-                 :size               "small"
+                 :size               "s"
                  :aria-label         ((:tr req) [:play-log/intensive])
                  :aria-pressed       (if (intensive? play) "true" "false")
                  :disabled           disabled?

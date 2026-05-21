@@ -109,7 +109,7 @@
                    [:a {:href (urls/link-member member)} name]
                    [:wa-button {:appearance         "plain"
                                 :variant            "danger"
-                                :size               "small"
+                                :size               "s"
                                 :type               "button"
                                 :data-id            (str member-id)
                                 :data-action        (d*/act req ::actions/remove-team-member)
@@ -131,7 +131,7 @@
                (team-member-label member)]))
            [:wa-button {:appearance         "outlined"
                         :variant            "brand"
-                        :size               "medium"
+                        :size               "m"
                         :type               "button"
                         :data-id            "team-add-member"
                         :data-action        (d*/act req ::actions/add-team-member)
@@ -210,7 +210,7 @@
        :subtitle "Teams help organize members around responsibilities."
        :actions  [[:wa-button {:appearance  "outlined"
                                :variant     "brand"
-                               :size        "medium"
+                               :size        "m"
                                :data-id     "team-create"
                                :data-action (d*/act req ::actions/open-team-create)}
                    (tr [:team/create-team])]]}

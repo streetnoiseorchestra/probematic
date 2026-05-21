@@ -52,7 +52,7 @@
   [:wa-input {:label                        (tr [:action/search])
               :placeholder                  (tr [:song/search])
               :appearance                   "outlined"
-              :size                         "medium"
+              :size                         "m"
               :value                        search
               :with-clear                   true
               :data-bind                    "songs-index.search"
@@ -65,7 +65,7 @@
 (defn- repertoire-filter-control [{:keys [tr] :as req} {:keys [repertoire-filter]}]
   [:wa-select {:label          (tr [:gig/probeplan-repertoire])
                :appearance     "outlined"
-               :size           "medium"
+               :size           "m"
                :value          repertoire-filter
                :data-bind      "songs-index.repertoire-filter"
                :data-on:change (str "@post('" (d*/act req ::actions/set-repertoire-filter) "')")}

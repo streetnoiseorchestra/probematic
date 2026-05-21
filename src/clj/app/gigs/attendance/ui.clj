@@ -93,7 +93,7 @@
                                             "; @post('" (d*/act req ::actions/update-attendance-plan) "')")}
      [:wa-button {:slot       "trigger"
                   :appearance "outlined"
-                  :size       "small"
+                  :size       "s"
                   :class      "gigs-attendance-plan-button"
                   :title      (plan-label tr plan)
                   :aria-label (plan-label tr plan)}
@@ -107,7 +107,7 @@
         (plan-label tr option)])]))
 
 (defn motivation-select [{:keys [tr] :as req} gig-id member-id motivation]
-  [:wa-select {:size               "small"
+  [:wa-select {:size               "s"
                :data-preserve-attr "open"
                :class              "gigs-attendance-motivation-select"
                :value              (name (or motivation :motivation/none))
@@ -122,7 +122,7 @@
 (defn comment-control [req gig-id member-id comment]
   (if (comment-editing? req gig-id member-id)
     [:wa-input {:class                "gigs-attendance-comment-input"
-                :size                 "small"
+                :size                 "s"
                 :autofocus            true
                 :value                comment
                 :data-bind            "gig-attendance.comment"
@@ -144,12 +144,12 @@
     (if (seq comment)
       [:wa-button {:appearance        "plain"
                    :variant           "brand"
-                   :size              "small"
+                   :size              "s"
                    :class             "gigs-attendance-comment-link"
                    :data-on:mousedown (comment-open-js req gig-id member-id comment)}
        comment]
       [:wa-button {:appearance        "plain"
-                   :size              "small"
+                   :size              "s"
                    :class             "gigs-attendance-comment-button"
                    :aria-label        ((:tr req) [:action/comment])
                    :data-on:mousedown (comment-open-js req gig-id member-id "")}

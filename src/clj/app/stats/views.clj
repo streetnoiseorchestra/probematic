@@ -111,7 +111,7 @@
    (for [{:keys [id label-key]} state/timespan-options]
      [:wa-button (cond-> {:href       (state/timespan-url req id)
                           :appearance "outlined"
-                          :size       "small"}
+                          :size       "s"}
                    (= id (state/selected-timespan-id req))
                    (assoc :variant "brand"))
       (tr label-key)])))

@@ -162,7 +162,7 @@
            :class "songs-detail-sheet-title"}
        title]
       [:wa-button {:appearance "plain"
-                   :size       "small"
+                   :size       "s"
                    :href       (urls/link-file-download webdav-path)
                    :class      "songs-detail-sheet-download"
                    :aria-label (tr [:action/download])}
@@ -170,7 +170,7 @@
                   :name    "download"}]]
       [:wa-button {:appearance  "plain"
                    :variant     "danger"
-                   :size        "small"
+                   :size        "s"
                    :type        "button"
                    :class       "songs-detail-sheet-remove"
                    :aria-label  (tr [:action/remove])

@@ -189,12 +189,12 @@
        :subtitle "Choose which sections are visible and how they are ordered."
        :actions  [[:wa-button {:appearance  "outlined"
                                :variant     "brand"
-                               :size        "medium"
+                               :size        "m"
                                :data-id     "section-create"
                                :data-action (d*/act req ::actions/open-section-create)}
                    (tr [:section-add])]
                   [:wa-button {:appearance  "outlined"
-                               :size        "medium"
+                               :size        "m"
                                :data-id     "section-reorder"
                                :data-action (d*/act req ::actions/open-section-reorder)}
                    (tr [:action/reorder])]]}

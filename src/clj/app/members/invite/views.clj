@@ -23,7 +23,7 @@
         error (form/field-error form-state :error field)]
     [:wa-input (merge {:label        label
                        :appearance   "outlined"
-                       :size         "medium"
+                       :size         "m"
                        :value        (get form-state field "")
                        :hint         error
                        :data-invalid (when error "true")
@@ -35,7 +35,7 @@
     (into
      [:wa-select {:label          (tr [:section])
                   :appearance     "outlined"
-                  :size           "medium"
+                  :size           "m"
                   :value          (:section-name form-state)
                   :hint           error
                   :data-invalid   (when error "true")
@@ -46,7 +46,7 @@
 
 (defn- toggle-field [signal label description checked?]
   [:div {:class "wa-stack wa-gap-2xs"}
-   [:wa-switch {:size           "medium"
+   [:wa-switch {:size           "m"
                 :checked        checked?
                 :data-bind      signal
                 :data-on:change (str "$" signal " = !$" signal)}
