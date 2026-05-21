@@ -225,7 +225,7 @@
   (html/->str
    [html/doctype-html5
     [:html {:lang  (html-lang req)
-            :class "wa-cloak wa-theme-active wa-palette-rudimentary wa-brand-orange"}
+            :class "wa-theme-active wa-palette-rudimentary wa-brand-orange"}
      (head req opts)
      body]]))
 
