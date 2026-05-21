@@ -57,6 +57,10 @@
          tw-watch-css        (shell "tailwindcss --watch --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
          tw-prod-css         (shell "tailwindcss --minify --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
          css                 (shell "lightningcss --bundle --custom-media --targets 'defaults' resources/public/css/main2.css -o resources/public/css/compiled/main2.css")
+         icon-sprites        {:doc  "Build SVG icon sprites"
+                              :task (shell "bb scripts/build_icon_sprites.clj")}
+         test:icon-sprites   {:doc  "Run SVG icon sprite tests"
+                              :task (shell "bb -cp scripts -f scripts/build_icon_sprites_test.clj")}
          watch-css           (shell "watchexec -e css bb css")
          dev-services        (shell "docker compose -f ./docker-compose.dev.yml up -d")
          uberjar             {:override-builtin true

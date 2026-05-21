@@ -8,6 +8,8 @@
    [app.ui2 :as ui2]
    [app.urls :as url]
    [app.util :as util]
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [jsonista.core :as j]))
 
@@ -115,6 +117,14 @@
        "?v="
        (cache-buster req (str "public/" path))))
 
+(def ^:private snoico-sprite-path "img/sprites/snoico.svg")
+(defn- snoico-viewboxes []
+  (let [snoico-viewboxes-resource "public/img/sprites/snoico-viewboxes.edn"]
+    (if-let [resource (io/resource snoico-viewboxes-resource)]
+      (edn/read-string (slurp resource))
+      (throw (ex-info "Cannot load snoico viewBox manifest"
+                      {:path snoico-viewboxes-resource})))))
+
 (defn- public-script [req path & extra]
   [:script (merge {:src   (asset-url req path)
                    :defer true}
@@ -165,7 +175,10 @@
                                                       "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
     [:script {:type "module" :src "/vendor/webawesome@3.7.0/webawesome.loader.js"}]
     [:script {:type "module"}
-     (html/raw "
+     (let [snoico-sprite-url (asset-url req snoico-sprite-path)
+           snoico-viewboxes  (j/write-value-as-string (snoico-viewboxes))]
+       (html/raw
+        (str "
   import { registerIconLibrary } from 'wa/webawesome.js';
   // these imports ensure that webcomonents custom elements are defined
   // before datastar inits so that d* can properly interact with their value and change attrs
@@ -178,17 +191,22 @@
   import 'wa/components/select/select.js';
   import 'wa/components/switch/switch.js';
   import 'wa/components/callout/callout.js';
+  const snoicoSpriteUrl = " (j/write-value-as-string snoico-sprite-url) ";
+  const snoicoViewBoxes = " snoico-viewboxes ";
   registerIconLibrary('default', {
     resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
     //mutator: svg => svg.setAttribute('fill', 'currentColor'),
   });
   registerIconLibrary('snoico', {
-    resolver: name => `/img/snoico/${name}.svg`,
-    mutator: svg => {
-      svg.querySelectorAll('.logotype-text').forEach(node => node.setAttribute('fill', '#f97316'));
-      svg.querySelectorAll('.logotype-snoman').forEach(node => node.setAttribute('fill', '#22c55e'));
+    resolver: name => `${snoicoSpriteUrl}#${name}`,
+    mutator: (svg, icon) => {
+      const viewBox = snoicoViewBoxes[icon?.name];
+      if (viewBox) {
+        svg.setAttribute('viewBox', viewBox);
+      }
     },
-  });")]
+    spriteSheet: true,
+  });")))]
     (script req "datastar@1.0.1.js" :type "module")
     (when (config/dev-mode? (-> req :system :env))
       (script req "datastar-inspector@1.1.4.js" :type "module"))]
