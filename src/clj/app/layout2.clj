@@ -137,7 +137,6 @@
     [:link {:rel "shortcut icon" :href "/img/megaphone-icon.png"}]
     [:title (or title "SNOrga")]
     (stylesheet req "vendor/webawesome@3.5.0/styles/themes" "active.css")
-    (stylesheet req "vendor/webawesome@3.5.0/styles/color/palettes" "vogue.css")
     (stylesheet req "vendor/webawesome@3.5.0/styles" "native.css")
     (stylesheet req "vendor/webawesome@3.5.0/styles" "utilities.css")
     (stylesheet req "css/compiled" "main2.css")
