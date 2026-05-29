@@ -15,7 +15,8 @@
     :prod))
 
 (defn stop-system! []
-  (alter-var-root #'system ig/halt!))
+  (alter-var-root #'system ig/halt!)
+  (shutdown-agents))
 
 (defn -main [& args]
   (let [profile (profile)
