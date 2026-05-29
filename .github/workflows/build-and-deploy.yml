@@ -99,22 +99,22 @@ jobs:
             BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
             GIT_HASH=${{ steps.vars.outputs.git-hash }}
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs:
-      - build-and-push
-    environment: snorga.streetnoise.at
-    steps:
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          chmod 0700 ~/.ssh
-          touch ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          touch ~/.ssh/known_hosts
-          chmod 640 ~/.ssh/known_hosts
-          ssh-keyscan -t ssh-ed25519 ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+  #deploy:
+  #  runs-on: ubuntu-latest
+  #  needs:
+  #    - build-and-push
+  #  environment: snorga.streetnoise.at
+  #  steps:
+  #    - name: Set up SSH
+  #      run: |
+  #        mkdir -p ~/.ssh
+  #        chmod 0700 ~/.ssh
+  #        touch ~/.ssh/id_ed25519
+  #        chmod 600 ~/.ssh/id_ed25519
+  #        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+  #        touch ~/.ssh/known_hosts
+  #        chmod 640 ~/.ssh/known_hosts
+  #        ssh-keyscan -t ssh-ed25519 ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Deploy the service
-        run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} 'snorga.streetnoise.at'
+  #    - name: Deploy the service
+  #      run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} 'snorga.streetnoise.at'
