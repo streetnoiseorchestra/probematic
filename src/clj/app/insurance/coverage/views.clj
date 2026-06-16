@@ -38,16 +38,15 @@
      (tr [:band-instrument]))])
 
 (defn- breadcrumb [{:keys [tr]} policy instrument]
-  [:wa-breadcrumb {:class "insurance-coverage-breadcrumb"}
-   [:wa-breadcrumb-item {:href (urls/link-insurance)}
-    [:wa-icon {:slot    "start"
-               :library "snoico"
-               :name    "shield-check-outline"}]
-    (tr [:nav/insurance])]
-   [:wa-breadcrumb-item {:href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [:wa-breadcrumb-item
-    (:instrument/name instrument)]])
+  (ui2/breadcrumb {:class "insurance-coverage-breadcrumb"}
+                  {:href  (urls/link-insurance)
+                   :start [:wa-icon {:slot    "start"
+                                     :library "snoico"
+                                     :name    "shield-check-outline"}]
+                   :label (tr [:nav/insurance])}
+                  {:href  (urls/link-policy policy)
+                   :label (:insurance.policy/name policy)}
+                  {:label (:instrument/name instrument)}))
 
 (defn- member-link [member]
   (if-let [member-id (:member/member-id member)]

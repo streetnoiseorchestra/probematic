@@ -168,24 +168,23 @@
 
 (defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
   (ui2/page-header
-   {:breadcrumb (into
-                 [:wa-breadcrumb
-                  [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-                  [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-                   (tr [:nav/gigs])]]
-                 breadcrumb-items)
+   {:breadcrumb (apply ui2/breadcrumb
+                       {}
+                       (cons {:href  (urls/link-gigs-home)
+                              :label (tr [:nav/gigs])}
+                             breadcrumb-items))
     :title      title
     :subtitle   subtitle}))
 
 (defn- edit-header [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
   (ui2/page-header
-   {:breadcrumb [:wa-breadcrumb
-                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-                 [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-                  (tr [:nav/gigs])]
-                 [:wa-breadcrumb-item {:href (urls/link-gig gig)}
-                  (gigs.ui/gig-breadcrumb-label req gig)]
-                 [:wa-breadcrumb-item (tr [:action/edit])]]
+   {:breadcrumb (ui2/breadcrumb
+                 {}
+                 {:href  (urls/link-gigs-home)
+                  :label (tr [:nav/gigs])}
+                 {:href  (urls/link-gig gig)
+                  :label (gigs.ui/gig-breadcrumb-label req gig)}
+                 {:label (tr [:action/edit])})
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
                  [:h1 (tr [:action/edit])]
                  (when status
@@ -196,7 +195,7 @@
   (page-header req
                (tr [:gig/create-title])
                nil
-               [:wa-breadcrumb-item (tr [:gig/create-title])]))
+               {:label (tr [:gig/create-title])}))
 
 (defn- gig->form [{:gig/keys [call-time contact date description end-date end-time gig-id gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title]
                    :forum.topic/keys [topic-id]}]

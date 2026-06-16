@@ -119,15 +119,13 @@
          (range 1 (inc (count (re-seq #"/" path)))))))
 
 (defn file-breadcrumb [req picker-id root-dir current-dir]
-  (into
-   [:wa-breadcrumb]
-   (cons
-    [:span {:slot "separator"} "/"]
-    (for [path (filter #(actions/within-root? root-dir %)
-                       (component-paths current-dir))]
-      [:wa-breadcrumb-item {:href          "#"
-                            :data-on:click (breadcrumb-action req picker-id path)}
-       (fs/file-name path)]))))
+  (apply ui2/breadcrumb
+         {:separator [:span {:slot "separator"} "/"]}
+         (for [path (filter #(actions/within-root? root-dir %)
+                            (component-paths current-dir))]
+           {:href          "#"
+            :data-on:click (breadcrumb-action req picker-id path)
+            :label         (fs/file-name path)})))
 
 (defn- picker-files [req root-dir current-dir]
   (let [current-dir-exists? (sardine/dir-exists? (:webdav req) current-dir)

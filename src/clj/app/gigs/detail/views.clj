@@ -68,11 +68,11 @@
 
 (defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
   (ui2/page-header
-   {:breadcrumb [:wa-breadcrumb
-                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-                 [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-                  (tr [:nav/gigs])]
-                 [:wa-breadcrumb-item (gigs.ui/gig-breadcrumb-label req gig)]]
+   {:breadcrumb (ui2/breadcrumb
+                 {}
+                 {:href  (urls/link-gigs-home)
+                  :label (tr [:nav/gigs])}
+                 {:label (gigs.ui/gig-breadcrumb-label req gig)})
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
                  (when status
                    (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))

@@ -46,11 +46,11 @@
 
 (defn- song-summary [{:keys [tr]} {:song/keys [active? title] :as _song}]
   (ui2/page-header
-   {:breadcrumb [:wa-breadcrumb
-                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-                 [:wa-breadcrumb-item {:href (urls/link-songs-home)}
-                  (tr [:nav/songs])]
-                 [:wa-breadcrumb-item title]]
+   {:breadcrumb (ui2/breadcrumb
+                 {}
+                 {:href  (urls/link-songs-home)
+                  :label (tr [:nav/songs])}
+                 {:label title})
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
                  [:h1 title]
                  (ui2/active-badge tr active?)]

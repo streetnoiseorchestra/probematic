@@ -235,10 +235,11 @@
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       (ui2/page-header
-       {:breadcrumb [:wa-breadcrumb
-                     [:wa-breadcrumb-item {:href "/band-settings"}
-                      (tr [:nav/band-settings])]
-                     [:wa-breadcrumb-item title]]
+       {:breadcrumb (ui2/breadcrumb
+                     {}
+                     {:href "/band-settings"
+                      :label (tr [:nav/band-settings])}
+                     {:label title})
         :title      title
         :subtitle   "Create teams and manage their members."})
       (teams-panel req)])))

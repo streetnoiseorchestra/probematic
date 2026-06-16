@@ -114,24 +114,23 @@
 
 (defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
   (ui2/page-header
-   {:breadcrumb (into
-                 [:wa-breadcrumb
-                  [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-                  [:wa-breadcrumb-item {:href (urls/link-songs-home)}
-                   (tr [:nav/songs])]]
-                 breadcrumb-items)
+   {:breadcrumb (apply ui2/breadcrumb
+                       {}
+                       (cons {:href  (urls/link-songs-home)
+                              :label (tr [:nav/songs])}
+                             breadcrumb-items))
     :title      title
     :subtitle   subtitle}))
 
 (defn- edit-header [{:keys [tr]} {:song/keys [active? title] :as song}]
   (ui2/page-header
-   {:breadcrumb [:wa-breadcrumb
-                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-                 [:wa-breadcrumb-item {:href (urls/link-songs-home)}
-                  (tr [:nav/songs])]
-                 [:wa-breadcrumb-item {:href (urls/link-song song)}
-                  title]
-                 [:wa-breadcrumb-item (tr [:action/edit])]]
+   {:breadcrumb (ui2/breadcrumb
+                 {}
+                 {:href  (urls/link-songs-home)
+                  :label (tr [:nav/songs])}
+                 {:href  (urls/link-song song)
+                  :label title}
+                 {:label (tr [:action/edit])})
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-title"}
                  [:h1 (tr [:action/edit])]
                  (ui2/active-badge tr active?)]
@@ -141,7 +140,7 @@
   (page-header req
                (tr [:song/create-title])
                (tr [:song/create-subtitle])
-               [:wa-breadcrumb-item (tr [:song/create-title])]))
+               {:label (tr [:song/create-title])}))
 
 (defn- song->form [{:song/keys [active? arrangement-credits arrangement-notes composition-credits lyrics origin solo-info song-id title]
                     :forum.topic/keys [topic-id]}]

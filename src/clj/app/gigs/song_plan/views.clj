@@ -32,13 +32,13 @@
 
 (defn page-summary [{:keys [tr] :as req} gig title-kw]
   (ui2/page-header
-   {:breadcrumb [:wa-breadcrumb
-                 [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-                 [:wa-breadcrumb-item {:href (urls/link-gigs-home)}
-                  (tr [:nav/gigs])]
-                 [:wa-breadcrumb-item {:href (urls/link-gig gig)}
-                  (gigs.ui/gig-breadcrumb-label req gig)]
-                 [:wa-breadcrumb-item (tr title-kw)]]
+   {:breadcrumb (ui2/breadcrumb
+                 {}
+                 {:href  (urls/link-gigs-home)
+                  :label (tr [:nav/gigs])}
+                 {:href  (urls/link-gig gig)
+                  :label (gigs.ui/gig-breadcrumb-label req gig)}
+                 {:label (tr title-kw)})
     :title      (tr title-kw)
     :actions    [[:wa-button {:appearance "outlined"
                               :href       (urls/link-gig gig)}

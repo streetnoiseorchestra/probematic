@@ -784,15 +784,14 @@
   (let [form-state (contact-form-state req member)
         sections   (when form-state (q/retrieve-sections db))]
     [:header {:class "member-detail-header wa-stack wa-gap-m"}
-     [:wa-breadcrumb
-      [:wa-icon {:slot "separator" :name "nav-arrow-right"}]
-      [:wa-breadcrumb-item {:href "/members"}
-       (tr [:nav/members])]
-      [:wa-breadcrumb-item (cond-> {}
-                             form-state (assoc :href (urls/link-member member)))
-       (:member/name member)]
+     (ui2/breadcrumb
+      {}
+      {:href  "/members"
+       :label (tr [:nav/members])}
+      (cond-> {:label (:member/name member)}
+        form-state (assoc :href (urls/link-member member)))
       (when form-state
-        [:wa-breadcrumb-item (tr [:action/edit])])]
+        {:label (tr [:action/edit])}))
      (if form-state
        (ui2/section-card {:title    (tr [:action/edit])}
                          (contact-form req form-state sections))

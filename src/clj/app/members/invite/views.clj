@@ -96,11 +96,11 @@
      [:div {:class        "wa-stack wa-gap-2xl members-invite-page"
             :data-signals (d*/->signals {:member-invite form-state})}
       (ui2/page-header
-       {:breadcrumb [:wa-breadcrumb
-                     [:wa-breadcrumb-item {:href "/members"}
-                      (tr [:nav/members])]
-                     [:wa-breadcrumb-item
-                      (tr [:member/invite-member])]]
+       {:breadcrumb (ui2/breadcrumb
+                     {}
+                     {:href "/members"
+                      :label (tr [:nav/members])}
+                     {:label (tr [:member/invite-member])})
         :title      (tr [:member/invite-member])
         :subtitle   (tr [:member/invite-member-page-description])})
       (ui2/section-card
