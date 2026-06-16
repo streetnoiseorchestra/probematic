@@ -164,6 +164,8 @@
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
                                                       "wa/"          "/vendor/webawesome@3.8.0/"
                                                       "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
+    (stylesheet req "vendor/bprogress@1.3.4" "index.css" :type "text/css")
+    [:script {:src (asset-url req "vendor/bprogress@1.3.4/index.global.js")}]
     [:script {:type "module" :src "/vendor/webawesome@3.8.0/webawesome.loader.js"}]
     [:script {:type "module"}
      (let [snoico-sprite-url (asset-url req snoico-sprite-path)
@@ -244,7 +246,7 @@
 (defn shim-html
   [req opts]
   (html5 req (merge {:title "SNOrga"} opts)
-         [:body
+         [:body {:data-on:datastar-fetch "evt.detail.el.id !== 'long-lived-sse' && (evt.detail.type === 'started' ? BProgressJS.BProgress.start() : (evt.detail.type === 'finished' || evt.detail.type === 'error') && BProgressJS.BProgress.done()); "}
           [:div {:data-init on-load-js
                  :id        "long-lived-sse"}]
           [:div {:data-signals:tabid tabid-js}]
