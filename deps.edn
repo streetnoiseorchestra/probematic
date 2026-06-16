@@ -25,7 +25,7 @@
         dev.data-star.clojure/sdk                      {:mvn/version "1.0.0-RC10"}
         dev.data-star.clojure/http-kit                 {:mvn/version "1.0.0-RC10"}
         datastar/expressions                           {:git/url "https://github.com/ramblurr/datastar-expressions/"
-                                                        :git/sha "f1616e761ae502d4f6795f4d0573ca1429e39179"}
+                                                        :git/sha "4b2ce91807666cafe6f22f879f2c8e08755a131e"}
         org.flatland/ordered                           {:mvn/version "1.15.12"}
         ;; for Discourse integration
         clj-commons/clj-yaml                           {:mvn/version "1.0.29"}
@@ -38,8 +38,9 @@
         metosin/muuntaja                               {:mvn/version "0.6.11"}
         org.babashka/sci                               {:mvn/version "0.12.51"}
         com.taoensso/nippy                             {:mvn/version "3.6.2"}
-        com.outskirtslabs/vips                         {:local/root "/home/ramblurr/src/github.com/outskirtslabs/vips"}
-        com.outskirtslabs/vips-native-linux-x86-64-gnu {:local/root "/home/ramblurr/src/github.com/outskirtslabs/vips/native/linux-x86-64-gnu"}
+        com.outskirtslabs/vips                         {:git/url "https://github.com/outskirtslabs/vips.git"
+                                                        :git/sha "bf367e2026fefe7661664890c94bf376c1f1731f"}
+        com.outskirtslabs/vips-native-linux-x86-64-gnu {:mvn/version "1.2.4-2"}
         com.googlecode.libphonenumber/libphonenumber   {:mvn/version "9.0.30"}
         ;; Documents + Files
         babashka/fs                                    {:mvn/version "0.5.33"}
@@ -55,8 +56,6 @@
         ;; Nextcloud {Cal,Web}DAV
         com.github.lookfirst/sardine                   {:mvn/version "5.13"}
         com.github.caldav4j/caldav4j                   {:mvn/version "1.0.5"}
-        org.ehcache/ehcache                            {:mvn/version "3.12.0"
-                                                        :exclusions  [org.glassfish.jaxb/jaxb-runtime]}
         ;; Error reporting & Logging
         ch.qos.logback/logback-classic                 {:mvn/version "1.5.32"}
         com.brunobonacci/mulog                         {:mvn/version "0.10.1"}
@@ -130,6 +129,5 @@
   :run-x {:ns-default app.main
           :jvm-opts ["-XX:-OmitStackTraceInFastThrow"
                      "--enable-native-access=ALL-UNNAMED"]}
-  :build {:deps       {io.github.clojure/tools.build {:git/tag "v0.10.13"
-                                                      :git/sha "ae52edfedef4ca72e699e9c86abfe0940e97dc26"}}
+  :build {:deps       {io.github.clojure/tools.build {:mvn/version "0.10.14"}}
           :ns-default build}}}
