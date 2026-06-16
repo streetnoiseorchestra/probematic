@@ -23,8 +23,8 @@ archive
 log
 .lsp
 .clj-kondo/.cache
-.clj-kondo/imports
 .clj-kondo/.lock
+.clj-kondo/inline-configs
 .cpcache
 session.json
 secrets.edn
