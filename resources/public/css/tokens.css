@@ -2,9 +2,9 @@
 @custom-media --sno-viewport-below-s (max-width: calc(640px - 1px));
 @custom-media --sno-viewport-l (min-width: 960px);
 @custom-media --sno-viewport-s-to-l (min-width: 640px) and (max-width: calc(960px - 1px));
-@custom-media --sno-index-collapsed (max-width: calc(1152px - 1px));
-@custom-media --sno-index-expanded (min-width: 1152px);
-@custom-media --sno-index-collapsed-wide (min-width: 960px) and (max-width: calc(1152px - 1px));
+@custom-media --sno-index-collapsed (width < 1152px);
+@custom-media --sno-index-expanded (width >= 1152px);
+@custom-media --sno-index-collapsed-wide (width >= 960px) and (width < 1152px);
 @custom-media --sno-particulars-wide (min-width: 60rem);
 
 :root {
@@ -28,6 +28,7 @@
   --wa-border-radius-scale: 1.75;
   --wa-border-width-scale: 1;
   --wa-space-scale: 1;
+  --wa-line-height-normal: normal;
 }
 
 @layer sno-tokens {

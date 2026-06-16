@@ -71,12 +71,10 @@
 
 (defn state-transact! [req f]
   (if-let [tab-id (-> req :body-params :tab-id)]
-    (do
-      (swap! !page-state update tab-id (fn [state]
-                                         (-> state
-                                             (f)
-                                             (assoc ::modified (System/currentTimeMillis)))))
-      #_(tap> [:state-transacted @!page-state]))
+    (swap! !page-state update tab-id (fn [state]
+                                       (-> state
+                                           (f)
+                                           (assoc ::modified (System/currentTimeMillis)))))
     (throw (ex-info "No tab-id in request" {}))))
 
 (defn init-tab-state! [<ch tab-id]
@@ -185,7 +183,7 @@
                                            ;; (tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
                                            ;; only send an event if the view has changed
                                            (when (and new-view (not= last-view-hash new-view-hash))
-                                             (d*/patch-elements! sse-gen new-view {d*/id                  new-view-hash}))
+                                             (d*/patch-elements! sse-gen new-view {d*/id new-view-hash}))
                                            (recur req new-view-hash))
                                          ;; we want work cancelling to have higher priority
                                          :priority true))
@@ -403,7 +401,7 @@
 (defn act
   ([req cmd]
    (act req cmd nil))
-  ([req cmd opts]
+  ([req cmd _opts]
    (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))
    #_(action :post
              (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))

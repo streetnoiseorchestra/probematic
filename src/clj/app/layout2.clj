@@ -38,13 +38,12 @@
                                                 :aria-current "page"))
    [:wa-icon {:library "snoico"
               :name    (name icon)
-              :slot    "start"
-              :class   "nav-icon"}]
+              :slot    "start"}]
    label])
 
 (defn navigation [req]
   (let [tr (i18n/tr-from-req req)]
-    (into [:div {:class "wa-stack wa-gap-0"}]
+    (into [:nav]
           (map (partial nav-button req) (nav-items tr)))))
 
 (defn- avatar-src [member]
@@ -52,13 +51,12 @@
     (str "https://forum.streetnoise.at"
          (str/replace tpl "{size}" "200"))))
 
-(def ^:private menu-icon-opts {:slot "icon" :class "menu-icon"})
+(def ^:private menu-icon-opts {:slot "icon"})
 
 (defn brand-link []
-  [:a {:href "/" :class "brand-link logotype-dark"}
+  [:a {:href "/" :aria-label "Home"}
    [:wa-icon {:library    "snoico"
               :name       "logotype"
-              :class      "brand-logotype"
               :auto-width true}]])
 
 (defn navigation-header [req member]
@@ -78,7 +76,7 @@
           [:wa-icon {:library "snoico"
                      :name    "user"
                      :slot    "icon"}])]
-       [:span {:class "member-nick"} (ui2/member-nick member)]]]
+       [:span (ui2/member-nick member)]]]
      [:wa-dropdown-item {:value   (url/link-member member)
                          :onclick "window.location = this.value"}
       [:wa-icon (merge {:library "snoico"
@@ -160,6 +158,7 @@
         --wa-border-radius-scale: 1.75;
         --wa-border-width-scale: 1;
         --wa-space-scale: 1;
+        --wa-line-height-normal: normal;
       }")]
     [:script {:type :importmap} (html/raw (j/write-value-as-string
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
@@ -172,9 +171,8 @@
        (html/raw
         (str "
   import { registerIconLibrary } from 'wa/webawesome.js';
-  // these imports ensure that webcomonents custom elements are defined
-  // before datastar inits so that d* can properly interact with their value and change attrs
-  import 'wa/components/page/page.js';
+  // These imports ensure Web Awesome custom elements are defined before Datastar
+  // initializes so d* can interact with their value and change attrs.
   import 'wa/components/icon/icon.js';
   import 'wa/components/button/button.js';
   import 'wa/components/input/input.js';
@@ -257,36 +255,36 @@
   (let [member (auth/get-current-member req)
         body   (if (string? body) (html/raw body) body)]
     [:div {:id "morph"}
-     [:wa-page {:mobile-breakpoint         "1152"
-                :disable-navigation-toggle true}
-      [:header {:slot "navigation-header"}
-       (brand-link)]
-
-      [:div {:slot "navigation" :style "padding-top: 0"}
-       [:div {:class "wa-desktop-only"}
-        (navigation-header req member)]
-       (navigation req)]
-
-      [:div {:slot "subheader" :class "page-subheader wa-split wa-mobile-only"}
-       [:wa-button {:data-toggle-nav true
-                    :appearance       "plain"
-                    :aria-label       "Toggle navigation"}
+     [:app-shell
+      [:header
+       [:wa-button {:href       "#app-shell-navigation"
+                    :appearance "plain"
+                    :aria-label "Toggle navigation"}
         [:wa-icon {:library "snoico"
                    :name    "bars"
-                   :slot    "start"
-                   :class   "nav-toggle-icon"}]]
-       [:a {:href "/" :class "subheader-logo" :aria-label "Home"}
+                   :slot    "start"}]]
+       [:a {:href "/" :aria-label "Home"}
         [:wa-icon {:library "snoico"
-                   :name    "snoman"
-                   :class   "subheader-brand-icon"}]
-        #_[:wa-icon {:library    "snoico"
-                     :name       "sno-trumpet"
-                     :class      "subheader-brand-icon"
-                     :auto-width true}]]
-       [:div {:class "subheader-user"}
+                   :name    "snoman"}]]
+       [:app-shell-user
         (navigation-header req member)]]
-
-      body]
+      [:aside {:id "app-shell-navigation"}
+       [:header
+        (brand-link)
+        [:wa-button {:href       "#"
+                     :appearance "plain"
+                     :aria-label "Close navigation"}
+         [:wa-icon {:library "snoico"
+                    :name    "xmark"
+                    :slot    "start"}]]]
+       [:app-shell-account
+        (navigation-header req member)]
+       (navigation req)]
+      [:a {:href       "#"
+           :aria-label "Close navigation"
+           :tabindex   "-1"}]
+      [:app-shell-content
+       body]]
      (when (config/dev-mode? (-> req :system :env))
        [:datastar-inspector])]))
 
