@@ -30,7 +30,6 @@ log
 session.json
 secrets.edn
 node_modules
-resources/public/css/compiled/*
 *.db
 gigo-members.json
 redis-dev
@@ -44,7 +43,10 @@ datastar-inspector*.js
 prompts/
 extra/
 .agents
-resources/public/vendor/webawesome@*/
 webawesome-*.zip
 webawesome-*.tgz
 awesome.me-webawesome-*.tgz
+resources/public/vendor/webawesome@*/
+resources/public/css/compiled/*
+resources/public/img/phosphor
+resources/public/img/iconoir

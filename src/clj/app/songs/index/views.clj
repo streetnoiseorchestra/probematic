@@ -8,7 +8,7 @@
 
 (defn- song-stat [{:keys [icon label value]}]
   [:span {:class "songs-index-stat"}
-   [:wa-icon {:library "default"
+   [:wa-icon {:library "phosphor"
               :name    icon}]
    [:span label]
    (when (some? value)
@@ -27,7 +27,7 @@
      [:span {:class "songs-index-song-title"} title]
      (song-status-badge req active? "songs-index-status songs-index-status--mobile")]
     [:div {:class "songs-index-row-meta"}
-     (song-stat {:icon  "hashtag"
+     (song-stat {:icon  "hash"
                  :label (tr [:song/total-plays])
                  :value (or total-plays 0)})
      (song-stat {:icon  "star"
@@ -59,8 +59,8 @@
               :data-on:input__debounce.250ms
               (str "@post('" (d*/act req ::actions/set-search-phrase) "')")}
    [:wa-icon {:slot    "start"
-              :library "default"
-              :name    "search"}]])
+              :library "phosphor"
+              :name    "magnifying-glass"}]])
 
 (defn- repertoire-filter-control [{:keys [tr] :as req} {:keys [repertoire-filter]}]
   [:wa-select {:label          (tr [:gig/probeplan-repertoire])

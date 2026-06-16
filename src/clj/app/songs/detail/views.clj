@@ -167,7 +167,7 @@
                    :href       (urls/link-file-download webdav-path)
                    :class      "songs-detail-sheet-download"
                    :aria-label (tr [:action/download])}
-       [:wa-icon {:library "default"
+       [:wa-icon {:library "phosphor"
                   :name    "download"}]]
       [:wa-button {:appearance  "plain"
                    :variant     "danger"

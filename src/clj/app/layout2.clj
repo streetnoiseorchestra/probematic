@@ -194,6 +194,10 @@
     resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
     //mutator: svg => svg.setAttribute('fill', 'currentColor'),
   });
+  registerIconLibrary('phosphor', {
+    resolver: (name, family, variant) => `/img/phosphor/phosphor-regular/${name}.svg`,
+    //mutator: svg => svg.setAttribute('fill', 'currentColor'),
+  });
   registerIconLibrary('snoico', {
     resolver: name => `${snoicoSpriteUrl}#${name}`,
     mutator: (svg, icon) => {

@@ -34,8 +34,8 @@
      [:div {:class "wa-split"}
       [:div
        {:class "wa-cluster wa-gap-xs"}
-       [:wa-icon {:library    "default"
-                  :name       "info-circle"
+       [:wa-icon {:library    "phosphor"
+                  :name       "info"
                   :id         info-id
                   :aria-label tooltip}]
        (when tooltip
@@ -47,7 +47,7 @@
       #_[:div
          {:class "wa-cluster wa-gap-xs",
           :style {:color "var(--wa-color-green)"}}
-         [:wa-icon {:name "arrow-trend-up"}]
+         [:wa-icon {:library "phosphor" :name "trend-up"}]
          #_[:wa-format-number
             {:class "wa-heading-m", :type "percent", :value ".475"}]]]
      [:div {:class "wa-heading-2xl stats-metric-value"} value]]))
@@ -185,9 +185,9 @@
        label]
 
       (when tooltip
-        [:wa-icon {:library    "default"
+        [:wa-icon {:library    "phosphor"
                    :id         info-id
-                   :name       "info-circle"
+                   :name       "info"
                    :aria-label tooltip}])
       (when tooltip
         [:wa-tooltip {:for       info-id
@@ -201,9 +201,9 @@
      [:span {:class "stats-sort-header-label"}
       [:span label]
       (when tooltip
-        [:wa-icon {:library    "default"
+        [:wa-icon {:library    "phosphor"
                    :id         info-id
-                   :name       "info-circle"
+                   :name       "info"
                    :aria-label tooltip}])
       (when tooltip
         [:wa-tooltip {:for       info-id
