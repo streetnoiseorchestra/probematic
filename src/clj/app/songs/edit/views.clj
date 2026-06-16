@@ -5,6 +5,7 @@
    [app.queries :as q]
    [app.songs.edit.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -114,23 +115,23 @@
 
 (defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
   (ui2/page-header
-   {:breadcrumb (apply ui2/breadcrumb
+   {:breadcrumb (into [breadcrumb/Breadcrumb
                        {}
-                       (cons {:href  (urls/link-songs-home)
-                              :label (tr [:nav/songs])}
-                             breadcrumb-items))
+                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+                        (tr [:nav/songs])]]
+                      breadcrumb-items)
     :title      title
     :subtitle   subtitle}))
 
 (defn- edit-header [{:keys [tr]} {:song/keys [active? title] :as song}]
   (ui2/page-header
-   {:breadcrumb (ui2/breadcrumb
+   {:breadcrumb [breadcrumb/Breadcrumb
                  {}
-                 {:href  (urls/link-songs-home)
-                  :label (tr [:nav/songs])}
-                 {:href  (urls/link-song song)
-                  :label title}
-                 {:label (tr [:action/edit])})
+                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+                  (tr [:nav/songs])]
+                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-song song)}
+                  title]
+                 [breadcrumb/BreadcrumbItem (tr [:action/edit])]]
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-title"}
                  [:h1 (tr [:action/edit])]
                  (ui2/active-badge tr active?)]
@@ -140,7 +141,7 @@
   (page-header req
                (tr [:song/create-title])
                (tr [:song/create-subtitle])
-               {:label (tr [:song/create-title])}))
+               [breadcrumb/BreadcrumbItem (tr [:song/create-title])]))
 
 (defn- song->form [{:song/keys [active? arrangement-credits arrangement-notes composition-credits lyrics origin solo-info song-id title]
                     :forum.topic/keys [topic-id]}]

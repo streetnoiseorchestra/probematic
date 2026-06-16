@@ -2,6 +2,7 @@
   (:require
    [app.insurance.coverage.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [clojure.string :as str]
    [medley.core :as m]))
@@ -38,15 +39,15 @@
      (tr [:band-instrument]))])
 
 (defn- breadcrumb [{:keys [tr]} policy instrument]
-  (ui2/breadcrumb {:class "insurance-coverage-breadcrumb"}
-                  {:href  (urls/link-insurance)
-                   :start [:wa-icon {:slot    "start"
-                                     :library "snoico"
-                                     :name    "shield-check-outline"}]
-                   :label (tr [:nav/insurance])}
-                  {:href  (urls/link-policy policy)
-                   :label (:insurance.policy/name policy)}
-                  {:label (:instrument/name instrument)}))
+  [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
+   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+    [:wa-icon {:library "snoico"
+               :name    "shield-check-outline"}]
+    (tr [:nav/insurance])]
+   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+    (:insurance.policy/name policy)]
+   [breadcrumb/BreadcrumbItem
+    (:instrument/name instrument)]])
 
 (defn- member-link [member]
   (if-let [member-id (:member/member-id member)]

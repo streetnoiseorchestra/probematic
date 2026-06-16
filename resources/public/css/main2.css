@@ -7,6 +7,7 @@
 @import "ui2/layout.css" layer(sno-ui);
 @import "ui2/dl.css" layer(sno-ui);
 @import "ui2/table.css" layer(sno-ui);
+@import "ui2/breadcrumb.css" layer(sno-ui);
 @import "ui2/gig-attendance.css" layer(sno-ui);
 @import "pages/dashboard.css" layer(sno-page);
 @import "pages/gigs.css" layer(sno-page);

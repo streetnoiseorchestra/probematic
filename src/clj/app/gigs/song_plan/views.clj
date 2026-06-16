@@ -3,6 +3,7 @@
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]))
 
 (defn pop-helper-script []
@@ -32,13 +33,13 @@
 
 (defn page-summary [{:keys [tr] :as req} gig title-kw]
   (ui2/page-header
-   {:breadcrumb (ui2/breadcrumb
+   {:breadcrumb [breadcrumb/Breadcrumb
                  {}
-                 {:href  (urls/link-gigs-home)
-                  :label (tr [:nav/gigs])}
-                 {:href  (urls/link-gig gig)
-                  :label (gigs.ui/gig-breadcrumb-label req gig)}
-                 {:label (tr title-kw)})
+                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+                  (tr [:nav/gigs])]
+                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gig gig)}
+                  (gigs.ui/gig-breadcrumb-label req gig)]
+                 [breadcrumb/BreadcrumbItem (tr title-kw)]]
     :title      (tr title-kw)
     :actions    [[:wa-button {:appearance "outlined"
                               :href       (urls/link-gig gig)}

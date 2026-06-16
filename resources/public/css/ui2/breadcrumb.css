@@ -1,0 +1,48 @@
+.sno-breadcrumb {
+  display: flex;
+  color: var(--wa-color-text-quiet);
+  font-size: var(--wa-font-size-s);
+  line-height: 1.25rem;
+
+  & ol {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & li + li {
+    margin-inline-start: 1rem;
+  }
+
+  & .sno-breadcrumb-step {
+    display: flex;
+    align-items: center;
+  }
+
+  & .sno-breadcrumb-step .sno-breadcrumb-item {
+    margin-inline-start: 1rem;
+  }
+
+  & a,
+  & [aria-current="page"] {
+    display: inline-flex;
+    gap: var(--wa-space-3xs);
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  & a > span,
+  & span[aria-current="page"] > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .sno-breadcrumb-separator {
+    display: block;
+    flex-shrink: 0;
+    color: var(--wa-color-text-quiet);
+  }
+}

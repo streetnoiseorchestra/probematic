@@ -10,6 +10,7 @@
    [app.qrcode :as qr]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -784,14 +785,15 @@
   (let [form-state (contact-form-state req member)
         sections   (when form-state (q/retrieve-sections db))]
     [:header {:class "member-detail-header wa-stack wa-gap-m"}
-     (ui2/breadcrumb
+     [breadcrumb/Breadcrumb
       {}
-      {:href  "/members"
-       :label (tr [:nav/members])}
-      (cond-> {:label (:member/name member)}
-        form-state (assoc :href (urls/link-member member)))
+      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
+       (tr [:nav/members])]
+      [breadcrumb/BreadcrumbItem (cond-> {}
+                                   form-state (assoc ::breadcrumb/href (urls/link-member member)))
+       (:member/name member)]
       (when form-state
-        {:label (tr [:action/edit])}))
+        [breadcrumb/BreadcrumbItem (tr [:action/edit])])]
      (if form-state
        (ui2/section-card {:title    (tr [:action/edit])}
                          (contact-form req form-state sections))

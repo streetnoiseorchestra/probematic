@@ -4,7 +4,8 @@
    [app.form :as form]
    [app.members.invite.actions :as actions]
    [app.queries :as q]
-   [app.ui2 :as ui2]))
+   [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]))
 
 (defn- default-form-state []
   {:member-id     (str (random-uuid))
@@ -96,11 +97,11 @@
      [:div {:class        "wa-stack wa-gap-2xl members-invite-page"
             :data-signals (d*/->signals {:member-invite form-state})}
       (ui2/page-header
-       {:breadcrumb (ui2/breadcrumb
+       {:breadcrumb [breadcrumb/Breadcrumb
                      {}
-                     {:href "/members"
-                      :label (tr [:nav/members])}
-                     {:label (tr [:member/invite-member])})
+                     [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
+                      (tr [:nav/members])]
+                     [breadcrumb/BreadcrumbItem (tr [:member/invite-member])]]
         :title      (tr [:member/invite-member])
         :subtitle   (tr [:member/invite-member-page-description])})
       (ui2/section-card

@@ -10,6 +10,7 @@
    [app.queries :as q]
    [app.songs.detail.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -46,11 +47,11 @@
 
 (defn- song-summary [{:keys [tr]} {:song/keys [active? title] :as _song}]
   (ui2/page-header
-   {:breadcrumb (ui2/breadcrumb
+   {:breadcrumb [breadcrumb/Breadcrumb
                  {}
-                 {:href  (urls/link-songs-home)
-                  :label (tr [:nav/songs])}
-                 {:label title})
+                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+                  (tr [:nav/songs])]
+                 [breadcrumb/BreadcrumbItem title]]
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
                  [:h1 title]
                  (ui2/active-badge tr active?)]

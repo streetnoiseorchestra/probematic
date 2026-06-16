@@ -6,6 +6,7 @@
    [app.humanize :as humanize]
    [app.sardine :as sardine]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [babashka.fs :as fs]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -119,13 +120,12 @@
          (range 1 (inc (count (re-seq #"/" path)))))))
 
 (defn file-breadcrumb [req picker-id root-dir current-dir]
-  (apply ui2/breadcrumb
-         {:separator [:span {:slot "separator"} "/"]}
-         (for [path (filter #(actions/within-root? root-dir %)
-                            (component-paths current-dir))]
-           {:href          "#"
-            :data-on:click (breadcrumb-action req picker-id path)
-            :label         (fs/file-name path)})))
+  (into [breadcrumb/Breadcrumb {::breadcrumb/separator "/"}]
+        (for [path (filter #(actions/within-root? root-dir %)
+                           (component-paths current-dir))]
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href "#"
+                                      :data-on:click (breadcrumb-action req picker-id path)}
+           (fs/file-name path)])))
 
 (defn- picker-files [req root-dir current-dir]
   (let [current-dir-exists? (sardine/dir-exists? (:webdav req) current-dir)

@@ -49,29 +49,6 @@
   [& names]
   (str/join " " (filter identity names)))
 
-(defn breadcrumb
-  "Renders a Web Awesome breadcrumb from item maps.
-
-  Required: `attrs`.
-  Optional: zero or more item maps with `:href` and `:label`.
-  Extra item keys become attributes on the `wa-breadcrumb-item`."
-  [attrs & items]
-  (let [attrs     (or attrs {})
-        separator (if (contains? attrs :separator)
-                    (:separator attrs)
-                    [:wa-icon {:slot "separator" :name "nav-arrow-right"}])
-        attrs     (dissoc attrs :separator)]
-    (into (cond-> [:wa-breadcrumb attrs]
-            separator (conj separator))
-          (map (fn [{:keys [href label start end] :as item}]
-                 (let [item-attrs (cond-> (dissoc item :href :label :start :end)
-                                    href (assoc :href href))
-                       children   (filter some? [start label end])]
-                   (if (seq item-attrs)
-                     (into [:wa-breadcrumb-item item-attrs] children)
-                     (into [:wa-breadcrumb-item] children)))))
-          (filter some? items))))
-
 (defn muted
   "Renders `value`, or an em dash when `value` is blank."
   [value]

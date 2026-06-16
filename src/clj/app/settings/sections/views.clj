@@ -5,6 +5,7 @@
    [app.queries :as q]
    [app.settings.sections.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn sections-reordering [{:keys [tr page-state] :as req} sections]
@@ -218,11 +219,11 @@
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       (ui2/page-header
-       {:breadcrumb (ui2/breadcrumb
+       {:breadcrumb [breadcrumb/Breadcrumb
                      {}
-                     {:href "/band-settings"
-                      :label (tr [:nav/band-settings])}
-                     {:label title})
+                     [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
+                      (tr [:nav/band-settings])]
+                     [breadcrumb/BreadcrumbItem title]]
         :title      title
         :subtitle   "Choose which sections are available and how they are ordered."})
       (sections-panel req)])))

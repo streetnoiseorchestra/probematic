@@ -7,6 +7,7 @@
    [app.gigs.ui :as gigs.ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -168,23 +169,23 @@
 
 (defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
   (ui2/page-header
-   {:breadcrumb (apply ui2/breadcrumb
+   {:breadcrumb (into [breadcrumb/Breadcrumb
                        {}
-                       (cons {:href  (urls/link-gigs-home)
-                              :label (tr [:nav/gigs])}
-                             breadcrumb-items))
+                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+                        (tr [:nav/gigs])]]
+                      breadcrumb-items)
     :title      title
     :subtitle   subtitle}))
 
 (defn- edit-header [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
   (ui2/page-header
-   {:breadcrumb (ui2/breadcrumb
+   {:breadcrumb [breadcrumb/Breadcrumb
                  {}
-                 {:href  (urls/link-gigs-home)
-                  :label (tr [:nav/gigs])}
-                 {:href  (urls/link-gig gig)
-                  :label (gigs.ui/gig-breadcrumb-label req gig)}
-                 {:label (tr [:action/edit])})
+                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+                  (tr [:nav/gigs])]
+                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gig gig)}
+                  (gigs.ui/gig-breadcrumb-label req gig)]
+                 [breadcrumb/BreadcrumbItem (tr [:action/edit])]]
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
                  [:h1 (tr [:action/edit])]
                  (when status
@@ -195,7 +196,7 @@
   (page-header req
                (tr [:gig/create-title])
                nil
-               {:label (tr [:gig/create-title])}))
+               [breadcrumb/BreadcrumbItem (tr [:gig/create-title])]))
 
 (defn- gig->form [{:gig/keys [call-time contact date description end-date end-time gig-id gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title]
                    :forum.topic/keys [topic-id]}]

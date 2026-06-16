@@ -5,6 +5,7 @@
    [app.settings.domain :as domain]
    [app.settings.teams.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -235,11 +236,11 @@
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       (ui2/page-header
-       {:breadcrumb (ui2/breadcrumb
+       {:breadcrumb [breadcrumb/Breadcrumb
                      {}
-                     {:href "/band-settings"
-                      :label (tr [:nav/band-settings])}
-                     {:label title})
+                     [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
+                      (tr [:nav/band-settings])]
+                     [breadcrumb/BreadcrumbItem title]]
         :title      title
         :subtitle   "Create teams and manage their members."})
       (teams-panel req)])))
