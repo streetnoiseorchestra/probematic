@@ -150,17 +150,9 @@
     (stylesheet req "vendor/webawesome@3.8.0/styles" "native.css")
     (stylesheet req "vendor/webawesome@3.8.0/styles" "utilities.css")
     (stylesheet req "css/compiled" "main2.css")
-    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=IBM+Plex+Sans+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"}]
-    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Grotesk:wght@300..700&display=swap"}]
-    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"}]
-    [:link {:rel "stylesheet" :href "https://fonts.bunny.net/css2?family=Podkova:wght@400..800&display=swap"}]
     [:style
      (html/raw
       ":root {
-        --wa-font-family-body: \"Space Grotesk\", sans-serif;
-        --wa-font-family-heading: \"IBM Plex Sans Condensed\", sans-serif;
-        --wa-font-family-code: \"Space Mono\", monospace;
-        --wa-font-family-longform: Podkova, serif;
         --wa-font-weight-body: 400;
         --wa-font-weight-heading: 650;
         --wa-font-weight-code: 400;
