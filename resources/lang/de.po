@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-05-21 09:18+0000\n"
+"POT-Creation-Date: 2026-06-17 12:43+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -1586,6 +1586,12 @@ msgctxt ":poll/closes-at"
 msgid "Automatically Closes At"
 msgstr "Schließt automatisch um"
 
+#: :poll/closes
+#, ycp-format
+msgctxt ":poll/closes"
+msgid "Closes"
+msgstr "Schließt"
+
 #: :poll/choices
 #, ycp-format
 msgctxt ":poll/choices"
@@ -1679,6 +1685,12 @@ msgstr "Optionen"
 msgctxt ":poll/max-choice-hint"
 msgid "The maximum number of choices a person can make."
 msgstr "Die maximale Anzahl an Entscheidungen, die eine Person treffen kann."
+
+#: :poll/error-invalid-option
+#, ycp-format
+msgctxt ":poll/error-invalid-option"
+msgid "That option does not belong to this poll"
+msgstr "Diese Option gehört nicht zu dieser Umfrage"
 
 #: :poll/results
 #, ycp-format
@@ -2507,7 +2519,7 @@ msgstr "Neu anordnen"
 #: :action/confirm-delete-poll
 #, ycp-format
 msgctxt ":action/confirm-delete-poll"
-msgid "Are you sure you want to delete the poll '%1?'"
+msgid "Are you sure you want to delete the poll '%1'?"
 msgstr "Sind Sie sicher, dass Sie die Umfrage „%1“ löschen möchten?"
 
 #: :action/ignore
@@ -2648,6 +2660,13 @@ msgctxt ":error/is-required"
 msgid "%1 is required."
 msgstr ""
 
+#: :error/poll-too-few-options
+#, ycp-format
+msgctxt ":error/poll-too-few-options"
+msgid "The poll needs at least as many options as the max choice count."
+msgstr ""
+"Die Umfrage braucht mindestens so viele Optionen wie die maximale Auswahl."
+
 #: :error/go-home
 #, ycp-format
 msgctxt ":error/go-home"
@@ -2659,6 +2678,12 @@ msgstr "Go Home"
 msgctxt ":error/member-username-format"
 msgid "should have only letters, numbers and _.@-'"
 msgstr ""
+
+#: :error/poll-not-found
+#, ycp-format
+msgctxt ":error/poll-not-found"
+msgid "Poll not found."
+msgstr "Umfrage nicht gefunden."
 
 #: :error/gig-edit-not-found
 #, ycp-format
@@ -2677,6 +2702,12 @@ msgstr ""
 msgctxt ":error/gig-end-time-before-set-time"
 msgid "End time must be at or after set time."
 msgstr "Die Endzeit muss gleich oder nach der Auftrittszeit sein."
+
+#: :error/poll-open-immutable
+#, ycp-format
+msgctxt ":error/poll-open-immutable"
+msgid "Open poll type and options cannot be changed."
+msgstr "Typ und Optionen einer offenen Umfrage können nicht geändert werden."
 
 #: :error/unauthorized-message
 #, ycp-format
@@ -2802,6 +2833,12 @@ msgctxt ":error/gig-edit-not-allowed"
 msgid "You are not allowed to edit this gig."
 msgstr "Du darfst diese Probe oder diesen Gig nicht bearbeiten."
 
+#: :error/poll-min-choice-greater-than-max
+#, ycp-format
+msgctxt ":error/poll-min-choice-greater-than-max"
+msgid "Min choices must be less than or equal to max choices."
+msgstr "Minimale Auswahl muss kleiner oder gleich der maximalen Auswahl sein."
+
 #: :error/member-section-invalid
 #, ycp-format
 msgctxt ":error/member-section-invalid"
@@ -2819,6 +2856,12 @@ msgstr "Probeleitung 2 muss sich von Probeleitung 1 unterscheiden."
 msgctxt ":error/member-unique-username"
 msgid "A member already has that username"
 msgstr "Ein Mitglied hat bereits diesen Benutzernamen"
+
+#: :error/poll-edit-closed
+#, ycp-format
+msgctxt ":error/poll-edit-closed"
+msgid "Closed polls cannot be edited."
+msgstr "Geschlossene Umfragen können nicht bearbeitet werden."
 
 #: :error/unknown-form-error
 #, ycp-format
@@ -3081,6 +3124,24 @@ msgstr "Gig-Archiv anzeigen"
 msgctxt ":gigs/archive"
 msgid "Gig Archive"
 msgstr "Gig-Archiv"
+
+#: :poll.status/draft
+#, ycp-format
+msgctxt ":poll.status/draft"
+msgid "Draft"
+msgstr "Entwurf"
+
+#: :poll.status/open
+#, ycp-format
+msgctxt ":poll.status/open"
+msgid "Open"
+msgstr "Offen"
+
+#: :poll.status/closed
+#, ycp-format
+msgctxt ":poll.status/closed"
+msgid "Closed"
+msgstr "Geschlossen"
 
 #: :orange-and-green
 #, ycp-format
@@ -3530,7 +3591,9 @@ msgctxt ":stats/methodology-histograms-body"
 msgid ""
 "The histograms show attendance-rate percentage bins on the x-axis and the "
 "number of members in each bin on the y-axis."
-msgstr "Die Histogramme zeigen Anwesenheitsraten in Prozent-Bins auf der x-Achse und die Anzahl der Mitglieder in jedem Bin auf der y-Achse."
+msgstr ""
+"Die Histogramme zeigen Anwesenheitsraten in Prozent-Bins auf der x-Achse und "
+"die Anzahl der Mitglieder in jedem Bin auf der y-Achse."
 
 #: :stats/last-six-months
 #, ycp-format
@@ -3690,7 +3753,10 @@ msgid ""
 "The dashboard displays gig attendance rate and probe attendance rate as "
 "percentages calculated from attended events relative to the total events a "
 "member could have attended."
-msgstr "Das Dashboard zeigt die Gig-Anwesenheitsrate und Proben-Anwesenheitsrate als Prozentsätze, berechnet aus besuchten Terminen im Verhältnis zu allen Terminen, die ein Mitglied hätte besuchen können."
+msgstr ""
+"Das Dashboard zeigt die Gig-Anwesenheitsrate und Proben-Anwesenheitsrate als "
+"Prozentsätze, berechnet aus besuchten Terminen im Verhältnis zu allen "
+"Terminen, die ein Mitglied hätte besuchen können."
 
 #: :stats/member-table-empty-body
 #, ycp-format
@@ -3778,7 +3844,10 @@ msgctxt ":stats/methodology-active-members-body"
 msgid ""
 "Attendance rate is calculated using the number of members who were marked "
 "active at the time each gig or rehearsal occurred."
-msgstr "Die Anwesenheitsrate wird mit der Anzahl der Mitglieder berechnet, die zum Zeitpunkt des jeweiligen Gigs oder der jeweiligen Probe als aktiv markiert waren."
+msgstr ""
+"Die Anwesenheitsrate wird mit der Anzahl der Mitglieder berechnet, die zum "
+"Zeitpunkt des jeweiligen Gigs oder der jeweiligen Probe als aktiv markiert "
+"waren."
 
 #: :stats/last-seen-tooltip
 #, ycp-format
@@ -3853,7 +3922,8 @@ msgstr "Aktive Mitglieder"
 #, ycp-format
 msgctxt ":stats/gigs-percent-tooltip"
 msgid "The percentage of gigs the member attended in the timeframe"
-msgstr "Der Prozentsatz der Veranstaltungen, die das Mitglied im Zeitraum besucht hat"
+msgstr ""
+"Der Prozentsatz der Veranstaltungen, die das Mitglied im Zeitraum besucht hat"
 
 #: :stats/last-year
 #, ycp-format
@@ -3868,7 +3938,10 @@ msgid ""
 "The accuracy of these attendance statistics depends on complete input from "
 "members. Missing attendance responses can skew the rates and totals shown "
 "here."
-msgstr "Die Genauigkeit dieser Anwesenheitsstatistiken hängt von vollständigen Eingaben der Mitglieder ab. Fehlende Rückmeldungen können die angezeigten Raten und Summen verzerren."
+msgstr ""
+"Die Genauigkeit dieser Anwesenheitsstatistiken hängt von vollständigen "
+"Eingaben der Mitglieder ab. Fehlende Rückmeldungen können die angezeigten "
+"Raten und Summen verzerren."
 
 #: :stats/member-table-subtitle
 #, ycp-format
@@ -3876,7 +3949,9 @@ msgctxt ":stats/member-table-subtitle"
 msgid ""
 "Attendance counts and rates for members who attended at least one gig or "
 "rehearsal in the selected timeframe."
-msgstr "Anwesenheitszahlen und Raten für Mitglieder, die im gewählten Zeitraum mindestens einen Gig oder eine Probe besucht haben."
+msgstr ""
+"Anwesenheitszahlen und Raten für Mitglieder, die im gewählten Zeitraum "
+"mindestens einen Gig oder eine Probe besucht haben."
 
 #: :stats/most-active-gig-count
 #, ycp-format

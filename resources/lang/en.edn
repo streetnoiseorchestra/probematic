@@ -326,7 +326,7 @@
                                   :confirm-delete-gig           "Are you sure you want to delete the gig %1? "
                                   :confirm-delete-policy        "Are you sure you want to delete the insurance policy %1?"
                                   :confirm-delete-instrument    "Are you sure you want to delete the instrument %1?"
-                                  :confirm-delete-poll          "Are you sure you want to delete the poll '%1?'"
+                                  :confirm-delete-poll          "Are you sure you want to delete the poll '%1'?"
                                   :confirm-delete-song          "Are you sure you want to delete the song %1?"
                                   :confirm-delete-team          "Are you sure you want to delete the team %1?"
                                   :confirm-delete-discount-type "Are you sure you want to delete the discount type %1?"
@@ -437,7 +437,12 @@
                                   :gig-rehearsal-leaders-same   "Probeleitung 2 must be different from Probeleitung 1."
                                   :gig-edit-not-allowed         "You are not allowed to edit this gig."
                                   :gig-edit-not-found           "Gig not found."
-                                  :phone-number-invalid          "Phone number is not valid"}
+                                  :phone-number-invalid          "Phone number is not valid"
+                                  :poll-min-choice-greater-than-max "Min choices must be less than or equal to max choices."
+                                  :poll-too-few-options "The poll needs at least as many options as the max choice count."
+                                  :poll-edit-closed "Closed polls cannot be edited."
+                                  :poll-open-immutable "Open poll type and options cannot be changed."
+                                  :poll-not-found "Poll not found."}
  :updating                       "Updating…"
  :email-subject                  {:gig-created      "New Gig: %1"
                                   :gig-updated      "Gig Edit: %1"
@@ -520,9 +525,11 @@
              :error-only-one         "You can only vote for one option"
              :error-between          "You can only vote for between %1 and %2 options"
              :error-not-open         "You cannot vote for a poll that is not open"
+             :error-invalid-option   "That option does not belong to this poll"
              :open-hint              "You need to open the poll before people can vote. WARNING! After you open it, you cannot change it."
              :options-read-only-hint "Once a poll has been opened the choices cannot be changed."
              :closed-on              "Closed On"
+             :closes                 "Closes"
              :days-left              "Days Left"
              :total-votes            "Total Votes"
              :total-voters           "Voters"
@@ -534,6 +541,9 @@
              :single        "Single Choice"
              :multiple-hint "People can choose multiple options."
              :single-hint   "People can only choose one option."}
+ :poll.status {:draft  "Draft"
+               :open   "Open"
+               :closed "Closed"}
 
  :stats                    {:title                            "SNO Stats"
                             :current-range                    "Current: %1 — %2"

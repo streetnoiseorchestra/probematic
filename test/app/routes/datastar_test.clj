@@ -5,6 +5,7 @@
    [app.members.routes :as members.routes]
    [app.nexus :as app-nexus]
    [app.probeplan.routes :as probeplan.routes]
+   [app.poll.routes :as poll.routes]
    [app.routes.datastar :as dsr]
    [app.settings.routes :as settings.routes]
    [app.stats.routes :as stats.routes]
@@ -219,6 +220,33 @@
            (urls/link-gig-log-plays gig-id)))
     (is (= (str "https://example.test/gig/" gig-id "/log-plays")
            (urls/absolute-link-gig-log-plays {:app-base-url "https://example.test"} gig-id)))))
+
+(deftest polls-routes-expose-the-datastar-index-create-detail-and-edit-paths
+  (let [router (http/router ["" (poll.routes/routes)])]
+    (is (= :app/polls
+           (get-in (r/match-by-path router "/polls") [:data :app.route/name])))
+    (is (= :app.poll.routes/index
+           (get-in (r/match-by-path router "/polls") [:data :name])))
+    (is (= :app.poll.routes/create
+           (get-in (r/match-by-path router "/polls/new") [:data :name])))
+    (let [poll-id (random-uuid)]
+      (is (= :app/polls
+             (get-in (r/match-by-path router (str "/poll/" poll-id)) [:data :app.route/name])))
+      (is (= :app.poll.routes/detail
+             (get-in (r/match-by-path router (str "/poll/" poll-id)) [:data :name])))
+      (is (= :app.poll.routes/edit
+             (get-in (r/match-by-path router (str "/poll/" poll-id "/edit")) [:data :name]))))))
+
+(deftest poll-helpers-point-to-public-index-create-detail-and-edit
+  (is (= "/polls"
+         (urls/link-polls-home)))
+  (is (= "/polls/new"
+         (urls/link-polls-create)))
+  (let [poll-id (random-uuid)]
+    (is (= (str "/poll/" poll-id)
+           (urls/link-poll poll-id)))
+    (is (= (str "/poll/" poll-id "/edit")
+           (urls/link-poll-edit poll-id)))))
 
 (deftest members-routes-expose-the-datastar-index-invite-and-detail-paths
   (let [router (http/router ["" (members.routes/routes)])]

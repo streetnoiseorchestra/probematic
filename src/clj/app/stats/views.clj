@@ -275,8 +275,8 @@
   (let [{:keys [from to]} (state/selected-range req)
         stats            (stats/stats-for db from to (state/sort-spec req))]
     (ui2/datastar-page
-     [:script {:src "/js/chart@4.4.0.js"}]
-     [:script {:src "/js/chartjs-plugin-datalabels.min.js"}]
+     [:script {:src "/vendor/chart.js@4.4.0/chart.umd.js"}]
+     [:script {:src "/vendor/chartjs-plugin-datalabels@2.2.0/chartjs-plugin-datalabels.min.js"}]
      [:script {:src "/js/widgets/stats-chart.js"}]
      [:div {:class "stats-page wa-stack wa-gap-xl"}
       (ui2/page-header

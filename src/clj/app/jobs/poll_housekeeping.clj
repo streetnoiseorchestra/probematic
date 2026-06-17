@@ -3,17 +3,17 @@
    [com.brunobonacci.mulog :as μ]
    [app.datomic :as d]
    [app.errors :as errors]
-   [app.queries :as q]
+   [app.poll.queries :as poll.queries]
    [app.datomic.shim :as datomic]
    [app.poll.domain :as domain]
    [ol.jobs-util :as jobs]
    [tick.core :as t]))
 
 (defn- poll-housekeeping-job
-  [{:keys [datomic] :as system} _]
+  [{:keys [datomic]} _]
   (try
     (let [conn (:conn datomic)
-          open-polls (q/find-open-polls (datomic/db conn))
+          open-polls (poll.queries/find-open-polls (datomic/db conn))
           now (t/instant)
           polls-to-close (filter (fn [{:poll/keys [closes-at]}]
                                    (let [closes-at (domain/closes-at-instant closes-at)]

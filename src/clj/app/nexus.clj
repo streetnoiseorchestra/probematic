@@ -8,6 +8,8 @@
    [app.members.actions]
    [app.members.effects :as members.effects]
    [app.probeplan.actions]
+   [app.poll.actions]
+   [app.poll.effects :as poll.effects]
    [app.settings.actions]
    [app.songs.actions]
    [app.songs.effects :as songs.effects]
@@ -27,7 +29,10 @@
     :team/name
     :section/name
     :travel.discount.type/discount-type-id
-    :travel.discount.type/discount-type-name})
+    :travel.discount.type/discount-type-name
+    :poll/poll-id
+    :poll.option/poll-option-id
+    :poll.vote/poll-vote-id})
 
 (defn prepare-tx-with-retractions
   "Transform transactions by connverting nil values to retractions.
@@ -240,11 +245,13 @@
                          :app.members/update-keycloak-meta         update-keycloak-meta-fx
                          :app.members/set-keycloak-account-enabled set-keycloak-account-enabled-fx
                          :app.members.index/resend-invitation      resend-invitation-fx
-                         :app.members.index/delete-invitation      delete-invitation-fx}
+                         :app.members.index/delete-invitation      delete-invitation-fx
+                         :app.poll/send-poll-opened                poll.effects/send-poll-opened-fx}
    :nexus/actions       (merge app.settings.actions/actions
                                app.members.actions/actions
                                app.gigs.actions/actions
                                app.probeplan.actions/actions
                                app.insurance.actions/actions
                                app.file-browser.actions/actions
-                               app.songs.actions/actions)})
+                               app.songs.actions/actions
+                               app.poll.actions/actions)})

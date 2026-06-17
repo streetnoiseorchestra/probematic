@@ -15,6 +15,7 @@
 @import "pages/gigs.css" layer(sno-page);
 @import "pages/insurance.css" layer(sno-page);
 @import "pages/members.css" layer(sno-page);
+@import "pages/polls.css" layer(sno-page);
 @import "pages/settings.css" layer(sno-page);
 @import "pages/probeplan.css" layer(sno-page);
 @import "pages/songs.css" layer(sno-page);

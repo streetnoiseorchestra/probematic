@@ -61,6 +61,18 @@
                    :app.insurance.actions/delete-policy))
     (is (contains? (:nexus/actions nexus-config)
                    :app.insurance.actions/duplicate-policy))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.poll.edit.actions/create-poll))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.poll.edit.actions/update-poll))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.poll.edit.actions/delete-poll))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.poll.detail.actions/open-poll))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.poll.detail.actions/close-poll))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.poll.detail.actions/cast-vote))
     (is (contains? (:nexus/effects nexus-config) :db/transact))
     (is (contains? (:nexus/effects nexus-config) :app.datastar/redirect))
     (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-details-edited))
@@ -73,7 +85,8 @@
     (is (contains? (:nexus/effects nexus-config) :app.members/send-user-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members/set-keycloak-account-enabled))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
-    (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))))
+    (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))
+    (is (contains? (:nexus/effects nexus-config) :app.poll/send-poll-opened))))
 
 (deftest system-config-wires-nexus-into-the-handler-system
   (let [cfg (app.system/system-config {:profile :test})]

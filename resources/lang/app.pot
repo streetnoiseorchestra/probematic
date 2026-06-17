@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Probematic\n"
-"POT-Creation-Date: 2026-05-21 09:18+0000\n"
+"POT-Creation-Date: 2026-06-17 12:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1475,6 +1475,12 @@ msgctxt ":poll/closes-at"
 msgid "Automatically Closes At"
 msgstr ""
 
+#: :poll/closes
+#, ycp-format
+msgctxt ":poll/closes"
+msgid "Closes"
+msgstr ""
+
 #: :poll/choices
 #, ycp-format
 msgctxt ":poll/choices"
@@ -1563,6 +1569,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":poll/max-choice-hint"
 msgid "The maximum number of choices a person can make."
+msgstr ""
+
+#: :poll/error-invalid-option
+#, ycp-format
+msgctxt ":poll/error-invalid-option"
+msgid "That option does not belong to this poll"
 msgstr ""
 
 #: :poll/results
@@ -2348,7 +2360,7 @@ msgstr ""
 #: :action/confirm-delete-poll
 #, ycp-format
 msgctxt ":action/confirm-delete-poll"
-msgid "Are you sure you want to delete the poll '%1?'"
+msgid "Are you sure you want to delete the poll '%1'?"
 msgstr ""
 
 #: :action/ignore
@@ -2489,6 +2501,12 @@ msgctxt ":error/is-required"
 msgid "%1 is required."
 msgstr ""
 
+#: :error/poll-too-few-options
+#, ycp-format
+msgctxt ":error/poll-too-few-options"
+msgid "The poll needs at least as many options as the max choice count."
+msgstr ""
+
 #: :error/go-home
 #, ycp-format
 msgctxt ":error/go-home"
@@ -2499,6 +2517,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":error/member-username-format"
 msgid "should have only letters, numbers and _.@-'"
+msgstr ""
+
+#: :error/poll-not-found
+#, ycp-format
+msgctxt ":error/poll-not-found"
+msgid "Poll not found."
 msgstr ""
 
 #: :error/gig-edit-not-found
@@ -2517,6 +2541,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":error/gig-end-time-before-set-time"
 msgid "End time must be at or after set time."
+msgstr ""
+
+#: :error/poll-open-immutable
+#, ycp-format
+msgctxt ":error/poll-open-immutable"
+msgid "Open poll type and options cannot be changed."
 msgstr ""
 
 #: :error/unauthorized-message
@@ -2627,6 +2657,12 @@ msgctxt ":error/gig-edit-not-allowed"
 msgid "You are not allowed to edit this gig."
 msgstr ""
 
+#: :error/poll-min-choice-greater-than-max
+#, ycp-format
+msgctxt ":error/poll-min-choice-greater-than-max"
+msgid "Min choices must be less than or equal to max choices."
+msgstr ""
+
 #: :error/member-section-invalid
 #, ycp-format
 msgctxt ":error/member-section-invalid"
@@ -2643,6 +2679,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":error/member-unique-username"
 msgid "A member already has that username"
+msgstr ""
+
+#: :error/poll-edit-closed
+#, ycp-format
+msgctxt ":error/poll-edit-closed"
+msgid "Closed polls cannot be edited."
 msgstr ""
 
 #: :error/unknown-form-error
@@ -2895,6 +2937,24 @@ msgstr ""
 #, ycp-format
 msgctxt ":gigs/archive"
 msgid "Gig Archive"
+msgstr ""
+
+#: :poll.status/draft
+#, ycp-format
+msgctxt ":poll.status/draft"
+msgid "Draft"
+msgstr ""
+
+#: :poll.status/open
+#, ycp-format
+msgctxt ":poll.status/open"
+msgid "Open"
+msgstr ""
+
+#: :poll.status/closed
+#, ycp-format
+msgctxt ":poll.status/closed"
+msgid "Closed"
 msgstr ""
 
 #: :orange-and-green

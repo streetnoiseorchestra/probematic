@@ -118,23 +118,6 @@
    (when (config/dev-mode? (-> req :system :env))
      (script req relative-prefix "datastar-inspector@1.1.4.js" :type :module))))
 
-(defn chart-poll-scripts [req]
-  (list
-   (script req nil "chart@4.4.0.js")
-   (script req nil "chartjs-plugin-datalabels.min.js")
-   (script req nil "widgets/poll-chart.js")))
-
-(defn chart-stat-scripts [req]
-  (list
-   (script req nil "chart@4.4.0.js")
-   (script req nil "chartjs-plugin-datalabels.min.js")
-   (script req nil "widgets/stats-chart.js")))
-
-(defn sortable-scripts [req]
-  (list
-   (script req nil "widgets/sortable.js")
-   (script req nil "sortable@1.14.0.js")))
-
 (defn html5-response
   ([req body] (html5-response req nil body))
   ([req {:keys [js extra-scripts title]} body]

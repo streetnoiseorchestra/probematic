@@ -3,6 +3,7 @@
    [app.email.email-worker :as email-worker]
    [app.email.templates :as tmpl]
    [app.i18n :as i18n]
+   [app.poll.queries :as poll.queries]
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.urls :as url]
@@ -151,7 +152,7 @@
 
 (defn send-poll-opened! [req poll-id]
   (let [db (datomic/db (:datomic-conn req))
-        poll (q/retrieve-poll db poll-id)
+        poll (poll.queries/retrieve-poll db poll-id)
         members (q/active-members db)
         sys (sys-from-req req)]
     (queue-email! sys  (build-new-poll-opened (sys-from-req req) poll members))))
@@ -266,7 +267,7 @@
     (def redis-opts (-> state/system :app.ig/redis))
     (def env (-> state/system :app.ig/env))
 
-    (def poll (q/retrieve-poll db #uuid "018b60ab-32f5-8c78-9c67-28da6b48ec4c"))
+    (def poll (poll.queries/retrieve-poll db #uuid "018b60ab-32f5-8c78-9c67-28da6b48ec4c"))
 
     (def tr (i18n/tr-with (i18n/read-langs) ["en"]))
     (def sys {:tr tr :env env})) ;; rcf

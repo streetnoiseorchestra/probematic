@@ -12,19 +12,6 @@
 (def show-committed-path [:gig-detail :attendance :show-committed?])
 (def remind-all-sent-at-path [:gig-detail :attendance :remind-all-sent-at])
 
-(defn- keywordize-keys [x]
-  (cond
-    (map? x) (into {}
-                   (map (fn [[k v]]
-                          [(if (keyword? k) k (keyword k))
-                           (keywordize-keys v)]))
-                   x)
-    (vector? x) (mapv keywordize-keys x)
-    :else x))
-
-(defn- params [signals]
-  (-> signals keywordize-keys :gig-attendance))
-
 (defn- str->plan [plan]
   (when (seq (str plan))
     ((set domain/plans) (keyword "plan" (str plan)))))
@@ -69,7 +56,7 @@
   [:db/transact tx-data {:on-success [[:app.gigs/trigger-gig-edited gig-id :attendance]]}])
 
 (defn update-attendance-plan-action [{:keys [db] :as state} signals]
-  (let [{:keys [plan] :as params} (params signals)
+  (let [{:keys [plan] :as params} (:gig-attendance signals)
         {:keys [gig-id member-id]} (ids params)
         plan-kw (str->plan plan)]
     (if-not plan-kw
@@ -80,7 +67,7 @@
         [(transact-attendance-effect gig-id tx-data)]))))
 
 (defn update-attendance-motivation-action [{:keys [db] :as state} signals]
-  (let [{:keys [motivation] :as params} (params signals)
+  (let [{:keys [motivation] :as params} (:gig-attendance signals)
         {:keys [gig-id member-id]} (ids params)
         motivation-kw (str->motivation motivation)]
     (if-not motivation-kw
@@ -91,7 +78,7 @@
         [(transact-attendance-effect gig-id tx-data)]))))
 
 (defn open-attendance-comment-action [_state signals]
-  (let [{:keys [comment] :as params} (params signals)
+  (let [{:keys [comment] :as params} (:gig-attendance signals)
         {:keys [gig-id member-id]} (ids params)]
     [[:app.datastar/assoc-state
       comment-edit-path
@@ -121,7 +108,7 @@
       [(create-attendance-tx db gig-id member-id {:attendance/comment comment})])))
 
 (defn update-attendance-comment-action [{:keys [db]} signals]
-  (let [{:keys [comment] :as params} (params signals)
+  (let [{:keys [comment] :as params} (:gig-attendance signals)
         {:keys [gig-id member-id]} (ids params)
         tx-data    (comment-tx-data db gig-id member-id comment)
         close-edit [:app.datastar/assoc-state comment-edit-path nil]]
@@ -131,7 +118,7 @@
       [support/clear-loading close-edit])))
 
 (defn switch-attendance-comment-action [{:keys [db]} signals]
-  (let [{:keys [comment comment-gig-id comment-member-id next-comment next-gig-id next-member-id]} (params signals)
+  (let [{:keys [comment comment-gig-id comment-member-id next-comment next-gig-id next-member-id]} (:gig-attendance signals)
         comment-gig-id    (util/ensure-uuid! comment-gig-id)
         comment-member-id (util/ensure-uuid! comment-member-id)
         next-gig-id       (util/ensure-uuid! next-gig-id)
@@ -148,14 +135,14 @@
       true    (conj open-next clear-switching))))
 
 (defn toggle-attendance-committed-action [_state signals]
-  (let [{:keys [show-committed? show-committed]} (params signals)
+  (let [{:keys [show-committed? show-committed]} (:gig-attendance signals)
         show-committed? (form/normalize-bool (if (some? show-committed?)
                                                show-committed?
                                                show-committed))]
     [[:app.datastar/assoc-state show-committed-path show-committed?]]))
 
 (defn send-reminder-to-all-action [{:keys [now]} signals]
-  (let [{:keys [gig-id]} (params signals)
+  (let [{:keys [gig-id]} (:gig-attendance signals)
         gig-id (util/ensure-uuid! gig-id)]
     [[:app.gigs/send-reminder-to-all gig-id]
      [:app.datastar/assoc-state remind-all-sent-at-path now]]))

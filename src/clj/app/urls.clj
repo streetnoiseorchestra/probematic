@@ -59,21 +59,24 @@
 (def link-policy-changes-confirm (partial link-helper "/insurance-changes-excel/" :insurance.policy/policy-id))
 (defn link-policy-table-member [policy-or-policy-id member-or-member-id]
   (link-policy policy-or-policy-id (str "/#coverages-" (entity-id :member/member-id member-or-member-id))))
-(def link-poll (partial link-helper "/poll/" :poll/poll-id))
+(defn link-poll [poll-or-poll-id]
+  (link-helper "/poll/" :poll/poll-id poll-or-poll-id ""))
+(defn link-poll-edit [poll-or-poll-id]
+  (link-helper "/poll/" :poll/poll-id poll-or-poll-id "/edit"))
 (def link-instrument (partial link-helper "/instrument/" :instrument/instrument-id))
 (def link-coverage (partial link-helper "/insurance-coverage/" :instrument.coverage/coverage-id))
 
 (def link-coverage-edit (partial link-helper "/insurance-coverage-edit/" :instrument.coverage/coverage-id))
 
 (defn link-gigs-home [] "/gigs")
-(defn link-polls-home [] "/polls/")
+(defn link-polls-home [] "/polls")
 (defn link-songs-home [] "/songs/")
 (defn link-calendar [] "/calendar/")
 (defn link-probeplan-home [] "/probeplan")
 (defn link-gig-create [] "/gigs/create")
 (defn link-gig-archive [] "/gigs/archive")
 (defn link-gig-archive-year [year] (str "/gigs/archive/" year))
-(defn link-polls-create [] "/polls/new/")
+(defn link-polls-create [] "/polls/new")
 (defn link-insurance [] "/insurance/")
 
 (defn link-insurance-survey-start [policy-id]
@@ -141,7 +144,7 @@
   (str (config/app-base-url env) (link-gig-log-plays gig-id)))
 
 (defn absolute-link-poll [env poll-id]
-  (str (config/app-base-url env) "/poll/" poll-id "/"))
+  (str (config/app-base-url env) (link-poll poll-id)))
 
 (defn absolute-link-song [env song-id]
   (str (config/app-base-url env) "/song/" song-id "/"))

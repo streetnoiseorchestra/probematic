@@ -330,6 +330,8 @@
   "Sie können nur für Optionen zwischen %1 und %2 stimmen",
   :error-not-open
   "Sie können nicht für eine Umfrage stimmen, die nicht geöffnet ist",
+  :error-invalid-option
+  "Diese Option gehört nicht zu dieser Umfrage",
   :poll-type "Umfragetyp",
   :close-early "Früh schließen",
   :autoremind? "Automatische Erinnerung?",
@@ -339,6 +341,7 @@
   :options-read-only-hint
   "Sobald eine Umfrage geöffnet wurde, können die Auswahlmöglichkeiten nicht mehr geändert werden.",
   :closed-on "Geschlossen am",
+  :closes "Schließt",
   :options "Optionen",
   :max-choice-hint
   "Die maximale Anzahl an Entscheidungen, die eine Person treffen kann.",
@@ -430,6 +433,10 @@
   :single "Einzelauswahl",
   :multiple-hint "Menschen können mehrere Optionen wählen.",
   :single-hint "Menschen können nur eine Option wählen."},
+ :poll.status
+ {:draft "Entwurf",
+  :open "Offen",
+  :closed "Geschlossen"}
  :sno-id "SNO ID",
  :band-owes-you
  "Die Band schuldet dir %1! Bitte kontaktiere den Kassier.",
@@ -522,7 +529,12 @@
   :gig-edit-not-found "Probe oder Gig wurde nicht gefunden.",
   :notify "Click to notify Casey",
   :member-unique-username
-  "Ein Mitglied hat bereits diesen Benutzernamen"},
+  "Ein Mitglied hat bereits diesen Benutzernamen",
+  :poll-min-choice-greater-than-max "Minimale Auswahl muss kleiner oder gleich der maximalen Auswahl sein.",
+  :poll-too-few-options "Die Umfrage braucht mindestens so viele Optionen wie die maximale Auswahl.",
+  :poll-edit-closed "Geschlossene Umfragen können nicht bearbeitet werden.",
+  :poll-open-immutable "Typ und Optionen einer offenen Umfrage können nicht geändert werden.",
+  :poll-not-found "Umfrage nicht gefunden."}
  :reminders
  {:remind-me-in "Erinnere mich in",
   :remind-all "Erinnern alle",

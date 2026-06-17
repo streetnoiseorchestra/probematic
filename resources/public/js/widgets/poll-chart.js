@@ -1,151 +1,165 @@
-var activePollChart = null;
-function PollChart(ctx) {
-  const pollLabelSelector = ctx.getAttribute("data-labels");
-  const pollDataSetsSelector = ctx.getAttribute("data-datasets");
-  const labels = JSON.parse(document.querySelector(pollLabelSelector).innerHTML)
-  const data = JSON.parse(document.querySelector(pollDataSetsSelector).innerHTML)
-  const transformedData = [];
-  const totalVoters = data.totalVoters
-  data.values.forEach((votes, index) => {
-    if (votes > 0) {
-      transformedData.push(votes);
-      //this._optionToSlice[index] = counter++;
-    }
-  });
-  const totalVotes = transformedData.reduce((sum, votes) => sum + votes, 0);
-  console.log("total votes", totalVotes)
-  const displayMode = "percentage";
-  const fontFamily = getComputedStyle(document.body).fontFamily;
+const activePollCharts = new WeakMap();
 
-  if(activePollChart) {
-    activePollChart.destroy();
+function chartData(canvas) {
+  const selector = canvas.getAttribute('data-poll-values');
+  const source = selector && document.querySelector(selector);
+
+  if (!source) {
+    return null;
   }
 
-  activePollChart = new Chart(ctx, {
+  try {
+    return JSON.parse(source.textContent || '{}');
+  } catch (_err) {
+    return null;
+  }
+}
+
+function destroyChart(canvas) {
+  const existing = activePollCharts.get(canvas);
+
+  if (existing) {
+    existing.destroy();
+    activePollCharts.delete(canvas);
+  }
+}
+
+function renderChart(canvas) {
+  if (!window.Chart) {
+    return null;
+  }
+
+  const data = chartData(canvas);
+
+  if (!data) {
+    return null;
+  }
+
+  destroyChart(canvas);
+
+  const labels = Array.isArray(data.labels) ? data.labels : [];
+  const values = Array.isArray(data.values) ? data.values : [];
+  const totalVoters = Number(data.totalVoters || 0);
+  const fontFamily = getComputedStyle(document.body).fontFamily;
+  const plugins = window.ChartDataLabels ? [window.ChartDataLabels] : [];
+
+  const chart = new window.Chart(canvas, {
     type: 'bar',
     data: {
-      labels: labels,
+      labels,
       datasets: [
         {
-          data: transformedData,
-          hoverBorderColor: "#fff",
-        }
-      ]
-
+          data: values,
+          hoverBorderColor: '#fff',
+          backgroundColor: '#22c55e',
+          borderColor: 'transparent',
+          borderWidth: 0,
+        },
+      ],
     },
     options: {
       maintainAspectRatio: false,
       indexAxis: 'y',
       barThickness: 20,
-      borderWidth: 0,
-      backgroundColor: "#22c55e",
-      borderColor: "transparent",
-
       responsive: true,
       aspectRatio: 1.1,
       animation: { duration: 0 },
-      //layout: { padding: { left: (datasets[0].data.reduce((a, b) => a > b ? a : b).toString().length - 1) * 7 } },
       scales: {
         x: {
-          ticks: {
-            display: false
-          },
-          grid: {
-            display: false
-          },
+          beginAtZero: true,
+          ticks: { display: false },
+          grid: { display: false },
         },
         y: {
           ticks: {
-            callback: function (val, index) {
-                return '   ' + this.getLabelForValue(val);
+            callback(value) {
+              return `   ${this.getLabelForValue(value)}`;
             },
             font: {
               family: fontFamily,
-              size: 16
+              size: 16,
             },
           },
-          grid: {
-            display: false
-          },
-          beginAtZero: true
-        }
+          grid: { display: false },
+          beginAtZero: true,
+        },
       },
       plugins: {
         tooltip: false,
-        legend: {  display: false },
+        legend: { display: false },
         datalabels: {
-          color: "#333",
-          backgroundColor: "rgba(255, 255, 255, 0.5)",
+          color: '#333',
+          backgroundColor: 'rgba(255, 255, 255, 0.5)',
           borderRadius: 2,
           font: {
             family: fontFamily,
             size: 16,
           },
           padding: {
-              top: 2,
-              right: 6,
-              bottom: 2,
-              left: 6,
-            },
+            top: 2,
+            right: 6,
+            bottom: 2,
+            left: 6,
+          },
           formatter(votes) {
-            if (displayMode !== "percentage") {
-              return votes;
-            }
+            const percent = totalVoters > 0 ? (Number(votes) * 100.0) / totalVoters : 0;
+            const formattedPercent = Number(percent.toFixed(1)).toLocaleString('de-AT', {
+              maximumFractionDigits: 1,
+            });
 
-            let percent =  (votes * 100.0) / totalVoters
-            percent = Number(percent.toFixed(1)).toLocaleString('de-AT', { maximumFractionDigits: 1 });
-            return `${votes} votes (${percent}%)`;
+            return `${votes} (${formattedPercent}%)`;
           },
         },
-      }
+      },
     },
-    plugins: [window.ChartDataLabels],
+    plugins,
+  });
 
-    /*
-     plugins: [{
-        id: 'custom_text',
-        afterDrawDisabled: (chart) => {
-            const ctx = chart.ctx;
-            ctx.textAlign = 'end';
-            ctx.font = '16px Inter';
-            ctx.fillStyle = "rgb(145, 145, 145)";
+  activePollCharts.set(canvas, chart);
+  return chart;
+}
 
-          chart.data.datasets.forEach((dataset, datasetIndex) => {
-            const datasetMeta = chart.getDatasetMeta(datasetIndex);
-            datasetMeta.data.length
-            datasetMeta.data.forEach((bar, index) => {
-              const votes = dataset.data[index];
-              const percentageRaw = (votes / totalVotes) * 100.0;
-              const percentage = Number(percentageRaw.toFixed(1)).toLocaleString('de-AT', { maximumFractionDigits: 1 });
+function initAll(root = document) {
+  root.querySelectorAll('canvas.poll-chart').forEach(renderChart);
+}
 
-              // Draw %age on the right
-              const x = bar.x;
-              const y = bar.y - (bar.height/2) - 5;
-              ctx.fillText(`${percentage}%`, x, y);
-            });
-          });
+function observeCharts() {
+  if (!document.body) {
+    return;
+  }
+
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (!(node instanceof Element)) {
+          continue;
         }
-     }]
-     */
+
+        if (node.matches('canvas.poll-chart')) {
+          renderChart(node);
+        } else {
+          initAll(node);
+        }
+      }
+    }
   });
 
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
-function discoverPolls() {
-  document.querySelectorAll('canvas.poll-chart').forEach(container => PollChart(container))
+function start() {
+  initAll();
+  observeCharts();
 }
 
-
-if(document.readyState !== 'loading') {
-    discoverPolls();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', start, { once: true });
 } else {
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log("loaded")
-    discoverPolls();
-  });
+  start();
 }
 
-document.body.addEventListener("htmx:afterSettle", function(evt) {
-  console.log("aftersettle")
-  discoverPolls();
-})
+window.SnoPollCharts = {
+  init: initAll,
+  render: renderChart,
+  destroy: destroyChart,
+};
