@@ -10,9 +10,49 @@
    [app.stats.routes :as stats.routes]
    [app.urls :as urls]
    [app.test-common :as tc]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [reitit.core :as r]
    [reitit.http :as http]))
+
+(def test-req
+  {:system  {:env {:ig/system {:app.ig/profile :test}}}
+   :tr      pr-str
+   :session {:session/member {:member/name "Test Member"
+                              :member/nick "Tester"}}})
+
+(defn page [_req]
+  [:section {:id "datastar-toggle-fixture"}
+   "Datastar toggle fixture"])
+
+(defn response-body-string [response]
+  (let [body (:body response)]
+    (cond
+      (string? body) body
+      (instance? java.io.InputStream body) (slurp body)
+      :else (str body))))
+
+(defn page-get-response []
+  (let [[_path _route-data [_child-path child-data]]
+        (dsr/page-routes {:page-name ::toggle-fixture
+                          :path      "/toggle-fixture"
+                          :view-ns   'app.routes.datastar-test})]
+    ((:get child-data) test-req)))
+
+(deftest page-get-can-render-full-page-when-shim-disabled
+  (binding [dsr/*use-page-shim?* false]
+    (let [response (page-get-response)
+          body     (response-body-string response)]
+      (is (= {:status         200
+              :content-type   "text/html"
+              :contains-page? true
+              :contains-sse?  true
+              :contains-morph? true}
+             {:status         (:status response)
+              :content-type   (get-in response [:headers "Content-Type"])
+              :contains-page? (str/includes? body "Datastar toggle fixture")
+              :contains-sse?  (str/includes? body "long-lived-sse")
+              :contains-morph? (str/includes? body "id=\"morph\"")})))))
 
 (defn route-signature [route]
   {:path         (first route)

@@ -247,14 +247,20 @@
   ;; unique against a given users other tabs.
   "self.crypto.randomUUID().substring(0,8)")
 
+(def ^:private datastar-fetch-progress-js
+  "evt.detail.el.id !== 'long-lived-sse' && (evt.detail.type === 'started' ? BProgressJS.BProgress.start() : (evt.detail.type === 'finished' || evt.detail.type === 'error') && BProgressJS.BProgress.done()); ")
+
+(defn- datastar-page-body [content]
+  [:body {:data-on:datastar-fetch datastar-fetch-progress-js}
+   [:div {:data-init on-load-js
+          :id        "long-lived-sse"}]
+   [:div {:data-signals:tabid tabid-js}]
+   content])
+
 (defn shim-html
   [req opts]
   (html5 req (merge {:title "SNOrga"} opts)
-         [:body {:data-on:datastar-fetch "evt.detail.el.id !== 'long-lived-sse' && (evt.detail.type === 'started' ? BProgressJS.BProgress.start() : (evt.detail.type === 'finished' || evt.detail.type === 'error') && BProgressJS.BProgress.done()); "}
-          [:div {:data-init on-load-js
-                 :id        "long-lived-sse"}]
-          [:div {:data-signals:tabid tabid-js}]
-          [:main {:id "morph"}]]))
+         (datastar-page-body [:main {:id "morph"}])))
 
 (defn app-shell-body
   [req body]
@@ -293,6 +299,11 @@
        body]]
      (when (config/dev-mode? (-> req :system :env))
        [:datastar-inspector])]))
+
+(defn datastar-page-html
+  [req opts body]
+  (html5 req (merge {:title "SNOrga"} opts)
+         (datastar-page-body (app-shell-body req body))))
 
 (defn app-shell-html
   ([req body]

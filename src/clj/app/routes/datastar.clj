@@ -11,6 +11,10 @@
    (java.nio.charset StandardCharsets)
    (java.util.zip GZIPOutputStream)))
 
+;; Toggle this to false to render full page bodies on initial GET requests while
+;; keeping the long-lived SSE POST active.
+(def ^:dynamic *use-page-shim?* false)
+
 (defn- shim-html [req]
   (layout2/shim-html req nil))
 
@@ -69,6 +73,17 @@
 (defn shim [req]
   #_(layout/app-shell req nil)
   (precompressed-shim-response req (cached-precompressed-shim req)))
+
+(defn- full-page-response [render-fn opts req]
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body    (layout2/datastar-page-html req opts (render-fn req))})
+
+(defn- initial-get-handler [render-fn opts]
+  (fn [req]
+    (if *use-page-shim?*
+      (shim req)
+      (full-page-response render-fn opts req))))
 
 (defn resolve-from-kw
   "Resolves a namespace-qualified keyword to a symbol and then resolves that symbol to a var."
@@ -132,7 +147,7 @@
         wrapped-render (some-> render-fn wrap-render-fn)
         route-data     (cond-> (merge {:name page-name} route-data)
                          extra-head (assoc :extra-head extra-head))
-        child-routes   (into [["" {:get  shim
+        child-routes   (into [["" {:get  (initial-get-handler render-fn route-data)
                                    :post (d*/render-handler wrapped-render)}]])]
     (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     (into [path route-data] child-routes)))
