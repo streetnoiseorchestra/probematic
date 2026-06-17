@@ -144,24 +144,24 @@
   font-size: var(--wa-font-size-s);
 }
 
-.dashboard-insurance-todo-metric wa-icon {
+.dashboard-insurance-todo-metric .sno-icon {
   inline-size: var(--sno-dashboard-insurance-todo-icon-size);
   block-size: var(--sno-dashboard-insurance-todo-icon-size);
 }
 
-.dashboard-insurance-todo-metric--needs-review wa-icon {
+.dashboard-insurance-todo-metric--needs-review .sno-icon {
   color: var(--sno-dashboard-insurance-todo-needs-review-color);
 }
 
-.dashboard-insurance-todo-metric--changed wa-icon {
+.dashboard-insurance-todo-metric--changed .sno-icon {
   color: var(--sno-dashboard-insurance-todo-changed-color);
 }
 
-.dashboard-insurance-todo-metric--new wa-icon {
+.dashboard-insurance-todo-metric--new .sno-icon {
   color: var(--sno-dashboard-insurance-todo-new-color);
 }
 
-.dashboard-insurance-todo-metric--removed wa-icon {
+.dashboard-insurance-todo-metric--removed .sno-icon {
   color: var(--sno-dashboard-insurance-todo-removed-color);
 }
 

@@ -6,6 +6,7 @@
    [app.file-browser.routes :as file-browser]
    [app.gigs.routes :as gigs]
    [app.insurance.routes :as insurance]
+   [app.icons :as icons]
    [app.interceptors :as interceptors]
    [app.interceptors.compression :as compression]
    [app.members.routes :as members]
@@ -32,6 +33,8 @@
                                        (interceptors/filestore-interceptor system)
                                        (interceptors/current-user-interceptor system)
                                        (ds/datastar-refresh-interceptor system)]))}
+
+   (icons/routes (:icon-sprites system))
 
    (auth/routes system)
    (gigs/unauthenticated-routes system)

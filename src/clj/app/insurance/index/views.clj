@@ -8,6 +8,7 @@
    [app.insurance.ui :as insurance.ui]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]))
 
 (def policy-status-data
@@ -18,10 +19,10 @@
 (defn- policy-status-icon [status]
   (let [{:keys [icon class]} (policy-status-data status)]
     (when icon
-      [:wa-icon {:library     "snoico"
-                 :name        icon
-                 :class       (ui2/cs "insurance-policy-status-icon" class)
-                 :aria-hidden true}])))
+      [ico/Icon {::ico/library :snoico
+                 ::ico/name    icon
+                 :class        (ui2/cs "insurance-policy-status-icon" class)
+                 :aria-hidden  true}])))
 
 (defn- policy-remove-dialog [{:keys [tr] :as req} {:insurance.policy/keys [policy-id name]}]
   (let [loading-id (pr-str (str policy-id))]
@@ -97,9 +98,9 @@
     :actions [[button/Button {:appearance "outlined"
                               :variant    "brand"
                               :href       "/insurance-new/"}
-               [:wa-icon {:slot    "start"
-                          :library "snoico"
-                          :name    "circle-plus-solid"}]
+               [ico/Icon {::ico/library :snoico
+                          ::ico/name    :circle-plus-solid
+                          :slot         "start"}]
                (tr [:insurance/insurance-policy])]]}
    (ui2/table-shell
     (if (seq policies)

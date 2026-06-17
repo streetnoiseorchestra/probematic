@@ -1,13 +1,14 @@
 (ns app.ui2.button
   (:require
    [app.ui2.core :as uic]
+   [app.ui2.icon :as ico]
    [dev.onionpancakes.chassis.compiler :as cc]
    [dev.onionpancakes.chassis.core :as c]))
 
 (def doc-button
   {:examples ["[button/Button {:appearance \"filled\" :variant \"brand\"} \"Save\"]"
               "[button/Button {:href \"/members\" :appearance \"plain\"} \"Members\"]"
-              "[button/Button {:appearance \"plain\" :aria-label \"Download\"} [:wa-icon {:name \"download\"}]]"]
+              "[button/Button {:appearance \"plain\" :aria-label \"Download\"} [ico/Icon {::ico/name :download ::ico/library :phosphor}]]"]
    :ns       *ns*
    :as       'button
    :name     'Button
@@ -70,7 +71,7 @@
 
 (defn- icon-child? [child]
   (and (vector? child)
-       (= :wa-icon (first child))))
+       (#{:wa-icon ico/Icon} (first child))))
 
 (defn- basic-label-child? [child]
   (and (some? child)

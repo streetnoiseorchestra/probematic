@@ -1,6 +1,7 @@
 (ns app.insurance.ui
   (:require
-   [app.ui2 :as ui2]))
+   [app.ui2 :as ui2]
+   [app.ui2.icon :as ico]))
 
 (def todo-metric-order
   [:needs-review :changed :new :removed])
@@ -29,8 +30,8 @@
        [:span {:id    metric-id
                :class (ui2/cs (str class-prefix "-metric")
                               (str class-prefix "-metric--" status-name))}
-        [:wa-icon {:library "snoico"
-                   :name    icon-name}]
+        [ico/Icon {::ico/library :snoico
+                   ::ico/name    icon-name}]
         [:span {:class (str class-prefix "-count")} count]]
-       [:wa-tooltip {:for metric-id}
+       [:wa-tooltip {:for metric-id :class "wa-cloak"}
         (tr tooltip-key)]))))

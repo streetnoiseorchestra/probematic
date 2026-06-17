@@ -10,6 +10,7 @@
    [app.qrcode :as qr]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [app.util :as util]
    [clojure.string :as str]))
@@ -165,10 +166,10 @@
   ([icon-name]
    (calendar-menu-icon icon-name nil))
   ([icon-name extra-class]
-   [:wa-icon {:slot    "icon"
-              :library "snoico"
-              :name    icon-name
-              :class   (ui2/cs "dashboard-calendar-service-icon" extra-class)}]))
+   [ico/Icon {::ico/library :snoico
+              ::ico/name    icon-name
+              :slot         "icon"
+              :class        (ui2/cs "dashboard-calendar-service-icon" extra-class)}]))
 
 (defn- calendar-subscribe-button [{:keys [tr system]}]
   (when-let [{:keys [https webcal google outlook-365 outlook-live]} (calendar-url-data (:env system))]
@@ -176,9 +177,9 @@
      [button/Button {:slot       "trigger"
                      :appearance "outlined"
                      :with-caret true}
-      [:wa-icon {:library "snoico"
-                 :name    "calendar"
-                 :slot    "start"}]
+      [ico/Icon {::ico/library :snoico
+                 ::ico/name    :calendar
+                 :slot         "start"}]
       (tr [:action/add-to-calendar])]
      [:wa-dropdown-item {:data-on:click (str "navigator.clipboard.writeText(" (js-value https) ")")}
       (calendar-menu-icon "copy" "dashboard-calendar-service-icon--copy")

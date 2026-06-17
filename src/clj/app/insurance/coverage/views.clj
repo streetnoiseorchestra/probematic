@@ -4,6 +4,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [clojure.string :as str]
    [medley.core :as m]))
@@ -26,10 +27,10 @@
 
 (defn- icon [{:keys [class icon]}]
   (when icon
-    [:wa-icon {:library     "snoico"
-               :name        icon
-               :class       (ui2/cs "insurance-coverage-icon" class)
-               :aria-hidden true}]))
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    icon
+               :class        (ui2/cs "insurance-coverage-icon" class)
+               :aria-hidden  true}]))
 
 (defn- kind-badge [tr private?]
   [:wa-badge {:appearance "outlined"
@@ -42,8 +43,8 @@
 (defn- breadcrumb [{:keys [tr]} policy instrument]
   [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
    [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [:wa-icon {:library "snoico"
-               :name    "shield-check-outline"}]
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    :shield-check-outline}]
     (tr [:nav/insurance])]
    [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
     (:insurance.policy/name policy)]
@@ -60,9 +61,9 @@
     [[button/Button {:appearance "outlined"
                      :variant    "brand"
                      :href       (urls/link-coverage-edit coverage)}
-      [:wa-icon {:slot    "start"
-                 :library "snoico"
-                 :name    "cog"}]
+      [ico/Icon {::ico/library :snoico
+                 ::ico/name    :cog
+                 :slot         "start"}]
       (tr [:action/edit])]]))
 
 (defn- image-card [_req {:keys [thumbnail full]}]

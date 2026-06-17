@@ -7,10 +7,9 @@
    [app.secret-box :as secret-box]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.urls :as url]
    [app.util :as util]
-   [clojure.edn :as edn]
-   [clojure.java.io :as io]
    [clojure.string :as str]
    [jsonista.core :as j]))
 
@@ -37,14 +36,14 @@
                           :appearance "plain"}
                    (active? req route-name) (assoc :variant "brand"
                                                    :aria-current "page"))
-   [:wa-icon {:library "snoico"
-              :name    (name icon)
-              :slot    "start"}]
+   [ico/Icon {::ico/library :snoico
+              ::ico/name    icon
+              :slot         "start"}]
    label])
 
 (defn navigation [req]
   (let [tr (i18n/tr-from-req req)]
-    (into [:nav]
+    (into [:nav {:class "wa-stack wa-gap-0"}]
           (map (partial nav-button req) (nav-items tr)))))
 
 (defn- avatar-src [member]
@@ -56,9 +55,10 @@
 
 (defn brand-link []
   [:a {:href "/" :aria-label "Home"}
-   [:wa-icon {:library    "snoico"
-              :name       "logotype"
-              :auto-width true}]])
+   [ico/Icon {::ico/library    :snoico
+              ::ico/name       :logotype
+              ::ico/auto-width true
+              :style           "color: var(--sno-brand-green)"}]])
 
 (defn navigation-header [req member]
   (let [tr  (i18n/tr-from-req req)
@@ -74,28 +74,28 @@
                             :style "--size: 2rem"}
                      src (assoc :image src))
         (when-not src
-          [:wa-icon {:library "snoico"
-                     :name    "user"
-                     :slot    "icon"}])]
+          [ico/Icon {::ico/library :snoico
+                     ::ico/name    :user
+                     :slot         "icon"}])]
        [:span (ui2/member-nick member)]]]
      [:wa-dropdown-item {:value   (url/link-member member)
                          :onclick "window.location = this.value"}
-      [:wa-icon (merge {:library "snoico"
-                        :name    "user"}
+      [ico/Icon (merge {::ico/library :snoico
+                        ::ico/name    :user}
                        menu-icon-opts)]
       (tr [:my-profile])]
      [:wa-dropdown-item {:value   "/band-settings"
                          :onclick "window.location = this.value"}
-      [:wa-icon (merge {:library "snoico"
-                        :name    "cog"}
+      [ico/Icon (merge {::ico/library :snoico
+                        ::ico/name    :cog}
                        menu-icon-opts)]
       (tr [:nav/band-settings])]
      [:wa-divider]
      [:wa-dropdown-item {:value   (url/link-logout)
                          :variant "danger"
                          :onclick "window.location = this.value"}
-      [:wa-icon (merge {:library "snoico"
-                        :name    "xmark"}
+      [ico/Icon (merge {::ico/library :snoico
+                        ::ico/name    :xmark}
                        menu-icon-opts)]
       (tr [:nav/logout])]]))
 
@@ -116,14 +116,6 @@
        "?v="
        (cache-buster req (str "public/" path))))
 
-(def ^:private snoico-sprite-path "img/sprites/snoico.svg")
-(defn- snoico-viewboxes []
-  (let [snoico-viewboxes-resource "public/img/sprites/snoico-viewboxes.edn"]
-    (if-let [resource (io/resource snoico-viewboxes-resource)]
-      (edn/read-string (slurp resource))
-      (throw (ex-info "Cannot load snoico viewBox manifest"
-                      {:path snoico-viewboxes-resource})))))
-
 (defn- public-script [req path & extra]
   [:script (merge {:src   (asset-url req path)
                    :defer true}
@@ -136,7 +128,6 @@
   [:link (merge {:rel  "stylesheet"
                  :href (asset-url req (str dir "/" path))}
                 (apply hash-map extra))])
-
 (defn head [req {:keys [extra-head title]}]
   (into
    [:head
@@ -165,85 +156,27 @@
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
                                                       "wa/"          "/vendor/webawesome@3.8.0/"
                                                       "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/webawesome.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/icon/icon.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/button/button.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/button-group/button-group.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/input/input.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/avatar/avatar.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/dialog/dialog.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/checkbox/checkbox.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/select/select.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/option/option.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/switch/switch.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/callout/callout.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/card/card.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/details/details.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/divider/divider.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/badge/badge.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/dropdown/dropdown.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/dropdown-item/dropdown-item.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/format-number/format-number.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/qr-code/qr-code.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tab/tab.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tab-group/tab-group.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tab-panel/tab-panel.js"}]
-    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tooltip/tooltip.js"}]
     (stylesheet req "vendor/bprogress@1.3.4" "index.css" :type "text/css")
     (public-script req "vendor/bprogress@1.3.4/index.global.js")
     [:script {:type "module" :blocking "render"}
-     (let [snoico-sprite-url (asset-url req snoico-sprite-path)
-           snoico-viewboxes  (j/write-value-as-string (snoico-viewboxes))]
-       (html/raw
-        (str "
-  import { allDefined, registerIconLibrary, startLoader } from 'wa/webawesome.js';
-  // These imports ensure Web Awesome custom elements are defined before Datastar
-  // initializes so d* can interact with their value and change attrs.
-  import 'wa/components/icon/icon.js';
-  import 'wa/components/button/button.js';
-  import 'wa/components/button-group/button-group.js';
-  import 'wa/components/input/input.js';
-  import 'wa/components/avatar/avatar.js';
-  import 'wa/components/dialog/dialog.js';
-  import 'wa/components/checkbox/checkbox.js';
-  import 'wa/components/select/select.js';
-  import 'wa/components/option/option.js';
-  import 'wa/components/switch/switch.js';
-  import 'wa/components/callout/callout.js';
-  import 'wa/components/card/card.js';
-  import 'wa/components/details/details.js';
-  import 'wa/components/divider/divider.js';
-  import 'wa/components/badge/badge.js';
-  import 'wa/components/dropdown/dropdown.js';
-  import 'wa/components/dropdown-item/dropdown-item.js';
-  import 'wa/components/format-number/format-number.js';
-  import 'wa/components/qr-code/qr-code.js';
-  import 'wa/components/tab/tab.js';
-  import 'wa/components/tab-group/tab-group.js';
-  import 'wa/components/tab-panel/tab-panel.js';
-  import 'wa/components/tooltip/tooltip.js';
-  const snoicoSpriteUrl = " (j/write-value-as-string snoico-sprite-url) ";
-  const snoicoViewBoxes = " snoico-viewboxes ";
-  registerIconLibrary('default', {
-    resolver: (name, family, variant) => `/img/iconoir/${name}.svg`,
-    //mutator: svg => svg.setAttribute('fill', 'currentColor'),
-  });
-  registerIconLibrary('phosphor', {
-    resolver: (name, family, variant) => `/img/phosphor/phosphor-regular/${name}.svg`,
-    //mutator: svg => svg.setAttribute('fill', 'currentColor'),
-  });
-  registerIconLibrary('snoico', {
-    resolver: name => `${snoicoSpriteUrl}#${name}`,
-    mutator: (svg, icon) => {
-      const viewBox = snoicoViewBoxes[icon?.name];
-      if (viewBox) {
-        svg.setAttribute('viewBox', viewBox);
-      }
-    },
-    spriteSheet: true,
-  });
-  startLoader();
-  await allDefined();")))]
+     (html/raw
+      "
+      import { allDefined, setBasePath, startLoader } from 'wa/webawesome.js';
+      // These imports ensure Web Awesome custom elements are defined before Datastar
+      // initializes so d* can interact with their value and change attrs.
+      // Keep wa-icon defined because some Web Awesome components render internal icons.
+      import 'wa/components/icon/icon.js';
+      import 'wa/components/button/button.js';
+      import 'wa/components/avatar/avatar.js';
+      import 'wa/components/divider/divider.js';
+      import 'wa/components/tooltip/tooltip.js';
+      import 'wa/components/badge/badge.js';
+      import 'wa/components/select/select.js';
+      import 'wa/components/dropdown/dropdown.js';
+      import 'wa/components/dropdown-item/dropdown-item.js';
+      setBasePath('/vendor/webawesome@3.8.0');
+      startLoader();
+      await allDefined();")]
     (script req "datastar@1.0.1.js" :type "module")
     (when (config/dev-mode? (-> req :system :env))
       (script req "datastar-inspector@1.1.4.js" :type "module"))]
@@ -308,12 +241,13 @@
        [button/Button {:href       "#app-shell-navigation"
                        :appearance "plain"
                        :aria-label "Toggle navigation"}
-        [:wa-icon {:library "snoico"
-                   :name    "bars"
-                   :slot    "start"}]]
+        [ico/Icon {::ico/library :snoico
+                   ::ico/name    :bars
+                   :slot         "start"}]]
        [:a {:href "/" :aria-label "Home"}
-        [:wa-icon {:library "snoico"
-                   :name    "snoman"}]]
+        [ico/Icon {::ico/library :snoico
+                   ::ico/name    :snoman
+                   :style        "color: var(--sno-brand-green)"}]]
        [:app-shell-user
         (navigation-header req member)]]
       [:aside {:id "app-shell-navigation"}
@@ -322,9 +256,8 @@
         [button/Button {:href       "#"
                         :appearance "plain"
                         :aria-label "Close navigation"}
-         [:wa-icon {:library "snoico"
-                    :name    "xmark"
-                    :slot    "start"}]]]
+         [ico/Icon {::ico/library :snoico
+                    ::ico/name :xmark}]]]
        [:app-shell-account
         (navigation-header req member)]
        (navigation req)]

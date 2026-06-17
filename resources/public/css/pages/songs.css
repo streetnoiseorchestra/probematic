@@ -98,7 +98,7 @@
     font-size: var(--wa-font-size-s);
   }
 
-  .songs-index-stat wa-icon {
+  .songs-index-stat .sno-icon {
     color: var(--sno-gig-row-gray-400);
     font-size: var(--sno-gig-row-icon-size);
   }
@@ -284,7 +284,7 @@
     border-bottom: var(--sno-size-none);
   }
 
-  .songs-detail-sheet-row wa-icon {
+  .songs-detail-sheet-row .sno-icon {
     color: var(--sno-gig-row-gray-400);
     font-size: var(--sno-gig-row-icon-size);
   }
@@ -307,12 +307,12 @@
     justify-self: end;
   }
 
-  .songs-detail-sheet-download wa-icon {
+  .songs-detail-sheet-download .sno-icon {
     color: var(--wa-color-text-link);
     font-size: var(--sno-gig-row-icon-size);
   }
 
-  .songs-detail-sheet-remove wa-icon {
+  .songs-detail-sheet-remove .sno-icon {
     color: var(--wa-color-danger-on-normal);
     font-size: var(--sno-gig-row-icon-size);
   }
@@ -381,7 +381,7 @@
     color: var(--wa-color-text-normal);
   }
 
-  .file-browser-row-link wa-icon {
+  .file-browser-row-link .sno-icon {
     color: var(--sno-gig-row-gray-400);
     font-size: var(--sno-gig-row-icon-size);
   }

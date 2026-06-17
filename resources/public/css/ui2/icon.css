@@ -1,0 +1,72 @@
+.sno-icon {
+  --primary-color: currentColor;
+  --primary-opacity: 1;
+  --secondary-color: currentColor;
+  --secondary-opacity: 0.4;
+  --rotate-angle: 0deg;
+
+  box-sizing: content-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -0.125em;
+  fill: currentColor;
+  block-size: 1em;
+  overflow: visible;
+  inline-size: auto;
+  flex: none;
+
+  &:not([auto-width]) {
+    inline-size: 1.25em;
+    block-size: 1em;
+    min-inline-size: 1.25em;
+    min-block-size: 1em;
+  }
+
+  &[auto-width] {
+    inline-size: auto;
+    block-size: 1em;
+  }
+
+  &[rotate] {
+    transform: rotate(var(--rotate-angle, 0deg));
+  }
+
+  &[flip="x"] {
+    transform: scaleX(-1);
+  }
+
+  &[flip="y"] {
+    transform: scaleY(-1);
+  }
+
+  &[flip="both"] {
+    transform: scale(-1, -1);
+  }
+
+  &[rotate][flip="x"] {
+    transform: rotate(var(--rotate-angle, 0deg)) scaleX(-1);
+  }
+
+  &[rotate][flip="y"] {
+    transform: rotate(var(--rotate-angle, 0deg)) scaleY(-1);
+  }
+
+  &[rotate][flip="both"] {
+    transform: rotate(var(--rotate-angle, 0deg)) scale(-1, -1);
+  }
+
+  & [data-duotone-primary] {
+    color: var(--primary-color);
+    opacity: var(--path-opacity, var(--primary-opacity));
+  }
+
+  & [data-duotone-secondary] {
+    color: var(--secondary-color);
+    opacity: var(--path-opacity, var(--secondary-opacity));
+  }
+
+  &[slot="start"] {
+    margin-inline-end: 0.75em;
+  }
+}

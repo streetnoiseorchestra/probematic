@@ -5,6 +5,7 @@
    [app.stats.state :as state]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.urls :as url]
    [clojure.string :as str]
    [jsonista.core :as j]))
@@ -35,10 +36,10 @@
      [:div {:class "wa-split"}
       [:div
        {:class "wa-cluster wa-gap-xs"}
-       [:wa-icon {:library    "phosphor"
-                  :name       "info"
-                  :id         info-id
-                  :aria-label tooltip}]
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :info
+                  ::ico/label   tooltip
+                  :id           info-id}]
        (when tooltip
          [:wa-tooltip {:for       info-id
                        :placement "top"
@@ -48,7 +49,7 @@
       #_[:div
          {:class "wa-cluster wa-gap-xs",
           :style {:color "var(--wa-color-green)"}}
-         [:wa-icon {:library "phosphor" :name "trend-up"}]
+         [ico/Icon {::ico/library :phosphor ::ico/name :trend-up}]
          #_[:wa-format-number
             {:class "wa-heading-m", :type "percent", :value ".475"}]]]
      [:div {:class "wa-heading-2xl stats-metric-value"} value]]))
@@ -186,10 +187,10 @@
        label]
 
       (when tooltip
-        [:wa-icon {:library    "phosphor"
-                   :id         info-id
-                   :name       "info"
-                   :aria-label tooltip}])
+        [ico/Icon {::ico/library :phosphor
+                   ::ico/name    :info
+                   ::ico/label   tooltip
+                   :id           info-id}])
       (when tooltip
         [:wa-tooltip {:for       info-id
                       :placement "top"
@@ -202,10 +203,10 @@
      [:span {:class "stats-sort-header-label"}
       [:span label]
       (when tooltip
-        [:wa-icon {:library    "phosphor"
-                   :id         info-id
-                   :name       "info"
-                   :aria-label tooltip}])
+        [ico/Icon {::ico/library :phosphor
+                   ::ico/name    :info
+                   ::ico/label   tooltip
+                   :id           info-id}])
       (when tooltip
         [:wa-tooltip {:for       info-id
                       :placement "top"
@@ -219,9 +220,9 @@
                          :class "stats-member-avatar"}
                   src (assoc :image src))
      (when-not src
-       [:wa-icon {:slot    "icon"
-                  :library "snoico"
-                  :name    "user"}])]))
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :user
+                  :slot         "icon"}])]))
 
 (defn- member-row [{:keys [tr] :as req} {:keys [member gigs-attended probes-attended last-seen gig-rate probe-rate gig-title]}]
   [:tr

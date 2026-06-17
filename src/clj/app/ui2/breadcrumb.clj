@@ -1,6 +1,7 @@
 (ns app.ui2.breadcrumb
   (:require
    [app.ui2.core :as uic]
+   [app.ui2.icon :as ico]
    [clojure.string :as str]
    [dev.onionpancakes.chassis.compiler :as cc]
    [dev.onionpancakes.chassis.core :as c]))
@@ -47,7 +48,7 @@
        "M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z",
        :clip-rule "evenodd",
        :fill-rule "evenodd"}]]
-  [:wa-icon {:library "phosphor" :name "caret-right"}])
+  [ico/Icon {::ico/library :phosphor ::ico/name :caret-right}])
 
 (defn- separator-node [separator]
   (when (some? separator)

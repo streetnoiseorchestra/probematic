@@ -12,6 +12,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -158,8 +159,8 @@
   (let [tr (:tr req)]
     (list
      [:div {:class "songs-detail-sheet-row"}
-      [:wa-icon {:library "snoico"
-                 :name    (filetype-icon-name sheet)}]
+      [ico/Icon {::ico/library :snoico
+                 ::ico/name    (filetype-icon-name sheet)}]
       [:a {:href  (urls/link-file-download webdav-path)
            :class "songs-detail-sheet-title"}
        title]
@@ -168,16 +169,16 @@
                       :href       (urls/link-file-download webdav-path)
                       :class      "songs-detail-sheet-download"
                       :aria-label (tr [:action/download])}
-       [:wa-icon {:library "phosphor"
-                  :name    "download"}]]
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :download}]]
       [button/Button {:appearance  "plain"
                       :variant     "danger"
                       :size        "s"
                       :class       "songs-detail-sheet-remove"
                       :aria-label  (tr [:action/remove])
                       :data-dialog (str "open " (sheet-remove-dialog-id sheet-id))}
-       [:wa-icon {:library "snoico"
-                  :name    "xmark"}]]]
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :xmark}]]]
      (sheet-remove-dialog req sheet))))
 
 (defn- current-member-section-name [req]
@@ -201,7 +202,7 @@
   [:a {:href          "#"
        :class         "songs-detail-sheet-add"
        :data-on:click (open-sheet-music-picker-action req song-id name root-dir current-dir)}
-   [:wa-icon {:library "snoico" :name "circle-plus-solid"}]
+   [ico/Icon {::ico/library :snoico ::ico/name :circle-plus-solid}]
    ((:tr req) [:action/add])])
 
 (defn- sheet-section [req song-id root-dir current-dir section]
@@ -220,7 +221,7 @@
         [:a {:href          "#"
              :class         "songs-detail-sheet-empty-state"
              :data-on:click (open-sheet-music-picker-action req song-id (:section/name section) root-dir current-dir)}
-         [:wa-icon {:library "snoico" :name "circle-plus-solid"}]
+         [ico/Icon {::ico/library :snoico ::ico/name :circle-plus-solid}]
          [:span ((:tr req) [:action/add])]])]]))
 
 (defn- sheet-music-content

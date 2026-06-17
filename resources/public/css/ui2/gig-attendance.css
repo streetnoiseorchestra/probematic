@@ -145,7 +145,7 @@
   padding: var(--wa-space-3xs);
 }
 
-.gigs-attendance-comment-button wa-icon {
+.gigs-attendance-comment-button .sno-icon {
   font-size: 1.25rem;
 }
 

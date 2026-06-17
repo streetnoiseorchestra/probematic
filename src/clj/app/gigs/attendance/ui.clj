@@ -5,6 +5,7 @@
    [app.gigs.domain :as domain]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [clojure.string :as str]))
 
@@ -29,12 +30,12 @@
    (plan-icon plan nil))
   ([plan attrs]
    (let [{:keys [icon class]} (plan-icon-data (or plan :plan/no-response))]
-     [:wa-icon (merge attrs
-                      {:library "snoico"
-                       :name    icon
-                       :class   (ui2/cs "gigs-attendance-plan-icon"
-                                        class
-                                        (:class attrs))})])))
+     [ico/Icon (merge attrs
+                      {::ico/library :snoico
+                       ::ico/name    icon
+                       :class        (ui2/cs "gigs-attendance-plan-icon"
+                                             class
+                                             (:class attrs))})])))
 
 (defn js-value [value]
   (pr-str (str value)))
@@ -99,9 +100,9 @@
                      :title      (plan-label tr plan)
                      :aria-label (plan-label tr plan)}
       (plan-icon plan)
-      [:wa-icon {:library "snoico"
-                 :name    "chevron-down"
-                 :class   "gigs-attendance-plan-caret"}]]
+      [ico/Icon {::ico/library :snoico
+                 ::ico/name    :chevron-down
+                 :class        "gigs-attendance-plan-caret"}]]
      (for [option selectable-plans]
        [:wa-dropdown-item {:value (name option)}
         (plan-icon option {:slot "icon"})
@@ -154,8 +155,8 @@
                       :class             "gigs-attendance-comment-button"
                       :aria-label        ((:tr req) [:action/comment])
                       :data-on:mousedown (comment-open-js req gig-id member-id "")}
-       [:wa-icon {:library "snoico"
-                  :name    "comment-outline"}]])))
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :comment-outline}]])))
 
 (defn comment-class [req gig-id member-id comment]
   (ui2/cs "gigs-attendance-comment"

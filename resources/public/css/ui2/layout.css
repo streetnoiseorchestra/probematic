@@ -34,7 +34,7 @@ app-shell {
     justify-self: start;
   }
 
-  & > header > wa-button wa-icon {
+  & > header > wa-button .sno-icon {
     font-size: var(--sno-nav-toggle-icon-size);
   }
 
@@ -46,7 +46,7 @@ app-shell {
     text-decoration: none;
   }
 
-  & > header > a wa-icon {
+  & > header > a .sno-icon {
     color: currentColor;
     font-size: var(--wa-font-size-xl);
   }
@@ -71,32 +71,26 @@ app-shell {
     text-decoration: none;
   }
 
-  & > aside > header > a wa-icon {
+  & > aside > header > a .sno-icon {
     color: inherit;
     font-size: var(--sno-brand-logotype-size);
   }
 
-  & > aside > header > wa-button {
+  & > aside > header > .wa-button {
     justify-self: end;
   }
 
-  & > aside > nav {
-    display: grid;
-    align-content: start;
-    grid-auto-rows: max-content;
-    gap: var(--wa-space-2xs);
-  }
-
-  & > aside > nav wa-button {
+  & > aside > nav .wa-button {
     inline-size: var(--sno-size-full);
   }
 
+  & > aside > nav .wa-button,
   & > aside > nav wa-button::part(base) {
     justify-content: start;
   }
 
-  & > aside > nav wa-icon[slot="start"],
-  & wa-dropdown-item wa-icon[slot="icon"] {
+  & > aside > nav .sno-icon[slot="start"],
+  & wa-dropdown-item .sno-icon[slot="icon"] {
     flex: none;
     font-size: var(--sno-nav-icon-size);
   }
@@ -201,7 +195,8 @@ app-shell-content {
       var(--wa-space-2xl)
     );
 
-    grid-template: "navigation content" minmax(100dvb, auto) /
+    grid-template:
+      "navigation content" minmax(100dvb, auto) /
       var(--app-shell-navigation-width) minmax(0, 1fr);
   }
 

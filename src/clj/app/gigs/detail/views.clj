@@ -13,6 +13,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -173,9 +174,9 @@
                                               :data-dialog (str "open " dialog-id)}
                                        recent? (assoc :class "gigs-remind-all-button--sent"))
                        (when recent?
-                         [:wa-icon {:slot    "start"
-                                    :library "snoico"
-                                    :name    "circle-check"}])
+                         [ico/Icon {::ico/library :snoico
+                                    ::ico/name    :circle-check
+                                    :slot         "start"}])
                        (tr [:reminders/remind-all])]]
     (if recent?
       [:span

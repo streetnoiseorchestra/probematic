@@ -16,7 +16,7 @@
     border-color: var(--sno-reminder-sent-border);
   }
 
-  & wa-icon {
+  & .sno-icon {
     color: var(--sno-reminder-sent-border);
   }
 }
@@ -252,7 +252,7 @@ dl.gigs-detail-info-list {
       box-shadow: none;
     }
 
-    & wa-icon {
+    & .sno-icon {
       font-size: 1.25rem;
     }
 
@@ -290,12 +290,12 @@ dl.gigs-detail-info-list {
       padding: var(--wa-space-3xs);
     }
 
-    & > li > :last-child wa-icon {
+    & > li > :last-child .sno-icon {
       color: var(--sno-probeplan-intensive-border);
       font-size: 1.9rem;
     }
 
-    & > li[data-intensive="true"] > :last-child wa-icon {
+    & > li[data-intensive="true"] > :last-child .sno-icon {
       color: var(--sno-probeplan-intensive-icon);
       border-block-end: 2px solid var(--sno-probeplan-intensive-icon);
     }

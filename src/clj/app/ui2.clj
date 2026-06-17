@@ -1,6 +1,7 @@
 (ns app.ui2
   (:require
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.html :as html]
    [app.humanize :as humanize]
    [app.i18n :as i18n]
@@ -497,7 +498,7 @@
                     :appearance "plain"
                     :disabled   disabled?
                     :aria-label "More actions"}
-     [:wa-icon {:name "ellipsis" :library "snoico"}]]
+     [ico/Icon {::ico/library :snoico ::ico/name :ellipsis}]]
     (for [{:keys [label] :as item} items]
       [:wa-dropdown-item (dissoc item :icon)
        label])]

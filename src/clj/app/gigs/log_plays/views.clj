@@ -6,6 +6,7 @@
    [app.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -92,16 +93,16 @@
 
 (defn- legend-item [{:keys [tr]} {:keys [class icon label]}]
   [:div {:class "gigs-log-plays-legend-item"}
-   [:wa-icon {:library "snoico"
-              :name    icon
-              :class   (ui2/cs "gigs-log-play-icon gigs-log-play-icon--checked" class)}]
+   [ico/Icon {::ico/library :snoico
+              ::ico/name    icon
+              :class        (ui2/cs "gigs-log-play-icon gigs-log-play-icon--checked" class)}]
    [:span (tr label)]])
 
 (defn- intensive-legend-item [{:keys [tr]}]
   [:div {:class "gigs-log-plays-legend-item gigs-log-plays-legend-item--intensive"}
-   [:wa-icon {:library "snoico"
-              :name    "fist-punch"
-              :class   "gigs-log-play-icon gigs-log-play-icon--checked gigs-log-play-icon--intensive"}]
+   [ico/Icon {::ico/library :snoico
+              ::ico/name    :fist-punch
+              :class        "gigs-log-play-icon gigs-log-play-icon--checked gigs-log-play-icon--intensive"}]
    [:span (tr [:play-log/intensive])]])
 
 (defn- legend [req]
@@ -126,10 +127,10 @@
                                          (set! $gig-log-plays.rating ~(rating-signal rating))
                                          (set! $gig-log-plays.emphasis ~(emphasis-signal (play-emphasis play)))
                                          (@post ~(d*/act req ::actions/update-rating)))}
-     [:wa-icon {:library "snoico"
-                :name    icon
-                :class   (ui2/cs "gigs-log-play-icon" class
-                                 (when selected? "gigs-log-play-icon--checked"))}]]))
+     [ico/Icon {::ico/library :snoico
+                ::ico/name    icon
+                :class        (ui2/cs "gigs-log-play-icon" class
+                                      (when selected? "gigs-log-play-icon--checked"))}]]))
 
 (defn- intensive-button [req gig-id {:song/keys [song-id]} play]
   (let [disabled? (not (active-play? play))]
@@ -147,10 +148,10 @@
                                            (set! $gig-log-plays.rating ~(rating-signal (play-rating play)))
                                            (set! $gig-log-plays.emphasis ~(emphasis-signal (play-emphasis play)))
                                            (@post ~(d*/act req ::actions/toggle-intensive))))}
-     [:wa-icon {:library "snoico"
-                :name    "fist-punch"
-                :class   (ui2/cs "gigs-log-play-icon gigs-log-play-icon--intensive"
-                                 (when (intensive? play) "gigs-log-play-icon--checked"))}]]))
+     [ico/Icon {::ico/library :snoico
+                ::ico/name    :fist-punch
+                :class        (ui2/cs "gigs-log-play-icon gigs-log-play-icon--intensive"
+                                      (when (intensive? play) "gigs-log-play-icon--checked"))}]]))
 
 (defn- play-row [req gig-id {:song/keys [song-id title] :keys [play planned?] :as row}]
   [:div {:id                 (str "gig-log-play-row-" (ui2/safe-dom-id song-id))

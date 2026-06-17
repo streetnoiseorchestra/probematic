@@ -5,12 +5,13 @@
    [app.songs.index.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]))
 
 (defn- song-stat [{:keys [icon label value]}]
   [:span {:class "songs-index-stat"}
-   [:wa-icon {:library "phosphor"
-              :name    icon}]
+   [ico/Icon {::ico/library :phosphor
+              ::ico/name    icon}]
    [:span label]
    (when (some? value)
      [:span {:class "songs-index-stat-value"} value])])
@@ -59,9 +60,9 @@
               :data-bind                    "songs-index.search"
               :data-on:input__debounce.250ms
               (str "@post('" (d*/act req ::actions/set-search-phrase) "')")}
-   [:wa-icon {:slot    "start"
-              :library "phosphor"
-              :name    "magnifying-glass"}]])
+   [ico/Icon {::ico/library :phosphor
+              ::ico/name    :magnifying-glass
+              :slot         "start"}]])
 
 (defn- repertoire-filter-control [{:keys [tr] :as req} {:keys [repertoire-filter]}]
   [:wa-select {:label          (tr [:gig/probeplan-repertoire])
@@ -70,9 +71,9 @@
                :value          repertoire-filter
                :data-bind      "songs-index.repertoire-filter"
                :data-on:change (str "@post('" (d*/act req ::actions/set-repertoire-filter) "')")}
-   [:wa-icon {:slot    "start"
-              :library "snoico"
-              :name    "music-note-outline"}]
+   [ico/Icon {::ico/library :snoico
+              ::ico/name    :music-note-outline
+              :slot         "start"}]
    [:wa-option {:value "current"} (tr [:gig/probeplan-repertoire-current])]
    [:wa-option {:value "old"} (tr [:gig/probeplan-repertoire-old])]
    [:wa-option {:value "all"} (tr [:gig/probeplan-repertoire-all])]])

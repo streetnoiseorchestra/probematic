@@ -1,6 +1,7 @@
 (ns app.members.invite-accept.views
   (:require
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.i18n :as i18n]
    [app.layout2 :as layout2]
    [app.members.invite-accept.service :as service]))
@@ -17,9 +18,10 @@
     [:main {:id "main" :class "members-invite-accept-page"}
      [:section {:class "members-invite-accept-card wa-stack wa-gap-l"}
       [:div {:class "wa-stack wa-gap-s wa-align-items-center"}
-       [:wa-icon {:library "snoico"
-                  :name    "logotype"
-                  :class   "members-invite-accept-logo"}]]
+       [ico/Icon {::ico/library    :snoico
+                  ::ico/name       :logotype
+                  ::ico/auto-width true
+                  :class           "members-invite-accept-logo"}]]
       body]]]))
 
 (defn- invalid-page [req]

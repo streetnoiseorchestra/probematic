@@ -2,7 +2,8 @@
   (:require
    [app.datastar :as d*]
    [app.ui2 :as ui2]
-   [app.ui2.button :as button]))
+   [app.ui2.button :as button]
+   [app.ui2.icon :as ico]))
 
 (defn- settings-link-card [{:keys [href icon title body]}]
   [button/Button {:href       href
@@ -10,10 +11,10 @@
                   :class      "band-settings-index-card-button"}
    [:div {:class "wa-flank wa-flex-nowrap wa-align-items-start"}
     [:wa-avatar {:shape "rounded"}
-     [:wa-icon {:slot    "icon"
-                :library "snoico"
-                :name    icon
-                :class   "wa-color-text-link"}]]
+     [ico/Icon {::ico/library :snoico
+                ::ico/name    icon
+                :slot         "icon"
+                :class        "wa-color-text-link"}]]
     [:div {:class "band-settings-index-card-body"}
      [:strong {:class "wa-color-text-link"} title]
      [:p body]]]])

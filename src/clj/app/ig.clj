@@ -8,6 +8,7 @@
             [app.email.email-worker :as email-worker]
             [app.errors :as error]
             [app.filestore :as filestore]
+            [app.icons]
             [app.i18n :as i18n]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]

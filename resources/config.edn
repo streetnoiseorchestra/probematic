@@ -95,9 +95,11 @@
                                                        :calendar              #ig/ref :app.ig/calendar
                                                        :filestore             #ig/ref :app.ig/filestore
                                                        :nexus                 #ig/ref :app.ig/nexus
-                                                       :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult}
+                                                       :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult
+                                                       :icon-sprites          #ig/ref :app.icons/sprites}
                            :app.datastar/refresh-mult {:datomic #ig/ref :app.ig/datomic-db}
                            :app.ig/nexus              {}
+                           :app.icons/sprites         {}
                            :app.ig/oauth2             {:env #ig/ref :app.ig/env}
                            :ol.ig/jobs                {:job-defs #ig/ref :app.ig.jobs/definitions
                                                        :env      #ig/ref :app.ig/env}

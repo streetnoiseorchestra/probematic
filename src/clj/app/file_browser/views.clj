@@ -8,6 +8,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.icon :as ico]
    [babashka.fs :as fs]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -87,8 +88,8 @@
            :data-on:click (if directory?
                             (directory-action req picker-id (directory-target-dir file))
                             (select-action req picker-id select-action-key (selected-file-path file)))}
-       [:wa-icon {:library "snoico"
-                  :name    (file-icon-name file)}]
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    (file-icon-name file)}]
        [:span {:class "file-browser-row-name"} name]]]
      [:td {:class "file-browser-row-size"}
       (when file?

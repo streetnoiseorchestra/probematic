@@ -5,6 +5,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]))
 
 (defn pop-helper-script []
@@ -116,8 +117,8 @@
   [:div {:data-drag-zone true}
    [:button {:type       "button"
              :aria-label "Drag to reorder"}
-    [:wa-icon {:library "snoico"
-               :name    "bars"}]]
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    :bars}]]
    [:span title]])
 
 (def reorder-event-name "song-plan-reordered")

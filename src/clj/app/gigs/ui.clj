@@ -1,6 +1,7 @@
 (ns app.gigs.ui
   (:require
    [app.ui2 :as ui2]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [clojure.string :as str]))
 
@@ -22,15 +23,15 @@
   ([status]
    (gig-status-icon status nil))
   ([status attrs]
-   [:wa-icon (merge attrs
-                    {:library "snoico"
+   [ico/Icon (merge attrs
+                    {::ico/library :snoico
                      ;; todo plumb in tr for accessability label
-                     #_:label    #_(tr [status])
-                     :name    (status-icon-name status)
-                     :class   (str "gigs-status-icon "
-                                   (status-class status)
-                                   (when-let [class (:class attrs)]
-                                     (str " " class)))})]))
+                     #_::ico/label #_(tr [status])
+                     ::ico/name    (status-icon-name status)
+                     :class        (str "gigs-status-icon "
+                                        (status-class status)
+                                        (when-let [class (:class attrs)]
+                                          (str " " class)))})]))
 
 (defn gig-breadcrumb-label [req {:gig/keys [date title gig-type] :as _gig}]
   (if (#{:gig.type/probe :gig.type/extra-probe} gig-type)
@@ -50,14 +51,14 @@
      [:div {:class "gigs-row-meta"}
       (when location
         [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-location"}
-         [:wa-icon {:library "snoico"
-                    :name    "location-dot"
-                    :class   "gigs-row-meta-icon"}]
+         [ico/Icon {::ico/library :snoico
+                    ::ico/name    :location-dot
+                    :class        "gigs-row-meta-icon"}]
          [:span location]])
       [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-date"}
-       [:wa-icon {:library "snoico"
-                  :name    "calendar"
-                  :class   "gigs-row-meta-icon"}]
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :calendar
+                  :class        "gigs-row-meta-icon"}]
        [:span (ui2/date-range-display req :compact-with-weekday date end-date)]]]]))
 
 (defn section-heading [title]
@@ -103,7 +104,7 @@
                :class "gigs-probeplan-link"}
            [:span {:class "gigs-probeplan-song-title"} title]
            (when intensive?
-             [:wa-icon {:library "snoico"
-                        :name    "fist-punch"
-                        :class   "gigs-probeplan-intensive-icon"}])]]))]
+             [ico/Icon {::ico/library :snoico
+                        ::ico/name    :fist-punch
+                        :class        "gigs-probeplan-intensive-icon"}])]]))]
     [:div {:class "gigs-empty"} "—"]))

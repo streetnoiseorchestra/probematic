@@ -1,10 +1,30 @@
 (ns app.ui2.button-test
   (:require
    [app.html :as html]
+   [app.icons :as icons]
+   [app.ui2.icon :as ico]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is]]))
+   [clojure.test :refer [deftest is use-fixtures]]))
 
 (def missing-component ::missing-component)
+
+(def test-manifest
+  (delay
+    (icons/build-sprite-manifest
+     [{:id          :snoico
+       :source-root "public/img/snoico"
+       :icons       [:home :calendar]}])))
+
+(defn install-test-manifest [f]
+  (let [manifest_ (deref #'icons/sprite-manifest_)
+        original  @manifest_]
+    (icons/install-sprite-manifest! @test-manifest)
+    (try
+      (f)
+      (finally
+        (reset! manifest_ original)))))
+
+(use-fixtures :each install-test-manifest)
 
 (defn resolve-button []
   (try
@@ -77,23 +97,23 @@
       (let [html (button-html {:appearance "plain"
                                :size       "s"
                                :aria-label "Download"}
-                              [:wa-icon {:library "snoico" :name "download"}])]
+                              [ico/Icon {::ico/library :snoico ::ico/name :home}])]
         (is (str/includes? html "<button"))
         (is (not (str/includes? html "<wa-button")))
         (is (str/includes? html "type=\"button\""))
         (is (str/includes? html "aria-label=\"Download\""))
-        (is (str/includes? html "<wa-icon"))))))
+        (is (str/includes? html "<svg"))))))
 
 (deftest icon-and-label-buttons-wrap-the-label-for-native-icon-spacing
   (let [button (button-alias)]
     (is (not= missing-component button) "Button alias should exist")
     (when-not (= missing-component button)
       (let [html (button-html {:appearance "outlined"}
-                              [:wa-icon {:library "snoico" :name "edit" :slot "start"}]
+                              [ico/Icon {::ico/library :snoico ::ico/name :calendar :slot "start"}]
                               "Edit")]
         (is (str/includes? html "<button"))
         (is (not (str/includes? html "<wa-button")))
-        (is (str/includes? html "<wa-icon"))
+        (is (str/includes? html "<svg"))
         (is (str/includes? html "slot=\"start\""))
         (is (str/includes? html "<span>Edit</span>"))))))
 

@@ -7,6 +7,7 @@
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -52,7 +53,7 @@
          emphasis (if song song.emphasis "none")]
      (when (and el.dataset.lastEmphasis
                 (!== el.dataset.lastEmphasis emphasis))
-       (let [icon (.querySelector el "wa-icon[name='fist-punch']")]
+       (let [icon (.querySelector el ".gigs-probeplan-intensive-icon")]
          (when icon
            (.finish js/window.snoSongPlanPop icon))))
      (set! el.dataset.lastEmphasis emphasis))))
@@ -96,14 +97,15 @@
                   :size          "s"
                   :aria-label    "Toggle intensive"
                   :data-on:click (->expr
-                                  (let [icon (.querySelector evt.currentTarget "wa-icon[name='fist-punch']")]
+                                  (let [icon (.querySelector evt.currentTarget ".gigs-probeplan-intensive-icon")]
                                     (when icon
                                       (.pending js/window.snoSongPlanPop icon)))
                                   (set! $gig-probeplan.gig-id ~(str gig-id))
                                   (set! $gig-probeplan.song-id ~(str song-id))
                                   (@post ~(d*/act req ::actions/toggle-probeplan-intensive)))}
-   [:wa-icon {:library            "snoico"
-              :name               "fist-punch"
+   [ico/Icon {::ico/library       :snoico
+              ::ico/name          :fist-punch
+              :class              "gigs-probeplan-intensive-icon"
               :data-preserve-attr "class"}]])
 
 (defn- selected-song-row [req gig-id {:song/keys [song-id title] :as song}]

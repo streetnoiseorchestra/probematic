@@ -12,6 +12,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -743,9 +744,9 @@
                             :shape "rounded"}
                      src (assoc :image src))
         (when-not src
-          [:wa-icon {:library "snoico"
-                     :name    "user"
-                     :slot    "icon"}])]
+          [ico/Icon {::ico/library :snoico
+                     ::ico/name    :user
+                     :slot         "icon"}])]
        [:h1 (:member/name member)]]
       (ui2/action-bar
        {}
