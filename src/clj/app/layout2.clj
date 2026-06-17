@@ -164,29 +164,62 @@
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
                                                       "wa/"          "/vendor/webawesome@3.8.0/"
                                                       "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/webawesome.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/icon/icon.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/button/button.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/button-group/button-group.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/input/input.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/avatar/avatar.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/dialog/dialog.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/checkbox/checkbox.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/select/select.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/option/option.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/switch/switch.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/callout/callout.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/card/card.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/details/details.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/divider/divider.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/badge/badge.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/dropdown/dropdown.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/dropdown-item/dropdown-item.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/format-number/format-number.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/qr-code/qr-code.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tab/tab.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tab-group/tab-group.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tab-panel/tab-panel.js"}]
+    [:link {:rel "modulepreload" :href "/vendor/webawesome@3.8.0/components/tooltip/tooltip.js"}]
     (stylesheet req "vendor/bprogress@1.3.4" "index.css" :type "text/css")
-    [:script {:src (asset-url req "vendor/bprogress@1.3.4/index.global.js")}]
-    [:script {:type "module" :src "/vendor/webawesome@3.8.0/webawesome.loader.js"}]
-    [:script {:type "module"}
+    (public-script req "vendor/bprogress@1.3.4/index.global.js")
+    [:script {:type "module" :blocking "render"}
      (let [snoico-sprite-url (asset-url req snoico-sprite-path)
            snoico-viewboxes  (j/write-value-as-string (snoico-viewboxes))]
        (html/raw
         (str "
-  import { registerIconLibrary } from 'wa/webawesome.js';
+  import { allDefined, registerIconLibrary, startLoader } from 'wa/webawesome.js';
   // These imports ensure Web Awesome custom elements are defined before Datastar
   // initializes so d* can interact with their value and change attrs.
   import 'wa/components/icon/icon.js';
   import 'wa/components/button/button.js';
+  import 'wa/components/button-group/button-group.js';
   import 'wa/components/input/input.js';
   import 'wa/components/avatar/avatar.js';
   import 'wa/components/dialog/dialog.js';
   import 'wa/components/checkbox/checkbox.js';
   import 'wa/components/select/select.js';
+  import 'wa/components/option/option.js';
   import 'wa/components/switch/switch.js';
   import 'wa/components/callout/callout.js';
+  import 'wa/components/card/card.js';
+  import 'wa/components/details/details.js';
   import 'wa/components/divider/divider.js';
   import 'wa/components/badge/badge.js';
   import 'wa/components/dropdown/dropdown.js';
+  import 'wa/components/dropdown-item/dropdown-item.js';
+  import 'wa/components/format-number/format-number.js';
+  import 'wa/components/qr-code/qr-code.js';
+  import 'wa/components/tab/tab.js';
+  import 'wa/components/tab-group/tab-group.js';
+  import 'wa/components/tab-panel/tab-panel.js';
   import 'wa/components/tooltip/tooltip.js';
   const snoicoSpriteUrl = " (j/write-value-as-string snoico-sprite-url) ";
   const snoicoViewBoxes = " snoico-viewboxes ";
@@ -207,7 +240,9 @@
       }
     },
     spriteSheet: true,
-  });")))]
+  });
+  startLoader();
+  await allDefined();")))]
     (script req "datastar@1.0.1.js" :type "module")
     (when (config/dev-mode? (-> req :system :env))
       (script req "datastar-inspector@1.1.4.js" :type "module"))]
