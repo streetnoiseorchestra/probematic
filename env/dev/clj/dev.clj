@@ -8,7 +8,7 @@
    [com.brunobonacci.mulog :as mu]
    [clj-reload.core :as clj-reload]
    [ol.dev.portal :as portal]
-   [app.ui.core :as ui-core]
+   [app.ui2.core :as ui2-core]
    [com.fulcrologic.guardrails.malli.core]
    [app.system :as system]
    [app.ig]
@@ -19,7 +19,7 @@
 ;; Toggle Dev-time flags
 
 (set! *print-namespace-maps* false)
-(ui-core/enable-opts-validation!)
+(ui2-core/enable-opts-validation!)
 
 ;; --------------------------------------------------------------------------------------------
 ;; Portal & Logging
