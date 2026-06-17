@@ -4,7 +4,6 @@
    [app.config :as config]
    [app.secret-box :as secret-box]
    [app.util :as util]
-   [clojure.java.io :as io]
    [ctmx.render :as ctmx.render]
    [hiccup.page :as hiccup.page]
    [hiccup.util :as hiccup.util]
@@ -145,28 +144,3 @@
 
 (defn snippet-response [body]
   (ctmx.render/snippet-response body))
-
-(defn post-login-client-side-redirect
-  "When using a SameSite=strict session cookie, after the OAUTH2 login the session cookie will not be sent. We need to interrupt the server-side redirect
-  with this client side redirect to trigger the SameSite=strict allow policy so the session cookie will be sent."
-  [session cookies relative-uri]
-  {:status 200
-   :headers {"Content-Type" "text/html"}
-   :session session
-   :cookies cookies
-   :body  (html5-safe
-           [:head
-            [:title "Probematic"]
-            [:style
-             (hiccup.util/raw-string (-> (io/resource "public/css/login-interstitial.css") slurp))]
-            [:meta {:http-equiv "refresh" :content (str "0;URL='" relative-uri "'")}]]
-           [:body
-            [:div.container
-             [:div.content
-              [:noscript
-               [:p [:a {:href relative-uri} "Continue"]]]
-              [:div.spinner
-               [:div]
-               [:div]
-               [:div]]
-              [:p "Logging in..."]]]])})

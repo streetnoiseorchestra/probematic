@@ -1,10 +1,10 @@
 (ns app.auth
   (:require
-   [app.interceptors.util :as int]
-   [app.interceptors.session :as session]
    [app.config :as config]
-   [app.render :as render]
    [app.errors :as errors]
+   [app.html :as html]
+   [app.interceptors.session :as session]
+   [app.interceptors.util :as int]
    [app.secret-box :as secret-box]
    [app.session :refer [redis-store]]
    [app.ui2 :as ui2]
@@ -12,6 +12,7 @@
    [buddy.core.codecs :as codecs]
    [buddy.core.keys :as buddy-keys]
    [buddy.sign.jwt :as jwt]
+   [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as str]
    [jsonista.core :as j]
@@ -177,6 +178,35 @@
    (m/find-first #(= "RS256" (:alg %)))
    (buddy-keys/jwk->public-key)))
 
+(defn- post-login-client-side-redirect
+  "Returns an interstitial response that stores the session and then redirects client-side.
+
+  This avoids losing the `SameSite=strict` session cookie after OAuth2 login."
+  [session cookies relative-uri]
+  {:status  200
+   :headers {"Content-Type" "text/html"}
+   :session session
+   :cookies cookies
+   :body    (html/->str
+             [html/doctype-html5
+              [:html
+               [:head
+                [:title "Probematic"]
+                [:style
+                 (html/raw (-> (io/resource "public/css/login-interstitial.css") slurp))]
+                [:meta {:http-equiv "refresh"
+                        :content    (str "0;URL='" relative-uri "'")}]]
+               [:body
+                [:div {:class "container"}
+                 [:div {:class "content"}
+                  [:noscript
+                   [:p [:a {:href relative-uri} "Continue"]]]
+                  [:div {:class "spinner"}
+                   [:div]
+                   [:div]
+                   [:div]]
+                  [:p "Logging in..."]]]]]])})
+
 (defn identity-mismatch-preview-handler [env req]
   (if (config/dev-mode? env)
     (identity-mismatch-response req)
@@ -194,7 +224,7 @@
               token (code->token oauth2 code original-redirect-uri)]
           (if (or (nil? token) (:error token))
             (restart-login env)
-            (render/post-login-client-side-redirect
+            (post-login-client-side-redirect
              (build-oauth2-session token
                                    (oauth2-load-certificate oauth2)
                                    (config/oauth2-known-roles env))

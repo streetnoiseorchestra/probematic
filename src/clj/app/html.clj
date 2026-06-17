@@ -1,13 +1,14 @@
 (ns app.html
-  (:import (java.io OutputStream))
   (:require
-   [squint.compiler :as squint]
    [backtick         :refer [template]]
-   [dev.onionpancakes.chassis.core :as chassis]
-   [ring.util.response :as ring-response]
    [buddy.core.codecs :as codecs]
    [buddy.core.hash :as digest]
-   [clojure.java.io :as io]))
+   [clojure.java.io :as io]
+   [dev.onionpancakes.chassis.core :as chassis]
+   [ring.util.response :as ring-response]
+   [squint.compiler :as squint])
+  (:import
+   (java.io OutputStream)))
 
 (def ->str
   "Returns an HTML string given a hiccup datstructure"
