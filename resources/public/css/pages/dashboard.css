@@ -1,9 +1,5 @@
-.dashboard-page,
-.dashboard-calendar-page {
-  max-inline-size: var(--sno-size-full);
-}
-
-.dashboard-page {
+.dashboard-list,
+.dashboard-ledger-card {
   container-type: inline-size;
 }
 

@@ -278,7 +278,7 @@
      [:script {:src "/vendor/chart.js@4.4.0/chart.umd.js"}]
      [:script {:src "/vendor/chartjs-plugin-datalabels@2.2.0/chartjs-plugin-datalabels.min.js"}]
      [:script {:src "/js/widgets/stats-chart.js"}]
-     [:div {:class "stats-page wa-stack wa-gap-xl"}
+     [:div {:class "wa-stack wa-gap-xl"}
       (ui2/page-header
        {:title    (tr [:stats/title])
         :subtitle (tr [:stats/current-range]

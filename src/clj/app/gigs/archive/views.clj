@@ -39,7 +39,7 @@
                                    (http.util/path-param req :year)
                                    (:gigs-archive page-state))]
     (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l gigs-archive-page"
+     [:div {:class        "wa-stack wa-gap-l"
             :data-signals (d*/->signals {:gigs-archive archive-page-state})}
       (ui2/page-header
        {:title    (tr [:gigs/title])

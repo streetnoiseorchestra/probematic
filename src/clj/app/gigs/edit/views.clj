@@ -379,7 +379,7 @@
         gig    (q/retrieve-gig db gig-id)]
     (if gig
       (ui2/datastar-page
-       [:div {:class "wa-stack wa-gap-2xl gigs-edit-page"}
+       [:div {:class "wa-stack wa-gap-2xl"}
         (edit-header req gig)
         (edit-form req gig)
         (gig-remove-dialog req gig)]
@@ -389,7 +389,7 @@
 
 (defn- create-page [req]
   (ui2/datastar-page
-   [:div {:class "wa-stack wa-gap-2xl gigs-edit-page"}
+   [:div {:class "wa-stack wa-gap-2xl"}
     (create-header req)
     (create-form req)]
    (ui2/markdown-editor-scripts)))

@@ -1,7 +1,3 @@
-.stats-page {
-  max-inline-size: var(--sno-size-full);
-}
-
 .stats-summary-card [class*="wa-grid"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

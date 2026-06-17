@@ -104,7 +104,7 @@
   (let [page-state (queries/normalize-page-state (:songs-index page-state))
         songs      (queries/songs db page-state)]
     (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l songs-index-page"
+     [:div {:class        "wa-stack wa-gap-l"
             :data-signals (d*/->signals {:songs-index page-state})}
       (toolbar req page-state (count songs))
       (songs-list req songs)])))

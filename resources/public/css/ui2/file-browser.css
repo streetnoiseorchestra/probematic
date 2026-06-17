@@ -1,0 +1,77 @@
+.file-browser-panel {
+  margin-block-start: var(--wa-space-m);
+  background: var(--wa-color-surface-default);
+}
+
+.file-browser-header {
+  display: flex;
+  gap: var(--wa-space-s);
+  align-items: start;
+  justify-content: space-between;
+}
+
+.file-browser-title {
+  margin: var(--sno-size-none);
+  font-size: var(--wa-font-size-l);
+  font-weight: var(--sno-font-weight-semibold);
+}
+
+.file-browser-subtitle {
+  margin: var(--sno-size-none);
+  color: var(--wa-color-text-quiet);
+}
+
+.file-browser-back {
+  white-space: nowrap;
+}
+
+.file-browser-row-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.file-browser-row-link:hover {
+  text-decoration: underline;
+}
+
+.file-browser-table-shell {
+  overflow-x: auto;
+}
+
+.file-browser-table {
+  inline-size: var(--sno-size-full);
+  border-collapse: collapse;
+}
+
+.file-browser-table thead {
+  background: var(--wa-color-surface-lowered);
+}
+
+.file-browser-table :where(th, td) {
+  padding: var(--wa-space-xs) var(--wa-space-s);
+  border-bottom: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  text-align: start;
+}
+
+.file-browser-row-link {
+  display: inline-flex;
+  gap: var(--wa-space-xs);
+  align-items: center;
+  inline-size: var(--sno-size-full);
+  color: var(--wa-color-text-normal);
+}
+
+.file-browser-row-link .sno-icon {
+  color: var(--sno-gig-row-gray-400);
+  font-size: var(--sno-gig-row-icon-size);
+}
+
+.file-browser-row:hover {
+  background: var(--wa-color-surface-lowered);
+}
+
+.file-browser-row-size {
+  color: var(--wa-color-text-quiet);
+  white-space: nowrap;
+}

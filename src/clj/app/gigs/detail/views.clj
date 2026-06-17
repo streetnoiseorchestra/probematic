@@ -270,7 +270,7 @@ window.DiscourseEmbed = %s;
         gig    (q/retrieve-gig db gig-id)]
     (if gig
       (ui2/datastar-page
-       [:div {:class        "wa-stack wa-gap-2xl gigs-detail-page"
+       [:div {:class        "wa-stack wa-gap-2xl"
               :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
         (gig-summary req gig)
         (gig-info-section req gig)

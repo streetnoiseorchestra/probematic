@@ -56,7 +56,6 @@
 (deftest create-page-renders-datastar-form
   (let [{:keys [conn]} (tc/new-system "songs-edit-create-view")
         html           (views/page (req conn))]
-    (is (str/includes? html "songs-edit-page"))
     (is (str/includes? html "Add Song"))
     (is (str/includes? html "data-action=\"/act?ns=app.songs.edit.actions&amp;kw=create-song\""))
     (is (str/includes? html "data-bind=\"song-edit.title\""))

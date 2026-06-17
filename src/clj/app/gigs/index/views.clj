@@ -10,7 +10,7 @@
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [future-gigs past-gigs]} (queries/index-page-data db)]
     (ui2/plain-page
-     [:div {:class "wa-stack wa-gap-l gigs-index-page"}
+     [:div {:class "wa-stack wa-gap-l"}
       (ui2/page-header
        {:title   (tr [:gigs/title])
         :actions [[button/Button {:appearance "filled"

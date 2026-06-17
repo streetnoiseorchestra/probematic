@@ -17,7 +17,7 @@
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [running-polls past-polls]} (queries/index-page-data db)]
     (ui2/plain-page
-     [:div {:class "wa-stack wa-gap-l polls-index-page"}
+     [:div {:class "wa-stack wa-gap-l"}
       (page-header req)
       [:div {:class "wa-grid wa-gap-m polls-index-columns"}
        (poll.ui/poll-section req {:title         (tr [:polls/running])

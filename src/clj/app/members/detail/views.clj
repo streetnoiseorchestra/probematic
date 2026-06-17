@@ -838,7 +838,7 @@
         travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))
         ledger-entry-signals            (form-state->signals (get-in page-state [:member-detail :ledger-entry]))]
     (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-2xl members-detail-page"
+     [:div {:class        "wa-stack wa-gap-2xl"
             :data-effect  (tab-url-effect member)
             :data-signals (d*/->signals {:member-detail {:active-tab             active-tab
                                                          :contact                contact-signals

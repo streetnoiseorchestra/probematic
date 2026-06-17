@@ -213,7 +213,7 @@
         _      (assert member)
         {:keys [answered insurance-todos ledger unanswered]} (queries/dashboard-data db member)]
     (ui2/datastar-page
-     [:div {:class        "dashboard-page wa-stack wa-gap-l"
+     [:div {:class        "wa-stack wa-gap-l"
             :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
       (ui2/page-header
        {:title   (tr [(keyword "dashboard" (name (util/time-window (util/local-time-austria!))))]

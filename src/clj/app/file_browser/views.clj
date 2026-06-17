@@ -181,7 +181,7 @@
         current-dir (or (config/nextcloud-path-current-songs env) root-dir)
         picker      (get-in page-state [:file-browser actions/default-picker-id])]
     (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l file-browser-page"
+     [:div {:class        "wa-stack wa-gap-l"
             :data-signals (d*/->signals {:file-browser {:picker-id     nil
                                                         :target-dir    nil
                                                         :selected-path nil}})}

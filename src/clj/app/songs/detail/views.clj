@@ -305,7 +305,7 @@ window.DiscourseEmbed = %s;
         song    (q/retrieve-song db song-id)]
     (if song
       (ui2/datastar-page
-       [:div {:class "wa-stack wa-gap-2xl songs-detail-page"}
+       [:div {:class "wa-stack wa-gap-2xl"}
         (song-summary req song)
         (background-section req song)
         (play-stats-section req song)

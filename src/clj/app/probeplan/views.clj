@@ -210,7 +210,7 @@
   (let [rows      (mapv #(update % :songs songs-by-position) (queries/probeplan-plans db))
         all-songs (queries/active-songs db)
         editing?  (true? (get-in page-state [:probeplan :editing]))]
-    [:div {:class        "wa-stack wa-gap-l probeplan-page"
+    [:div {:class        "wa-stack wa-gap-l"
            :data-signals (d*/->signals (editable-signals rows))}
      (ui2/page-header
       {:title   (tr [:nav/probeplan])

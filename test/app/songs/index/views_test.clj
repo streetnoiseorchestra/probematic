@@ -41,7 +41,7 @@
    :tr         tr
    :page-state {}})
 
-(deftest songs-index-page-renders-force-sync-action
+(deftest songs-index-renders-force-sync-action
   (let [{:keys [conn]} (tc/new-system "songs-index-view-sync")
         html           (views/page (req conn))]
     (is (str/includes? html "Sync songs"))

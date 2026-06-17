@@ -192,7 +192,7 @@
         members          (queries/members db page-state)
         open-invitations (queries/open-invitations req)]
     (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l members-index-page"
+     [:div {:class        "wa-stack wa-gap-l"
             :data-signals (d*/->signals {:members-index page-state
                                          :invite        {:action nil
                                                          :code nil

@@ -207,7 +207,7 @@
 
 (deftest selected-songs-for-page-test
   (testing "uses stored probeplan songs as the source of truth"
-    (let [{:keys [conn]} (tc/new-system "probeplan-page-songs")
+    (let [{:keys [conn]} (tc/new-system "probeplan-songs")
           gig-id         (random-uuid)
           song-a         (random-uuid)
           song-b         (random-uuid)]

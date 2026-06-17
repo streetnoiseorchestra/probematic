@@ -1,7 +1,3 @@
-.polls-index-page {
-  max-inline-size: var(--sno-size-full);
-}
-
 .poll-detail-page,
 .poll-edit-page {
   width: min(100%, 72rem);

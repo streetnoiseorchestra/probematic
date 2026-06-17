@@ -7,7 +7,7 @@
 
 (defn page [{:keys [tr]}]
   (ui2/plain-page
-   [:div {:class "dashboard-calendar-page wa-stack wa-gap-l"}
+   [:div {:class "wa-stack wa-gap-l"}
     (ui2/page-header
      {:title   (tr [:nav/calendar])
       :actions [[button/Button {:appearance "filled"
