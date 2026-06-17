@@ -229,8 +229,8 @@
 
 (defn- datastar-page-body [content]
   [:body {:data-on:datastar-fetch datastar-fetch-progress-js}
-   #_[:div {:data-init on-load-js
-            :id        "long-lived-sse"}]
+   [:div {:data-init on-load-js
+          :id        "long-lived-sse"}]
    [:div {:data-signals:tabid tabid-js}]
    content])
 
