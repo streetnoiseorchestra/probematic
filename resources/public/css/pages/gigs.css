@@ -390,32 +390,40 @@ dl.gigs-detail-info-list {
 }
 
 .gigs-log-plays-items {
+  --sno-log-play-grid-column-gap: var(--wa-space-xs);
+  --sno-log-play-grid-min-card-inline-size: 22rem;
+
   display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: var(--sno-size-none);
+  /* Keep auto-fit responsive without ever allowing more than three columns. */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(
+      min(
+        var(--sno-size-full),
+        max(
+          var(--sno-log-play-grid-min-card-inline-size),
+          calc(
+            (
+              var(--sno-size-full) - var(--sno-log-play-grid-column-gap) -
+                var(--sno-log-play-grid-column-gap)
+            ) / 3
+          )
+        )
+      ),
+      1fr
+    )
+  );
+  column-gap: var(--sno-log-play-grid-column-gap);
+  row-gap: var(--sno-size-none);
   padding: var(--sno-size-none);
   margin: var(--sno-size-none);
 }
 
-@media (--sno-viewport-s) {
-  .gigs-log-plays-items {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: var(--wa-space-xs);
-  }
-}
-
-@media (--sno-viewport-l) {
-  .gigs-log-plays-items {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 .gigs-log-play-row {
-  display: flex;
-  flex-basis: 50%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--wa-space-s);
+  gap: var(--wa-space-xs);
   min-inline-size: var(--sno-size-none);
   min-block-size: 3.625rem;
   padding: var(--wa-space-2xs);
@@ -444,36 +452,50 @@ dl.gigs-detail-info-list {
 .gigs-log-play-title {
   min-inline-size: var(--sno-size-none);
   line-height: 1.25;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .gigs-log-play-controls {
   display: flex;
   align-items: center;
   flex: none;
-  gap: var(--wa-space-2xs);
+  gap: var(--wa-space-3xs);
+}
+
+.gigs-log-play-controls button,
+.gigs-log-play-controls wa-button {
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  min-inline-size: 2.25rem;
+  min-block-size: 2.25rem;
+  padding: var(--sno-size-none);
+  flex: 0 0 2.25rem;
 }
 
 .gigs-log-play-controls wa-button::part(base) {
-  inline-size: 2rem;
-  block-size: 2rem;
-  min-block-size: 2rem;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  min-block-size: 2.25rem;
   padding: var(--sno-size-none);
 }
 
 .gigs-log-play-intensive-control {
   display: flex;
   align-items: center;
-  padding-inline-start: var(--wa-space-xs);
-  margin-block-start: var(--wa-space-3xs);
-  margin-inline-start: var(--wa-space-2xs);
-  border-inline-start: 4px var(--wa-border-style) var(--wa-color-surface-border);
+  padding-inline-start: var(--wa-space-2xs);
+  border-inline-start: 2px var(--wa-border-style) var(--wa-color-surface-border);
 }
 
 .gigs-log-play-icon {
   color: var(--wa-color-text-quiet);
   font-size: 2rem;
   border-block-end: 2px solid transparent;
+}
+
+.gigs-log-play-icon.sno-icon {
+  inline-size: 1em;
+  min-inline-size: 1em;
 }
 
 .gigs-log-play-icon--not-played {
@@ -504,6 +526,7 @@ dl.gigs-detail-info-list {
   border-color: currentColor;
 }
 
+.gigs-log-play-controls button:active .gigs-log-play-icon,
 .gigs-log-play-controls wa-button:active .gigs-log-play-icon {
   border-radius: var(--wa-border-radius-s);
   box-shadow:
