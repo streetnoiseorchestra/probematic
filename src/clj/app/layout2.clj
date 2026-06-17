@@ -60,7 +60,7 @@
               ::ico/auto-width true
               :style           "color: var(--sno-brand-green)"}]])
 
-(defn navigation-header [req member]
+(defn nav-user-dropdown [req member]
   (let [tr  (i18n/tr-from-req req)
         src (avatar-src member)]
     [:wa-dropdown {:distance "4"}
@@ -166,6 +166,7 @@
       // initializes so d* can interact with their value and change attrs.
       // Keep wa-icon defined because some Web Awesome components render internal icons.
       import 'wa/components/icon/icon.js';
+      import 'wa/components/card/card.js';
       import 'wa/components/button/button.js';
       import 'wa/components/avatar/avatar.js';
       import 'wa/components/divider/divider.js';
@@ -176,11 +177,17 @@
       import 'wa/components/dropdown-item/dropdown-item.js';
       setBasePath('/vendor/webawesome@3.8.0');
       startLoader();
+      Promise.race([
+        new Promise(resolve => {document.addEventListener('wa-discovery-complete', resolve)}),
+        new Promise(resolve => setTimeout(() => resolve, 2000)),
+      ]).then(() => {
+        document.querySelectorAll('.wa-cloak').forEach(el => el.classList.remove('wa-cloak'));
+      });
       await allDefined();")]
     (script req "datastar@1.0.1.js" :type "module")
     (when (config/dev-mode? (-> req :system :env))
       (script req "datastar-inspector@1.1.4.js" :type "module"))]
-   extra-head))
+   (conj extra-head [:script {:blocking "render"} "let FF_FOUC_FIX;"])))
 
 (defn- html-lang [req]
   (name (or (:current-locale req) "en")))
@@ -221,8 +228,8 @@
 
 (defn- datastar-page-body [content]
   [:body {:data-on:datastar-fetch datastar-fetch-progress-js}
-   [:div {:data-init on-load-js
-          :id        "long-lived-sse"}]
+   #_[:div {:data-init on-load-js
+            :id        "long-lived-sse"}]
    [:div {:data-signals:tabid tabid-js}]
    content])
 
@@ -248,8 +255,7 @@
         [ico/Icon {::ico/library :snoico
                    ::ico/name    :snoman
                    :style        "color: var(--sno-brand-green)"}]]
-       [:app-shell-user
-        (navigation-header req member)]]
+       [:app-shell-user (nav-user-dropdown req member)]]
       [:aside {:id "app-shell-navigation"}
        [:header
         (brand-link)
@@ -259,15 +265,15 @@
          [ico/Icon {::ico/library :snoico
                     ::ico/name :xmark}]]]
        [:app-shell-account
-        (navigation-header req member)]
+        (nav-user-dropdown req member)]
        (navigation req)]
       [:a {:href       "#"
            :aria-label "Close navigation"
            :tabindex   "-1"}]
       [:app-shell-content
        body]]
-     (when (config/dev-mode? (-> req :system :env))
-       [:datastar-inspector])]))
+     #_(when (config/dev-mode? (-> req :system :env))
+         [:datastar-inspector])]))
 
 (defn datastar-page-html
   [req opts body]

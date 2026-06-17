@@ -18,10 +18,10 @@ app-shell {
     inset-block-start: 0;
     z-index: 20;
     display: grid;
-    grid-template-columns: minmax(2.75rem, auto) minmax(0, 1fr) minmax(
-        2.75rem,
-        auto
-      );
+    grid-template-columns:
+      var(--app-shell-topbar-size)
+      minmax(0, 1fr)
+      var(--app-shell-topbar-size);
     align-items: center;
     block-size: var(--app-shell-topbar-size);
     padding-inline: var(--wa-space-s);
@@ -106,6 +106,14 @@ app-shell {
   }
 }
 
+app-shell wa-dropdown:not(:defined) {
+  display: inline-block;
+}
+
+app-shell wa-dropdown:not(:defined) > :not([slot="trigger"]) {
+  display: none !important;
+}
+
 app-shell-user,
 app-shell-account,
 app-shell-content {
@@ -113,6 +121,8 @@ app-shell-content {
 }
 
 app-shell-user {
+  inline-size: var(--app-shell-topbar-size);
+  min-inline-size: var(--app-shell-topbar-size);
   justify-self: end;
 
   & wa-button#account-dropdown-button {
