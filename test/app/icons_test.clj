@@ -67,15 +67,15 @@
 
 (deftest sprite-builder-removes-source-title-and-root-accessibility-from-symbols
   (let [manifest (icons/build-sprite-manifest
-                  [{:id          :iconoir-test
-                    :source-root "public/img/iconoir"
-                    :icons       [:nav-arrow-right]}])
-        body     (get-in manifest [:by-library :iconoir-test :body])]
+                  [{:id          :fixture
+                    :source-root "fixtures/icons"
+                    :icons       [:title-accessibility]}])
+        body     (get-in manifest [:by-library :fixture :body])]
     (is (= {:has-symbol? true
             :has-title?  false
             :has-role?   false
             :has-label?  false}
-           {:has-symbol? (str/includes? body "<symbol id=\"iconoir-test-nav-arrow-right\"")
+           {:has-symbol? (str/includes? body "<symbol id=\"fixture-title-accessibility\"")
             :has-title?  (str/includes? body "<title>")
             :has-role?   (str/includes? body "role=\"img\"")
             :has-label?  (str/includes? body "aria-label=")}))))
