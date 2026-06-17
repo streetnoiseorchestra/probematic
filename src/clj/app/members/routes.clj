@@ -45,9 +45,6 @@
     (ds/page-routes {:page-name ::detail
                      :path      "/member/{member-id}"
                      :view-ns   'app.members.detail.views})
-    (ds/page-routes {:page-name ::detail-trailing-slash
-                     :path      "/member/{member-id}/"
-                     :view-ns   'app.members.detail.views})
     (ds/page-routes {:page-name ::detail-tab
                      :path      "/member/{member-id}/{member-detail-tab}"
                      :view-ns   'app.members.detail.views})]])

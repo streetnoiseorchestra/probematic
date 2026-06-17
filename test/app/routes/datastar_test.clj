@@ -1,5 +1,6 @@
 (ns app.routes.datastar-test
   (:require
+   [app.dashboard.routes :as dashboard.routes]
    [app.datastar :as datastar]
    [app.gigs.routes :as gigs.routes]
    [app.members.routes :as members.routes]
@@ -8,13 +9,15 @@
    [app.poll.routes :as poll.routes]
    [app.routes.datastar :as dsr]
    [app.settings.routes :as settings.routes]
+   [app.songs.routes :as songs.routes]
    [app.stats.routes :as stats.routes]
-   [app.urls :as urls]
    [app.test-common :as tc]
+   [app.urls :as urls]
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [reitit.core :as r]
-   [reitit.http :as http]))
+   [reitit.http :as http]
+   [reitit.ring :as ring]))
 
 (def test-req
   {:system  {:env {:ig/system {:app.ig/profile :test}}}
@@ -62,6 +65,28 @@
                                   {:path path
                                    :name (:name data)}))
                        (drop 2 route))})
+
+(defn page-name [router path]
+  (get-in (r/match-by-path router path) [:data :name]))
+
+(defn app-route-name [router path]
+  (get-in (r/match-by-path router path) [:data :app.route/name]))
+
+(defn slash-redirect-summary [router path]
+  (let [response ((ring/redirect-trailing-slash-handler)
+                  {::r/router router
+                   :request-method :get
+                   :uri path})]
+    {:status   (:status response)
+     :location (get-in response [:headers "Location"])}))
+
+(defn assert-slashless-canonical-route [router path slashed-path expected-page-name]
+  (is (= expected-page-name
+         (page-name router path)))
+  (is (nil? (r/match-by-path router slashed-path)))
+  (is (= {:status   301
+          :location path}
+         (slash-redirect-summary router slashed-path))))
 
 (deftest settings-routes-expose-the-band-settings-index-and-subpages
   (let [routes (drop 2 (settings.routes/routes))]
@@ -164,38 +189,37 @@
 (deftest gigs-routes-expose-the-datastar-index-and-detail-paths
   (let [router (http/router ["" (gigs.routes/routes)])]
     (is (= :app/gigs
-           (get-in (r/match-by-path router "/gigs") [:data :app.route/name])))
+           (app-route-name router "/gigs")))
     (is (= :app.gigs.routes/index
-           (get-in (r/match-by-path router "/gigs") [:data :name])))
+           (page-name router "/gigs")))
     (is (= :app/gigs
-           (get-in (r/match-by-path router "/gigs/archive") [:data :app.route/name])))
+           (app-route-name router "/gigs/archive")))
     (is (= :app.gigs.routes/archive
-           (get-in (r/match-by-path router "/gigs/archive") [:data :name])))
+           (page-name router "/gigs/archive")))
     (is (= :app.gigs.routes/archive-year
-           (get-in (r/match-by-path router "/gigs/archive/2025") [:data :name])))
-    (let [gig-id (random-uuid)]
+           (page-name router "/gigs/archive/2025")))
+    (let [gig-id      (random-uuid)
+          detail-path (str "/gig/" gig-id)]
       (is (= :app/gigs
-             (get-in (r/match-by-path router (str "/gig/" gig-id)) [:data :app.route/name])))
-      (is (= :app.gigs.routes/detail
-             (get-in (r/match-by-path router (str "/gig/" gig-id)) [:data :name])))
+             (app-route-name router detail-path)))
+      (assert-slashless-canonical-route router
+                                        detail-path
+                                        (str detail-path "/")
+                                        :app.gigs.routes/detail)
       (is (= :app/gigs
-             (get-in (r/match-by-path router (str "/gig/" gig-id "/")) [:data :app.route/name])))
-      (is (= :app.gigs.routes/detail-trailing-slash
-             (get-in (r/match-by-path router (str "/gig/" gig-id "/")) [:data :name])))
-      (is (= :app/gigs
-             (get-in (r/match-by-path router (str "/gig/" gig-id "/edit")) [:data :app.route/name])))
+             (app-route-name router (str "/gig/" gig-id "/edit"))))
       (is (= :app.gigs.routes/edit
-             (get-in (r/match-by-path router (str "/gig/" gig-id "/edit")) [:data :name])))
+             (page-name router (str "/gig/" gig-id "/edit"))))
       (is (= :app.gigs.routes/probeplan
-             (get-in (r/match-by-path router (str "/gig/" gig-id "/probeplan")) [:data :name])))
+             (page-name router (str "/gig/" gig-id "/probeplan"))))
       (is (= :app.gigs.routes/setlist
-             (get-in (r/match-by-path router (str "/gig/" gig-id "/setlist")) [:data :name])))
+             (page-name router (str "/gig/" gig-id "/setlist"))))
       (is (= :app.gigs.routes/log-plays
-             (get-in (r/match-by-path router (str "/gig/" gig-id "/log-plays")) [:data :name])))
+             (page-name router (str "/gig/" gig-id "/log-plays"))))
       (is (= :app/gigs
-             (get-in (r/match-by-path router "/gigs/create") [:data :app.route/name])))
+             (app-route-name router "/gigs/create")))
       (is (= :app.gigs.routes/create
-             (get-in (r/match-by-path router "/gigs/create") [:data :name])))
+             (page-name router "/gigs/create")))
       (is (nil? (r/match-by-path router (str "/gig/" gig-id "/log-play")))))))
 
 (deftest gig-helpers-point-to-public-index-archive-and-create
@@ -208,7 +232,7 @@
   (is (= "/gigs/archive/2025"
          (urls/link-gig-archive-year 2025)))
   (let [gig-id (random-uuid)]
-    (is (= (str "/gig/" gig-id "/")
+    (is (= (str "/gig/" gig-id)
            (urls/link-gig gig-id)))
     (is (= (str "/gig/" gig-id "/edit")
            (urls/link-gig-edit gig-id)))
@@ -218,8 +242,56 @@
            (urls/link-gig-setlist gig-id)))
     (is (= (str "/gig/" gig-id "/log-plays")
            (urls/link-gig-log-plays gig-id)))
+    (is (= (str "https://example.test/gig/" gig-id)
+           (urls/absolute-link-gig {:app-base-url "https://example.test"} gig-id)))
     (is (= (str "https://example.test/gig/" gig-id "/log-plays")
            (urls/absolute-link-gig-log-plays {:app-base-url "https://example.test"} gig-id)))))
+
+(deftest dashboard-routes-expose-the-slashless-calendar-path
+  (let [router (http/router ["" (dashboard.routes/routes)])]
+    (is (= :app.dashboard.routes/index
+           (page-name router "/")))
+    (is (= :app/dashboard
+           (app-route-name router "/calendar")))
+    (assert-slashless-canonical-route router
+                                      "/calendar"
+                                      "/calendar/"
+                                      :app.dashboard.routes/calendar)))
+
+(deftest songs-routes-expose-slashless-index-create-detail-and-edit-paths
+  (let [router (http/router ["" (songs.routes/routes)])]
+    (is (= :app/songs
+           (app-route-name router "/songs")))
+    (assert-slashless-canonical-route router
+                                      "/songs"
+                                      "/songs/"
+                                      :app.songs.routes/index)
+    (is (= :app.songs.routes/create
+           (page-name router "/songs/new")))
+    (let [song-id      (random-uuid)
+          detail-path  (str "/song/" song-id)
+          edit-path    (str detail-path "/edit")]
+      (is (= :app/songs
+             (app-route-name router detail-path)))
+      (assert-slashless-canonical-route router
+                                        detail-path
+                                        (str detail-path "/")
+                                        :app.songs.routes/detail)
+      (is (= :app.songs.routes/edit
+             (page-name router edit-path))))))
+
+(deftest song-helpers-point-to-slashless-canonical-paths
+  (is (= "/songs"
+         (urls/link-songs-home)))
+  (is (= "/songs/new"
+         (urls/link-song-create)))
+  (let [song-id (random-uuid)]
+    (is (= (str "/song/" song-id)
+           (urls/link-song song-id)))
+    (is (= (str "/song/" song-id "/edit")
+           (urls/link-song-edit song-id)))
+    (is (= (str "https://example.test/song/" song-id)
+           (urls/absolute-link-song {:app-base-url "https://example.test"} song-id)))))
 
 (deftest polls-routes-expose-the-datastar-index-create-detail-and-edit-paths
   (let [router (http/router ["" (poll.routes/routes)])]
@@ -251,42 +323,67 @@
 (deftest members-routes-expose-the-datastar-index-invite-and-detail-paths
   (let [router (http/router ["" (members.routes/routes)])]
     (is (= :app/members
-           (get-in (r/match-by-path router "/members") [:data :app.route/name])))
+           (app-route-name router "/members")))
     (is (= :app.members.routes/index
-           (get-in (r/match-by-path router "/members") [:data :name])))
+           (page-name router "/members")))
     (is (= :app/members
-           (get-in (r/match-by-path router "/members/invite") [:data :app.route/name])))
+           (app-route-name router "/members/invite")))
     (is (= :app.members.routes/invite
-           (get-in (r/match-by-path router "/members/invite") [:data :name])))
+           (page-name router "/members/invite")))
     (is (nil? (r/match-by-path router "/members-old")))
-    (let [member-id (random-uuid)]
+    (let [member-id   (random-uuid)
+          detail-path (str "/member/" member-id)]
       (is (= :app/members
-             (get-in (r/match-by-path router (str "/member/" member-id)) [:data :app.route/name])))
-      (is (= :app.members.routes/detail
-             (get-in (r/match-by-path router (str "/member/" member-id)) [:data :name])))
-      (is (= :app/members
-             (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :app.route/name])))
-      (is (= :app.members.routes/detail-trailing-slash
-             (get-in (r/match-by-path router (str "/member/" member-id "/")) [:data :name])))
+             (app-route-name router detail-path)))
+      (assert-slashless-canonical-route router
+                                        detail-path
+                                        (str detail-path "/")
+                                        :app.members.routes/detail)
       (is (nil? (r/match-by-path router (str "/member-old/" member-id)))))))
 
-(deftest gigs-unauthenticated-routes-expose-answer-link
+(deftest member-and-calendar-helpers-point-to-slashless-canonical-paths
+  (is (= "/calendar"
+         (urls/link-calendar)))
+  (is (= "/insurance"
+         (urls/link-insurance)))
+  (is (= "/insurance#faq10"
+         (urls/link-faq-insurance-team)))
+  (let [member-id (random-uuid)]
+    (is (= (str "/member/" member-id)
+           (urls/link-member member-id)))
+    (is (= (str "/member/" member-id "/money")
+           (urls/link-member-money member-id)))
+    (is (= (str "/member/" member-id "#member-ledger-panel")
+           (urls/link-member-ledger member-id)))
+    (is (= (str "/member/" member-id "#member-ledger-table")
+           (urls/link-member-ledger-table member-id)))
+    (is (= (str "https://example.test/member/" member-id)
+           (urls/absolute-link-member {:app-base-url "https://example.test"} member-id)))
+    (is (= (str "https://example.test/member/" member-id "#member-ledger-table")
+           (urls/absolute-link-member-ledger {:app-base-url "https://example.test"} member-id)))))
+
+(deftest gigs-unauthenticated-routes-expose-slashless-answer-link
   (let [router (http/router ["" (gigs.routes/unauthenticated-routes)])]
     (is (= :app/gig-answer-link
-           (get-in (r/match-by-path router "/answer-link") [:data :app.route/name])))
-    (is (= :app/gig-answer-link
-           (get-in (r/match-by-path router "/answer-link/") [:data :app.route/name])))
+           (app-route-name router "/answer-link")))
+    (is (nil? (r/match-by-path router "/answer-link/")))
+    (is (= {:status   301
+            :location "/answer-link"}
+           (slash-redirect-summary router "/answer-link/")))
+    (is (nil? (r/match-by-path router "/dev/answer-link")))
     (is (nil? (r/match-by-path router "/dev/answer-link/")))))
 
-(deftest gigs-dev-routes-expose-answer-link-preview-only-in-dev
+(deftest gigs-dev-routes-expose-slashless-answer-link-preview-only-in-dev
   (let [dev-system  {:env {:ig/system {:app.ig/profile :dev}}}
         prod-system {:env {:ig/system {:app.ig/profile :prod}}}
         dev-router  (http/router ["" (gigs.routes/unauthenticated-routes dev-system)])
         prod-router (http/router ["" (gigs.routes/unauthenticated-routes prod-system)])]
     (is (= :app/gig-answer-link-dev
-           (get-in (r/match-by-path dev-router "/dev/answer-link") [:data :app.route/name])))
-    (is (= :app/gig-answer-link-dev
-           (get-in (r/match-by-path dev-router "/dev/answer-link/") [:data :app.route/name])))
+           (app-route-name dev-router "/dev/answer-link")))
+    (is (nil? (r/match-by-path dev-router "/dev/answer-link/")))
+    (is (= {:status   301
+            :location "/dev/answer-link"}
+           (slash-redirect-summary dev-router "/dev/answer-link/")))
     (is (nil? (r/match-by-path prod-router "/dev/answer-link")))
     (is (nil? (r/match-by-path prod-router "/dev/answer-link/")))))
 

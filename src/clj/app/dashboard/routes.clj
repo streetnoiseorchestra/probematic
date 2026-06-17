@@ -14,7 +14,4 @@
                     :view-ns   'app.dashboard.index.views})
    (ds/page-routes {:page-name ::calendar
                     :path      "/calendar"
-                    :view-ns   'app.dashboard.calendar.views})
-   (ds/page-routes {:page-name ::calendar-trailing-slash
-                    :path      "/calendar/"
                     :view-ns   'app.dashboard.calendar.views})])

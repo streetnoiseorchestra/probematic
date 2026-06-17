@@ -12,11 +12,6 @@
                    :path      "/songs"
                    :view-ns   'app.songs.index.views}))
 
-(defn songs-list-trailing-slash-routes []
-  (ds/page-routes {:page-name ::index-trailing-slash
-                   :path      "/songs/"
-                   :view-ns   'app.songs.index.views}))
-
 (defn songs-new-routes []
   (ds/page-routes {:page-name  ::create
                    :path       "/songs/new"
@@ -29,21 +24,14 @@
 
 (defn song-detail-routes []
   (ds/page-routes {:page-name ::detail
-                   :path      "/song/{song-id}/"
-                   :view-ns   'app.songs.detail.views}))
-
-(defn song-detail-no-slash-routes []
-  (ds/page-routes {:page-name ::detail-no-slash
                    :path      "/song/{song-id}"
                    :view-ns   'app.songs.detail.views}))
 
 (defn routes []
   ["" {:app.route/name :app/songs}
    (song-detail-routes)
-   (song-detail-no-slash-routes)
    (song-edit-routes)
    (songs-list-routes)
-   (songs-list-trailing-slash-routes)
    (songs-new-routes)
    ["/song-media/{song-id}"
     {:post {:summary "Upload media for an song"

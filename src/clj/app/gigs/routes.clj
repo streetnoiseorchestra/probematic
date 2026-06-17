@@ -28,9 +28,6 @@
    (ds/page-routes {:page-name ::detail
                     :path      "/gig/{gig/gig-id}"
                     :view-ns   'app.gigs.detail.views})
-   (ds/page-routes {:page-name ::detail-trailing-slash
-                    :path      "/gig/{gig/gig-id}/"
-                    :view-ns   'app.gigs.detail.views})
    (ds/page-routes {:page-name ::probeplan
                     :path      "/gig/{gig/gig-id}/probeplan"
                     :view-ns   'app.gigs.probeplan.views})
@@ -50,11 +47,7 @@
   ([system]
    (cond-> [""
             ["/answer-link" {:app.route/name :app/gig-answer-link
-                             :get            answer-link/answer-link}]
-            ["/answer-link/" {:app.route/name :app/gig-answer-link
-                              :get            answer-link/answer-link}]]
+                             :get            answer-link/answer-link}]]
      (config/dev-mode? (:env system))
      (conj ["/dev/answer-link" {:app.route/name :app/gig-answer-link-dev
-                                :get            answer-link/answer-link-preview}]
-           ["/dev/answer-link/" {:app.route/name :app/gig-answer-link-dev
-                                 :get            answer-link/answer-link-preview}]))))
+                                :get            answer-link/answer-link-preview}]))))

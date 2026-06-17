@@ -54,7 +54,7 @@
                  :forum.topic/topic-id     nil}]
                {:transact-w-nils? true
                 :on-success       [[:app.songs/trigger-song-edited song-id]]}]
-              [:app.datastar/redirect (str "/song/" song-id "/")]]
+              [:app.datastar/redirect (str "/song/" song-id)]]
              (actions/update-song-action
               (state-for system)
               {:song-edit {:song-id             (str song-id)

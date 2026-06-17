@@ -39,4 +39,4 @@
     (is (str/includes? body "window.setTimeout"))
     (is (str/includes? body "window.location.assign"))
     (is (str/includes? body "1000"))
-    (is (str/includes? body (str "/gig/" gig-id "/")))))
+    (is (str/includes? body (pr-str (str "/gig/" gig-id))))))

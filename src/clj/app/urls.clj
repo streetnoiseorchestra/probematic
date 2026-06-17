@@ -24,15 +24,23 @@
   (some-> string str (URLEncoder/encode "UTF-8") (.replace "+" "%20")))
 
 (defn link-dashboard [] "/")
-(def link-member (partial link-helper "/member/" :member/member-id))
+(defn link-member
+  ([member-or-member-id]
+   (link-helper "/member/" :member/member-id member-or-member-id ""))
+  ([member-or-member-id suffix]
+   (link-helper "/member/" :member/member-id member-or-member-id suffix)))
 (defn link-member-detail-tab [member-or-member-id tab]
   (str (link-member member-or-member-id "/") tab))
 (defn link-member-money [member-or-member-id]
   (link-member-detail-tab member-or-member-id "money"))
-(def link-member-ledger #(link-member % "/#member-ledger-panel"))
-(def link-member-ledger-table #(link-member % "/#member-ledger-table"))
+(def link-member-ledger #(link-member % "#member-ledger-panel"))
+(def link-member-ledger-table #(link-member % "#member-ledger-table"))
 
-(def link-gig (partial link-helper "/gig/" :gig/gig-id))
+(defn link-gig
+  ([gig-or-gig-id]
+   (link-helper "/gig/" :gig/gig-id gig-or-gig-id ""))
+  ([gig-or-gig-id suffix]
+   (link-helper "/gig/" :gig/gig-id gig-or-gig-id suffix)))
 (defn link-gig-edit [gig-or-gig-id]
   (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/edit"))
 (defn link-gig-probeplan [gig-or-gig-id]
@@ -41,7 +49,11 @@
   (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/setlist"))
 (defn link-gig-log-plays [gig-or-gig-id]
   (link-helper "/gig/" :gig/gig-id gig-or-gig-id "/log-plays"))
-(def link-song (partial link-helper "/song/" :song/song-id))
+(defn link-song
+  ([song-or-song-id]
+   (link-helper "/song/" :song/song-id song-or-song-id ""))
+  ([song-or-song-id suffix]
+   (link-helper "/song/" :song/song-id song-or-song-id suffix)))
 (defn link-song-edit [song-or-song-id]
   (link-helper "/song/" :song/song-id song-or-song-id "/edit"))
 (defn link-song-create [] "/songs/new")
@@ -70,19 +82,19 @@
 
 (defn link-gigs-home [] "/gigs")
 (defn link-polls-home [] "/polls")
-(defn link-songs-home [] "/songs/")
-(defn link-calendar [] "/calendar/")
+(defn link-songs-home [] "/songs")
+(defn link-calendar [] "/calendar")
 (defn link-probeplan-home [] "/probeplan")
 (defn link-gig-create [] "/gigs/create")
 (defn link-gig-archive [] "/gigs/archive")
 (defn link-gig-archive-year [year] (str "/gigs/archive/" year))
 (defn link-polls-create [] "/polls/new")
-(defn link-insurance [] "/insurance/")
+(defn link-insurance [] "/insurance")
 
 (defn link-insurance-survey-start [policy-id]
   (str "/insurance-survey/" policy-id "/"))
 
-(defn link-faq-insurance-team [] "/insurance/#faq10")
+(defn link-faq-insurance-team [] "/insurance#faq10")
 
 (defn append-qps
   "Given a map of query parameters, return a string of query parameters (starting with ?) to append to a URL.
@@ -138,7 +150,7 @@
   (format "/song-media/%s" (str song-id)))
 
 (defn absolute-link-gig [env gig-id]
-  (str (config/app-base-url env) "/gig/" gig-id "/"))
+  (str (config/app-base-url env) (link-gig gig-id)))
 
 (defn absolute-link-gig-log-plays [env gig-id]
   (str (config/app-base-url env) (link-gig-log-plays gig-id)))
@@ -147,10 +159,10 @@
   (str (config/app-base-url env) (link-poll poll-id)))
 
 (defn absolute-link-song [env song-id]
-  (str (config/app-base-url env) "/song/" song-id "/"))
+  (str (config/app-base-url env) (link-song song-id)))
 
 (defn absolute-link-member [env member-id]
-  (str (config/app-base-url env) "/member/" member-id "/"))
+  (str (config/app-base-url env) (link-member member-id)))
 
 (defn absolute-link-member-ledger [env member-id]
   (str (absolute-link-member env member-id) "#member-ledger-table"))
