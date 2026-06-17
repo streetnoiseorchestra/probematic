@@ -1,6 +1,7 @@
 (ns app.gigs.ui
   (:require
    [app.ui2 :as ui2]
+   [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
    [clojure.string :as str]))
@@ -62,10 +63,10 @@
        [:span (ui2/date-range-display req :compact-with-weekday date end-date)]]]]))
 
 (defn section-heading [title]
-  [:div {:class "gigs-section-heading"}
+  [:div
    [:div {:class "wa-flank:end"}
     [:h2 title]]
-   [:wa-divider {:class "gigs-section-divider"}]])
+   [divider/Divider]])
 
 (defn gig-section [req {:keys [empty-message footer gigs id title]}]
   [:section {:id    id

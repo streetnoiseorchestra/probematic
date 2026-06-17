@@ -3,6 +3,7 @@
    [app.datastar :as d*]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]))
 
 (defn- settings-link-card [{:keys [href icon title body]}]
@@ -21,10 +22,10 @@
 
 (defn page [{:keys [tr]}]
   (ui2/plain-page
-   [:div {:class "wa-grid band-settings-index-grid"}
+   [:div {:class "wa-grid" :style "--min-column-size: var(--sno-settings-index-min-column-size);"}
     (ui2/page-header {:class "wa-span-grid"
                       :title (tr [:nav/band-settings])})
-    [:wa-divider {:class "wa-span-grid band-settings-index-divider"}]
+    [divider/Divider {:class "wa-span-grid"}]
     (settings-link-card {:href  "/band-settings/teams"
                          :icon  "users-outline"
                          :title "Teams"

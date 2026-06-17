@@ -1,12 +1,14 @@
 (ns app.ui2
   (:require
-   [app.ui2.button :as button]
-   [app.ui2.icon :as ico]
    [app.html :as html]
    [app.humanize :as humanize]
    [app.i18n :as i18n]
    [app.icons :as icons]
+   [app.ui2.button :as button]
+   [app.ui2.divider :as divider]
+   [app.ui2.icon :as ico]
    [clojure.string :as str]
+   [dev.onionpancakes.chassis.compiler :as cc]
    [starfederation.datastar.clojure.expressions :refer [->expr]]
    [tick.core :as t])
   (:import
@@ -424,9 +426,10 @@
 
   Required: `title`."
   [title]
-  [:div {:class "sno-section-divider"}
-   [:h2 title]
-   [:wa-divider]])
+  (cc/compile
+   [:div {:class "sno-section-divider"}
+    [:h2 title]
+    [divider/Divider]]))
 
 (defn page-header
   "Renders a standard page header.
@@ -460,7 +463,7 @@
                    :subtitle subtitle
                    :title    title})
      (action-bar {:class "sno-section-actions"} actions)]
-    (when divider? [:wa-divider])]
+    (when divider? [divider/Divider])]
    children))
 
 (defn remove-dialog

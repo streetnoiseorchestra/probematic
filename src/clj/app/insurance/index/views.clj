@@ -8,6 +8,7 @@
    [app.insurance.ui :as insurance.ui]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as urls]))
 
@@ -128,7 +129,7 @@
      question]
     [:div {:class "insurance-faq-answer wa-stack wa-gap-xs"}
      answer]]
-   [:wa-divider]))
+   [divider/Divider]))
 
 (defn- link-or-span [href text]
   (if href

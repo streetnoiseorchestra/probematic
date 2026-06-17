@@ -12,6 +12,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -128,7 +129,7 @@
 
 (defn- sno-id-admin-fields [{:keys [tr] :as req} form-state]
   [:div {:class "member-detail-sno-id-admin-fields wa-stack wa-gap-m"}
-   [:wa-divider]
+   [divider/Divider]
    [:div {:class "wa-stack wa-gap-2xs"}
     [:strong (tr [:sno-id])]
     [:span {:class "wa-caption-s"}
@@ -376,7 +377,7 @@
       (when create-state
         [:div {:class "wa-stack wa-gap-s"}
          (travel-discount-create-form req create-state discount-types)
-         [:wa-divider]])
+         [divider/Divider]])
       (travel-discounts-table req edit-state discounts)
       (for [discount discounts]
         (travel-discount-remove-dialog req discount)))]))
@@ -640,9 +641,9 @@
       (ledger-balance-card req member ledger)
       (when create-state
         [:div {:class "wa-stack wa-gap-s"}
-         [:wa-divider]
+         [divider/Divider]
          (ledger-entry-create-form req member create-state)])
-      [:wa-divider]
+      [divider/Divider]
       (ledger-entries-table req entries)
       (for [entry entries]
         (ledger-entry-remove-dialog req entry)))]))

@@ -6,6 +6,7 @@
    [app.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -209,7 +210,7 @@
          [:div {:class "gigs-log-plays-items gigs-log-plays-items--planned"}
           (for [row planned]
             (play-row req gig-id row))]
-         [:wa-divider {:class "gigs-log-plays-separator"}]))
+         [divider/Divider]))
       (repertoire-filter-control req repertoire-filter)
       (if (seq repertoire)
         [:div {:class "gigs-log-plays-items"}

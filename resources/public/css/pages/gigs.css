@@ -5,10 +5,6 @@
   max-inline-size: var(--sno-size-full);
 }
 
-.gigs-section-heading h2 {
-  margin: var(--sno-size-none);
-}
-
 .gigs-remind-all-button--sent {
   &::part(base) {
     color: var(--sno-reminder-sent-text);
@@ -414,10 +410,6 @@ dl.gigs-detail-info-list {
   }
 }
 
-.gigs-log-plays-separator {
-  margin-block: var(--wa-space-xs);
-}
-
 .gigs-log-play-row {
   display: flex;
   flex-basis: 50%;
@@ -563,10 +555,6 @@ dl.gigs-detail-info-list {
 
 .gigs-index-columns {
   --min-column-size: min(100%, 24rem);
-}
-
-.gigs-section-divider {
-  padding-bottom: var(--wa-space-2xs);
 }
 
 .gigs-list-card {

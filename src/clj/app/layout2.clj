@@ -7,6 +7,7 @@
    [app.secret-box :as secret-box]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
+   [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as url]
    [app.util :as util]
@@ -90,7 +91,7 @@
                         ::ico/name    :cog}
                        menu-icon-opts)]
       (tr [:nav/band-settings])]
-     [:wa-divider]
+     [divider/Divider]
      [:wa-dropdown-item {:value   (url/link-logout)
                          :variant "danger"
                          :onclick "window.location = this.value"}
