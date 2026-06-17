@@ -11,6 +11,7 @@
    [app.markdown :as markdown]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -59,12 +60,12 @@
     (muted nil)))
 
 (defn- header-actions [{:keys [tr]} gig]
-  [[:wa-button {:appearance "outlined"
-                :href       (urls/link-gig-edit gig)}
+  [[button/Button {:appearance "outlined"
+                   :href       (urls/link-gig-edit gig)}
     (tr [:action/edit])]
-   [:wa-button {:appearance "outlined"
-                :variant    "brand"
-                :href       (urls/link-gig-log-plays gig)}
+   [button/Button {:appearance "outlined"
+                   :variant    "brand"
+                   :href       (urls/link-gig-log-plays gig)}
     "Log Plays"]])
 
 (defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
@@ -112,9 +113,9 @@
     (ui2/section-card
      {:title    (tr [:gig/setlist])
       :divider? true
-      :actions  [[:wa-button {:appearance "outlined"
-                              :variant    "brand"
-                              :href       (urls/link-gig-setlist gig-id)}
+      :actions  [[button/Button {:appearance "outlined"
+                                 :variant    "brand"
+                                 :href       (urls/link-gig-setlist gig-id)}
                   (if (seq songs)
                     (tr [:action/edit])
                     (tr [:gig/create-setlist]))]]}
@@ -125,9 +126,9 @@
     (ui2/section-card
      {:title    (tr [:gig/probeplan])
       :divider? true
-      :actions  [[:wa-button {:appearance "outlined"
-                              :variant    "brand"
-                              :href       (urls/link-gig-probeplan gig-id)}
+      :actions  [[button/Button {:appearance "outlined"
+                                 :variant    "brand"
+                                 :href       (urls/link-gig-probeplan gig-id)}
                   (if (seq songs)
                     (tr [:action/edit])
                     (tr [:gig/create-probeplan]))]]}
@@ -165,12 +166,12 @@
         recent?       (recent-reminder? sent-at)
         button-id     "gig-detail-remind-all-button"
         dialog-id     "gig-detail-remind-all-dialog"
-        button        [:wa-button (cond-> {:id          button-id
-                                           :appearance  (if recent? "filled" "outlined")
-                                           :variant     "neutral"
-                                           :size        "s"
-                                           :data-dialog (str "open " dialog-id)}
-                                    recent? (assoc :class "gigs-remind-all-button--sent"))
+        button        [button/Button (cond-> {:id          button-id
+                                              :appearance  (if recent? "filled" "outlined")
+                                              :variant     "neutral"
+                                              :size        "s"
+                                              :data-dialog (str "open " dialog-id)}
+                                       recent? (assoc :class "gigs-remind-all-button--sent"))
                        (when recent?
                          [:wa-icon {:slot    "start"
                                     :library "snoico"
@@ -188,28 +189,28 @@
   [:wa-dialog {:id    "gig-detail-remind-all-dialog"
                :label (tr [:reminders/confirm-remind-all-title])}
    [:p (tr [:reminders/confirm-remind-all])]
-   [:wa-button {:slot        "footer"
-                :appearance  "outlined"
-                :data-dialog "close"}
+   [button/Button {:slot        "footer"
+                   :appearance  "outlined"
+                   :data-dialog "close"}
     (tr [:action/cancel])]
-   [:wa-button {:slot          "footer"
-                :appearance    "filled"
-                :variant       "brand"
-                :data-dialog   "close"
-                :data-on:click (attendance.ui/action-js req
-                                                        ::actions/send-reminder-to-all
-                                                        {:gig-id gig-id})}
+   [button/Button {:slot          "footer"
+                   :appearance    "filled"
+                   :variant       "brand"
+                   :data-dialog   "close"
+                   :data-on:click (attendance.ui/action-js req
+                                                           ::actions/send-reminder-to-all
+                                                           {:gig-id gig-id})}
     (tr [:reminders/confirm])]])
 
 (defn- attendance-actions [req archived? gig-id show-committed?]
   (when-not archived?
     [(remind-all-button req gig-id)
-     [:wa-button (merge {:appearance "filled"
-                         :variant    "brand"
-                         :size       "s"}
-                        (attendance.ui/action-attrs req
-                                                    ::actions/toggle-attendance-committed
-                                                    {:show-committed (not show-committed?)}))
+     [button/Button (merge {:appearance "filled"
+                            :variant    "brand"
+                            :size       "s"}
+                           (attendance.ui/action-attrs req
+                                                       ::actions/toggle-attendance-committed
+                                                       {:show-committed (not show-committed?)}))
       (if show-committed?
         ((:tr req) [:gig/show-all])
         ((:tr req) [:gig/show-committed]))]]))

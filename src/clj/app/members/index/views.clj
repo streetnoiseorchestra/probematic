@@ -5,6 +5,7 @@
    [app.members.index.queries :as queries]
    [app.members.ui :as members.ui]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -73,9 +74,9 @@
    [:wa-option {:value "all"} (tr [:member/filter-all])]])
 
 (defn- invite-button [{:keys [tr]}]
-  [:wa-button {:appearance "filled"
-               :variant    "brand"
-               :href       "/members/invite"}
+  [button/Button {:appearance "filled"
+                  :variant    "brand"
+                  :href       "/members/invite"}
    (tr [:member/invite-member])])
 
 (defn- members-toolbar [{:keys [tr] :as req} page-state total]
@@ -93,17 +94,16 @@
           (pr-str action)))
 
 (defn- invite-action-button [req {:keys [invite-code action label variant action-key]}]
-  [:wa-button {:appearance         "outlined"
-               :variant            variant
-               :size               "s"
-               :type               "button"
-               :data-attr:loading  (invite-loading? invite-code action)
-               :data-attr:disabled "$invite.inflight"
-               :data-on:click      (->expr
-                                    (set! $invite.code ~invite-code)
-                                    (set! $invite.action ~action)
-                                    (set! $invite.inflight true)
-                                    (@post ~(d*/act req action-key)))}
+  [button/Button {:appearance         "outlined"
+                  :variant            variant
+                  :size               "s"
+                  :data-attr:loading  (invite-loading? invite-code action)
+                  :data-attr:disabled "$invite.inflight"
+                  :data-on:click      (->expr
+                                       (set! $invite.code ~invite-code)
+                                       (set! $invite.action ~action)
+                                       (set! $invite.inflight true)
+                                       (@post ~(d*/act req action-key)))}
    label])
 
 (defn- open-invitations-panel [{:keys [tr] :as req} open-invitations]

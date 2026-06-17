@@ -6,6 +6,7 @@
    [app.gigs.song-plan.views :as plan.views]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -38,13 +39,13 @@
      (set! el.dataset.lastSelected selected-value))))
 
 (defn- repertoire-filter-button [req current-filter value label]
-  [:wa-button {:appearance    (if (= current-filter value) "filled" "outlined")
-               :variant       (when (= current-filter value) "brand")
-               :size          "s"
-               :aria-pressed  (if (= current-filter value) "true" "false")
-               :data-on:click (->expr
-                               (set! $gig-setlist.repertoire-filter ~value)
-                               (@post ~(d*/act req ::actions/set-repertoire-filter)))}
+  [button/Button {:appearance    (if (= current-filter value) "filled" "outlined")
+                  :variant       (when (= current-filter value) "brand")
+                  :size          "s"
+                  :aria-pressed  (if (= current-filter value) "true" "false")
+                  :data-on:click (->expr
+                                  (set! $gig-setlist.repertoire-filter ~value)
+                                  (@post ~(d*/act req ::actions/set-repertoire-filter)))}
    label])
 
 (defn- song-choice [req gig-id selected-ids {:song/keys [last-played-on song-id title]}]

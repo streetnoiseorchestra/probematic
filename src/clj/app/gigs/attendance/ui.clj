@@ -4,6 +4,7 @@
    [app.gigs.detail.actions :as actions]
    [app.gigs.domain :as domain]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]
    [clojure.string :as str]))
 
@@ -91,12 +92,12 @@
                                                                      :member-id member-id})
                                             "; $gig-attendance.plan = evt.detail.item.value"
                                             "; @post('" (d*/act req ::actions/update-attendance-plan) "')")}
-     [:wa-button {:slot       "trigger"
-                  :appearance "outlined"
-                  :size       "s"
-                  :class      "gigs-attendance-plan-button"
-                  :title      (plan-label tr plan)
-                  :aria-label (plan-label tr plan)}
+     [button/Button {:slot       "trigger"
+                     :appearance "outlined"
+                     :size       "s"
+                     :class      "gigs-attendance-plan-button"
+                     :title      (plan-label tr plan)
+                     :aria-label (plan-label tr plan)}
       (plan-icon plan)
       [:wa-icon {:library "snoico"
                  :name    "chevron-down"
@@ -142,17 +143,17 @@
                                            "; $gig-attendance.comment = evt.target.value"
                                            "; @post('" (d*/act req ::actions/update-attendance-comment) "')")}]
     (if (seq comment)
-      [:wa-button {:appearance        "plain"
-                   :variant           "brand"
-                   :size              "s"
-                   :class             "gigs-attendance-comment-link"
-                   :data-on:mousedown (comment-open-js req gig-id member-id comment)}
+      [button/Button {:appearance        "plain"
+                      :variant           "brand"
+                      :size              "s"
+                      :class             "gigs-attendance-comment-link"
+                      :data-on:mousedown (comment-open-js req gig-id member-id comment)}
        comment]
-      [:wa-button {:appearance        "plain"
-                   :size              "s"
-                   :class             "gigs-attendance-comment-button"
-                   :aria-label        ((:tr req) [:action/comment])
-                   :data-on:mousedown (comment-open-js req gig-id member-id "")}
+      [button/Button {:appearance        "plain"
+                      :size              "s"
+                      :class             "gigs-attendance-comment-button"
+                      :aria-label        ((:tr req) [:action/comment])
+                      :data-on:mousedown (comment-open-js req gig-id member-id "")}
        [:wa-icon {:library "snoico"
                   :name    "comment-outline"}]])))
 

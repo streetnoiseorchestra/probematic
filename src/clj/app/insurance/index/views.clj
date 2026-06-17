@@ -7,6 +7,7 @@
    [app.insurance.index.queries :as queries]
    [app.insurance.ui :as insurance.ui]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]))
 
 (def policy-status-data
@@ -27,18 +28,18 @@
     [:wa-dialog {:id    (ui2/remove-dialog-id "insurance-policy" policy-id)
                  :label (tr [:action/confirm-generic])}
      [:p (tr [:action/confirm-delete-policy] [name])]
-     [:wa-button {:slot        "footer"
-                  :appearance  "outlined"
-                  :data-dialog "close"}
+     [button/Button {:slot        "footer"
+                     :appearance  "outlined"
+                     :data-dialog "close"}
       (tr [:action/cancel])]
-     [:wa-button {:slot               "footer"
-                  :appearance         "filled"
-                  :variant            "danger"
-                  :data-dialog        "close"
-                  :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
-                  :data-attr:loading  (str "$loading === " loading-id)
-                  :data-id            policy-id
-                  :data-action        (d*/act req ::actions/delete-policy)}
+     [button/Button {:slot               "footer"
+                     :appearance         "filled"
+                     :variant            "danger"
+                     :data-dialog        "close"
+                     :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                     :data-attr:loading  (str "$loading === " loading-id)
+                     :data-id            policy-id
+                     :data-action        (d*/act req ::actions/delete-policy)}
       (tr [:action/confirm-delete])]]))
 
 (defn- policy-actions [{:keys [tr] :as req} {:insurance.policy/keys [policy-id]}]
@@ -93,9 +94,9 @@
   (ui2/section-card
    {:class   "wa-stack insurance-policies"
     :title   (tr [:insurance/policies])
-    :actions [[:wa-button {:appearance "outlined"
-                           :variant    "brand"
-                           :href       "/insurance-new/"}
+    :actions [[button/Button {:appearance "outlined"
+                              :variant    "brand"
+                              :href       "/insurance-new/"}
                [:wa-icon {:slot    "start"
                           :library "snoico"
                           :name    "circle-plus-solid"}]

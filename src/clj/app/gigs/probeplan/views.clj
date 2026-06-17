@@ -6,6 +6,7 @@
    [app.gigs.song-plan.views :as plan.views]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -57,13 +58,13 @@
      (set! el.dataset.lastEmphasis emphasis))))
 
 (defn- repertoire-filter-button [req current-filter value label]
-  [:wa-button {:appearance      (if (= current-filter value) "filled" "outlined")
-               :variant         (when (= current-filter value) "brand")
-               :size            "s"
-               :aria-pressed    (if (= current-filter value) "true" "false")
-               :data-on:click   (->expr
-                                 (set! $gig-probeplan.repertoire-filter ~value)
-                                 (@post ~(d*/act req ::actions/set-repertoire-filter)))}
+  [button/Button {:appearance      (if (= current-filter value) "filled" "outlined")
+                  :variant         (when (= current-filter value) "brand")
+                  :size            "s"
+                  :aria-pressed    (if (= current-filter value) "true" "false")
+                  :data-on:click   (->expr
+                                    (set! $gig-probeplan.repertoire-filter ~value)
+                                    (@post ~(d*/act req ::actions/set-repertoire-filter)))}
    label])
 
 (defn- song-choice [req gig-id selected-ids {:song/keys [last-played-on song-id title]}]
@@ -91,16 +92,16 @@
     :choice            (partial song-choice req gig-id)}))
 
 (defn- intensive-button [req gig-id {:song/keys [song-id]}]
-  [:wa-button {:appearance    "plain"
-               :size          "s"
-               :aria-label    "Toggle intensive"
-               :data-on:click (->expr
-                               (let [icon (.querySelector evt.currentTarget "wa-icon[name='fist-punch']")]
-                                 (when icon
-                                   (.pending js/window.snoSongPlanPop icon)))
-                               (set! $gig-probeplan.gig-id ~(str gig-id))
-                               (set! $gig-probeplan.song-id ~(str song-id))
-                               (@post ~(d*/act req ::actions/toggle-probeplan-intensive)))}
+  [button/Button {:appearance    "plain"
+                  :size          "s"
+                  :aria-label    "Toggle intensive"
+                  :data-on:click (->expr
+                                  (let [icon (.querySelector evt.currentTarget "wa-icon[name='fist-punch']")]
+                                    (when icon
+                                      (.pending js/window.snoSongPlanPop icon)))
+                                  (set! $gig-probeplan.gig-id ~(str gig-id))
+                                  (set! $gig-probeplan.song-id ~(str song-id))
+                                  (@post ~(d*/act req ::actions/toggle-probeplan-intensive)))}
    [:wa-icon {:library            "snoico"
               :name               "fist-punch"
               :data-preserve-attr "class"}]])

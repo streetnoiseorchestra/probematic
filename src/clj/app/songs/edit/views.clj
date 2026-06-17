@@ -5,6 +5,7 @@
    [app.queries :as q]
    [app.songs.edit.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -84,32 +85,31 @@
    [:p (tr [:action/confirm-delete-song] [title])]))
 
 (defn- save-button [tr]
-  [:wa-button {:appearance         "filled"
-               :variant            "brand"
-               :type               "submit"
-               :form               "song-edit-form"
-               :data-attr:disabled "!!$loading && $loading !== 'song-edit'"
-               :data-attr:loading  "$loading === 'song-edit'"}
+  [button/Button {:appearance         "filled"
+                  :variant            "brand"
+                  :type               "submit"
+                  :form               "song-edit-form"
+                  :data-attr:disabled "!!$loading && $loading !== 'song-edit'"
+                  :data-attr:loading  "$loading === 'song-edit'"}
    (tr [:action/save])])
 
 (defn- edit-form-actions [{:keys [tr]} song]
   (ui2/action-bar
    {}
-   [[:wa-button {:appearance "outlined"
-                 :href       (urls/link-song song)}
+   [[button/Button {:appearance "outlined"
+                    :href       (urls/link-song song)}
      (tr [:action/cancel])]
-    [:wa-button {:appearance  "outlined"
-                 :variant     "danger"
-                 :type        "button"
-                 :data-dialog (str "open " (song-remove-dialog-id song))}
+    [button/Button {:appearance  "outlined"
+                    :variant     "danger"
+                    :data-dialog (str "open " (song-remove-dialog-id song))}
      (tr [:action/delete])]
     (save-button tr)]))
 
 (defn- create-form-actions [{:keys [tr]}]
   (ui2/action-bar
    {}
-   [[:wa-button {:appearance "outlined"
-                 :href       (urls/link-songs-home)}
+   [[button/Button {:appearance "outlined"
+                    :href       (urls/link-songs-home)}
      (tr [:action/cancel])]
     (save-button tr)]))
 

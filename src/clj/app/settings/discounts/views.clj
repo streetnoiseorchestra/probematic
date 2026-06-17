@@ -4,6 +4,7 @@
    [app.queries :as q]
    [app.settings.discounts.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -31,17 +32,17 @@
                     :data-invalid (if dt-name-error "true" nil)
                     :data-bind    "discount-type-create.discount-type-name"
                     :name         :discount-type-name}]]
-       [:wa-button {:slot        "footer"
-                    :appearance  "outlined"
-                    :data-dialog "close"}
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
         (tr [:action/cancel])]
-       [:wa-button {:slot               "footer"
-                    :appearance         "filled"
-                    :variant            "brand"
-                    :type               "submit"
-                    :data-attr:disabled "!!$loading && $loading !== 'discount-type-create'"
-                    :data-attr:loading  "$loading === 'discount-type-create'"
-                    :form               "dt-create"}
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :data-attr:disabled "!!$loading && $loading !== 'discount-type-create'"
+                       :data-attr:loading  "$loading === 'discount-type-create'"
+                       :form               "dt-create"}
         (tr [:action/create])]])))
 
 (defn travel-discount-type-edit-form [{:keys [tr page-state] :as req}]
@@ -72,35 +73,35 @@
         [:wa-switch {:data-attr:checked "$discount-type.discount-type-enabled"
                      :data-on:change    "$discount-type.discount-type-enabled = !$discount-type.discount-type-enabled"}
          "Active"]]
-       [:wa-button {:slot        "footer"
-                    :appearance  "outlined"
-                    :data-dialog "close"}
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
         (tr [:action/cancel])]
-       [:wa-button {:slot               "footer"
-                    :appearance         "filled"
-                    :variant            "brand"
-                    :type               "submit"
-                    :form               "dt-edit-form"
-                    :data-attr:disabled "!!$loading && $loading !== 'discount-type'"
-                    :data-attr:loading  "$loading === 'discount-type'"}
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "dt-edit-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'discount-type'"
+                       :data-attr:loading  "$loading === 'discount-type'"}
         (tr [:action/save])]])))
 
 (defn travel-discount-type-remove-dialog [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name]}]
   [:wa-dialog {:id    (ui2/remove-dialog-id "discount-type" discount-type-id)
                :label (tr [:action/confirm-generic])}
    [:p (tr [:action/confirm-delete-discount-type] [(str "\"" discount-type-name "\"")])]
-   [:wa-button {:slot        "footer"
-                :appearance  "outlined"
-                :data-dialog "close"}
+   [button/Button {:slot        "footer"
+                   :appearance  "outlined"
+                   :data-dialog "close"}
     (tr [:action/cancel])]
-   [:wa-button {:slot               "footer"
-                :appearance         "filled"
-                :variant            "danger"
-                :data-dialog        "close"
-                :data-attr:disabled "!!$loading && $loading !== 'discount-type.discount-type-id'"
-                :data-attr:loading  "$loading === 'discount-type.discount-type-id'"
-                :data-id            discount-type-id
-                :data-action        (d*/act req ::actions/delete-discount-type)}
+   [button/Button {:slot               "footer"
+                   :appearance         "filled"
+                   :variant            "danger"
+                   :data-dialog        "close"
+                   :data-attr:disabled "!!$loading && $loading !== 'discount-type.discount-type-id'"
+                   :data-attr:loading  "$loading === 'discount-type.discount-type-id'"
+                   :data-id            discount-type-id
+                   :data-action        (d*/act req ::actions/delete-discount-type)}
     (tr [:action/confirm-delete])]])
 
 (defn travel-discount-type-table-row [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name enabled?]}]
@@ -132,11 +133,11 @@
      (ui2/section-card
       {:title    "Manage travel discounts"
        :subtitle "Reusable labels for member travel discounts."
-       :actions  [[:wa-button {:appearance  "outlined"
-                               :variant     "brand"
-                               :size        "m"
-                               :data-id     "discount-type-create"
-                               :data-action (d*/act req ::actions/open-discount-type-create)}
+       :actions  [[button/Button {:appearance  "outlined"
+                                  :variant     "brand"
+                                  :size        "m"
+                                  :data-id     "discount-type-create"
+                                  :data-action (d*/act req ::actions/open-discount-type-create)}
                    (tr [:travel-discounts/add-discount-type])]]}
       (ui2/table-shell
        (if (seq discount-types)

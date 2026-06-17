@@ -9,6 +9,7 @@
    [app.insurance.ui :as insurance.ui]
    [app.qrcode :as qr]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]
    [app.util :as util]
    [clojure.string :as str]))
@@ -172,9 +173,9 @@
 (defn- calendar-subscribe-button [{:keys [tr system]}]
   (when-let [{:keys [https webcal google outlook-365 outlook-live]} (calendar-url-data (:env system))]
     [:wa-dropdown {:placement "bottom-end"}
-     [:wa-button {:slot       "trigger"
-                  :appearance "outlined"
-                  :with-caret true}
+     [button/Button {:slot       "trigger"
+                     :appearance "outlined"
+                     :with-caret true}
       [:wa-icon {:library "snoico"
                  :name    "calendar"
                  :slot    "start"}]
@@ -201,9 +202,9 @@
 
 (defn- page-actions [req]
   [(calendar-subscribe-button req)
-   [:wa-button {:appearance "filled"
-                :variant    "brand"
-                :href       (urls/link-gig-create)}
+   [button/Button {:appearance "filled"
+                   :variant    "brand"
+                   :href       (urls/link-gig-create)}
     ((:tr req) [:action/create-gig])]])
 
 (defn page [{:keys [db tr] :as req}]

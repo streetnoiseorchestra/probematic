@@ -5,6 +5,7 @@
    [app.queries :as q]
    [app.settings.sections.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -54,9 +55,9 @@
                        (.warn js/console "no data-sort-order value found on dragged item")))))
                 (.dispatchEvent sortContainer
                                 (new js/CustomEvent  "reordered" {:detail {:orderInfo data}}))))}))
-     [:wa-button {:slot        "footer"
-                  :appearance  "outlined"
-                  :data-dialog "close"}
+     [button/Button {:slot        "footer"
+                     :appearance  "outlined"
+                     :data-dialog "close"}
       (tr [:action/done])]]))
 
 (defn section-create-form [{:keys [tr page-state] :as req}]
@@ -83,17 +84,17 @@
                     :data-invalid (if section-name-error "true" nil)
                     :data-bind    "section-create.section-name"
                     :name         :section-name}]]
-       [:wa-button {:slot        "footer"
-                    :appearance  "outlined"
-                    :data-dialog "close"}
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
         (tr [:action/cancel])]
-       [:wa-button {:slot               "footer"
-                    :appearance         "filled"
-                    :variant            "brand"
-                    :type               "submit"
-                    :form               "section-create-form"
-                    :data-attr:disabled "!!$loading && $loading !== 'section-create'"
-                    :data-attr:loading  "$loading === 'section-create'"}
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "section-create-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'section-create'"
+                       :data-attr:loading  "$loading === 'section-create'"}
         (tr [:action/create])]])))
 
 (defn section-edit-form [{:keys [tr page-state] :as req}]
@@ -124,17 +125,17 @@
         [:wa-switch {:data-attr:checked "$section.section-enabled"
                      :data-on:change    "$section.section-enabled = !$section.section-enabled"}
          "Active"]]
-       [:wa-button {:slot        "footer"
-                    :appearance  "outlined"
-                    :data-dialog "close"}
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
         (tr [:action/cancel])]
-       [:wa-button {:slot               "footer"
-                    :appearance         "filled"
-                    :variant            "brand"
-                    :type               "submit"
-                    :form               "section-edit-form"
-                    :data-attr:disabled "!!$loading && $loading !== 'section'"
-                    :data-attr:loading  "$loading === 'section'"}
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "section-edit-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'section'"
+                       :data-attr:loading  "$loading === 'section'"}
         (tr [:action/save])]])))
 
 (defn section-remove-dialog [{:keys [tr] :as req} {:section/keys [name]}]
@@ -142,18 +143,18 @@
     [:wa-dialog {:id    (ui2/remove-dialog-id "section" name)
                  :label (tr [:action/confirm-generic])}
      [:p (tr [:action/confirm-delete-section] [(str "\"" name "\"")])]
-     [:wa-button {:slot        "footer"
-                  :appearance  "outlined"
-                  :data-dialog "close"}
+     [button/Button {:slot        "footer"
+                     :appearance  "outlined"
+                     :data-dialog "close"}
       (tr [:action/cancel])]
-     [:wa-button {:slot               "footer"
-                  :appearance         "filled"
-                  :variant            "danger"
-                  :data-dialog        "close"
-                  :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
-                  :data-attr:loading  (str "$loading === " loading-id)
-                  :data-id            name
-                  :data-action        (d*/act req ::actions/delete-section)}
+     [button/Button {:slot               "footer"
+                     :appearance         "filled"
+                     :variant            "danger"
+                     :data-dialog        "close"
+                     :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                     :data-attr:loading  (str "$loading === " loading-id)
+                     :data-id            name
+                     :data-action        (d*/act req ::actions/delete-section)}
       (tr [:action/confirm-delete])]]))
 
 (defn section-table-row [{:keys [tr] :as req} {:section/keys [name active?]}]
@@ -188,16 +189,16 @@
      (ui2/section-card
       {:title    "Manage sections"
        :subtitle "Choose which sections are visible and how they are ordered."
-       :actions  [[:wa-button {:appearance  "outlined"
-                               :variant     "brand"
-                               :size        "m"
-                               :data-id     "section-create"
-                               :data-action (d*/act req ::actions/open-section-create)}
+       :actions  [[button/Button {:appearance  "outlined"
+                                  :variant     "brand"
+                                  :size        "m"
+                                  :data-id     "section-create"
+                                  :data-action (d*/act req ::actions/open-section-create)}
                    (tr [:section-add])]
-                  [:wa-button {:appearance  "outlined"
-                               :size        "m"
-                               :data-id     "section-reorder"
-                               :data-action (d*/act req ::actions/open-section-reorder)}
+                  [button/Button {:appearance  "outlined"
+                                  :size        "m"
+                                  :data-id     "section-reorder"
+                                  :data-action (d*/act req ::actions/open-section-reorder)}
                    (tr [:action/reorder])]]}
       (ui2/table-shell
        (if (seq sections)

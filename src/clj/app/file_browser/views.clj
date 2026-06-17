@@ -6,6 +6,7 @@
    [app.humanize :as humanize]
    [app.sardine :as sardine]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [babashka.fs :as fs]
    [clojure.string :as str]
@@ -140,10 +141,9 @@
    (@post ~(d*/act req ::actions/close-picker))))
 
 (defn- close-control [{:keys [tr] :as req} picker-id]
-  [:wa-button {:appearance    "outlined"
-               :type          "button"
-               :class         "file-browser-back"
-               :data-on:click (close-action req picker-id)}
+  [button/Button {:appearance    "outlined"
+                  :class         "file-browser-back"
+                  :data-on:click (close-action req picker-id)}
    (tr [:action/back])])
 
 (defn file-picker-panel
@@ -186,10 +186,9 @@
                                                         :selected-path nil}})}
       (ui2/page-header
        {:heading (tr [:file/choose-file])
-        :actions [[:wa-button {:appearance    "filled"
-                               :variant       "brand"
-                               :type          "button"
-                               :data-on:click (open-demo-action req root-dir current-dir)}
+        :actions [[button/Button {:appearance    "filled"
+                                  :variant       "brand"
+                                  :data-on:click (open-demo-action req root-dir current-dir)}
                    (tr [:file/choose-file])]]})
       (file-picker-panel req {:picker-id     actions/default-picker-id
                               :state         picker

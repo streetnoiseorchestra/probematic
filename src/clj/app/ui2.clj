@@ -1,5 +1,6 @@
 (ns app.ui2
   (:require
+   [app.ui2.button :as button]
    [app.html :as html]
    [app.humanize :as humanize]
    [app.i18n :as i18n]
@@ -472,15 +473,15 @@
                       :data-preserve-attr "open"}
                      dialog-attrs)
    body
-   [:wa-button {:slot        "footer"
-                :appearance  "outlined"
-                :data-dialog "close"}
+   [button/Button {:slot        "footer"
+                   :appearance  "outlined"
+                   :data-dialog "close"}
     cancel-label]
-   [:wa-button (merge {:slot        "footer"
-                       :appearance  "filled"
-                       :variant     "danger"
-                       :data-dialog "close"}
-                      confirm-attrs)
+   [button/Button (merge {:slot        "footer"
+                          :appearance  "filled"
+                          :variant     "danger"
+                          :data-dialog "close"}
+                         confirm-attrs)
     confirm-label]])
 
 (defn row-action-menu
@@ -491,11 +492,11 @@
   [{:keys [button-id disabled? items]}]
   (list
    [:wa-dropdown {:placement "bottom-end"}
-    [:wa-button {:id         button-id
-                 :slot       "trigger"
-                 :appearance "plain"
-                 :disabled   disabled?
-                 :aria-label "More actions"}
+    [button/Button {:id         button-id
+                    :slot       "trigger"
+                    :appearance "plain"
+                    :disabled   disabled?
+                    :aria-label "More actions"}
      [:wa-icon {:name "ellipsis" :library "snoico"}]]
     (for [{:keys [label] :as item} items]
       [:wa-dropdown-item (dissoc item :icon)

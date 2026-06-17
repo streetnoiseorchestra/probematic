@@ -5,6 +5,7 @@
    [app.settings.domain :as domain]
    [app.settings.teams.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -50,17 +51,17 @@
                     :data-invalid (if team-name-error "true" nil)
                     :data-bind    "team-create.team-name"
                     :name         :team-name}]]
-       [:wa-button {:slot        "footer"
-                    :appearance  "outlined"
-                    :data-dialog "close"}
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
         (tr [:action/cancel])]
-       [:wa-button {:slot               "footer"
-                    :appearance         "filled"
-                    :variant            "brand"
-                    :type               "submit"
-                    :form               "team-create-form"
-                    :data-attr:disabled "!!$loading && $loading !== 'team-create'"
-                    :data-attr:loading  "$loading === 'team-create'"}
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "team-create-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'team-create'"
+                       :data-attr:loading  "$loading === 'team-create'"}
         (tr [:action/create])]])))
 
 (defn team-edit-form [{:keys [tr db page-state] :as req}]
@@ -108,15 +109,14 @@
                 (let [loading-id (pr-str (str member-id))]
                   [:div {:class "settings-team-member-row wa-flank:end wa-align-items-center wa-gap-xs"}
                    [:a {:href (urls/link-member member)} name]
-                   [:wa-button {:appearance         "plain"
-                                :variant            "danger"
-                                :size               "s"
-                                :type               "button"
-                                :data-id            (str member-id)
-                                :data-action        (d*/act req ::actions/remove-team-member)
-                                :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
-                                :data-attr:loading  (str "$loading === " loading-id)
-                                :data-on:mousedown  (->expr (set! $team.remove-member-id ~(str member-id)))}
+                   [button/Button {:appearance         "plain"
+                                   :variant            "danger"
+                                   :size               "s"
+                                   :data-id            (str member-id)
+                                   :data-action        (d*/act req ::actions/remove-team-member)
+                                   :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                                   :data-attr:loading  (str "$loading === " loading-id)
+                                   :data-on:mousedown  (->expr (set! $team.remove-member-id ~(str member-id)))}
                     (tr [:action/remove])]])))
              [:span {:class "wa-caption-s wa-color-text-quiet italic"}
               (tr [:team/no-members])])]
@@ -130,26 +130,25 @@
             (for [member all-members]
               [:wa-option {:value (:member/member-id member)}
                (team-member-label member)]))
-           [:wa-button {:appearance         "outlined"
-                        :variant            "brand"
-                        :size               "m"
-                        :type               "button"
-                        :data-id            "team-add-member"
-                        :data-action        (d*/act req ::actions/add-team-member)
-                        :data-attr:disabled "$team.member-id == null || $team.member-id === '' || (!!$loading && $loading !== 'team-add-member')"
-                        :data-attr:loading  "$loading === 'team-add-member'"}
+           [button/Button {:appearance         "outlined"
+                           :variant            "brand"
+                           :size               "m"
+                           :data-id            "team-add-member"
+                           :data-action        (d*/act req ::actions/add-team-member)
+                           :data-attr:disabled "$team.member-id == null || $team.member-id === '' || (!!$loading && $loading !== 'team-add-member')"
+                           :data-attr:loading  "$loading === 'team-add-member'"}
             (tr [:action/add])]]]]]
-       [:wa-button {:slot        "footer"
-                    :appearance  "outlined"
-                    :data-dialog "close"}
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
         (tr [:action/cancel])]
-       [:wa-button {:slot               "footer"
-                    :appearance         "filled"
-                    :variant            "brand"
-                    :type               "submit"
-                    :form               "team-edit-form"
-                    :data-attr:disabled "!!$loading && $loading !== 'team'"
-                    :data-attr:loading  "$loading === 'team'"}
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "team-edit-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'team'"
+                       :data-attr:loading  "$loading === 'team'"}
         (tr [:action/save])]])))
 
 (defn team-remove-dialog [{:keys [tr] :as req} {team-name :team/name :team/keys [team-id]}]
@@ -157,18 +156,18 @@
     [:wa-dialog {:id    (ui2/remove-dialog-id "team" team-id)
                  :label (tr [:action/confirm-generic])}
      [:p (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])]
-     [:wa-button {:slot        "footer"
-                  :appearance  "outlined"
-                  :data-dialog "close"}
+     [button/Button {:slot        "footer"
+                     :appearance  "outlined"
+                     :data-dialog "close"}
       (tr [:action/cancel])]
-     [:wa-button {:slot               "footer"
-                  :appearance         "filled"
-                  :variant            "danger"
-                  :data-dialog        "close"
-                  :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
-                  :data-attr:loading  (str "$loading === " loading-id)
-                  :data-id            team-id
-                  :data-action        (d*/act req ::actions/delete-team)}
+     [button/Button {:slot               "footer"
+                     :appearance         "filled"
+                     :variant            "danger"
+                     :data-dialog        "close"
+                     :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                     :data-attr:loading  (str "$loading === " loading-id)
+                     :data-id            team-id
+                     :data-action        (d*/act req ::actions/delete-team)}
       (tr [:action/confirm-delete])]]))
 
 (defn team-table-row [{:keys [tr] :as req} {team-name :team/name :team/keys [team-id members team-type]}]
@@ -209,11 +208,11 @@
      (ui2/section-card
       {:title    "Manage teams"
        :subtitle "Teams help organize members around responsibilities."
-       :actions  [[:wa-button {:appearance  "outlined"
-                               :variant     "brand"
-                               :size        "m"
-                               :data-id     "team-create"
-                               :data-action (d*/act req ::actions/open-team-create)}
+       :actions  [[button/Button {:appearance  "outlined"
+                                  :variant     "brand"
+                                  :size        "m"
+                                  :data-id     "team-create"
+                                  :data-action (d*/act req ::actions/open-team-create)}
                    (tr [:team/create-team])]]}
       (ui2/table-shell
        (if (seq teams)

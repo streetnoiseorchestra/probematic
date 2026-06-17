@@ -5,15 +5,16 @@
    [app.gigs.queries :as queries]
    [app.gigs.ui :as gigs.ui]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]
    [app.util.http :as http.util]))
 
 (defn- year-button [selected-year year]
-  [:wa-button (cond-> {:appearance "outlined"
-                       :size       "s"
-                       :href       (urls/link-gig-archive-year year)}
-                (= selected-year year) (assoc :appearance "filled"
-                                              :variant "brand"))
+  [button/Button (cond-> {:appearance "outlined"
+                          :size       "s"
+                          :href       (urls/link-gig-archive-year year)}
+                   (= selected-year year) (assoc :appearance "filled"
+                                                 :variant "brand"))
    year])
 
 (defn- year-selector [selected-year years]
@@ -43,9 +44,9 @@
       (ui2/page-header
        {:title    (tr [:gigs/title])
         :subtitle selected-year
-        :actions  [[:wa-button {:appearance "filled"
-                                :variant    "brand"
-                                :href       (urls/link-gig-create)}
+        :actions  [[button/Button {:appearance "filled"
+                                   :variant    "brand"
+                                   :href       (urls/link-gig-create)}
                     (tr [:action/create])]]})
       (archive-tools req archive-page-state selected-year years)
       (gigs.ui/gig-section req {:title         selected-year

@@ -5,6 +5,7 @@
    [app.members.invite.actions :as actions]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]))
 
 (defn- default-form-state []
@@ -80,14 +81,14 @@
                   (:active form-state))
     (ui2/action-bar
      {}
-     [[:wa-button {:appearance "outlined"
-                   :href       "/members"}
+     [[button/Button {:appearance "outlined"
+                      :href       "/members"}
        (tr [:action/cancel])]
-      [:wa-button {:appearance         "filled"
-                   :variant            "brand"
-                   :type               "submit"
-                   :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
-                   :data-attr:loading  "$loading === 'member-invite'"}
+      [button/Button {:appearance         "filled"
+                      :variant            "brand"
+                      :type               "submit"
+                      :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
+                      :data-attr:loading  "$loading === 'member-invite'"}
        (tr [:member/invite-member])]])]])
 
 (defn page [{:keys [db page-state tr] :as req}]

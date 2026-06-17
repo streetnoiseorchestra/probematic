@@ -4,6 +4,7 @@
    [app.songs.index.actions :as actions]
    [app.songs.index.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]))
 
 (defn- song-stat [{:keys [icon label value]}]
@@ -77,16 +78,15 @@
    [:wa-option {:value "all"} (tr [:gig/probeplan-repertoire-all])]])
 
 (defn- toolbar-actions [{:keys [tr] :as req}]
-  [[:wa-button {:appearance         "plain"
-                :type               "button"
-                :data-indicator     "songsIndexSyncing"
-                :data-attr:loading  "$songsIndexSyncing"
-                :data-attr:disabled "$songsIndexSyncing"
-                :data-on:click      (str "@post('" (d*/act req ::actions/force-sync-songs) "')")}
+  [[button/Button {:appearance         "plain"
+                   :data-indicator     "songsIndexSyncing"
+                   :data-attr:loading  "$songsIndexSyncing"
+                   :data-attr:disabled "$songsIndexSyncing"
+                   :data-on:click      (str "@post('" (d*/act req ::actions/force-sync-songs) "')")}
     (tr [:song/sync-songs])]
-   [:wa-button {:appearance "filled"
-                :variant    "brand"
-                :href       (urls/link-song-create)}
+   [button/Button {:appearance "filled"
+                   :variant    "brand"
+                   :href       (urls/link-song-create)}
     (tr [:song/create-title])]])
 
 (defn- toolbar [{:keys [tr] :as req} page-state total]

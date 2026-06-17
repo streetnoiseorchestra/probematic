@@ -10,6 +10,7 @@
    [app.queries :as q]
    [app.songs.detail.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -55,11 +56,11 @@
     :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
                  [:h1 title]
                  (ui2/active-badge tr active?)]
-    :actions    [[:wa-button {:appearance "outlined"
-                              :href       (urls/link-songs-home)}
+    :actions    [[button/Button {:appearance "outlined"
+                                 :href       (urls/link-songs-home)}
                   (tr [:action/back])]
-                 [:wa-button {:appearance "outlined"
-                              :href       (urls/link-song-edit _song)}
+                 [button/Button {:appearance "outlined"
+                                 :href       (urls/link-song-edit _song)}
                   (tr [:action/edit])]]}))
 
 (defn- background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
@@ -162,20 +163,19 @@
       [:a {:href  (urls/link-file-download webdav-path)
            :class "songs-detail-sheet-title"}
        title]
-      [:wa-button {:appearance "plain"
-                   :size       "s"
-                   :href       (urls/link-file-download webdav-path)
-                   :class      "songs-detail-sheet-download"
-                   :aria-label (tr [:action/download])}
+      [button/Button {:appearance "plain"
+                      :size       "s"
+                      :href       (urls/link-file-download webdav-path)
+                      :class      "songs-detail-sheet-download"
+                      :aria-label (tr [:action/download])}
        [:wa-icon {:library "phosphor"
                   :name    "download"}]]
-      [:wa-button {:appearance  "plain"
-                   :variant     "danger"
-                   :size        "s"
-                   :type        "button"
-                   :class       "songs-detail-sheet-remove"
-                   :aria-label  (tr [:action/remove])
-                   :data-dialog (str "open " (sheet-remove-dialog-id sheet-id))}
+      [button/Button {:appearance  "plain"
+                      :variant     "danger"
+                      :size        "s"
+                      :class       "songs-detail-sheet-remove"
+                      :aria-label  (tr [:action/remove])
+                      :data-dialog (str "open " (sheet-remove-dialog-id sheet-id))}
        [:wa-icon {:library "snoico"
                   :name    "xmark"}]]]
      (sheet-remove-dialog req sheet))))

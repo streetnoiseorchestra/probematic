@@ -2,6 +2,7 @@
   (:require
    [app.insurance.coverage.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [clojure.string :as str]
@@ -56,9 +57,9 @@
 
 (defn- page-actions [{:keys [tr]} coverage policy]
   (when (queries/policy-editable? policy)
-    [[:wa-button {:appearance "outlined"
-                  :variant    "brand"
-                  :href       (urls/link-coverage-edit coverage)}
+    [[button/Button {:appearance "outlined"
+                     :variant    "brand"
+                     :href       (urls/link-coverage-edit coverage)}
       [:wa-icon {:slot    "start"
                  :library "snoico"
                  :name    "cog"}]

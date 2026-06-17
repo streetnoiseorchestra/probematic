@@ -1,5 +1,6 @@
 (ns app.members.invite-accept.views
   (:require
+   [app.ui2.button :as button]
    [app.i18n :as i18n]
    [app.layout2 :as layout2]
    [app.members.invite-accept.service :as service]))
@@ -45,9 +46,9 @@
                   :value      (:member/email member)
                   :disabled   true
                   :appearance "outlined"}]
-      [:wa-button {:appearance "filled"
-                   :variant    "brand"
-                   :type       "submit"}
+      [button/Button {:appearance "filled"
+                      :variant    "brand"
+                      :type       "submit"}
        (tr [:account/create-account])]])))
 
 (defn- success-page [req member]
@@ -59,9 +60,9 @@
        [:h1 {:class "wa-heading-l"} (tr [:account/account-created-title])]
        [:p {:class "wa-body-m wa-color-text-quiet"}
         (tr [:account/account-created-subtitle])]]
-      [:wa-button {:appearance "filled"
-                   :variant    "brand"
-                   :href       (service/login-link req member)}
+      [button/Button {:appearance "filled"
+                      :variant    "brand"
+                      :href       (service/login-link req member)}
        (tr [:login])]])))
 
 (defn invite-accept [req]

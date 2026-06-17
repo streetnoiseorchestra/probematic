@@ -3,6 +3,7 @@
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]))
 
@@ -41,8 +42,8 @@
                   (gigs.ui/gig-breadcrumb-label req gig)]
                  [breadcrumb/BreadcrumbItem (tr title-kw)]]
     :title      (tr title-kw)
-    :actions    [[:wa-button {:appearance "outlined"
-                              :href       (urls/link-gig gig)}
+    :actions    [[button/Button {:appearance "outlined"
+                                 :href       (urls/link-gig gig)}
                   (tr [:action/back])]]}))
 
 (defn selected-song-ids [songs]

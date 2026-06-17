@@ -4,6 +4,7 @@
    [app.stats.queries :as stats]
    [app.stats.state :as state]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as url]
    [clojure.string :as str]
    [jsonista.core :as j]))
@@ -109,11 +110,11 @@
    [:wa-button-group {:class "stats-timespan-controls"
                       :label (tr [:stats/timespan-label])}]
    (for [{:keys [id label-key]} state/timespan-options]
-     [:wa-button (cond-> {:href       (state/timespan-url req id)
-                          :appearance "outlined"
-                          :size       "s"}
-                   (= id (state/selected-timespan-id req))
-                   (assoc :variant "brand"))
+     [button/Button (cond-> {:href       (state/timespan-url req id)
+                             :appearance "outlined"
+                             :size       "s"}
+                      (= id (state/selected-timespan-id req))
+                      (assoc :variant "brand"))
       (tr label-key)])))
 
 (defn- chart-data [values title x-axis-label y-axis-label color]

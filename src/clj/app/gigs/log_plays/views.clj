@@ -5,6 +5,7 @@
    [app.gigs.song-plan.views :as plan.views]
    [app.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -74,13 +75,13 @@
      (set! el.dataset.lastPlayState state))))
 
 (defn- repertoire-filter-button [req current-filter value label]
-  [:wa-button {:appearance    (if (= current-filter value) "filled" "outlined")
-               :variant       (when (= current-filter value) "brand")
-               :size          "s"
-               :aria-pressed  (if (= current-filter value) "true" "false")
-               :data-on:click (->expr
-                               (set! $gig-log-plays.repertoire-filter ~value)
-                               (@post ~(d*/act req ::actions/set-repertoire-filter)))}
+  [button/Button {:appearance    (if (= current-filter value) "filled" "outlined")
+                  :variant       (when (= current-filter value) "brand")
+                  :size          "s"
+                  :aria-pressed  (if (= current-filter value) "true" "false")
+                  :data-on:click (->expr
+                                  (set! $gig-log-plays.repertoire-filter ~value)
+                                  (@post ~(d*/act req ::actions/set-repertoire-filter)))}
    label])
 
 (defn- repertoire-filter-control [req repertoire-filter]
@@ -111,20 +112,20 @@
 
 (defn- rating-button [req gig-id {:song/keys [song-id]} play {:keys [class icon label rating]}]
   (let [selected? (= (actions/normalize-rating rating) (play-rating play))]
-    [:wa-button {:appearance         "plain"
-                 :size               "s"
-                 :aria-label         ((:tr req) label)
-                 :aria-pressed       (if selected? "true" "false")
-                 :data-rating        (rating-signal rating)
-                 :data-rating-button true
-                 :data-preserve-attr "class"
-                 :data-on:click      (->expr
-                                      (.pending js/window.snoSongPlanPop evt.currentTarget)
-                                      (set! $gig-log-plays.gig-id ~(str gig-id))
-                                      (set! $gig-log-plays.song-id ~(str song-id))
-                                      (set! $gig-log-plays.rating ~(rating-signal rating))
-                                      (set! $gig-log-plays.emphasis ~(emphasis-signal (play-emphasis play)))
-                                      (@post ~(d*/act req ::actions/update-rating)))}
+    [button/Button {:appearance         "plain"
+                    :size               "s"
+                    :aria-label         ((:tr req) label)
+                    :aria-pressed       (if selected? "true" "false")
+                    :data-rating        (rating-signal rating)
+                    :data-rating-button true
+                    :data-preserve-attr "class"
+                    :data-on:click      (->expr
+                                         (.pending js/window.snoSongPlanPop evt.currentTarget)
+                                         (set! $gig-log-plays.gig-id ~(str gig-id))
+                                         (set! $gig-log-plays.song-id ~(str song-id))
+                                         (set! $gig-log-plays.rating ~(rating-signal rating))
+                                         (set! $gig-log-plays.emphasis ~(emphasis-signal (play-emphasis play)))
+                                         (@post ~(d*/act req ::actions/update-rating)))}
      [:wa-icon {:library "snoico"
                 :name    icon
                 :class   (ui2/cs "gigs-log-play-icon" class
@@ -132,20 +133,20 @@
 
 (defn- intensive-button [req gig-id {:song/keys [song-id]} play]
   (let [disabled? (not (active-play? play))]
-    [:wa-button {:appearance         "plain"
-                 :size               "s"
-                 :aria-label         ((:tr req) [:play-log/intensive])
-                 :aria-pressed       (if (intensive? play) "true" "false")
-                 :disabled           disabled?
-                 :data-preserve-attr "class"
-                 :data-on:click      (when-not disabled?
-                                       (->expr
-                                        (.pending js/window.snoSongPlanPop evt.currentTarget)
-                                        (set! $gig-log-plays.gig-id ~(str gig-id))
-                                        (set! $gig-log-plays.song-id ~(str song-id))
-                                        (set! $gig-log-plays.rating ~(rating-signal (play-rating play)))
-                                        (set! $gig-log-plays.emphasis ~(emphasis-signal (play-emphasis play)))
-                                        (@post ~(d*/act req ::actions/toggle-intensive))))}
+    [button/Button {:appearance         "plain"
+                    :size               "s"
+                    :aria-label         ((:tr req) [:play-log/intensive])
+                    :aria-pressed       (if (intensive? play) "true" "false")
+                    :disabled           disabled?
+                    :data-preserve-attr "class"
+                    :data-on:click      (when-not disabled?
+                                          (->expr
+                                           (.pending js/window.snoSongPlanPop evt.currentTarget)
+                                           (set! $gig-log-plays.gig-id ~(str gig-id))
+                                           (set! $gig-log-plays.song-id ~(str song-id))
+                                           (set! $gig-log-plays.rating ~(rating-signal (play-rating play)))
+                                           (set! $gig-log-plays.emphasis ~(emphasis-signal (play-emphasis play)))
+                                           (@post ~(d*/act req ::actions/toggle-intensive))))}
      [:wa-icon {:library "snoico"
                 :name    "fist-punch"
                 :class   (ui2/cs "gigs-log-play-icon gigs-log-play-icon--intensive"

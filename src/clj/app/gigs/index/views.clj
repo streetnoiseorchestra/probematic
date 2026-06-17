@@ -4,6 +4,7 @@
    [app.gigs.queries :as queries]
    [app.gigs.ui :as gigs.ui]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]))
 
 (defn page [{:keys [db tr] :as req}]
@@ -12,9 +13,9 @@
      [:div {:class "wa-stack wa-gap-l gigs-index-page"}
       (ui2/page-header
        {:title   (tr [:gigs/title])
-        :actions [[:wa-button {:appearance "filled"
-                               :variant    "brand"
-                               :href       (urls/link-gig-create)}
+        :actions [[button/Button {:appearance "filled"
+                                  :variant    "brand"
+                                  :href       (urls/link-gig-create)}
                    (tr [:action/create])]]})
       [:div {:class "wa-grid wa-gap-m gigs-index-columns"}
        (gigs.ui/gig-section req {:title         (tr [:gigs/upcoming])
@@ -24,8 +25,8 @@
                                  :empty-message (tr [:gigs/no-past])
                                  :gigs          past-gigs
                                  :footer        [:div {:class "gigs-list-footer"}
-                                                 [:wa-button {:appearance "plain"
-                                                              :href       (urls/link-gig-archive)}
+                                                 [button/Button {:appearance "plain"
+                                                                 :href       (urls/link-gig-archive)}
                                                   (tr [:gigs/view-archive])]]})]])))
 
 (d*/refresh-all!)

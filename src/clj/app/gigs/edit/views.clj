@@ -7,6 +7,7 @@
    [app.gigs.ui :as gigs.ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -138,32 +139,31 @@
    [:p (tr [:action/confirm-delete-gig] [title])]))
 
 (defn- save-button [tr]
-  [:wa-button {:appearance         "filled"
-               :variant            "brand"
-               :type               "submit"
-               :form               "gig-edit-form"
-               :data-attr:disabled "!!$loading && $loading !== 'gig-edit'"
-               :data-attr:loading  "$loading === 'gig-edit'"}
+  [button/Button {:appearance         "filled"
+                  :variant            "brand"
+                  :type               "submit"
+                  :form               "gig-edit-form"
+                  :data-attr:disabled "!!$loading && $loading !== 'gig-edit'"
+                  :data-attr:loading  "$loading === 'gig-edit'"}
    (tr [:action/save])])
 
 (defn- edit-form-actions [{:keys [tr]} gig]
   (ui2/action-bar
    {}
-   [[:wa-button {:appearance "outlined"
-                 :href       (urls/link-gig gig)}
+   [[button/Button {:appearance "outlined"
+                    :href       (urls/link-gig gig)}
      (tr [:action/cancel])]
-    [:wa-button {:appearance  "outlined"
-                 :variant     "danger"
-                 :type        "button"
-                 :data-dialog (str "open " (gig-remove-dialog-id gig))}
+    [button/Button {:appearance  "outlined"
+                    :variant     "danger"
+                    :data-dialog (str "open " (gig-remove-dialog-id gig))}
      (tr [:action/delete])]
     (save-button tr)]))
 
 (defn- create-form-actions [{:keys [tr]}]
   (ui2/action-bar
    {}
-   [[:wa-button {:appearance "outlined"
-                 :href       (urls/link-gigs-home)}
+   [[button/Button {:appearance "outlined"
+                    :href       (urls/link-gigs-home)}
      (tr [:action/cancel])]
     (save-button tr)]))
 

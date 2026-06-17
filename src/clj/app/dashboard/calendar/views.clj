@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]))
 
 (defn page [{:keys [tr]}]
@@ -9,9 +10,9 @@
    [:div {:class "dashboard-calendar-page wa-stack wa-gap-l"}
     (ui2/page-header
      {:title   (tr [:nav/calendar])
-      :actions [[:wa-button {:appearance "filled"
-                             :variant    "brand"
-                             :href       (urls/link-gig-create)}
+      :actions [[button/Button {:appearance "filled"
+                                :variant    "brand"
+                                :href       (urls/link-gig-create)}
                  (tr [:action/create-gig])]]})
     [:wa-card
      [:iframe {:class "dashboard-calendar-frame"

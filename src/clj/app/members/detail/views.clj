@@ -10,6 +10,7 @@
    [app.qrcode :as qr]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -190,16 +191,15 @@
         (sno-id-admin-fields req form-state))
       (ui2/action-bar
        {}
-       [[:wa-button {:appearance  "outlined"
-                     :type        "button"
-                     :data-id     "member-contact-cancel"
-                     :data-action (d*/act req ::actions/close-contact-edit)}
+       [[button/Button {:appearance  "outlined"
+                        :data-id     "member-contact-cancel"
+                        :data-action (d*/act req ::actions/close-contact-edit)}
          (tr [:action/cancel])]
-        [:wa-button {:appearance         "filled"
-                     :variant            "brand"
-                     :type               "submit"
-                     :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
-                     :data-attr:loading  "$loading === 'member-contact'"}
+        [button/Button {:appearance         "filled"
+                        :variant            "brand"
+                        :type               "submit"
+                        :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
+                        :data-attr:loading  "$loading === 'member-contact'"}
          (tr [:action/save])]])]]))
 
 (defn- keycloak-link [{:keys [system]} keycloak-id]
@@ -269,16 +269,15 @@
                     :data-on:wa-input "$member-detail.travel-discount-create.expiry-date = evt.target.value"})]
       (ui2/action-bar
        {}
-       [[:wa-button {:appearance  "outlined"
-                     :type        "button"
-                     :data-id     "member-travel-discount-create-cancel"
-                     :data-action (d*/act req ::actions/close-travel-discount-create)}
+       [[button/Button {:appearance  "outlined"
+                        :data-id     "member-travel-discount-create-cancel"
+                        :data-action (d*/act req ::actions/close-travel-discount-create)}
          (tr [:action/cancel])]
-        [:wa-button {:appearance         "filled"
-                     :variant            "brand"
-                     :type               "submit"
-                     :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount-create'"
-                     :data-attr:loading  "$loading === 'member-travel-discount-create'"}
+        [button/Button {:appearance         "filled"
+                        :variant            "brand"
+                        :type               "submit"
+                        :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount-create'"
+                        :data-attr:loading  "$loading === 'member-travel-discount-create'"}
          (tr [:action/add])]])]]))
 
 (defn- travel-discount-edit-form [{:keys [tr] :as req} form-state]
@@ -298,16 +297,15 @@
                 (tr [:travel-discounts/expiry-date])
                 {:type             "date"
                  :data-on:wa-input "$member-detail.travel-discount.expiry-date = evt.target.value"})
-    [:wa-button {:appearance  "outlined"
-                 :type        "button"
-                 :data-id     "member-travel-discount-cancel"
-                 :data-action (d*/act req ::actions/close-travel-discount-edit)}
+    [button/Button {:appearance  "outlined"
+                    :data-id     "member-travel-discount-cancel"
+                    :data-action (d*/act req ::actions/close-travel-discount-edit)}
      (tr [:action/cancel])]
-    [:wa-button {:appearance         "filled"
-                 :variant            "brand"
-                 :type               "submit"
-                 :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount'"
-                 :data-attr:loading  "$loading === 'member-travel-discount'"}
+    [button/Button {:appearance         "filled"
+                    :variant            "brand"
+                    :type               "submit"
+                    :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount'"
+                    :data-attr:loading  "$loading === 'member-travel-discount'"}
      (tr [:action/save])]]])
 
 (defn- travel-discount-remove-dialog [{:keys [tr] :as req} {:travel.discount/keys [discount-id discount-type]}]
@@ -332,18 +330,16 @@
      [:td {:class "align-middle text-right"}
       (when-not editing?
         [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
-         [:wa-button {:appearance  "outlined"
-                      :variant     "brand"
-                      :size        "s"
-                      :type        "button"
-                      :data-id     discount-id
-                      :data-action (d*/act req ::actions/open-travel-discount-edit)}
+         [button/Button {:appearance  "outlined"
+                         :variant     "brand"
+                         :size        "s"
+                         :data-id     discount-id
+                         :data-action (d*/act req ::actions/open-travel-discount-edit)}
           (tr [:action/update])]
-         [:wa-button {:appearance  "outlined"
-                      :variant     "danger"
-                      :size        "s"
-                      :type        "button"
-                      :data-dialog (format "open %s" (ui2/remove-dialog-id "travel-discount" discount-id))}
+         [button/Button {:appearance  "outlined"
+                         :variant     "danger"
+                         :size        "s"
+                         :data-dialog (format "open %s" (ui2/remove-dialog-id "travel-discount" discount-id))}
           (tr [:action/delete])]])]]))
 
 (defn- travel-discounts-table [{:keys [tr] :as req} edit-state discounts]
@@ -371,11 +367,10 @@
      (ui2/section-card
       {:subtitle (tr [:travel-discounts/subtitle])
        :actions  (when-not create-state
-                   [[:wa-button {:appearance  "outlined"
-                                 :variant     "brand"
-                                 :type        "button"
-                                 :data-id     (:member/member-id member)
-                                 :data-action (d*/act req ::actions/open-travel-discount-create)}
+                   [[button/Button {:appearance  "outlined"
+                                    :variant     "brand"
+                                    :data-id     (:member/member-id member)
+                                    :data-action (d*/act req ::actions/open-travel-discount-create)}
                      (tr [:travel-discounts/add-discount])]])}
       (when create-state
         [:div {:class "wa-stack wa-gap-s"}
@@ -478,11 +473,10 @@
        {:value "credit" :label (tr [:ledger.entry/direction-credit] [name])}])))
 
 (defn- ledger-direction-button [value label]
-  [:wa-button {:appearance    "outlined"
-               :variant       "brand"
-               :type          "button"
-               :data-on:click (str "$_ledgerDirection = '" value "'; "
-                                   "$member-detail.ledger-entry.tx-direction = '" value "'")}
+  [button/Button {:appearance    "outlined"
+                  :variant       "brand"
+                  :data-on:click (str "$_ledgerDirection = '" value "'; "
+                                      "$member-detail.ledger-entry.tx-direction = '" value "'")}
    label])
 
 (defn- ledger-direction-choice [req member form-state]
@@ -539,9 +533,8 @@
         [:span {:class     "wa-caption-s"
                 :data-show "$_ledgerDirection === 'credit'"}
          (get direction-text "credit")]
-        [:wa-button {:appearance    "plain"
-                     :type          "button"
-                     :data-on:click "$_ledgerDirection = ''; $member-detail.ledger-entry.tx-direction = ''"}
+        [button/Button {:appearance    "plain"
+                        :data-on:click "$_ledgerDirection = ''; $member-detail.ledger-entry.tx-direction = ''"}
          "Change direction"]]
        [:div {:class "wa-grid wa-gap-m"}
         (form-input form-state
@@ -564,23 +557,21 @@
                      :data-on:wa-input "$member-detail.ledger-entry.amount = evt.target.value"})]
        (ui2/action-bar
         {}
-        [[:wa-button {:appearance  "outlined"
-                      :type        "button"
-                      :data-id     "member-ledger-entry-create-cancel"
-                      :data-action (d*/act req ::actions/close-ledger-entry-create)}
+        [[button/Button {:appearance  "outlined"
+                         :data-id     "member-ledger-entry-create-cancel"
+                         :data-action (d*/act req ::actions/close-ledger-entry-create)}
           (tr [:action/cancel])]
-         [:wa-button {:appearance         "filled"
-                      :variant            "brand"
-                      :type               "submit"
-                      :data-attr:disabled "!!$loading && $loading !== 'member-ledger-entry-create'"
-                      :data-attr:loading  "$loading === 'member-ledger-entry-create'"}
+         [button/Button {:appearance         "filled"
+                         :variant            "brand"
+                         :type               "submit"
+                         :data-attr:disabled "!!$loading && $loading !== 'member-ledger-entry-create'"
+                         :data-attr:loading  "$loading === 'member-ledger-entry-create'"}
           (tr [:action/save])]])]
       (ui2/action-bar
        {:data-show "$_ledgerDirection === ''"}
-       [[:wa-button {:appearance  "outlined"
-                     :type        "button"
-                     :data-id     "member-ledger-entry-create-cancel"
-                     :data-action (d*/act req ::actions/close-ledger-entry-create)}
+       [[button/Button {:appearance  "outlined"
+                        :data-id     "member-ledger-entry-create-cancel"
+                        :data-action (d*/act req ::actions/close-ledger-entry-create)}
          (tr [:action/cancel])]])]]))
 
 (defn- ledger-entry-remove-dialog [{:keys [tr] :as req} {:ledger.entry/keys [entry-id description]}]
@@ -600,11 +591,10 @@
    [:td {:class "align-middle"} description]
    [:td {:class "align-middle text-right"} (ledger-amount-badge amount)]
    [:td {:class "align-middle text-right"}
-    [:wa-button {:appearance  "plain"
-                 :variant     "danger"
-                 :size        "s"
-                 :type        "button"
-                 :data-dialog (format "open %s" (ui2/remove-dialog-id "ledger-entry" entry-id))}
+    [button/Button {:appearance  "plain"
+                    :variant     "danger"
+                    :size        "s"
+                    :data-dialog (format "open %s" (ui2/remove-dialog-id "ledger-entry" entry-id))}
      (tr [:action/delete])]]])
 
 (defn- ledger-entries-table [{:keys [tr] :as req} entries]
@@ -636,17 +626,15 @@
                   " and what "
                   [:span {:class "text-success"} "the band owes you (-)"]]
        :actions  (when-not create-state
-                   [[:wa-button {:appearance  "outlined"
-                                 :variant     "brand"
-                                 :type        "button"
-                                 :data-id     (:member/member-id member)
-                                 :data-action (d*/act req ::actions/open-ledger-debt-create)}
+                   [[button/Button {:appearance  "outlined"
+                                    :variant     "brand"
+                                    :data-id     (:member/member-id member)
+                                    :data-action (d*/act req ::actions/open-ledger-debt-create)}
                      (tr [:ledger/add-debt])]
-                    [:wa-button {:appearance  "outlined"
-                                 :variant     "brand"
-                                 :type        "button"
-                                 :data-id     (:member/member-id member)
-                                 :data-action (d*/act req ::actions/open-ledger-payment-create)}
+                    [button/Button {:appearance  "outlined"
+                                    :variant     "brand"
+                                    :data-id     (:member/member-id member)
+                                    :data-action (d*/act req ::actions/open-ledger-payment-create)}
                      (tr [:ledger/add-payment])]])}
       (ledger-balance-card req member ledger)
       (when create-state
@@ -705,9 +693,9 @@
      [:td {:class "member-insurance-col align-middle"}
       kind-badge]
      [:td {:class "align-middle text-right"}
-      [:wa-button {:appearance "plain"
-                   :size       "s"
-                   :href       (urls/link-coverage coverage)}
+      [button/Button {:appearance "plain"
+                      :size       "s"
+                      :href       (urls/link-coverage coverage)}
        (tr [:action/view])]]]))
 
 (defn- insurance-coverages-table [{:keys [tr] :as req} coverages]
@@ -738,9 +726,9 @@
      (ui2/section-card
       {:subtitle (tr [:member/insurance-subtitle])
        :actions  (when policy
-                   [[:wa-button {:appearance "outlined"
-                                 :variant    "brand"
-                                 :href       (urls/link-coverage-create (:insurance.policy/policy-id policy))}
+                   [[button/Button {:appearance "outlined"
+                                    :variant    "brand"
+                                    :href       (urls/link-coverage-create (:insurance.policy/policy-id policy))}
                      (tr [:instrument.coverage/create-button])]])}
       [:div {:class "wa-stack wa-gap-m"}
        (insurance-policy-summary req policy)
@@ -761,14 +749,13 @@
        [:h1 (:member/name member)]]
       (ui2/action-bar
        {}
-       [[:wa-button {:appearance "outlined"
-                     :href       (str "/member-vcard/" (:member/member-id member))}
+       [[button/Button {:appearance "outlined"
+                        :href       (str "/member-vcard/" (:member/member-id member))}
          (tr [:Contact-Download])]
-        [:wa-button {:appearance  "outlined"
-                     :variant     "brand"
-                     :type        "button"
-                     :data-id     (:member/member-id member)
-                     :data-action (d*/act req ::actions/open-contact-edit)}
+        [button/Button {:appearance  "outlined"
+                        :variant     "brand"
+                        :data-id     (:member/member-id member)
+                        :data-action (d*/act req ::actions/open-contact-edit)}
          (tr [:action/edit])]])]
      (profile-details req member)]))
 

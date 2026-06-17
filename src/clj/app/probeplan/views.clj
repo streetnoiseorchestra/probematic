@@ -4,6 +4,7 @@
    [app.probeplan.actions :as actions]
    [app.probeplan.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as urls]))
 
 (defn- intensive-position? [position]
@@ -190,22 +191,19 @@
 
 (defn- edit-actions [{:keys [tr] :as req} editing?]
   (if editing?
-    [[:wa-button {:appearance  "outlined"
-                  :type        "button"
-                  :data-id     "probeplan-cancel"
-                  :data-action (d*/act req ::actions/cancel-edit)}
+    [[button/Button {:appearance  "outlined"
+                     :data-id     "probeplan-cancel"
+                     :data-action (d*/act req ::actions/cancel-edit)}
       (tr [:action/cancel])]
-     [:wa-button {:appearance  "filled"
-                  :variant     "brand"
-                  :type        "button"
-                  :data-id     "probeplan-save"
-                  :data-action (d*/act req ::actions/save-probeplans)}
+     [button/Button {:appearance  "filled"
+                     :variant     "brand"
+                     :data-id     "probeplan-save"
+                     :data-action (d*/act req ::actions/save-probeplans)}
       (tr [:action/save])]]
-    [[:wa-button {:appearance  "outlined"
-                  :variant     "brand"
-                  :type        "button"
-                  :data-id     "probeplan-edit"
-                  :data-action (d*/act req ::actions/open-edit)}
+    [[button/Button {:appearance  "outlined"
+                     :variant     "brand"
+                     :data-id     "probeplan-edit"
+                     :data-action (d*/act req ::actions/open-edit)}
       (tr [:action/edit])]]))
 
 (defn- page-content [{:keys [db page-state tr] :as req}]

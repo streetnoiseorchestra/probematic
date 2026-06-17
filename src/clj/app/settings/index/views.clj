@@ -1,12 +1,13 @@
 (ns app.settings.index.views
   (:require
    [app.datastar :as d*]
-   [app.ui2 :as ui2]))
+   [app.ui2 :as ui2]
+   [app.ui2.button :as button]))
 
 (defn- settings-link-card [{:keys [href icon title body]}]
-  [:wa-button {:href       href
-               :appearance "plain"
-               :class      "band-settings-index-card-button"}
+  [button/Button {:href       href
+                  :appearance "plain"
+                  :class      "band-settings-index-card-button"}
    [:div {:class "wa-flank wa-flex-nowrap wa-align-items-start"}
     [:wa-avatar {:shape "rounded"}
      [:wa-icon {:slot    "icon"

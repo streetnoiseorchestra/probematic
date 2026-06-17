@@ -6,6 +6,7 @@
    [app.i18n :as i18n]
    [app.secret-box :as secret-box]
    [app.ui2 :as ui2]
+   [app.ui2.button :as button]
    [app.urls :as url]
    [app.util :as util]
    [clojure.edn :as edn]
@@ -32,10 +33,10 @@
   (= route-name (-> req :reitit.core/match :data :app.route/name)))
 
 (defn- nav-button [req {:keys [label icon href route-name]}]
-  [:wa-button (cond-> {:href       href
-                       :appearance "plain"}
-                (active? req route-name) (assoc :variant "brand"
-                                                :aria-current "page"))
+  [button/Button (cond-> {:href       href
+                          :appearance "plain"}
+                   (active? req route-name) (assoc :variant "brand"
+                                                   :aria-current "page"))
    [:wa-icon {:library "snoico"
               :name    (name icon)
               :slot    "start"}]
@@ -64,9 +65,9 @@
         src (avatar-src member)]
     [:wa-dropdown {:distance "4"}
      [:div {:slot "trigger"}
-      [:wa-button {:id         "account-dropdown-button"
-                   :appearance "plain"
-                   :with-caret true}
+      [button/Button {:id         "account-dropdown-button"
+                      :appearance "plain"
+                      :with-caret true}
        [:wa-avatar (cond-> {:slot  "start"
                             :label (ui2/member-nick member)
                             :shape "rounded"
@@ -304,9 +305,9 @@
     [:div {:id "morph"}
      [:app-shell
       [:header
-       [:wa-button {:href       "#app-shell-navigation"
-                    :appearance "plain"
-                    :aria-label "Toggle navigation"}
+       [button/Button {:href       "#app-shell-navigation"
+                       :appearance "plain"
+                       :aria-label "Toggle navigation"}
         [:wa-icon {:library "snoico"
                    :name    "bars"
                    :slot    "start"}]]
@@ -318,9 +319,9 @@
       [:aside {:id "app-shell-navigation"}
        [:header
         (brand-link)
-        [:wa-button {:href       "#"
-                     :appearance "plain"
-                     :aria-label "Close navigation"}
+        [button/Button {:href       "#"
+                        :appearance "plain"
+                        :aria-label "Close navigation"}
          [:wa-icon {:library "snoico"
                     :name    "xmark"
                     :slot    "start"}]]]
