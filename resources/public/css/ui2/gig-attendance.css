@@ -105,9 +105,17 @@
   min-inline-size: var(--sno-size-none);
 }
 
+.gigs-attendance-member {
+  font-size: var(--wa-font-size-m);
+}
+
 .gigs-attendance-member-link:hover,
 .gigs-attendance-comment-link:hover {
   text-decoration: underline;
+}
+
+.gigs-attendance-member-link {
+  overflow-wrap: anywhere;
 }
 
 .gigs-attendance-plan-button::part(base) {
@@ -138,11 +146,18 @@
   min-block-size: var(--sno-gigs-attendance-control-block-size);
 }
 
-.gigs-attendance-comment-button::part(base),
-.gigs-attendance-comment-link::part(base) {
+.gigs-attendance-comment-button,
+.gigs-attendance-comment-link {
   block-size: var(--sno-gigs-attendance-control-block-size);
   min-block-size: var(--sno-gigs-attendance-control-block-size);
   padding: var(--wa-space-3xs);
+}
+.gigs-attendance-comment--filled .gigs-attendance-comment-link {
+  block-size: auto;
+  min-block-size: 0;
+  justify-content: flex-start;
+  padding-block: 0;
+  line-height: var(--sno-line-height-tight);
 }
 
 .gigs-attendance-comment-button .sno-icon {
@@ -151,9 +166,6 @@
 
 .gigs-attendance-comment-link {
   max-inline-size: var(--sno-size-full);
-}
-
-.gigs-attendance-comment-link::part(label) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -191,15 +203,15 @@
   }
 
   .gigs-attendance-row--editable {
-    grid-template-columns: minmax(0, 1fr) auto minmax(6.75rem, 9rem) var(
+    grid-template-columns: minmax(6.5rem, 8rem) auto minmax(8rem, 1fr) var(
         --sno-gigs-attendance-control-block-size
       );
-    gap: var(--wa-space-3xs);
+    column-gap: var(--wa-space-3xs);
+    row-gap: var(--sno-size-none);
     padding-inline: var(--sno-size-none);
   }
 
-  .gigs-attendance-row--editable .gigs-attendance-comment-button,
-  .gigs-attendance-row--editable .gigs-attendance-comment-button::part(base) {
+  .gigs-attendance-row--editable .gigs-attendance-comment-button {
     inline-size: var(--sno-gigs-attendance-control-block-size);
   }
 

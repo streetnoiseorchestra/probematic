@@ -102,7 +102,7 @@
     --sno-member-detail-avatar-size-wide: 4rem;
     --sno-member-detail-heading-fluid-size: 8vw;
     --sno-line-height-tight: 1.05;
-    --sno-font-weight-semibold: 600;
+    --sno-font-weight-semibold: bold;
     --sno-nav-icon-size: var(--wa-font-size-l);
     --sno-nav-toggle-icon-size: var(--wa-font-size-2xl);
     --sno-brand-logotype-size: var(--wa-font-size-2xl);
