@@ -220,7 +220,12 @@
     vertical-align: middle;
   }
 
-  & :is(thead th:not(:first-child), tbody tr:not([data-description]) td, tfoot td) {
+  &
+    :is(
+      thead th:not(:first-child),
+      tbody tr:not([data-description]) td,
+      tfoot td
+    ) {
     inline-size: 1%;
     text-align: end;
     white-space: nowrap;

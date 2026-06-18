@@ -54,11 +54,12 @@
   (str/join " " (filter identity names)))
 
 (defn muted
-  "Renders `value`, or an em dash when `value` is blank."
-  [value]
-  (if (str/blank? (str value))
-    [:span {:class "wa-color-text-quiet"} html/emdash]
-    value))
+  "Renders `value`, or `fallback` (default: emdash) when `value` is blank."
+  ([value] (muted value html/emdash))
+  ([value fallback]
+   (if (str/blank? (str value))
+     [:span {:class "wa-color-text-quiet"} fallback]
+     value)))
 
 (defn link-copy
   "Renders `href` as a single-line link with a copy button.

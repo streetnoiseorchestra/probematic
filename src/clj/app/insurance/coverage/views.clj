@@ -213,7 +213,7 @@
   [:div {:class "insurance-history-editor"}
    (history-icon action)
    [:div {:class "insurance-history-editor-text"}
-    [:span (ui2/muted audit-user-name)]
+    [:span (ui2/muted audit-user-name "SNOrga")]
     [:span {:class "wa-caption-s"}
      (tr [(keyword "history" (name action))])]]])
 
@@ -268,7 +268,6 @@
       (breadcrumb req policy instrument)
       (ui2/page-header {:class    "insurance-coverage-page-header"
                         :title    (:instrument/name instrument)
-                        :subtitle (:insurance.policy/name policy)
                         :actions  (page-actions req coverage policy)})
       (instrument-section req instrument)
       (coverage-section req coverage policy)
