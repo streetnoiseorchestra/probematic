@@ -1,7 +1,3 @@
-.gigs-attendance-card {
-  gap: var(--wa-space-s);
-}
-
 .gigs-attendance-summary {
   display: flex;
   flex-wrap: wrap;

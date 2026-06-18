@@ -103,12 +103,6 @@
   inline-size: 100%;
 }
 
-.dashboard-gig-comment .gigs-attendance-comment-link::part(label) {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-}
-
 .dashboard-gig-comment.gigs-attendance-comment--filled .gigs-attendance-comment-link {
   block-size: auto;
   min-block-size: 0;
