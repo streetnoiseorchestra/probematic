@@ -1,4 +1,8 @@
 .sno-breadcrumb {
+  --sno-breadcrumbs-spacing: 0.3rem;
+  @media (--sno-viewport-s) {
+    --sno-breadcrumbs-spacing: 0.5rem;
+  }
   display: flex;
   color: var(--wa-color-text-quiet);
   font-size: var(--wa-font-size-s);
@@ -11,9 +15,12 @@
     padding: 0;
     list-style: none;
   }
+  & li {
+    margin-inline-start: unset;
+  }
 
   & li + li {
-    margin-inline-start: 1rem;
+    margin-inline-start: var(--sno-breadcrumbs-spacing);
   }
 
   & .sno-breadcrumb-step {
@@ -22,7 +29,7 @@
   }
 
   & .sno-breadcrumb-step .sno-breadcrumb-item {
-    margin-inline-start: 1rem;
+    margin-inline-start: var(--sno-breadcrumbs-spacing);
   }
 
   & a,
