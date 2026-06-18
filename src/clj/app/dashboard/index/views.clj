@@ -66,35 +66,33 @@
                      (mapv #(gig-row req %) gigs)))
 
 (defn- insurance-todo-row [{:keys [tr]} {:insurance.policy/keys [name policy-id] :keys [total-needs-review total-changed total-new total-removed] :as policy}]
-  (dashboard-row
-   :a
-   {:href (urls/link-policy policy)}
-   "dashboard-insurance-todo-row"
-   [:div {:class       "dashboard-insurance-todo-status-cell"
-          :aria-hidden true}]
-   [:div {:class "dashboard-insurance-todo-name"}
-    [:span name]]
-   [:div {:class "dashboard-insurance-todo-metrics"}
-    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                  :class-prefix "dashboard-insurance-todo"
-                                  :policy-id    policy-id
-                                  :status       :needs-review
-                                  :count        total-needs-review})
-    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                  :class-prefix "dashboard-insurance-todo"
-                                  :policy-id    policy-id
-                                  :status       :changed
-                                  :count        total-changed})
-    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                  :class-prefix "dashboard-insurance-todo"
-                                  :policy-id    policy-id
-                                  :status       :new
-                                  :count        total-new})
-    (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                  :class-prefix "dashboard-insurance-todo"
-                                  :policy-id    policy-id
-                                  :status       :removed
-                                  :count        total-removed})]))
+  (dashboard-row :div {}
+                 "dashboard-insurance-todo-row"
+                 [:div {:class       "dashboard-insurance-todo-status-cell"
+                        :aria-hidden true}]
+                 [:div {:class "dashboard-insurance-todo-name"}
+                  [:a {:href (urls/link-policy policy)} name]]
+                 [:div {:class "dashboard-insurance-todo-metrics"}
+                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                                :class-prefix "dashboard-insurance-todo"
+                                                :policy-id    policy-id
+                                                :status       :needs-review
+                                                :count        total-needs-review})
+                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                                :class-prefix "dashboard-insurance-todo"
+                                                :policy-id    policy-id
+                                                :status       :changed
+                                                :count        total-changed})
+                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                                :class-prefix "dashboard-insurance-todo"
+                                                :policy-id    policy-id
+                                                :status       :new
+                                                :count        total-new})
+                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
+                                                :class-prefix "dashboard-insurance-todo"
+                                                :policy-id    policy-id
+                                                :status       :removed
+                                                :count        total-removed})]))
 
 (defn- insurance-todos-section [{:keys [tr] :as req} policies]
   (dashboard-section "dashboard-insurance-todo-section"

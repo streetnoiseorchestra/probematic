@@ -86,13 +86,8 @@
 
 .dashboard-gig-title {
   min-inline-size: 0;
-  text-decoration: none;
   overflow-wrap: anywhere;
   white-space: normal;
-}
-
-.dashboard-gig-title:hover {
-  text-decoration: underline;
 }
 
 .dashboard-gig-status {
@@ -103,7 +98,8 @@
   inline-size: 100%;
 }
 
-.dashboard-gig-comment.gigs-attendance-comment--filled .gigs-attendance-comment-link {
+.dashboard-gig-comment.gigs-attendance-comment--filled
+  .gigs-attendance-comment-link {
   block-size: auto;
   min-block-size: 0;
   justify-content: flex-start;
@@ -132,16 +128,8 @@
   justify-self: center;
 }
 
-.dashboard-insurance-todo-row {
-  text-decoration: none;
-}
-
 .dashboard-insurance-todo-status-cell {
   inline-size: var(--sno-gig-row-icon-size);
-}
-
-.dashboard-insurance-todo-row:hover .dashboard-insurance-todo-name span {
-  text-decoration: underline;
 }
 
 .dashboard-insurance-todo-name {
