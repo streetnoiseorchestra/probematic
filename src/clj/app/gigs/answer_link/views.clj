@@ -3,14 +3,9 @@
    [app.auth :as auth]
    [app.gigs.answer-link.service :as service]
    [app.html :as html]
-   [app.i18n :as i18n]
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.urls :as urls]))
-
-(defn- tr [req]
-  (or (:tr req)
-      (i18n/tr-from-req req)))
 
 (defn- redirect [url]
   {:status 302
@@ -20,7 +15,7 @@
 (defn- page-shell [req & body]
   (apply ui2/standalone-page
          {:title       "SNOrga"
-          :description ((tr req) [:gig/answer-link-submitted])}
+          :description ((:tr req) [:gig/answer-link-submitted])}
          body))
 
 (defn- redirect-to-gig-snippet [gig]
@@ -34,7 +29,7 @@
   ([req]
    (success-page req nil))
   ([req gig]
-   (let [tr (tr req)]
+   (let [tr (:tr req)]
      (apply page-shell
             req
             (cond-> [[:header
@@ -43,7 +38,7 @@
               gig (conj (redirect-to-gig-snippet gig)))))))
 
 (defn- invalid-page [req]
-  (let [tr (tr req)]
+  (let [tr (:tr req)]
     (page-shell
      req
      [:header {:class "danger"}
