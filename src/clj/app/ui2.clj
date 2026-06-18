@@ -584,7 +584,7 @@
 
 (defn standalone-page [{:keys [description lang status title]} & body]
   {:status  (or status 200)
-   :headers {"Content-Type" "text/html"}
+   :headers {"Content-Type" "text/html; charset=utf-8"}
    :body    (html/->str
              (html/html-document
               {:title       title

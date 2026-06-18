@@ -2,6 +2,7 @@
   (:require
    [app.insurance.coverage.views]
    [app.insurance.index.views]
+   [app.insurance.public.views :as public]
    [app.insurance.views :as view]
    [app.layout :as layout]
    [app.queries :as q]
@@ -183,11 +184,11 @@
      {:get {:summary "The public page for an instrument"
             :parameters {:path [:map [:instrument-id :uuid]]}
             :handler (fn [req]
-                       (view/instrument-public-page req (-> req :parameters :path :instrument-id)))}}]
+                       (public/instrument-public-page req (-> req :parameters :path :instrument-id)))}}]
     ["/download-zip" {:get {:summary "Download all photos for an instrument"
                             :parameters {:path [:map [:instrument-id :uuid]]}
                             :handler (fn [req]
-                                       (view/instrument-public-page-download-all req (-> req :parameters :path :instrument-id)))}}]]
+                                       (public/instrument-public-page-download-all req (-> req :parameters :path :instrument-id)))}}]]
    ["/instrument-image/{instrument-id}/{image-id}"
     {:get {:summary "Get instrument images"
            :parameters {:path [:map [:instrument-id :uuid] [:image-id :string]]
