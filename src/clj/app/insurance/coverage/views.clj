@@ -203,11 +203,11 @@
   (icon (history-action-data action)))
 
 (defn- history-head [{:keys [tr]}]
-  [:div {:class "insurance-history-head"}
-   [:div (tr [:history/editor])]
-   [:div (tr [:history/field])]
-   [:div (tr [:history/before])]
-   [:div (tr [:history/after])]])
+  [:thead
+   [:tr
+    [:th {:scope "col"} (tr [:history/field])]
+    [:th {:scope "col"} (tr [:history/before])]
+    [:th {:scope "col"} (tr [:history/after])]]])
 
 (defn- history-action-cell [tr audit-user-name action]
   [:div {:class "insurance-history-editor"}
@@ -218,29 +218,31 @@
      (tr [(keyword "history" (name action))])]]])
 
 (defn- history-change-row [{:keys [tr]} audit-user-name {:keys [action after before field-label]}]
-  [:div {:class "insurance-history-row"}
-   (history-action-cell tr audit-user-name action)
-   [:div {:class "insurance-history-field"} field-label]
-   [:div {:class "insurance-history-before"} (ui2/muted before)]
-   [:div {:class "insurance-history-after"} (ui2/muted after)]])
+  [:tr
+   [:th {:scope "row"}
+    [:span field-label]
+    (history-action-cell tr audit-user-name action)]
+   [:td (ui2/muted before)]
+   [:td (ui2/muted after)]])
 
 (defn- history-date-row [req timestamp]
   (let [label (ui2/format-date-time req :medium timestamp)]
-    [:div {:class "insurance-history-date-row"}
-     [:time {:class      "insurance-history-time"
-             :datetime   (str timestamp)
-             :title      label
-             :aria-label label}
-      (ui2/relative-time-value timestamp)]]))
+    [:tr
+     [:th {:scope "rowgroup" :colspan 3}
+      [:time {:class      "insurance-history-time"
+              :datetime   (str timestamp)
+              :title      label
+              :aria-label label}
+       (ui2/relative-time-value timestamp)]]]))
 
 (defn- history-entry [req coverage {:keys [audit changes timestamp]}]
   (let [change-rows     (history-changes req coverage changes)
         audit-user-name (get-in audit [:audit/member :member/name])]
     (when (seq change-rows)
-      (list
+      [:tbody
        (history-date-row req timestamp)
        (for [change-row change-rows]
-         (history-change-row req audit-user-name change-row))))))
+         (history-change-row req audit-user-name change-row))])))
 
 (defn- history-section [req coverage]
   (let [history (queries/coverage-history (:db req) coverage)]
@@ -251,8 +253,10 @@
       :subtitle ((:tr req) [:history/subtitle-coverage])}
      (if (seq history)
        [:div {:class "insurance-history-table"}
-        (history-head req)
-        (keep #(history-entry req coverage %) history)]
+        (ui2/table-shell
+         [:table
+          (history-head req)
+          (keep #(history-entry req coverage %) history)])]
        (ui2/empty-state ((:tr req) [:history/title]) ((:tr req) [:history/no-changes]))))))
 
 (defn page [{:keys [db] :as req}]

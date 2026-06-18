@@ -260,42 +260,71 @@
 }
 
 .insurance-history-table {
-  display: grid;
-  overflow-x: auto;
+  --history-column-change-size: 44%;
+  --history-column-before-size: 28%;
+  --history-head-fill: var(--wa-color-neutral-fill-loud);
+  --history-rowgroup-fill: var(--wa-color-neutral-fill-normal);
+  --history-row-fill: var(--wa-color-neutral-fill-quiet);
+  --history-border-color: var(--wa-color-neutral-border-quiet);
+
   font-size: var(--wa-font-size-s);
-}
 
-.insurance-history-head,
-.insurance-history-row {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 0.8fr)
-    minmax(0, 1fr);
-  gap: var(--wa-space-xs);
-  align-items: start;
-  min-inline-size: 36rem;
-}
+  & table {
+    inline-size: 100%;
+    table-layout: fixed;
+  }
 
-.insurance-history-head {
-  padding: var(--wa-space-2xs) var(--wa-space-xs);
-  background: var(--wa-color-neutral-fill-normal);
-  color: var(--wa-color-text-normal);
-  font-weight: var(--wa-font-weight-bold);
-}
+  & :where(th, td) {
+    min-inline-size: 0;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
 
-.insurance-history-date-row {
-  min-inline-size: 36rem;
-  padding: var(--wa-space-xs);
-  background: var(--wa-color-neutral-fill-quiet);
-  border-block-start: var(--wa-border-width-s) var(--wa-border-style)
-    var(--wa-color-neutral-border-quiet);
-  border-block-end: var(--wa-border-width-s) var(--wa-border-style)
-    var(--wa-color-neutral-border-quiet);
-  font-weight: var(--wa-font-weight-semibold);
-}
+  & tbody tr {
+    background: var(--history-row-fill);
+  }
 
-.insurance-history-row {
-  padding: var(--wa-space-xs);
+  & thead th {
+    background: var(--history-head-fill);
+    color: var(--wa-color-text-normal);
+    text-align: start;
+  }
+
+  & thead th:nth-child(1) {
+    inline-size: var(--history-column-change-size);
+  }
+
+  & thead th:nth-child(2) {
+    inline-size: var(--history-column-before-size);
+  }
+
+  & tbody th {
+    border-block-end: 0;
+    font-size: inherit;
+    text-align: start;
+  }
+
+  & tbody th[scope="row"] {
+    font-weight: var(--wa-font-weight-body);
+
+    > span {
+      display: block;
+      font-weight: var(--wa-font-weight-semibold);
+    }
+
+    > .insurance-history-editor {
+      margin-block-start: var(--wa-space-3xs);
+    }
+  }
+
+  & tbody th[scope="rowgroup"] {
+    background: var(--history-rowgroup-fill);
+    border-block-start: var(--wa-border-width-s) var(--wa-border-style)
+      var(--history-border-color);
+    border-block-end: var(--wa-border-width-s) var(--wa-border-style)
+      var(--history-border-color);
+    font-weight: var(--wa-font-weight-semibold);
+  }
 }
 
 .insurance-history-editor,
@@ -318,20 +347,6 @@
 
 .insurance-history-time {
   color: var(--wa-color-text-normal);
-}
-
-.insurance-history-time-separator::before {
-  content: "";
-  display: block;
-  inline-size: var(--wa-border-width-s);
-  block-size: 1em;
-  background: var(--wa-color-neutral-border-normal);
-}
-
-.insurance-history-row > div,
-.insurance-history-head > div {
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
 }
 
 .insurance-history-image {
