@@ -97,7 +97,7 @@
     (ui2/detail-item (tr [:instrument/description]) (:instrument/description instrument))
     (when-let [share-url (not-empty (:instrument/images-share-url instrument))]
       (ui2/detail-item (tr [:instrument/images-share-url])
-                       [:a {:href share-url :target "_blank"} share-url]))]
+                       (ui2/link-copy share-url)))]
    (photo-grid req instrument)))
 
 (defn- coverage-type-rows [currency {:insurance.coverage.type/keys [name cost premium-factor description]}]

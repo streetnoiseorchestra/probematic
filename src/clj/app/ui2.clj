@@ -60,6 +60,36 @@
     [:span {:class "wa-color-text-quiet"} html/emdash]
     value))
 
+(defn link-copy
+  "Renders `href` as a single-line link with a copy button.
+
+  The link opens in a new tab by default, and the copy button copies `href`.
+
+  Options:
+
+  | key                  | description
+  | -------------------- | -----------
+  | `:class`             | Additional root classes.
+  | `:label`             | Visible text, defaulting to `href`.
+  | `:link-attrs`        | Attributes merged into the `<a>` element.
+  | `:copy-button-attrs` | Attributes merged into the `<wa-copy-button>`."
+  ([href]
+   (link-copy {} href))
+  ([{:keys [class copy-button-attrs label link-attrs] :as attrs} href]
+   (let [href       (str href)
+         label      (or label href)
+         link-class (:class link-attrs)
+         link-attrs (assoc link-attrs
+                           :class (cs "sno-link-copy__text" link-class)
+                           :href href
+                           :rel (or (:rel link-attrs) "noopener noreferrer")
+                           :target (or (:target link-attrs) "_blank")
+                           :title (or (:title link-attrs) href))]
+     [:span (cond-> (dissoc attrs :class :copy-button-attrs :label :link-attrs)
+              true (assoc :class (cs "sno-link-copy" class)))
+      [:a link-attrs label]
+      [:wa-copy-button (merge {:value href} copy-button-attrs)]])))
+
 (defn markdown-editor-scripts
   "Returns the shared EasyMDE assets and Datastar-safe markdown editor initializer."
   []

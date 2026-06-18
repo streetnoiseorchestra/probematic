@@ -8,6 +8,7 @@
 @import "ui2/layout.css" layer(sno-ui);
 @import "ui2/dl.css" layer(sno-ui);
 @import "ui2/table.css" layer(sno-ui);
+@import "ui2/link-copy.css" layer(sno-ui);
 @import "ui2/breadcrumb.css" layer(sno-ui);
 @import "ui2/divider.css" layer(sno-ui);
 @import "ui2/gig-attendance.css" layer(sno-ui);

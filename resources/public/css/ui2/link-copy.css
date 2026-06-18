@@ -1,0 +1,35 @@
+.sno-link-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0;
+  align-items: stretch;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  overflow: hidden;
+  background: var(--wa-color-surface-default);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-normal);
+  border-radius: var(--wa-border-radius-s);
+}
+
+.sno-link-copy__text {
+  display: flex;
+  align-items: center;
+  min-block-size: calc(var(--wa-form-control-height) * 0.8);
+  min-inline-size: 0;
+  padding-block: var(--wa-space-2xs);
+  padding-inline: var(--wa-space-xs);
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sno-link-copy wa-copy-button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-inline-start: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-neutral-border-normal);
+}
