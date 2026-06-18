@@ -1,5 +1,6 @@
 (ns app.insurance.coverage.views
   (:require
+   [app.datastar :as d*]
    [app.insurance.coverage.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
@@ -99,15 +100,16 @@
                        [:a {:href share-url :target "_blank"} share-url]))]
    (photo-grid req instrument)))
 
-(defn- coverage-type-row [_tr currency {:insurance.coverage.type/keys [name cost premium-factor description]}]
-  [:tr
-   [:td {:class "align-middle"}
-    [:div {:class "wa-stack wa-gap-3xs"}
-     [:span name]
-     (when-not (str/blank? (str description))
-       [:span {:class "wa-caption-s"} description])]]
-   [:td {:class "align-middle text-right"} premium-factor]
-   [:td {:class "align-middle text-right"} (ui2/money cost currency)]])
+(defn- coverage-type-rows [currency {:insurance.coverage.type/keys [name cost premium-factor description]}]
+  (let [description (not-empty (str/trim (str description)))]
+    (cond-> [[:tr
+              [:th {:scope "row"} name]
+              [:td premium-factor]
+              [:td (ui2/money cost currency)]]]
+      description
+      (conj [:tr {:data-description true}
+             [:td {:colspan 3}
+              [:small description]]]))))
 
 (defn- coverage-section [{:keys [tr]} coverage policy]
   (let [currency (:insurance.policy/currency policy)]
@@ -121,19 +123,21 @@
       (ui2/detail-item (tr [:insurance/value]) (ui2/money (:instrument.coverage/value coverage) currency))
       (ui2/detail-item (tr [:band-private]) (kind-badge tr (:instrument.coverage/private? coverage)))
       (ui2/detail-item (tr [:instrument.coverage/insurer-id]) (:instrument.coverage/insurer-id coverage))]
-     (ui2/table-shell
-      [:table {:class "insurance-coverage-type-table"}
-       [:thead
-        [:tr
-         [:th (tr [:insurance/coverage-types])]
-         [:th {:class "text-right"} (tr [:insurance/premium-factor])]
-         [:th {:class "text-right"} (tr [:instrument.coverage/cost])]]]
-       [:tbody
-        (for [coverage-type (:instrument.coverage/types coverage)]
-          (coverage-type-row tr currency coverage-type))
-        [:tr {:class "insurance-coverage-type-total"}
-         [:th {:colspan 2} (tr [:insurance/total])]
-         [:td {:class "text-right"} (ui2/money (:instrument.coverage/cost coverage) currency)]]]]))))
+     [:div {:class "insurance-coverage-types"}
+      (ui2/table-shell
+       [:table
+        [:thead
+         [:tr
+          [:th {:scope "col"} (tr [:insurance/coverage-types])]
+          [:th {:scope "col"} (tr [:insurance/premium-factor])]
+          [:th {:scope "col"} (tr [:instrument.coverage/cost])]]]
+        (into
+         [:tbody]
+         (mapcat #(coverage-type-rows currency %) (:instrument.coverage/types coverage)))
+        [:tfoot
+         [:tr
+          [:th {:scope "row" :colspan 2} (tr [:insurance/total])]
+          [:td (ui2/money (:instrument.coverage/cost coverage) currency)]]]])])))
 
 (defn- normalize-single-change [field-change]
   (let [[_k v action :as f] (first field-change)]
@@ -265,3 +269,5 @@
       (instrument-section req instrument)
       (coverage-section req coverage policy)
       (history-section req coverage)])))
+
+(d*/refresh-all!)

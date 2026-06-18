@@ -141,10 +141,6 @@
   color: var(--sno-gig-row-gray-400);
 }
 
-.insurance-coverage-detail-page {
-  padding: var(--wa-space-l);
-}
-
 .insurance-coverage-breadcrumb a {
   color: var(--wa-color-text-link);
   text-decoration: none;
@@ -206,11 +202,58 @@
   object-fit: cover;
 }
 
-.insurance-coverage-type-table {
-  min-width: 36rem;
+.insurance-coverage-types {
+  --coverage-type-description-color: var(--wa-color-text-quiet);
+  --coverage-type-description-measure: 60ch;
+
+  & .table-shell {
+    inline-size: fit-content;
+    max-inline-size: 100%;
+  }
+
+  & table {
+    inline-size: auto;
+    width: auto;
+  }
+
+  & :where(th, td) {
+    vertical-align: middle;
+  }
+
+  & :is(thead th:not(:first-child), tbody tr:not([data-description]) td, tfoot td) {
+    inline-size: 1%;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  & tbody th[scope="row"] {
+    font-size: inherit;
+    font-weight: var(--wa-font-weight-semibold);
+    text-align: start;
+    border-block-end: 0;
+  }
+
+  & tbody tr[data-description] {
+    border-block-start: 0;
+
+    > td {
+      padding-block-start: 0;
+      text-align: start;
+      white-space: normal;
+    }
+
+    small {
+      display: block;
+      max-inline-size: var(--coverage-type-description-measure);
+      color: var(--coverage-type-description-color);
+      font-size: var(--wa-font-size-s);
+      line-height: var(--wa-line-height-normal);
+      text-wrap: pretty;
+    }
+  }
 }
 
-.insurance-coverage-type-total {
+.insurance-coverage-types tfoot {
   border-block-start: var(--wa-border-width-l) double
     var(--wa-color-neutral-border-normal);
   font-weight: var(--wa-font-weight-bold);
@@ -225,10 +268,9 @@
 .insurance-history-head,
 .insurance-history-row {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr) minmax(
-      0,
-      0.8fr
-    ) minmax(0, 1fr);
+  grid-template-columns:
+    minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 0.8fr)
+    minmax(0, 1fr);
   gap: var(--wa-space-xs);
   align-items: start;
   min-inline-size: 36rem;
@@ -297,11 +339,4 @@
   block-size: 5rem;
   object-fit: cover;
   border-radius: var(--wa-border-radius-m);
-}
-
-@media (max-width: 48rem) {
-  .insurance-index-page,
-  .insurance-coverage-detail-page {
-    padding: var(--wa-space-m);
-  }
 }

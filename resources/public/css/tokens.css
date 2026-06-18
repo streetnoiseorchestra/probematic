@@ -111,6 +111,6 @@
     --sno-opacity-subtle: 25%;
     --sno-invalid-color: var(--wa-color-danger-border-loud);
     --sno-table-cell-padding: 0.5em;
-    --sno-table-border-radius: calc(1.75 * 0.5rem);
+    --sno-table-border-radius: 0;
   }
 }
