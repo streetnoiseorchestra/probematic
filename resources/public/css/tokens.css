@@ -32,6 +32,9 @@
   --wa-line-height-normal: normal;
   --wa-link-decoration-default: underline
     color-mix(in oklab, currentColor 70%, transparent) dotted;
+  --wa-color-success-fill-loud: #4ade80;
+  --wa-color-danger-fill-loud: #f87171;
+  --wa-color-warning-fill-loud: #fb923c;
 }
 
 @layer sno-tokens {
@@ -47,10 +50,6 @@
     --sno-gig-row-icon-size: 1.25rem;
     --sno-gig-row-gray-400: #9ca3af;
     --sno-gig-row-red-500: #ef4444;
-    --sno-dashboard-insurance-todo-needs-review-color: #fb923c;
-    --sno-dashboard-insurance-todo-changed-color: #fb923c;
-    --sno-dashboard-insurance-todo-new-color: #4ade80;
-    --sno-dashboard-insurance-todo-removed-color: #f87171;
     --sno-dashboard-insurance-todo-icon-size: 1.25rem;
     --sno-gig-detail-status-icon-size: 1.5rem;
     --sno-gigs-attendance-icon-size: 1.15rem;

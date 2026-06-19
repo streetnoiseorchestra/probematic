@@ -1,5 +1,6 @@
 (ns app.ui2.icon
   (:require
+   [app.errors :as error]
    [app.icons :as icons]
    [app.ui2.core :as uic]
    [dev.onionpancakes.chassis.compiler :as cc]
@@ -89,4 +90,9 @@
       (throw (ex-info "Icon name is required" {:attrs attrs})))
     (cc/compile
      [:svg (icon-attrs attrs)
-      [:use {:href (icons/sprite-href library name)}]])))
+      [:use {:href
+             (try
+               (icons/sprite-href library name)
+               (catch Exception e
+                 (error/report-error! e)
+                 nil))}]])))

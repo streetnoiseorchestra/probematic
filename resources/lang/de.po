@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-06-18 16:06+0000\n"
+"POT-Creation-Date: 2026-06-19 15:31+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -3281,6 +3281,189 @@ msgctxt ":plan/no-response"
 msgid "No Response"
 msgstr "Keine Antwort"
 
+#: :insurance.dashboard/review-complete
+#, ycp-format
+msgctxt ":insurance.dashboard/review-complete"
+msgid "%1 of %2 handled"
+msgstr "%1 von %2 erledigt"
+
+#: :insurance.dashboard/private-instruments
+#, ycp-format
+msgctxt ":insurance.dashboard/private-instruments"
+msgid "Private instruments"
+msgstr "Private Instrumente"
+
+#: :insurance.dashboard/policy-cost-tooltip
+#, ycp-format
+msgctxt ":insurance.dashboard/policy-cost-tooltip"
+msgid "Estimated policy cost from current coverage values and premium factors."
+msgstr ""
+"Geschätzte Policenkosten aus aktuellen Versicherungswerten und "
+"Prämienfaktoren."
+
+#: :insurance.dashboard/opens-later
+#, ycp-format
+msgctxt ":insurance.dashboard/opens-later"
+msgid "Coming soon"
+msgstr "Kommt später"
+
+#: :insurance.dashboard/health-checklist-subtitle
+#, ycp-format
+msgctxt ":insurance.dashboard/health-checklist-subtitle"
+msgid "Required data before sending changes."
+msgstr "Erforderliche Daten vor dem Senden von Änderungen."
+
+#: :insurance.dashboard/no-covered-instruments
+#, ycp-format
+msgctxt ":insurance.dashboard/no-covered-instruments"
+msgid "No covered instruments"
+msgstr "Keine versicherten Instrumente"
+
+#: :insurance.dashboard/review-status
+#, ycp-format
+msgctxt ":insurance.dashboard/review-status"
+msgid "Review status"
+msgstr "Review-Status"
+
+#: :insurance.dashboard/coverage-workbench
+#, ycp-format
+msgctxt ":insurance.dashboard/coverage-workbench"
+msgid "Coverage workbench"
+msgstr "Versicherungs-Workbench"
+
+#: :insurance.dashboard/recent-changes
+#, ycp-format
+msgctxt ":insurance.dashboard/recent-changes"
+msgid "Recent changes"
+msgstr "Aktuelle Änderungen"
+
+#: :insurance.dashboard/review-queue
+#, ycp-format
+msgctxt ":insurance.dashboard/review-queue"
+msgid "Review queue"
+msgstr "Review-Warteschlange"
+
+#: :insurance.dashboard/total-instruments-tooltip
+#, ycp-format
+msgctxt ":insurance.dashboard/total-instruments-tooltip"
+msgid "Number of covered instruments in this policy."
+msgstr "Anzahl der versicherten Instrumente in dieser Police."
+
+#: :insurance.dashboard/health-checklist
+#, ycp-format
+msgctxt ":insurance.dashboard/health-checklist"
+msgid "Health Checklist"
+msgstr "Daten-Checkliste"
+
+#: :insurance.dashboard/total-instruments
+#, ycp-format
+msgctxt ":insurance.dashboard/total-instruments"
+msgid "Total instruments"
+msgstr "Instrumente gesamt"
+
+#: :insurance.dashboard/action-pages-subtitle
+#, ycp-format
+msgctxt ":insurance.dashboard/action-pages-subtitle"
+msgid ""
+"These links will become separate policy pages as the redesign continues."
+msgstr "Diese Links werden im weiteren Redesign eigene Policen-Seiten."
+
+#: :insurance.dashboard/policy-cost
+#, ycp-format
+msgctxt ":insurance.dashboard/policy-cost"
+msgid "Policy cost"
+msgstr "Policenkosten"
+
+#: :insurance.dashboard/policy-status
+#, ycp-format
+msgctxt ":insurance.dashboard/policy-status"
+msgid "Policy status"
+msgstr "Policenstatus"
+
+#: :insurance.dashboard/total-insured-value-tooltip
+#, ycp-format
+msgctxt ":insurance.dashboard/total-insured-value-tooltip"
+msgid "Sum of insured values for all covered instruments."
+msgstr "Summe der Versicherungswerte aller versicherten Instrumente."
+
+#: :insurance.dashboard/band-instruments
+#, ycp-format
+msgctxt ":insurance.dashboard/band-instruments"
+msgid "Band instruments"
+msgstr "Band-Instrumente"
+
+#: :insurance.dashboard/continue-reviewing
+#, ycp-format
+msgctxt ":insurance.dashboard/continue-reviewing"
+msgid "Continue reviewing"
+msgstr "Review fortsetzen"
+
+#: :insurance.dashboard/next-actions
+#, ycp-format
+msgctxt ":insurance.dashboard/next-actions"
+msgid "Next actions"
+msgstr "Nächste Aktionen"
+
+#: :insurance.dashboard/total-insured-value
+#, ycp-format
+msgctxt ":insurance.dashboard/total-insured-value"
+msgid "Total insured value"
+msgstr "Versicherungswert gesamt"
+
+#: :insurance.dashboard/missing-insurer-ids
+#, ycp-format
+msgctxt ":insurance.dashboard/missing-insurer-ids"
+msgid "Missing Harmonia IDs"
+msgstr "Fehlende Harmonia-IDs"
+
+#: :insurance.dashboard/activity-log
+#, ycp-format
+msgctxt ":insurance.dashboard/activity-log"
+msgid "Activity log"
+msgstr "Aktivitätsprotokoll"
+
+#: :insurance.dashboard/missing-photos
+#, ycp-format
+msgctxt ":insurance.dashboard/missing-photos"
+msgid "Missing photos"
+msgstr "Fehlende Fotos"
+
+#: :insurance.dashboard/recent-changes-subtitle
+#, ycp-format
+msgctxt ":insurance.dashboard/recent-changes-subtitle"
+msgid "Current coverage change flags for this policy."
+msgstr "Aktuelle Änderungsmarkierungen für diese Police."
+
+#: :insurance.dashboard/policy-details
+#, ycp-format
+msgctxt ":insurance.dashboard/policy-details"
+msgid "Policy details"
+msgstr "Policendetails"
+
+#: :insurance.dashboard/no-recent-changes
+#, ycp-format
+msgctxt ":insurance.dashboard/no-recent-changes"
+msgid "No changed, new, or removed instruments."
+msgstr "Keine geänderten, neuen oder entfernten Instrumente."
+
+#: :insurance.dashboard/coverage-mix-subtitle
+#, ycp-format
+msgctxt ":insurance.dashboard/coverage-mix-subtitle"
+msgid "Band and private instruments in this policy."
+msgstr "Band- und private Instrumente in dieser Police."
+
+#: :insurance.dashboard/coverage-mix
+#, ycp-format
+msgctxt ":insurance.dashboard/coverage-mix"
+msgid "Coverage mix"
+msgstr "Instrumentenmix"
+
+#: :insurance.dashboard/policy-setup
+#, ycp-format
+msgctxt ":insurance.dashboard/policy-setup"
+msgid "Policy setup"
+msgstr "Policen-Setup"
+
 #: :private-instrument
 #, ycp-format
 msgctxt ":private-instrument"
@@ -4330,6 +4513,21 @@ msgstr "Hintergrund"
 msgctxt ":song/list-title"
 msgid "Repertoire"
 msgstr "Repertoire"
+
+#, ycp-format
+#~ msgctxt ":insurance.dashboard/health-check-missing"
+#~ msgid "%1 missing"
+#~ msgstr "%1 fehlen"
+
+#, ycp-format
+#~ msgctxt ":insurance.dashboard/health-check-complete"
+#~ msgid "Complete"
+#~ msgstr "Vollständig"
+
+#, ycp-format
+#~ msgctxt ":insurance.dashboard/data-health"
+#~ msgid "Data health"
+#~ msgstr "Datenqualität"
 
 #, ycp-format
 #~ msgctxt ":Active"

@@ -84,6 +84,45 @@
   :create-subtitle "Details zur neuen Versicherungspolice.",
   :effective-until "Gültig bis",
   :covered-instruments "Instrumente mit Versicherung"},
+ :insurance.dashboard
+ {:continue-reviewing "Review fortsetzen",
+  :review-queue "Review-Warteschlange",
+  :coverage-workbench "Versicherungs-Workbench",
+  :activity-log "Aktivitätsprotokoll",
+  :policy-setup "Policen-Setup",
+  :next-actions "Nächste Aktionen",
+  :action-pages-subtitle
+  "Diese Links werden im weiteren Redesign eigene Policen-Seiten.",
+  :opens-later "Kommt später",
+  :review-status "Review-Status",
+  :review-complete "%1 von %2 erledigt",
+  :health-checklist "Daten-Checkliste",
+  :health-checklist-subtitle
+  "Erforderliche Daten vor dem Senden von Änderungen.",
+  :coverage-mix "Instrumentenmix",
+  :coverage-mix-subtitle
+  "Band- und private Instrumente in dieser Police.",
+  :no-covered-instruments "Keine versicherten Instrumente",
+  :recent-changes "Aktuelle Änderungen",
+  :recent-changes-subtitle
+  "Aktuelle Änderungsmarkierungen für diese Police.",
+  :no-recent-changes
+  "Keine geänderten, neuen oder entfernten Instrumente.",
+  :policy-details "Policendetails",
+  :policy-status "Policenstatus",
+  :total-instruments "Instrumente gesamt",
+  :total-instruments-tooltip
+  "Anzahl der versicherten Instrumente in dieser Police.",
+  :total-insured-value "Versicherungswert gesamt",
+  :total-insured-value-tooltip
+  "Summe der Versicherungswerte aller versicherten Instrumente.",
+  :policy-cost "Policenkosten",
+  :policy-cost-tooltip
+  "Geschätzte Policenkosten aus aktuellen Versicherungswerten und Prämienfaktoren.",
+  :missing-photos "Fehlende Fotos",
+  :missing-insurer-ids "Fehlende Harmonia-IDs",
+  :band-instruments "Band-Instrumente",
+  :private-instruments "Private Instrumente"},
  :email
  {:invite-expired
   "Entschuldigung, der Einladungscode ist abgelaufen, bitte frag nach einem neuen!",

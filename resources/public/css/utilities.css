@@ -45,3 +45,13 @@
 .text-success {
   color: var(--wa-color-success-on-quiet);
 }
+
+.wrap-break-word {
+  overflow-wrap: break-word;
+}
+.wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+.wrap-normal {
+  overflow-wrap: normal;
+}

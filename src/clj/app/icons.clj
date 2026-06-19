@@ -286,6 +286,7 @@
                   :snoman
                   :snomegaphone
                   :square
+                  :square-info
                   :square-outline
                   :trumpet
                   :user
@@ -295,12 +296,21 @@
     :source-root "public/img/phosphor/phosphor-regular"
     :icons       [:calendar
                   :caret-right
+                  :check
                   :download
                   :hash
                   :info
                   :magnifying-glass
                   :star
-                  :trend-up]}])
+                  :trend-up
+                  :warning
+                  :money
+                  :money-wavy
+                  :currency-eur
+                  :bank
+                  :coin
+                  :coins
+                  :hand-coins]}])
 
 (defonce sprite-manifest_ (atom nil))
 

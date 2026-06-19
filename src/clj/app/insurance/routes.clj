@@ -5,6 +5,7 @@
    [app.insurance.coverage.edit.views]
    [app.insurance.coverage.views]
    [app.insurance.index.views]
+   [app.insurance.policy.dashboard.views]
    [app.insurance.public.views :as public]
    [app.insurance.views :as view]
    [app.layout :as layout]
@@ -118,7 +119,9 @@
     (insurance-survey)
     (insurance-coverage-create)
     (insurance-generate-changes)
-    (insurance-detail)
+    (ds/page-routes {:page-name ::policy-dashboard
+                     :path      "/insurance-policy/{policy-id}"
+                     :view-ns   'app.insurance.policy.dashboard.views})
     (insurance-notification)
 
     ["/insurance-changes-excel-download/{policy-id}/"

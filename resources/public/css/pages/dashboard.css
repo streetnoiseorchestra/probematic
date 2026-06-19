@@ -163,19 +163,19 @@
 }
 
 .dashboard-insurance-todo-metric--needs-review .sno-icon {
-  color: var(--sno-dashboard-insurance-todo-needs-review-color);
+  color: var(--wa-color-warning-fill-loud);
 }
 
 .dashboard-insurance-todo-metric--changed .sno-icon {
-  color: var(--sno-dashboard-insurance-todo-changed-color);
+  color: var(--wa-color-warning-fill-loud);
 }
 
 .dashboard-insurance-todo-metric--new .sno-icon {
-  color: var(--sno-dashboard-insurance-todo-new-color);
+  color: var(--wa-color-success-fill-loud);
 }
 
 .dashboard-insurance-todo-metric--removed .sno-icon {
-  color: var(--sno-dashboard-insurance-todo-removed-color);
+  color: var(--wa-color-danger-fill-loud);
 }
 
 .dashboard-insurance-todo-count {

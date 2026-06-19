@@ -11,7 +11,7 @@
 .sno-divider:not([orientation="vertical"]) {
   display: block;
   border-top: solid var(--width) var(--color);
-  margin: var(--spacing) 0;
+  /*margin: var(--spacing) 0;*/
 }
 
 .sno-divider[orientation="vertical"] {

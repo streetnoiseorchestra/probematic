@@ -1,6 +1,6 @@
 /* The wa-* layers come from Web Awesome's stylesheet.
    Recheck resources/public/vendor/webawesome@3.8.0/styles/layers.css when upgrading Web Awesome. */
-@layer wa-native, wa-base, wa-utilities, wa-color-palette, wa-color-variant, wa-theme, wa-theme-dimension, wa-theme-overrides, sno-tokens, sno-base, sno-ui, sno-page, sno-overrides;
+@layer wa-native, wa-base, sno-base, sno-ui, wa-utilities, wa-color-palette, wa-color-variant, wa-theme, wa-theme-dimension, wa-theme-overrides, sno-tokens, sno-page, sno-overrides;
 
 @import "tokens.css";
 @import "base.css" layer(sno-base);
