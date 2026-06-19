@@ -351,11 +351,12 @@
                        :type "application/json"}
               (html/raw (j/write-value-as-string data))]
              [:div {:style "position: relative; inline-size: min(var(--sno-size-full), 12rem); block-size: 12rem; margin-inline: auto;"}
-              [:canvas {:class       "insurance-dashboard-pie-chart"
-                        :data-values (str "#" data-id)
-                        :role        "img"
-                        :aria-label  (tr [:insurance.dashboard/coverage-mix])
-                        :style       "inline-size: var(--sno-size-full); block-size: var(--sno-size-full);"}]]]
+              [:canvas {:class             "insurance-dashboard-pie-chart"
+                        :data-ignore-morph true
+                        :data-values       (str "#" data-id)
+                        :role              "img"
+                        :aria-label        (tr [:insurance.dashboard/coverage-mix])
+                        :style             "inline-size: var(--sno-size-full); block-size: var(--sno-size-full);"}]]]
             (divided-rows
              [(coverage-mix-legend-item (tr [:insurance.dashboard/band-instruments])
                                         (:band coverage-mix-colors)
