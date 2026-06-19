@@ -4,6 +4,7 @@
    [app.datastar :as datastar]
    [app.gigs.routes :as gigs.routes]
    [app.members.routes :as members.routes]
+   [app.insurance.routes :as insurance.routes]
    [app.nexus :as app-nexus]
    [app.probeplan.routes :as probeplan.routes]
    [app.poll.routes :as poll.routes]
@@ -247,6 +248,17 @@
     (is (= (str "https://example.test/gig/" gig-id "/log-plays")
            (urls/absolute-link-gig-log-plays {:app-base-url "https://example.test"} gig-id)))))
 
+(deftest insurance-routes-expose-coverage-detail-and-edit-datastar-pages
+  (let [router      (http/router ["" (insurance.routes/routes)])
+        coverage-id (random-uuid)]
+    (is (= :app/instrument.coverage
+           (app-route-name router (str "/insurance-coverage/" coverage-id "/"))))
+    (is (= :app.insurance.routes/coverage-detail
+           (page-name router (str "/insurance-coverage/" coverage-id "/"))))
+    (is (= :app/instrument.coverage
+           (app-route-name router (str "/insurance-coverage-edit/" coverage-id "/"))))
+    (is (= :app.insurance.routes/coverage-edit
+           (page-name router (str "/insurance-coverage-edit/" coverage-id "/"))))))
 (deftest dashboard-routes-expose-the-slashless-calendar-path
   (let [router (http/router ["" (dashboard.routes/routes)])]
     (is (= :app.dashboard.routes/index

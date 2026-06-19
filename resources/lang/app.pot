@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Probematic\n"
-"POT-Creation-Date: 2026-06-17 12:43+0000\n"
+"POT-Creation-Date: 2026-06-18 16:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -77,6 +77,12 @@ msgctxt ":insurance/error-edit-frozen-policy"
 msgid "Cannot update instrument and coverage on a policy that is not in draft status"
 msgstr ""
 
+#: :insurance/error-invalid-coverage-type
+#, ycp-format
+msgctxt ":insurance/error-invalid-coverage-type"
+msgid "Please choose valid coverage types."
+msgstr ""
+
 #: :insurance/email-p3
 #, ycp-format
 msgctxt ":insurance/email-p3"
@@ -147,6 +153,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":insurance/request-payments-title"
 msgid "Request Insurance Payments"
+msgstr ""
+
+#: :insurance/error-invalid-number
+#, ycp-format
+msgctxt ":insurance/error-invalid-number"
+msgid "%1 must be a whole number greater than zero."
 msgstr ""
 
 #: :insurance/send-changes
@@ -2591,6 +2603,12 @@ msgctxt ":error/gig-end-date-before-date"
 msgid "End date must be on or after date."
 msgstr ""
 
+#: :error/not-allowed
+#, ycp-format
+msgctxt ":error/not-allowed"
+msgid "You are not allowed to do that."
+msgstr ""
+
 #: :error/item-load-failed
 #, ycp-format
 msgctxt ":error/item-load-failed"
@@ -2747,6 +2765,12 @@ msgctxt ":reminders/one-week"
 msgid "1 Week"
 msgstr ""
 
+#: :instrument.coverage/upload-progress
+#, ycp-format
+msgctxt ":instrument.coverage/upload-progress"
+msgid "Uploading photos…"
+msgstr ""
+
 #: :instrument.coverage/private?
 #, ycp-format
 msgctxt ":instrument.coverage/private?"
@@ -2763,6 +2787,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":instrument.coverage/insurer-id"
 msgid "Harmonia ID"
+msgstr ""
+
+#: :instrument.coverage/upload-drop-label
+#, ycp-format
+msgctxt ":instrument.coverage/upload-drop-label"
+msgid "Choose photos to upload"
 msgstr ""
 
 #: :instrument.coverage/cost-hint
@@ -2795,16 +2825,34 @@ msgctxt ":instrument.coverage/band"
 msgid "Band"
 msgstr ""
 
+#: :instrument.coverage/edit-title
+#, ycp-format
+msgctxt ":instrument.coverage/edit-title"
+msgid "Edit Instrument Coverage"
+msgstr ""
+
 #: :instrument.coverage/cost-hint-direct
 #, ycp-format
 msgctxt ":instrument.coverage/cost-hint-direct"
 msgid "You'll have to pay this to the band."
 msgstr ""
 
+#: :instrument.coverage/upload-complete
+#, ycp-format
+msgctxt ":instrument.coverage/upload-complete"
+msgid "Upload complete."
+msgstr ""
+
 #: :instrument.coverage/types
 #, ycp-format
 msgctxt ":instrument.coverage/types"
 msgid "Coverage Types"
+msgstr ""
+
+#: :instrument.coverage/upload-help
+#, ycp-format
+msgctxt ":instrument.coverage/upload-help"
+msgid "PNG, JPG, or GIF up to 10 MB."
 msgstr ""
 
 #: :instrument.coverage/status
@@ -2823,6 +2871,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":instrument.coverage/value-hint"
 msgid "The estimated market value of the item, i.e., how much it would cost to replace it if lost."
+msgstr ""
+
+#: :instrument.coverage/upload-error
+#, ycp-format
+msgctxt ":instrument.coverage/upload-error"
+msgid "Upload failed."
 msgstr ""
 
 #: :instrument.coverage/cost

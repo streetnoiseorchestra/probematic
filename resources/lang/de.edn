@@ -25,6 +25,8 @@
  :insurance
  {:error-edit-frozen-policy
   "Du kannst ein Instrument und den Versicherungsschutz für eine Police, die sich nicht im Entwurfsstatus befindet, nicht aktualisieren",
+ :error-invalid-number "%1 muss eine ganze Zahl größer als null sein.",
+ :error-invalid-coverage-type "Bitte wähle gültige Versicherungsarten aus.",
   :email-p3
   "Möchtest du genau wissen woraus sich deine Kosten zusammenstellen, kannst du dies im Forum unter folgendem Link nachlesen.",
   :item-count-hint
@@ -511,6 +513,7 @@
   :member-unique-email "Ein Mitglied hat diese E-Mail-Adresse bereits",
   :member-unique-nick "Ein Mitglied hat bereits diesen Spitznamen",
   :unauthorized-title "Authentifizierung fehlgeschlagen",
+ :not-allowed "Du darfst das nicht tun",
   :unknown-message
   "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
   :not-found-title "Nicht gefunden",
@@ -565,8 +568,14 @@
   :change "Status ändern",
   :insurer-id "Harmonia ID",
   :coverage-id "Coverage ID",
-  :private?-hint
-  "Ist dieses Instrument ein Bandinstrument oder ein Privatinstrument?"},
+ :private?-hint
+ "Ist dieses Instrument ein Bandinstrument oder ein Privatinstrument?",
+ :edit-title "Instrumentenversicherung bearbeiten",
+ :upload-drop-label "Fotos zum Hochladen auswählen",
+ :upload-help "PNG, JPG oder GIF bis 10 MB.",
+ :upload-progress "Fotos werden hochgeladen…",
+ :upload-complete "Upload abgeschlossen.",
+ :upload-error "Upload fehlgeschlagen"},
  :missing ":de missing text",
  :ledger.entry
  {:amount "Betrag",

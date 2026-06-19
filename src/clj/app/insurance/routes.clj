@@ -1,5 +1,8 @@
 (ns app.insurance.routes
   (:require
+   [app.datomic.shim :as d]
+   [app.insurance.coverage.edit.api :as coverage-edit.api]
+   [app.insurance.coverage.edit.views]
    [app.insurance.coverage.views]
    [app.insurance.index.views]
    [app.insurance.public.views :as public]
@@ -8,7 +11,6 @@
    [app.queries :as q]
    [app.routes.datastar :as ds]
    [ctmx.core :as ctmx]
-   [app.datomic.shim :as d]
    [reitit.ring.malli :as reitit.ring.malli]))
 
 (defn insurance-detail []
@@ -33,17 +35,6 @@
    (fn [req]
      (layout/app-shell req
                        (view/insurance-policy-changes-review req)))))
-
-(defn insurance-coverage-detail []
-  (ds/page-routes {:page-name ::coverage-detail
-                   :path      "/insurance-coverage/{coverage-id}/"
-                   :view-ns   'app.insurance.coverage.views}))
-(defn insurance-coverage-detail-edit []
-  (ctmx/make-routes
-   "/insurance-coverage-edit/{coverage-id}/"
-   (fn [req]
-     (layout/app-shell req
-                       (view/insurance-coverage-detail-page-rw req)))))
 
 (defn insurance-coverage-create []
   (ctmx/make-routes
@@ -71,31 +62,12 @@
      (layout/app-shell req
                        (view/insurance-coverage-create-page3 req)))))
 
-(defn instrument-detail []
-  (ctmx/make-routes
-   "/instrument/{instrument-id}/"
-   (fn [req]
-     (layout/app-shell req
-                       (view/instrument-detail-page req false)))))
-
 (defn insurance-create []
   (ctmx/make-routes
    "/insurance-new/"
    (fn [req]
      (layout/app-shell req
                        (view/insurance-create-page req)))))
-
-(defn insurance-index []
-  (ds/page-routes {:page-name ::index
-                   :path      "/insurance"
-                   :view-ns   'app.insurance.index.views}))
-
-(defn instrument-create []
-  (ctmx/make-routes
-   "/instrument-new/"
-   (fn [req]
-     (layout/app-shell req
-                       (view/instrument-create-page req)))))
 
 (def policy-interceptor {:name ::insurance-policy--interceptor
                          :enter (fn [ctx]
@@ -127,12 +99,14 @@
 
 (defn routes []
   ["" {:app.route/name :app/insurance}
-   (insurance-index)
+   (ds/page-routes {:page-name ::index
+                    :path      "/insurance"
+                    :view-ns   'app.insurance.index.views})
    ["/instrument-image/{instrument-id}"
     {:post {:summary "Upload an image for an instrument"
             :parameters {:multipart [:map [:file reitit.ring.malli/temp-file-part]]
                          :path [:map [:instrument-id :uuid]]}
-            :handler (fn [req] (view/image-upload-handler req))}}]
+            :handler (fn [req] (coverage-edit.api/image-upload-handler req))}}]
    ["/instrument-image-button/"
     {:post {:summary "Upload an image for an instrument from a single button"
             :parameters {:multipart [:map
@@ -167,15 +141,14 @@
 
    ["" {:app.route/name :app/instrument.coverage
         :interceptors [coverage-interceptor]}
-    (insurance-coverage-detail)
-    (insurance-coverage-detail-edit)]
+    (ds/page-routes {:page-name ::coverage-detail
+                     :path      "/insurance-coverage/{coverage-id}/"
+                     :view-ns   'app.insurance.coverage.views})
+    (ds/page-routes {:page-name ::coverage-edit
+                     :path      "/insurance-coverage-edit/{coverage-id}/"
+                     :view-ns   'app.insurance.coverage.edit.views})]
 
-   (insurance-create)
-   (instrument-create)
-   ["" {:app.route/name :app/insurance2
-        :interceptors [instrument-interceptor]}
-
-    (instrument-detail)]])
+   (insurance-create)])
 
 (defn unauthenticated-routes []
   [""

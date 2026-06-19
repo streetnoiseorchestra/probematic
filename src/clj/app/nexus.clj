@@ -131,6 +131,7 @@
            :db                 (d/db (-> system :datomic :conn))
            :page-state         (request-page-state request)
            :current-user-roles (current-user-roles request)}
+    (:env system) (assoc :env (:env system))
     (current-member-id request) (assoc :current-member-id (current-member-id request))))
 
 (defn- on-success-actions [transact-actions]

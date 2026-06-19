@@ -360,3 +360,91 @@
   object-fit: cover;
   border-radius: var(--wa-border-radius-m);
 }
+
+.insurance-coverage-edit-page {
+  max-inline-size: 72rem;
+  margin-inline: auto;
+  padding: var(--wa-space-l);
+}
+.insurance-coverage-edit-form-grid {
+  display: grid;
+  gap: var(--wa-space-m);
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--sno-size-full), 18rem), 1fr)
+  );
+  align-items: start;
+}
+.insurance-coverage-edit-wide,
+.insurance-coverage-edit-textarea-field,
+.insurance-coverage-edit-choice-list {
+  grid-column: 1 / -1;
+}
+.insurance-coverage-edit-textarea-field {
+  display: grid;
+  gap: var(--wa-space-2xs);
+}
+.insurance-coverage-edit-textarea-field label,
+.insurance-coverage-edit-field-label {
+  color: var(--wa-form-control-label-color);
+  font-size: var(--wa-form-control-label-font-size);
+  font-weight: var(--wa-form-control-label-font-weight);
+}
+.insurance-coverage-edit-textarea {
+  inline-size: var(--sno-size-full);
+  min-block-size: 8rem;
+  padding: var(--wa-form-control-padding-block) var(--wa-form-control-padding-inline);
+  color: var(--wa-form-control-value-color);
+  font: inherit;
+  background: var(--wa-form-control-background-color);
+  border: var(--wa-form-control-border-width) var(--wa-form-control-border-style)
+    var(--wa-form-control-border-color);
+  border-radius: var(--wa-form-control-border-radius);
+}
+.insurance-coverage-edit-textarea:focus {
+  border-color: var(--wa-form-control-focus-border-color);
+  box-shadow: 0 0 0 var(--wa-focus-ring-width) var(--wa-focus-ring-color);
+  outline: none;
+}
+.insurance-coverage-edit-choice-list {
+  display: grid;
+  gap: var(--wa-space-xs);
+}
+.insurance-coverage-edit-choice-list wa-checkbox::part(base) {
+  align-items: start;
+  padding: var(--wa-space-xs);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  border-radius: var(--wa-border-radius-s);
+}
+.insurance-coverage-upload {
+  max-inline-size: 42rem;
+}
+.insurance-coverage-upload-zone {
+  display: grid;
+  gap: var(--wa-space-xs);
+  place-items: center;
+  padding: var(--wa-space-xl);
+  color: var(--wa-color-text-quiet);
+  text-align: center;
+  cursor: pointer;
+  background: var(--wa-color-surface-default);
+  border: var(--wa-border-width-l) dashed var(--wa-color-surface-border);
+  border-radius: var(--wa-panel-border-radius);
+}
+.insurance-coverage-upload-zone:hover {
+  color: var(--wa-color-text-normal);
+  border-color: var(--wa-color-brand-border-normal);
+}
+.insurance-coverage-upload-zone > .sno-icon {
+  font-size: 2rem;
+}
+.insurance-coverage-upload-zone input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

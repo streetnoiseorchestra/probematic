@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-06-17 12:43+0000\n"
+"POT-Creation-Date: 2026-06-18 16:06+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -88,6 +88,12 @@ msgstr ""
 "Du kannst ein Instrument und den Versicherungsschutz für eine Police, die "
 "sich nicht im Entwurfsstatus befindet, nicht aktualisieren"
 
+#: :insurance/error-invalid-coverage-type
+#, ycp-format
+msgctxt ":insurance/error-invalid-coverage-type"
+msgid "Please choose valid coverage types."
+msgstr "Bitte wähle gültige Versicherungsarten aus."
+
 #: :insurance/email-p3
 #, ycp-format
 msgctxt ":insurance/email-p3"
@@ -167,6 +173,12 @@ msgstr "Versicherungswert"
 msgctxt ":insurance/request-payments-title"
 msgid "Request Insurance Payments"
 msgstr "Versicherungszahlungen beantragen"
+
+#: :insurance/error-invalid-number
+#, ycp-format
+msgctxt ":insurance/error-invalid-number"
+msgid "%1 must be a whole number greater than zero."
+msgstr "%1 muss eine ganze Zahl größer als null sein."
 
 #: :insurance/send-changes
 #, ycp-format
@@ -2756,6 +2768,12 @@ msgctxt ":error/gig-end-date-before-date"
 msgid "End date must be on or after date."
 msgstr "Das Enddatum muss am oder nach dem Datum liegen."
 
+#: :error/not-allowed
+#, ycp-format
+msgctxt ":error/not-allowed"
+msgid "You are not allowed to do that."
+msgstr "Du darfst das nicht tun."
+
 #: :error/item-load-failed
 #, ycp-format
 msgctxt ":error/item-load-failed"
@@ -2927,6 +2945,12 @@ msgctxt ":reminders/one-week"
 msgid "1 Week"
 msgstr "1 Woche"
 
+#: :instrument.coverage/upload-progress
+#, ycp-format
+msgctxt ":instrument.coverage/upload-progress"
+msgid "Uploading photos…"
+msgstr "Fotos werden hochgeladen…"
+
 #: :instrument.coverage/private?
 #, ycp-format
 msgctxt ":instrument.coverage/private?"
@@ -2944,6 +2968,12 @@ msgstr "Instrument"
 msgctxt ":instrument.coverage/insurer-id"
 msgid "Harmonia ID"
 msgstr "Harmonia ID"
+
+#: :instrument.coverage/upload-drop-label
+#, ycp-format
+msgctxt ":instrument.coverage/upload-drop-label"
+msgid "Choose photos to upload"
+msgstr "Fotos zum Hochladen auswählen"
 
 #: :instrument.coverage/cost-hint
 #, ycp-format
@@ -2977,17 +3007,35 @@ msgctxt ":instrument.coverage/band"
 msgid "Band"
 msgstr "Band"
 
+#: :instrument.coverage/edit-title
+#, ycp-format
+msgctxt ":instrument.coverage/edit-title"
+msgid "Edit Instrument Coverage"
+msgstr "Instrumentenversicherung bearbeiten"
+
 #: :instrument.coverage/cost-hint-direct
 #, ycp-format
 msgctxt ":instrument.coverage/cost-hint-direct"
 msgid "You'll have to pay this to the band."
 msgstr "Du musst das an die Band zahlen."
 
+#: :instrument.coverage/upload-complete
+#, ycp-format
+msgctxt ":instrument.coverage/upload-complete"
+msgid "Upload complete."
+msgstr "Upload abgeschlossen."
+
 #: :instrument.coverage/types
 #, ycp-format
 msgctxt ":instrument.coverage/types"
 msgid "Coverage Types"
 msgstr "Versicherungsarten"
+
+#: :instrument.coverage/upload-help
+#, ycp-format
+msgctxt ":instrument.coverage/upload-help"
+msgid "PNG, JPG, or GIF up to 10 MB."
+msgstr "PNG, JPG oder GIF bis 10 MB."
 
 #: :instrument.coverage/status
 #, ycp-format
@@ -3010,6 +3058,12 @@ msgid ""
 msgstr ""
 "Der geschätzte Marktwert des Artikels, also wie viel es kosten würde, ihn zu "
 "ersetzen, falls er verloren geht."
+
+#: :instrument.coverage/upload-error
+#, ycp-format
+msgctxt ":instrument.coverage/upload-error"
+msgid "Upload failed."
+msgstr "Upload fehlgeschlagen."
 
 #: :instrument.coverage/cost
 #, ycp-format

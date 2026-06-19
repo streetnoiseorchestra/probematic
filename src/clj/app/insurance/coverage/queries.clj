@@ -45,3 +45,10 @@
                         txs)))
          (sort-by :timestamp)
          reverse)))
+
+(defn instrument-categories [db]
+  (mapv first
+        (datomic/find-all db
+                          :instrument.category/category-id
+                          [:instrument.category/name
+                           :instrument.category/category-id])))

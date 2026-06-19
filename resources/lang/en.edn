@@ -183,6 +183,8 @@
                                   :send-changes-disabled-hint  "Changes cannot be sent while there are open TODOs"
                                   :send-payment-notifications  "Send Payment Notifications"
                                   :error-edit-frozen-policy    "Cannot update instrument and coverage on a policy that is not in draft status"
+                                  :error-invalid-number         "%1 must be a whole number greater than zero."
+                                  :error-invalid-coverage-type  "Please choose valid coverage types."
                                   :total-needs-review-tooltip  "Total instruments that need review"
                                   :total-total-changed-tooltip "Total instruments that have changed"
                                   :total-total-removed-tooltip "Total instruments that have been removed"
@@ -215,7 +217,13 @@
                                   :change           "Change Status"
                                   :cost             "Cost"
                                   :cost-hint        "The cost to insure the instrument. If private, the owner must pay this."
-                                  :cost-hint-direct "You'll have to pay this to the band."}
+                                  :cost-hint-direct "You'll have to pay this to the band."
+                                  :edit-title       "Edit Instrument Coverage"
+                                  :upload-drop-label "Choose photos to upload"
+                                  :upload-help      "PNG, JPG, or GIF up to 10 MB."
+                                  :upload-progress  "Uploading photos…"
+                                  :upload-complete  "Upload complete."
+                                  :upload-error     "Upload failed."}
  :instrument.coverage.status     {:needs-review    "Todo"
                                   :reviewed        "Reviewed"
                                   :coverage-active "Active"}
@@ -416,6 +424,7 @@
                                   :not-found-message      "The thing you were looking for wasn't found. If you think it should exist, please contact Casey and tell him this error code:"
                                   :unauthorized-title     "Authentication failed"
                                   :unauthorized-message   "Your identity is unknown to the system.. something probably went wrong. Please contact Casey and tell him this error code:"
+                                  :not-allowed            "You are not allowed to do that."
                                   :item-load-failed       "Something went wrong loading this item. Please contact the team."
                                   :go-home                "Go Home"
                                   :notify                 "Click to notify Casey"

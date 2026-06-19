@@ -62,6 +62,12 @@
     (is (contains? (:nexus/actions nexus-config)
                    :app.insurance.actions/duplicate-policy))
     (is (contains? (:nexus/actions nexus-config)
+                   :app.insurance.coverage.edit.actions/update-instrument-coverage))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.insurance.coverage.edit.actions/delete-instrument-coverage))
+    (is (contains? (:nexus/actions nexus-config)
+                   :app.insurance.coverage.edit.actions/validate-coverage-field))
+    (is (contains? (:nexus/actions nexus-config)
                    :app.poll.edit.actions/create-poll))
     (is (contains? (:nexus/actions nexus-config)
                    :app.poll.edit.actions/update-poll))
@@ -96,12 +102,15 @@
 (deftest system->state-includes-current-member-id-and-roles-from-request
   (let [{:keys [conn]} (tc/new-system "nexus-state")
         member-id      (random-uuid)
+        env            {:app-base-url "https://example.test"}
         state          (app-nexus/system->state
-                        {:system  {:datomic {:conn conn}}
+                        {:system  {:datomic {:conn conn}
+                                   :env     env}
                          :request {:session {:session/member {:member/member-id member-id}
                                              :session/roles  #{:admin}}}})]
     (is (= member-id (:current-member-id state)))
-    (is (= #{:admin} (:current-user-roles state)))))
+    (is (= #{:admin} (:current-user-roles state)))
+    (is (= env (:env state)))))
 
 (deftest db-transact-fx-dispatches-on-success-actions
   (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-success")
