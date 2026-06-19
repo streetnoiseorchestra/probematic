@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-06-19 15:31+0000\n"
+"POT-Creation-Date: 2026-06-19 15:42+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -3312,6 +3312,18 @@ msgstr "Kommt später"
 msgctxt ":insurance.dashboard/health-checklist-subtitle"
 msgid "Required data before sending changes."
 msgstr "Erforderliche Daten vor dem Senden von Änderungen."
+
+#: :insurance.dashboard/coverage-mix-total
+#, ycp-format
+msgctxt ":insurance.dashboard/coverage-mix-total"
+msgid "%1 total instruments"
+msgstr "%1 Instrumente gesamt"
+
+#: :insurance.dashboard/health-checks-complete
+#, ycp-format
+msgctxt ":insurance.dashboard/health-checks-complete"
+msgid "%1 of %2 checks passed"
+msgstr "%1 von %2 Prüfungen bestanden"
 
 #: :insurance.dashboard/no-covered-instruments
 #, ycp-format

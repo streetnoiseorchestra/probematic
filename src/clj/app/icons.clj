@@ -310,7 +310,9 @@
                   :bank
                   :coin
                   :coins
-                  :hand-coins]}])
+                  :hand-coins
+                  :hand-pointing
+                  :table]}])
 
 (defonce sprite-manifest_ (atom nil))
 

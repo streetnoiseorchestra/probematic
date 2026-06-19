@@ -76,46 +76,29 @@
     (tr [:nav/insurance])]
    [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]])
 
-(defn- future-button
-  [tr {:keys [appearance icon label-key variant]}]
-  [button/Button (cond-> {:appearance appearance
-                          :href       "#"}
-                   variant (assoc :variant variant))
-   (when icon
-     [ico/Icon {::ico/library :snoico
-                ::ico/name    icon
-                :slot         "start"}])
-   (tr label-key)])
-
-(defn- page-actions
-  [tr]
-  [(future-button tr {:appearance "filled"
-                      :variant    "brand"
-                      :icon       :circle-question-outline
-                      :label-key  [:insurance.dashboard/continue-reviewing]})
-   (future-button tr {:appearance "outlined"
-                      :variant    "brand"
-                      :icon       :circle-exclamation
-                      :label-key  [:insurance.dashboard/coverage-workbench]})])
-
 (defn- page-header
-  [{:keys [tr] :as req} {:insurance.policy/keys [effective-at effective-until name status] :as policy}]
-  (let [ico-data (policy-status-data status)]
-    [:div
-     (ui2/page-header
-      {:breadcrumb (page-breadcrumb req policy)
-       :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
-                    [ico/Icon {::ico/library :snoico
-                               ::ico/name    (:icon ico-data)
-                               :class        "wa-font-size-xl"
-                               :style        (str "color: " (:color ico-data) ";")
-                               :aria-hidden  true}]
-                    [:h1 name]
-                    (policy-status-badge tr status)]
-       :subtitle   [:span
-                    (ui2/date-range-display req :medium effective-at effective-until)]
-       :actions    (page-actions tr)})
-     [divider/Divider]]))
+  [{:keys [tr] :as req} {:insurance.policy/keys [name status] :as policy}]
+  [:div
+   (ui2/page-header
+    {:breadcrumb (page-breadcrumb req policy)
+     :heading    [:div {:class "wa-flank wa-align-items-center"}
+                  (policy-status-badge tr status)
+                  [:h1 name]]
+     :actions    [[button/Button {:appearance "filled"
+                                  :variant    "brand"
+                                  :href       "#"}
+                   [ico/Icon {::ico/library :phosphor
+                              ::ico/name    :hand-pointing
+                              :slot         "start"}]
+                   (tr [:insurance.dashboard/continue-reviewing])]
+                  [button/Button {:appearance "outlined"
+                                  :variant    "brand"
+                                  :href       "#"}
+                   [ico/Icon {::ico/library :phosphor
+                              ::ico/name    :table
+                              :slot         "start"}]
+                   (tr [:insurance.dashboard/coverage-workbench])]]})
+   [divider/Divider]])
 
 (defn metric-card
   [{:keys [id tooltip icon label value library]}]
@@ -131,9 +114,7 @@
      [:div {:class "wa-cluster wa-gap-xs"}
       [:h3 {:class "wa-caption-s"} label]
       (when tooltip
-        [ico/Icon {:id           id
-                   ::ico/library :snoico
-                   ::ico/name    :square-info}])]
+        (ui2/square-info id))]
      (when tooltip
        [:wa-tooltip {:for id :without-arrow true} tooltip])
      [:div
@@ -320,21 +301,31 @@
                                 ");")
              :aria-hidden  true}])
 
+(defn- health-check-passed?
+  [totals {:keys [count-key]}]
+  (zero? (get totals count-key 0)))
+
 (defn- health-check-row
-  [tr totals {:keys [count-key label-key]}]
+  [tr totals {:keys [count-key label-key] :as check}]
   (let [count    (get totals count-key 0)
-        healthy? (zero? count)]
+        healthy? (health-check-passed? totals check)]
     (dashboard-row (health-check-icon healthy?)
                    (tr label-key)
                    count)))
 
 (defn- health-checklist-section
   [{:keys [tr]} {:keys [totals]}]
-  (apply dashboard-card
-         {:title    (tr [:insurance.dashboard/health-checklist])
-          :subtitle (tr [:insurance.dashboard/health-checklist-subtitle])}
-         (divided-rows
-          (map #(health-check-row tr totals %) health-checks))))
+  (let [total        (count health-checks)
+        passed       (count (filter #(health-check-passed? totals %) health-checks))
+        passed-label (tr [:insurance.dashboard/health-checks-complete] [passed total])]
+    (apply dashboard-card
+           {:title    (tr [:insurance.dashboard/health-checklist])
+            :subtitle (tr [:insurance.dashboard/health-checklist-subtitle])}
+           (concat
+            (divided-rows
+             (map #(health-check-row tr totals %) health-checks))
+            [[:div {:class "wa-caption-s wa-text-end"}
+              passed-label]]))))
 
 (defn- coverage-mix-chart-data
   [tr {:keys [band-count private-count]}]
@@ -350,7 +341,8 @@
 (defn- coverage-mix-section
   [{:keys [tr]} {:keys [totals]}]
   (let [data-id "insurance-dashboard-coverage-mix-data"
-        data    (coverage-mix-chart-data tr totals)]
+        data    (coverage-mix-chart-data tr totals)
+        total   (or (:total-instruments totals) 0)]
     (apply dashboard-card
            {:title    (tr [:insurance.dashboard/coverage-mix])
             :subtitle (tr [:insurance.dashboard/coverage-mix-subtitle])}
@@ -358,7 +350,7 @@
             [[:script {:id   data-id
                        :type "application/json"}
               (html/raw (j/write-value-as-string data))]
-             [:div {:style "position: relative; block-size: 12rem;"}
+             [:div {:style "position: relative; inline-size: min(var(--sno-size-full), 12rem); block-size: 12rem; margin-inline: auto;"}
               [:canvas {:class       "insurance-dashboard-pie-chart"
                         :data-values (str "#" data-id)
                         :role        "img"
@@ -370,7 +362,9 @@
                                         (:band-count totals))
               (coverage-mix-legend-item (tr [:insurance.dashboard/private-instruments])
                                         (:private coverage-mix-colors)
-                                        (:private-count totals))])))))
+                                        (:private-count totals))])
+            [[:div {:class "wa-caption-s wa-text-end"}
+              (tr [:insurance.dashboard/coverage-mix-total] [total])]]))))
 
 (defn- future-action-row
   [tr {:keys [icon label-key]}]

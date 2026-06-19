@@ -643,3 +643,9 @@
   (if (str/blank? nick)
     name
     nick))
+
+(defn square-info [id]
+  [ico/Icon {:id           id
+             :style        "user-select: none;"
+             ::ico/library :snoico
+             ::ico/name    :square-info}])

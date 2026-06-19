@@ -99,9 +99,11 @@
   :health-checklist "Daten-Checkliste",
   :health-checklist-subtitle
   "Erforderliche Daten vor dem Senden von Änderungen.",
+  :health-checks-complete "%1 von %2 Prüfungen bestanden",
   :coverage-mix "Instrumentenmix",
   :coverage-mix-subtitle
   "Band- und private Instrumente in dieser Police.",
+  :coverage-mix-total "%1 Instrumente gesamt",
   :no-covered-instruments "Keine versicherten Instrumente",
   :recent-changes "Aktuelle Änderungen",
   :recent-changes-subtitle
