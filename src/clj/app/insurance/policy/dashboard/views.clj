@@ -86,7 +86,7 @@
                   [:h1 name]]
      :actions    [[button/Button {:appearance "filled"
                                   :variant    "brand"
-                                  :href       "#"}
+                                  :href       (urls/link-policy-review policy)}
                    [ico/Icon {::ico/library :phosphor
                               ::ico/name    :hand-pointing
                               :slot         "start"}]
@@ -368,26 +368,29 @@
               (tr [:insurance.dashboard/coverage-mix-total] [total])]]))))
 
 (defn- future-action-row
-  [tr {:keys [icon label-key]}]
-  [:a {:href  "#"
-       :class "wa-flank"
-       :style "color: inherit; text-decoration: none;"}
-   [ico/Icon {::ico/library :snoico
-              ::ico/name    icon
-              :class        "wa-font-size-xl wa-color-text-quiet"
-              :aria-hidden  true}]
-   [:div {:class "wa-split"}
-    [:span (tr label-key)]
-    [:wa-badge {:appearance "outlined" :pill true :variant "neutral"}
-     (tr [:insurance.dashboard/opens-later])]]])
+  [tr {:keys [href icon label-key]}]
+  (let [available? (and href (not= "#" href))]
+    [:a {:href  (or href "#")
+         :class "wa-flank"
+         :style "color: inherit; text-decoration: none;"}
+     [ico/Icon {::ico/library :snoico
+                ::ico/name    icon
+                :class        "wa-font-size-xl wa-color-text-quiet"
+                :aria-hidden  true}]
+     [:div {:class "wa-split"}
+      [:span (tr label-key)]
+      (when-not available?
+        [:wa-badge {:appearance "outlined" :pill true :variant "neutral"}
+         (tr [:insurance.dashboard/opens-later])])]]))
 
 (defn- next-actions-section
-  [{:keys [tr]}]
+  [{:keys [tr]} policy]
   (apply dashboard-card
          {:title    (tr [:insurance.dashboard/next-actions])
           :subtitle (tr [:insurance.dashboard/action-pages-subtitle])}
          (divided-rows
-          [(future-action-row tr {:icon      "circle-question-outline"
+          [(future-action-row tr {:href      (urls/link-policy-review policy)
+                                  :icon      "circle-question-outline"
                                   :label-key [:insurance.dashboard/review-queue]})
            (future-action-row tr {:icon      "circle-exclamation"
                                   :label-key [:insurance.dashboard/coverage-workbench]})
@@ -446,7 +449,7 @@
         (review-status-section req dashboard)
         (health-checklist-section req dashboard)
         (coverage-mix-section req dashboard)
-        (next-actions-section req)]
+        (next-actions-section req policy)]
        [:aside {:class "wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
         (recent-changes-section req dashboard)]]])))
 

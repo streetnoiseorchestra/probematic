@@ -1,6 +1,7 @@
 (ns app.insurance.actions
   (:require
    [app.insurance.coverage.edit.actions :as coverage-edit.actions]
+   [app.insurance.policy.review.actions :as policy-review.actions]
    [app.insurance.index.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
@@ -99,4 +100,5 @@
   (merge
    {::delete-policy    #'delete-policy-action
     ::duplicate-policy #'duplicate-policy-action}
-   coverage-edit.actions/actions))
+   coverage-edit.actions/actions
+   policy-review.actions/actions))

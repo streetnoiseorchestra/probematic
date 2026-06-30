@@ -171,6 +171,11 @@
       import 'wa/components/button/button.js';
       import 'wa/components/avatar/avatar.js';
       import 'wa/components/divider/divider.js';
+      import 'wa/components/relative-time/relative-time.js';
+      import 'wa/components/textarea/textarea.js';
+      import 'wa/components/tab-group/tab-group.js';
+      import 'wa/components/tab/tab.js';
+      import 'wa/components/tab-panel/tab-panel.js';
       import 'wa/components/tooltip/tooltip.js';
       import 'wa/components/badge/badge.js';
       import 'wa/components/select/select.js';

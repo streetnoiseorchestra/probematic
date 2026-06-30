@@ -125,6 +125,36 @@
   :missing-insurer-ids "Fehlende Harmonia-IDs",
   :band-instruments "Band-Instrumente",
   :private-instruments "Private Instrumente"},
+ :insurance.review
+ {:title "Review-Warteschlange",
+  :subtitle "Versicherte Instrumente für %1 prüfen.",
+  :back-to-dashboard "Zurück zum Policen-Dashboard",
+  :filters "Review-Filter",
+  :filter-needs-review "Todo",
+  :filter-missing-insurer-id "Fehlende ID",
+  :items-left "%1 Einträge übrig.",
+  :see-all-in-workbench "Alle in der Workbench anzeigen",
+  :queue "Warteschlange",
+  :empty-title "Keine passenden Versicherungen",
+  :empty-body "Wähle einen anderen Filter oder gehe zurück zum Dashboard.",
+  :reviewing-owner "Besitzer: %1",
+  :mark-reviewed "Als geprüft markieren",
+  :skip "Überspringen",
+  :approve-and-next "Freigeben und weiter",
+  :save-and-continue "Speichern und weiter",
+  :comments "Kommentare",
+  :comment-placeholder "Notiz zu diesem Eintrag hinzufügen.",
+  :add-comment "Kommentar hinzufügen",
+  :commented "kommentierte",
+  :leave-reply "Antwort hinterlassen",
+  :not-insurance-team
+  "Nur Mitglieder des Versicherungsteams können Review-Einträge ändern.",
+  :frozen-policy
+  "Diese Police ist nicht im Entwurf, daher sind Review-Aktionen schreibgeschützt.",
+  :error-coverage-not-found "Versicherung nicht gefunden.",
+  :error-not-allowed "Du darfst diesen Review-Eintrag nicht ändern.",
+  :error-frozen-policy
+  "Diese Police ist nicht im Entwurf, daher können Review-Einträge nicht geändert werden."},
  :email
  {:invite-expired
   "Entschuldigung, der Einladungscode ist abgelaufen, bitte frag nach einem neuen!",
@@ -523,6 +553,7 @@
   :quick-edit "Schnellbearbeitung",
   :mark-as "Markieren als",
   :next "Nächste",
+  :previous "Vorherige",
   :back "Zurück",
   :confirm-delete-team
   "Bist du sicher, dass du das Team %1 löschen möchtest?",

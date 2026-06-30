@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-06-19 15:42+0000\n"
+"POT-Creation-Date: 2026-06-20 08:02+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -2576,6 +2576,12 @@ msgctxt ":action/confirm-delete-discount-type"
 msgid "Are you sure you want to delete the discount type %1?"
 msgstr "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?"
 
+#: :action/previous
+#, ycp-format
+msgctxt ":action/previous"
+msgid "Previous"
+msgstr "Vorherige"
+
 #: :action/back
 #, ycp-format
 msgctxt ":action/back"
@@ -2944,6 +2950,166 @@ msgstr "3 Tage"
 msgctxt ":reminders/one-week"
 msgid "1 Week"
 msgstr "1 Woche"
+
+#: :insurance.review/leave-reply
+#, ycp-format
+msgctxt ":insurance.review/leave-reply"
+msgid "Leave a reply"
+msgstr "Antwort hinterlassen"
+
+#: :insurance.review/error-frozen-policy
+#, ycp-format
+msgctxt ":insurance.review/error-frozen-policy"
+msgid "This policy is not draft, so review items cannot be changed."
+msgstr ""
+"Diese Police ist nicht im Entwurf, daher können Review-Einträge nicht "
+"geändert werden."
+
+#: :insurance.review/add-comment
+#, ycp-format
+msgctxt ":insurance.review/add-comment"
+msgid "Add comment"
+msgstr "Kommentar hinzufügen"
+
+#: :insurance.review/back-to-dashboard
+#, ycp-format
+msgctxt ":insurance.review/back-to-dashboard"
+msgid "Back to policy dashboard"
+msgstr "Zurück zum Policen-Dashboard"
+
+#: :insurance.review/filter-needs-review
+#, ycp-format
+msgctxt ":insurance.review/filter-needs-review"
+msgid "Todo"
+msgstr "Todo"
+
+#: :insurance.review/items-left
+#, ycp-format
+msgctxt ":insurance.review/items-left"
+msgid "%1 items left."
+msgstr "%1 Einträge übrig."
+
+#: :insurance.review/queue
+#, ycp-format
+msgctxt ":insurance.review/queue"
+msgid "Queue"
+msgstr "Warteschlange"
+
+#: :insurance.review/filters
+#, ycp-format
+msgctxt ":insurance.review/filters"
+msgid "Review filters"
+msgstr "Review-Filter"
+
+#: :insurance.review/frozen-policy
+#, ycp-format
+msgctxt ":insurance.review/frozen-policy"
+msgid "This policy is not draft, so review actions are read-only."
+msgstr ""
+"Diese Police ist nicht im Entwurf, daher sind Review-Aktionen "
+"schreibgeschützt."
+
+#: :insurance.review/comments
+#, ycp-format
+msgctxt ":insurance.review/comments"
+msgid "Comments"
+msgstr "Kommentare"
+
+#: :insurance.review/comment-placeholder
+#, ycp-format
+msgctxt ":insurance.review/comment-placeholder"
+msgid "Add a note about this item."
+msgstr "Notiz zu diesem Eintrag hinzufügen."
+
+#: :insurance.review/save-and-continue
+#, ycp-format
+msgctxt ":insurance.review/save-and-continue"
+msgid "Save and continue"
+msgstr "Speichern und weiter"
+
+#: :insurance.review/commented
+#, ycp-format
+msgctxt ":insurance.review/commented"
+msgid "commented"
+msgstr "kommentierte"
+
+#: :insurance.review/title
+#, ycp-format
+msgctxt ":insurance.review/title"
+msgid "Review queue"
+msgstr "Review-Warteschlange"
+
+#: :insurance.review/empty-body
+#, ycp-format
+msgctxt ":insurance.review/empty-body"
+msgid "Try another filter or return to the dashboard."
+msgstr "Wähle einen anderen Filter oder gehe zurück zum Dashboard."
+
+#: :insurance.review/reviewing-owner
+#, ycp-format
+msgctxt ":insurance.review/reviewing-owner"
+msgid "Owner: %1"
+msgstr "Besitzer: %1"
+
+#: :insurance.review/mark-reviewed
+#, ycp-format
+msgctxt ":insurance.review/mark-reviewed"
+msgid "Mark reviewed"
+msgstr "Als geprüft markieren"
+
+#: :insurance.review/subtitle
+#, ycp-format
+msgctxt ":insurance.review/subtitle"
+msgid "Review covered instruments for %1."
+msgstr "Versicherte Instrumente für %1 prüfen."
+
+#: :insurance.review/not-insurance-team
+#, ycp-format
+msgctxt ":insurance.review/not-insurance-team"
+msgid "Only insurance team members can update review items."
+msgstr "Nur Mitglieder des Versicherungsteams können Review-Einträge ändern."
+
+#: :insurance.review/error-not-allowed
+#, ycp-format
+msgctxt ":insurance.review/error-not-allowed"
+msgid "You are not allowed to update this review item."
+msgstr "Du darfst diesen Review-Eintrag nicht ändern."
+
+#: :insurance.review/empty-title
+#, ycp-format
+msgctxt ":insurance.review/empty-title"
+msgid "No matching coverages"
+msgstr "Keine passenden Versicherungen"
+
+#: :insurance.review/error-coverage-not-found
+#, ycp-format
+msgctxt ":insurance.review/error-coverage-not-found"
+msgid "Coverage not found."
+msgstr "Versicherung nicht gefunden."
+
+#: :insurance.review/approve-and-next
+#, ycp-format
+msgctxt ":insurance.review/approve-and-next"
+msgid "Approve and next"
+msgstr "Freigeben und weiter"
+
+#: :insurance.review/skip
+#, ycp-format
+msgctxt ":insurance.review/skip"
+msgid "Skip"
+msgstr "Überspringen"
+
+#: :insurance.review/see-all-in-workbench
+#, ycp-format
+msgctxt ":insurance.review/see-all-in-workbench"
+msgid "See all in the workbench"
+msgstr "Alle in der Workbench anzeigen"
+
+#: :insurance.review/filter-missing-insurer-id
+#, ycp-format
+msgctxt ":insurance.review/filter-missing-insurer-id"
+msgid "Missing ID"
+msgstr "Fehlende ID"
 
 #: :instrument.coverage/upload-progress
 #, ycp-format
@@ -4525,6 +4691,7 @@ msgstr "Hintergrund"
 msgctxt ":song/list-title"
 msgid "Repertoire"
 msgstr "Repertoire"
+
 
 #, ycp-format
 #~ msgctxt ":insurance.dashboard/health-check-missing"

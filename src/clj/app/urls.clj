@@ -58,7 +58,15 @@
   (link-helper "/song/" :song/song-id song-or-song-id "/edit"))
 (defn link-song-create [] "/songs/new")
 
+(declare append-qps)
 (def link-policy (partial link-helper "/insurance-policy/" :insurance.policy/policy-id))
+(defn link-policy-review
+  ([policy-or-policy-id]
+   (link-policy-review policy-or-policy-id nil))
+  ([policy-or-policy-id {:keys [coverage-id filter]}]
+   (str (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/review")
+        (append-qps {:filter      (some-> filter name)
+                     :coverage-id coverage-id}))))
 (def link-policy-send-notifications (partial link-helper "/insurance-policy-notify/" :insurance.policy/policy-id))
 (def link-policy-changes (partial link-helper "/insurance-policy-changes/" :insurance.policy/policy-id))
 
