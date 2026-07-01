@@ -292,3 +292,39 @@
             :removes-ownership-filter?
             (and (str/includes? html "$insuranceWorkbench.filterDraft.ownership = &apos;all&apos;")
                  (str/includes? html "kw=apply-filter"))}))))
+
+(deftest workbench-table-right-aligns-numeric-and-harmonia-columns
+  (let [coverage-id (random-uuid)
+        html        (html/->str
+                     (#'views/flat-table
+                      {:tr tr}
+                      {:filters {:group :none}
+                       :policy  {:insurance.policy/currency :EUR}
+                       :rows    [{:category-name       "Strings"
+                                  :coverage-id         coverage-id
+                                  :coverage-type-names ["Basic"]
+                                  :harmonia-id         "H-123"
+                                  :instrument-name     "Violin"
+                                  :member-id           (random-uuid)
+                                  :member-label        "Anna"
+                                  :missing-insurer-id? false
+                                  :missing-photo?      false
+                                  :photo-count         3
+                                  :private?            false
+                                  :workflow-status     :instrument.coverage.status/needs-review
+                                  :change-status       :instrument.coverage.change/changed
+                                  :insured-value       1000M
+                                  :cost                12.34M}]}))]
+    (is (= {:right-aligned-headers? true
+            :right-aligned-cells?   true
+            :photo-cell-aligned?    true
+            :harmonia-cell-aligned? true}
+           {:right-aligned-headers?
+            (every? #(str/includes? html (str "text-align: end;\">" % "</th>"))
+                    ["photos" "insurer-id" "value" "cost"])
+            :right-aligned-cells?
+            (= 4 (count (re-seq #"<td style=\"text-align: end;\"" html)))
+            :photo-cell-aligned?
+            (str/includes? html "<td style=\"text-align: end;\">3</td>")
+            :harmonia-cell-aligned?
+            (str/includes? html "<td style=\"text-align: end;\">H-123</td>")}))))

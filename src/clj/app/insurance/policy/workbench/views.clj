@@ -121,14 +121,32 @@
    {:id :instrument :label-key [:instrument/instrument]}
    {:id :category :label-key [:instrument/category]}
    {:id :ownership :label-key [:band-private]}
-   {:id :photos :label-key [:insurance.workbench/photos]}
-   {:id :harmonia-id :label-key [:instrument.coverage/insurer-id]}
+   {:id :photos :label-key [:insurance.workbench/photos] :align :end}
+   {:id :harmonia-id :label-key [:instrument.coverage/insurer-id] :align :end}
    {:id :workflow :label-key [:insurance.workbench/workflow-status]}
    {:id :change :label-key [:insurance.workbench/change-status]}
-   {:id :value :label-key [:insurance/value]}
-   {:id :cost :label-key [:instrument.coverage/cost]}
+   {:id :value :label-key [:insurance/value] :align :end}
+   {:id :cost :label-key [:instrument.coverage/cost] :align :end}
    {:id :coverage-types :label-key [:insurance/coverage-types]}
    {:id :actions :label-key [:actions]}])
+
+(def selection-column
+  {:id :selection :label-key [:insurance.workbench/selection]})
+
+(def table-column-by-id
+  (into {(:id selection-column) selection-column}
+        (map (juxt :id identity))
+        table-columns))
+
+(defn- table-column
+  [id]
+  (table-column-by-id id))
+
+(defn- table-columns-for
+  [group]
+  (into [selection-column]
+        (cond->> table-columns
+          (= group :member) (remove #(= :member (:id %))))))
 
 (def filter-popover-id
   "insurance-workbench-filter-popover")
@@ -790,27 +808,38 @@
 (def sticky-heading-style
   "position: sticky; top: 0; background: var(--wa-color-surface-default); z-index: 1;")
 
+(defn- column-alignment-style
+  [{:keys [align]}]
+  (case align
+    :end "text-align: end;"
+    nil))
+
+(defn- join-styles
+  [& styles]
+  (str/join " " (remove str/blank? styles)))
+
+(defn- table-heading-attrs
+  [column]
+  {:scope "col"
+   :style (join-styles sticky-heading-style (column-alignment-style column))})
+
+(defn- table-cell-attrs
+  [column]
+  (if-let [style (column-alignment-style column)]
+    {:style style}
+    {}))
+
+(defn- table-cell
+  [column-id content]
+  [:td (table-cell-attrs (table-column column-id)) content])
+
 (defn- table-headings
   [tr group]
-  (let [labels [(tr [:insurance.workbench/selection])
-                (when (= group :none) (tr [:col/member]))
-                (tr [:instrument/instrument])
-                (tr [:instrument/category])
-                (tr [:band-private])
-                (tr [:insurance.workbench/photos])
-                (tr [:instrument.coverage/insurer-id])
-                (tr [:insurance.workbench/workflow-status])
-                (tr [:insurance.workbench/change-status])
-                (tr [:insurance/value])
-                (tr [:instrument.coverage/cost])
-                (tr [:insurance/coverage-types])
-                (tr [:actions])]]
-    [:thead
-     (into [:tr]
-           (for [label (remove nil? labels)]
-             [:th {:scope "col"
-                   :style sticky-heading-style}
-              label]))]))
+  [:thead
+   (into [:tr]
+         (for [{:keys [label-key] :as column} (table-columns-for group)]
+           [:th (table-heading-attrs column)
+            (tr label-key)]))])
 
 (defn- missing-badge
   [tr]
@@ -825,29 +854,31 @@
                 member-id member-label missing-insurer-id? missing-photo? photo-count
                 private? workflow-status change-status insured-value cost]} row]
     (concat
-     [[:td [:wa-checkbox (merge {:aria-label (tr [:insurance.workbench/select-row])}
-                                (row-selection-attrs coverage-id))]]]
+     [(table-cell :selection
+                  [:wa-checkbox (merge {:aria-label (tr [:insurance.workbench/select-row])}
+                                       (row-selection-attrs coverage-id))])]
      (when (= group :none)
-       [[:td (if member-id
-               [:a {:href (urls/link-member member-id)} member-label]
-               member-label)]])
-     [[:td [:a {:href (urls/link-coverage coverage-id)} instrument-name]]
-      [:td category-name]
-      [:td (insurance-ui/kind-badge tr private?)]
-      [:td (if missing-photo?
-             (missing-badge tr)
-             photo-count)]
-      [:td (if missing-insurer-id?
-             (missing-badge tr)
-             (ui2/muted harmonia-id))]
-      [:td (insurance-ui/status-badge tr workflow-status)]
-      [:td (insurance-ui/change-badge tr change-status)]
-      [:td (ui2/money insured-value currency)]
-      [:td (ui2/money cost currency)]
-      [:td (str/join ", " coverage-type-names)]
-      [:td [:span {:class "wa-cluster wa-gap-xs"}
-            [:a {:href (urls/link-coverage coverage-id)} (tr [:action/view])]
-            [:a {:href (urls/link-coverage-edit coverage-id)} (tr [:action/edit])]]]])))
+       [(table-cell :member
+                    (if member-id
+                      [:a {:href (urls/link-member member-id)} member-label]
+                      member-label))])
+     [(table-cell :instrument [:a {:href (urls/link-coverage coverage-id)} instrument-name])
+      (table-cell :category category-name)
+      (table-cell :ownership (insurance-ui/kind-badge tr private?))
+      (table-cell :photos (if missing-photo?
+                            (missing-badge tr)
+                            photo-count))
+      (table-cell :harmonia-id (if missing-insurer-id?
+                                 (missing-badge tr)
+                                 (ui2/muted harmonia-id)))
+      (table-cell :workflow (insurance-ui/status-badge tr workflow-status))
+      (table-cell :change (insurance-ui/change-badge tr change-status))
+      (table-cell :value (ui2/money insured-value currency))
+      (table-cell :cost (ui2/money cost currency))
+      (table-cell :coverage-types (str/join ", " coverage-type-names))
+      (table-cell :actions [:span {:class "wa-cluster wa-gap-xs"}
+                            [:a {:href (urls/link-coverage coverage-id)} (tr [:action/view])]
+                            [:a {:href (urls/link-coverage-edit coverage-id)} (tr [:action/edit])]])])))
 
 (defn- coverage-row
   ([req currency group row]
