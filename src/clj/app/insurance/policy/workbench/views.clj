@@ -864,7 +864,7 @@
                       member-label))])
      [(table-cell :instrument [:a {:href (urls/link-coverage coverage-id)} instrument-name])
       (table-cell :category category-name)
-      (table-cell :ownership (insurance-ui/kind-badge tr private?))
+      (table-cell :ownership (insurance-ui/ownership-badge-short tr private?))
       (table-cell :photos (if missing-photo?
                             (missing-badge tr)
                             photo-count))

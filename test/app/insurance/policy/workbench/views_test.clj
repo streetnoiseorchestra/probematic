@@ -14,6 +14,8 @@
    [:insurance.workbench/ownership] "Ownership"
    [:insurance.workbench/ownership-band] "Band"
    [:insurance.workbench/ownership-private] "Private"
+   [:band-instrument] "Band Instrument"
+   [:private-instrument] "Private Instrument"
    [:action/remove] "Remove"})
 
 (defn tr
@@ -292,6 +294,51 @@
             :removes-ownership-filter?
             (and (str/includes? html "$insuranceWorkbench.filterDraft.ownership = &apos;all&apos;")
                  (str/includes? html "kw=apply-filter"))}))))
+
+(deftest workbench-table-uses-short-ownership-labels
+  (let [coverage-id (random-uuid)
+        rows        [{:category-name       "Strings"
+                      :coverage-id         coverage-id
+                      :coverage-type-names ["Basic"]
+                      :harmonia-id         "H-123"
+                      :instrument-name     "Violin"
+                      :missing-insurer-id? false
+                      :missing-photo?      false
+                      :photo-count         3
+                      :private?            false
+                      :workflow-status     :instrument.coverage.status/needs-review
+                      :change-status       :instrument.coverage.change/changed
+                      :insured-value       1000M
+                      :cost                12.34M}
+                     {:category-name       "Strings"
+                      :coverage-id         (random-uuid)
+                      :coverage-type-names ["Basic"]
+                      :harmonia-id         "H-124"
+                      :instrument-name     "Cello"
+                      :missing-insurer-id? false
+                      :missing-photo?      false
+                      :photo-count         1
+                      :private?            true
+                      :workflow-status     :instrument.coverage.status/reviewed
+                      :change-status       :instrument.coverage.change/none
+                      :insured-value       2000M
+                      :cost                23.45M}]
+        html        (html/->str
+                     (#'views/flat-table
+                      {:tr tr}
+                      {:filters {:group :member}
+                       :policy  {:insurance.policy/currency :EUR}
+                       :rows    rows}))]
+    (is (= {:uses-short-band-label?    true
+            :uses-short-private-label? true
+            :omits-long-labels?        true}
+           {:uses-short-band-label?
+            (str/includes? html ">Band</wa-badge>")
+            :uses-short-private-label?
+            (str/includes? html ">Private</wa-badge>")
+            :omits-long-labels?
+            (not (or (str/includes? html "Band Instrument")
+                     (str/includes? html "Private Instrument")))}))))
 
 (deftest workbench-table-right-aligns-numeric-and-harmonia-columns
   (let [coverage-id (random-uuid)

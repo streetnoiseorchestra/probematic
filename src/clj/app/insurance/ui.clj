@@ -151,14 +151,28 @@
   [tr change]
   (status-badge* tr change-status-data change))
 
-(defn kind-badge
-  [tr private?]
+(defn- ownership-badge*
+  [tr private? label-keys]
   [:wa-badge {:appearance "outlined"
               :variant    (if private? "warning" "success")
               :pill       true}
-   (if private?
-     (tr [:private-instrument])
-     (tr [:band-instrument]))])
+   (tr (if private?
+         (:private label-keys)
+         (:band label-keys)))])
+
+(defn ownership-badge
+  [tr private?]
+  (ownership-badge* tr
+                    private?
+                    {:private [:private-instrument]
+                     :band    [:band-instrument]}))
+
+(defn ownership-badge-short
+  [tr private?]
+  (ownership-badge* tr
+                    private?
+                    {:private [:insurance.workbench/ownership-private]
+                     :band    [:insurance.workbench/ownership-band]}))
 
 (defn member-link
   [member]
@@ -239,7 +253,7 @@
             [(detail-row (tr [:insurance/item-count]) (or (:instrument.coverage/item-count coverage) 1))
              (detail-row (tr [:insurance/value]) (ui2/money (:instrument.coverage/value coverage) currency))
              (detail-row (tr [:instrument.coverage/insurer-id]) (:instrument.coverage/insurer-id coverage))
-             (detail-row (tr [:band-private]) (kind-badge tr (:instrument.coverage/private? coverage)))]))
+             (detail-row (tr [:band-private]) (ownership-badge tr (:instrument.coverage/private? coverage)))]))
      [:div {:class "insurance-coverage-types"}
       (ui2/table-shell
        [:table
@@ -266,7 +280,7 @@
        [:div {:class "wa-cluster wa-gap-xs"}
         (status-badge tr (:instrument.coverage/status coverage))
         (change-badge tr (:instrument.coverage/change coverage))
-        (kind-badge tr (:instrument.coverage/private? coverage))]
+        (ownership-badge tr (:instrument.coverage/private? coverage))]
        [:h2 {:class "wa-heading-xl"} (:instrument/name instrument)]
        (when-let [subtitle (or subtitle
                                (get-in instrument [:instrument/owner :member/name]))]
@@ -410,7 +424,7 @@
 
 (defn band-or-private
   [tr private?]
-  (kind-badge tr private?))
+  (ownership-badge tr private?))
 
 (defn coverage-currency
   [coverage]
