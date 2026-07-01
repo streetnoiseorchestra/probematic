@@ -24,3 +24,10 @@ body {
 #main.full-width {
   --sno-content-max-inline-size: infinity;
 }
+
+app-shell header svg .logotype-snoman {
+  fill: var(--sno-brand-green);
+}
+app-shell header svg .logotype-text {
+  fill: var(--sno-brand-orange);
+}

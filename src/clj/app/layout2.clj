@@ -4,6 +4,7 @@
    [app.config :as config]
    [app.html :as html]
    [app.i18n :as i18n]
+   [app.icons :as icon]
    [app.secret-box :as secret-box]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
@@ -56,10 +57,7 @@
 
 (defn brand-link []
   [:a {:href "/" :aria-label "Home"}
-   [ico/Icon {::ico/library    :snoico
-              ::ico/name       :logotype
-              ::ico/auto-width true
-              :style           "color: var(--sno-brand-green)"}]])
+   (icon/logotype {:class      ""})])
 
 (defn nav-user-dropdown [req member]
   (let [tr  (i18n/tr-from-req req)
