@@ -83,10 +83,14 @@
    :tr                tr})
 
 (defn workbench-signals
-  [{:keys [policy-id selected-ids target-status]}]
-  {:insuranceWorkbench {:policyId              (str policy-id)
-                        :selectedCoverageIds  (mapv str selected-ids)
-                        :targetWorkflowStatus (name target-status)}})
+  [{:keys [policy-id selected-ids target-change-status target-status]}]
+  (cond-> {:insuranceWorkbench {:policyId             (str policy-id)
+                                :selectedCoverageIds (mapv str selected-ids)}}
+    target-status
+    (assoc-in [:insuranceWorkbench :targetWorkflowStatus] (name target-status))
+
+    target-change-status
+    (assoc-in [:insuranceWorkbench :targetChangeStatus] (name target-change-status))))
 
 (defn apply-filter-signals
   [{:keys [category-ids change-statuses coverage-type-ids field missing-harmonia-id?
@@ -110,6 +114,12 @@
   (->> (second (db-transact-effect effects))
        (filter #(= :instrument.coverage/status (nth % 2 nil)))
        (mapv (fn [[_ lookup-ref _ status]] [lookup-ref status]))))
+
+(defn transaction-changes
+  [effects]
+  (->> (second (db-transact-effect effects))
+       (filter #(= :instrument.coverage/change (nth % 2 nil)))
+       (mapv (fn [[_ lookup-ref _ change]] [lookup-ref change]))))
 
 (deftest bulk-update-workflow-status-action-success-test
   (testing "returns one audited transaction effect for selected coverages"
@@ -164,6 +174,86 @@
                         (workbench-signals {:policy-id policy-id
                                             :selected-ids [coverage-id]
                                             :target-status target-status})))])))))))
+
+(deftest bulk-update-statuses-action-updates-workflow-and-change-statuses
+  (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-workbench-action-combined-statuses")
+        policy-id                           (random-uuid)
+        coverage-a                          (random-uuid)
+        coverage-b                          (random-uuid)]
+    (seed-insurance-team! conn member-id)
+    (seed-action-policy! conn {:policy-id policy-id
+                               :coverages [{:coverage-id coverage-a}
+                                           {:coverage-id coverage-b}]})
+    (let [effects (actions/bulk-update-statuses-action
+                   (state system)
+                   (workbench-signals {:policy-id            policy-id
+                                       :selected-ids         [coverage-a coverage-b]
+                                       :target-status        :active
+                                       :target-change-status :changed}))]
+      (is (= [[[:instrument.coverage/coverage-id coverage-a]
+               :instrument.coverage.status/coverage-active]
+              [[:instrument.coverage/coverage-id coverage-b]
+               :instrument.coverage.status/coverage-active]]
+             (transaction-statuses effects)))
+      (is (= [[[:instrument.coverage/coverage-id coverage-a]
+               :instrument.coverage.change/changed]
+              [[:instrument.coverage/coverage-id coverage-b]
+               :instrument.coverage.change/changed]]
+             (transaction-changes effects))))))
+
+(deftest bulk-update-statuses-action-can-update-only-change-status
+  (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-workbench-action-change-only")
+        policy-id                           (random-uuid)
+        coverage-id                         (random-uuid)]
+    (seed-insurance-team! conn member-id)
+    (seed-action-policy! conn {:policy-id policy-id
+                               :coverages [{:coverage-id coverage-id}]})
+    (let [effects (actions/bulk-update-statuses-action
+                   (state system)
+                   (workbench-signals {:policy-id            policy-id
+                                       :selected-ids         [coverage-id]
+                                       :target-status        :keep
+                                       :target-change-status :none}))]
+      (is (empty? (transaction-statuses effects)))
+      (is (= [[[:instrument.coverage/coverage-id coverage-id]
+               :instrument.coverage.change/none]]
+             (transaction-changes effects))))))
+
+(deftest bulk-mark-workflow-action-ignores-change-target
+  (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-workbench-action-mark-workflow")
+        policy-id                           (random-uuid)
+        coverage-id                         (random-uuid)]
+    (seed-insurance-team! conn member-id)
+    (seed-action-policy! conn {:policy-id policy-id
+                               :coverages [{:coverage-id coverage-id}]})
+    (let [effects (actions/bulk-mark-workflow-action
+                   (state system)
+                   (workbench-signals {:policy-id            policy-id
+                                       :selected-ids         [coverage-id]
+                                       :target-status        :reviewed
+                                       :target-change-status :changed}))]
+      (is (= [[[:instrument.coverage/coverage-id coverage-id]
+               :instrument.coverage.status/reviewed]]
+             (transaction-statuses effects)))
+      (is (empty? (transaction-changes effects))))))
+
+(deftest bulk-set-change-action-ignores-workflow-target
+  (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-workbench-action-set-change")
+        policy-id                           (random-uuid)
+        coverage-id                         (random-uuid)]
+    (seed-insurance-team! conn member-id)
+    (seed-action-policy! conn {:policy-id policy-id
+                               :coverages [{:coverage-id coverage-id}]})
+    (let [effects (actions/bulk-set-change-action
+                   (state system)
+                   (workbench-signals {:policy-id            policy-id
+                                       :selected-ids         [coverage-id]
+                                       :target-status        :active
+                                       :target-change-status :none}))]
+      (is (empty? (transaction-statuses effects)))
+      (is (= [[[:instrument.coverage/coverage-id coverage-id]
+               :instrument.coverage.change/none]]
+             (transaction-changes effects))))))
 
 (defn rejection-summary
   [effects]

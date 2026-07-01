@@ -131,7 +131,7 @@
    {:id :actions :label-key [:actions]}])
 
 (def selection-column
-  {:id :selection :label-key [:insurance.workbench/selection]})
+  {:id :selection})
 
 (def table-column-by-id
   (into {(:id selection-column) selection-column}
@@ -611,48 +611,7 @@
            :data-on:click (show-filter-popover-js chip-id field)}
       [:dt {:class "wa-font-weight-bold wa-color-text-quiet"} label]
       [divider/Divider {::divider/orientation :vertical ::divider/spacing "0.2rem" :style "min-block-size: 0.5lh"}]
-      [:dd {:class "wa-font-weight-bold" :style "color: var(--wa-color-green-60)"} value]]
-
-     #_[button/Button {:id            chip-id
-                       :appearance    "plain"
-                       :size          "s"
-                       :data-on:click (show-filter-popover-js chip-id field)}
-        [:span {:class "wa-caption-s wa-color-text-quiet"} label]
-        [:span {:aria-hidden                   "true"
-                :data-workbench-filter-divider "true"
-                :style                         (str "align-self: stretch; "
-                                                    "border-inline-start: var(--wa-border-width-s) solid var(--wa-color-neutral-border-normal);")}]
-        [:span {:class "wa-caption-s"} value]]]
-    #_[:span {:class                      "wa-cluster wa-gap-0 wa-align-items-stretch"
-              :data-workbench-filter-chip (name field)
-              :style                      (str "overflow: hidden; "
-                                               "border: var(--wa-border-width-s) solid var(--wa-color-neutral-border-normal); "
-                                               "border-radius: 999px; "
-                                               "background: var(--wa-color-surface-default);")}
-       [button/Button {:appearance    "outlined"
-                       :size          "s"
-                       :aria-label    (tr [:action/remove])
-                       :data-on:click (remove-filter-js req field)
-                       :style         (str "min-inline-size: auto; "
-                                           "border-start-end-radius: 0; "
-                                           "border-end-end-radius: 0; "
-                                           "padding-inline: var(--wa-space-2xs);")}
-        [ico/Icon {::ico/library :snoico
-                   ::ico/name    :xmark
-                   :style        "font-size: var(--wa-font-size-xs);"}]]
-       [button/Button {:id            chip-id
-                       :appearance    "outlined"
-                       :size          "s"
-                       :data-on:click (show-filter-popover-js chip-id field)
-                       :style         (str "border-start-start-radius: 0; "
-                                           "border-end-start-radius: 0; "
-                                           "padding-inline: var(--wa-space-2xs) var(--wa-space-xs);")}
-        [:span {:class "wa-caption-s wa-color-text-quiet"} label]
-        [:span {:aria-hidden                   "true"
-                :data-workbench-filter-divider "true"
-                :style                         (str "align-self: stretch; "
-                                                    "border-inline-start: var(--wa-border-width-s) solid var(--wa-color-neutral-border-normal);")}]
-        [:span {:class "wa-caption-s"} value]]]))
+      [:dd {:class "wa-font-weight-bold" :style "color: var(--wa-color-green-60)"} value]]]))
 
 (defn- active-filters-bar
   [req workbench]
@@ -733,7 +692,8 @@
   [policy filters]
   {:insuranceWorkbench {:policyId              (str (:insurance.policy/policy-id policy))
                         :selectedCoverageIds  []
-                        :targetWorkflowStatus nil
+                        :targetWorkflowStatus "keep"
+                        :targetChangeStatus   "keep"
                         :filterEditor         {:field        nil
                                                :source       nil
                                                :appliedField nil}
@@ -757,56 +717,200 @@
                                                                            [(name id) true])
                                                                          table-columns))}}})
 
+(def selected-coverage-ids-js
+  "($insuranceWorkbench.selectedCoverageIds || [])")
+
+(def selected-count-js
+  (str selected-coverage-ids-js ".length"))
+
+(defn- js-string-array
+  [values]
+  (str "[" (str/join ", " (map (comp pr-str str) values)) "]"))
+
+(defn- selected-coverage-id-js
+  [coverage-id]
+  (str selected-coverage-ids-js ".includes('" coverage-id "')"))
+
+(defn- select-all-checked-js
+  [coverage-ids]
+  (if (seq coverage-ids)
+    (str (js-string-array coverage-ids) ".every(id => " selected-coverage-ids-js ".includes(id))")
+    "false"))
+
+(defn- select-all-indeterminate-js
+  [coverage-ids]
+  (if (seq coverage-ids)
+    (str (js-string-array coverage-ids) ".some(id => " selected-coverage-ids-js ".includes(id)) && "
+         "!" (select-all-checked-js coverage-ids))
+    "false"))
+
+(defn- select-all-effect-js
+  [coverage-ids]
+  (str "el.checked = " (select-all-checked-js coverage-ids) "; "
+       "el.indeterminate = " (select-all-indeterminate-js coverage-ids)))
+
+(defn- select-all-change-js
+  [coverage-ids]
+  (str "$insuranceWorkbench.selectedCoverageIds = "
+       (select-all-checked-js coverage-ids)
+       " ? [] : "
+       (js-string-array coverage-ids)))
+
+(defn- select-all-attrs
+  [tr coverage-ids]
+  {:aria-label                (tr [:action/select-all])
+   :data-workbench-select-all "true"
+   :data-on:change           (select-all-change-js coverage-ids)
+   :data-effect              (select-all-effect-js coverage-ids)})
+
+(defn- row-selection-effect-js
+  [coverage-id]
+  (str "el.checked = " (selected-coverage-id-js coverage-id)))
+
 (defn- row-selection-attrs
   [coverage-id]
   (let [coverage-id (str coverage-id)]
-    {:data-on:change (str "if (evt.target.checked) { "
+    {:data-effect    (row-selection-effect-js coverage-id)
+     :data-on:change (str "if (evt.target.checked) { "
                           "$insuranceWorkbench.selectedCoverageIds = "
-                          "Array.from(new Set([...($insuranceWorkbench.selectedCoverageIds || []), '" coverage-id "'])); "
+                          "Array.from(new Set([..." selected-coverage-ids-js ", '" coverage-id "'])); "
                           "} else { "
                           "$insuranceWorkbench.selectedCoverageIds = "
-                          "($insuranceWorkbench.selectedCoverageIds || []).filter(id => id !== '" coverage-id "'); "
+                          selected-coverage-ids-js ".filter(id => id !== '" coverage-id "'); "
                           "}")}))
 
-(defn- bulk-button-attrs
-  [req target-status editable?]
-  (let [status-name (name target-status)]
-    {:appearance         "outlined"
-     :size               "s"
-     :disabled           (not editable?)
-     :data-on:click      (str "$insuranceWorkbench.targetWorkflowStatus = '" status-name "'; "
-                              "$loading = 'insurance-workbench-bulk'; "
-                              "@post('" (d*/act req ::actions/bulk-update-workflow-status) "')")
-     :data-attr:disabled (str "(!$insuranceWorkbench.selectedCoverageIds || "
-                              "$insuranceWorkbench.selectedCoverageIds.length === 0) || "
-                              (if editable? "false" "true"))
-     :data-attr:loading  "$loading === 'insurance-workbench-bulk'"}))
+(defn- bulk-selection-disabled-js
+  []
+  (str selected-count-js " === 0"))
+
+(defn- bulk-action-disabled-js
+  [editable?]
+  (str "(" (bulk-selection-disabled-js) ") || "
+       (if editable? "false" "true")))
+
+(defn- bulk-status-action-js
+  [req target-kind]
+  (let [[target-signal keep-signal action] (case target-kind
+                                             :workflow ["targetWorkflowStatus"
+                                                        "targetChangeStatus"
+                                                        ::actions/bulk-mark-workflow]
+                                             :change ["targetChangeStatus"
+                                                      "targetWorkflowStatus"
+                                                      ::actions/bulk-set-change])]
+    (str "$insuranceWorkbench." target-signal " = evt.detail.item.value; "
+         "$insuranceWorkbench." keep-signal " = 'keep'; "
+         "$loading = 'insurance-workbench-bulk'; "
+         "@post('" (d*/act req action) "')")))
+
+(def bulk-workflow-targets
+  [{:target :todo :status :needs-review}
+   {:target :reviewed :status :reviewed}
+   {:target :active :status :coverage-active}])
+
+(defn- bulk-status-dropdown
+  [{:keys [tr] :as req} {:keys [editable? items label-key target-kind]}]
+  (into [:wa-dropdown {:size              "m"
+                       :data-on:wa-select (bulk-status-action-js req target-kind)}
+         [button/Button {:appearance         "outlined"
+                         :size               "s"
+                         :slot               "trigger"
+                         :with-caret         true
+                         :disabled           true
+                         :data-attr:disabled (bulk-action-disabled-js editable?)
+                         :data-attr:loading  "$loading === 'insurance-workbench-bulk'"}
+          (tr label-key)]]
+        items))
+
+(defn- bulk-workflow-status-dropdown
+  [req editable?]
+  (bulk-status-dropdown
+   req
+   {:editable?   editable?
+    :label-key   [:insurance.workbench/mark-workflow]
+    :target-kind :workflow
+    :items       (for [{:keys [target status]} bulk-workflow-targets]
+                   [:wa-dropdown-item {:value (name target)}
+                    (insurance-ui/status-label (:tr req) (domain/qualified-coverage-status status))])}))
+
+(defn- bulk-change-status-dropdown
+  [req editable?]
+  (bulk-status-dropdown
+   req
+   {:editable?   editable?
+    :label-key   [:insurance.workbench/set-change]
+    :target-kind :change
+    :items       (for [change domain/simple-instrument-coverage-changes]
+                   [:wa-dropdown-item {:value (name change)}
+                    (insurance-ui/change-label (:tr req) (domain/qualified-coverage-change change))])}))
+
+(defn- deselect-all-button
+  [tr]
+  [button/Button {:appearance         "plain"
+                  :size               "s"
+                  :disabled           true
+                  :data-on:click      "$insuranceWorkbench.selectedCoverageIds = []"
+                  :data-attr:disabled (bulk-selection-disabled-js)}
+   (tr [:insurance.workbench/deselect-all])])
+
+(def expand-all-groups-js
+  (str "document.querySelectorAll('[data-workbench-coverage-row]')"
+       ".forEach(row => row.hidden = false); "
+       "document.querySelectorAll('[data-workbench-toggle]')"
+       ".forEach(el => el.dataset.collapsed = 'false');"))
+
+(def collapse-all-groups-js
+  (str "document.querySelectorAll('[data-workbench-coverage-row]')"
+       ".forEach(row => row.hidden = true); "
+       "document.querySelectorAll('[data-workbench-toggle]')"
+       ".forEach(el => el.dataset.collapsed = 'true');"))
+
+(defn- expansion-actions
+  [tr]
+  [:menu
+   [:li
+    [button/Button {:appearance    "outlined"
+                    :size          "s"
+                    :data-on:click expand-all-groups-js}
+     (tr [:insurance.workbench/expand-all])]]
+   [:li
+    [button/Button {:appearance    "outlined"
+                    :size          "s"
+                    :data-on:click collapse-all-groups-js}
+     (tr [:insurance.workbench/collapse-all])]]])
+
+(def bulk-action-bar-stuck-js
+  (str "const top = parseFloat(getComputedStyle(el).top) || 0; "
+       "el.classList.toggle('insurance-workbench-bulk-action-bar--stuck', "
+       selected-count-js
+       " > 0 && el.getBoundingClientRect().top <= top)"))
+
+(defn- bulk-actions
+  [{:keys [tr] :as req} editable?]
+  [:div
+   [:p
+    [:strong
+     [:span {:data-text selected-count-js} "0"]
+     " "
+     (tr [:insurance.workbench/selected])]
+    (deselect-all-button tr)]
+   [:menu
+    [:li
+     (bulk-workflow-status-dropdown req editable?)]
+    [:li
+     (bulk-change-status-dropdown req editable?)]]
+   (when-not editable?
+     [:small (tr [:insurance.workbench/read-only])])])
 
 (defn- bulk-action-bar
-  [{:keys [tr] :as req} {:keys [editable?]}]
-  [:div {:class     "wa-cluster wa-gap-s wa-align-items-center"
-         :data-show "$insuranceWorkbench.selectedCoverageIds && $insuranceWorkbench.selectedCoverageIds.length > 0"
-         :style     (str "position: sticky; top: 0; z-index: 2; "
-                         "padding: var(--wa-space-s); "
-                         "background: var(--wa-color-surface-raised); "
-                         "border: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
-                         "border-radius: var(--wa-border-radius-m);")}
-   [:strong
-    [:span {:data-text "$insuranceWorkbench.selectedCoverageIds.length"} "0"]
-    " "
-    (tr [:insurance.workbench/selected])]
-   [button/Button (bulk-button-attrs req :todo editable?)
-    (tr [:insurance.workbench/mark-todo])]
-   [button/Button (bulk-button-attrs req :reviewed editable?)
-    (tr [:insurance.workbench/mark-reviewed])]
-   [button/Button (bulk-button-attrs req :active editable?)
-    (tr [:insurance.workbench/mark-active])]
-   (when-not editable?
-     [:span {:class "wa-caption-s wa-color-text-quiet"}
-      (tr [:insurance.workbench/read-only])])])
-
-(def sticky-heading-style
-  "position: sticky; top: 0; background: var(--wa-color-surface-default); z-index: 1;")
+  [{:keys [tr] :as req} {:keys [editable? filters rows]}]
+  [:section {:class                              "insurance-workbench-bulk-action-bar"
+             :data-class:insurance-workbench-bulk-action-bar--sticky (str selected-count-js " > 0")
+             :data-effect                         bulk-action-bar-stuck-js
+             :data-on:scroll__window__throttle.100ms bulk-action-bar-stuck-js}
+   (bulk-actions req editable?)
+   (when (and (= :member (:group filters))
+              (seq rows))
+     (expansion-actions tr))])
 
 (defn- column-alignment-style
   [{:keys [align]}]
@@ -814,14 +918,11 @@
     :end "text-align: end;"
     nil))
 
-(defn- join-styles
-  [& styles]
-  (str/join " " (remove str/blank? styles)))
-
 (defn- table-heading-attrs
   [column]
-  {:scope "col"
-   :style (join-styles sticky-heading-style (column-alignment-style column))})
+  (cond-> {:scope "col"}
+    (column-alignment-style column)
+    (assoc :style (column-alignment-style column))))
 
 (defn- table-cell-attrs
   [column]
@@ -833,13 +934,19 @@
   [column-id content]
   [:td (table-cell-attrs (table-column column-id)) content])
 
+(defn- table-heading-content
+  [tr coverage-ids {:keys [id label-key]}]
+  (if (= id :selection)
+    [:wa-checkbox (select-all-attrs tr coverage-ids)]
+    (tr label-key)))
+
 (defn- table-headings
-  [tr group]
+  [tr group coverage-ids]
   [:thead
    (into [:tr]
-         (for [{:keys [label-key] :as column} (table-columns-for group)]
+         (for [column (table-columns-for group)]
            [:th (table-heading-attrs column)
-            (tr label-key)]))])
+            (table-heading-content tr coverage-ids column)]))])
 
 (defn- missing-badge
   [tr]
@@ -889,10 +996,11 @@
 
 (defn- flat-table
   [req {:keys [filters policy rows]}]
-  (let [currency (:insurance.policy/currency policy)]
+  (let [currency     (:insurance.policy/currency policy)
+        coverage-ids (mapv :coverage-id rows)]
     (ui2/table-shell
      [:table {:class "wa-table"}
-      (table-headings (:tr req) (:group filters))
+      (table-headings (:tr req) (:group filters) coverage-ids)
       (into [:tbody]
             (map #(coverage-row req currency (:group filters) %) rows))])))
 
@@ -953,28 +1061,13 @@
 
 (defn- grouped-table
   [req {:keys [groups policy]}]
-  (let [currency (:insurance.policy/currency policy)]
-    [:div {:class "wa-stack wa-gap-s"}
-     [:div {:class "wa-cluster wa-gap-s"}
-      [button/Button {:appearance    "outlined"
-                      :size          "s"
-                      :data-on:click (str "document.querySelectorAll('[data-workbench-coverage-row]')"
-                                          ".forEach(row => row.hidden = false); "
-                                          "document.querySelectorAll('[data-workbench-toggle]')"
-                                          ".forEach(el => el.dataset.collapsed = 'false');")}
-       ((:tr req) [:insurance.workbench/expand-all])]
-      [button/Button {:appearance    "outlined"
-                      :size          "s"
-                      :data-on:click (str "document.querySelectorAll('[data-workbench-coverage-row]')"
-                                          ".forEach(row => row.hidden = true); "
-                                          "document.querySelectorAll('[data-workbench-toggle]')"
-                                          ".forEach(el => el.dataset.collapsed = 'true');")}
-       ((:tr req) [:insurance.workbench/collapse-all])]]
-     (ui2/table-shell
-      [:table {:class "wa-table"}
-       (table-headings (:tr req) :member)
-       (into [:tbody]
-             (mapcat #(member-group-rows req currency %) groups))])]))
+  (let [currency     (:insurance.policy/currency policy)
+        coverage-ids (mapv :coverage-id (mapcat :rows groups))]
+    (ui2/table-shell
+     [:table {:class "wa-table"}
+      (table-headings (:tr req) :member coverage-ids)
+      (into [:tbody]
+            (mapcat #(member-group-rows req currency %) groups))])))
 
 (defn- rows-section
   [req {:keys [filters rows] :as workbench}]
@@ -1000,7 +1093,7 @@
   (let [workbench (queries/policy-workbench db (policy-id req) (workbench-params req))
         policy    (:policy workbench)]
     (ui2/datastar-page2 {:class "full-width"}
-                        [:div {:class              "wa-stack wa-gap-xl"
+                        [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
                                :data-preserve-attr "data-signals"
                                :data-signals       (d*/->signals (selection-signals policy (:filters workbench)))}
                          (ui2/page-header

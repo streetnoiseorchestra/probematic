@@ -130,7 +130,6 @@
   color: var(--sno-gig-row-gray-400);
 }
 
-
 .insurance-coverage-page-header .sno-page-header-main {
   align-items: start;
 }
@@ -433,4 +432,86 @@
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.insurance-workbench-bulk-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wa-space-s);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wa-space-s);
+  border: var(--wa-border-width-s) solid var(--wa-color-surface-border);
+  border-radius: var(--wa-border-radius-m);
+}
+
+.insurance-workbench-bulk-action-bar--sticky {
+  position: sticky;
+  top: 10px;
+  z-index: var(--sno-table-bulk-action-z-index);
+}
+
+.insurance-workbench-bulk-action-bar--stuck {
+  box-shadow: var(--wa-shadow-l);
+  background-color: var(--wa-color-surface-raised);
+}
+
+.insurance-workbench-bulk-action-bar--stuck > menu {
+  display: none;
+}
+
+.insurance-workbench-bulk-action-bar :is(div, p, menu, li) {
+  min-inline-size: 0;
+}
+
+.insurance-workbench-bulk-action-bar :is(p, menu) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wa-space-s);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.insurance-workbench-bulk-action-bar menu {
+  list-style: none;
+}
+
+.insurance-workbench-bulk-action-bar small {
+  color: var(--wa-color-text-quiet);
+  font-size: var(--wa-font-size-s);
+}
+
+@media (max-width: 30rem) {
+  .insurance-workbench-bulk-action-bar {
+    align-items: stretch;
+  }
+
+  .insurance-workbench-bulk-action-bar > div,
+  .insurance-workbench-bulk-action-bar > div > p {
+    inline-size: 100%;
+  }
+
+  .insurance-workbench-bulk-action-bar > div > p {
+    justify-content: space-between;
+  }
+
+  .insurance-workbench-bulk-action-bar > div > menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    inline-size: 100%;
+    gap: var(--wa-space-xs);
+  }
+
+  .insurance-workbench-bulk-action-bar > div > menu > li > wa-dropdown,
+  .insurance-workbench-bulk-action-bar > div > menu > li > wa-dropdown > wa-button {
+    inline-size: 100%;
+  }
+}
+
+.insurance-workbench table.wa-table thead th[scope="col"] {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--wa-color-surface-default);
 }

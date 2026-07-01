@@ -53,10 +53,32 @@
        split-id-value
        (mapv (comp ensure-uuid-or-invalid str/trim str))))
 
-(defn- target-status
+(def skip-bulk-target ::skip-bulk-target)
+
+(def invalid-bulk-target ::invalid-bulk-target)
+
+(defn- bulk-target-key
+  [value]
+  (let [target (domain/simple-keyword value)]
+    (cond
+      (or (nil? target) (= :keep target)) skip-bulk-target
+      :else target)))
+
+(defn- target-workflow-status
   [signals]
-  (get domain/bulk-workflow-target-statuses
-       (domain/simple-keyword (:targetWorkflowStatus signals))))
+  (let [target (bulk-target-key (:targetWorkflowStatus signals))]
+    (cond
+      (= skip-bulk-target target) skip-bulk-target
+      :else (get domain/bulk-workflow-target-statuses target invalid-bulk-target))))
+
+(defn- target-change-status
+  [signals]
+  (let [target (bulk-target-key (:targetChangeStatus signals))]
+    (cond
+      (= skip-bulk-target target) skip-bulk-target
+      (contains? domain/simple-instrument-coverage-change-set target)
+      (domain/qualified-coverage-change target)
+      :else invalid-bulk-target)))
 
 (defn- insurance-team-member?
   [db current-member-id]
@@ -73,6 +95,22 @@
    [:instrument.coverage/coverage-id coverage-id]
    :instrument.coverage/status
    status])
+
+(defn- coverage-change-tx
+  [change coverage-id]
+  [:db/add
+   [:instrument.coverage/coverage-id coverage-id]
+   :instrument.coverage/change
+   change])
+
+(defn- target-tx-data
+  [selected-ids workflow-status change-status]
+  (vec
+   (concat
+    (when-not (= skip-bulk-target workflow-status)
+      (map (partial coverage-status-tx workflow-status) selected-ids))
+    (when-not (= skip-bulk-target change-status)
+      (map (partial coverage-change-tx change-status) selected-ids)))))
 
 (defn- filter-field-key
   [value]
@@ -169,19 +207,23 @@
       [[:app.datastar/assoc-state [form-key :filters :last-applied-field] (some-> field name)]
        (clear-filter-editor-signals field)])))
 
-(defn bulk-update-workflow-status-action
+(defn bulk-update-statuses-action
   [{:keys [current-member-id db tr]} signals]
-  (let [signals      (:insuranceWorkbench signals)
-        policy-id    (policy-id signals)
-        selected-ids (selected-coverage-ids signals)
-        status       (target-status signals)
-        policy       (when (uuid? policy-id) (q/retrieve-policy db policy-id))
-        coverages    (mapv #(when (uuid? %) (q/retrieve-coverage db %)) selected-ids)]
+  (let [signals         (:insuranceWorkbench signals)
+        policy-id       (policy-id signals)
+        selected-ids    (selected-coverage-ids signals)
+        workflow-status (target-workflow-status signals)
+        change-status   (target-change-status signals)
+        tx-data         (target-tx-data selected-ids workflow-status change-status)
+        policy          (when (uuid? policy-id) (q/retrieve-policy db policy-id))
+        coverages       (mapv #(when (uuid? %) (q/retrieve-coverage db %)) selected-ids)]
     (cond
       (empty? selected-ids)
       (error-effects tr [:insurance.workbench/error-empty-selection])
 
-      (nil? status)
+      (or (= invalid-bulk-target workflow-status)
+          (= invalid-bulk-target change-status)
+          (empty? tx-data))
       (error-effects tr [:insurance.workbench/error-invalid-target-status])
 
       (not (insurance-team-member? db current-member-id))
@@ -197,9 +239,26 @@
       (error-effects tr [:insurance.workbench/error-coverage-not-in-policy])
 
       :else
-      (success-effects current-member-id
-                       (mapv (partial coverage-status-tx status) selected-ids)))))
+      (success-effects current-member-id tx-data))))
+
+(def bulk-update-workflow-status-action
+  bulk-update-statuses-action)
+
+(defn bulk-mark-workflow-action
+  [state signals]
+  (bulk-update-statuses-action
+   state
+   (assoc-in signals [:insuranceWorkbench :targetChangeStatus] "keep")))
+
+(defn bulk-set-change-action
+  [state signals]
+  (bulk-update-statuses-action
+   state
+   (assoc-in signals [:insuranceWorkbench :targetWorkflowStatus] "keep")))
 
 (def actions
-  {::bulk-update-workflow-status #'bulk-update-workflow-status-action
-   ::apply-filter                 #'apply-filter-action})
+  {::bulk-update-statuses        #'bulk-update-statuses-action
+   ::bulk-update-workflow-status #'bulk-update-workflow-status-action
+   ::bulk-mark-workflow          #'bulk-mark-workflow-action
+   ::bulk-set-change             #'bulk-set-change-action
+   ::apply-filter                #'apply-filter-action})

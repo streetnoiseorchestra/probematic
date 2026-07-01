@@ -14,8 +14,22 @@
    [:insurance.workbench/ownership] "Ownership"
    [:insurance.workbench/ownership-band] "Band"
    [:insurance.workbench/ownership-private] "Private"
+   [:insurance.workbench/selected] "selected"
+   [:insurance.workbench/mark-workflow] "Mark Workflow"
+   [:insurance.workbench/set-change] "Set Change"
+   [:insurance.workbench/deselect-all] "Deselect All"
+   [:insurance.workbench/expand-all] "Expand all"
+   [:insurance.workbench/collapse-all] "Collapse all"
+   [:instrument.coverage.status/needs-review] "Todo"
+   [:instrument.coverage.status/reviewed] "Reviewed"
+   [:instrument.coverage.status/coverage-active] "Active"
+   [:instrument.coverage.change/changed] "Modified"
+   [:instrument.coverage.change/new] "Added"
+   [:instrument.coverage.change/removed] "Removed"
+   [:instrument.coverage.change/none] "No changes"
    [:band-instrument] "Band Instrument"
    [:private-instrument] "Private Instrument"
+   [:action/apply] "Apply"
    [:action/remove] "Remove"})
 
 (defn tr
@@ -339,6 +353,178 @@
             :omits-long-labels?
             (not (or (str/includes? html "Band Instrument")
                      (str/includes? html "Private Instrument")))}))))
+
+(deftest workbench-table-selection-heading-selects-all-rows
+  (let [coverage-a (random-uuid)
+        coverage-b (random-uuid)
+        html       (html/->str
+                    (#'views/flat-table
+                     {:tr tr}
+                     {:filters {:group :member}
+                      :policy  {:insurance.policy/currency :EUR}
+                      :rows    [{:category-name       "Strings"
+                                 :coverage-id         coverage-a
+                                 :coverage-type-names ["Basic"]
+                                 :harmonia-id         "H-123"
+                                 :instrument-name     "Violin"
+                                 :missing-insurer-id? false
+                                 :missing-photo?      false
+                                 :photo-count         3
+                                 :private?            false
+                                 :workflow-status     :instrument.coverage.status/needs-review
+                                 :change-status       :instrument.coverage.change/changed
+                                 :insured-value       1000M
+                                 :cost                12.34M}
+                                {:category-name       "Strings"
+                                 :coverage-id         coverage-b
+                                 :coverage-type-names ["Basic"]
+                                 :harmonia-id         "H-124"
+                                 :instrument-name     "Cello"
+                                 :missing-insurer-id? false
+                                 :missing-photo?      false
+                                 :photo-count         1
+                                 :private?            true
+                                 :workflow-status     :instrument.coverage.status/reviewed
+                                 :change-status       :instrument.coverage.change/none
+                                 :insured-value       2000M
+                                 :cost                23.45M}]}))]
+    (is (= {:header-checkbox?               true
+            :no-selection-text?             true
+            :selects-all-row-ids?           true
+            :click-checked-deselects-all?   true
+            :click-indeterminate-selects-all? true
+            :syncs-header-checked?          true
+            :syncs-header-indeterminate?    true
+            :syncs-row-checkboxes?          true}
+           {:header-checkbox?
+            (str/includes? html "data-workbench-select-all=\"true\"")
+            :no-selection-text?
+            (not (str/includes? html ">selection</th>"))
+            :selects-all-row-ids?
+            (and (str/includes? html (str coverage-a))
+                 (str/includes? html (str coverage-b)))
+            :click-checked-deselects-all?
+            (str/includes? html "? [] : [")
+            :click-indeterminate-selects-all?
+            (not (str/includes? html "evt.target.checked ?"))
+            :syncs-header-checked?
+            (str/includes? html "el.checked = [")
+            :syncs-header-indeterminate?
+            (and (str/includes? html "el.indeterminate = [")
+                 (str/includes? html ".some(id =&gt; ($insuranceWorkbench.selectedCoverageIds || []).includes(id))")
+                 (str/includes? html "&amp;&amp; !["))
+            :syncs-row-checkboxes?
+            (str/includes? html "data-effect=\"el.checked = ($insuranceWorkbench.selectedCoverageIds || []).includes")}))))
+
+(deftest bulk-action-bar-is-stable-and-supports-workflow-and-change-updates
+  (let [html (html/->str
+              (#'views/bulk-action-bar
+               {::r/router router
+                :tr        tr}
+               {:editable? true
+                :filters   {:group :member}
+                :rows      [{}]}))]
+    (is (= {:always-visible?                      true
+            :shows-zero-selected?                 true
+            :uses-semantic-action-groups?         true
+            :uses-dropdowns?                      true
+            :omits-wa-selects?                    true
+            :has-workflow-trigger?                true
+            :has-change-trigger?                  true
+            :workflow-items-have-icons?           true
+            :workflow-items-have-colors?          true
+            :change-items-have-icons?             true
+            :change-items-have-colors?            true
+            :workflow-action-posts-only-workflow? true
+            :change-action-posts-only-change?     true
+            :posts-mark-and-set-actions?          true
+            :has-deselect-all?                    true
+            :has-expansion-actions?               true
+            :hides-expansion-actions-when-sticky? true
+            :selection-actions-disabled?          true}
+           {:always-visible?
+            (not (str/includes? html "data-show="))
+            :shows-zero-selected?
+            (and (str/includes? html ">0</span>")
+                 (str/includes? html "selected"))
+            :uses-semantic-action-groups?
+            (and (str/includes? html "<section")
+                 (str/includes? html "<p><strong")
+                 (str/includes? html "<menu><li"))
+            :uses-dropdowns?
+            (str/includes? html "<wa-dropdown")
+            :omits-wa-selects?
+            (not (str/includes? html "<wa-select"))
+            :has-workflow-trigger?
+            (and (str/includes? html "Mark Workflow")
+                 (str/includes? html "value=\"todo\"")
+                 (str/includes? html "value=\"reviewed\"")
+                 (str/includes? html "value=\"active\""))
+            :has-change-trigger?
+            (and (str/includes? html "Set Change")
+                 (str/includes? html "value=\"changed\"")
+                 (str/includes? html "value=\"new\"")
+                 (str/includes? html "value=\"removed\"")
+                 (str/includes? html "value=\"none\""))
+            :workflow-items-have-icons?
+            (and (str/includes? html "circle-question-outline")
+                 (str/includes? html "circle-dot-outline")
+                 (str/includes? html "circle-check-outline"))
+            :workflow-items-have-colors?
+            (and (str/includes? html "var(--sno-dashboard-insurance-todo-needs-review-color")
+                 (str/includes? html "var(--sno-gig-row-gray-400)")
+                 (str/includes? html "var(--wa-color-success-fill-loud)"))
+            :change-items-have-icons?
+            (and (str/includes? html "circle-exclamation")
+                 (str/includes? html "circle-plus-solid")
+                 (str/includes? html "circle-xmark-outline")
+                 (str/includes? html "minus"))
+            :change-items-have-colors?
+            (and (str/includes? html "var(--wa-color-warning-fill-loud)")
+                 (str/includes? html "var(--wa-color-success-fill-loud)")
+                 (str/includes? html "var(--wa-color-danger-fill-loud)")
+                 (str/includes? html "var(--wa-color-neutral-fill-loud)"))
+            :workflow-action-posts-only-workflow?
+            (and (str/includes? html "$insuranceWorkbench.targetWorkflowStatus = evt.detail.item.value")
+                 (str/includes? html "$insuranceWorkbench.targetChangeStatus = &apos;keep&apos;"))
+            :change-action-posts-only-change?
+            (and (str/includes? html "$insuranceWorkbench.targetChangeStatus = evt.detail.item.value")
+                 (str/includes? html "$insuranceWorkbench.targetWorkflowStatus = &apos;keep&apos;"))
+            :posts-mark-and-set-actions?
+            (and (str/includes? html "kw=bulk-mark-workflow")
+                 (str/includes? html "kw=bulk-set-change"))
+            :has-deselect-all?
+            (and (str/includes? html "Deselect All")
+                 (str/includes? html "$insuranceWorkbench.selectedCoverageIds = []"))
+            :has-expansion-actions?
+            (and (str/includes? html "Expand all")
+                 (str/includes? html "Collapse all")
+                 (str/includes? html "document.querySelectorAll(&apos;[data-workbench-coverage-row]&apos;)"))
+            :hides-expansion-actions-when-sticky?
+            (and (str/includes? html "data-class:insurance-workbench-bulk-action-bar--sticky")
+                 (str/includes? html "data-effect=")
+                 (str/includes? html "data-on:scroll__window__throttle.100ms")
+                 (str/includes? html "($insuranceWorkbench.selectedCoverageIds || []).length &gt; 0")
+                 (str/includes? html "insurance-workbench-bulk-action-bar--stuck"))
+            :selection-actions-disabled?
+            (str/includes? html "($insuranceWorkbench.selectedCoverageIds || []).length === 0")}))))
+
+(deftest bulk-action-bar-omits-expansion-actions-outside-grouped-table
+  (let [html (html/->str
+              (#'views/bulk-action-bar
+               {::r/router router
+                :tr        tr}
+               {:editable? true
+                :filters   {:group :none}}))]
+    (is (= {:omits-expand-all?   true
+            :omits-collapse-all? true
+            :omits-expansion-js? true}
+           {:omits-expand-all?
+            (not (str/includes? html "Expand all"))
+            :omits-collapse-all?
+            (not (str/includes? html "Collapse all"))
+            :omits-expansion-js?
+            (not (str/includes? html "data-workbench-coverage-row"))}))))
 
 (deftest workbench-table-right-aligns-numeric-and-harmonia-columns
   (let [coverage-id (random-uuid)
