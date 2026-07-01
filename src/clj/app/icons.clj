@@ -294,13 +294,17 @@
                   :xmark]}
    {:id          :phosphor
     :source-root "public/img/phosphor/phosphor-regular"
-    :icons       [:calendar
+    :icons       [:arrow-bend-down-right
+                  :calendar
+                  :caret-left
                   :caret-right
                   :check
                   :download
+                  :funnel
                   :hash
                   :info
                   :magnifying-glass
+                  :sliders-horizontal
                   :star
                   :trend-up
                   :warning

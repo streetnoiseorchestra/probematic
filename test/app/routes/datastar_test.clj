@@ -248,16 +248,34 @@
     (is (= (str "https://example.test/gig/" gig-id "/log-plays")
            (urls/absolute-link-gig-log-plays {:app-base-url "https://example.test"} gig-id)))))
 
-(deftest insurance-routes-expose-policy-review-coverage-detail-and-edit-datastar-pages
+(deftest insurance-routes-expose-policy-review-workbench-coverage-detail-and-edit-datastar-pages
   (let [router      (http/router ["" (insurance.routes/routes)])
         policy-id   (random-uuid)
-        coverage-id (random-uuid)]
+        coverage-id (random-uuid)
+        category-id (random-uuid)]
     (is (= :app/insurance
            (app-route-name router (urls/link-policy-review policy-id))))
     (is (= :app.insurance.routes/policy-review
            (page-name router (urls/link-policy-review policy-id))))
     (is (= (str "/insurance-policy/" policy-id "/review?filter=changed&coverage-id=" coverage-id)
            (urls/link-policy-review policy-id {:filter :changed :coverage-id coverage-id})))
+    (is (= :app/insurance
+           (app-route-name router (urls/link-policy-workbench policy-id))))
+    (assert-slashless-canonical-route router
+                                      (urls/link-policy-workbench policy-id)
+                                      (str (urls/link-policy-workbench policy-id) "/")
+                                      :app.insurance.routes/policy-workbench)
+    (is (= (str "/insurance-policy/" policy-id
+                "/workbench?view=todo&review-filter=missing-id&member-q=Anna&category-id="
+                category-id
+                "&ownership=private&group=none")
+           (urls/link-policy-workbench {:insurance.policy/policy-id policy-id}
+                                       {:view :todo
+                                        :review-filter :missing-id
+                                        :member-q "Anna"
+                                        :category-id category-id
+                                        :ownership :private
+                                        :group :none})))
     (is (= :app/instrument.coverage
            (app-route-name router (str "/insurance-coverage/" coverage-id "/"))))
     (is (= :app.insurance.routes/coverage-detail

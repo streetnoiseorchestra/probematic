@@ -2,7 +2,9 @@
   (:require
    [app.datastar :as d*]
    [app.html :as html]
+   [app.insurance.domain :as domain]
    [app.insurance.policy.dashboard.queries :as queries]
+   [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -22,27 +24,6 @@
                                     :color   "var(--sno-gig-row-gray-400)"
                                     :variant "neutral"}})
 
-(def workflow-status-data
-  {:instrument.coverage.status/needs-review    {:icon    "circle-question-outline"
-                                                :color   "var(--sno-dashboard-insurance-todo-needs-review-color, var(--wa-color-warning-fill-loud))"
-                                                :variant "warning"}
-   :instrument.coverage.status/reviewed        {:icon    "circle-dot-outline"
-                                                :color   "var(--sno-gig-row-gray-400)"
-                                                :variant "neutral"}
-   :instrument.coverage.status/coverage-active {:icon    "circle-check-outline"
-                                                :color   "var(--wa-color-success-fill-loud)"
-                                                :variant "success"}})
-
-(def change-status-data
-  {:instrument.coverage.change/changed {:color   "var(--wa-color-warning-fill-loud)"
-                                        :variant "warning"}
-   :instrument.coverage.change/new     {:color   "var(--wa-color-success-fill-loud)"
-                                        :variant "success"}
-   :instrument.coverage.change/removed {:color   "var(--wa-color-danger-fill-loud)"
-                                        :variant "danger"}
-   :instrument.coverage.change/none    {:color   "var(--wa-color-neutral-fill-loud)"
-                                        :variant "neutral"}})
-
 (defn- policy-id
   [{:keys [parameters path-params]}]
   (let [value (or (get-in parameters [:path :policy-id])
@@ -58,14 +39,6 @@
                 :variant    variant
                 :pill       true}
      (tr [status])]))
-
-(defn- change-badge
-  [tr change]
-  (let [{:keys [variant]} (change-status-data change)]
-    [:wa-badge {:appearance "outlined"
-                :variant    variant
-                :pill       true}
-     (tr [change])]))
 
 (defn- page-breadcrumb
   [{:keys [tr]} policy]
@@ -93,7 +66,7 @@
                    (tr [:insurance.dashboard/continue-reviewing])]
                   [button/Button {:appearance "outlined"
                                   :variant    "brand"
-                                  :href       "#"}
+                                  :href       (urls/link-policy-workbench policy)}
                    [ico/Icon {::ico/library :phosphor
                               ::ico/name    :table
                               :slot         "start"}]
@@ -148,16 +121,6 @@
 (defn- overview-section
   [req {:keys [policy totals]}]
   (metric-grid req {:totals totals} (:insurance.policy/currency policy)))
-
-(def review-status-bar-statuses
-  [:instrument.coverage.status/coverage-active
-   :instrument.coverage.status/reviewed
-   :instrument.coverage.status/needs-review])
-
-(def status-colors
-  {:instrument.coverage.status/coverage-active "var(--wa-color-success-fill-loud)"
-   :instrument.coverage.status/reviewed        "var(--wa-color-neutral-fill-loud)"
-   :instrument.coverage.status/needs-review    "var(--sno-dashboard-insurance-todo-needs-review-color, var(--wa-color-warning-fill-loud))"})
 
 (def coverage-mix-colors
   {:band    "var(--wa-color-success-fill-loud)"
@@ -228,7 +191,7 @@
 (defn- review-status-segment
   [{:keys [first? handled-ratio last? status status-counts total]}]
   (let [count (get status-counts status 0)
-        color (status-colors status)]
+        color (insurance-ui/status-color status)]
     [:div {:style (bar-segment-style color (width-style count total) first? last?)}
      (when first?
        [:wa-format-number {:type                    "percent"
@@ -240,7 +203,7 @@
 
 (defn- review-status-bar
   [status-counts total handled-ratio handled-label]
-  (let [statuses (filter #(pos? (get status-counts % 0)) review-status-bar-statuses)]
+  (let [statuses (filter #(pos? (get status-counts % 0)) domain/instrument-coverage-review-progress-statuses)]
     [:div {:class         "wa-cluster wa-gap-0"
            :style         "padding: var(--wa-space-2xs) 0"
            :role          "progressbar"
@@ -263,7 +226,7 @@
 
 (defn- review-status-legend-item
   [tr status-counts status]
-  (dashboard-row (legend-marker (status-colors status))
+  (dashboard-row (legend-marker (insurance-ui/status-color status))
                  (tr [status])
                  (get status-counts status 0)))
 
@@ -279,7 +242,7 @@
            (concat
             [(review-status-bar status-counts total handled-ratio handled-label)]
             (divided-rows
-             (map #(review-status-legend-item tr status-counts %) review-status-bar-statuses))
+             (map #(review-status-legend-item tr status-counts %) domain/instrument-coverage-review-progress-statuses))
             [[:div {:class "wa-caption-s wa-text-end"}
               handled-label]]))))
 
@@ -401,14 +364,14 @@
 
 (defn- change-row
   [tr {:keys [change coverage instrument-name owner-name]}]
-  (let [{:keys [color]} (change-status-data change)]
+  (let [color (insurance-ui/change-color change)]
     [:div {:class "wa-flank"}
      (legend-marker (or color "var(--wa-color-neutral-fill-loud)"))
      [:div {:class "wa-split"}
       [:div {:class "wa-stack wa-gap-3xs" :style "min-inline-size: 0;"}
        [:a {:href (urls/link-coverage coverage)} instrument-name]
        [:span {:class "wa-caption-s wa-color-text-quiet"} owner-name]]
-      (change-badge tr change)]]))
+      (insurance-ui/change-badge tr change)]]))
 
 (defn- recent-changes-section
   [{:keys [tr]} {:keys [recent-changes]}]

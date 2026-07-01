@@ -55,3 +55,7 @@
 .wrap-normal {
   overflow-wrap: normal;
 }
+
+.cursor-pointer {
+  cursor: pointer;
+}

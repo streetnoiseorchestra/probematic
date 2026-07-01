@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-06-20 08:02+0000\n"
+"POT-Creation-Date: 2026-07-01 09:14+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -930,6 +930,344 @@ msgctxt ":instrument.coverage.change/changed"
 msgid "Modified"
 msgstr "Verändert"
 
+#: :insurance.workbench/change-status
+#, ycp-format
+msgctxt ":insurance.workbench/change-status"
+msgid "Change status"
+msgstr "Änderungsstatus"
+
+#: :insurance.workbench/ownership-private
+#, ycp-format
+msgctxt ":insurance.workbench/ownership-private"
+msgid "Private"
+msgstr "Privat"
+
+#: :insurance.workbench/member-search
+#, ycp-format
+msgctxt ":insurance.workbench/member-search"
+msgid "Member"
+msgstr "Mitglied"
+
+#: :insurance.workbench/view-changed
+#, ycp-format
+msgctxt ":insurance.workbench/view-changed"
+msgid "Changed"
+msgstr "Geändert"
+
+#: :insurance.workbench/error-coverage-not-in-policy
+#, ycp-format
+msgctxt ":insurance.workbench/error-coverage-not-in-policy"
+msgid "All selected coverages must belong to this policy."
+msgstr "Alle ausgewählten Versicherungen müssen zu dieser Police gehören."
+
+#: :insurance.workbench/error-empty-selection
+#, ycp-format
+msgctxt ":insurance.workbench/error-empty-selection"
+msgid "Select at least one coverage."
+msgstr "Wähle mindestens eine Versicherung aus."
+
+#: :insurance.workbench/error-frozen-policy
+#, ycp-format
+msgctxt ":insurance.workbench/error-frozen-policy"
+msgid "This policy is not draft, so coverages cannot be changed."
+msgstr ""
+"Diese Police ist nicht im Entwurf, daher können Versicherungen nicht "
+"geändert werden."
+
+#: :insurance.workbench/member-search-placeholder
+#, ycp-format
+msgctxt ":insurance.workbench/member-search-placeholder"
+msgid "Search by member name"
+msgstr "Nach Mitgliedsname suchen"
+
+#: :insurance.workbench/view-missing-id
+#, ycp-format
+msgctxt ":insurance.workbench/view-missing-id"
+msgid "Missing Harmonia IDs"
+msgstr "Fehlende Harmonia-IDs"
+
+#: :insurance.workbench/value-between
+#, ycp-format
+msgctxt ":insurance.workbench/value-between"
+msgid "is between"
+msgstr "liegt zwischen"
+
+#: :insurance.workbench/group
+#, ycp-format
+msgctxt ":insurance.workbench/group"
+msgid "Grouping"
+msgstr "Gruppierung"
+
+#: :insurance.workbench/value-greater-than
+#, ycp-format
+msgctxt ":insurance.workbench/value-greater-than"
+msgid "is greater than"
+msgstr "ist größer als"
+
+#: :insurance.workbench/selected
+#, ycp-format
+msgctxt ":insurance.workbench/selected"
+msgid "selected"
+msgstr "ausgewählt"
+
+#: :insurance.workbench/value-operator
+#, ycp-format
+msgctxt ":insurance.workbench/value-operator"
+msgid "Value operator"
+msgstr "Wertoperator"
+
+#: :insurance.workbench/error-invalid-target-status
+#, ycp-format
+msgctxt ":insurance.workbench/error-invalid-target-status"
+msgid "Choose a valid workflow status."
+msgstr "Wähle einen gültigen Workflow-Status."
+
+#: :insurance.workbench/present
+#, ycp-format
+msgctxt ":insurance.workbench/present"
+msgid "Present"
+msgstr "Vorhanden"
+
+#: :insurance.workbench/view-all
+#, ycp-format
+msgctxt ":insurance.workbench/view-all"
+msgid "All coverages"
+msgstr "Alle Versicherungen"
+
+#: :insurance.workbench/all-coverage-types
+#, ycp-format
+msgctxt ":insurance.workbench/all-coverage-types"
+msgid "All coverage types"
+msgstr "Alle Versicherungsarten"
+
+#: :insurance.workbench/ownership-all
+#, ycp-format
+msgctxt ":insurance.workbench/ownership-all"
+msgid "All"
+msgstr "Alle"
+
+#: :insurance.workbench/columns
+#, ycp-format
+msgctxt ":insurance.workbench/columns"
+msgid "Columns"
+msgstr "Spalten"
+
+#: :insurance.workbench/group-none
+#, ycp-format
+msgctxt ":insurance.workbench/group-none"
+msgid "Flat list"
+msgstr "Flache Liste"
+
+#: :insurance.workbench/workflow-status
+#, ycp-format
+msgctxt ":insurance.workbench/workflow-status"
+msgid "Workflow status"
+msgstr "Workflow-Status"
+
+#: :insurance.workbench/value-equal-to
+#, ycp-format
+msgctxt ":insurance.workbench/value-equal-to"
+msgid "is equal to"
+msgstr "ist gleich"
+
+#: :insurance.workbench/search
+#, ycp-format
+msgctxt ":insurance.workbench/search"
+msgid "Search"
+msgstr "Suche"
+
+#: :insurance.workbench/title
+#, ycp-format
+msgctxt ":insurance.workbench/title"
+msgid "Coverage workbench"
+msgstr "Versicherungs-Workbench"
+
+#: :insurance.workbench/empty-body
+#, ycp-format
+msgctxt ":insurance.workbench/empty-body"
+msgid "Try another view or filter."
+msgstr "Wähle eine andere Ansicht oder einen anderen Filter."
+
+#: :insurance.workbench/group-member
+#, ycp-format
+msgctxt ":insurance.workbench/group-member"
+msgid "Group by member"
+msgstr "Nach Mitglied gruppieren"
+
+#: :insurance.workbench/value-min
+#, ycp-format
+msgctxt ":insurance.workbench/value-min"
+msgid "Minimum"
+msgstr "Minimum"
+
+#: :insurance.workbench/group-summary
+#, ycp-format
+msgctxt ":insurance.workbench/group-summary"
+msgid "%1 items, %2 value, %3 cost"
+msgstr "%1 Einträge, %2 Wert, %3 Kosten"
+
+#: :insurance.workbench/photos
+#, ycp-format
+msgctxt ":insurance.workbench/photos"
+msgid "Photos"
+msgstr "Fotos"
+
+#: :insurance.workbench/view-new
+#, ycp-format
+msgctxt ":insurance.workbench/view-new"
+msgid "New"
+msgstr "Neu"
+
+#: :insurance.workbench/select-row
+#, ycp-format
+msgctxt ":insurance.workbench/select-row"
+msgid "Select coverage"
+msgstr "Versicherung auswählen"
+
+#: :insurance.workbench/mark-reviewed
+#, ycp-format
+msgctxt ":insurance.workbench/mark-reviewed"
+msgid "Mark reviewed"
+msgstr "Als geprüft markieren"
+
+#: :insurance.workbench/view-todo
+#, ycp-format
+msgctxt ":insurance.workbench/view-todo"
+msgid "Todo"
+msgstr "Todo"
+
+#: :insurance.workbench/ownership
+#, ycp-format
+msgctxt ":insurance.workbench/ownership"
+msgid "Ownership"
+msgstr "Besitz"
+
+#: :insurance.workbench/wrap-cells
+#, ycp-format
+msgctxt ":insurance.workbench/wrap-cells"
+msgid "Wrap cells"
+msgstr "Zellen umbrechen"
+
+#: :insurance.workbench/mark-active
+#, ycp-format
+msgctxt ":insurance.workbench/mark-active"
+msgid "Mark active"
+msgstr "Als aktiv markieren"
+
+#: :insurance.workbench/and
+#, ycp-format
+msgctxt ":insurance.workbench/and"
+msgid "and"
+msgstr "und"
+
+#: :insurance.workbench/ownership-band
+#, ycp-format
+msgctxt ":insurance.workbench/ownership-band"
+msgid "Band"
+msgstr "Band"
+
+#: :insurance.workbench/view-private
+#, ycp-format
+msgctxt ":insurance.workbench/view-private"
+msgid "Private instruments"
+msgstr "Private Instrumente"
+
+#: :insurance.workbench/table-settings
+#, ycp-format
+msgctxt ":insurance.workbench/table-settings"
+msgid "Table settings"
+msgstr "Tabelleneinstellungen"
+
+#: :insurance.workbench/collapse-all
+#, ycp-format
+msgctxt ":insurance.workbench/collapse-all"
+msgid "Collapse all"
+msgstr "Alle zuklappen"
+
+#: :insurance.workbench/missing
+#, ycp-format
+msgctxt ":insurance.workbench/missing"
+msgid "Missing"
+msgstr "Fehlt"
+
+#: :insurance.workbench/read-only
+#, ycp-format
+msgctxt ":insurance.workbench/read-only"
+msgid "Bulk actions are read-only."
+msgstr "Sammelaktionen sind schreibgeschützt."
+
+#: :insurance.workbench/view-missing-photos
+#, ycp-format
+msgctxt ":insurance.workbench/view-missing-photos"
+msgid "Missing photos"
+msgstr "Fehlende Fotos"
+
+#: :insurance.workbench/error-not-allowed
+#, ycp-format
+msgctxt ":insurance.workbench/error-not-allowed"
+msgid "You are not allowed to update these coverages."
+msgstr "Du darfst diese Versicherungen nicht ändern."
+
+#: :insurance.workbench/empty-title
+#, ycp-format
+msgctxt ":insurance.workbench/empty-title"
+msgid "No matching coverages"
+msgstr "Keine passenden Versicherungen"
+
+#: :insurance.workbench/selection
+#, ycp-format
+msgctxt ":insurance.workbench/selection"
+msgid "Selection"
+msgstr "Auswahl"
+
+#: :insurance.workbench/expand-all
+#, ycp-format
+msgctxt ":insurance.workbench/expand-all"
+msgid "Expand all"
+msgstr "Alle aufklappen"
+
+#: :insurance.workbench/mark-todo
+#, ycp-format
+msgctxt ":insurance.workbench/mark-todo"
+msgid "Mark todo"
+msgstr "Als Todo markieren"
+
+#: :insurance.workbench/all-categories
+#, ycp-format
+msgctxt ":insurance.workbench/all-categories"
+msgid "All categories"
+msgstr "Alle Kategorien"
+
+#: :insurance.workbench/value-max
+#, ycp-format
+msgctxt ":insurance.workbench/value-max"
+msgid "Maximum"
+msgstr "Maximum"
+
+#: :insurance.workbench/error-coverage-not-found
+#, ycp-format
+msgctxt ":insurance.workbench/error-coverage-not-found"
+msgid "Coverage not found."
+msgstr "Versicherung nicht gefunden."
+
+#: :insurance.workbench/view
+#, ycp-format
+msgctxt ":insurance.workbench/view"
+msgid "View"
+msgstr "Ansicht"
+
+#: :insurance.workbench/value-less-than
+#, ycp-format
+msgctxt ":insurance.workbench/value-less-than"
+msgid "is less than"
+msgstr "ist kleiner als"
+
+#: :insurance.workbench/view-removed
+#, ycp-format
+msgctxt ":insurance.workbench/view-removed"
+msgid "Removed"
+msgstr "Entfernt"
+
 #: :password/commonly-used
 #, ycp-format
 msgctxt ":password/commonly-used"
@@ -1507,6 +1845,12 @@ msgctxt ":insurance.survey/no"
 msgid "No"
 msgstr "Nein"
 
+#: :actions
+#, ycp-format
+msgctxt ":actions"
+msgid "Actions"
+msgstr "Aktionen"
+
 #: :login
 #, ycp-format
 msgctxt ":login"
@@ -1908,6 +2252,12 @@ msgstr "SNO UUID"
 msgctxt ":member/insurance-title"
 msgid "Insurance & Instruments"
 msgstr "Versicherung & Instrumente"
+
+#: :member/member
+#, fuzzy, ycp-format
+msgctxt ":member/member"
+msgid "Member"
+msgstr "Mitglied"
 
 #: :member/sno-id-disabled
 #, ycp-format
@@ -2414,6 +2764,12 @@ msgctxt ":action/done"
 msgid "Done"
 msgstr "Fertig"
 
+#: :action/reset
+#, ycp-format
+msgctxt ":action/reset"
+msgid "Reset"
+msgstr "Zurücksetzen"
+
 #: :action/confirm-delete-section
 #, ycp-format
 msgctxt ":action/confirm-delete-section"
@@ -2599,6 +2955,12 @@ msgstr "Bist du sicher, dass du das Team %1 löschen möchtest?"
 msgctxt ":action/comment"
 msgid "Comment"
 msgstr "Kommentar"
+
+#: :action/apply
+#, ycp-format
+msgctxt ":action/apply"
+msgid "Apply"
+msgstr "Anwenden"
 
 #: :action/send
 #, ycp-format
@@ -4691,7 +5053,6 @@ msgstr "Hintergrund"
 msgctxt ":song/list-title"
 msgid "Repertoire"
 msgstr "Repertoire"
-
 
 #, ycp-format
 #~ msgctxt ":insurance.dashboard/health-check-missing"

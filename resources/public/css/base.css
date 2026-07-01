@@ -20,3 +20,7 @@ body {
   max-inline-size: var(--sno-content-max-inline-size);
   margin-inline: auto;
 }
+
+#main.full-width {
+  --sno-content-max-inline-size: infinity;
+}

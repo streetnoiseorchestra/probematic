@@ -170,15 +170,12 @@
     (approve-and-next-button req selected-coverage)))
 
 (def workbench-filter-slugs
-  {:needs-review       "todo"
-   :missing-insurer-id "missing-id"})
+  {:needs-review       :todo
+   :missing-insurer-id :missing-id})
 
 (defn- workbench-link
   [policy filter]
-  (str "/insurance-policy/"
-       (:insurance.policy/policy-id policy)
-       "/workbench?review-filter="
-       (get workbench-filter-slugs filter (name filter))))
+  (urls/link-policy-workbench policy {:review-filter (get workbench-filter-slugs filter filter)}))
 
 (defn- workbench-summary
   [{:keys [tr]} {:keys [filter policy queue-count]}]

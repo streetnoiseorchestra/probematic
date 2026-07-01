@@ -8,10 +8,6 @@
 
 (def form-key :insurance-review)
 
-(defn- tr-fn
-  [{:keys [tr]}]
-  (or tr (fn ([k] k) ([k _args] k))))
-
 (defn- target-coverage-id
   [signals]
   (try
@@ -41,9 +37,8 @@
    [:app.datastar/assoc-state [form-key :error] nil]])
 
 (defn- mark-coverage-attr-action
-  [{:keys [current-member-id db] :as state} signals attr value]
-  (let [tr          (tr-fn state)
-        coverage-id (target-coverage-id signals)
+  [{:keys [current-member-id db tr]} signals attr value]
+  (let [coverage-id (target-coverage-id signals)
         coverage    (when coverage-id
                       (q/retrieve-coverage db coverage-id))
         policy      (:insurance.policy/_covered-instruments coverage)]
@@ -99,9 +94,8 @@
   (some #(= :db/transact (first %)) effects))
 
 (defn update-insurer-id-action
-  [state signals]
-  (let [tr          (tr-fn state)
-        coverage-id (target-coverage-id signals)
+  [{:keys [tr] :as state} signals]
+  (let [coverage-id (target-coverage-id signals)
         insurer-id  (signal-insurer-id signals coverage-id)]
     (if (str/blank? insurer-id)
       [support/clear-loading

@@ -44,21 +44,61 @@
 
 (def workflow-status-data
   {:instrument.coverage.status/needs-review    {:icon    :circle-question-outline
+                                                :color   "var(--sno-dashboard-insurance-todo-needs-review-color, var(--wa-color-warning-fill-loud))"
                                                 :variant "warning"}
    :instrument.coverage.status/reviewed        {:icon    :circle-dot-outline
+                                                :color   "var(--sno-gig-row-gray-400)"
                                                 :variant "neutral"}
    :instrument.coverage.status/coverage-active {:icon    :circle-check-outline
+                                                :color   "var(--wa-color-success-fill-loud)"
                                                 :variant "success"}})
 
 (def change-status-data
   {:instrument.coverage.change/changed {:icon    :circle-exclamation
+                                        :color   "var(--wa-color-warning-fill-loud)"
                                         :variant "warning"}
    :instrument.coverage.change/new     {:icon    :circle-plus-solid
+                                        :color   "var(--wa-color-success-fill-loud)"
                                         :variant "success"}
    :instrument.coverage.change/removed {:icon    :circle-xmark-outline
+                                        :color   "var(--wa-color-danger-fill-loud)"
                                         :variant "danger"}
    :instrument.coverage.change/none    {:icon    :minus
+                                        :color   "var(--wa-color-neutral-fill-loud)"
                                         :variant "neutral"}})
+
+(defn status-color
+  [status]
+  (:color (workflow-status-data status)))
+
+(defn change-color
+  [change]
+  (:color (change-status-data change)))
+
+(defn- status-icon
+  ([status-data]
+   (status-icon status-data nil))
+  ([{:keys [color icon]} attrs]
+   [ico/Icon (cond-> (merge {::ico/library :snoico
+                             ::ico/name    icon
+                             :aria-hidden  true}
+                            attrs)
+               color (assoc :style (str "color: " color ";")))]))
+
+(defn- status-label*
+  [tr data status]
+  (when-let [status-data (data status)]
+    [:span {:class "wa-cluster wa-gap-2xs wa-align-items-center"}
+     (status-icon status-data)
+     [:span (tr [status])]]))
+
+(defn status-label
+  [tr status]
+  (status-label* tr workflow-status-data status))
+
+(defn change-label
+  [tr change]
+  (status-label* tr change-status-data change))
 
 (def history-action-data
   {:retracted {:icon "circle-xmark"       :class "insurance-history-icon--retracted"}
@@ -94,27 +134,22 @@
                :class        (ui2/cs "insurance-coverage-icon" class)
                :aria-hidden  true}]))
 
-(defn status-badge
-  [tr status]
-  (when-let [{:keys [icon variant]} (workflow-status-data status)]
+(defn- status-badge*
+  [tr data status]
+  (when-let [{:keys [variant] :as status-data} (data status)]
     [:wa-badge {:appearance "outlined"
                 :variant    variant
                 :pill       true}
-     [ico/Icon {::ico/library :snoico
-                ::ico/name    icon
-                :aria-hidden  true}]
+     (status-icon status-data {:slot "start"})
      (tr [status])]))
+
+(defn status-badge
+  [tr status]
+  (status-badge* tr workflow-status-data status))
 
 (defn change-badge
   [tr change]
-  (when-let [{:keys [icon variant]} (change-status-data change)]
-    [:wa-badge {:appearance "outlined"
-                :variant    variant
-                :pill       true}
-     [ico/Icon {::ico/library :snoico
-                ::ico/name    icon
-                :aria-hidden  true}]
-     (tr [change])]))
+  (status-badge* tr change-status-data change))
 
 (defn kind-badge
   [tr private?]

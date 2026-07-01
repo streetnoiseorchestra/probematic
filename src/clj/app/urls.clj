@@ -67,6 +67,24 @@
    (str (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/review")
         (append-qps {:filter      (some-> filter name)
                      :coverage-id coverage-id}))))
+(defn- query-value
+  [value]
+  (cond
+    (keyword? value)    (name value)
+    (sequential? value) (mapv query-value value)
+    :else               value))
+
+(defn link-policy-workbench
+  ([policy-or-policy-id]
+   (link-policy-workbench policy-or-policy-id nil))
+  ([policy-or-policy-id {:keys [view review-filter member-q category-id category-ids ownership group]}]
+   (str (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/workbench")
+        (append-qps {:view          (query-value view)
+                     :review-filter (query-value review-filter)
+                     :member-q      member-q
+                     :category-id   (query-value (or category-id category-ids))
+                     :ownership     (query-value ownership)
+                     :group         (query-value group)}))))
 (def link-policy-send-notifications (partial link-helper "/insurance-policy-notify/" :insurance.policy/policy-id))
 (def link-policy-changes (partial link-helper "/insurance-policy-changes/" :insurance.policy/policy-id))
 

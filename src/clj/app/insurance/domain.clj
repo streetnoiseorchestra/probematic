@@ -4,18 +4,75 @@
    [app.urls :as urls]
    [clojure.data :as clojure.data]
    [clojure.set :as set]
+   [clojure.string :as str]
    [com.yetanalytics.squuid :as sq]
    [medley.core :as m]
    [tick.core :as t]))
 
-(def instrument-coverage-statuses [:instrument.coverage.status/needs-review
-                                   :instrument.coverage.status/reviewed
-                                   :instrument.coverage.status/coverage-active])
+(def coverage-ownerships
+  [:all :band :private])
 
-(def instrument-coverage-changes [:instrument.coverage.change/new
-                                  :instrument.coverage.change/removed
-                                  :instrument.coverage.change/changed
-                                  :instrument.coverage.change/none])
+(def coverage-ownership-set
+  (set coverage-ownerships))
+
+(def instrument-coverage-statuses
+  [:instrument.coverage.status/needs-review
+   :instrument.coverage.status/reviewed
+   :instrument.coverage.status/coverage-active])
+
+(def instrument-coverage-status-set
+  (set instrument-coverage-statuses))
+
+(def instrument-coverage-review-progress-statuses
+  [:instrument.coverage.status/coverage-active
+   :instrument.coverage.status/reviewed
+   :instrument.coverage.status/needs-review])
+
+(def instrument-coverage-changes
+  [:instrument.coverage.change/changed
+   :instrument.coverage.change/new
+   :instrument.coverage.change/removed
+   :instrument.coverage.change/none])
+
+(def instrument-coverage-change-set
+  (set instrument-coverage-changes))
+
+(def active-instrument-coverage-changes
+  (vec (remove #{:instrument.coverage.change/none} instrument-coverage-changes)))
+
+(def bulk-workflow-target-statuses
+  {:todo     :instrument.coverage.status/needs-review
+   :reviewed :instrument.coverage.status/reviewed
+   :active   :instrument.coverage.status/coverage-active})
+
+(defn simple-keyword
+  [value]
+  (cond
+    (keyword? value) (keyword (name value))
+    (string? value)  (let [value (-> value str/trim (str/replace-first #"^:" ""))]
+                       (when-not (str/blank? value)
+                         (keyword (name (keyword value)))))
+    :else            nil))
+
+(defn qualified-coverage-status
+  [status]
+  (keyword "instrument.coverage.status" (name status)))
+
+(defn qualified-coverage-change
+  [change]
+  (keyword "instrument.coverage.change" (name change)))
+
+(def simple-instrument-coverage-statuses
+  (mapv simple-keyword instrument-coverage-statuses))
+
+(def simple-instrument-coverage-status-set
+  (set simple-instrument-coverage-statuses))
+
+(def simple-instrument-coverage-changes
+  (mapv simple-keyword instrument-coverage-changes))
+
+(def simple-instrument-coverage-change-set
+  (set simple-instrument-coverage-changes))
 
 (def policy-statuses [:insurance.policy.status/active
                       :insurance.policy.status/sent
@@ -60,7 +117,7 @@
 
 (defn update-total-coverage-price
   "Given a policy and a specific instrument coverage, calculate the total price for the instrument"
-  [policy {:instrument.coverage/keys [value instrument] :as coverage}]
+  [policy {:instrument.coverage/keys [instrument] :as coverage}]
   ;;  value * category factor * premium factor * coverage factor
   (let [category-id (-> instrument :instrument/category :instrument.category/category-id)
         _  (assert category-id)
@@ -200,7 +257,7 @@
                                                            (sort-by (fn [r] (-> r :member :member/name)))))))
 
 (defn summarize-member-reports [coverage-reports]
-  (let [result (reduce (fn [acc {:insurance.survey.report/keys [coverage report-id completed-at]}]
+  (let [result (reduce (fn [acc {:insurance.survey.report/keys [completed-at]}]
                          (if (some? completed-at)
                            (update acc :completed inc)
                            (update acc :open inc)))
@@ -273,7 +330,7 @@
   (when-let [old-value (:insurance.survey.report/completed-at report)]
     [[:db/retract (report-ref report) :insurance.survey.report/completed-at (t/inst old-value)]]))
 
-(defn txs-maybe-survey-response-complete [{:insurance.survey.report/keys [report-id]  :as report} {:insurance.survey.response/keys [response-id coverage-reports] :as response}]
+(defn txs-maybe-survey-response-complete [{:insurance.survey.report/keys [report-id]} {:insurance.survey.response/keys [coverage-reports] :as response}]
   (assert response "Response must be non-nil")
   (let [open-reports (filter (comp nil? :insurance.survey.report/completed-at) coverage-reports)
 
@@ -290,13 +347,13 @@
      (mapcat txs-uncomplete-survey-report coverage-reports))
     [[:db/add (response-ref r) :insurance.survey.response/completed-at (t/inst)]]))
 
-(defn txs-confirm-and-activate-policy-coverages [{:instrument.coverage/keys [coverage-id status change] :as coverage}]
+(defn txs-confirm-and-activate-policy-coverages [{:instrument.coverage/keys [coverage-id change] :as coverage}]
   (if (= change :instrument.coverage.change/removed)
     [[:db/retractEntity (coverage-ref coverage)]]
     [[:db/add [:instrument.coverage/coverage-id coverage-id] :instrument.coverage/status :instrument.coverage.status/coverage-active]
      [:db/add [:instrument.coverage/coverage-id coverage-id] :instrument.coverage/change :instrument.coverage.change/none]]))
 
-(defn txs-confirm-and-activate-policy [{:as policy :insurance.policy/keys [policy-id covered-instruments]}]
+(defn txs-confirm-and-activate-policy [{:insurance.policy/keys [policy-id covered-instruments]}]
   (concat
    [{:insurance.policy/policy-id policy-id
      :insurance.policy/status    :insurance.policy.status/active}]

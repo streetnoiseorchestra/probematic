@@ -4,20 +4,6 @@
    [app.queries :as q]
    [clojure.string :as str]))
 
-(def coverage-statuses
-  [:instrument.coverage.status/needs-review
-   :instrument.coverage.status/reviewed
-   :instrument.coverage.status/coverage-active])
-
-(def coverage-changes
-  [:instrument.coverage.change/changed
-   :instrument.coverage.change/new
-   :instrument.coverage.change/removed
-   :instrument.coverage.change/none])
-
-(def dashboard-change-statuses
-  (remove #{:instrument.coverage.change/none} coverage-changes))
-
 (defn- coverage-item-count
   [{:instrument.coverage/keys [item-count]}]
   (or item-count 1))
@@ -64,7 +50,7 @@
 (defn- recent-changes
   [coverages]
   (->> coverages
-       (filter (comp (set dashboard-change-statuses) :instrument.coverage/change))
+       (filter (comp (set domain/active-instrument-coverage-changes) :instrument.coverage/change))
        (sort-by (juxt owner-name instrument-name))
        (mapv recent-change-item)))
 
@@ -82,6 +68,6 @@
                       :missing-insurer-id-count (count (filter missing-insurer-id? coverages))
                       :private-count            (count (filter :instrument.coverage/private? coverages))
                       :band-count               (count (remove :instrument.coverage/private? coverages))}
-     :status-counts  (count-by coverage-statuses :instrument.coverage/status coverages)
-     :change-counts  (count-by coverage-changes :instrument.coverage/change coverages)
+     :status-counts  (count-by domain/instrument-coverage-statuses :instrument.coverage/status coverages)
+     :change-counts  (count-by domain/instrument-coverage-changes :instrument.coverage/change coverages)
      :recent-changes (recent-changes coverages)}))

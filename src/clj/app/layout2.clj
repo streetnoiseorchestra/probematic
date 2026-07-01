@@ -181,6 +181,10 @@
       import 'wa/components/select/select.js';
       import 'wa/components/dropdown/dropdown.js';
       import 'wa/components/dropdown-item/dropdown-item.js';
+      import 'wa/components/popover/popover.js';
+      import 'wa/components/checkbox/checkbox.js';
+      import 'wa/components/switch/switch.js';
+      import 'wa/components/input/input.js';
       setBasePath('/vendor/webawesome@3.8.0');
       startLoader();
       Promise.race([
@@ -278,8 +282,8 @@
            :tabindex   "-1"}]
       [:app-shell-content
        body]]
-     #_(when (config/dev-mode? (-> req :system :env))
-         [:datastar-inspector])]))
+     (when (config/dev-mode? (-> req :system :env))
+       [:datastar-inspector])]))
 
 (defn datastar-page-html
   [req opts body]

@@ -601,25 +601,26 @@
   "Returns the standard `main` attrs for Nexus-backed Datastar pages.
 
   Required: none."
-  []
-  {:id             "main"
-   :data-on:submit (->expr (when evt.target.dataset.action
-                             (evt.target.setAttribute "loading" "")
-                             (set! $loading evt.target.dataset.id)
-                             (set! $targetid evt.target.dataset.id)
-                             (@post ("`${evt.target.dataset.action}`"))))
-   :data-on:mousedown (->expr (when (and evt.target.dataset.action
-                                         (= evt.button 0)
-                                         (not (evt.target.matches "form")))
-                                (evt.target.setAttribute "loading" "")
-                                (set! $loading evt.target.dataset.id)
-                                (set! $targetid evt.target.dataset.id)
-                                (@post ("`${evt.target.dataset.action}`"))))
-   :data-on:keydown (->expr (when (and evt.target.dataset.action (= evt.key "Enter"))
-                              (evt.target.setAttribute "loading" "")
-                              (set! $loading evt.target.dataset.id)
-                              (set! $targetid evt.target.dataset.id)
-                              (@post ("`${evt.target.dataset.action}`"))))})
+  [extra]
+  (merge  {:id                "main"
+           :data-on:submit    (->expr (when evt.target.dataset.action
+                                        (evt.target.setAttribute "loading" "")
+                                        (set! $loading evt.target.dataset.id)
+                                        (set! $targetid evt.target.dataset.id)
+                                        (@post ("`${evt.target.dataset.action}`"))))
+           :data-on:mousedown (->expr (when (and evt.target.dataset.action
+                                                 (= evt.button 0)
+                                                 (not (evt.target.matches "form")))
+                                        (evt.target.setAttribute "loading" "")
+                                        (set! $loading evt.target.dataset.id)
+                                        (set! $targetid evt.target.dataset.id)
+                                        (@post ("`${evt.target.dataset.action}`"))))
+           :data-on:keydown   (->expr (when (and evt.target.dataset.action (= evt.key "Enter"))
+                                        (evt.target.setAttribute "loading" "")
+                                        (set! $loading evt.target.dataset.id)
+                                        (set! $targetid evt.target.dataset.id)
+                                        (@post ("`${evt.target.dataset.action}`"))))}
+          extra))
 
 (defn datastar-page
   "Renders `children` inside the standard Datastar `main` element.
@@ -627,7 +628,15 @@
   Optional: zero or more `children`."
   [& children]
   (html/->str
-   (into [:main (datastar-main-attrs)] children)))
+   (into [:main (datastar-main-attrs {})] children)))
+
+(defn datastar-page2
+  "Renders `children` inside the standard Datastar `main` element with extra attrs.
+
+  Optional: zero or more `children`."
+  [extra-attrs & children]
+  (html/->str
+   (into [:main (datastar-main-attrs extra-attrs)] children)))
 
 (defn plain-page
   "Renders `children` inside a plain `main` element.
