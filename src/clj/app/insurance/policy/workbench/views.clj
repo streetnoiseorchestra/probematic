@@ -235,19 +235,40 @@
                      active? (assoc :variant "brand"))
      (tr (view-label-keys view))]))
 
-(defn- view-button-row
+(defn- view-select-form
   [tr {:keys [filters policy view]}]
-  (into [:div {:class                   "wa-cluster wa-gap-xs"
-               :data-workbench-view-row "true"
-               :style                   "overflow-x: auto; padding-block-end: var(--wa-space-2xs);"}]
-        (for [view-option queries/supported-views]
-          (view-button tr policy filters view view-option))))
+  (into [:form {:method "get"
+                :action (urls/link-policy-workbench policy)}]
+        (concat (hidden-inputs [["group" (:group filters)]
+                                ["member-q" (:member-q filters)]
+                                ["category-id" (category-query-values filters)]
+                                ["coverage-type-id" (coverage-type-query-values filters)]
+                                ["ownership" (:ownership filters)]
+                                ["missing-photos" (active-boolean-query-value (:missing-photos? filters))]
+                                ["missing-harmonia-id" (active-boolean-query-value (:missing-harmonia-id? filters))]
+                                ["workflow-status" (workflow-status-query-values filters)]
+                                ["change-status" (change-status-query-values filters)]])
+                [(into [:wa-select {:name           "view"
+                                    :value          (name view)
+                                    :appearance     "outlined"
+                                    :aria-label     (tr [:insurance.workbench/view])
+                                    :data-on:change "evt.target.closest('form').requestSubmit()"}]
+                       (for [view-option queries/supported-views]
+                         [:wa-option {:value (name view-option)}
+                          (tr (view-label-keys view-option))]))])))
+
+(defn- view-button-row
+  [tr workbench]
+  [:div {:class "insurance-workbench-view-switcher"}
+   (into [:nav {:aria-label (tr [:insurance.workbench/view])}]
+         (for [view-option queries/supported-views]
+           (view-button tr (:policy workbench) (:filters workbench) (:view workbench) view-option)))
+   (view-select-form tr workbench)])
 
 (defn- search-form
   [{:keys [tr]} {:keys [filters policy view]}]
   (into [:form {:method "get"
-                :action (urls/link-policy-workbench policy)
-                :style  "flex: 1 1 24rem; min-inline-size: min(100%, 18rem);"}]
+                :action (urls/link-policy-workbench policy)}]
         (concat (hidden-inputs [["view" view]
                                 ["group" (:group filters)]
                                 ["category-id" (category-query-values filters)]
@@ -672,14 +693,13 @@
 
 (defn- workbench-toolbar
   [{:keys [tr] :as req} workbench]
-  [:div {:class "wa-stack wa-gap-s"
-         :data-workbench-toolbar "true"}
+  [:div {:class "wa-stack wa-gap-s"}
    (view-button-row tr workbench)
-   [:div {:class "wa-cluster wa-gap-s wa-align-items-center"
-          :data-workbench-search-row "true"}
+   [:div {:class                     "wa-flank:end wa-gap-2xs"}
     (search-form req workbench)
-    (filter-button tr)
-    (table-settings-button tr)]
+    [:div {:class "wa-cluster wa-gap-2xs"}
+     (filter-button tr)
+     (table-settings-button tr)]]
    (active-filters-bar req workbench)
    (filter-popover req workbench)
    (table-settings-popover req workbench)])
@@ -1078,16 +1098,6 @@
     (ui2/empty-state ((:tr req) [:insurance.workbench/empty-title])
                      ((:tr req) [:insurance.workbench/empty-body]))))
 
-(defn- page-actions
-  [{:keys [tr]} policy]
-  [[button/Button {:appearance "outlined"
-                   :href       (urls/link-policy policy)}
-    (tr [:insurance.review/back-to-dashboard])]
-   [button/Button {:appearance "filled"
-                   :variant    "brand"
-                   :href       (urls/link-policy-review policy)}
-    (tr [:insurance.review/title])]])
-
 (defn page
   [{:keys [db tr] :as req}]
   (let [workbench (queries/policy-workbench db (policy-id req) (workbench-params req))
@@ -1099,8 +1109,7 @@
                          (ui2/page-header
                           {:breadcrumb (page-breadcrumb req policy)
                            :title      (tr [:insurance.workbench/title])
-                           :subtitle   (:insurance.policy/name policy)
-                           :actions    (page-actions req policy)})
+                           :subtitle   (:insurance.policy/name policy)})
                          (workbench-toolbar req workbench)
                          (bulk-action-bar req workbench)
                          (rows-section req workbench)])))

@@ -434,6 +434,32 @@
   white-space: nowrap;
 }
 
+.insurance-workbench-view-switcher > nav {
+  display: none;
+  gap: var(--wa-space-xs);
+  overflow-x: auto;
+  padding-block-end: var(--wa-space-2xs);
+}
+
+.insurance-workbench-view-switcher > form {
+  margin: 0;
+}
+
+.insurance-workbench-view-switcher wa-select {
+  inline-size: 100%;
+}
+
+@media (--sno-viewport-s) {
+  .insurance-workbench-view-switcher > nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .insurance-workbench-view-switcher > form {
+    display: none;
+  }
+}
+
 .insurance-workbench-bulk-action-bar {
   display: flex;
   flex-wrap: wrap;

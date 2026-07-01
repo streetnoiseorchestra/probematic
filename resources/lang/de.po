@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-01 09:14+0000\n"
+"POT-Creation-Date: 2026-07-01 13:37+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -980,6 +980,12 @@ msgctxt ":insurance.workbench/member-search-placeholder"
 msgid "Search by member name"
 msgstr "Nach Mitgliedsname suchen"
 
+#: :insurance.workbench/mark-workflow
+#, ycp-format
+msgctxt ":insurance.workbench/mark-workflow"
+msgid "Mark Workflow"
+msgstr "Workflow markieren"
+
 #: :insurance.workbench/view-missing-id
 #, ycp-format
 msgctxt ":insurance.workbench/view-missing-id"
@@ -1019,8 +1025,8 @@ msgstr "Wertoperator"
 #: :insurance.workbench/error-invalid-target-status
 #, ycp-format
 msgctxt ":insurance.workbench/error-invalid-target-status"
-msgid "Choose a valid workflow status."
-msgstr "Wähle einen gültigen Workflow-Status."
+msgid "Choose a valid workflow or change status."
+msgstr "Wähle einen gültigen Workflow- oder Änderungsstatus."
 
 #: :insurance.workbench/present
 #, ycp-format
@@ -1063,6 +1069,12 @@ msgstr "Flache Liste"
 msgctxt ":insurance.workbench/workflow-status"
 msgid "Workflow status"
 msgstr "Workflow-Status"
+
+#: :insurance.workbench/deselect-all
+#, ycp-format
+msgctxt ":insurance.workbench/deselect-all"
+msgid "Deselect All"
+msgstr "Auswahl aufheben"
 
 #: :insurance.workbench/value-equal-to
 #, ycp-format
@@ -1129,6 +1141,12 @@ msgstr "Versicherung auswählen"
 msgctxt ":insurance.workbench/mark-reviewed"
 msgid "Mark reviewed"
 msgstr "Als geprüft markieren"
+
+#: :insurance.workbench/set-change
+#, ycp-format
+msgctxt ":insurance.workbench/set-change"
+msgid "Set Change"
+msgstr "Änderung setzen"
 
 #: :insurance.workbench/view-todo
 #, ycp-format

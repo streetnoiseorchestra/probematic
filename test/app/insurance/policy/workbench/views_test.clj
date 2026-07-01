@@ -12,6 +12,7 @@
 (def translations
   {[:instrument/category] "Category"
    [:insurance.workbench/ownership] "Ownership"
+   [:insurance.workbench/view] "View"
    [:insurance.workbench/ownership-band] "Band"
    [:insurance.workbench/ownership-private] "Private"
    [:insurance.workbench/selected] "selected"
@@ -200,6 +201,47 @@
                  (str/includes? html (str "value=\"" category-id "\"")))
             :preserves-member-search?
             (str/includes? html "value=\"Anna\"")}))))
+
+(deftest toolbar-renders-responsive-view-select-and-flanked-search-controls
+  (let [policy-id   (random-uuid)
+        category-id (random-uuid)
+        html        (html/->str
+                     (#'views/workbench-toolbar
+                      {::r/router router
+                       :tr        tr}
+                      {:policy               {:insurance.policy/policy-id policy-id}
+                       :view                 :todo
+                       :available-categories []
+                       :filters              {:group :member
+                                              :ownership :all
+                                              :member-q "Anna"
+                                              :category-ids #{category-id}}}))]
+    (is (= {:view-buttons-nav?           true
+            :mobile-view-select?         true
+            :view-select-has-no-label?   true
+            :view-select-preserves-state? true
+            :search-row-flanked?         true
+            :search-actions-grouped?     true}
+           {:view-buttons-nav?
+            (and (str/includes? html "insurance-workbench-view-switcher")
+                 (str/includes? html "<nav aria-label=\"View\"")
+                 (str/includes? html "data-workbench-view=\"todo\""))
+            :mobile-view-select?
+            (and (str/includes? html "<wa-select")
+                 (str/includes? html "name=\"view\"")
+                 (str/includes? html "aria-label=\"View\"")
+                 (str/includes? html "data-on:change=\"evt.target.closest(&apos;form&apos;).requestSubmit()\""))
+            :view-select-has-no-label?
+            (not (str/includes? html " label=\"View\""))
+            :view-select-preserves-state?
+            (and (str/includes? html "name=\"member-q\"")
+                 (str/includes? html "value=\"Anna\"")
+                 (str/includes? html "name=\"category-id\"")
+                 (str/includes? html (str "value=\"" category-id "\"")))
+            :search-row-flanked?
+            (str/includes? html "class=\"wa-flank:end wa-gap-2xs\"")
+            :search-actions-grouped?
+            (str/includes? html "class=\"wa-cluster wa-gap-2xs\"")}))))
 
 (deftest table-settings-group-switch-navigates-and-preserves-toolbar-state
   (let [policy-id   (random-uuid)
