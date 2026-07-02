@@ -44,11 +44,12 @@
 
 (defn gig-row [req {:gig/keys [title status location date end-date] :as gig}]
   (let [location (present-location location)]
-    [:a {:href  (urls/link-gig gig)
-         :class "gigs-row"}
+    [:div {:class "gigs-row"}
      [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-row-title"}
       (gig-status-icon status)
-      [:span {:class "gigs-row-title-text"} title]]
+      [:a {:href  (urls/link-gig gig)
+           :class "gigs-row-title-text"}
+       [:span title]]]
      [:div {:class "gigs-row-meta"}
       (when location
         [:span {:class "wa-cluster wa-gap-3xs wa-align-items-center gigs-row-meta-item gigs-row-location"}
@@ -60,7 +61,11 @@
        [ico/Icon {::ico/library :snoico
                   ::ico/name    :calendar
                   :class        "gigs-row-meta-icon"}]
-       [:span (ui2/date-range-display req :compact-with-weekday date end-date)]]]]))
+       [:span (ui2/date-range-display req :compact-with-weekday date end-date)]]]
+     [:a {:class       "wa-link-plain"
+          :href        (urls/link-gig gig)
+          :aria-hidden "true"
+          :tabindex    "-1"}]]))
 
 (defn section-heading [title]
   [:div

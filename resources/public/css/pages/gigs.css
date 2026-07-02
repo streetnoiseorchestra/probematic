@@ -564,6 +564,7 @@ dl.gigs-detail-info-list {
 }
 
 .gigs-row {
+  position: relative;
   display: block;
   padding: var(--wa-space-s) var(--wa-space-l);
   border-block-end: var(--wa-border-width-s) var(--wa-border-style)
@@ -586,15 +587,34 @@ dl.gigs-detail-info-list {
   border-start-end-radius: var(--wa-panel-border-radius);
 }
 
+.gigs-row > a[aria-hidden="true"] {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
+}
+
 .gigs-row-title {
   flex-wrap: nowrap;
   min-inline-size: var(--sno-size-none);
 }
 
 .gigs-row-title-text {
+  position: relative;
+  z-index: 2;
+  display: block;
+  flex: 1 1 auto;
+  min-inline-size: var(--sno-size-none);
   overflow: hidden;
   font-size: var(--wa-font-size-s);
   font-weight: var(--sno-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gigs-row-title-text > span {
+  display: block;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
