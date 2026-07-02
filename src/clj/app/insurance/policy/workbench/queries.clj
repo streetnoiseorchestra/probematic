@@ -29,6 +29,15 @@
 (def supported-groups
   #{:member :none})
 
+(def default-page-size
+  50)
+
+(def page-size-options
+  [20 50 100])
+
+(def max-page-size
+  (apply max page-size-options))
+
 (def review-filter->view
   {:todo       :todo
    :missing-id :missing-id})
@@ -37,6 +46,35 @@
   [params k]
   (or (get params k)
       (get params (name k))))
+
+(defn- scalar-value
+  [value]
+  (if (sequential? value)
+    (first value)
+    value))
+
+(defn- positive-integer
+  [value]
+  (try
+    (let [value (some-> value scalar-value str str/trim)
+          value (when-not (str/blank? value)
+                  (Long/parseLong value))]
+      (when (and value (pos? value))
+        value))
+    (catch Exception _
+      nil)))
+
+(defn- normalized-page-size
+  [params]
+  (let [page-size (positive-integer (parameter-value params :page-size))]
+    (if (and page-size (<= page-size max-page-size))
+      page-size
+      default-page-size)))
+
+(defn- normalized-page
+  [params]
+  (or (positive-integer (parameter-value params :page))
+      1))
 
 (defn- supported-value
   [supported default value]
@@ -139,7 +177,7 @@
                                                    :change-statuses)
    :value-filter         (normalized-value-filter params)
    :group                (supported-value supported-groups
-                                          :member
+                                          :none
                                           (parameter-value params :group))})
 
 (defn- coverage-item-count
@@ -295,6 +333,32 @@
           (filter (quick-filter-predicate filters)))
     rows)))
 
+(defn- pagination
+  [params total-results]
+  (let [page-size     (normalized-page-size params)
+        total-pages   (max 1 (long (Math/ceil (/ total-results (double page-size)))))
+        requested-page (normalized-page params)
+        page          (min requested-page total-pages)
+        offset        (* (dec page) page-size)
+        range-start   (if (pos? total-results) (inc offset) 0)
+        range-end     (min total-results (+ offset page-size))]
+    {:page          page
+     :page-size     page-size
+     :page-sizes    page-size-options
+     :total-results total-results
+     :total-pages   total-pages
+     :range-start   range-start
+     :range-end     range-end
+     :offset        offset
+     :has-prev?     (> page 1)
+     :has-next?     (< page total-pages)
+     :prev-page     (when (> page 1) (dec page))
+     :next-page     (when (< page total-pages) (inc page))}))
+
+(defn- page-rows
+  [rows {:keys [offset range-end]}]
+  (subvec (vec rows) offset range-end))
+
 (defn- group-key
   [{:keys [member-id member-label]}]
   (or member-id member-label))
@@ -375,20 +439,23 @@
 
 (defn policy-workbench
   [db policy-id params]
-  (let [policy    (q/retrieve-policy db policy-id)
-        view      (normalized-view params)
-        filters   (normalized-filters params)
-        coverages (enriched-coverages policy)
-        members   (member-lookup db coverages)
-        all-rows  (mapv #(row members %) coverages)
-        rows      (visible-rows view filters all-rows)]
+  (let [policy        (q/retrieve-policy db policy-id)
+        view          (normalized-view params)
+        filters       (normalized-filters params)
+        coverages     (enriched-coverages policy)
+        members       (member-lookup db coverages)
+        all-rows      (mapv #(row members %) coverages)
+        visible-rows  (visible-rows view filters all-rows)
+        pagination    (pagination params (count visible-rows))
+        rows          (page-rows visible-rows pagination)]
     {:policy               policy
      :view                 view
      :views                supported-views
      :filters              filters
      :available-categories (available-categories all-rows)
      :summary-counts       (summary-counts all-rows)
+     :pagination           pagination
      :rows                 rows
      :groups               (grouped-rows (:group filters) rows)
-     :totals               (totals rows)
+     :totals               (totals visible-rows)
      :editable?            (coverage.queries/policy-editable? policy)}))

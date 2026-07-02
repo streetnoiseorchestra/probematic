@@ -81,9 +81,9 @@
    (link-policy-workbench policy-or-policy-id nil))
   ([policy-or-policy-id {:keys [category-id category-ids change-status change-statuses
                                 coverage-type-id coverage-type-ids group member-q
-                                missing-harmonia-id missing-photos ownership review-filter
-                                value value-max value-min value-operator view workflow-status
-                                workflow-statuses]}]
+                                missing-harmonia-id missing-photos ownership page page-size
+                                review-filter value value-max value-min value-operator view
+                                workflow-status workflow-statuses]}]
    (str (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/workbench")
         (append-qps (array-map :view                (query-value view)
                                :review-filter       (query-value review-filter)
@@ -99,7 +99,9 @@
                                :value               value
                                :value-min           value-min
                                :value-max           value-max
-                               :group               (query-value group))))))
+                               :group               (query-value group)
+                               :page                page
+                               :page-size           page-size)))))
 (def link-policy-send-notifications (partial link-helper "/insurance-policy-notify/" :insurance.policy/policy-id))
 (def link-policy-changes (partial link-helper "/insurance-policy-changes/" :insurance.policy/policy-id))
 

@@ -175,12 +175,13 @@
   [workbench]
   (mapv :category-name (:available-categories workbench)))
 
-(deftest default-workbench-groups-and-summarizes-test
-  (testing "defaults to all coverages grouped by member with stable sorting and summaries"
+(deftest default-workbench-flat-list-and-summarizes-test
+  (testing "defaults to all coverages as a flat list with stable sorting and summaries"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-default")
           policy-id      (random-uuid)
-          {:keys [anna-id zoe-id]} (seed-workbench-policy! conn policy-id)
-          result         (workbench conn policy-id {})]
+          result         (do
+                           (seed-workbench-policy! conn policy-id)
+                           (workbench conn policy-id {}))]
       (is (= {:view                     :all
               :filters                  {:member-q nil
                                          :category-ids #{}
@@ -191,16 +192,11 @@
                                          :workflow-statuses #{}
                                          :change-statuses #{}
                                          :value-filter nil
-                                         :group :member}
+                                         :group :none}
               :editable?                true
               :available-category-names ["Brass" "Woodwind"]
               :row-names                ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
-              :groups                   [{:member-id anna-id
-                                          :member-label "Anna Alto"
-                                          :row-count 2}
-                                         {:member-id zoe-id
-                                          :member-label "Zoe Zebra"
-                                          :row-count 3}]
+              :groups                   []
               :summary-counts           {:all 5
                                          :todo 2
                                          :missing-id 2
@@ -440,6 +436,68 @@
                          :row-names (row-names result)
                          :groups (group-summary result)})})))))
 
+(deftest pagination-test
+  (testing "defaults to 50 rows per page and paginates after filtering and sorting"
+    (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-pagination")
+          policy-id      (random-uuid)]
+      (seed-workbench-policy! conn policy-id)
+      (is (= {:default {:pagination {:page 1
+                                     :page-size 50
+                                     :total-results 5
+                                     :total-pages 1
+                                     :range-start 1
+                                     :range-end 5
+                                     :has-prev? false
+                                     :has-next? false}
+                        :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
+                        :total-instruments 5}
+              :page-2  {:pagination {:page 2
+                                     :page-size 2
+                                     :total-results 5
+                                     :total-pages 3
+                                     :range-start 3
+                                     :range-end 4
+                                     :has-prev? true
+                                     :has-next? true}
+                        :row-names ["Cornet" "Drum Kit"]
+                        :total-instruments 5}
+              :clamped {:pagination {:page 3
+                                     :page-size 2
+                                     :total-results 5
+                                     :total-pages 3
+                                     :range-start 5
+                                     :range-end 5
+                                     :has-prev? true
+                                     :has-next? false}
+                        :row-names ["Euphonium"]
+                        :total-instruments 5}
+              :invalid {:pagination {:page 1
+                                     :page-size 50
+                                     :total-results 5
+                                     :total-pages 1
+                                     :range-start 1
+                                     :range-end 5
+                                     :has-prev? false
+                                     :has-next? false}
+                        :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
+                        :total-instruments 5}}
+             (letfn [(shape [result]
+                       {:pagination (select-keys (:pagination result)
+                                                 [:page
+                                                  :page-size
+                                                  :total-results
+                                                  :total-pages
+                                                  :range-start
+                                                  :range-end
+                                                  :has-prev?
+                                                  :has-next?])
+                        :row-names (row-names result)
+                        :total-instruments (get-in result [:totals :total-instruments])})]
+               {:default (shape (workbench conn policy-id {}))
+                :page-2  (shape (workbench conn policy-id {:page "2" :page-size "2"}))
+                :clamped (shape (workbench conn policy-id {:page "99" :page-size "2"}))
+                :invalid (shape (workbench conn policy-id {:page "nope" :page-size "999"}))}))))))
+
 (deftest unsupported-parameters-fall-back-safely-test
   (testing "unsupported values and invalid UUID filters do not crash page data generation"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-fallback")
@@ -455,7 +513,7 @@
                         :workflow-statuses #{}
                         :change-statuses #{}
                         :value-filter nil
-                        :group :member}
+                        :group :none}
               :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
              (let [result (workbench conn
                                      policy-id

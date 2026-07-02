@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-01 16:44+0000\n"
+"POT-Creation-Date: 2026-07-02 13:34+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -1106,6 +1106,12 @@ msgctxt ":insurance.workbench/group-member"
 msgid "Group by member"
 msgstr "Nach Mitglied gruppieren"
 
+#: :insurance.workbench/pagination-summary
+#, ycp-format
+msgctxt ":insurance.workbench/pagination-summary"
+msgid "%1–%2 of %3 results"
+msgstr "%1–%2 von %3 Ergebnissen"
+
 #: :insurance.workbench/filter-by
 #, ycp-format
 msgctxt ":insurance.workbench/filter-by"
@@ -1129,6 +1135,12 @@ msgstr "%1 Einträge, %2 Wert, %3 Kosten"
 msgctxt ":insurance.workbench/photos"
 msgid "Photos"
 msgstr "Fotos"
+
+#: :insurance.workbench/pagination
+#, ycp-format
+msgctxt ":insurance.workbench/pagination"
+msgid "Pagination"
+msgstr "Seitennavigation"
 
 #: :insurance.workbench/view-new
 #, ycp-format
@@ -1177,6 +1189,12 @@ msgstr "Als aktiv markieren"
 msgctxt ":insurance.workbench/and"
 msgid "and"
 msgstr "und"
+
+#: :insurance.workbench/rows-per-page
+#, ycp-format
+msgctxt ":insurance.workbench/rows-per-page"
+msgid "Rows per page"
+msgstr "Zeilen pro Seite"
 
 #: :insurance.workbench/ownership-band
 #, ycp-format
