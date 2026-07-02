@@ -573,6 +573,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
+  vertical-align: middle;
   background: var(--wa-color-surface-default);
 }
 
