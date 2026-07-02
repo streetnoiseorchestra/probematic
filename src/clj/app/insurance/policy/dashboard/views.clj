@@ -407,13 +407,13 @@
       (page-header req policy)
       (overview-section req dashboard)
       [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 42ch;"}
-       [:div {:class "wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
+       [:div {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
         (policy-details-section req policy)
         (review-status-section req dashboard)
         (health-checklist-section req dashboard)
         (coverage-mix-section req dashboard)
         (next-actions-section req policy)]
-       [:aside {:class "wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
+       [:aside {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
         (recent-changes-section req dashboard)]]])))
 
 (d*/refresh-all!)

@@ -1118,7 +1118,7 @@
   (let [currency     (:insurance.policy/currency policy)
         coverage-ids (mapv :coverage-id rows)]
     (ui2/table-shell
-     [:table {:class "wa-table"}
+     [:table {:class "wa-table leading-condensed"}
       (table-headings (:tr req) (:group filters) coverage-ids)
       (into [:tbody]
             (map #(coverage-row req currency (:group filters) %) rows))])))
@@ -1183,7 +1183,7 @@
   (let [currency     (:insurance.policy/currency policy)
         coverage-ids (mapv :coverage-id (mapcat :rows groups))]
     (ui2/table-shell
-     [:table {:class "wa-table"}
+     [:table {:class "wa-table leading-condensed"}
       (table-headings (:tr req) :member coverage-ids)
       (into [:tbody]
             (mapcat #(member-group-rows req currency %) groups))])))

@@ -59,3 +59,17 @@
 .cursor-pointer {
   cursor: pointer;
 }
+
+.leading-none {
+  line-height: 1;
+}
+.leading-condensed {
+  line-height: var(--wa-line-height-condensed);
+}
+.leading-normal {
+  line-height: var(--wa-line-height-normal);
+}
+
+.leading-expanded {
+  line-height: var(--wa-line-height-expanded);
+}
