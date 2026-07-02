@@ -153,9 +153,9 @@
    {:id :category :label-key [:instrument/category]}
    {:id :ownership :label-key [:band-private]}
    {:id :photos :label-key [:insurance.workbench/photos] :align :end}
-   {:id :harmonia-id :label-key [:instrument.coverage/insurer-id] :align :end}
-   {:id :workflow :label-key [:insurance.workbench/workflow-status]}
-   {:id :change :label-key [:insurance.workbench/change-status]}
+   {:id :harmonia-id :label-key [:instrument.coverage/insurer-id] :align :end :header-variants #{:nowrap}}
+   {:id :workflow :label-key [:insurance.workbench/workflow]}
+   {:id :change :label-key [:insurance.workbench/change]}
    {:id :value :label-key [:insurance/value] :align :end}
    {:id :cost :label-key [:instrument.coverage/cost] :align :end}
    {:id :coverage-types :label-key [:insurance/coverage-types]}
@@ -1120,17 +1120,27 @@
 (def action-column-class
   "insurance-workbench-row-actions-cell")
 
+(def header-variant-classes
+  {:nowrap "insurance-workbench-table-heading--nowrap"})
+
 (defn- action-column?
   [{:keys [id]}]
   (= :actions id))
 
+(defn- table-heading-class
+  [column]
+  (apply ui2/cs
+         (cond-> []
+           (action-column? column) (conj action-column-class)
+           true (into (keep header-variant-classes (:header-variants column))))))
+
 (defn- table-heading-attrs
   [column]
-  (cond-> (if (action-column? column)
-            {:class action-column-class :scope "col"}
-            {:scope "col"})
-    (column-alignment-style column)
-    (assoc :style (column-alignment-style column))))
+  (let [class (table-heading-class column)
+        style (column-alignment-style column)]
+    (cond-> {:scope "col"}
+      (seq class) (assoc :class class)
+      style (assoc :style style))))
 
 (defn- table-cell-attrs
   [column]

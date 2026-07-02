@@ -1096,19 +1096,26 @@
                                   :change-status       :instrument.coverage.change/changed
                                   :insured-value       1000M
                                   :cost                12.34M}]}))]
-    (is (= {:right-aligned-headers? true
-            :right-aligned-cells?   true
-            :photo-cell-aligned?    true
-            :harmonia-cell-aligned? true}
+    (is (= {:right-aligned-headers?       true
+            :right-aligned-cells?         true
+            :photo-cell-aligned?          true
+            :harmonia-cell-aligned?       true
+            :harmonia-header-nowrap-class? true}
            {:right-aligned-headers?
-            (every? #(str/includes? html (str "text-align: end;\">" % "</th>"))
+            (every? #(re-find (re-pattern (str "<th[^>]*style=\"[^\"]*text-align: end;[^\"]*\"[^>]*>"
+                                               %
+                                               "</th>"))
+                              html)
                     ["photos" "insurer-id" "Versicherungswert" "cost"])
             :right-aligned-cells?
             (= 4 (count (re-seq #"<td style=\"text-align: end;\"" html)))
             :photo-cell-aligned?
             (str/includes? html "<td style=\"text-align: end;\">3</td>")
             :harmonia-cell-aligned?
-            (str/includes? html "<td style=\"text-align: end;\">H-123</td>")}))))
+            (str/includes? html "<td style=\"text-align: end;\">H-123</td>")
+            :harmonia-header-nowrap-class?
+            (boolean (re-find #"<th[^>]*class=\"[^\"]*insurance-workbench-table-heading--nowrap[^\"]*\"[^>]*>insurer-id</th>"
+                              html))}))))
 
 (deftest rows-section-renders-pagination-controls-with-page-size-dropdown
   (let [policy-id   (random-uuid)

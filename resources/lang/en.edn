@@ -287,6 +287,8 @@
                                   :photos                      "Photos"
                                   :workflow-status             "Workflow status"
                                   :change-status               "Change status"
+                                  :workflow                    "Workflow"
+                                  :change                      "Change"
                                   :present                     "Present"
                                   :missing                     "Missing"
                                   :table-settings              "Table settings"

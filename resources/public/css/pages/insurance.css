@@ -564,6 +564,10 @@
   background: var(--wa-color-surface-default);
 }
 
+.insurance-workbench-table-heading--nowrap {
+  white-space: nowrap;
+}
+
 .insurance-workbench .insurance-workbench-row-actions-cell {
   position: sticky;
   inset-inline-end: 0;
