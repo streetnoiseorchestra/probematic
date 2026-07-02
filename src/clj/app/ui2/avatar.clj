@@ -69,7 +69,7 @@
                :string]
               [::avatar-template {:optional true
                                   :doc      "Discourse avatar template with an optional `{size}` placeholder."}
-               :string]
+               [:maybe :string]]
               [::image {:optional true
                         :doc      "Avatar image URL. Overrides member avatar templates."}
                :string]
