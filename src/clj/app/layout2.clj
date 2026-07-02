@@ -7,12 +7,12 @@
    [app.icons :as icon]
    [app.secret-box :as secret-box]
    [app.ui2 :as ui2]
+   [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as url]
    [app.util :as util]
-   [clojure.string :as str]
    [jsonista.core :as j]))
 
 (defn- nav-items
@@ -48,11 +48,6 @@
     (into [:nav {:class "wa-stack wa-gap-0"}]
           (map (partial nav-button req) (nav-items tr)))))
 
-(defn- avatar-src [member]
-  (when-let [tpl (:member/avatar-template member)]
-    (str "https://forum.streetnoise.at"
-         (str/replace tpl "{size}" "200"))))
-
 (def ^:private menu-icon-opts {:slot "icon"})
 
 (defn brand-link []
@@ -60,22 +55,19 @@
    (icon/logotype {:class      ""})])
 
 (defn nav-user-dropdown [req member]
-  (let [tr  (i18n/tr-from-req req)
-        src (avatar-src member)]
+  (let [tr (i18n/tr-from-req req)]
     [:wa-dropdown {:distance "4"}
      [:div {:slot "trigger"}
       [button/Button {:id         "account-dropdown-button"
                       :appearance "plain"
                       :with-caret true}
-       [:wa-avatar (cond-> {:slot  "start"
-                            :label (ui2/member-nick member)
-                            :shape "rounded"
-                            :style "--size: 2rem"}
-                     src (assoc :image src))
-        (when-not src
-          [ico/Icon {::ico/library :snoico
-                     ::ico/name    :user
-                     :slot         "icon"}])]
+       [avatar/Avatar {::avatar/member member
+                       ::avatar/image-size 200
+                       ::avatar/icon :user
+                       ::avatar/link? false
+                       :slot "start"
+                       :shape "rounded"
+                       :style "--size: 2rem"}]
        [:span (ui2/member-nick member)]]]
      [:wa-dropdown-item {:value   (url/link-member member)
                          :onclick "window.location = this.value"}

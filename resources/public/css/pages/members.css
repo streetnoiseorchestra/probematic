@@ -23,13 +23,6 @@
   font-size: var(--sno-brand-logotype-size);
 }
 
-/* Size the host before Web Awesome upgrades it to prevent avatar FOUC. */
-.member-detail-header wa-avatar {
-  --size: var(--sno-member-detail-avatar-size);
-  width: var(--size);
-  height: var(--size);
-}
-
 .members-index-toolbar {
   display: flex;
   flex-wrap: wrap;

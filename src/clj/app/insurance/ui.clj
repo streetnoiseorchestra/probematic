@@ -2,6 +2,7 @@
   (:require
    [app.insurance.coverage.queries :as coverage.queries]
    [app.ui2 :as ui2]
+   [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
@@ -316,18 +317,14 @@
 (defn author-initials
   [comment]
   (or (not-empty (get-in comment [:comment/author :member/nick]))
-      (->> (str/split (str/trim (author-name comment)) #"\\s+")
-           (keep first)
-           (take 2)
-           (apply str)
-           str/upper-case)))
+      (avatar/initials (author-name comment))))
 
 (defn comment-item
   [{:keys [tr]} comment]
   [:li {:class "wa-stack wa-gap-2xs"}
    [:div {:class "wa-flank"}
-    [:wa-avatar {:initials (author-initials comment)
-                 :label    (author-name comment)}]
+    [avatar/Avatar {::avatar/name (author-name comment)
+                    ::avatar/initials (author-initials comment)}]
     [:div {:class "wa-cluster"}
      [:strong (author-name comment)]
      [:span {:class "wa-caption-s"}

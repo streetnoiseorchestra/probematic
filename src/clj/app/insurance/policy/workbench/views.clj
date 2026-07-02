@@ -6,6 +6,7 @@
    [app.insurance.policy.workbench.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
+   [app.ui2.avatar :as avatar]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
@@ -1153,20 +1154,32 @@
               :pill       true}
    (tr [:insurance.workbench/missing])])
 
+(defn- member-name-with-avatar
+  [{:keys [member-avatar-template member-id member-label]}]
+  [:div {:class "wa-flank wa-gap-xs wa-align-items-center"
+         :style "--flank-size: 1.75rem;"}
+   [avatar/Avatar (cond-> {::avatar/name member-label
+                           ::avatar/avatar-template member-avatar-template
+                           :shape "rounded"
+                           :style "--size: 1.75rem"
+                           :loading "lazy"}
+                    member-id (assoc ::avatar/href (urls/link-member member-id)))]
+   (if member-id
+     [:a {:href (urls/link-member member-id)} member-label]
+     [:span member-label])])
+
 (defn- row-cell-content
   [{:keys [tr]} currency row column-id]
   (let [{:keys [category-name coverage-id coverage-type-names harmonia-id instrument-name
-                member-id member-label missing-insurer-id? missing-photo? photo-count
-                private? workflow-status change-status insured-value cost]} row]
+                missing-insurer-id? missing-photo? photo-count private? workflow-status
+                change-status insured-value cost]} row]
     (case column-id
       :selection
       [:wa-checkbox (merge {:aria-label (tr [:insurance.workbench/select-row])}
                            (row-selection-attrs coverage-id))]
 
       :member
-      (if member-id
-        [:a {:href (urls/link-member member-id)} member-label]
-        member-label)
+      (member-name-with-avatar row)
 
       :instrument
       [:a {:href (urls/link-coverage coverage-id)} instrument-name]
@@ -1259,9 +1272,7 @@
          [ico/Icon {::ico/library :phosphor
                     ::ico/name    :caret-right
                     :class        "insurance-workbench-member-toggle-icon"}]]
-        (if-let [member-id (:member-id group)]
-          [:a {:href (urls/link-member member-id)} (:member-label group)]
-          (:member-label group))]
+        (member-name-with-avatar group)]
        [:span {:class "wa-caption-s wa-color-text-quiet"}
         (tr [:insurance/item-count])
         ": "

@@ -2,20 +2,20 @@
   (:require
    [app.datastar :as d*]
    [app.ui2 :as ui2]
+   [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
-   [app.ui2.divider :as divider]
-   [app.ui2.icon :as ico]))
+   [app.ui2.divider :as divider]))
 
 (defn- settings-link-card [{:keys [href icon title body]}]
   [button/Button {:href       href
                   :appearance "plain"
                   :class      "band-settings-index-card-button"}
    [:div {:class "wa-flank wa-flex-nowrap wa-align-items-start"}
-    [:wa-avatar {:shape "rounded"}
-     [ico/Icon {::ico/library :snoico
-                ::ico/name    icon
-                :slot         "icon"
-                :class        "wa-color-text-link"}]]
+    [avatar/Avatar {::avatar/icon icon
+                    ::avatar/icon-library :snoico
+                    ::avatar/icon-attrs {:class "wa-color-text-link"}
+                    :shape "rounded"
+                    :style "flex: none"}]
     [:div {:class "band-settings-index-card-body"}
      [:strong {:class "wa-color-text-link"} title]
      [:p body]]]])

@@ -10,10 +10,10 @@
    [app.qrcode :as qr]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.divider :as divider]
-   [app.ui2.icon :as ico]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -22,16 +22,6 @@
   (:import
    [java.text NumberFormat]
    [java.util Locale]))
-
-(defn- member-name [{:member/keys [name nick]}]
-  (if (str/blank? nick)
-    name
-    (str name " (" nick ")")))
-
-(defn- avatar-src [member]
-  (when-let [tpl (:member/avatar-template member)]
-    (str "https://forum.streetnoise.at"
-         (str/replace tpl "{size}" "200"))))
 
 (defn- muted [value]
   (if (str/blank? (str value))
@@ -737,29 +727,26 @@
        (insurance-coverages-table req coverages)])]))
 
 (defn- profile-summary [{:keys [tr] :as req} member]
-  (let [src (avatar-src member)]
-    [:section {:class "wa-stack wa-gap-l"}
-     [:div {:class "sno-section-header"}
-      [:div {:class "sno-title-block wa-flank wa-flex-nowrap wa-align-items-center"}
-       [:wa-avatar (cond-> {:label (member-name member)
-                            :shape "rounded"}
-                     src (assoc :image src))
-        (when-not src
-          [ico/Icon {::ico/library :snoico
-                     ::ico/name    :user
-                     :slot         "icon"}])]
-       [:h1 (:member/name member)]]
-      (ui2/action-bar
-       {}
-       [[button/Button {:appearance "outlined"
-                        :href       (str "/member-vcard/" (:member/member-id member))}
-         (tr [:Contact-Download])]
-        [button/Button {:appearance  "outlined"
-                        :variant     "brand"
-                        :data-id     (:member/member-id member)
-                        :data-action (d*/act req ::actions/open-contact-edit)}
-         (tr [:action/edit])]])]
-     (profile-details req member)]))
+  [:section {:class "wa-stack wa-gap-l"}
+   [:div {:class "sno-section-header"}
+    [:div {:class "sno-title-block wa-flank wa-flex-nowrap wa-align-items-center"}
+     [avatar/Avatar {::avatar/member member
+                     ::avatar/image-size 200
+                     ::avatar/icon :user
+                     :shape "rounded"
+                     :style "--size: var(--sno-member-detail-avatar-size)"}]
+     [:h1 (:member/name member)]]
+    (ui2/action-bar
+     {}
+     [[button/Button {:appearance "outlined"
+                      :href       (str "/member-vcard/" (:member/member-id member))}
+       (tr [:Contact-Download])]
+      [button/Button {:appearance  "outlined"
+                      :variant     "brand"
+                      :data-id     (:member/member-id member)
+                      :data-action (d*/act req ::actions/open-contact-edit)}
+       (tr [:action/edit])]])]
+   (profile-details req member)])
 
 (defn- contact-form-state [{:keys [page-state] :as req} member]
   (let [form-state (get-in page-state [:member-detail :contact])]

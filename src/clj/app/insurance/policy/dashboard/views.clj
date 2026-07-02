@@ -6,6 +6,7 @@
    [app.insurance.policy.dashboard.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
+   [app.ui2.avatar :as avatar]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
@@ -77,12 +78,11 @@
   [{:keys [id tooltip icon label value library]}]
   [:wa-card {:style "flex: auto;"}
    [:div {:class "wa-flank wa-align-items-start"}
-    [:wa-avatar {:shape "rounded"}
-     [ico/Icon {::ico/library (or library :phosphor)
-                ::ico/name    icon
-                :slot         "icon"
-                :class        "wa-font-size-xl wa-color-text-quiet"
-                :aria-hidden  true}]]
+    [avatar/Avatar {::avatar/icon icon
+                    ::avatar/icon-library (or library :phosphor)
+                    ::avatar/icon-attrs {:class "wa-font-size-xl wa-color-text-quiet"
+                                         :aria-hidden true}
+                    :shape "rounded"}]
     [:div {:class "wa-stack wa-gap-2xs"}
      [:div {:class "wa-cluster wa-gap-xs"}
       [:h3 {:class "wa-caption-s"} label]

@@ -11,10 +11,6 @@ wa-button.band-settings-index-card-button {
     min-inline-size: var(--sno-size-none);
   }
 
-  wa-avatar {
-    flex: none;
-  }
-
   .band-settings-index-card-body {
     flex: 1 1 var(--sno-size-none);
     min-inline-size: var(--sno-size-none);

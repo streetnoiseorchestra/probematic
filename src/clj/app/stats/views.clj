@@ -4,10 +4,10 @@
    [app.stats.queries :as stats]
    [app.stats.state :as state]
    [app.ui2 :as ui2]
+   [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
    [app.urls :as url]
-   [clojure.string :as str]
    [jsonista.core :as j]))
 
 (defn- fmt-double [value]
@@ -24,11 +24,6 @@
   (if (some? value)
     (str value)
     html/emdash))
-
-(defn- avatar-src [member]
-  (when-let [tpl (:member/avatar-template member)]
-    (str "https://forum.streetnoise.at"
-         (str/replace tpl "{size}" "80"))))
 
 (defn- metric-cell [{:keys [id label tooltip value]}]
   (let [info-id (str id "-info")]
@@ -214,16 +209,12 @@
                       :trigger   "hover click focus"}
          tooltip])]]))
 
-(defn- member-avatar [{:member/keys [name] :as member}]
-  (let [src (avatar-src member)]
-    [:wa-avatar (cond-> {:shape "rounded"
-                         :label name
-                         :style "--size: 2rem; flex: none;"}
-                  src (assoc :image src))
-     (when-not src
-       [ico/Icon {::ico/library :snoico
-                  ::ico/name    :user
-                  :slot         "icon"}])]))
+(defn- member-avatar [member]
+  [avatar/Avatar {::avatar/member member
+                  ::avatar/icon :user
+                  ::avatar/link? false
+                  :shape "rounded"
+                  :style "--size: 2rem; flex: none;"}])
 
 (defn- member-row [{:keys [tr] :as req} {:keys [member gigs-attended probes-attended last-seen gig-rate probe-rate gig-title]}]
   [:tr

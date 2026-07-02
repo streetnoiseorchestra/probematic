@@ -1,0 +1,25 @@
+/* Match Web Awesome's avatar host dimensions before upgrade to avoid layout shift. */
+wa-avatar:not(:defined) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: var(--size, 3rem);
+  height: var(--size, 3rem);
+  color: var(--wa-color-neutral-on-normal);
+  font: inherit;
+  font-size: calc(var(--size, 3rem) * 0.4);
+  vertical-align: middle;
+  background-color: var(--wa-color-neutral-fill-normal);
+  border-radius: var(--wa-border-radius-circle);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+wa-avatar:not(:defined)[shape="square"] {
+  border-radius: 0;
+}
+
+wa-avatar:not(:defined)[shape="rounded"] {
+  border-radius: var(--wa-border-radius-m);
+}
