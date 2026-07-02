@@ -22,11 +22,12 @@
 
 (defn- song-row [{:keys [tr] :as req} {:song/keys [active? last-played-on score title total-plays]
                                        :as        song}]
-  [:a {:href  (urls/link-song song)
-       :class "songs-index-row"}
+  [:div {:class "songs-index-row"}
    [:div {:class "songs-index-row-main"}
     [:div {:class "songs-index-title-line"}
-     [:span {:class "songs-index-song-title"} title]
+     [:a {:href  (urls/link-song song)
+          :class "songs-index-song-title"}
+      [:span title]]
      (song-status-badge req active? "songs-index-status songs-index-status--mobile")]
     [:div {:class "songs-index-row-meta"}
      (song-stat {:icon  "hash"

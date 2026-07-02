@@ -43,7 +43,7 @@
 
 (defn- sort-button [req page-state field label]
   [:a {:href          "#"
-       :class         "members-index-sort-link"
+       :class         "wa-link-plain wa-font-weight-bold"
        :data-on:click (->expr
                        (evt.preventDefault)
                        (set! $members-index.sort-request-field ~field)
@@ -145,8 +145,7 @@
     [:tr
      [:td
       [:div {:class "wa-stack wa-gap-3xs"}
-       [:a {:href  (urls/link-member member)
-            :class "members-index-member-link"}
+       [:a {:href (urls/link-member member)}
         (member-name member)]
        [:div {:class "members-index-row-meta"}
         [:span {:class "members-index-row-meta__discounts"} mobile-discounts]

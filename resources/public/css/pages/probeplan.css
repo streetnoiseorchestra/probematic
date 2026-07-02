@@ -99,11 +99,6 @@
   border-block-end-style: dashed;
 }
 
-.probeplan-date-link {
-  color: var(--wa-color-text-link);
-  text-decoration: underline;
-  text-underline-offset: 0.125rem;
-}
 
 .probeplan-cell-empty {
   color: var(--wa-color-text-quiet);

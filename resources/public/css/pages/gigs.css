@@ -35,15 +35,6 @@ dl.gigs-detail-info-list {
   grid-column: 1 / -1;
 }
 
-.gigs-song-link {
-  color: var(--wa-color-text-link);
-  font-weight: var(--sno-font-weight-semibold);
-  text-decoration: none;
-}
-
-.gigs-song-link:hover {
-  text-decoration: underline;
-}
 
 .gigs-song-note {
   color: var(--wa-color-text-quiet);
@@ -88,18 +79,11 @@ dl.gigs-detail-info-list {
     align-items: center;
     min-block-size: 2.3rem;
     padding: var(--wa-space-3xs) var(--wa-space-xs);
-    color: inherit;
-    text-decoration: none;
-  }
-
-  & .gigs-probeplan-link:hover .gigs-probeplan-song-title {
-    text-decoration: underline;
   }
 
   & .gigs-probeplan-song-title {
     min-inline-size: var(--sno-size-none);
     overflow: hidden;
-    color: var(--wa-color-text-normal);
     font-size: var(--sno-gigs-probeplan-editor-font-size);
     font-weight: var(--wa-font-weight-body);
     line-height: var(--wa-line-height-normal);
@@ -249,12 +233,10 @@ dl.gigs-detail-info-list {
       display: block;
       min-inline-size: var(--sno-size-none);
       overflow: hidden;
-      color: var(--wa-color-text-normal);
       font-size: var(--sno-gigs-probeplan-editor-font-size);
       font-weight: var(--wa-font-weight-body);
       line-height: var(--wa-line-height-normal);
       text-align: start;
-      text-decoration: none;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -584,7 +566,6 @@ dl.gigs-detail-info-list {
 .gigs-row {
   display: block;
   padding: var(--wa-space-s) var(--wa-space-l);
-  text-decoration: none;
   border-block-end: var(--wa-border-width-s) var(--wa-border-style)
     var(--wa-color-surface-border);
   overflow: hidden;

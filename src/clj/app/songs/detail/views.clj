@@ -77,8 +77,7 @@
 
 (defn- gig-link [req gig]
   (when gig
-    [:a {:href  (urls/link-gig gig)
-         :class "songs-detail-link"}
+    [:a {:href (urls/link-gig gig)}
      (or (:gig/title gig)
          (ui2/format-date req :compact-with-weekday (:gig/date gig)))]))
 

@@ -31,11 +31,10 @@
 }
 
 .songs-index-row {
+  position: relative;
   display: grid;
   gap: var(--wa-space-s);
   padding: var(--wa-space-s) var(--wa-space-m);
-  color: inherit;
-  text-decoration: none;
   border-bottom: var(--wa-border-width-s) var(--wa-border-style)
     var(--wa-color-surface-border);
 }
@@ -63,9 +62,20 @@
 }
 
 .songs-index-song-title {
-  overflow: hidden;
-  color: var(--wa-color-text-link);
+  flex: 1 1 auto;
+  min-inline-size: var(--sno-size-none);
   font-weight: var(--sno-font-weight-semibold);
+}
+
+.songs-index-song-title::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.songs-index-song-title > span {
+  display: block;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -162,15 +172,6 @@
   grid-column: 1 / -1;
 }
 
-.songs-detail-link {
-  color: var(--wa-color-text-link);
-  font-weight: var(--sno-font-weight-semibold);
-  text-decoration: none;
-}
-
-.songs-detail-link:hover {
-  text-decoration: underline;
-}
 
 .songs-detail-sheet-grid {
   --min-column-size: min(100%, 28rem);
@@ -223,14 +224,8 @@
   flex: none;
   gap: var(--wa-space-3xs);
   align-items: center;
-  color: var(--wa-color-text-link);
   font-size: var(--wa-font-size-s);
   font-weight: var(--sno-font-weight-semibold);
-  text-decoration: none;
-}
-
-.songs-detail-sheet-add:hover {
-  text-decoration: underline;
 }
 
 .songs-detail-sheet-rows {
@@ -256,13 +251,7 @@
   display: inline-flex;
   gap: var(--wa-space-xs);
   align-items: center;
-  color: var(--wa-color-text-link);
   font-weight: var(--sno-font-weight-semibold);
-  text-decoration: none;
-}
-
-.songs-detail-sheet-empty-state:hover {
-  text-decoration: underline;
 }
 
 .songs-detail-sheet-row:last-child {
@@ -277,14 +266,8 @@
 .songs-detail-sheet-title {
   min-inline-size: var(--sno-size-none);
   overflow: hidden;
-  color: var(--wa-color-text-link);
   font-weight: var(--sno-font-weight-semibold);
-  text-decoration: none;
   text-overflow: ellipsis;
-}
-
-.songs-detail-sheet-title:hover {
-  text-decoration: underline;
 }
 
 .songs-detail-sheet-download,

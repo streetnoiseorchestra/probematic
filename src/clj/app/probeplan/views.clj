@@ -140,8 +140,7 @@
   [:td {:class "probeplan-cell probeplan-cell--date"}
    (let [date-label (ui2/format-date req :month-day date)]
      (if fixed?
-       [:a {:href  (urls/link-gig gig-id)
-            :class "probeplan-date-link"}
+       [:a {:href (urls/link-gig gig-id)}
         date-label]
        date-label))])
 

@@ -80,8 +80,7 @@
     footer]])
 
 (defn song-link [{:song/keys [title] :as song}]
-  [:a {:href  (urls/link-song song)
-       :class "gigs-song-link"}
+  [:a {:href (urls/link-song song)}
    title])
 
 (defn setlist-list [songs]
@@ -102,7 +101,7 @@
          [:li {:id             (str "gig-detail-probeplan-" (ui2/safe-dom-id song-id))
                :data-intensive (if intensive? "true" "false")}
           [:a {:href  (urls/link-song song)
-               :class "gigs-probeplan-link"}
+               :class "wa-link-plain gigs-probeplan-link"}
            [:span {:class "gigs-probeplan-song-title"} title]
            (when intensive?
              [ico/Icon {::ico/library :snoico

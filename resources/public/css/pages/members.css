@@ -75,27 +75,6 @@
   white-space: nowrap;
 }
 
-.members-index-sort-link {
-  color: inherit;
-  cursor: pointer;
-  font-weight: var(--sno-font-weight-semibold);
-  text-decoration: none;
-}
-
-.members-index-sort-link:hover {
-  color: var(--wa-color-text-link);
-  text-decoration: underline;
-}
-
-.members-index-member-link {
-  color: var(--wa-color-text-link);
-  font-weight: var(--sno-font-weight-semibold);
-  text-decoration: none;
-}
-
-.members-index-member-link:hover {
-  text-decoration: underline;
-}
 
 .members-index-row-meta {
   display: flex;

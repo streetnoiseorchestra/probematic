@@ -40,9 +40,10 @@
    [:strong value]])
 
 (defn poll-row [{:keys [tr] :as req} {:poll/keys [title poll-status closes-at] :as poll}]
-  [:a {:class "polls-row"
-       :href  (urls/link-poll poll)}
-   [:span {:class "polls-row-title"} title]
+  [:div {:class "polls-row"}
+   [:a {:class "polls-row-title"
+        :href  (urls/link-poll poll)}
+    [:span title]]
    (status-badge tr poll-status {:class "polls-row-status"})
    (poll-index-stat (tr [:poll/total-voters])
                     (or (:poll/voter-count poll) 0))
