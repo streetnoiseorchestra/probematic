@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-02 13:34+0000\n"
+"POT-Creation-Date: 2026-07-02 19:46+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -1135,6 +1135,12 @@ msgstr "%1 Einträge, %2 Wert, %3 Kosten"
 msgctxt ":insurance.workbench/photos"
 msgid "Photos"
 msgstr "Fotos"
+
+#: :insurance.workbench/status
+#, ycp-format
+msgctxt ":insurance.workbench/status"
+msgid "Status"
+msgstr "Status"
 
 #: :insurance.workbench/pagination
 #, ycp-format

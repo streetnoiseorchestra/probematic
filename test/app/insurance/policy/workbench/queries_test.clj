@@ -272,29 +272,28 @@
           policy-id      (random-uuid)]
       (seed-workbench-policy! conn policy-id)
       (is (= {:todo       {:preset-filters {:workflow-statuses #{:needs-review}}
-                           :column-ids     [:member
+                           :column-ids     [:status
+                                            :member
                                             :instrument
                                             :category
                                             :photos
                                             :harmonia-id
-                                            :workflow
-                                            :change
                                             :value
                                             :actions]
                            :row-names      ["Alto Horn" "Cornet"]}
               :missing-id {:preset-filters {:missing-harmonia-id? true}
-                           :column-ids     [:member
+                           :column-ids     [:status
+                                            :member
                                             :instrument
                                             :category
                                             :harmonia-id
-                                            :workflow
                                             :actions]
                            :row-names      ["Bass Clarinet" "Cornet"]}
               :changed    {:preset-filters {:change-statuses #{:changed :new :removed}}
-                           :column-ids     [:member
+                           :column-ids     [:status
+                                            :member
                                             :instrument
                                             :category
-                                            :change
                                             :value
                                             :cost
                                             :actions]

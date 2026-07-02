@@ -86,6 +86,20 @@
                             attrs)
                color (assoc :style (str "color: " color ";")))]))
 
+(defn workflow-status-icon
+  ([status]
+   (workflow-status-icon status nil))
+  ([status attrs]
+   (when-let [status-data (workflow-status-data status)]
+     (status-icon status-data attrs))))
+
+(defn change-status-icon
+  ([change]
+   (change-status-icon change nil))
+  ([change attrs]
+   (when-let [status-data (change-status-data change)]
+     (status-icon status-data attrs))))
+
 (defn- status-label*
   [tr data status]
   (when-let [status-data (data status)]

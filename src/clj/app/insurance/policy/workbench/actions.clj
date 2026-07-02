@@ -14,14 +14,13 @@
   "insuranceWorkbench.selectedCoverageIds")
 
 (def configurable-table-column-ids
-  #{:member
+  #{:status
+    :member
     :instrument
     :category
     :ownership
     :photos
     :harmonia-id
-    :workflow
-    :change
     :value
     :cost
     :coverage-types

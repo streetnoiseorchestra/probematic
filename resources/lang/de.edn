@@ -184,6 +184,7 @@
   :photos "Fotos",
   :workflow-status "Workflow-Status",
   :change-status "Änderungsstatus",
+  :status "Status",
   :present "Vorhanden",
   :missing "Fehlt",
   :table-settings "Tabelleneinstellungen",

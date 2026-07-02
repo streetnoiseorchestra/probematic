@@ -23,6 +23,7 @@
    [:insurance.workbench/selected] "selected"
    [:insurance.workbench/mark-workflow] "Mark Workflow"
    [:insurance.workbench/set-change] "Set Change"
+   [:insurance.workbench/status] "Status"
    [:insurance.workbench/deselect-all] "Deselect All"
    [:insurance.workbench/expand-all] "Expand all"
    [:insurance.workbench/collapse-all] "Collapse all"
@@ -316,7 +317,6 @@
                             :harmonia-id false}})]
     (is (= {"actions" true
             "category" true
-            "change" true
             "cost" false
             "coverage-types" true
             "harmonia-id" false
@@ -324,8 +324,8 @@
             "member" true
             "ownership" true
             "photos" true
-            "value" true
-            "workflow" true}
+            "status" true
+            "value" true}
            (get-in signals [:insuranceWorkbench :table :columns])))))
 
 (deftest search-form-typeahead-posts-member-search-and-preserves-active-category-filter
@@ -585,6 +585,60 @@
             :omits-long-labels?
             (not (or (str/includes? html "Band Instrument")
                      (str/includes? html "Private Instrument")))}))))
+
+(deftest workbench-table-collapses-workflow-and-change-into-status-icon-column
+  (let [coverage-id       (random-uuid)
+        html              (html/->str
+                           (#'views/flat-table
+                            {:tr tr}
+                            {:filters {:group :none}
+                             :policy  {:insurance.policy/currency :EUR}
+                             :rows    [{:category-name       "Strings"
+                                        :coverage-id         coverage-id
+                                        :coverage-type-names ["Basic"]
+                                        :harmonia-id         "H-123"
+                                        :instrument-name     "Violin"
+                                        :member-id           (random-uuid)
+                                        :member-label        "Anna"
+                                        :missing-insurer-id? false
+                                        :missing-photo?      false
+                                        :photo-count         3
+                                        :private?            false
+                                        :workflow-status     :instrument.coverage.status/needs-review
+                                        :change-status       :instrument.coverage.change/changed
+                                        :insured-value       1000M
+                                        :cost                12.34M}]}))
+        select-pos        (str/index-of html "data-workbench-select-all")
+        status-pos        (str/index-of html ">Status</th>")
+        member-pos        (str/index-of html ">member</th>")
+        status-cell-start (str/index-of html "class=\"insurance-workbench-status-cell\"")
+        status-cell-end   (some->> status-cell-start
+                                   (str/index-of html "</td>"))
+        status-cell-html  (when (and status-cell-start status-cell-end)
+                            (subs html status-cell-start status-cell-end))]
+    (is (= {:status-column-after-selection? true
+            :omits-separate-status-columns? true
+            :renders-workflow-icon?         true
+            :renders-change-icon?           true
+            :uses-tooltips?                 true
+            :omits-badges-in-status-cell?   true}
+           {:status-column-after-selection?
+            (and select-pos status-pos member-pos (< select-pos status-pos member-pos))
+            :omits-separate-status-columns?
+            (not (or (str/includes? html ">workflow</th>")
+                     (str/includes? html ">change</th>")))
+            :renders-workflow-icon?
+            (and (str/includes? (or status-cell-html "") "data-workbench-status-icon=\"workflow\"")
+                 (str/includes? (or status-cell-html "") "circle-question-outline"))
+            :renders-change-icon?
+            (and (str/includes? (or status-cell-html "") "data-workbench-status-icon=\"change\"")
+                 (str/includes? (or status-cell-html "") "circle-exclamation"))
+            :uses-tooltips?
+            (and (str/includes? (or status-cell-html "") "<wa-tooltip")
+                 (str/includes? (or status-cell-html "") ">Todo</wa-tooltip>")
+                 (str/includes? (or status-cell-html "") ">Modified</wa-tooltip>"))
+            :omits-badges-in-status-cell?
+            (not (str/includes? (or status-cell-html "") "<wa-badge"))}))))
 
 (deftest workbench-row-actions-render-stripe-style-sticky-button-group
   (let [coverage-id (random-uuid)
@@ -959,7 +1013,7 @@
             :footer-omits-inline-base-style?
             (not (footer-includes? "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border)"))
             :footer-puts-sums-in-value-and-cost-columns?
-            (footer-matches? #"(?s)colspan=\"8\".*6\.000,00.*36,00.*colspan=\"2\"")
+            (footer-matches? #"(?s)colspan=\"7\".*6\.000,00.*36,00.*colspan=\"2\"")
             :footer-labels-are-tooltips?
             (and (footer-includes? "title=\"Versicherungswert\"")
                  (footer-includes? "title=\"Cost\"")

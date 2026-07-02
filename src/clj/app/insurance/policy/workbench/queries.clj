@@ -7,14 +7,13 @@
    [clojure.string :as str]))
 
 (def all-column-ids
-  [:member
+  [:status
+   :member
    :instrument
    :category
    :ownership
    :photos
    :harmonia-id
-   :workflow
-   :change
    :value
    :cost
    :coverage-types
@@ -24,61 +23,58 @@
   {:all            {:filters {}
                     :columns all-column-ids}
    :todo           {:filters {:workflow-statuses #{:needs-review}}
-                    :columns [:member
+                    :columns [:status
+                              :member
                               :instrument
                               :category
                               :photos
                               :harmonia-id
-                              :workflow
-                              :change
                               :value
                               :actions]}
    :missing-id     {:filters {:missing-harmonia-id? true}
-                    :columns [:member
+                    :columns [:status
+                              :member
                               :instrument
                               :category
                               :harmonia-id
-                              :workflow
                               :actions]}
    :missing-photos {:filters {:missing-photos? true}
-                    :columns [:member
+                    :columns [:status
+                              :member
                               :instrument
                               :category
                               :photos
-                              :workflow
-                              :change
                               :actions]}
    :private        {:filters {:ownership :private}
-                    :columns [:member
+                    :columns [:status
+                              :member
                               :instrument
                               :category
                               :ownership
                               :value
                               :cost
-                              :workflow
-                              :change
                               :actions]}
    :changed        {:filters {:change-statuses #{:changed :new :removed}}
-                    :columns [:member
+                    :columns [:status
+                              :member
                               :instrument
                               :category
-                              :change
                               :value
                               :cost
                               :actions]}
    :new            {:filters {:change-statuses #{:new}}
-                    :columns [:member
+                    :columns [:status
+                              :member
                               :instrument
                               :category
-                              :change
                               :value
                               :cost
                               :actions]}
    :removed        {:filters {:change-statuses #{:removed}}
-                    :columns [:member
+                    :columns [:status
+                              :member
                               :instrument
                               :category
-                              :change
                               :value
                               :cost
                               :actions]}})

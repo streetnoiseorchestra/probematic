@@ -148,14 +148,13 @@
    :value])
 
 (def table-columns
-  [{:id :member :label-key [:col/member]}
+  [{:id :status :label-key [:insurance.workbench/status] :header-variants #{:nowrap}}
+   {:id :member :label-key [:col/member]}
    {:id :instrument :label-key [:instrument/instrument]}
    {:id :category :label-key [:instrument/category]}
    {:id :ownership :label-key [:band-private]}
    {:id :photos :label-key [:insurance.workbench/photos] :align :end}
    {:id :harmonia-id :label-key [:instrument.coverage/insurer-id] :align :end :header-variants #{:nowrap}}
-   {:id :workflow :label-key [:insurance.workbench/workflow]}
-   {:id :change :label-key [:insurance.workbench/change]}
    {:id :value :label-key [:insurance/value] :align :end}
    {:id :cost :label-key [:instrument.coverage/cost] :align :end}
    {:id :coverage-types :label-key [:insurance/coverage-types]}
@@ -1126,12 +1125,19 @@
 (def action-column-class
   "insurance-workbench-row-actions-cell")
 
+(def status-column-class
+  "insurance-workbench-status-cell")
+
 (def header-variant-classes
   {:nowrap "insurance-workbench-table-heading--nowrap"})
 
 (defn- action-column?
   [{:keys [id]}]
   (= :actions id))
+
+(defn- status-column?
+  [{:keys [id]}]
+  (= :status id))
 
 (defn- table-heading-class
   [column]
@@ -1150,9 +1156,10 @@
 
 (defn- table-cell-attrs
   [column]
-  (cond-> (if (action-column? column)
-            {:class action-column-class}
-            {})
+  (cond-> (cond
+            (action-column? column) {:class action-column-class}
+            (status-column? column) {:class status-column-class}
+            :else {})
     (column-alignment-style column)
     (assoc :style (column-alignment-style column))))
 
@@ -1323,11 +1330,46 @@
      (row-action-tooltip view-button-id view-label)
      (row-action-tooltip edit-button-id edit-label)]))
 
+(defn- coverage-status-icon-id
+  [coverage-id kind]
+  (str "insurance-workbench-status-"
+       (name kind)
+       "-"
+       (ui2/safe-dom-id coverage-id)))
+
+(defn- row-status-icon
+  [coverage-id kind label icon]
+  (when icon
+    (let [icon-id (coverage-status-icon-id coverage-id kind)]
+      [[:span {:id                         icon-id
+               :class                      "insurance-workbench-status-icon"
+               :data-workbench-status-icon (name kind)
+               :role                       "img"
+               :aria-label                 label}
+        icon]
+       [:wa-tooltip {:for           icon-id
+                     :placement     "top"
+                     :without-arrow true}
+        label]])))
+
+(defn- row-status-icons
+  [tr {:keys [change-status coverage-id workflow-status]}]
+  (into [:span {:class                         "wa-cluster wa-gap-2xs wa-align-items-center"
+                :data-workbench-status-icons "true"}]
+        (mapcat identity)
+        [(row-status-icon coverage-id
+                          :workflow
+                          (tr [workflow-status])
+                          (insurance-ui/workflow-status-icon workflow-status))
+         (row-status-icon coverage-id
+                          :change
+                          (tr [change-status])
+                          (insurance-ui/change-status-icon change-status))]))
+
 (defn- row-cell-content
   [{:keys [tr]} currency row column-id]
   (let [{:keys [category-name coverage-id coverage-type-names harmonia-id instrument-name
-                missing-insurer-id? missing-photo? photo-count private? workflow-status
-                change-status insured-value cost]} row]
+                missing-insurer-id? missing-photo? photo-count private? insured-value cost]} row]
     (case column-id
       :selection
       [:wa-checkbox (merge {:aria-label (tr [:insurance.workbench/select-row])}
@@ -1355,11 +1397,8 @@
         (missing-badge tr)
         (ui2/muted harmonia-id))
 
-      :workflow
-      (insurance-ui/status-badge tr workflow-status)
-
-      :change
-      (insurance-ui/change-badge tr change-status)
+      :status
+      (row-status-icons tr row)
 
       :value
       (ui2/money insured-value currency)
