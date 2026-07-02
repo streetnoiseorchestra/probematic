@@ -108,7 +108,7 @@
 
 (defn- timespan-controls [{:keys [tr] :as req}]
   (into
-   [:wa-button-group {:class "stats-timespan-controls"
+   [:wa-button-group {:style "justify-content: end;"
                       :label (tr [:stats/timespan-label])}]
    (for [{:keys [id label-key]} state/timespan-options]
      [button/Button (cond-> {:href       (state/timespan-url req id)
@@ -144,13 +144,14 @@
         y-axis-label (tr [:stats/num-members])
         gig-title    (tr [:stats/gig-attendance])
         probe-title  (tr [:stats/probe-attendance])]
-    [:section {:class "stats-charts-section wa-stack wa-gap-m"}
-     [:div {:class "stats-chart-data"}
+    [:section {:class "wa-stack wa-gap-m"}
+     [:div
       (chart-json "gig-histogram-data"
                   (chart-data gig-histogram gig-title x-axis-label y-axis-label "#f97316"))
       (chart-json "probe-histogram-data"
                   (chart-data probe-histogram probe-title x-axis-label y-axis-label "#22c55e"))]
-     [:div {:class "wa-grid wa-gap-l stats-chart-grid"}
+     [:div {:class "wa-grid wa-gap-l"
+            :style "--min-column-size: min(30rem, 100%);"}
       (histogram-card {:canvas-id "gig-histogram"
                        :data-id   "gig-histogram-data"
                        :title     gig-title})
@@ -217,7 +218,7 @@
   (let [src (avatar-src member)]
     [:wa-avatar (cond-> {:shape "rounded"
                          :label name
-                         :class "stats-member-avatar"}
+                         :style "--size: 2rem; flex: none;"}
                   src (assoc :image src))
      (when-not src
        [ico/Icon {::ico/library :snoico
@@ -226,9 +227,8 @@
 
 (defn- member-row [{:keys [tr] :as req} {:keys [member gigs-attended probes-attended last-seen gig-rate probe-rate gig-title]}]
   [:tr
-   [:td {:class "stats-member-cell"}
-    [:a {:href (url/link-member member)
-         :class "stats-member-link"}
+   [:td
+    [:a {:href (url/link-member member)}
      [:div {:class "wa-cluster wa-gap-xs stats-member"}
       (member-avatar member)
       [:span (:member/name member)]]]]

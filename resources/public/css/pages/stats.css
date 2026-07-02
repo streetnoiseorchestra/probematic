@@ -7,13 +7,6 @@
   line-height: var(--sno-line-height-tight);
 }
 
-.stats-timespan-controls {
-  justify-content: end;
-}
-
-.stats-chart-grid {
-  --min-column-size: min(30rem, 100%);
-}
 
 .stats-chart-card::part(body) {
   min-block-size: 24rem;
@@ -48,12 +41,6 @@
   white-space: nowrap;
 }
 
-.stats-member-table th a {
-  color: var(--wa-color-text-link);
-  text-decoration: underline;
-  text-underline-offset: 0.125rem;
-}
-
 .stats-sort-header-label {
   display: inline-flex;
   align-items: center;
@@ -65,28 +52,14 @@
     var(--wa-color-neutral-border-quiet);
 }
 
-.stats-member-cell {
+.stats-member-table tbody td:first-child {
   min-inline-size: 14rem;
-}
-
-.stats-member-link {
-  color: var(--wa-color-text-link);
-  text-decoration: none;
-}
-
-.stats-member-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.125rem;
 }
 
 .stats-member {
   flex-wrap: nowrap;
 }
 
-.stats-member-avatar {
-  flex: none;
-  --size: 2rem;
-}
 
 .stats-table-col--desktop {
   display: none;
