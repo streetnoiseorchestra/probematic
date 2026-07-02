@@ -764,8 +764,6 @@
                 :style         "--max-width: 24rem;"}
    [:div {:class "wa-stack wa-gap-s"}
     [:strong (tr [:insurance.workbench/table-settings])]
-    [:wa-switch {:data-on:change "$insuranceWorkbench.table.wrapCells = evt.target.checked"}
-     (tr [:insurance.workbench/wrap-cells])]
     [:wa-switch (cond-> {:data-on:change (group-switch-js policy filters view)}
                   (= :member (:group filters)) (assoc :checked true))
      (tr [:insurance.workbench/group-member])]
@@ -829,8 +827,7 @@
                                                       :workflowStatuses  (signal-array-values (workflow-status-query-values filters))
                                                       :changeStatuses    (signal-array-values (change-status-query-values filters))}
                                                      (value-filter-signal-values filters))
-                        :table                {:wrapCells     false
-                                               :groupByMember (= :member (:group filters))
+                        :table                {:groupByMember (= :member (:group filters))
                                                :columns       (into {}
                                                                     (map (fn [{:keys [id]}]
                                                                            [(name id) true])

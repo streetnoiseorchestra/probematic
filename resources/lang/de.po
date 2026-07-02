@@ -1166,12 +1166,6 @@ msgctxt ":insurance.workbench/ownership"
 msgid "Ownership"
 msgstr "Besitz"
 
-#: :insurance.workbench/wrap-cells
-#, ycp-format
-msgctxt ":insurance.workbench/wrap-cells"
-msgid "Wrap cells"
-msgstr "Zellen umbrechen"
-
 #: :insurance.workbench/mark-active
 #, ycp-format
 msgctxt ":insurance.workbench/mark-active"

@@ -290,7 +290,6 @@
                                   :present                     "Present"
                                   :missing                     "Missing"
                                   :table-settings              "Table settings"
-                                  :wrap-cells                  "Wrap cells"
                                   :columns                     "Columns"
                                   :filter-by                   "Filter by: %1"
                                   :value-operator              "Value operator"

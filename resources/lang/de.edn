@@ -187,7 +187,6 @@
   :present "Vorhanden",
   :missing "Fehlt",
   :table-settings "Tabelleneinstellungen",
-  :wrap-cells "Zellen umbrechen",
   :columns "Spalten",
   :filter-by "Filtern nach: %1",
   :value-operator "Wertoperator",
