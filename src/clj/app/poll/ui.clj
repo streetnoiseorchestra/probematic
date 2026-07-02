@@ -94,6 +94,7 @@
       (html/raw (j/write-value-as-string (chart-data poll)))]
      [:div {:class "poll-chart-container"}
       [:canvas {:class             "poll-chart"
+                :data-ignore-morph true
                 :data-poll-values  (str "#" data-id)
                 :aria-hidden       "true"}]]]))
 
@@ -131,3 +132,5 @@
   (merge {:data-id     id
           :data-action (d*/act req action)}
          (loading-attrs id)))
+
+(d*/refresh-all!)

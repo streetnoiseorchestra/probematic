@@ -1,5 +1,6 @@
 (ns app.stats.views
   (:require
+   [app.datastar :as d*]
    [app.html :as html]
    [app.stats.queries :as stats]
    [app.stats.state :as state]
@@ -131,6 +132,7 @@
    [:div {:class "stats-chart-container"
           :data-init "if (window.SnoStatsCharts) window.SnoStatsCharts.renderAll(el)"}
     [:canvas {:class       "histogram-chart"
+              :data-ignore-morph true
               :data-values (str "#" data-id)
               :id          canvas-id}]]])
 
@@ -280,3 +282,5 @@
       (charts-section tr stats)
       (methodology req)
       (member-table req (:per-member-stats stats))])))
+
+(d*/refresh-all!)
