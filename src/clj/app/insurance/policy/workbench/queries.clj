@@ -97,7 +97,7 @@
   #{:member :none})
 
 (def default-page-size
-  50)
+  20)
 
 (def page-size-options
   [20 50 100])

@@ -477,12 +477,12 @@
                          :groups (group-summary result)})})))))
 
 (deftest pagination-test
-  (testing "defaults to 50 rows per page and paginates after filtering and sorting"
+  (testing "defaults to 20 rows per page and paginates after filtering and sorting"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-pagination")
           policy-id      (random-uuid)]
       (seed-workbench-policy! conn policy-id)
       (is (= {:default {:pagination {:page 1
-                                     :page-size 50
+                                     :page-size 20
                                      :total-results 5
                                      :total-pages 1
                                      :range-start 1
@@ -512,7 +512,7 @@
                         :row-names ["Euphonium"]
                         :total-instruments 5}
               :invalid {:pagination {:page 1
-                                     :page-size 50
+                                     :page-size 20
                                      :total-results 5
                                      :total-pages 1
                                      :range-start 1
