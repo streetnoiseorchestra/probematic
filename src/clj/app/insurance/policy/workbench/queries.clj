@@ -21,7 +21,15 @@
 
 (def workbench-view-presets
   {:all            {:filters {}
-                    :columns all-column-ids}
+                    :columns [:status
+                              :member
+                              :instrument
+                              :category
+                              :ownership
+                              :value
+                              :cost
+                              :coverage-types
+                              :actions]}
    :todo           {:filters {:workflow-statuses #{:needs-review}}
                     :columns [:status
                               :member

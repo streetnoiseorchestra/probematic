@@ -163,7 +163,7 @@
                                   :item-count                  "Count"
                                   :item-count-hint             "Wieviele identische Produkte möchtest du versichern (z.B. 1x Trompete/ 4x Drumsticks…)?"
                                   :value                       "Versicherungswert"
-                                  :value-abbrev                "V.S."
+                                  :value-abbrev                "Vers.-Wert"
                                   :value-hint                  "Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben"
                                   :total                       "Total"
                                   :no-photos                   "No photos have been uploaded yet."

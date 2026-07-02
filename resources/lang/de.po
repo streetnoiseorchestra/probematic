@@ -239,8 +239,8 @@ msgstr "Insurance TODOs"
 #: :insurance/value-abbrev
 #, ycp-format
 msgctxt ":insurance/value-abbrev"
-msgid "V.S."
-msgstr "V.S."
+msgid "Vers.-Wert"
+msgstr "Vers.-Wert"
 
 #: :insurance/total
 #, ycp-format

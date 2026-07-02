@@ -155,7 +155,7 @@
    {:id :ownership :label-key [:band-private]}
    {:id :photos :label-key [:insurance.workbench/photos] :align :end}
    {:id :harmonia-id :label-key [:instrument.coverage/insurer-id] :align :end :header-variants #{:nowrap}}
-   {:id :value :label-key [:insurance/value] :align :end}
+   {:id :value :label-key [:insurance/value-abbrev] :align :end}
    {:id :cost :label-key [:instrument.coverage/cost] :align :end}
    {:id :coverage-types :label-key [:insurance/coverage-types]}
    {:id :actions :label-key [:actions] :align :end}])

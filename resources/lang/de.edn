@@ -53,7 +53,7 @@
   :effective-at "Gültig bei",
   :title "Versicherung & Instrumente",
   :dashboard-title "Insurance TODOs",
-  :value-abbrev "V.S.",
+  :value-abbrev "Vers.-Wert"
   :total "Gesamt",
   :no-photos "Es wurden noch keine Fotos hochgeladen.",
   :create-title "Neue Versicherungspolice",
