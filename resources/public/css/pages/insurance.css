@@ -535,6 +535,15 @@
   }
 }
 
+.insurance-workbench-member-toggle-icon {
+  transition: transform var(--wa-transition-normal) var(--wa-transition-easing);
+  transform-origin: center;
+}
+
+.insurance-workbench-member-toggle[data-collapsed="false"] .insurance-workbench-member-toggle-icon {
+  transform: rotate(90deg);
+}
+
 .insurance-workbench table.wa-table thead th[scope="col"] {
   position: sticky;
   top: 0;

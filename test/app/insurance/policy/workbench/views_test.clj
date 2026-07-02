@@ -12,6 +12,9 @@
 (def translations
   {[:instrument/category] "Category"
    [:insurance/value] "Versicherungswert"
+   [:insurance/cost] "Cost"
+   [:insurance/item-count] "Count"
+   [:insurance/total] "Total"
    [:insurance.workbench/filter-by] "Filter by: %1"
    [:insurance.workbench/ownership] "Ownership"
    [:insurance.workbench/view] "View"
@@ -556,6 +559,94 @@
             :syncs-row-checkboxes?
             (str/includes? html "data-effect=\"el.checked = ($insuranceWorkbench.selectedCoverageIds || []).includes")}))))
 
+(deftest grouped-table-renders-member-sums-in-footer
+  (let [member-id  (random-uuid)
+        coverage-a (random-uuid)
+        coverage-b (random-uuid)
+        group      {:member-id           member-id
+                    :member-label        "Anna"
+                    :row-count           2
+                    :total-insured-value 6000M
+                    :total-cost          36M
+                    :rows                [{:category-name       "Strings"
+                                           :coverage-id         coverage-a
+                                           :coverage-type-names ["Basic"]
+                                           :harmonia-id         "H-123"
+                                           :instrument-name     "Violin"
+                                           :missing-insurer-id? false
+                                           :missing-photo?      false
+                                           :photo-count         3
+                                           :private?            false
+                                           :workflow-status     :instrument.coverage.status/needs-review
+                                           :change-status       :instrument.coverage.change/changed
+                                           :insured-value       1000M
+                                           :cost                12M}
+                                          {:category-name       "Strings"
+                                           :coverage-id         coverage-b
+                                           :coverage-type-names ["Basic"]
+                                           :harmonia-id         "H-124"
+                                           :instrument-name     "Cello"
+                                           :missing-insurer-id? false
+                                           :missing-photo?      false
+                                           :photo-count         1
+                                           :private?            true
+                                           :workflow-status     :instrument.coverage.status/reviewed
+                                           :change-status       :instrument.coverage.change/none
+                                           :insured-value       5000M
+                                           :cost                24M}]}
+        html       (html/->str
+                    (#'views/grouped-table
+                     {:tr tr}
+                     {:policy {:insurance.policy/currency :EUR}
+                      :groups [group]}))
+        footer-start     (str/index-of html "data-workbench-member-footer=")
+        footer-html      (when footer-start
+                           (subs html
+                                 footer-start
+                                 (min (count html) (+ footer-start 2000))))
+        footer-includes? (fn [needle]
+                           (boolean (and footer-html
+                                         (str/includes? footer-html needle))))
+        footer-matches?  (fn [pattern]
+                           (boolean (and footer-html
+                                         (re-find pattern footer-html))))]
+    (is (= {:heading-keeps-item-count? true
+            :heading-renders-caret-toggle? true
+            :heading-links-member-name? true
+            :renders-footer?           true
+            :footer-collapses?         true
+            :footer-has-border?        true
+            :footer-puts-sums-in-value-and-cost-columns? true
+            :footer-labels-are-tooltips? true
+            :footer-shows-value-sum?   true
+            :footer-shows-cost-sum?    true}
+           {:heading-keeps-item-count?
+            (str/includes? html "Count: <span class=\"wa-font-weight-bold\">2</span>")
+            :heading-renders-caret-toggle?
+            (and (str/includes? html "insurance-workbench-member-toggle")
+                 (str/includes? html "data-collapsed=\"false\"")
+                 (str/includes? html "caret-right")
+                 (str/includes? html "insurance-workbench-member-toggle-icon"))
+            :heading-links-member-name?
+            (str/includes? html (str "<a href=\"/member/" member-id "\">Anna</a>"))
+            :renders-footer?
+            (some? footer-start)
+            :footer-collapses?
+            (footer-includes? "data-workbench-group=")
+            :footer-has-border?
+            (footer-includes? "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border)")
+            :footer-puts-sums-in-value-and-cost-columns?
+            (footer-matches? #"(?s)colspan=\"8\".*6\.000,00.*36,00.*colspan=\"2\"")
+            :footer-labels-are-tooltips?
+            (and (footer-includes? "title=\"Versicherungswert\"")
+                 (footer-includes? "title=\"Cost\"")
+                 (not (footer-includes? ">Versicherungswert<"))
+                 (not (footer-includes? ">Cost<")))
+            :footer-shows-value-sum?
+            (footer-includes? "6.000,00")
+            :footer-shows-cost-sum?
+            (footer-includes? "36,00")}))))
+
 (deftest bulk-action-bar-is-stable-and-supports-workflow-and-change-updates
   (let [html (html/->str
               (#'views/bulk-action-bar
@@ -639,7 +730,7 @@
             :has-expansion-actions?
             (and (str/includes? html "Expand all")
                  (str/includes? html "Collapse all")
-                 (str/includes? html "document.querySelectorAll(&apos;[data-workbench-coverage-row]&apos;)"))
+                 (str/includes? html "document.querySelectorAll(&apos;[data-workbench-group]&apos;)"))
             :hides-expansion-actions-when-sticky?
             (and (str/includes? html "data-class:insurance-workbench-bulk-action-bar--sticky")
                  (str/includes? html "data-effect=")
@@ -664,7 +755,7 @@
             :omits-collapse-all?
             (not (str/includes? html "Collapse all"))
             :omits-expansion-js?
-            (not (str/includes? html "data-workbench-coverage-row"))}))))
+            (not (str/includes? html "data-workbench-group"))}))))
 
 (deftest workbench-table-right-aligns-numeric-and-harmonia-columns
   (let [coverage-id (random-uuid)

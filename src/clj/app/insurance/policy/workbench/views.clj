@@ -971,14 +971,17 @@
                   :data-attr:disabled (bulk-selection-disabled-js)}
    (tr [:insurance.workbench/deselect-all])])
 
+(def workbench-group-row-selector
+  "[data-workbench-group]")
+
 (def expand-all-groups-js
-  (str "document.querySelectorAll('[data-workbench-coverage-row]')"
+  (str "document.querySelectorAll('" workbench-group-row-selector "')"
        ".forEach(row => row.hidden = false); "
        "document.querySelectorAll('[data-workbench-toggle]')"
        ".forEach(el => el.dataset.collapsed = 'false');"))
 
 (def collapse-all-groups-js
-  (str "document.querySelectorAll('[data-workbench-coverage-row]')"
+  (str "document.querySelectorAll('" workbench-group-row-selector "')"
        ".forEach(row => row.hidden = true); "
        "document.querySelectorAll('[data-workbench-toggle]')"
        ".forEach(el => el.dataset.collapsed = 'true');"))
@@ -1141,7 +1144,7 @@
        ".forEach(row => row.hidden = !collapsed);"))
 
 (defn- member-heading-row
-  [{:keys [tr]} currency group]
+  [{:keys [tr]} group]
   (let [group-id (member-group-id group)]
     [:tr {:data-workbench-member-heading group-id}
      [:th {:scope   "rowgroup"
@@ -1150,33 +1153,91 @@
                          "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
                          "padding-block: var(--wa-space-xs);")}
       [:div {:class "wa-split wa-gap-s wa-align-items-center"}
-       [:div {:class "wa-cluster wa-gap-xs"}
+       [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
         [button/Button {:appearance            "plain"
                         :size                  "s"
+                        :class                 "insurance-workbench-member-toggle"
+                        :aria-label            (:member-label group)
                         :data-workbench-toggle group-id
                         :data-collapsed        "false"
                         :data-on:click         (group-toggle-js group-id)}
-         (:member-label group)]
-        [:wa-badge {:appearance "outlined" :variant "neutral" :pill true}
-         (:row-count group)]]
+         [ico/Icon {::ico/library :phosphor
+                    ::ico/name    :caret-right
+                    :class        "insurance-workbench-member-toggle-icon"}]]
+        (if-let [member-id (:member-id group)]
+          [:a {:href (urls/link-member member-id)} (:member-label group)]
+          (:member-label group))]
        [:span {:class "wa-caption-s wa-color-text-quiet"}
-        (tr [:insurance.workbench/group-summary]
-            [(:row-count group)
-             (ui2/money (:total-insured-value group) currency)
-             (ui2/money (:total-cost group) currency)])]]]]))
+        (tr [:insurance/item-count])
+        ": "
+        [:span {:class "wa-font-weight-bold"}
+         (:row-count group)]]]]]))
+
+(def ^:private member-footer-cell-base-style
+  (str "background: var(--wa-color-neutral-fill-quiet); "
+       "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
+       "border-block-end: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
+       "padding-block: var(--wa-space-xs);"))
+
+(defn- member-footer-cell-style
+  [position & styles]
+  (str member-footer-cell-base-style
+       (case position
+         :start (str " border-inline-start: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
+                     "border-start-start-radius: var(--wa-border-radius-m); "
+                     "border-end-start-radius: var(--wa-border-radius-m);")
+         :end (str " border-inline-end: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
+                   "border-start-end-radius: var(--wa-border-radius-m); "
+                   "border-end-end-radius: var(--wa-border-radius-m);")
+         nil)
+       (apply str styles)))
+
+(defn- member-footer-row
+  [{:keys [tr]} currency group]
+  (let [group-id (member-group-id group)]
+    [:tr {:data-workbench-member-footer group-id
+          :data-workbench-group         group-id}
+     [:td {:colspan 8
+           :style   (member-footer-cell-style
+                     :start
+                     " text-align: end; "
+                     "padding-inline: var(--wa-space-s);")}
+      [:strong {:class "wa-caption-s wa-color-text-quiet"}
+       (tr [:insurance/total])]]
+     [:td {:title      (tr [:insurance/value])
+           :aria-label (tr [:insurance/value])
+           :style      (member-footer-cell-style
+                        nil
+                        " text-align: end; "
+                        "font-weight: var(--wa-font-weight-bold); "
+                        "padding-inline: var(--wa-space-s);")}
+      (ui2/money (:total-insured-value group) currency)]
+     [:td {:title      (tr [:insurance/cost])
+           :aria-label (tr [:insurance/cost])
+           :style      (member-footer-cell-style
+                        nil
+                        " text-align: end; "
+                        "font-weight: var(--wa-font-weight-bold); "
+                        "padding-inline: var(--wa-space-s);")}
+      (ui2/money (:total-cost group) currency)]
+     [:td {:colspan 2
+           :style   (member-footer-cell-style
+                     :end
+                     " padding-inline: var(--wa-space-s);")}]]))
 
 (defn- member-group-rows
   [req currency group]
   (let [group-id (member-group-id group)]
     (concat
-     [(member-heading-row req currency group)]
+     [(member-heading-row req group)]
      (map #(coverage-row req
                          currency
                          :member
                          %
                          {:data-workbench-group        group-id
                           :data-workbench-coverage-row "true"})
-          (:rows group)))))
+          (:rows group))
+     [(member-footer-row req currency group)])))
 
 (defn- grouped-table
   [req {:keys [groups policy]}]
