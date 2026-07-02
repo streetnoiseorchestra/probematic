@@ -1426,24 +1426,20 @@
         [:span {:class "wa-font-weight-bold"}
          (:row-count group)]]]]]))
 
-(def ^:private member-footer-cell-base-style
-  (str "background: var(--wa-color-neutral-fill-quiet); "
-       "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
-       "border-block-end: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
-       "padding-block: var(--wa-space-xs);"))
-
-(defn- member-footer-cell-style
-  [position & styles]
-  (str member-footer-cell-base-style
-       (case position
-         :start (str " border-inline-start: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
-                     "border-start-start-radius: var(--wa-border-radius-m); "
-                     "border-end-start-radius: var(--wa-border-radius-m);")
-         :end (str " border-inline-end: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
-                   "border-start-end-radius: var(--wa-border-radius-m); "
-                   "border-end-end-radius: var(--wa-border-radius-m);")
-         nil)
-       (apply str styles)))
+(defn- member-footer-cell-attrs
+  [edge kind]
+  (cond-> {:class "insurance-workbench-member-footer-cell"}
+    edge
+    (assoc :data-workbench-member-footer-edge
+           (case edge
+             :start "start"
+             :end "end"))
+    kind
+    (assoc :data-workbench-member-footer-cell
+           (case kind
+             :total-label "total-label"
+             :total-value "total-value"
+             :spacer "spacer"))))
 
 (def ^:private member-footer-total-columns
   #{:value :cost})
@@ -1452,23 +1448,15 @@
   [{:keys [tr]} currency group {:keys [id]}]
   (case id
     :value
-    [:td {:title      (tr [:insurance/value])
-          :aria-label (tr [:insurance/value])
-          :style      (member-footer-cell-style
-                       nil
-                       " text-align: end; "
-                       "font-weight: var(--wa-font-weight-bold); "
-                       "padding-inline: var(--wa-space-s);")}
+    [:td (merge {:title      (tr [:insurance/value])
+                 :aria-label (tr [:insurance/value])}
+                (member-footer-cell-attrs nil :total-value))
      (ui2/money (:total-insured-value group) currency)]
 
     :cost
-    [:td {:title      (tr [:insurance/cost])
-          :aria-label (tr [:insurance/cost])
-          :style      (member-footer-cell-style
-                       nil
-                       " text-align: end; "
-                       "font-weight: var(--wa-font-weight-bold); "
-                       "padding-inline: var(--wa-space-s);")}
+    [:td (merge {:title      (tr [:insurance/cost])
+                 :aria-label (tr [:insurance/cost])}
+                (member-footer-cell-attrs nil :total-value))
      (ui2/money (:total-cost group) currency)]))
 
 (defn- member-footer-row
@@ -1487,25 +1475,17 @@
                   trailing-count  (- (count columns) (inc last-total-idx))]
               (concat
                (when (pos? first-total-idx)
-                 [[:td {:colspan first-total-idx
-                        :style   (member-footer-cell-style
-                                  :start
-                                  " text-align: end; "
-                                  "padding-inline: var(--wa-space-s);")}
+                 [[:td (assoc (member-footer-cell-attrs :start :total-label)
+                              :colspan first-total-idx)
                    [:strong {:class "wa-caption-s wa-color-text-quiet"}
                     (tr [:insurance/total])]]])
                (for [idx total-indexes]
                  (member-footer-total-cell req currency group (nth columns idx)))
                (when (pos? trailing-count)
-                 [[:td {:colspan trailing-count
-                        :style   (member-footer-cell-style
-                                  :end
-                                  " padding-inline: var(--wa-space-s);")}]])))
-            [[:td {:colspan (count columns)
-                   :style   (member-footer-cell-style
-                             :start
-                             " text-align: end; "
-                             "padding-inline: var(--wa-space-s);")}
+                 [[:td (assoc (member-footer-cell-attrs :end :spacer)
+                              :colspan trailing-count)]])))
+            [[:td (assoc (member-footer-cell-attrs :start :total-label)
+                         :colspan (count columns))
               [:strong {:class "wa-caption-s wa-color-text-quiet"}
                (tr [:insurance/total])]]]))))
 
@@ -1592,14 +1572,23 @@
    (for [page-size (:page-sizes pagination)]
      (page-size-item (:page-size pagination) page-size))])
 
+(def ^:private pagination-controls-stuck-js
+  (str "const bottom = parseFloat(getComputedStyle(el).bottom) || 0; "
+       "const threshold = window.innerHeight - bottom; "
+       "const stuck = el.getBoundingClientRect().bottom >= threshold - 1; "
+       "el.classList.toggle('insurance-workbench-pagination--stuck', stuck);"))
+
 (defn- pagination-controls
   [{:keys [tr]} {:keys [pagination] :as workbench}]
   (let [prev-url (when (:has-prev? pagination)
                    (pagination-url workbench {:page (:prev-page pagination)}))
         next-url (when (:has-next? pagination)
                    (pagination-url workbench {:page (:next-page pagination)}))]
-    [:div {:class                     "wa-stack wa-gap-xs"
-           :data-workbench-pagination "true"}
+    [:div {:class                              "wa-stack wa-gap-xs insurance-workbench-pagination"
+           :data-workbench-pagination          "true"
+           :data-effect                        pagination-controls-stuck-js
+           :data-on:scroll__window__throttle.100ms pagination-controls-stuck-js
+           :data-on:resize__window__throttle.100ms pagination-controls-stuck-js}
      [divider/Divider]
      [:nav {:class      "wa-cluster wa-gap-2xs wa-align-items-center wa-justify-content-end"
             :aria-label (tr [:insurance.workbench/pagination])}

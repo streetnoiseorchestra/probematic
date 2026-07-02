@@ -924,7 +924,9 @@
             :group-uses-own-tbody?     true
             :renders-footer?           true
             :footer-collapses?         true
-            :footer-has-border?        true
+            :footer-uses-one-css-class-with-data-attributes? true
+            :footer-omits-generated-footer-classes? true
+            :footer-omits-inline-base-style? true
             :footer-puts-sums-in-value-and-cost-columns? true
             :footer-labels-are-tooltips? true
             :footer-shows-value-sum?   true
@@ -946,8 +948,16 @@
             (some? footer-start)
             :footer-collapses?
             (str/includes? html "class=\"insurance-workbench-collapsible-row\" data-workbench-member-footer=")
-            :footer-has-border?
-            (footer-includes? "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border)")
+            :footer-uses-one-css-class-with-data-attributes?
+            (and (footer-includes? "insurance-workbench-member-footer-cell")
+                 (footer-includes? "data-workbench-member-footer-edge=\"start\"")
+                 (footer-includes? "data-workbench-member-footer-edge=\"end\"")
+                 (footer-includes? "data-workbench-member-footer-cell=\"total-label\"")
+                 (footer-includes? "data-workbench-member-footer-cell=\"total-value\""))
+            :footer-omits-generated-footer-classes?
+            (not (re-find #"insurance-workbench-member-footer-cell--" footer-html))
+            :footer-omits-inline-base-style?
+            (not (footer-includes? "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border)"))
             :footer-puts-sums-in-value-and-cost-columns?
             (footer-matches? #"(?s)colspan=\"8\".*6\.000,00.*36,00.*colspan=\"2\"")
             :footer-labels-are-tooltips?
@@ -1154,20 +1164,25 @@
                                      :change-status       :instrument.coverage.change/changed
                                      :insured-value       1000M
                                      :cost                12.34M}]}))]
-    (is (= {:renders-summary-trigger?        true
-            :uses-dropdown?                  true
-            :labels-page-size-menu?          true
-            :renders-page-size-items?        true
-            :marks-current-size-with-icon?   true
-            :reserves-icon-slot-for-each-size? true
-            :hides-unselected-icons-inline?  true
-            :omits-checkbox-items?           true
-            :uses-custom-check-icon?         true
-            :omits-inline-title-style?       true
-            :uses-justify-utility?           true
-            :navigates-to-page-size?         true
-            :previous-disabled?              true
-            :next-link?                      true}
+    (is (= {:renders-summary-trigger?           true
+            :uses-dropdown?                     true
+            :labels-page-size-menu?             true
+            :renders-page-size-items?           true
+            :marks-current-size-with-icon?      true
+            :reserves-icon-slot-for-each-size?  true
+            :hides-unselected-icons-inline?     true
+            :omits-checkbox-items?              true
+            :uses-custom-check-icon?            true
+            :omits-inline-title-style?          true
+            :uses-justify-utility?              true
+            :navigates-to-page-size?            true
+            :previous-disabled?                 true
+            :next-link?                         true
+            :sticky-pagination-class?           true
+            :toggles-stuck-pagination-class?    true
+            :omits-static-pagination-shadow?    true
+            :omits-pagination-padding?          true
+            :omits-inline-pagination-position? true}
            {:renders-summary-trigger?
             (str/includes? html "1–20 of 85 results")
             :uses-dropdown?
@@ -1205,4 +1220,57 @@
             (str/includes? html "aria-label=\"Previous\" disabled")
             :next-link?
             (and (str/includes? html "aria-label=\"Next\"")
-                 (str/includes? html "page=2"))}))))
+                 (str/includes? html "page=2"))
+            :sticky-pagination-class?
+            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
+                  pagination-html  (when pagination-start
+                                     (subs html
+                                           pagination-start
+                                           (min (count html) (+ pagination-start 2000))))]
+              (str/includes? (or pagination-html "") "insurance-workbench-pagination"))
+            :toggles-stuck-pagination-class?
+            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
+                  pagination-html  (when pagination-start
+                                     (subs html
+                                           pagination-start
+                                           (min (count html) (+ pagination-start 2000))))]
+              (str/includes? (or pagination-html "") "insurance-workbench-pagination--stuck"))
+            :omits-static-pagination-shadow?
+            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
+                  pagination-html  (when pagination-start
+                                     (subs html
+                                           pagination-start
+                                           (min (count html) (+ pagination-start 2000))))]
+              (not (str/includes? (or pagination-html "") "box-shadow")))
+            :omits-pagination-padding?
+            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
+                  pagination-html  (when pagination-start
+                                     (subs html
+                                           pagination-start
+                                           (min (count html) (+ pagination-start 2000))))]
+              (not (str/includes? (or pagination-html "") "padding-block")))
+            :omits-inline-pagination-position?
+            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
+                  pagination-html  (when pagination-start
+                                     (subs html
+                                           pagination-start
+                                           (min (count html) (+ pagination-start 2000))))]
+              (not (str/includes? (or pagination-html "") "position: sticky")))}))))
+
+(deftest sticky-workbench-bars-use-slide-transitions
+  (let [css (slurp "resources/public/css/pages/insurance.css")]
+    (is (= {:pagination-transitions?       true
+            :pagination-slides-when-stuck? true
+            :bulk-bar-transitions?         true
+            :bulk-bar-slides-when-stuck?   true
+            :reduced-motion-disables?      true}
+           {:pagination-transitions?
+            (boolean (re-find #"(?s)\.insurance-workbench-pagination \{.*transition:" css))
+            :pagination-slides-when-stuck?
+            (boolean (re-find #"(?s)\.insurance-workbench-pagination--stuck \{.*transform: translateY\(0\);" css))
+            :bulk-bar-transitions?
+            (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar \{.*transition:" css))
+            :bulk-bar-slides-when-stuck?
+            (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar--stuck \{.*transform: translateY\(0\);" css))
+            :reduced-motion-disables?
+            (boolean (re-find #"(?s)@media \(prefers-reduced-motion: reduce\).*\.insurance-workbench-pagination,.*\.insurance-workbench-bulk-action-bar" css))}))))
