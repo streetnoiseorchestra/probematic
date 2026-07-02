@@ -40,6 +40,9 @@
 (def active-instrument-coverage-changes
   (vec (remove #{:instrument.coverage.change/none} instrument-coverage-changes)))
 
+(def active-instrument-coverage-change-set
+  (set active-instrument-coverage-changes))
+
 (def bulk-workflow-target-statuses
   {:todo     :instrument.coverage.status/needs-review
    :reviewed :instrument.coverage.status/reviewed

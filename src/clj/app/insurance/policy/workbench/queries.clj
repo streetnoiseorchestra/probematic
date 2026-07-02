@@ -6,6 +6,16 @@
    [app.util :as util]
    [clojure.string :as str]))
 
+(def view-predicates
+  {:all            (constantly true)
+   :todo           #(= :instrument.coverage.status/needs-review (:workflow-status %))
+   :missing-id     :missing-insurer-id?
+   :missing-photos :missing-photo?
+   :private        :private?
+   :changed        #(contains? domain/active-instrument-coverage-change-set (:change-status %))
+   :new            #(= :instrument.coverage.change/new (:change-status %))
+   :removed        #(= :instrument.coverage.change/removed (:change-status %))})
+
 (def supported-views
   [:all
    :todo
@@ -220,10 +230,6 @@
    (lower instrument-name)
    (str coverage-id)])
 
-(defn- sorted-rows
-  [rows]
-  (sort-by row-sort-key rows))
-
 (defn- enriched-coverages
   [policy]
   (domain/enrich-coverages policy
@@ -232,16 +238,7 @@
 
 (defn- view-predicate
   [view]
-  (case view
-    :all            (constantly true)
-    :todo           #(= :instrument.coverage.status/needs-review (:workflow-status %))
-    :missing-id     :missing-insurer-id?
-    :missing-photos :missing-photo?
-    :private        :private?
-    :changed        #(contains? (set domain/active-instrument-coverage-changes) (:change-status %))
-    :new            #(= :instrument.coverage.change/new (:change-status %))
-    :removed        #(= :instrument.coverage.change/removed (:change-status %))
-    (constantly true)))
+  (get view-predicates view (:all view-predicates)))
 
 (defn- member-match?
   [member-q {:keys [member-label member-username]}]
@@ -283,13 +280,17 @@
        :private (= :private (:ownership row))
        true))))
 
+(defn- sorted-rows
+  [rows]
+  (vec (sort-by row-sort-key rows)))
+
 (defn- visible-rows
   [view filters rows]
-  (->> rows
-       (filter (view-predicate view))
-       (filter (quick-filter-predicate filters))
-       sorted-rows
-       vec))
+  (sorted-rows
+   (eduction
+    (comp (filter (view-predicate view))
+          (filter (quick-filter-predicate filters)))
+    rows)))
 
 (defn- group-key
   [{:keys [member-id member-label]}]
@@ -305,7 +306,7 @@
        (group-by group-key)
        vals
        (map (fn [group-rows]
-              (let [group-rows (vec (sorted-rows group-rows))
+              (let [group-rows (sorted-rows group-rows)
                     sample     (first group-rows)]
                 {:member-id           (:member-id sample)
                  :member-label        (:member-label sample)
@@ -342,16 +343,22 @@
   [pred rows]
   (count (filter pred rows)))
 
+(def initial-summary-counts
+  (zipmap (keys view-predicates) (repeat 0)))
+
+(defn- update-summary-counts
+  [counts row]
+  (reduce-kv
+   (fn [counts view pred]
+     (if (pred row)
+       (update counts view inc)
+       counts))
+   counts
+   view-predicates))
+
 (defn- summary-counts
   [rows]
-  {:all            (count rows)
-   :todo           (count-where (view-predicate :todo) rows)
-   :missing-id     (count-where (view-predicate :missing-id) rows)
-   :missing-photos (count-where (view-predicate :missing-photos) rows)
-   :private        (count-where (view-predicate :private) rows)
-   :changed        (count-where (view-predicate :changed) rows)
-   :new            (count-where (view-predicate :new) rows)
-   :removed        (count-where (view-predicate :removed) rows)})
+  (reduce update-summary-counts initial-summary-counts rows))
 
 (defn- totals
   [rows]
@@ -365,13 +372,13 @@
 
 (defn policy-workbench
   [db policy-id params]
-  (let [policy     (q/retrieve-policy db policy-id)
-        view       (normalized-view params)
-        filters    (normalized-filters params)
-        coverages  (enriched-coverages policy)
-        members    (member-lookup db coverages)
-        all-rows   (vec (sorted-rows (map #(row members %) coverages)))
-        rows       (visible-rows view filters all-rows)]
+  (let [policy    (q/retrieve-policy db policy-id)
+        view      (normalized-view params)
+        filters   (normalized-filters params)
+        coverages (enriched-coverages policy)
+        members   (member-lookup db coverages)
+        all-rows  (mapv #(row members %) coverages)
+        rows      (visible-rows view filters all-rows)]
     {:policy               policy
      :view                 view
      :views                supported-views
