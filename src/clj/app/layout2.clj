@@ -135,27 +135,11 @@
             :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
     [:link {:rel "shortcut icon" :href "/img/megaphone-icon.png"}]
     [:title (or title "SNOrga")]
-    (stylesheet req "vendor/webawesome@3.8.0/styles/themes" "active.css")
-    (stylesheet req "vendor/webawesome@3.8.0/styles" "native.css")
-    (stylesheet req "vendor/webawesome@3.8.0/styles" "utilities.css")
     (stylesheet req "css/compiled" "main2.css")
-    [:style
-     (html/raw
-      ":root {
-        --wa-font-weight-body: 400;
-        --wa-font-weight-heading: 650;
-        --wa-font-weight-code: 400;
-        --wa-font-weight-longform: 400;
-        --wa-border-radius-scale: 1.75;
-        --wa-border-width-scale: 1;
-        --wa-space-scale: 1;
-        --wa-line-height-normal: normal;
-      }")]
     [:script {:type :importmap} (html/raw (j/write-value-as-string
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
                                                       "wa/"          "/vendor/webawesome@3.8.0/"
                                                       "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
-    (stylesheet req "vendor/bprogress@1.3.4" "index.css" :type "text/css")
     (public-script req "vendor/bprogress@1.3.4/index.global.js")
     [:script {:type "module" :blocking "render"}
      (html/raw

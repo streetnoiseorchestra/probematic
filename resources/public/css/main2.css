@@ -2,6 +2,13 @@
    Recheck resources/public/vendor/webawesome@3.8.0/styles/layers.css when upgrading Web Awesome. */
 @layer wa-native, wa-base, sno-base, sno-ui, wa-utilities, wa-color-palette, wa-color-variant, wa-theme, wa-theme-dimension, wa-theme-overrides, sno-tokens, sno-page, sno-overrides;
 
+/* load web awesome theme+native+utils first */
+@import "webawesome-sno.css";
+@import "../vendor/webawesome@3.8.0/styles/layers.css";
+@import "../vendor/webawesome@3.8.0/styles/color/palettes/rudimentary.css";
+@import "../vendor/webawesome@3.8.0/styles/native.css";
+@import "../vendor/webawesome@3.8.0/styles/utilities.css";
+
 @import "tokens.css";
 @import "base.css" layer(sno-base);
 @import "ui2/icon.css" layer(sno-ui);
@@ -25,3 +32,4 @@
 @import "shell.css" layer(sno-overrides);
 @import "webawesome-overrides.css" layer(sno-overrides);
 @import "utilities.css" layer(wa-utilities);
+@import "../vendor/bprogress@1.3.4/index.css";
