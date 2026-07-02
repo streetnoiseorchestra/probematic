@@ -23,10 +23,14 @@
       [{:db/id            "anna"
         :member/member-id anna-id
         :member/name      "Anna Alto"
+        :member/nick      "alto-ally"
+        :member/email     "anna.alto@example.test"
         :member/username  "aalto"}
        {:db/id            "zoe"
         :member/member-id zoe-id
         :member/name      "Zoe Zebra"
+        :member/nick      "zebra-zo"
+        :member/email     "zoe.zebra@example.test"
         :member/username  "zzebra"}
        {:db/id                           "brass"
         :instrument.category/category-id brass-id
@@ -267,16 +271,20 @@
                                   [view (row-names (workbench conn policy-id {:view (name view)}))]))})))))
 
 (deftest member-search-test
-  (testing "matches member display name and username case-insensitively"
+  (testing "matches member name, nickname, username, and email case-insensitively"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-member-search")
           policy-id      (random-uuid)]
       (seed-workbench-policy! conn policy-id)
-      (is (= {:by-display-name ["Alto Horn" "Bass Clarinet"]
-              :by-username     ["Cornet" "Drum Kit" "Euphonium"]
-              :blank-search    ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
-             {:by-display-name (row-names (workbench conn policy-id {:member-q "anna"}))
-              :by-username     (row-names (workbench conn policy-id {:member-q "ZZEBRA"}))
-              :blank-search    (row-names (workbench conn policy-id {:member-q "   "}))})))))
+      (is (= {:by-member-name ["Alto Horn" "Bass Clarinet"]
+              :by-nickname    ["Alto Horn" "Bass Clarinet"]
+              :by-username    ["Cornet" "Drum Kit" "Euphonium"]
+              :by-email       ["Cornet" "Drum Kit" "Euphonium"]
+              :blank-search   ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
+             {:by-member-name (row-names (workbench conn policy-id {:member-q "anna"}))
+              :by-nickname    (row-names (workbench conn policy-id {:member-q "ALTO-ALLY"}))
+              :by-username    (row-names (workbench conn policy-id {:member-q "ZZEBRA"}))
+              :by-email       (row-names (workbench conn policy-id {:member-q "zoe.zebra@example"}))
+              :blank-search   (row-names (workbench conn policy-id {:member-q "   "}))})))))
 
 (deftest category-filtering-test
   (testing "accepts single, repeated, and comma-separated category id query values"

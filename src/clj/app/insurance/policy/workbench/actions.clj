@@ -12,6 +12,17 @@
 (def selection-signal-path
   "insuranceWorkbench.selectedCoverageIds")
 
+(defn- normalize-member-search
+  [value]
+  (let [value (some-> value str str/trim)]
+    (when-not (str/blank? value)
+      value)))
+
+(defn set-member-search-phrase-action
+  [_state {:keys [insuranceWorkbench]}]
+  [[:app.datastar/assoc-state [form-key :filters :member-q]
+    (normalize-member-search (:memberQ insuranceWorkbench))]])
+
 (defn- error-effects
   [tr key]
   [support/clear-loading
@@ -271,8 +282,9 @@
    (assoc-in signals [:insuranceWorkbench :targetWorkflowStatus] "keep")))
 
 (def actions
-  {::bulk-update-statuses        #'bulk-update-statuses-action
+  {::set-member-search-phrase  #'set-member-search-phrase-action
+   ::bulk-update-statuses       #'bulk-update-statuses-action
    ::bulk-update-workflow-status #'bulk-update-workflow-status-action
-   ::bulk-mark-workflow          #'bulk-mark-workflow-action
-   ::bulk-set-change             #'bulk-set-change-action
-   ::apply-filter                #'apply-filter-action})
+   ::bulk-mark-workflow         #'bulk-mark-workflow-action
+   ::bulk-set-change            #'bulk-set-change-action
+   ::apply-filter               #'apply-filter-action})

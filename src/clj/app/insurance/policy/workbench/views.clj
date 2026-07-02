@@ -90,6 +90,7 @@
   [{:keys [page-state]}]
   (let [filters (get-in page-state [:insurance-workbench :filters])]
     (cond-> {}
+      (contains? filters :member-q) (assoc :member-q (:member-q filters))
       (contains? filters :category-ids) (assoc :category-id (:category-ids filters))
       (contains? filters :coverage-type-ids) (assoc :coverage-type-id (:coverage-type-ids filters))
       (contains? filters :ownership) (assoc :ownership (:ownership filters))
@@ -302,7 +303,7 @@
    (view-select-form tr workbench)])
 
 (defn- search-form
-  [{:keys [tr]} {:keys [filters policy view]}]
+  [{:keys [tr] :as req} {:keys [filters policy view]}]
   (into [:form {:method "get"
                 :action (urls/link-policy-workbench policy)}]
         (concat (hidden-inputs (concat [["view" view]
@@ -315,11 +316,15 @@
                                         ["workflow-status" (workflow-status-query-values filters)]
                                         ["change-status" (change-status-query-values filters)]]
                                        (value-filter-hidden-fields filters)))
-                [[:wa-input {:name        "member-q"
-                             :aria-label  (tr [:insurance.workbench/search])
-                             :placeholder (tr [:insurance.workbench/member-search-placeholder])
-                             :value       (or (:member-q filters) "")
-                             :appearance  "outlined"}]])))
+                [[:wa-input {:name                         "member-q"
+                             :aria-label                   (tr [:insurance.workbench/search])
+                             :placeholder                  (tr [:insurance.workbench/member-search-placeholder])
+                             :value                        (or (:member-q filters) "")
+                             :appearance                   "outlined"
+                             :with-clear                   true
+                             :data-bind                    "insuranceWorkbench.memberQ"
+                             :data-on:input__debounce.250ms
+                             (str "@post('" (d*/act req ::actions/set-member-search-phrase) "')")}]])))
 
 (defn- ownership-select
   [tr selected-ownership]
@@ -811,6 +816,7 @@
 (defn- selection-signals
   [policy filters]
   {:insuranceWorkbench {:policyId              (str (:insurance.policy/policy-id policy))
+                        :memberQ              (or (:member-q filters) "")
                         :selectedCoverageIds  []
                         :targetWorkflowStatus "keep"
                         :targetChangeStatus   "keep"

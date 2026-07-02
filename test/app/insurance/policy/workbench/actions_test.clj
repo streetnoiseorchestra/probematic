@@ -10,6 +10,17 @@
   ([k] k)
   ([k args] [k args]))
 
+(deftest set-member-search-phrase-action-test
+  (is (= [[:app.datastar/assoc-state [:insurance-workbench :filters :member-q] "Anna"]]
+         (actions/set-member-search-phrase-action
+          {}
+          {:insuranceWorkbench {:memberQ "Anna"}})))
+
+  (is (= [[:app.datastar/assoc-state [:insurance-workbench :filters :member-q] nil]]
+         (actions/set-member-search-phrase-action
+          {}
+          {:insuranceWorkbench {:memberQ "   "}}))))
+
 (defn seed-insurance-team!
   [conn member-id]
   @(d/transact conn [{:team/team-id   (random-uuid)

@@ -80,6 +80,24 @@
                           {:filters {:category-ids [category-a category-b]
                                      :ownership :private}}}})))))
 
+(deftest workbench-params-uses-active-member-search-from-page-state
+  (is (= {:active-search "Zoe"
+          :cleared-search nil}
+         {:active-search
+          (:member-q
+           (#'views/workbench-params
+            {:parameters {:query {:view     "todo"
+                                  :member-q "Anna"}}
+             :page-state {:insurance-workbench
+                          {:filters {:member-q "Zoe"}}}}))
+          :cleared-search
+          (:member-q
+           (#'views/workbench-params
+            {:parameters {:query {:view     "todo"
+                                  :member-q "Anna"}}
+             :page-state {:insurance-workbench
+                          {:filters {:member-q nil}}}}))})))
+
 (deftest empty-category-filter-in-page-state-overrides-category-query-param
   (let [category-id (random-uuid)]
     (is (= {:view                "todo"
@@ -283,25 +301,36 @@
                          :workflowStatuses
                          :changeStatuses])))))
 
-(deftest search-form-preserves-active-category-filter
+(deftest search-form-typeahead-posts-member-search-and-preserves-active-category-filter
   (let [policy-id   (random-uuid)
         category-id (random-uuid)
         html        (html/->str
                      (#'views/search-form
-                      {:tr tr}
+                      {::r/router router
+                       :tr        tr}
                       {:policy  {:insurance.policy/policy-id policy-id}
                        :view    :todo
                        :filters {:group :member
                                  :ownership :all
                                  :member-q "Anna"
                                  :category-ids #{category-id}}}))]
-    (is (= {:preserves-category? true
-            :preserves-member-search? true}
+    (is (= {:preserves-category?      true
+            :preserves-member-search? true
+            :binds-member-search?     true
+            :posts-typeahead?         true
+            :uses-clear?              true}
            {:preserves-category?
             (and (str/includes? html "name=\"category-id\"")
                  (str/includes? html (str "value=\"" category-id "\"")))
             :preserves-member-search?
-            (str/includes? html "value=\"Anna\"")}))))
+            (str/includes? html "value=\"Anna\"")
+            :binds-member-search?
+            (str/includes? html "data-bind=\"insuranceWorkbench.memberQ\"")
+            :posts-typeahead?
+            (and (str/includes? html "data-on:input__debounce.250ms")
+                 (str/includes? html "set-member-search-phrase"))
+            :uses-clear?
+            (str/includes? html "with-clear")}))))
 
 (deftest toolbar-renders-responsive-view-select-and-flanked-search-controls
   (let [policy-id   (random-uuid)

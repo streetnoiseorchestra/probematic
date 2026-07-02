@@ -908,7 +908,7 @@ msgstr ""
 #: :insurance.workbench/member-search-placeholder
 #, ycp-format
 msgctxt ":insurance.workbench/member-search-placeholder"
-msgid "Search by member name"
+msgid "Search by name, nickname, username, or email"
 msgstr ""
 
 #: :insurance.workbench/mark-workflow

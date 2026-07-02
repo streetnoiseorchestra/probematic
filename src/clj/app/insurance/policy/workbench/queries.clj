@@ -202,6 +202,8 @@
      :member-id           member-id
      :member-name         (:member/name member)
      :member-username     (:member/username member)
+     :member-nick         (:member/nick member)
+     :member-email        (:member/email member)
      :member-label        (owner-label member)
      :instrument-id       (:instrument/instrument-id instrument)
      :instrument-name     (:instrument/name instrument)
@@ -241,10 +243,11 @@
   (get view-predicates view (:all view-predicates)))
 
 (defn- member-match?
-  [member-q {:keys [member-label member-username]}]
+  [member-q {:keys [member-email member-label member-nick member-username]}]
   (let [needle (lower member-q)]
-    (or (str/includes? (lower member-label) needle)
-        (str/includes? (lower member-username) needle))))
+    (boolean
+     (some #(str/includes? (lower %) needle)
+           [member-label member-nick member-username member-email]))))
 
 (defn- coverage-type-match?
   [coverage-type-ids row]

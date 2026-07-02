@@ -177,7 +177,7 @@
   :all-categories "Alle Kategorien",
   :all-coverage-types "Alle Versicherungsarten",
   :member-search "Mitglied",
-  :member-search-placeholder "Nach Mitgliedsname suchen",
+  :member-search-placeholder "Nach Name, Spitzname, Benutzername oder E-Mail suchen",
   :search "Suche",
   :selection "Auswahl",
   :selected "ausgewählt",

@@ -280,7 +280,7 @@
                                   :all-categories              "All categories"
                                   :all-coverage-types          "All coverage types"
                                   :member-search               "Member"
-                                  :member-search-placeholder   "Search by member name"
+                                  :member-search-placeholder   "Search by name, nickname, username, or email"
                                   :search                      "Search"
                                   :selection                   "Selection"
                                   :selected                    "selected"
