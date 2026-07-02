@@ -1,31 +1,31 @@
 (ns app.songs.routes
   (:require
    [app.routes.datastar :as ds]
-   [app.songs.detail.views]
+   [app.songs.detail.views :as detail.views]
    [app.songs.edit.api :as edit.api]
-   [app.songs.edit.views]
-   [app.songs.index.views]
+   [app.songs.edit.views :as edit.views]
+   [app.songs.index.views :as index.views]
    [reitit.ring.malli :as reitit.ring.malli]))
 
 (defn songs-list-routes []
   (ds/page-routes {:page-name ::index
                    :path      "/songs"
-                   :view-ns   'app.songs.index.views}))
+                   :page      #'index.views/page}))
 
 (defn songs-new-routes []
-  (ds/page-routes {:page-name  ::create
-                   :path       "/songs/new"
-                   :view-ns 'app.songs.edit.views}))
+  (ds/page-routes {:page-name ::create
+                   :path      "/songs/new"
+                   :page      #'edit.views/page}))
 
 (defn song-edit-routes []
-  (ds/page-routes {:page-name  ::edit
-                   :path       "/song/{song-id}/edit"
-                   :view-ns 'app.songs.edit.views}))
+  (ds/page-routes {:page-name ::edit
+                   :path      "/song/{song-id}/edit"
+                   :page      #'edit.views/page}))
 
 (defn song-detail-routes []
   (ds/page-routes {:page-name ::detail
                    :path      "/song/{song-id}"
-                   :view-ns   'app.songs.detail.views}))
+                   :page      #'detail.views/page}))
 
 (defn routes []
   ["" {:app.route/name :app/songs}

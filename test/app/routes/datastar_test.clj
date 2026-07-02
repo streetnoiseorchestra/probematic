@@ -41,7 +41,7 @@
   (let [[_path _route-data [_child-path child-data]]
         (dsr/page-routes {:page-name ::toggle-fixture
                           :path      "/toggle-fixture"
-                          :view-ns   'app.routes.datastar-test})]
+                          :page      #'page})]
     ((:get child-data) test-req)))
 
 (deftest page-get-can-render-full-page-when-shim-disabled

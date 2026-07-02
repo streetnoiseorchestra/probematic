@@ -1,8 +1,8 @@
 (ns app.dashboard.routes
   (:require
    [app.auth :as auth]
-   [app.dashboard.calendar.views]
-   [app.dashboard.index.views]
+   [app.dashboard.calendar.views :as calendar.views]
+   [app.dashboard.index.views :as index.views]
    [app.routes.datastar :as ds]))
 
 (defn routes []
@@ -11,7 +11,7 @@
        :interceptors   [auth/roles-authorization-interceptor]}
    (ds/page-routes {:page-name ::index
                     :path      "/"
-                    :view-ns   'app.dashboard.index.views})
+                    :page      #'index.views/page})
    (ds/page-routes {:page-name ::calendar
                     :path      "/calendar"
-                    :view-ns   'app.dashboard.calendar.views})])
+                    :page      #'calendar.views/page})])

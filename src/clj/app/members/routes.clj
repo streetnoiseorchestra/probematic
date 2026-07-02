@@ -1,14 +1,15 @@
 (ns app.members.routes
-  (:require [app.datomic.shim :as d]
-            [app.members.detail.views]
-            [app.members.domain :as members.domain]
-            [app.members.index.views]
-            [app.members.invite-accept.views :as invite-accept]
-            [app.members.invite.views]
-            [app.queries :as q]
-            [app.routes.datastar :as ds]
-            [app.sardine :as sardine]
-            [app.util.http :as http.util]))
+  (:require
+   [app.datomic.shim :as d]
+   [app.members.detail.views :as detail.views]
+   [app.members.domain :as members.domain]
+   [app.members.index.views :as index.views]
+   [app.members.invite-accept.views :as invite-accept]
+   [app.members.invite.views :as invite.views]
+   [app.queries :as q]
+   [app.routes.datastar :as ds]
+   [app.sardine :as sardine]
+   [app.util.http :as http.util]))
 
 (defn member-vcard [{:keys [db] :as req}]
   (let [member-id (http.util/path-param-uuid! req :member-id)
@@ -35,19 +36,19 @@
   ["" {:app.route/name :app/members}
    (ds/page-routes {:page-name ::index
                     :path      "/members"
-                    :view-ns   'app.members.index.views})
+                    :page      #'index.views/page})
    (ds/page-routes {:page-name ::invite
                     :path      "/members/invite"
-                    :view-ns   'app.members.invite.views})
+                    :page      #'invite.views/page})
    ["" {:interceptors members-interceptors}
     ["/member-vcard/{member-id}" {:app.route/name :app/member-vcard
                                   :get            member-vcard}]
     (ds/page-routes {:page-name ::detail
                      :path      "/member/{member-id}"
-                     :view-ns   'app.members.detail.views})
+                     :page      #'detail.views/page})
     (ds/page-routes {:page-name ::detail-tab
                      :path      "/member/{member-id}/{member-detail-tab}"
-                     :view-ns   'app.members.detail.views})]])
+                     :page      #'detail.views/page})]])
 
 (defn unauthenticated-routes []
   [""

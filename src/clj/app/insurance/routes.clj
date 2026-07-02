@@ -2,12 +2,12 @@
   (:require
    [app.datomic.shim :as d]
    [app.insurance.coverage.edit.api :as coverage-edit.api]
-   [app.insurance.coverage.edit.views]
-   [app.insurance.coverage.views]
-   [app.insurance.index.views]
-   [app.insurance.policy.dashboard.views]
-   [app.insurance.policy.review.views]
-   [app.insurance.policy.workbench.views]
+   [app.insurance.coverage.edit.views :as coverage.edit.views]
+   [app.insurance.coverage.views :as coverage.views]
+   [app.insurance.index.views :as index.views]
+   [app.insurance.policy.dashboard.views :as policy.dashboard.views]
+   [app.insurance.policy.review.views :as policy.review.views]
+   [app.insurance.policy.workbench.views :as policy.workbench.views]
    [app.insurance.public.views :as public]
    [app.insurance.views :as view]
    [app.layout :as layout]
@@ -104,7 +104,7 @@
   ["" {:app.route/name :app/insurance}
    (ds/page-routes {:page-name ::index
                     :path      "/insurance"
-                    :view-ns   'app.insurance.index.views})
+                    :page      #'index.views/page})
    ["/instrument-image/{instrument-id}"
     {:post {:summary "Upload an image for an instrument"
             :parameters {:multipart [:map [:file reitit.ring.malli/temp-file-part]]
@@ -123,13 +123,13 @@
     (insurance-generate-changes)
     (ds/page-routes {:page-name ::policy-review
                      :path      "/insurance-policy/{policy-id}/review"
-                     :view-ns   'app.insurance.policy.review.views})
+                     :page      #'policy.review.views/page})
     (ds/page-routes {:page-name ::policy-workbench
                      :path      "/insurance-policy/{policy-id}/workbench"
-                     :view-ns   'app.insurance.policy.workbench.views})
+                     :page      #'policy.workbench.views/page})
     (ds/page-routes {:page-name ::policy-dashboard
                      :path      "/insurance-policy/{policy-id}"
-                     :view-ns   'app.insurance.policy.dashboard.views})
+                     :page      #'policy.dashboard.views/page})
     (insurance-notification)
 
     ["/insurance-changes-excel-download/{policy-id}/"
@@ -154,10 +154,10 @@
         :interceptors [coverage-interceptor]}
     (ds/page-routes {:page-name ::coverage-detail
                      :path      "/insurance-coverage/{coverage-id}/"
-                     :view-ns   'app.insurance.coverage.views})
+                     :page      #'coverage.views/page})
     (ds/page-routes {:page-name ::coverage-edit
                      :path      "/insurance-coverage-edit/{coverage-id}/"
-                     :view-ns   'app.insurance.coverage.edit.views})]
+                     :page      #'coverage.edit.views/page})]
 
    (insurance-create)])
 

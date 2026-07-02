@@ -85,19 +85,6 @@
       (shim req)
       (full-page-response render-fn opts req))))
 
-(defn resolve-from-kw
-  "Resolves a namespace-qualified keyword to a symbol and then resolves that symbol to a var."
-  ([kw]
-   (when (and (keyword? kw) (namespace kw))
-     (let [ns-str        (namespace kw)
-           fn-str        (clojure.core/name kw)
-           qualified-sym (symbol ns-str fn-str)]
-       (resolve qualified-sym))))
-  ([ns kw]
-   (when (and (keyword? kw) (symbol? ns))
-     (let [qualified-sym (symbol (str ns) (clojure.core/name kw))]
-       (resolve qualified-sym)))))
-
 (defn- action-query-params [req]
   (or (get-in req [:parameters :query])
       (:query-params req)
@@ -141,13 +128,12 @@
     (html/->str (layout2/app-shell-body req (render-fn req)))))
 
 (defn page-routes
-  [{:keys [extra-head path page-name route-data view-ns]}]
+  [{:keys [extra-head page path page-name route-data]}]
   (assert path "path is required")
-  (let [render-fn     (resolve-from-kw view-ns :page)
-        wrapped-render (some-> render-fn wrap-render-fn)
+  (assert page (str ":page render function is required for " page-name))
+  (let [wrapped-render (wrap-render-fn page)
         route-data     (cond-> (merge {:name page-name} route-data)
                          extra-head (assoc :extra-head extra-head))
-        child-routes   (into [["" {:get  (initial-get-handler render-fn route-data)
+        child-routes   (into [["" {:get  (initial-get-handler page route-data)
                                    :post (d*/render-handler wrapped-render)}]])]
-    (assert render-fn (str "Page render function not found for " page-name " in ns " view-ns))
     (into [path route-data] child-routes)))

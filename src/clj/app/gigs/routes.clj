@@ -2,44 +2,44 @@
   (:require
    [app.config :as config]
    [app.gigs.answer-link.views :as answer-link]
-   [app.gigs.archive.views]
-   [app.gigs.detail.views]
-   [app.gigs.edit.views]
-   [app.gigs.index.views]
-   [app.gigs.log-plays.views]
-   [app.gigs.probeplan.views]
-   [app.gigs.setlist.views]
+   [app.gigs.archive.views :as archive.views]
+   [app.gigs.detail.views :as detail.views]
+   [app.gigs.edit.views :as edit.views]
+   [app.gigs.index.views :as index.views]
+   [app.gigs.log-plays.views :as log-plays.views]
+   [app.gigs.probeplan.views :as probeplan.views]
+   [app.gigs.setlist.views :as setlist.views]
    [app.routes.datastar :as ds]))
 
 (defn routes []
   ["" {:app.route/name :app/gigs}
    (ds/page-routes {:page-name ::index
                     :path      "/gigs"
-                    :view-ns   'app.gigs.index.views})
+                    :page      #'index.views/page})
    (ds/page-routes {:page-name ::archive
                     :path      "/gigs/archive"
-                    :view-ns   'app.gigs.archive.views})
+                    :page      #'archive.views/page})
    (ds/page-routes {:page-name ::archive-year
                     :path      "/gigs/archive/{year}"
-                    :view-ns   'app.gigs.archive.views})
-   (ds/page-routes {:page-name  ::create
-                    :path       "/gigs/create"
-                    :view-ns    'app.gigs.edit.views})
+                    :page      #'archive.views/page})
+   (ds/page-routes {:page-name ::create
+                    :path      "/gigs/create"
+                    :page      #'edit.views/page})
    (ds/page-routes {:page-name ::detail
                     :path      "/gig/{gig/gig-id}"
-                    :view-ns   'app.gigs.detail.views})
+                    :page      #'detail.views/page})
    (ds/page-routes {:page-name ::probeplan
                     :path      "/gig/{gig/gig-id}/probeplan"
-                    :view-ns   'app.gigs.probeplan.views})
+                    :page      #'probeplan.views/page})
    (ds/page-routes {:page-name ::setlist
                     :path      "/gig/{gig/gig-id}/setlist"
-                    :view-ns   'app.gigs.setlist.views})
+                    :page      #'setlist.views/page})
    (ds/page-routes {:page-name ::log-plays
                     :path      "/gig/{gig/gig-id}/log-plays"
-                    :view-ns   'app.gigs.log-plays.views})
-   (ds/page-routes {:page-name  ::edit
-                    :path       "/gig/{gig/gig-id}/edit"
-                    :view-ns 'app.gigs.edit.views})])
+                    :page      #'log-plays.views/page})
+   (ds/page-routes {:page-name ::edit
+                    :path      "/gig/{gig/gig-id}/edit"
+                    :page      #'edit.views/page})])
 
 (defn unauthenticated-routes
   ([]
