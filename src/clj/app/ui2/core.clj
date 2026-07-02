@@ -115,24 +115,35 @@
        (u.error/clean-trace)
        (map stack-frame->trace-element)))
 
-(defn validate-opts [schema opts]
-  (let [s (if (map? schema)
-            (l/schema schema)
-            schema)]
+(defn- component-schema [doc-or-schema]
+  (if (and (map? doc-or-schema) (contains? doc-or-schema :schema))
+    (:schema doc-or-schema)
+    doc-or-schema))
+
+(defn- component-doc [doc-or-schema]
+  (if (and (map? doc-or-schema) (contains? doc-or-schema :schema))
+    doc-or-schema
+    (meta doc-or-schema)))
+
+(defn validate-opts [doc-or-schema opts]
+  (let [schema (component-schema doc-or-schema)
+        s      (if (map? schema)
+                 (l/schema schema)
+                 schema)]
     (when-let [problem (m/explain s opts)]
       (let [trace (stack-trace)]
-        (doseq [bling-opts (error->bling-opts trace (meta schema) problem)]
+        (doseq [bling-opts (error->bling-opts trace (component-doc doc-or-schema) problem)]
           (bad-opt-value-callout bling-opts))))))
 
 (defn validate-opts! [doc attrs]
   (when *validate-opts*
-    (validate-opts (or (:schema doc) doc) (or attrs {}))))
+    (validate-opts doc (or attrs {}))))
 
 (defn merge-attrs*
   ^clojure.lang.IPersistentMap [orig-map & {:as extra}]
   (reduce (fn [acc [k v]]
             (case k
-              :class (update acc :class #(str v " " %))
+              :class (update acc :class #(cs v %))
               (assoc acc k v)))
           (or orig-map (ordered-map))
           extra))
@@ -145,10 +156,11 @@
 (defn norm
   "Normalizes the hiccup element to a vector of [tag attrs & children]."
   [hiccup]
-  (let [[tag & [attrs & _ch :as children]] hiccup]
+  (let [[tag & children] hiccup
+        attrs            (first children)]
     (if (map? attrs)
       hiccup
-      [tag nil children])))
+      (into [tag nil] children))))
 
 (defn assoc-attr
   "Assoc attributes to the hiccup element."
@@ -196,37 +208,30 @@
   [text cols indent]
   (if (or (nil? text) (empty? text))
     ""
-    (let [words       (str/split text #"\s+")
-          indent-str  (apply str (repeat indent " "))
-          build-lines (fn [words]
-                        (loop [remaining     words
-                               current-line  ""
-                               current-width 0
-                               result        []]
-                          (if (empty? remaining)
-                            (if (empty? current-line)
-                              result
-                              (conj result current-line))
-                            (let [word               (first remaining)
-                                  word-len           (count word)
-                                  space-needed       (if (empty? current-line) 0 1)
-                                  new-width          (+ current-width space-needed word-len)
-                                  fits-current-line? (<= new-width cols)]
-                              (if fits-current-line?
-                                (let [new-line (if (empty? current-line)
-                                                 word
-                                                 (str current-line " " word))]
-                                  (recur (rest remaining)
-                                         new-line
-                                         new-width
-                                         result))
-                                (recur remaining
-                                       ""
-                                       0
-                                       (if (empty? current-line)
-                                         result
-                                         (conj result current-line))))))))
-          lines       (build-lines words)]
+    (let [words      (str/split text #"\s+")
+          indent-str (apply str (repeat indent " "))
+          lines      (loop [remaining     words
+                            current-line  nil
+                            current-width 0
+                            result        []]
+                       (if-let [word (first remaining)]
+                         (let [word-len     (count word)
+                               space-needed (if current-line 1 0)
+                               new-width    (+ current-width space-needed word-len)]
+                           (if (or (nil? current-line)
+                                   (<= new-width cols))
+                             (recur (rest remaining)
+                                    (if current-line
+                                      (str current-line " " word)
+                                      word)
+                                    new-width
+                                    result)
+                             (recur remaining
+                                    nil
+                                    0
+                                    (conj result current-line))))
+                         (cond-> result
+                           current-line (conj current-line))))]
       (if (empty? lines)
         ""
         (str (first lines)
@@ -274,7 +279,8 @@
                                          (= option-type :boolean) "boolean"
                                          :else                    (name option-type))]
     (str
-     (format "%s %s - %s %s" (indent) option-name doc optional-str)
+     (format "%s %s - %s%s"
+             (indent) option-name doc (if optional-str (str " " optional-str) ""))
      "\n"
      type-indent
      type-str)))
