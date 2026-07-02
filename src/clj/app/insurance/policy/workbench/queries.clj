@@ -6,15 +6,82 @@
    [app.util :as util]
    [clojure.string :as str]))
 
-(def view-predicates
-  {:all            (constantly true)
-   :todo           #(= :instrument.coverage.status/needs-review (:workflow-status %))
-   :missing-id     :missing-insurer-id?
-   :missing-photos :missing-photo?
-   :private        :private?
-   :changed        #(contains? domain/active-instrument-coverage-change-set (:change-status %))
-   :new            #(= :instrument.coverage.change/new (:change-status %))
-   :removed        #(= :instrument.coverage.change/removed (:change-status %))})
+(def all-column-ids
+  [:member
+   :instrument
+   :category
+   :ownership
+   :photos
+   :harmonia-id
+   :workflow
+   :change
+   :value
+   :cost
+   :coverage-types
+   :actions])
+
+(def workbench-view-presets
+  {:all            {:filters {}
+                    :columns all-column-ids}
+   :todo           {:filters {:workflow-statuses #{:needs-review}}
+                    :columns [:member
+                              :instrument
+                              :category
+                              :photos
+                              :harmonia-id
+                              :workflow
+                              :change
+                              :value
+                              :actions]}
+   :missing-id     {:filters {:missing-harmonia-id? true}
+                    :columns [:member
+                              :instrument
+                              :category
+                              :harmonia-id
+                              :workflow
+                              :actions]}
+   :missing-photos {:filters {:missing-photos? true}
+                    :columns [:member
+                              :instrument
+                              :category
+                              :photos
+                              :workflow
+                              :change
+                              :actions]}
+   :private        {:filters {:ownership :private}
+                    :columns [:member
+                              :instrument
+                              :category
+                              :ownership
+                              :value
+                              :cost
+                              :workflow
+                              :change
+                              :actions]}
+   :changed        {:filters {:change-statuses #{:changed :new :removed}}
+                    :columns [:member
+                              :instrument
+                              :category
+                              :change
+                              :value
+                              :cost
+                              :actions]}
+   :new            {:filters {:change-statuses #{:new}}
+                    :columns [:member
+                              :instrument
+                              :category
+                              :change
+                              :value
+                              :cost
+                              :actions]}
+   :removed        {:filters {:change-statuses #{:removed}}
+                    :columns [:member
+                              :instrument
+                              :category
+                              :change
+                              :value
+                              :cost
+                              :actions]}})
 
 (def supported-views
   [:all
@@ -276,9 +343,17 @@
                            (:insurance.policy/coverage-types policy)
                            (:insurance.policy/covered-instruments policy)))
 
-(defn- view-predicate
+(defn view-preset
   [view]
-  (get view-predicates view (:all view-predicates)))
+  (get workbench-view-presets view (:all workbench-view-presets)))
+
+(defn view-preset-filters
+  [view]
+  (:filters (view-preset view)))
+
+(defn default-column-ids
+  [view]
+  (:columns (view-preset view)))
 
 (defn- member-match?
   [member-q {:keys [member-email member-label member-nick member-username]}]
@@ -327,11 +402,12 @@
 
 (defn- visible-rows
   [view filters rows]
-  (sorted-rows
-   (eduction
-    (comp (filter (view-predicate view))
-          (filter (quick-filter-predicate filters)))
-    rows)))
+  (let [preset-filters (view-preset-filters view)]
+    (sorted-rows
+     (eduction
+      (comp (filter (quick-filter-predicate preset-filters))
+            (filter (quick-filter-predicate filters)))
+      rows))))
 
 (defn- pagination
   [params total-results]
@@ -411,17 +487,17 @@
   (count (filter pred rows)))
 
 (def initial-summary-counts
-  (zipmap (keys view-predicates) (repeat 0)))
+  (zipmap supported-views (repeat 0)))
 
 (defn- update-summary-counts
   [counts row]
-  (reduce-kv
-   (fn [counts view pred]
-     (if (pred row)
+  (reduce
+   (fn [counts view]
+     (if ((quick-filter-predicate (view-preset-filters view)) row)
        (update counts view inc)
        counts))
    counts
-   view-predicates))
+   supported-views))
 
 (defn- summary-counts
   [rows]
@@ -439,18 +515,21 @@
 
 (defn policy-workbench
   [db policy-id params]
-  (let [policy        (q/retrieve-policy db policy-id)
-        view          (normalized-view params)
-        filters       (normalized-filters params)
-        coverages     (enriched-coverages policy)
-        members       (member-lookup db coverages)
-        all-rows      (mapv #(row members %) coverages)
-        visible-rows  (visible-rows view filters all-rows)
-        pagination    (pagination params (count visible-rows))
-        rows          (page-rows visible-rows pagination)]
+  (let [policy         (q/retrieve-policy db policy-id)
+        view           (normalized-view params)
+        filters        (normalized-filters params)
+        preset-filters (view-preset-filters view)
+        coverages      (enriched-coverages policy)
+        members        (member-lookup db coverages)
+        all-rows       (mapv #(row members %) coverages)
+        visible-rows   (visible-rows view filters all-rows)
+        pagination     (pagination params (count visible-rows))
+        rows           (page-rows visible-rows pagination)]
     {:policy               policy
      :view                 view
      :views                supported-views
+     :preset-filters       preset-filters
+     :default-column-ids   (default-column-ids view)
      :filters              filters
      :available-categories (available-categories all-rows)
      :summary-counts       (summary-counts all-rows)

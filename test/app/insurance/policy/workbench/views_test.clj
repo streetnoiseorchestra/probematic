@@ -627,6 +627,80 @@
             :omits-harmonia-cell?
             (not (str/includes? html "H-123"))}))))
 
+(deftest workbench-table-uses-active-view-column-defaults
+  (let [coverage-id (random-uuid)
+        html        (html/->str
+                     (#'views/flat-table
+                      {:tr tr}
+                      {:view    :missing-id
+                       :filters {:group :none}
+                       :policy  {:insurance.policy/currency :EUR}
+                       :rows    [{:category-name       "Strings"
+                                  :coverage-id         coverage-id
+                                  :coverage-type-names ["Basic"]
+                                  :harmonia-id         ""
+                                  :instrument-name     "Violin"
+                                  :member-id           (random-uuid)
+                                  :member-label        "Anna"
+                                  :missing-insurer-id? true
+                                  :missing-photo?      false
+                                  :photo-count         3
+                                  :private?            false
+                                  :workflow-status     :instrument.coverage.status/needs-review
+                                  :change-status       :instrument.coverage.change/changed
+                                  :insured-value       1000M
+                                  :cost                12.34M}]}))]
+    (is (= {:shows-preset-column? true
+            :keeps-selection-column? true
+            :hides-cost-column? true
+            :hides-value-column? true
+            :hides-coverage-types-column? true}
+           {:shows-preset-column?
+            (and (str/includes? html ">insurer-id</th>")
+                 (str/includes? html "missing"))
+            :keeps-selection-column?
+            (str/includes? html "data-workbench-select-all=\"true\"")
+            :hides-cost-column?
+            (and (not (str/includes? html ">cost</th>"))
+                 (not (str/includes? html "12,34")))
+            :hides-value-column?
+            (not (str/includes? html ">Versicherungswert</th>"))
+            :hides-coverage-types-column?
+            (and (not (str/includes? html ">coverage-types</th>"))
+                 (not (str/includes? html ">Basic</td>")))}))))
+
+(deftest workbench-table-column-overrides-are-scoped-to-active-view
+  (let [coverage-id (random-uuid)
+        html        (html/->str
+                     (#'views/flat-table
+                      {:tr tr}
+                      {:view    :missing-id
+                       :filters {:group :none}
+                       :table   {:columns-by-view {:missing-id {:harmonia-id false}}}
+                       :policy  {:insurance.policy/currency :EUR}
+                       :rows    [{:category-name       "Strings"
+                                  :coverage-id         coverage-id
+                                  :coverage-type-names ["Basic"]
+                                  :harmonia-id         "H-123"
+                                  :instrument-name     "Violin"
+                                  :member-id           (random-uuid)
+                                  :member-label        "Anna"
+                                  :missing-insurer-id? false
+                                  :missing-photo?      false
+                                  :photo-count         3
+                                  :private?            false
+                                  :workflow-status     :instrument.coverage.status/needs-review
+                                  :change-status       :instrument.coverage.change/changed
+                                  :insured-value       1000M
+                                  :cost                12.34M}]}))]
+    (is (= {:hides-overridden-preset-column? true
+            :does-not-render-legacy-global-toggle-js? true}
+           {:hides-overridden-preset-column?
+            (and (not (str/includes? html ">insurer-id</th>"))
+                 (not (str/includes? html "H-123")))
+            :does-not-render-legacy-global-toggle-js?
+            (not (str/includes? html "table.columns["))}))))
+
 (deftest workbench-table-selection-heading-selects-all-rows
   (let [coverage-a (random-uuid)
         coverage-b (random-uuid)

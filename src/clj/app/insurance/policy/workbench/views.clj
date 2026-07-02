@@ -172,31 +172,55 @@
   [id]
   (table-column-by-id id))
 
+(defn- column-visibility-override
+  [columns id]
+  (cond
+    (contains? columns id) (get columns id)
+    (contains? columns (name id)) (get columns (name id))))
+
+(defn- visible-column-setting?
+  [value]
+  (not (or (false? value)
+           (= "false" (some-> value str str/lower-case)))))
+
+(defn- table-column-default-visible?
+  [view id]
+  (contains? (set (queries/default-column-ids (or view :all))) id))
+
 (defn- table-column-visible?
-  [table id]
-  (let [columns (or (:columns table) {})]
-    (if (contains? columns id)
-      (not (or (false? (get columns id))
-               (= "false" (some-> (get columns id) str str/lower-case))))
-      (if (contains? columns (name id))
-        (not (or (false? (get columns (name id)))
-                 (= "false" (some-> (get columns (name id)) str str/lower-case))))
-        true))))
+  ([table id]
+   (table-column-visible? :all table id))
+  ([view table id]
+   (let [view             (or view :all)
+         view-columns     (or (get-in table [:columns-by-view view])
+                              (get-in table [:columns-by-view (name view)])
+                              (get-in table [:columnsByView view])
+                              (get-in table [:columnsByView (name view)]))
+         view-override    (column-visibility-override view-columns id)
+         legacy-override  (column-visibility-override (:columns table) id)]
+     (cond
+       (some? view-override) (visible-column-setting? view-override)
+       (some? legacy-override) (visible-column-setting? legacy-override)
+       :else (table-column-default-visible? view id)))))
 
 (defn- table-columns-state
-  [table]
-  (into {}
-        (for [{:keys [id]} table-columns]
-          [(name id) (table-column-visible? table id)])))
+  ([table]
+   (table-columns-state :all table))
+  ([view table]
+   (into {}
+         (for [{:keys [id]} table-columns]
+           [(name id) (table-column-visible? view table id)]))))
 
 (defn- table-columns-for
   ([group]
-   (table-columns-for group nil))
+   (table-columns-for group :all nil))
   ([group table]
+   (table-columns-for group :all table))
+  ([group view table]
    (into [selection-column]
          (cond->> table-columns
            (= group :member) (remove #(= :member (:id %)))
-           true (filter #(table-column-visible? table (:id %)))))))
+           true (filter #(table-column-visible? view table (:id %)))))))
 
 (def filter-popover-id
   "insurance-workbench-filter-popover")
@@ -783,16 +807,17 @@
             (map #(active-filter-pill req %) chips)))))
 
 (defn- table-column-toggle-js
-  [req id]
-  (str "$insuranceWorkbench.table.column = '" (name id) "'; "
+  [req view id]
+  (str "$insuranceWorkbench.table.view = '" (name (or view :all)) "'; "
+       "$insuranceWorkbench.table.column = '" (name id) "'; "
        "$insuranceWorkbench.table.columnVisible = evt.target.checked; "
        "@post('" (d*/act req ::actions/toggle-table-column) "')"))
 
 (defn- table-column-checkbox
-  [req table {:keys [id label-key]}]
+  [req view table {:keys [id label-key]}]
   [:wa-checkbox (cond-> {:data-workbench-column-toggle (name id)
-                         :data-on:change               (table-column-toggle-js req id)}
-                  (table-column-visible? table id) (assoc :checked true))
+                         :data-on:change               (table-column-toggle-js req view id)}
+                  (table-column-visible? view table id) (assoc :checked true))
    ((:tr req) label-key)])
 
 (defn- group-switch-js
@@ -820,7 +845,7 @@
     [:strong {:class "wa-caption-s wa-color-text-quiet"}
      (tr [:insurance.workbench/columns])]
     (for [column table-columns]
-      (table-column-checkbox req table column))]])
+      (table-column-checkbox req view table column))]])
 
 (defn- table-settings-button
   [tr]
@@ -859,30 +884,34 @@
 
 (defn- selection-signals
   ([policy filters]
-   (selection-signals policy filters nil))
+   (selection-signals policy filters nil :all))
   ([policy filters table]
-   {:insuranceWorkbench {:policyId             (str (:insurance.policy/policy-id policy))
-                         :memberQ              (or (:member-q filters) "")
-                         :selectedCoverageIds  []
-                         :targetWorkflowStatus "keep"
-                         :targetChangeStatus   "keep"
-                         :filterEditor         {:field        nil
-                                                :source       nil
-                                                :appliedField nil}
-                         :filterPopover        {:anchor filter-button-id
-                                                :open   false}
-                         :filterDraft          (merge {:categoryIds       (signal-array-values (category-query-values filters))
-                                                       :ownership         (name (or (:ownership filters) :all))
-                                                       :coverageTypeIds   (signal-array-values (coverage-type-query-values filters))
-                                                       :missingPhotos     (boolean (:missing-photos? filters))
-                                                       :missingHarmoniaId (boolean (:missing-harmonia-id? filters))
-                                                       :workflowStatuses  (signal-array-values (workflow-status-query-values filters))
-                                                       :changeStatuses    (signal-array-values (change-status-query-values filters))}
-                                                      (value-filter-signal-values filters))
-                         :table                {:groupByMember (= :member (:group filters))
-                                                :column        nil
-                                                :columnVisible nil
-                                                :columns       (table-columns-state table)}}}))
+   (selection-signals policy filters table :all))
+  ([policy filters table view]
+   (let [view (or view :all)]
+     {:insuranceWorkbench {:policyId             (str (:insurance.policy/policy-id policy))
+                           :memberQ              (or (:member-q filters) "")
+                           :selectedCoverageIds  []
+                           :targetWorkflowStatus "keep"
+                           :targetChangeStatus   "keep"
+                           :filterEditor         {:field        nil
+                                                  :source       nil
+                                                  :appliedField nil}
+                           :filterPopover        {:anchor filter-button-id
+                                                  :open   false}
+                           :filterDraft          (merge {:categoryIds       (signal-array-values (category-query-values filters))
+                                                         :ownership         (name (or (:ownership filters) :all))
+                                                         :coverageTypeIds   (signal-array-values (coverage-type-query-values filters))
+                                                         :missingPhotos     (boolean (:missing-photos? filters))
+                                                         :missingHarmoniaId (boolean (:missing-harmonia-id? filters))
+                                                         :workflowStatuses  (signal-array-values (workflow-status-query-values filters))
+                                                         :changeStatuses    (signal-array-values (change-status-query-values filters))}
+                                                        (value-filter-signal-values filters))
+                           :table                {:view          (name view)
+                                                  :groupByMember (= :member (:group filters))
+                                                  :column        nil
+                                                  :columnVisible nil
+                                                  :columns       (table-columns-state view table)}}})))
 
 (def selected-coverage-ids-js
   "($insuranceWorkbench.selectedCoverageIds || [])")
@@ -1191,10 +1220,10 @@
          (row-cells req currency columns row))))
 
 (defn- flat-table
-  [req {:keys [filters policy rows table]}]
+  [req {:keys [filters policy rows table view]}]
   (let [currency     (:insurance.policy/currency policy)
         coverage-ids (mapv :coverage-id rows)
-        columns      (table-columns-for (:group filters) table)]
+        columns      (table-columns-for (:group filters) view table)]
     (ui2/table-shell
      [:table {:class "wa-table leading-condensed"}
       (table-headings (:tr req) columns coverage-ids)
@@ -1337,10 +1366,10 @@
            [(member-footer-row req currency columns group)]))))
 
 (defn- grouped-table
-  [req {:keys [groups policy table]}]
+  [req {:keys [groups policy table view]}]
   (let [currency     (:insurance.policy/currency policy)
         coverage-ids (mapv :coverage-id (mapcat :rows groups))
-        columns      (table-columns-for :member table)]
+        columns      (table-columns-for :member view table)]
     (ui2/table-shell
      (into [:table {:class "wa-table leading-condensed"}
             (table-headings (:tr req) columns coverage-ids)]
@@ -1440,7 +1469,7 @@
     (ui2/datastar-page2 {:class "full-width"}
                         [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
                                :data-preserve-attr "data-signals"
-                               :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table))}
+                               :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table (:view workbench)))}
                          (ui2/page-header
                           {:breadcrumb (page-breadcrumb req policy)
                            :title      (tr [:insurance.workbench/title])

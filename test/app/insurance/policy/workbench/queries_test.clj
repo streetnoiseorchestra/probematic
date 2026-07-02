@@ -266,6 +266,46 @@
                                             :private :changed :new :removed]]
                                   [view (row-names (workbench conn policy-id {:view (name view)}))]))})))))
 
+(deftest view-presets-expose-filter-and-column-defaults-test
+  (testing "preset views are backed by the same filter and column concepts as manual configuration"
+    (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-view-presets")
+          policy-id      (random-uuid)]
+      (seed-workbench-policy! conn policy-id)
+      (is (= {:todo       {:preset-filters {:workflow-statuses #{:needs-review}}
+                           :column-ids     [:member
+                                            :instrument
+                                            :category
+                                            :photos
+                                            :harmonia-id
+                                            :workflow
+                                            :change
+                                            :value
+                                            :actions]
+                           :row-names      ["Alto Horn" "Cornet"]}
+              :missing-id {:preset-filters {:missing-harmonia-id? true}
+                           :column-ids     [:member
+                                            :instrument
+                                            :category
+                                            :harmonia-id
+                                            :workflow
+                                            :actions]
+                           :row-names      ["Bass Clarinet" "Cornet"]}
+              :changed    {:preset-filters {:change-statuses #{:changed :new :removed}}
+                           :column-ids     [:member
+                                            :instrument
+                                            :category
+                                            :change
+                                            :value
+                                            :cost
+                                            :actions]
+                           :row-names      ["Bass Clarinet" "Cornet" "Drum Kit"]}}
+             (into {}
+                   (for [view [:todo :missing-id :changed]
+                         :let [result (workbench conn policy-id {:view (name view)})]]
+                     [view {:preset-filters (:preset-filters result)
+                            :column-ids     (:default-column-ids result)
+                            :row-names      (row-names result)}])))))))
+
 (deftest member-search-test
   (testing "matches member name, nickname, username, and email case-insensitively"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-member-search")

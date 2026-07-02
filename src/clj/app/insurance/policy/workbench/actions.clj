@@ -2,6 +2,7 @@
   (:require
    [app.insurance.coverage.queries :as coverage.queries]
    [app.insurance.domain :as domain]
+   [app.insurance.policy.workbench.queries :as workbench.queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.util :as util]
@@ -250,6 +251,13 @@
   [value]
   (domain/simple-keyword value))
 
+(defn- table-view
+  [value]
+  (let [view (domain/simple-keyword value)]
+    (if (contains? (set workbench.queries/supported-views) view)
+      view
+      :all)))
+
 (defn- column-visible?
   [value]
   (not (or (false? value)
@@ -258,10 +266,11 @@
 (defn toggle-table-column-action
   [_state signals]
   (let [table-signals (get-in signals [:insuranceWorkbench :table])
+        view          (table-view (:view table-signals))
         column-id     (table-column-id (:column table-signals))]
     (if (contains? configurable-table-column-ids column-id)
       [[:app.datastar/assoc-state
-        [form-key :table :columns column-id]
+        [form-key :table :columns-by-view view column-id]
         (column-visible? (:columnVisible table-signals))]]
       [])))
 

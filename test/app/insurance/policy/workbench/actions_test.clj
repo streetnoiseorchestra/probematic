@@ -491,22 +491,24 @@
                                   :value-operator :less-than
                                   :value ""}))})))
 
-(deftest toggle-table-column-action-stores-column-visibility-in-page-state
+(deftest toggle-table-column-action-stores-column-visibility-in-view-scoped-page-state
   (is (= {:hide [[:app.datastar/assoc-state
-                  [:insurance-workbench :table :columns :cost]
+                  [:insurance-workbench :table :columns-by-view :missing-id :cost]
                   false]]
           :show [[:app.datastar/assoc-state
-                  [:insurance-workbench :table :columns :cost]
+                  [:insurance-workbench :table :columns-by-view :missing-id :cost]
                   true]]}
          {:hide
           (actions/toggle-table-column-action
            {}
-           {:insuranceWorkbench {:table {:column "cost"
+           {:insuranceWorkbench {:table {:view "missing-id"
+                                         :column "cost"
                                          :columnVisible false}}})
           :show
           (actions/toggle-table-column-action
            {}
-           {:insuranceWorkbench {:table {:column "cost"
+           {:insuranceWorkbench {:table {:view "missing-id"
+                                         :column "cost"
                                          :columnVisible true}}})})))
 
 (deftest toggle-table-column-action-rejects-unsupported-columns
@@ -525,7 +527,7 @@
 
 (deftest toggle-table-column-action-normalizes-string-visibility
   (is (= [[:app.datastar/assoc-state
-           [:insurance-workbench :table :columns :harmonia-id]
+           [:insurance-workbench :table :columns-by-view :all :harmonia-id]
            false]]
          (actions/toggle-table-column-action
           {}
