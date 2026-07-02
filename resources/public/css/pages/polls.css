@@ -42,16 +42,21 @@
     border-end-end-radius: var(--wa-panel-border-radius);
   }
 
+  & > a[aria-hidden="true"] {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: block;
+  }
+
   & .polls-row-title {
+    position: relative;
+    z-index: 2;
+    justify-self: start;
+    max-inline-size: 100%;
     min-inline-size: var(--sno-size-none);
     font-size: var(--wa-font-size-s);
     font-weight: var(--sno-font-weight-semibold);
-  }
-
-  & .polls-row-title::after {
-    content: "";
-    position: absolute;
-    inset: 0;
   }
 
   & .polls-row-title > span {

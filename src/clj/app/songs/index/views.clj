@@ -37,6 +37,10 @@
                  :label (tr [:song/score])
                  :value score})
      (song-status-badge req active? "songs-index-status songs-index-status--desktop")]]
+   [:a {:class       "wa-link-plain"
+        :href        (urls/link-song song)
+        :aria-hidden "true"
+        :tabindex    "-1"}]
    [:div {:class "songs-index-row-date"}
     (song-stat {:icon  "calendar"
                 :label (tr [:song/last-played])

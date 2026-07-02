@@ -61,16 +61,20 @@
   min-inline-size: var(--sno-size-none);
 }
 
-.songs-index-song-title {
-  flex: 1 1 auto;
-  min-inline-size: var(--sno-size-none);
-  font-weight: var(--sno-font-weight-semibold);
+.songs-index-row > a[aria-hidden="true"] {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: block;
 }
 
-.songs-index-song-title::after {
-  content: "";
-  position: absolute;
-  inset: 0;
+.songs-index-song-title {
+  position: relative;
+  z-index: 2;
+  flex: 0 1 auto;
+  max-inline-size: 100%;
+  min-inline-size: var(--sno-size-none);
+  font-weight: var(--sno-font-weight-semibold);
 }
 
 .songs-index-song-title > span {

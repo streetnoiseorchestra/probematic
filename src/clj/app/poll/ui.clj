@@ -44,6 +44,10 @@
    [:a {:class "polls-row-title"
         :href  (urls/link-poll poll)}
     [:span title]]
+   [:a {:class       "wa-link-plain"
+        :href        (urls/link-poll poll)
+        :aria-hidden "true"
+        :tabindex    "-1"}]
    (status-badge tr poll-status {:class "polls-row-status"})
    (poll-index-stat (tr [:poll/total-voters])
                     (or (:poll/voter-count poll) 0))
