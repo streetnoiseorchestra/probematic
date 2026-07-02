@@ -145,29 +145,28 @@
 (defn restart-login-handler [env]
   (assoc (restart-login env) :session nil))
 
-(defn identity-mismatch-response [req]
-  (let [tr (:tr req)]
-    (ui2/standalone-page
-     {:status      403
-      :title       (tr [:identity-mismatch/page-title])
-      :description (tr [:identity-mismatch/body])}
-     [:header
-      [:p (tr [:identity-mismatch/eyebrow])]
-      [:h1 (tr [:identity-mismatch/title])]]
-     [:p (tr [:identity-mismatch/body])]
-     (into [:dl
-            [:dt (tr [:identity-mismatch/signed-in-email])]
-            [:dd [:code (or (get-in req [:session :session/email]) (tr [:unknown]))]]]
-           (when-let [keycloak-id (get-in req [:session :session/keycloak-id])]
-             [[:dt (tr [:identity-mismatch/sno-id-subject])]
-              [:dd [:code keycloak-id]]]))
-     [:p (tr [:identity-mismatch/retry-guidance])]
-     [:footer
-      [:form {:method "post" :action "/login/restart"}
-       [:button {:type "submit"}
-        (tr [:identity-mismatch/restart-login])]]
-      [:a {:href "/logout"}
-       (tr [:identity-mismatch/log-out])]])))
+(defn identity-mismatch-response [{:keys [tr] :as  req}]
+  (ui2/standalone-page
+   {:status      403
+    :title       (tr [:identity-mismatch/page-title])
+    :description (tr [:identity-mismatch/body])}
+   [:header
+    [:p (tr [:identity-mismatch/eyebrow])]
+    [:h1 (tr [:identity-mismatch/title])]]
+   [:p (tr [:identity-mismatch/body])]
+   (into [:dl
+          [:dt (tr [:identity-mismatch/signed-in-email])]
+          [:dd [:code (or (get-in req [:session :session/email]) (tr [:unknown]))]]]
+         (when-let [keycloak-id (get-in req [:session :session/keycloak-id])]
+           [[:dt (tr [:identity-mismatch/sno-id-subject])]
+            [:dd [:code keycloak-id]]]))
+   [:p (tr [:identity-mismatch/retry-guidance])]
+   [:footer
+    [:form {:method "post" :action "/login/restart"}
+     [:button {:type "submit"}
+      (tr [:identity-mismatch/restart-login])]]
+    [:a {:href "/logout"}
+     (tr [:identity-mismatch/log-out])]]))
 
 (defn oauth2-load-certificate [{:keys [openid-config]}]
   (->>

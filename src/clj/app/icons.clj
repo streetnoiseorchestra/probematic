@@ -272,7 +272,6 @@
                   :google-calendar
                   :home
                   :location-dot
-                  :logotype
                   :meh
                   :microsoft-365
                   :minus
