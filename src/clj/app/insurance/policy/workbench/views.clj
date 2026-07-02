@@ -893,6 +893,7 @@
      {:insuranceWorkbench {:policyId             (str (:insurance.policy/policy-id policy))
                            :memberQ              (or (:member-q filters) "")
                            :selectedCoverageIds  []
+                           :bulkActionStuck      false
                            :targetWorkflowStatus "keep"
                            :targetChangeStatus   "keep"
                            :filterEditor         {:field        nil
@@ -1077,11 +1078,15 @@
                     :data-on:click collapse-all-groups-js}
      (tr [:insurance.workbench/collapse-all])]]])
 
-(def bulk-action-bar-stuck-js
-  (str "const top = parseFloat(getComputedStyle(el).top) || 0; "
-       "el.classList.toggle('insurance-workbench-bulk-action-bar--stuck', "
-       selected-count-js
-       " > 0 && el.getBoundingClientRect().top <= top)"))
+(def bulk-action-sentinel-exit-js
+  "$insuranceWorkbench.bulkActionStuck = el.getBoundingClientRect().top < 0")
+
+(defn- bulk-action-sentinel
+  []
+  [:div {:class                  "insurance-workbench-bulk-action-sentinel"
+         :aria-hidden            "true"
+         :data-on-intersect      "$insuranceWorkbench.bulkActionStuck = false"
+         :data-on-intersect__exit bulk-action-sentinel-exit-js}])
 
 (defn- bulk-actions
   [{:keys [tr] :as req} editable?]
@@ -1102,14 +1107,15 @@
 
 (defn- bulk-action-bar
   [{:keys [tr] :as req} {:keys [editable? filters rows]}]
-  [:section {:class                              "insurance-workbench-bulk-action-bar"
-             :data-class:insurance-workbench-bulk-action-bar--sticky (str selected-count-js " > 0")
-             :data-effect                         bulk-action-bar-stuck-js
-             :data-on:scroll__window__throttle.100ms bulk-action-bar-stuck-js}
-   (bulk-actions req editable?)
-   (when (and (= :member (:group filters))
-              (seq rows))
-     (expansion-actions tr))])
+  (list
+   (bulk-action-sentinel)
+   [:section {:class                              "insurance-workbench-bulk-action-bar"
+              :data-class:insurance-workbench-bulk-action-bar--sticky (str selected-count-js " > 0")
+              :data-class:insurance-workbench-bulk-action-bar--stuck  (str selected-count-js " > 0 && $insuranceWorkbench.bulkActionStuck")}
+    (bulk-actions req editable?)
+    (when (and (= :member (:group filters))
+               (seq rows))
+      (expansion-actions tr))]))
 
 (defn- column-alignment-style
   [{:keys [align]}]
@@ -1572,29 +1578,21 @@
    (for [page-size (:page-sizes pagination)]
      (page-size-item (:page-size pagination) page-size))])
 
-(def ^:private pagination-controls-stuck-js
-  (str "const bottom = parseFloat(getComputedStyle(el).bottom) || 0; "
-       "const threshold = window.innerHeight - bottom; "
-       "const stuck = el.getBoundingClientRect().bottom >= threshold - 1; "
-       "el.classList.toggle('insurance-workbench-pagination--stuck', stuck);"))
-
 (defn- pagination-controls
   [{:keys [tr]} {:keys [pagination] :as workbench}]
   (let [prev-url (when (:has-prev? pagination)
                    (pagination-url workbench {:page (:prev-page pagination)}))
         next-url (when (:has-next? pagination)
                    (pagination-url workbench {:page (:next-page pagination)}))]
-    [:div {:class                              "wa-stack wa-gap-xs insurance-workbench-pagination"
-           :data-workbench-pagination          "true"
-           :data-effect                        pagination-controls-stuck-js
-           :data-on:scroll__window__throttle.100ms pagination-controls-stuck-js
-           :data-on:resize__window__throttle.100ms pagination-controls-stuck-js}
-     [divider/Divider]
-     [:nav {:class      "wa-cluster wa-gap-2xs wa-align-items-center wa-justify-content-end"
-            :aria-label (tr [:insurance.workbench/pagination])}
-      (pagination-nav-button tr [:action/previous] :caret-left prev-url)
-      (page-size-dropdown tr workbench)
-      (pagination-nav-button tr [:action/next] :caret-right next-url)]]))
+    [:div {:class                     "insurance-workbench-pagination"
+           :data-workbench-pagination "true"}
+     [:div {:class "wa-stack wa-gap-xs insurance-workbench-pagination__inner"}
+      [divider/Divider]
+      [:nav {:class      "wa-cluster wa-gap-2xs wa-align-items-center wa-justify-content-end"
+             :aria-label (tr [:insurance.workbench/pagination])}
+       (pagination-nav-button tr [:action/previous] :caret-left prev-url)
+       (page-size-dropdown tr workbench)
+       (pagination-nav-button tr [:action/next] :caret-right next-url)]]]))
 
 (defn- rows-section
   [req {:keys [filters rows] :as workbench}]

@@ -980,24 +980,24 @@
                {:editable? true
                 :filters   {:group :member}
                 :rows      [{}]}))]
-    (is (= {:always-visible?                      true
-            :shows-zero-selected?                 true
-            :uses-semantic-action-groups?         true
-            :uses-dropdowns?                      true
-            :omits-wa-selects?                    true
-            :has-workflow-trigger?                true
-            :has-change-trigger?                  true
-            :workflow-items-have-icons?           true
-            :workflow-items-have-colors?          true
-            :change-items-have-icons?             true
-            :change-items-have-colors?            true
-            :workflow-action-posts-only-workflow? true
-            :change-action-posts-only-change?     true
-            :posts-mark-and-set-actions?          true
-            :has-deselect-all?                    true
-            :has-expansion-actions?               true
-            :hides-expansion-actions-when-sticky? true
-            :selection-actions-disabled?          true}
+    (is (= {:always-visible?                         true
+            :shows-zero-selected?                    true
+            :uses-semantic-action-groups?            true
+            :uses-dropdowns?                         true
+            :omits-wa-selects?                       true
+            :has-workflow-trigger?                   true
+            :has-change-trigger?                     true
+            :workflow-items-have-icons?              true
+            :workflow-items-have-colors?             true
+            :change-items-have-icons?                true
+            :change-items-have-colors?               true
+            :workflow-action-posts-only-workflow?    true
+            :change-action-posts-only-change?        true
+            :posts-mark-and-set-actions?             true
+            :has-deselect-all?                       true
+            :has-expansion-actions?                  true
+            :uses-intersection-sentinel-when-sticky? true
+            :selection-actions-disabled?             true}
            {:always-visible?
             (not (str/includes? html "data-show="))
             :shows-zero-selected?
@@ -1058,12 +1058,14 @@
                  (str/includes? html "setAttribute(&apos;aria-expanded&apos;, &apos;true&apos;)")
                  (str/includes? html "setAttribute(&apos;aria-expanded&apos;, &apos;false&apos;)")
                  (not (str/includes? html "row.hidden")))
-            :hides-expansion-actions-when-sticky?
+            :uses-intersection-sentinel-when-sticky?
             (and (str/includes? html "data-class:insurance-workbench-bulk-action-bar--sticky")
-                 (str/includes? html "data-effect=")
-                 (str/includes? html "data-on:scroll__window__throttle.100ms")
-                 (str/includes? html "($insuranceWorkbench.selectedCoverageIds || []).length &gt; 0")
-                 (str/includes? html "insurance-workbench-bulk-action-bar--stuck"))
+                 (str/includes? html "insurance-workbench-bulk-action-sentinel")
+                 (str/includes? html "data-on-intersect=")
+                 (str/includes? html "data-on-intersect__exit=")
+                 (str/includes? html "$insuranceWorkbench.bulkActionStuck")
+                 (str/includes? html "insurance-workbench-bulk-action-bar--stuck")
+                 (not (str/includes? html "data-on:scroll__window")))
             :selection-actions-disabled?
             (str/includes? html "($insuranceWorkbench.selectedCoverageIds || []).length === 0")}))))
 
@@ -1178,11 +1180,12 @@
             :navigates-to-page-size?            true
             :previous-disabled?                 true
             :next-link?                         true
-            :sticky-pagination-class?           true
-            :toggles-stuck-pagination-class?    true
+            :sticky-pagination-shell?           true
+            :pagination-uses-inner-wrapper?     true
+            :omits-pagination-js?               true
             :omits-static-pagination-shadow?    true
             :omits-pagination-padding?          true
-            :omits-inline-pagination-position? true}
+            :omits-inline-pagination-position?  true}
            {:renders-summary-trigger?
             (str/includes? html "1–20 of 85 results")
             :uses-dropdown?
@@ -1221,20 +1224,29 @@
             :next-link?
             (and (str/includes? html "aria-label=\"Next\"")
                  (str/includes? html "page=2"))
-            :sticky-pagination-class?
+            :sticky-pagination-shell?
             (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
                   pagination-html  (when pagination-start
                                      (subs html
                                            pagination-start
                                            (min (count html) (+ pagination-start 2000))))]
               (str/includes? (or pagination-html "") "insurance-workbench-pagination"))
-            :toggles-stuck-pagination-class?
+            :pagination-uses-inner-wrapper?
             (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
                   pagination-html  (when pagination-start
                                      (subs html
                                            pagination-start
                                            (min (count html) (+ pagination-start 2000))))]
-              (str/includes? (or pagination-html "") "insurance-workbench-pagination--stuck"))
+              (str/includes? (or pagination-html "") "insurance-workbench-pagination__inner"))
+            :omits-pagination-js?
+            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
+                  pagination-html  (when pagination-start
+                                     (subs html
+                                           pagination-start
+                                           (min (count html) (+ pagination-start 2000))))]
+              (and (not (str/includes? (or pagination-html "") "data-effect="))
+                   (not (str/includes? (or pagination-html "") "data-on:scroll__window"))
+                   (not (str/includes? (or pagination-html "") "insurance-workbench-pagination--stuck"))))
             :omits-static-pagination-shadow?
             (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
                   pagination-html  (when pagination-start
@@ -1259,18 +1271,24 @@
 
 (deftest sticky-workbench-bars-use-slide-transitions
   (let [css (slurp "resources/public/css/pages/insurance.css")]
-    (is (= {:pagination-transitions?       true
-            :pagination-slides-when-stuck? true
-            :bulk-bar-transitions?         true
-            :bulk-bar-slides-when-stuck?   true
-            :reduced-motion-disables?      true}
-           {:pagination-transitions?
-            (boolean (re-find #"(?s)\.insurance-workbench-pagination \{.*transition:" css))
+    (is (= {:pagination-scroll-state-container? true
+            :pagination-scroll-state-query?     true
+            :pagination-inner-transitions?      true
+            :pagination-slides-when-stuck?      true
+            :bulk-bar-transitions?              true
+            :bulk-bar-slides-when-stuck?        true
+            :reduced-motion-disables?           true}
+           {:pagination-scroll-state-container?
+            (boolean (re-find #"(?s)\.insurance-workbench-pagination \{.*container-type: scroll-state;" css))
+            :pagination-scroll-state-query?
+            (boolean (re-find #"(?s)@container scroll-state\(stuck: bottom\)" css))
+            :pagination-inner-transitions?
+            (boolean (re-find #"(?s)\.insurance-workbench-pagination__inner \{.*transition:" css))
             :pagination-slides-when-stuck?
-            (boolean (re-find #"(?s)\.insurance-workbench-pagination--stuck \{.*transform: translateY\(0\);" css))
+            (boolean (re-find #"(?s)@container scroll-state\(stuck: bottom\).*\.insurance-workbench-pagination__inner \{.*transform: translateY\(0\);" css))
             :bulk-bar-transitions?
             (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar \{.*transition:" css))
             :bulk-bar-slides-when-stuck?
             (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar--stuck \{.*transform: translateY\(0\);" css))
             :reduced-motion-disables?
-            (boolean (re-find #"(?s)@media \(prefers-reduced-motion: reduce\).*\.insurance-workbench-pagination,.*\.insurance-workbench-bulk-action-bar" css))}))))
+            (boolean (re-find #"(?s)@media \(prefers-reduced-motion: reduce\).*\.insurance-workbench-pagination__inner,.*\.insurance-workbench-bulk-action-bar" css))}))))
