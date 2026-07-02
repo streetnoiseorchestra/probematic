@@ -256,8 +256,8 @@
            :tabindex   "-1"}]
       [:app-shell-content
        body]]
-     (when (config/dev-mode? (-> req :system :env))
-       [:datastar-inspector])]))
+     #_(when (config/dev-mode? (-> req :system :env))
+         [:datastar-inspector])]))
 
 (defn datastar-page-html
   [req opts body]
