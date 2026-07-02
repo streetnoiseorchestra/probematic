@@ -714,9 +714,7 @@
 
 .insurance-workbench-row-action-group,
 .insurance-workbench-row-actions-trigger--idle {
-  transition:
-    opacity var(--wa-transition-normal) var(--wa-transition-easing),
-    transform var(--wa-transition-normal) var(--wa-transition-easing);
+  transition: opacity var(--wa-transition-normal) var(--wa-transition-easing);
 }
 
 .insurance-workbench-row-action-group {
@@ -727,7 +725,7 @@
   max-inline-size: max-content;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-50%) translateX(var(--wa-space-2xs));
+  transform: translateY(-50%);
 }
 
 .insurance-workbench-row-action-group::part(base) {
@@ -756,7 +754,7 @@
   .insurance-workbench-row-action-group {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(-50%) translateX(0);
+  transform: translateY(-50%);
 }
 
 .insurance-workbench

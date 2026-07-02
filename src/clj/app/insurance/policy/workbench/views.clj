@@ -1240,8 +1240,7 @@
                    variant (assoc :variant variant))
    [:span {:class "insurance-workbench-row-action-icon"}
     [ico/Icon {::ico/library :snoico
-               ::ico/name    :ellipsis
-               :style        "margin-bottom: 3px;"}]]])
+               ::ico/name    :ellipsis}]]])
 
 (defn- row-action-tooltip
   [button-id label]
@@ -1289,6 +1288,7 @@
                       :class      "insurance-workbench-row-actions-trigger insurance-workbench-row-actions-trigger--idle"}
        [ico/Icon {::ico/library :snoico
                   ::ico/name    :ellipsis
+                  ;; line it up with the row-action-dropdown-trigger
                   :style "margin-bottom: 3px;"}]]
       [:wa-button-group {:class       "insurance-workbench-row-action-group"
                          :label       actions-label
