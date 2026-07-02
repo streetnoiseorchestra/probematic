@@ -490,3 +490,44 @@
            (apply-filter-signals {:field :value
                                   :value-operator :less-than
                                   :value ""}))})))
+
+(deftest toggle-table-column-action-stores-column-visibility-in-page-state
+  (is (= {:hide [[:app.datastar/assoc-state
+                  [:insurance-workbench :table :columns :cost]
+                  false]]
+          :show [[:app.datastar/assoc-state
+                  [:insurance-workbench :table :columns :cost]
+                  true]]}
+         {:hide
+          (actions/toggle-table-column-action
+           {}
+           {:insuranceWorkbench {:table {:column "cost"
+                                         :columnVisible false}}})
+          :show
+          (actions/toggle-table-column-action
+           {}
+           {:insuranceWorkbench {:table {:column "cost"
+                                         :columnVisible true}}})})))
+
+(deftest toggle-table-column-action-rejects-unsupported-columns
+  (is (= {:selection-column []
+          :unknown-column []}
+         {:selection-column
+          (actions/toggle-table-column-action
+           {}
+           {:insuranceWorkbench {:table {:column "selection"
+                                         :columnVisible false}}})
+          :unknown-column
+          (actions/toggle-table-column-action
+           {}
+           {:insuranceWorkbench {:table {:column "internal"
+                                         :columnVisible false}}})})))
+
+(deftest toggle-table-column-action-normalizes-string-visibility
+  (is (= [[:app.datastar/assoc-state
+           [:insurance-workbench :table :columns :harmonia-id]
+           false]]
+         (actions/toggle-table-column-action
+          {}
+          {:insuranceWorkbench {:table {:column "harmonia-id"
+                                        :columnVisible "false"}}}))))

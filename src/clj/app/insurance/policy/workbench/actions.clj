@@ -12,6 +12,20 @@
 (def selection-signal-path
   "insuranceWorkbench.selectedCoverageIds")
 
+(def configurable-table-column-ids
+  #{:member
+    :instrument
+    :category
+    :ownership
+    :photos
+    :harmonia-id
+    :workflow
+    :change
+    :value
+    :cost
+    :coverage-types
+    :actions})
+
 (defn- normalize-member-search
   [value]
   (let [value (some-> value str str/trim)]
@@ -232,6 +246,25 @@
       [[:app.datastar/assoc-state [form-key :filters :last-applied-field] (some-> field name)]
        (clear-filter-editor-signals field)])))
 
+(defn- table-column-id
+  [value]
+  (domain/simple-keyword value))
+
+(defn- column-visible?
+  [value]
+  (not (or (false? value)
+           (= "false" (some-> value str str/lower-case)))))
+
+(defn toggle-table-column-action
+  [_state signals]
+  (let [table-signals (get-in signals [:insuranceWorkbench :table])
+        column-id     (table-column-id (:column table-signals))]
+    (if (contains? configurable-table-column-ids column-id)
+      [[:app.datastar/assoc-state
+        [form-key :table :columns column-id]
+        (column-visible? (:columnVisible table-signals))]]
+      [])))
+
 (defn bulk-update-statuses-action
   [{:keys [current-member-id db tr]} signals]
   (let [signals         (:insuranceWorkbench signals)
@@ -287,4 +320,5 @@
    ::bulk-update-workflow-status #'bulk-update-workflow-status-action
    ::bulk-mark-workflow         #'bulk-mark-workflow-action
    ::bulk-set-change            #'bulk-set-change-action
-   ::apply-filter               #'apply-filter-action})
+   ::apply-filter               #'apply-filter-action
+   ::toggle-table-column        #'toggle-table-column-action})

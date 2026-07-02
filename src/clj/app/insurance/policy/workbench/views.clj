@@ -67,24 +67,28 @@
 
 (defn- query-params
   [req]
-  (let [params (or (get-in req [:parameters :query])
-                   (:query-params req)
-                   {})]
-    {:view                (query-param params :view)
-     :review-filter       (query-param params :review-filter)
-     :member-q            (query-param params :member-q)
-     :category-id         (query-param params :category-id)
-     :coverage-type-id    (query-param params :coverage-type-id)
-     :ownership           (query-param params :ownership)
-     :missing-photos      (query-param params :missing-photos)
-     :missing-harmonia-id (query-param params :missing-harmonia-id)
-     :workflow-status     (query-param params :workflow-status)
-     :change-status       (query-param params :change-status)
-     :value-operator      (query-param params :value-operator)
-     :value               (query-param params :value)
-     :value-min           (query-param params :value-min)
-     :value-max           (query-param params :value-max)
-     :group               (query-param params :group)}))
+  (let [params    (or (get-in req [:parameters :query])
+                      (:query-params req)
+                      {})
+        page      (query-param params :page)
+        page-size (query-param params :page-size)]
+    (cond-> {:view                (query-param params :view)
+             :review-filter       (query-param params :review-filter)
+             :member-q            (query-param params :member-q)
+             :category-id         (query-param params :category-id)
+             :coverage-type-id    (query-param params :coverage-type-id)
+             :ownership           (query-param params :ownership)
+             :missing-photos      (query-param params :missing-photos)
+             :missing-harmonia-id (query-param params :missing-harmonia-id)
+             :workflow-status     (query-param params :workflow-status)
+             :change-status       (query-param params :change-status)
+             :value-operator      (query-param params :value-operator)
+             :value               (query-param params :value)
+             :value-min           (query-param params :value-min)
+             :value-max           (query-param params :value-max)
+             :group               (query-param params :group)}
+      (some? page)      (assoc :page page)
+      (some? page-size) (assoc :page-size page-size))))
 
 (defn- active-filter-params
   [{:keys [page-state]}]
@@ -168,11 +172,31 @@
   [id]
   (table-column-by-id id))
 
+(defn- table-column-visible?
+  [table id]
+  (let [columns (or (:columns table) {})]
+    (if (contains? columns id)
+      (not (or (false? (get columns id))
+               (= "false" (some-> (get columns id) str str/lower-case))))
+      (if (contains? columns (name id))
+        (not (or (false? (get columns (name id)))
+                 (= "false" (some-> (get columns (name id)) str str/lower-case))))
+        true))))
+
+(defn- table-columns-state
+  [table]
+  (into {}
+        (for [{:keys [id]} table-columns]
+          [(name id) (table-column-visible? table id)])))
+
 (defn- table-columns-for
-  [group]
-  (into [selection-column]
-        (cond->> table-columns
-          (= group :member) (remove #(= :member (:id %))))))
+  ([group]
+   (table-columns-for group nil))
+  ([group table]
+   (into [selection-column]
+         (cond->> table-columns
+           (= group :member) (remove #(= :member (:id %)))
+           true (filter #(table-column-visible? table (:id %)))))))
 
 (def filter-popover-id
   "insurance-workbench-filter-popover")
@@ -257,25 +281,37 @@
          (value-filter-query-params (:value-filter filters))
          overrides))
 
+(defn- pagination-query-state
+  [{:keys [filters pagination view]} overrides]
+  (query-state filters
+               view
+               (merge {:page-size (:page-size pagination)}
+                      overrides)))
+
 (defn- view-button
-  [tr policy filters current-view view]
-  (let [active? (= current-view view)]
+  [tr {:keys [filters pagination policy view]} view-option]
+  (let [active? (= view view-option)]
     [button/Button (cond-> {:appearance          (if active? "filled" "outlined")
                             :size                "s"
                             :href                (urls/link-policy-workbench
                                                   policy
-                                                  (query-state filters
-                                                               current-view
-                                                               {:view view}))
-                            :data-workbench-view (name view)}
+                                                  (pagination-query-state
+                                                   {:filters filters
+                                                    :pagination pagination
+                                                    :view view}
+                                                   {:view view-option
+                                                    :page 1}))
+                            :data-workbench-view (name view-option)}
                      active? (assoc :variant "brand"))
-     (tr (view-label-keys view))]))
+     (tr (view-label-keys view-option))]))
 
 (defn- view-select-form
-  [tr {:keys [filters policy view]}]
+  [tr {:keys [filters pagination policy view]}]
   (into [:form {:method "get"
                 :action (urls/link-policy-workbench policy)}]
         (concat (hidden-inputs (concat [["group" (:group filters)]
+                                        ["page" 1]
+                                        ["page-size" (:page-size pagination)]
                                         ["member-q" (:member-q filters)]
                                         ["category-id" (category-query-values filters)]
                                         ["coverage-type-id" (coverage-type-query-values filters)]
@@ -299,15 +335,17 @@
   [:div {:class "insurance-workbench-view-switcher"}
    (into [:nav {:aria-label (tr [:insurance.workbench/view])}]
          (for [view-option queries/supported-views]
-           (view-button tr (:policy workbench) (:filters workbench) (:view workbench) view-option)))
+           (view-button tr workbench view-option)))
    (view-select-form tr workbench)])
 
 (defn- search-form
-  [{:keys [tr] :as req} {:keys [filters policy view]}]
+  [{:keys [tr] :as req} {:keys [filters pagination policy view]}]
   (into [:form {:method "get"
                 :action (urls/link-policy-workbench policy)}]
         (concat (hidden-inputs (concat [["view" view]
                                         ["group" (:group filters)]
+                                        ["page" 1]
+                                        ["page-size" (:page-size pagination)]
                                         ["category-id" (category-query-values filters)]
                                         ["coverage-type-id" (coverage-type-query-values filters)]
                                         ["ownership" (:ownership filters)]
@@ -744,12 +782,18 @@
                                                        "padding: var(--wa-space-xs);")}]
             (map #(active-filter-pill req %) chips)))))
 
+(defn- table-column-toggle-js
+  [req id]
+  (str "$insuranceWorkbench.table.column = '" (name id) "'; "
+       "$insuranceWorkbench.table.columnVisible = evt.target.checked; "
+       "@post('" (d*/act req ::actions/toggle-table-column) "')"))
+
 (defn- table-column-checkbox
-  [tr {:keys [id label-key]}]
-  [:wa-checkbox {:checked                      true
-                 :data-workbench-column-toggle (name id)
-                 :data-on:change               (str "$insuranceWorkbench.table.columns['" (name id) "'] = evt.target.checked")}
-   (tr label-key)])
+  [req table {:keys [id label-key]}]
+  [:wa-checkbox (cond-> {:data-workbench-column-toggle (name id)
+                         :data-on:change               (table-column-toggle-js req id)}
+                  (table-column-visible? table id) (assoc :checked true))
+   ((:tr req) label-key)])
 
 (defn- group-switch-js
   [policy filters view]
@@ -761,7 +805,7 @@
          (pr-str none-url))))
 
 (defn- table-settings-popover
-  [{:keys [tr]} {:keys [filters policy view]}]
+  [{:keys [tr] :as req} {:keys [filters policy table view]}]
   [:wa-popover {:id            table-settings-popover-id
                 :for           table-settings-button-id
                 :placement     "bottom-end"
@@ -776,7 +820,7 @@
     [:strong {:class "wa-caption-s wa-color-text-quiet"}
      (tr [:insurance.workbench/columns])]
     (for [column table-columns]
-      (table-column-checkbox tr column))]])
+      (table-column-checkbox req table column))]])
 
 (defn- table-settings-button
   [tr]
@@ -814,30 +858,31 @@
      :valueMax      (some-> max form-value)}))
 
 (defn- selection-signals
-  [policy filters]
-  {:insuranceWorkbench {:policyId              (str (:insurance.policy/policy-id policy))
-                        :memberQ              (or (:member-q filters) "")
-                        :selectedCoverageIds  []
-                        :targetWorkflowStatus "keep"
-                        :targetChangeStatus   "keep"
-                        :filterEditor         {:field        nil
-                                               :source       nil
-                                               :appliedField nil}
-                        :filterPopover        {:anchor filter-button-id
-                                               :open   false}
-                        :filterDraft          (merge {:categoryIds       (signal-array-values (category-query-values filters))
-                                                      :ownership         (name (:ownership filters))
-                                                      :coverageTypeIds   (signal-array-values (coverage-type-query-values filters))
-                                                      :missingPhotos     (boolean (:missing-photos? filters))
-                                                      :missingHarmoniaId (boolean (:missing-harmonia-id? filters))
-                                                      :workflowStatuses  (signal-array-values (workflow-status-query-values filters))
-                                                      :changeStatuses    (signal-array-values (change-status-query-values filters))}
-                                                     (value-filter-signal-values filters))
-                        :table                {:groupByMember (= :member (:group filters))
-                                               :columns       (into {}
-                                                                    (map (fn [{:keys [id]}]
-                                                                           [(name id) true])
-                                                                         table-columns))}}})
+  ([policy filters]
+   (selection-signals policy filters nil))
+  ([policy filters table]
+   {:insuranceWorkbench {:policyId             (str (:insurance.policy/policy-id policy))
+                         :memberQ              (or (:member-q filters) "")
+                         :selectedCoverageIds  []
+                         :targetWorkflowStatus "keep"
+                         :targetChangeStatus   "keep"
+                         :filterEditor         {:field        nil
+                                                :source       nil
+                                                :appliedField nil}
+                         :filterPopover        {:anchor filter-button-id
+                                                :open   false}
+                         :filterDraft          (merge {:categoryIds       (signal-array-values (category-query-values filters))
+                                                       :ownership         (name (or (:ownership filters) :all))
+                                                       :coverageTypeIds   (signal-array-values (coverage-type-query-values filters))
+                                                       :missingPhotos     (boolean (:missing-photos? filters))
+                                                       :missingHarmoniaId (boolean (:missing-harmonia-id? filters))
+                                                       :workflowStatuses  (signal-array-values (workflow-status-query-values filters))
+                                                       :changeStatuses    (signal-array-values (change-status-query-values filters))}
+                                                      (value-filter-signal-values filters))
+                         :table                {:groupByMember (= :member (:group filters))
+                                                :column        nil
+                                                :columnVisible nil
+                                                :columns       (table-columns-state table)}}}))
 
 (def selected-coverage-ids-js
   "($insuranceWorkbench.selectedCoverageIds || [])")
@@ -1065,10 +1110,10 @@
     (tr label-key)))
 
 (defn- table-headings
-  [tr group coverage-ids]
+  [tr columns coverage-ids]
   [:thead
    (into [:tr]
-         (for [column (table-columns-for group)]
+         (for [column columns]
            [:th (table-heading-attrs column)
             (table-heading-content tr coverage-ids column)]))])
 
@@ -1079,60 +1124,82 @@
               :pill       true}
    (tr [:insurance.workbench/missing])])
 
-(defn- row-cells
-  [{:keys [tr]} currency group row]
+(defn- row-cell-content
+  [{:keys [tr]} currency row column-id]
   (let [{:keys [category-name coverage-id coverage-type-names harmonia-id instrument-name
                 member-id member-label missing-insurer-id? missing-photo? photo-count
                 private? workflow-status change-status insured-value cost]} row]
-    (concat
-     [(table-cell :selection
-                  [:wa-checkbox (merge {:aria-label (tr [:insurance.workbench/select-row])}
-                                       (row-selection-attrs coverage-id))])]
-     (when (= group :none)
-       [(table-cell :member
-                    (if member-id
-                      [:a {:href (urls/link-member member-id)} member-label]
-                      member-label))])
-     [(table-cell :instrument [:a {:href (urls/link-coverage coverage-id)} instrument-name])
-      (table-cell :category category-name)
-      (table-cell :ownership (insurance-ui/ownership-badge-short tr private?))
-      (table-cell :photos (if missing-photo?
-                            (missing-badge tr)
-                            photo-count))
-      (table-cell :harmonia-id (if missing-insurer-id?
-                                 (missing-badge tr)
-                                 (ui2/muted harmonia-id)))
-      (table-cell :workflow (insurance-ui/status-badge tr workflow-status))
-      (table-cell :change (insurance-ui/change-badge tr change-status))
-      (table-cell :value (ui2/money insured-value currency))
-      (table-cell :cost (ui2/money cost currency))
-      (table-cell :coverage-types (str/join ", " coverage-type-names))
-      (table-cell :actions [:span {:class "wa-cluster wa-gap-xs"}
-                            [:a {:href (urls/link-coverage coverage-id)} (tr [:action/view])]
-                            [:a {:href (urls/link-coverage-edit coverage-id)} (tr [:action/edit])]])])))
+    (case column-id
+      :selection
+      [:wa-checkbox (merge {:aria-label (tr [:insurance.workbench/select-row])}
+                           (row-selection-attrs coverage-id))]
+
+      :member
+      (if member-id
+        [:a {:href (urls/link-member member-id)} member-label]
+        member-label)
+
+      :instrument
+      [:a {:href (urls/link-coverage coverage-id)} instrument-name]
+
+      :category
+      category-name
+
+      :ownership
+      (insurance-ui/ownership-badge-short tr private?)
+
+      :photos
+      (if missing-photo?
+        (missing-badge tr)
+        photo-count)
+
+      :harmonia-id
+      (if missing-insurer-id?
+        (missing-badge tr)
+        (ui2/muted harmonia-id))
+
+      :workflow
+      (insurance-ui/status-badge tr workflow-status)
+
+      :change
+      (insurance-ui/change-badge tr change-status)
+
+      :value
+      (ui2/money insured-value currency)
+
+      :cost
+      (ui2/money cost currency)
+
+      :coverage-types
+      (str/join ", " coverage-type-names)
+
+      :actions
+      [:span {:class "wa-cluster wa-gap-xs"}
+       [:a {:href (urls/link-coverage coverage-id)} (tr [:action/view])]
+       [:a {:href (urls/link-coverage-edit coverage-id)} (tr [:action/edit])]])))
+
+(defn- row-cells
+  [req currency columns row]
+  (for [{:keys [id]} columns]
+    (table-cell id (row-cell-content req currency row id))))
 
 (defn- coverage-row
-  ([req currency group row]
-   (coverage-row req currency group row nil))
-  ([req currency group row attrs]
+  ([req currency columns row]
+   (coverage-row req currency columns row nil))
+  ([req currency columns row attrs]
    (into [:tr attrs]
-         (row-cells req currency group row))))
+         (row-cells req currency columns row))))
 
 (defn- flat-table
-  [req {:keys [filters policy rows]}]
+  [req {:keys [filters policy rows table]}]
   (let [currency     (:insurance.policy/currency policy)
-        coverage-ids (mapv :coverage-id rows)]
+        coverage-ids (mapv :coverage-id rows)
+        columns      (table-columns-for (:group filters) table)]
     (ui2/table-shell
      [:table {:class "wa-table leading-condensed"}
-      (table-headings (:tr req) (:group filters) coverage-ids)
+      (table-headings (:tr req) columns coverage-ids)
       (into [:tbody]
-            (map #(coverage-row req currency (:group filters) %) rows))])))
-
-(defn- column-count
-  [group]
-  (case group
-    :none 13
-    :member 12))
+            (map #(coverage-row req currency columns %) rows))])))
 
 (defn- member-group-id
   [{:keys [member-id member-label]}]
@@ -1143,11 +1210,11 @@
        "el.setAttribute('aria-expanded', expanded ? 'false' : 'true');"))
 
 (defn- member-heading-row
-  [{:keys [tr]} group]
+  [{:keys [tr]} columns group]
   (let [group-id (member-group-id group)]
     [:tr {:data-workbench-member-heading group-id}
      [:th {:scope   "rowgroup"
-           :colspan (column-count :member)
+           :colspan (count columns)
            :style   (str "background: var(--wa-color-surface-raised); "
                          "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border); "
                          "padding-block: var(--wa-space-xs);")}
@@ -1191,79 +1258,189 @@
          nil)
        (apply str styles)))
 
+(def ^:private member-footer-total-columns
+  #{:value :cost})
+
+(defn- member-footer-total-cell
+  [{:keys [tr]} currency group {:keys [id]}]
+  (case id
+    :value
+    [:td {:title      (tr [:insurance/value])
+          :aria-label (tr [:insurance/value])
+          :style      (member-footer-cell-style
+                       nil
+                       " text-align: end; "
+                       "font-weight: var(--wa-font-weight-bold); "
+                       "padding-inline: var(--wa-space-s);")}
+     (ui2/money (:total-insured-value group) currency)]
+
+    :cost
+    [:td {:title      (tr [:insurance/cost])
+          :aria-label (tr [:insurance/cost])
+          :style      (member-footer-cell-style
+                       nil
+                       " text-align: end; "
+                       "font-weight: var(--wa-font-weight-bold); "
+                       "padding-inline: var(--wa-space-s);")}
+     (ui2/money (:total-cost group) currency)]))
+
 (defn- member-footer-row
-  [{:keys [tr]} currency group]
-  (let [group-id (member-group-id group)]
-    [:tr {:class                        "insurance-workbench-collapsible-row"
-          :data-workbench-member-footer group-id}
-     [:td {:colspan 8
-           :style   (member-footer-cell-style
-                     :start
-                     " text-align: end; "
-                     "padding-inline: var(--wa-space-s);")}
-      [:strong {:class "wa-caption-s wa-color-text-quiet"}
-       (tr [:insurance/total])]]
-     [:td {:title      (tr [:insurance/value])
-           :aria-label (tr [:insurance/value])
-           :style      (member-footer-cell-style
-                        nil
-                        " text-align: end; "
-                        "font-weight: var(--wa-font-weight-bold); "
-                        "padding-inline: var(--wa-space-s);")}
-      (ui2/money (:total-insured-value group) currency)]
-     [:td {:title      (tr [:insurance/cost])
-           :aria-label (tr [:insurance/cost])
-           :style      (member-footer-cell-style
-                        nil
-                        " text-align: end; "
-                        "font-weight: var(--wa-font-weight-bold); "
-                        "padding-inline: var(--wa-space-s);")}
-      (ui2/money (:total-cost group) currency)]
-     [:td {:colspan 2
-           :style   (member-footer-cell-style
-                     :end
-                     " padding-inline: var(--wa-space-s);")}]]))
+  [{:keys [tr] :as req} currency columns group]
+  (let [group-id      (member-group-id group)
+        columns       (vec columns)
+        total-indexes (keep-indexed (fn [idx {:keys [id]}]
+                                      (when (contains? member-footer-total-columns id)
+                                        idx))
+                                    columns)]
+    (into [:tr {:class                        "insurance-workbench-collapsible-row"
+                :data-workbench-member-footer group-id}]
+          (if (seq total-indexes)
+            (let [first-total-idx (first total-indexes)
+                  last-total-idx  (last total-indexes)
+                  trailing-count  (- (count columns) (inc last-total-idx))]
+              (concat
+               (when (pos? first-total-idx)
+                 [[:td {:colspan first-total-idx
+                        :style   (member-footer-cell-style
+                                  :start
+                                  " text-align: end; "
+                                  "padding-inline: var(--wa-space-s);")}
+                   [:strong {:class "wa-caption-s wa-color-text-quiet"}
+                    (tr [:insurance/total])]]])
+               (for [idx total-indexes]
+                 (member-footer-total-cell req currency group (nth columns idx)))
+               (when (pos? trailing-count)
+                 [[:td {:colspan trailing-count
+                        :style   (member-footer-cell-style
+                                  :end
+                                  " padding-inline: var(--wa-space-s);")}]])))
+            [[:td {:colspan (count columns)
+                   :style   (member-footer-cell-style
+                             :start
+                             " text-align: end; "
+                             "padding-inline: var(--wa-space-s);")}
+              [:strong {:class "wa-caption-s wa-color-text-quiet"}
+               (tr [:insurance/total])]]]))))
 
 (defn- member-group-body
-  [req currency group]
+  [req currency columns group]
   (let [group-id (member-group-id group)]
     (into [:tbody {:data-workbench-member-group group-id}
-           (member-heading-row req group)]
+           (member-heading-row req columns group)]
           (concat
            (map #(coverage-row req
                                currency
-                               :member
+                               columns
                                %
                                {:class "insurance-workbench-collapsible-row"})
                 (:rows group))
-           [(member-footer-row req currency group)]))))
+           [(member-footer-row req currency columns group)]))))
 
 (defn- grouped-table
-  [req {:keys [groups policy]}]
+  [req {:keys [groups policy table]}]
   (let [currency     (:insurance.policy/currency policy)
-        coverage-ids (mapv :coverage-id (mapcat :rows groups))]
+        coverage-ids (mapv :coverage-id (mapcat :rows groups))
+        columns      (table-columns-for :member table)]
     (ui2/table-shell
      (into [:table {:class "wa-table leading-condensed"}
-            (table-headings (:tr req) :member coverage-ids)]
-           (map #(member-group-body req currency %) groups)))))
+            (table-headings (:tr req) columns coverage-ids)]
+           (map #(member-group-body req currency columns %) groups)))))
+
+(defn- pagination-summary
+  [tr {:keys [range-end range-start total-results]}]
+  (tr [:insurance.workbench/pagination-summary] [range-start range-end total-results]))
+
+(defn- pagination-url
+  [workbench overrides]
+  (urls/link-policy-workbench (:policy workbench)
+                              (pagination-query-state workbench overrides)))
+
+(defn- js-object-literal
+  [m]
+  (str "{"
+       (str/join ", "
+                 (for [[k v] m]
+                   (str (pr-str (str k)) ": " (pr-str v))))
+       "}"))
+
+(defn- page-size-select-js
+  [{:keys [pagination] :as workbench}]
+  (let [urls (into {}
+                   (for [page-size (:page-sizes pagination)]
+                     [page-size (pagination-url workbench
+                                                {:page 1
+                                                 :page-size page-size})]))]
+    (str "const urls = " (js-object-literal urls) "; "
+         "window.location.href = urls[evt.detail.item.value]")))
+
+(defn- pagination-nav-button
+  [tr label-key icon-name href]
+  [button/Button (cond-> {:appearance "plain"
+                          :size       "s"
+                          :aria-label (tr label-key)}
+                   href (assoc :href href)
+                   (nil? href) (assoc :disabled true))
+   [ico/Icon {::ico/library :phosphor
+              ::ico/name    icon-name}]])
+
+(defn- page-size-item
+  [selected-page-size page-size]
+  (let [selected? (= selected-page-size page-size)]
+    [:wa-dropdown-item {:value (str page-size)}
+     [ico/Icon (cond-> {::ico/library :phosphor
+                        ::ico/name    :check
+                        :slot         "icon"}
+                 (not selected?) (assoc :style "visibility: hidden;"))]
+     page-size]))
+
+(defn- page-size-dropdown
+  [tr {:keys [pagination] :as workbench}]
+  [:wa-dropdown {:data-workbench-page-size "true"
+                 :data-on:wa-select       (page-size-select-js workbench)}
+   [button/Button {:slot       "trigger"
+                   :appearance "plain"
+                   :size       "s"}
+    (pagination-summary tr pagination)]
+   [:h3 (tr [:insurance.workbench/rows-per-page])]
+   (for [page-size (:page-sizes pagination)]
+     (page-size-item (:page-size pagination) page-size))])
+
+(defn- pagination-controls
+  [{:keys [tr]} {:keys [pagination] :as workbench}]
+  (let [prev-url (when (:has-prev? pagination)
+                   (pagination-url workbench {:page (:prev-page pagination)}))
+        next-url (when (:has-next? pagination)
+                   (pagination-url workbench {:page (:next-page pagination)}))]
+    [:div {:class                     "wa-stack wa-gap-xs"
+           :data-workbench-pagination "true"}
+     [divider/Divider]
+     [:nav {:class      "wa-cluster wa-gap-2xs wa-align-items-center wa-justify-content-end"
+            :aria-label (tr [:insurance.workbench/pagination])}
+      (pagination-nav-button tr [:action/previous] :caret-left prev-url)
+      (page-size-dropdown tr workbench)
+      (pagination-nav-button tr [:action/next] :caret-right next-url)]]))
 
 (defn- rows-section
   [req {:keys [filters rows] :as workbench}]
   (if (seq rows)
-    (case (:group filters)
-      :member (grouped-table req workbench)
-      :none (flat-table req workbench))
+    [:div {:class "wa-stack wa-gap-xs"}
+     (case (:group filters)
+       :member (grouped-table req workbench)
+       :none (flat-table req workbench))
+     (pagination-controls req workbench)]
     (ui2/empty-state ((:tr req) [:insurance.workbench/empty-title])
                      ((:tr req) [:insurance.workbench/empty-body]))))
 
 (defn page
-  [{:keys [db tr] :as req}]
-  (let [workbench (queries/policy-workbench db (policy-id req) (workbench-params req))
+  [{:keys [db page-state tr] :as req}]
+  (let [table     (get-in page-state [:insurance-workbench :table])
+        workbench (assoc (queries/policy-workbench db (policy-id req) (workbench-params req))
+                         :table table)
         policy    (:policy workbench)]
     (ui2/datastar-page2 {:class "full-width"}
                         [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
                                :data-preserve-attr "data-signals"
-                               :data-signals       (d*/->signals (selection-signals policy (:filters workbench)))}
+                               :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table))}
                          (ui2/page-header
                           {:breadcrumb (page-breadcrumb req policy)
                            :title      (tr [:insurance.workbench/title])

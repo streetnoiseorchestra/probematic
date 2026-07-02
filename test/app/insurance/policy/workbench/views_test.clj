@@ -33,6 +33,8 @@
    [:insurance.workbench/value-between] "is between"
    [:insurance.workbench/value-min] "Minimum"
    [:insurance.workbench/value-max] "Maximum"
+   [:insurance.workbench/pagination-summary] "%1–%2 of %3 results"
+   [:insurance.workbench/rows-per-page] "Rows per page"
    [:instrument.coverage.status/needs-review] "Todo"
    [:instrument.coverage.status/reviewed] "Reviewed"
    [:instrument.coverage.status/coverage-active] "Active"
@@ -44,6 +46,8 @@
    [:private-instrument] "Private Instrument"
    [:action/apply] "Apply"
    [:action/back] "Back"
+   [:action/previous] "Previous"
+   [:action/next] "Next"
    [:action/remove] "Remove"})
 
 (defn tr
@@ -301,6 +305,26 @@
                          :workflowStatuses
                          :changeStatuses])))))
 
+(deftest selection-signals-use-server-table-column-state
+  (let [signals (#'views/selection-signals
+                 {:insurance.policy/policy-id (random-uuid)}
+                 {:group :member}
+                 {:columns {:cost false
+                            :harmonia-id false}})]
+    (is (= {"actions" true
+            "category" true
+            "change" true
+            "cost" false
+            "coverage-types" true
+            "harmonia-id" false
+            "instrument" true
+            "member" true
+            "ownership" true
+            "photos" true
+            "value" true
+            "workflow" true}
+           (get-in signals [:insuranceWorkbench :table :columns])))))
+
 (deftest search-form-typeahead-posts-member-search-and-preserves-active-category-filter
   (let [policy-id   (random-uuid)
         category-id (random-uuid)
@@ -378,7 +402,8 @@
         category-id (random-uuid)
         html        (html/->str
                      (#'views/table-settings-popover
-                      {:tr tr}
+                      {::r/router router
+                       :tr        tr}
                       {:policy  {:insurance.policy/policy-id policy-id}
                        :view    :todo
                        :filters {:group :member
@@ -400,6 +425,38 @@
             (str/includes? html (str "category-id=" category-id))
             :preserves-member-search?
             (str/includes? html "member-q=Anna")}))))
+
+(deftest table-settings-column-toggles-post-round-trip-action
+  (let [policy-id (random-uuid)
+        html      (html/->str
+                   (#'views/table-settings-popover
+                    {::r/router router
+                     :tr        tr}
+                    {:policy  {:insurance.policy/policy-id policy-id}
+                     :view    :todo
+                     :filters {:group :member
+                               :ownership :all}
+                     :table   {:columns {:cost false}}}))
+        cost-start (or (str/index-of html "data-workbench-column-toggle=\"cost\"") 0)
+        cost-tag   (subs html cost-start (inc (or (str/index-of html ">" cost-start) cost-start)))]
+    (is (= {:renders-column-toggle?      true
+            :posts-toggle-action?        true
+            :sets-column-signal?         true
+            :sets-visibility-signal?     true
+            :does-not-hide-front-end?     true
+            :unchecked-from-server-state? true}
+           {:renders-column-toggle?
+            (str/includes? html "data-workbench-column-toggle=\"cost\"")
+            :posts-toggle-action?
+            (str/includes? html "kw=toggle-table-column")
+            :sets-column-signal?
+            (str/includes? html "$insuranceWorkbench.table.column = &apos;cost&apos;")
+            :sets-visibility-signal?
+            (str/includes? html "$insuranceWorkbench.table.columnVisible = evt.target.checked")
+            :does-not-hide-front-end?
+            (not (str/includes? html "table.columns["))
+            :unchecked-from-server-state?
+            (not (str/includes? cost-tag " checked"))}))))
 
 (deftest active-category-filter-renders-removable-editor-chip
   (let [category-id (random-uuid)
@@ -525,6 +582,50 @@
             :omits-long-labels?
             (not (or (str/includes? html "Band Instrument")
                      (str/includes? html "Private Instrument")))}))))
+
+(deftest workbench-table-omits-hidden-columns-from-server-render
+  (let [coverage-id (random-uuid)
+        html        (html/->str
+                     (#'views/flat-table
+                      {:tr tr}
+                      {:filters {:group :none}
+                       :table   {:columns {:cost false
+                                           :harmonia-id false}}
+                       :policy  {:insurance.policy/currency :EUR}
+                       :rows    [{:category-name       "Strings"
+                                  :coverage-id         coverage-id
+                                  :coverage-type-names ["Basic"]
+                                  :harmonia-id         "H-123"
+                                  :instrument-name     "Violin"
+                                  :member-id           (random-uuid)
+                                  :member-label        "Anna"
+                                  :missing-insurer-id? false
+                                  :missing-photo?      false
+                                  :photo-count         3
+                                  :private?            false
+                                  :workflow-status     :instrument.coverage.status/needs-review
+                                  :change-status       :instrument.coverage.change/changed
+                                  :insured-value       1000M
+                                  :cost                12.34M}]}))]
+    (is (= {:keeps-selection-column? true
+            :keeps-visible-column?   true
+            :omits-cost-header?      true
+            :omits-cost-cell?        true
+            :omits-harmonia-header?  true
+            :omits-harmonia-cell?    true}
+           {:keeps-selection-column?
+            (str/includes? html "data-workbench-select-all=\"true\"")
+            :keeps-visible-column?
+            (and (str/includes? html ">Violin</a>")
+                 (str/includes? html "1.000,00"))
+            :omits-cost-header?
+            (not (str/includes? html ">cost</th>"))
+            :omits-cost-cell?
+            (not (str/includes? html "12,34"))
+            :omits-harmonia-header?
+            (not (str/includes? html ">insurer-id</th>"))
+            :omits-harmonia-cell?
+            (not (str/includes? html "H-123"))}))))
 
 (deftest workbench-table-selection-heading-selects-all-rows
   (let [coverage-a (random-uuid)
@@ -830,3 +931,88 @@
             (str/includes? html "<td style=\"text-align: end;\">3</td>")
             :harmonia-cell-aligned?
             (str/includes? html "<td style=\"text-align: end;\">H-123</td>")}))))
+
+(deftest rows-section-renders-pagination-controls-with-page-size-dropdown
+  (let [policy-id   (random-uuid)
+        coverage-id (random-uuid)
+        html        (html/->str
+                     (#'views/rows-section
+                      {:tr tr}
+                      {:policy     {:insurance.policy/policy-id policy-id
+                                    :insurance.policy/currency :EUR}
+                       :view       :all
+                       :filters    {:group :none
+                                    :ownership :all}
+                       :pagination {:page 1
+                                    :page-size 20
+                                    :page-sizes [20 50 100]
+                                    :total-results 85
+                                    :total-pages 5
+                                    :range-start 1
+                                    :range-end 20
+                                    :has-prev? false
+                                    :has-next? true
+                                    :prev-page nil
+                                    :next-page 2}
+                       :rows       [{:category-name       "Strings"
+                                     :coverage-id         coverage-id
+                                     :coverage-type-names ["Basic"]
+                                     :harmonia-id         "H-123"
+                                     :instrument-name     "Violin"
+                                     :member-id           (random-uuid)
+                                     :member-label        "Anna"
+                                     :missing-insurer-id? false
+                                     :missing-photo?      false
+                                     :photo-count         3
+                                     :private?            false
+                                     :workflow-status     :instrument.coverage.status/needs-review
+                                     :change-status       :instrument.coverage.change/changed
+                                     :insured-value       1000M
+                                     :cost                12.34M}]}))]
+    (is (= {:renders-summary-trigger?        true
+            :uses-dropdown?                  true
+            :labels-page-size-menu?          true
+            :renders-page-size-items?        true
+            :marks-current-size-with-icon?   true
+            :reserves-icon-slot-for-each-size? true
+            :hides-unselected-icons-inline?  true
+            :omits-checkbox-items?           true
+            :uses-custom-check-icon?         true
+            :omits-inline-title-style?       true
+            :uses-justify-utility?           true
+            :navigates-to-page-size?         true
+            :previous-disabled?              true
+            :next-link?                      true}
+           {:renders-summary-trigger?
+            (str/includes? html "1–20 of 85 results")
+            :uses-dropdown?
+            (str/includes? html "<wa-dropdown")
+            :labels-page-size-menu?
+            (str/includes? html "Rows per page")
+            :renders-page-size-items?
+            (and (str/includes? html "value=\"20\"")
+                 (str/includes? html "value=\"50\"")
+                 (str/includes? html "value=\"100\""))
+            :marks-current-size-with-icon?
+            (and (str/includes? html "slot=\"icon\"")
+                 (str/includes? html "phosphor-check"))
+            :reserves-icon-slot-for-each-size?
+            (= 3 (count (re-seq #"slot=\"icon\"" html)))
+            :hides-unselected-icons-inline?
+            (str/includes? html "visibility: hidden;")
+            :omits-checkbox-items?
+            (not (str/includes? html "type=\"checkbox\""))
+            :uses-custom-check-icon?
+            (str/includes? html "slot=\"icon\"")
+            :omits-inline-title-style?
+            (not (str/includes? html "padding-inline: var(--wa-space-xs)"))
+            :uses-justify-utility?
+            (str/includes? html "wa-justify-content-end")
+            :navigates-to-page-size?
+            (and (str/includes? html "page-size=50")
+                 (str/includes? html "page=1"))
+            :previous-disabled?
+            (str/includes? html "aria-label=\"Previous\" disabled")
+            :next-link?
+            (and (str/includes? html "aria-label=\"Next\"")
+                 (str/includes? html "page=2"))}))))
