@@ -15,12 +15,7 @@
   margin-block-start: var(--wa-space-2xs);
 }
 
-.probeplan-table-shell {
-  position: relative;
-  overflow-x: auto;
-}
-
-.probeplan-table-shell::after {
+.probeplan-table::after {
   content: "";
   position: absolute;
   z-index: 1;
@@ -32,7 +27,7 @@
     color-mix(in srgb, var(--wa-color-surface-default) 0%, transparent),
     var(--wa-color-surface-default) 90%
   );
-  inline-size: 101%;
+  inline-size: 100%;
   block-size: 20em;
 }
 
@@ -98,7 +93,6 @@
 .probeplan-row--future {
   border-block-end-style: dashed;
 }
-
 
 .probeplan-cell-empty {
   color: var(--wa-color-text-quiet);

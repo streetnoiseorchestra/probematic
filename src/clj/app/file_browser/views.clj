@@ -96,7 +96,7 @@
         (humanize/filesize content-length))]]))
 
 (defn file-table [{:keys [tr] :as req} picker-id select-action-key files]
-  [:div {:class "file-browser-table-shell"}
+  [:div {:class "table-shell"}
    [:table {:class "file-browser-table"}
     [:thead
      [:tr

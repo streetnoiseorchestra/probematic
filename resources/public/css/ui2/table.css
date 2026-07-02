@@ -7,5 +7,12 @@ th {
 .table-shell {
   overflow-x: auto;
   background-color: var(--wa-color-neutral-fill-quiet);
-  border-radius: var(--sno-table-border-radius);
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  border-radius: var(--wa-panel-border-radius);
+
+  table thead th {
+    z-index: 1;
+    background: var(--wa-color-surface-default);
+  }
 }

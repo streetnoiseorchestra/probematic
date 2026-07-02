@@ -165,7 +165,7 @@
 (defn- probe-table [{:keys [tr] :as req} all-songs editing? rows]
   (let [rows       (mapv #(update % :songs songs-by-position) rows)
         song-count (max-song-count rows)]
-    [:div {:class "probeplan-table-shell"}
+    [:div {:class "table-shell" :style "position: relative;"}
      [:table {:class "probeplan-table"}
       [:thead
        [:tr

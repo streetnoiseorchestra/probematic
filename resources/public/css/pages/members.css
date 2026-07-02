@@ -1,5 +1,8 @@
 .members-invite-page {
-  inline-size: min(var(--sno-size-full), var(--sno-narrow-form-max-inline-size));
+  inline-size: min(
+    var(--sno-size-full),
+    var(--sno-narrow-form-max-inline-size)
+  );
 }
 
 .members-invite-accept-page {
@@ -11,7 +14,10 @@
 }
 
 .members-invite-accept-card {
-  inline-size: min(var(--sno-size-full), var(--sno-narrow-form-max-inline-size));
+  inline-size: min(
+    var(--sno-size-full),
+    var(--sno-narrow-form-max-inline-size)
+  );
   padding: var(--wa-space-xl);
   background-color: var(--wa-color-surface-default);
   border: var(--wa-border-width-s) var(--wa-border-style)
@@ -38,14 +44,6 @@
   inline-size: var(--sno-size-full);
 }
 
-.members-index-table-shell {
-  overflow-x: auto;
-  background-color: var(--wa-color-surface-default);
-  border: var(--wa-border-width-s) var(--wa-border-style)
-    var(--wa-color-surface-border);
-  border-radius: var(--wa-panel-border-radius);
-}
-
 .members-index-table {
   inline-size: var(--sno-size-full);
   border-collapse: collapse;
@@ -67,7 +65,6 @@
   text-align: end;
   white-space: nowrap;
 }
-
 
 .members-index-row-meta {
   display: flex;

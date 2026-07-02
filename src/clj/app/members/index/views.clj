@@ -112,7 +112,7 @@
      (ui2/title-block {:level    2
                        :title    (tr [:member/open-invitations])
                        :subtitle (tr [:member/open-invitations-subtitle])})
-     [:div {:class "members-index-table-shell"}
+     [:div {:class "table-shell"}
       [:table {:class "members-index-table"}
        [:thead
         [:tr
@@ -164,7 +164,7 @@
 
 (defn- members-table [{:keys [tr] :as req} page-state members]
   (if (seq members)
-    [:div {:class "members-index-table-shell"}
+    [:div {:class "table-shell"}
      [:table {:class "members-index-table"}
       [:thead
        [:tr
