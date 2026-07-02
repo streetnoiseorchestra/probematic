@@ -539,10 +539,14 @@
   transition: transform var(--wa-transition-normal) var(--wa-transition-easing);
   transform-origin: center;
 }
-
-.insurance-workbench-member-toggle[data-collapsed="false"] .insurance-workbench-member-toggle-icon {
+.insurance-workbench-member-toggle[aria-expanded="true"] .insurance-workbench-member-toggle-icon {
   transform: rotate(90deg);
 }
+
+.insurance-workbench [data-workbench-member-group]:has(.insurance-workbench-member-toggle[aria-expanded="false"]) .insurance-workbench-collapsible-row {
+  display: none;
+}
+
 
 .insurance-workbench table.wa-table thead th[scope="col"] {
   position: sticky;

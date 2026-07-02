@@ -613,26 +613,31 @@
     (is (= {:heading-keeps-item-count? true
             :heading-renders-caret-toggle? true
             :heading-links-member-name? true
+            :group-uses-own-tbody?     true
             :renders-footer?           true
             :footer-collapses?         true
             :footer-has-border?        true
             :footer-puts-sums-in-value-and-cost-columns? true
             :footer-labels-are-tooltips? true
             :footer-shows-value-sum?   true
-            :footer-shows-cost-sum?    true}
+            :footer-shows-cost-sum?    true
+            :rows-use-collapsible-class? true}
            {:heading-keeps-item-count?
             (str/includes? html "Count: <span class=\"wa-font-weight-bold\">2</span>")
             :heading-renders-caret-toggle?
             (and (str/includes? html "insurance-workbench-member-toggle")
-                 (str/includes? html "data-collapsed=\"false\"")
+                 (str/includes? html "aria-expanded=\"true\"")
                  (str/includes? html "caret-right")
                  (str/includes? html "insurance-workbench-member-toggle-icon"))
             :heading-links-member-name?
             (str/includes? html (str "<a href=\"/member/" member-id "\">Anna</a>"))
+            :group-uses-own-tbody?
+            (and (str/includes? html "<tbody data-workbench-member-group=")
+                 (not (str/includes? html "insurance-workbench-member-group")))
             :renders-footer?
             (some? footer-start)
             :footer-collapses?
-            (footer-includes? "data-workbench-group=")
+            (str/includes? html "class=\"insurance-workbench-collapsible-row\" data-workbench-member-footer=")
             :footer-has-border?
             (footer-includes? "border-block-start: var(--wa-border-width-s) solid var(--wa-color-surface-border)")
             :footer-puts-sums-in-value-and-cost-columns?
@@ -645,8 +650,10 @@
             :footer-shows-value-sum?
             (footer-includes? "6.000,00")
             :footer-shows-cost-sum?
-            (footer-includes? "36,00")}))))
-
+            (footer-includes? "36,00")
+            :rows-use-collapsible-class?
+            (and (str/includes? html "insurance-workbench-collapsible-row")
+                 (not (str/includes? html "insurance-workbench-row-collapse")))}))))
 (deftest bulk-action-bar-is-stable-and-supports-workflow-and-change-updates
   (let [html (html/->str
               (#'views/bulk-action-bar
@@ -730,7 +737,9 @@
             :has-expansion-actions?
             (and (str/includes? html "Expand all")
                  (str/includes? html "Collapse all")
-                 (str/includes? html "document.querySelectorAll(&apos;[data-workbench-group]&apos;)"))
+                 (str/includes? html "setAttribute(&apos;aria-expanded&apos;, &apos;true&apos;)")
+                 (str/includes? html "setAttribute(&apos;aria-expanded&apos;, &apos;false&apos;)")
+                 (not (str/includes? html "row.hidden")))
             :hides-expansion-actions-when-sticky?
             (and (str/includes? html "data-class:insurance-workbench-bulk-action-bar--sticky")
                  (str/includes? html "data-effect=")
@@ -755,7 +764,7 @@
             :omits-collapse-all?
             (not (str/includes? html "Collapse all"))
             :omits-expansion-js?
-            (not (str/includes? html "data-workbench-group"))}))))
+            (not (str/includes? html "aria-expanded"))}))))
 
 (deftest workbench-table-right-aligns-numeric-and-harmonia-columns
   (let [coverage-id (random-uuid)

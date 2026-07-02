@@ -971,20 +971,19 @@
                   :data-attr:disabled (bulk-selection-disabled-js)}
    (tr [:insurance.workbench/deselect-all])])
 
-(def workbench-group-row-selector
-  "[data-workbench-group]")
+(def ^:private workbench-group-toggle-selector
+  "[data-workbench-toggle]")
+
+(defn- set-all-groups-expanded-js
+  [expanded?]
+  (str "document.querySelectorAll('" workbench-group-toggle-selector "')"
+       ".forEach(el => el.setAttribute('aria-expanded', '" (if expanded? "true" "false") "'));"))
 
 (def expand-all-groups-js
-  (str "document.querySelectorAll('" workbench-group-row-selector "')"
-       ".forEach(row => row.hidden = false); "
-       "document.querySelectorAll('[data-workbench-toggle]')"
-       ".forEach(el => el.dataset.collapsed = 'false');"))
+  (set-all-groups-expanded-js true))
 
 (def collapse-all-groups-js
-  (str "document.querySelectorAll('" workbench-group-row-selector "')"
-       ".forEach(row => row.hidden = true); "
-       "document.querySelectorAll('[data-workbench-toggle]')"
-       ".forEach(el => el.dataset.collapsed = 'true');"))
+  (set-all-groups-expanded-js false))
 
 (defn- expansion-actions
   [tr]
@@ -1136,12 +1135,9 @@
   [{:keys [member-id member-label]}]
   (ui2/safe-dom-id (or member-id member-label)))
 
-(defn- group-toggle-js
-  [group-id]
-  (str "const collapsed = el.dataset.collapsed === 'true'; "
-       "el.dataset.collapsed = collapsed ? 'false' : 'true'; "
-       "document.querySelectorAll(\"[data-workbench-group='" group-id "']\")"
-       ".forEach(row => row.hidden = !collapsed);"))
+(def ^:private group-toggle-js
+  (str "const expanded = el.getAttribute('aria-expanded') === 'true'; "
+       "el.setAttribute('aria-expanded', expanded ? 'false' : 'true');"))
 
 (defn- member-heading-row
   [{:keys [tr]} group]
@@ -1159,8 +1155,8 @@
                         :class                 "insurance-workbench-member-toggle"
                         :aria-label            (:member-label group)
                         :data-workbench-toggle group-id
-                        :data-collapsed        "false"
-                        :data-on:click         (group-toggle-js group-id)}
+                        :aria-expanded         "true"
+                        :data-on:click         group-toggle-js}
          [ico/Icon {::ico/library :phosphor
                     ::ico/name    :caret-right
                     :class        "insurance-workbench-member-toggle-icon"}]]
@@ -1195,8 +1191,8 @@
 (defn- member-footer-row
   [{:keys [tr]} currency group]
   (let [group-id (member-group-id group)]
-    [:tr {:data-workbench-member-footer group-id
-          :data-workbench-group         group-id}
+    [:tr {:class                        "insurance-workbench-collapsible-row"
+          :data-workbench-member-footer group-id}
      [:td {:colspan 8
            :style   (member-footer-cell-style
                      :start
@@ -1225,29 +1221,28 @@
                      :end
                      " padding-inline: var(--wa-space-s);")}]]))
 
-(defn- member-group-rows
+(defn- member-group-body
   [req currency group]
   (let [group-id (member-group-id group)]
-    (concat
-     [(member-heading-row req group)]
-     (map #(coverage-row req
-                         currency
-                         :member
-                         %
-                         {:data-workbench-group        group-id
-                          :data-workbench-coverage-row "true"})
-          (:rows group))
-     [(member-footer-row req currency group)])))
+    (into [:tbody {:data-workbench-member-group group-id}
+           (member-heading-row req group)]
+          (concat
+           (map #(coverage-row req
+                               currency
+                               :member
+                               %
+                               {:class "insurance-workbench-collapsible-row"})
+                (:rows group))
+           [(member-footer-row req currency group)]))))
 
 (defn- grouped-table
   [req {:keys [groups policy]}]
   (let [currency     (:insurance.policy/currency policy)
         coverage-ids (mapv :coverage-id (mapcat :rows groups))]
     (ui2/table-shell
-     [:table {:class "wa-table leading-condensed"}
-      (table-headings (:tr req) :member coverage-ids)
-      (into [:tbody]
-            (mapcat #(member-group-rows req currency %) groups))])))
+     (into [:table {:class "wa-table leading-condensed"}
+            (table-headings (:tr req) :member coverage-ids)]
+           (map #(member-group-body req currency %) groups)))))
 
 (defn- rows-section
   [req {:keys [filters rows] :as workbench}]
