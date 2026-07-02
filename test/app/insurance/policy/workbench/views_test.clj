@@ -640,6 +640,62 @@
             :omits-badges-in-status-cell?
             (not (str/includes? (or status-cell-html "") "<wa-badge"))}))))
 
+(deftest workbench-coverage-type-column-renders-known-types-as-icons
+  (let [coverage-id (random-uuid)
+        html        (html/->str
+                     (#'views/row-cell-content
+                      {:tr tr}
+                      :EUR
+                      {:coverage-id         coverage-id
+                       :coverage-type-names ["Grundschutz" "Nachzeit im Auto" "Proberaum"]}
+                      :coverage-types))]
+    (is (= {:renders-grundschutz-icon?    true
+            :renders-auto-icon?           true
+            :renders-proberaum-icon?      true
+            :labels-icons-accessibly?     true
+            :uses-tooltips?               true
+            :omits-comma-list?            true
+            :omits-wrapper-cluster?       true
+            :omits-unused-custom-classes? true}
+           {:renders-grundschutz-icon?
+            (and (str/includes? html "data-workbench-coverage-type-icon=\"grundschutz\"")
+                 (str/includes? html "phosphor-shield"))
+            :renders-auto-icon?
+            (and (str/includes? html "data-workbench-coverage-type-icon=\"nachzeit-im-auto\"")
+                 (str/includes? html "phosphor-car-profile"))
+            :renders-proberaum-icon?
+            (and (str/includes? html "data-workbench-coverage-type-icon=\"proberaum\"")
+                 (str/includes? html "phosphor-warehouse"))
+            :labels-icons-accessibly?
+            (and (str/includes? html "aria-label=\"Grundschutz\"")
+                 (str/includes? html "aria-label=\"Nachzeit im Auto\"")
+                 (str/includes? html "aria-label=\"Proberaum\""))
+            :uses-tooltips?
+            (and (str/includes? html ">Grundschutz</wa-tooltip>")
+                 (str/includes? html ">Nachzeit im Auto</wa-tooltip>")
+                 (str/includes? html ">Proberaum</wa-tooltip>"))
+            :omits-comma-list?
+            (not (str/includes? html "Grundschutz, Nachzeit im Auto, Proberaum"))
+            :omits-wrapper-cluster?
+            (not (str/includes? html "wa-cluster wa-gap-2xs wa-align-items-center"))
+            :omits-unused-custom-classes?
+            (not (str/includes? html "class=\"insurance-workbench-coverage-type"))}))))
+
+(deftest workbench-coverage-type-column-keeps-unknown-type-labels
+  (let [html (html/->str
+              (#'views/row-cell-content
+               {:tr tr}
+               :EUR
+               {:coverage-id         (random-uuid)
+                :coverage-type-names ["Basic"]}
+               :coverage-types))]
+    (is (= {:shows-unknown-label? true
+            :does-not-invent-icon? true}
+           {:shows-unknown-label?
+            (str/includes? html ">Basic</span>")
+            :does-not-invent-icon?
+            (not (str/includes? html "data-workbench-coverage-type-icon"))}))))
+
 (deftest workbench-row-actions-render-stripe-style-sticky-button-group
   (let [coverage-id (random-uuid)
         html        (html/->str

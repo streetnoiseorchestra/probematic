@@ -295,6 +295,7 @@
     :source-root "public/img/phosphor/phosphor-regular"
     :icons       [:arrow-bend-down-right
                   :calendar
+                  :car-profile
                   :caret-left
                   :caret-right
                   :check
@@ -305,6 +306,7 @@
                   :info
                   :magnifying-glass
                   :pencil-simple
+                  :shield
                   :sliders-horizontal
                   :star
                   :trend-up
@@ -317,7 +319,8 @@
                   :coins
                   :hand-coins
                   :hand-pointing
-                  :table]}])
+                  :table
+                  :warehouse]}])
 
 (defonce sprite-manifest_ (atom nil))
 

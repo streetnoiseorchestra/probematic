@@ -1366,6 +1366,54 @@
                           (tr [change-status])
                           (insurance-ui/change-status-icon change-status))]))
 
+;; TODO Stop matching coverage type icons by user-defined database labels.
+;; Add database-backed icon metadata or stable icon keys to coverage types instead.
+(def ^:private coverage-type-icon-data
+  {"Grundschutz"      {:icon :shield
+                       :key  :grundschutz}
+   "Nachzeit im Auto" {:icon :car-profile
+                       :key  :nachzeit-im-auto}
+   "Proberaum"        {:icon :warehouse
+                       :key  :proberaum}})
+
+(defn- coverage-type-label
+  [coverage-type-name]
+  (let [label (some-> coverage-type-name str str/trim)]
+    (when-not (str/blank? label)
+      label)))
+
+(defn- coverage-type-icon-id
+  [coverage-id index]
+  (str "insurance-workbench-coverage-type-"
+       (ui2/safe-dom-id coverage-id)
+       "-"
+       index))
+
+(defn- coverage-type-token
+  [coverage-id index coverage-type-name]
+  (when-let [label (coverage-type-label coverage-type-name)]
+    (if-let [{:keys [icon key]} (get coverage-type-icon-data label)]
+      (let [icon-id (coverage-type-icon-id coverage-id index)]
+        [[:span {:id                                icon-id
+                 :data-workbench-coverage-type-icon (name key)
+                 :role                              "img"
+                 :aria-label                        label}
+          [ico/Icon {::ico/library :phosphor
+                     ::ico/name    icon}]]
+         [:wa-tooltip {:for           icon-id
+                       :placement     "top"
+                       :without-arrow true}
+          label]])
+      [[:span label]])))
+
+(defn- coverage-type-icons
+  [coverage-id coverage-type-names]
+  (->> coverage-type-names
+       (keep coverage-type-label)
+       (map-indexed #(coverage-type-token coverage-id %1 %2))
+       (mapcat identity)
+       seq))
+
 (defn- row-cell-content
   [{:keys [tr]} currency row column-id]
   (let [{:keys [category-name coverage-id coverage-type-names harmonia-id instrument-name
@@ -1407,7 +1455,7 @@
       (ui2/money cost currency)
 
       :coverage-types
-      (str/join ", " coverage-type-names)
+      (coverage-type-icons coverage-id coverage-type-names)
 
       :actions
       (row-actions {:tr tr} coverage-id))))
