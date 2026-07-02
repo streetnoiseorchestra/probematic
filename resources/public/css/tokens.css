@@ -29,7 +29,6 @@
   --wa-border-radius-scale: 1.75;
   --wa-border-width-scale: 1;
   --wa-space-scale: 1;
-  --wa-line-height-normal: normal;
   --wa-link-decoration-default: underline
     color-mix(in oklab, currentColor 70%, transparent) dotted;
   --wa-color-success-fill-loud: #4ade80;
