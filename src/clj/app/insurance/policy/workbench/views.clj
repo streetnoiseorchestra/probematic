@@ -159,7 +159,7 @@
    {:id :value :label-key [:insurance/value] :align :end}
    {:id :cost :label-key [:instrument.coverage/cost] :align :end}
    {:id :coverage-types :label-key [:insurance/coverage-types]}
-   {:id :actions :label-key [:actions]}])
+   {:id :actions :label-key [:actions] :align :end}])
 
 (def selection-column
   {:id :selection})
@@ -1117,17 +1117,28 @@
     :end "text-align: end;"
     nil))
 
+(def action-column-class
+  "insurance-workbench-row-actions-cell")
+
+(defn- action-column?
+  [{:keys [id]}]
+  (= :actions id))
+
 (defn- table-heading-attrs
   [column]
-  (cond-> {:scope "col"}
+  (cond-> (if (action-column? column)
+            {:class action-column-class :scope "col"}
+            {:scope "col"})
     (column-alignment-style column)
     (assoc :style (column-alignment-style column))))
 
 (defn- table-cell-attrs
   [column]
-  (if-let [style (column-alignment-style column)]
-    {:style style}
-    {}))
+  (cond-> (if (action-column? column)
+            {:class action-column-class}
+            {})
+    (column-alignment-style column)
+    (assoc :style (column-alignment-style column))))
 
 (defn- table-cell
   [column-id content]
@@ -1135,8 +1146,14 @@
 
 (defn- table-heading-content
   [tr coverage-ids {:keys [id label-key]}]
-  (if (= id :selection)
+  (cond
+    (= id :selection)
     [:wa-checkbox (select-all-attrs tr coverage-ids)]
+
+    (= id :actions)
+    [:span {:class "wa-visually-hidden"} (tr label-key)]
+
+    :else
     (tr label-key)))
 
 (defn- table-headings
@@ -1167,6 +1184,128 @@
    (if member-id
      [:a {:href (urls/link-member member-id)} member-label]
      [:span member-label])])
+
+(defn- coverage-row-action-button-id
+  [coverage-id action]
+  (str "insurance-workbench-row-action-"
+       (name action)
+       "-"
+       (ui2/safe-dom-id coverage-id)))
+
+(defn- row-action-button
+  [button-id label href icon-name]
+  [button/Button {:id         button-id
+                  :href       href
+                  :appearance "filled"
+                  :size       "xs"
+                  :variant    "neutral"
+                  :aria-label label
+                  :class      "insurance-workbench-row-action-button"}
+   [:span {:class "insurance-workbench-row-action-icon"}
+    [ico/Icon {::ico/library :phosphor
+               ::ico/name    icon-name}]]])
+
+(defn- row-action-dropdown-trigger
+  [button-id label class appearance variant]
+  [button/Button (cond-> {:id         button-id
+                          :appearance appearance
+                          :size       "xs"
+                          :type       "button"
+                          :slot       "trigger"
+                          :aria-label label
+                          :class      class}
+                   variant (assoc :variant variant))
+   [:span {:class "insurance-workbench-row-action-icon"}
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    :ellipsis
+               :style        "margin-bottom: 3px;"}]]])
+
+(defn- row-action-tooltip
+  [button-id label]
+  [:wa-tooltip {:for           button-id
+                :placement     "top"
+                :without-arrow true}
+   label])
+
+(defn- row-action-dropdown-item
+  [label href icon-name]
+  [:wa-dropdown-item {:value   href
+                      :onclick "window.location = this.value"}
+   [ico/Icon {::ico/library :phosphor
+              ::ico/name    icon-name
+              :slot         "icon"}]
+   label])
+
+(defn- row-action-overflow-dropdown
+  [{:keys [class trigger]} view-label view-href edit-label edit-href]
+  [:wa-dropdown {:class     class
+                 :placement "bottom-end"}
+   trigger
+   (row-action-dropdown-item view-label view-href :eye)
+   (row-action-dropdown-item edit-label edit-href :pencil-simple)])
+
+(defn- row-actions
+  [{:keys [tr]} coverage-id]
+  (let [view-label              (tr [:action/view])
+        edit-label              (tr [:action/edit])
+        actions-label           (tr [:actions])
+        trigger-button-id       (coverage-row-action-button-id coverage-id :more)
+        group-trigger-button-id (coverage-row-action-button-id coverage-id :more-group)
+        dropdown-button-id      (coverage-row-action-button-id coverage-id :dropdown)
+        view-button-id          (coverage-row-action-button-id coverage-id :view)
+        edit-button-id          (coverage-row-action-button-id coverage-id :edit)
+        view-href               (urls/link-coverage coverage-id)
+        edit-href               (urls/link-coverage-edit coverage-id)]
+    [:div {:class "insurance-workbench-row-actions-menu"}
+     [:div {:class "insurance-workbench-row-actions-hover"}
+      [button/Button {:id         trigger-button-id
+                      :appearance "plain"
+                      :size       "xs"
+                      :type       "button"
+                      :aria-label actions-label
+                      :class      "insurance-workbench-row-actions-trigger insurance-workbench-row-actions-trigger--idle"}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :ellipsis
+                  :style "margin-bottom: 3px;"}]]
+      [:wa-button-group {:class       "insurance-workbench-row-action-group"
+                         :label       actions-label
+                         :orientation "horizontal"}
+       (row-action-button view-button-id
+                          view-label
+                          view-href
+                          :eye)
+       (row-action-button edit-button-id
+                          edit-label
+                          edit-href
+                          :pencil-simple)
+       (row-action-overflow-dropdown
+        {:class   "insurance-workbench-row-actions-dropdown insurance-workbench-row-actions-dropdown--group"
+         :trigger (row-action-dropdown-trigger
+                   group-trigger-button-id
+                   actions-label
+                   "insurance-workbench-row-actions-trigger insurance-workbench-row-actions-trigger--group"
+                   "filled"
+                   "neutral")}
+        view-label
+        view-href
+        edit-label
+        edit-href)]]
+     (row-action-overflow-dropdown
+      {:class   "insurance-workbench-row-actions-dropdown insurance-workbench-row-actions-dropdown--mobile"
+       :trigger (row-action-dropdown-trigger
+                 dropdown-button-id
+                 actions-label
+                 "insurance-workbench-row-actions-trigger insurance-workbench-row-actions-trigger--dropdown"
+                 "plain"
+                 nil)}
+      view-label
+      view-href
+      edit-label
+      edit-href)
+     (row-action-tooltip trigger-button-id actions-label)
+     (row-action-tooltip group-trigger-button-id actions-label)
+     (row-action-tooltip view-button-id view-label)
+     (row-action-tooltip edit-button-id edit-label)]))
 
 (defn- row-cell-content
   [{:keys [tr]} currency row column-id]
@@ -1216,9 +1355,7 @@
       (str/join ", " coverage-type-names)
 
       :actions
-      [:span {:class "wa-cluster wa-gap-xs"}
-       [:a {:href (urls/link-coverage coverage-id)} (tr [:action/view])]
-       [:a {:href (urls/link-coverage-edit coverage-id)} (tr [:action/edit])]])))
+      (row-actions {:tr tr} coverage-id))))
 
 (defn- row-cells
   [req currency columns row]

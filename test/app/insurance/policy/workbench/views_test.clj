@@ -46,9 +46,12 @@
    [:private-instrument] "Private Instrument"
    [:action/apply] "Apply"
    [:action/back] "Back"
-   [:action/previous] "Previous"
+   [:action/edit] "Edit"
    [:action/next] "Next"
-   [:action/remove] "Remove"})
+   [:action/previous] "Previous"
+   [:action/remove] "Remove"
+   [:action/view] "View"
+   [:actions] "Actions"})
 
 (defn tr
   ([path]
@@ -583,6 +586,107 @@
             (not (or (str/includes? html "Band Instrument")
                      (str/includes? html "Private Instrument")))}))))
 
+(deftest workbench-row-actions-render-stripe-style-sticky-button-group
+  (let [coverage-id (random-uuid)
+        html        (html/->str
+                     (#'views/flat-table
+                      {:tr tr}
+                      {:filters {:group :none}
+                       :policy  {:insurance.policy/currency :EUR}
+                       :rows    [{:category-name       "Strings"
+                                  :coverage-id         coverage-id
+                                  :coverage-type-names ["Basic"]
+                                  :harmonia-id         "H-123"
+                                  :instrument-name     "Violin"
+                                  :member-id           (random-uuid)
+                                  :member-label        "Anna"
+                                  :missing-insurer-id? false
+                                  :missing-photo?      false
+                                  :photo-count         3
+                                  :private?            false
+                                  :workflow-status     :instrument.coverage.status/needs-review
+                                  :change-status       :instrument.coverage.change/changed
+                                  :insured-value       1000M
+                                  :cost                12.34M}]}))]
+    (is (= {:has-sticky-action-heading? true
+            :has-sticky-action-cell? true
+            :has-ellipsis-trigger? true
+            :uses-horizontal-button-group? true
+            :renders-two-action-buttons? true
+            :buttons-are-xs-filled-wa-buttons? true
+            :links-existing-actions? true
+            :uses-icon-sprite-actions? true
+            :has-action-tooltips? true
+            :keeps-ellipsis-in-hover-button-group? true
+            :has-desktop-overflow-dropdown? true
+            :has-small-viewport-dropdown? true
+            :dropdown-items-have-icon-and-text? true}
+           {:has-sticky-action-heading?
+            (str/includes? html "<th class=\"insurance-workbench-row-actions-cell\"")
+            :has-sticky-action-cell?
+            (str/includes? html "<td class=\"insurance-workbench-row-actions-cell\"")
+            :has-ellipsis-trigger?
+            (and (str/includes? html "insurance-workbench-row-actions-trigger")
+                 (str/includes? html "snoico-ellipsis"))
+            :uses-horizontal-button-group?
+            (and (str/includes? html "<wa-button-group")
+                 (str/includes? html "orientation=\"horizontal\""))
+            :renders-two-action-buttons?
+            (= 2 (count (re-seq #"insurance-workbench-row-action-button" html)))
+            :buttons-are-xs-filled-wa-buttons?
+            (and (= 2 (count (re-seq #"insurance-workbench-row-action-button" html)))
+                 (<= 2 (count (re-seq #"size=\"xs\"" html)))
+                 (<= 2 (count (re-seq #"appearance=\"filled\"" html))))
+            :links-existing-actions?
+            (and (str/includes? html (str "href=\"/insurance-coverage/" coverage-id "/\""))
+                 (str/includes? html (str "href=\"/insurance-coverage-edit/" coverage-id "/\"")))
+            :uses-icon-sprite-actions?
+            (and (str/includes? html "phosphor-eye")
+                 (str/includes? html "phosphor-pencil-simple"))
+            :has-action-tooltips?
+            (and (str/includes? html ">View</wa-tooltip>")
+                 (str/includes? html ">Edit</wa-tooltip>"))
+            :keeps-ellipsis-in-hover-button-group?
+            (let [group-start (str/index-of html "<wa-button-group")
+                  group-end   (some->> group-start
+                                       (str/index-of html "</wa-button-group>"))
+                  group-html  (when (and group-start group-end)
+                                (subs html group-start group-end))
+                  positions   (map #(some-> group-html (str/index-of %))
+                                   ["phosphor-eye"
+                                    "phosphor-pencil-simple"
+                                    "insurance-workbench-row-actions-trigger--group"
+                                    "snoico-ellipsis"])]
+              (and group-html
+                   (every? some? positions)
+                   (apply < positions)))
+            :has-desktop-overflow-dropdown?
+            (let [group-start (str/index-of html "<wa-button-group")
+                  group-end   (some->> group-start
+                                       (str/index-of html "</wa-button-group>"))
+                  group-html  (when (and group-start group-end)
+                                (subs html group-start group-end))]
+              (and group-html
+                   (str/includes? group-html "insurance-workbench-row-actions-dropdown--group")
+                   (= 2 (count (re-seq #"<wa-dropdown-item" group-html)))
+                   (str/includes? group-html "onclick=\"window.location = this.value\"")
+                   (str/includes? group-html (str "value=\"/insurance-coverage/" coverage-id "/\""))
+                   (str/includes? group-html (str "value=\"/insurance-coverage-edit/" coverage-id "/\""))))
+            :has-small-viewport-dropdown?
+            (let [dropdown-start (str/index-of html "insurance-workbench-row-actions-dropdown--mobile")
+                  dropdown-end   (some->> dropdown-start
+                                          (str/index-of html "</wa-dropdown>"))
+                  dropdown-html  (when (and dropdown-start dropdown-end)
+                                   (subs html dropdown-start dropdown-end))]
+              (and dropdown-html
+                   (= 2 (count (re-seq #"<wa-dropdown-item" dropdown-html)))
+                   (str/includes? dropdown-html "onclick=\"window.location = this.value\"")
+                   (str/includes? dropdown-html (str "value=\"/insurance-coverage/" coverage-id "/\""))
+                   (str/includes? dropdown-html (str "value=\"/insurance-coverage-edit/" coverage-id "/\""))))
+            :dropdown-items-have-icon-and-text?
+            (and (str/includes? html "slot=\"icon\"")
+                 (str/includes? html ">View</wa-dropdown-item>")
+                 (str/includes? html ">Edit</wa-dropdown-item>"))}))))
 (deftest workbench-table-omits-hidden-columns-from-server-render
   (let [coverage-id (random-uuid)
         html        (html/->str
@@ -1071,7 +1175,12 @@
             (and (str/includes? html "slot=\"icon\"")
                  (str/includes? html "phosphor-check"))
             :reserves-icon-slot-for-each-size?
-            (= 3 (count (re-seq #"slot=\"icon\"" html)))
+            (let [dropdown-start (str/index-of html "data-workbench-page-size")
+                  dropdown-end   (some->> dropdown-start
+                                          (str/index-of html "</wa-dropdown>"))
+                  dropdown-html  (when (and dropdown-start dropdown-end)
+                                   (subs html dropdown-start dropdown-end))]
+              (= 3 (count (re-seq #"slot=\"icon\"" (or dropdown-html "")))))
             :hides-unselected-icons-inline?
             (str/includes? html "visibility: hidden;")
             :omits-checkbox-items?

@@ -299,10 +299,12 @@
                   :caret-right
                   :check
                   :download
+                  :eye
                   :funnel
                   :hash
                   :info
                   :magnifying-glass
+                  :pencil-simple
                   :sliders-horizontal
                   :star
                   :trend-up
