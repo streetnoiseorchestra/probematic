@@ -36,7 +36,9 @@
 
 (defn bad-opt-value-callout
   [{:keys [point-of-interest-opts callout-opts]}]
-  (let [message      ((requiring-resolve 'bling.core/point-of-interest) point-of-interest-opts)
+  (let [{:keys [header body]} point-of-interest-opts
+        source      ((requiring-resolve 'bling.core/point-of-interest) point-of-interest-opts)
+        message     (not-empty (str/join "\n\n" (remove str/blank? [header source body])))
         callout-opts (merge callout-opts {:padding-top 1})]
     (tap> (with-meta [(str (:label callout-opts) "\n" message)] {:ansi/color true}))
     ((requiring-resolve 'bling.core/callout) callout-opts message)))
@@ -94,10 +96,24 @@
                                   (assoc ::m/missing-key {:error/fn (fn [_ _]
                                                                       "is missing")}))})))
 
+(defn- stack-frame->trace-element
+  [[cls method file line]]
+  (let [cls                  (str cls)
+        [ns separator method] (if (str/includes? cls "/")
+                                (let [[ns method] (str/split cls #"/" 2)]
+                                  [ns "/" method])
+                                [cls "." (str method)])]
+    {:file      (when-not (= "NO_SOURCE_FILE" file) file)
+     :line      line
+     :ns        ns
+     :separator separator
+     :method    method}))
+
 (defn stack-trace []
   (->> (.getStackTrace (Thread/currentThread))
        (map StackTraceElement->vec)
-       (u.error/clean-trace)))
+       (u.error/clean-trace)
+       (map stack-frame->trace-element)))
 
 (defn validate-opts [schema opts]
   (let [s (if (map? schema)
