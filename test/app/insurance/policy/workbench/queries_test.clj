@@ -186,6 +186,7 @@
                                          :missing-harmonia-id? false
                                          :workflow-statuses #{}
                                          :change-statuses #{}
+                                         :value-filter nil
                                          :group :member}
               :editable?                true
               :available-category-names ["Brass" "Woodwind"]
@@ -358,6 +359,54 @@
                 {:change-statuses (get-in result [:filters :change-statuses])
                  :row-names (row-names result)})})))))
 
+(deftest value-filtering-test
+  (testing "supports numeric insured-value filters"
+    (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-value-filters")
+          policy-id      (random-uuid)]
+      (seed-workbench-policy! conn policy-id)
+      (is (= {:greater-than {:value-filter {:operator :greater-than
+                                            :value    2500M}
+                             :row-names ["Cornet" "Drum Kit"]}
+              :less-than    {:value-filter {:operator :less-than
+                                            :value    1000M}
+                             :row-names ["Euphonium"]}
+              :equal-to     {:value-filter {:operator :equal-to
+                                            :value    2000M}
+                             :row-names ["Bass Clarinet"]}
+              :between      {:value-filter {:operator :between
+                                            :min      1000M
+                                            :max      3000M}
+                             :row-names ["Alto Horn" "Bass Clarinet" "Cornet"]}
+              :invalid      {:value-filter nil
+                             :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}}
+             {:greater-than
+              (let [result (workbench conn policy-id {:value-operator "greater-than"
+                                                      :value "2500"})]
+                {:value-filter (get-in result [:filters :value-filter])
+                 :row-names (row-names result)})
+              :less-than
+              (let [result (workbench conn policy-id {:value-operator "less-than"
+                                                      :value "1000"})]
+                {:value-filter (get-in result [:filters :value-filter])
+                 :row-names (row-names result)})
+              :equal-to
+              (let [result (workbench conn policy-id {:value-operator "equal-to"
+                                                      :value "2000"})]
+                {:value-filter (get-in result [:filters :value-filter])
+                 :row-names (row-names result)})
+              :between
+              (let [result (workbench conn policy-id {:value-operator "between"
+                                                      :value-min "1000"
+                                                      :value-max "3000"})]
+                {:value-filter (get-in result [:filters :value-filter])
+                 :row-names (row-names result)})
+              :invalid
+              (let [result (workbench conn policy-id {:value-operator "between"
+                                                      :value-min "nope"
+                                                      :value-max "3000"})]
+                {:value-filter (get-in result [:filters :value-filter])
+                 :row-names (row-names result)})})))))
+
 (deftest grouping-modes-test
   (testing "member grouping and flat list modes return stable row order and group metadata"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-grouping")
@@ -397,6 +446,7 @@
                         :missing-harmonia-id? false
                         :workflow-statuses #{}
                         :change-statuses #{}
+                        :value-filter nil
                         :group :member}
               :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
              (let [result (workbench conn

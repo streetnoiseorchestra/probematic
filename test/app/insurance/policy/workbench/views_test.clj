@@ -11,6 +11,8 @@
 
 (def translations
   {[:instrument/category] "Category"
+   [:insurance/value] "Versicherungswert"
+   [:insurance.workbench/filter-by] "Filter by: %1"
    [:insurance.workbench/ownership] "Ownership"
    [:insurance.workbench/view] "View"
    [:insurance.workbench/ownership-band] "Band"
@@ -21,6 +23,13 @@
    [:insurance.workbench/deselect-all] "Deselect All"
    [:insurance.workbench/expand-all] "Expand all"
    [:insurance.workbench/collapse-all] "Collapse all"
+   [:insurance.workbench/value-operator] "Value operator"
+   [:insurance.workbench/value-greater-than] "is greater than"
+   [:insurance.workbench/value-less-than] "is less than"
+   [:insurance.workbench/value-equal-to] "is equal to"
+   [:insurance.workbench/value-between] "is between"
+   [:insurance.workbench/value-min] "Minimum"
+   [:insurance.workbench/value-max] "Maximum"
    [:instrument.coverage.status/needs-review] "Todo"
    [:instrument.coverage.status/reviewed] "Reviewed"
    [:instrument.coverage.status/coverage-active] "Active"
@@ -31,13 +40,17 @@
    [:band-instrument] "Band Instrument"
    [:private-instrument] "Private Instrument"
    [:action/apply] "Apply"
+   [:action/back] "Back"
    [:action/remove] "Remove"})
 
 (defn tr
   ([path]
    (get translations path (name (last path))))
-  ([path _args]
-   (tr path)))
+  ([path args]
+   (reduce (fn [s [idx arg]]
+             (str/replace s (str "%" (inc idx)) (str arg)))
+           (tr path)
+           (map-indexed vector args))))
 
 (deftest workbench-params-uses-active-category-filter-from-page-state
   (let [category-a (random-uuid)
@@ -52,6 +65,10 @@
             :missing-harmonia-id nil
             :workflow-status     nil
             :change-status       nil
+            :value-operator      nil
+            :value               nil
+            :value-min           nil
+            :value-max           nil
             :group               "member"}
            (#'views/workbench-params
             {:parameters {:query {:view "todo"
@@ -72,6 +89,10 @@
             :missing-harmonia-id nil
             :workflow-status     nil
             :change-status       nil
+            :value-operator      nil
+            :value               nil
+            :value-min           nil
+            :value-max           nil
             :group               "member"}
            (#'views/workbench-params
             {:parameters {:query {:view "todo"
@@ -81,6 +102,30 @@
              :page-state {:insurance-workbench
                           {:filters {:category-ids []
                                      :ownership :all}}}})))))
+
+(deftest workbench-params-uses-active-value-filter-from-page-state
+  (is (= {:view                "todo"
+          :review-filter       nil
+          :member-q            nil
+          :category-id         nil
+          :coverage-type-id    nil
+          :ownership           nil
+          :missing-photos      nil
+          :missing-harmonia-id nil
+          :workflow-status     nil
+          :change-status       nil
+          :value-operator      :between
+          :value               nil
+          :value-min           1000M
+          :value-max           3000M
+          :group               "member"}
+         (#'views/workbench-params
+          {:parameters {:query {:view  "todo"
+                                :group "member"}}
+           :page-state {:insurance-workbench
+                        {:filters {:value-filter {:operator :between
+                                                  :min      1000M
+                                                  :max      3000M}}}}}))))
 
 (deftest category-filter-control-renders-checkbox-list
   (let [category-id (random-uuid)
@@ -154,6 +199,59 @@
                  (str/includes? html "circle-plus-solid"))
             :badge-icons-use-start-slot?
             (str/includes? html "slot=\"start\"")}))))
+
+(deftest filter-editors-use-filter-by-title-and-unlabelled-controls
+  (let [value-html     (html/->str
+                        (#'views/filter-editor-shell
+                         {::r/router router
+                          :tr        tr}
+                         :value
+                         (#'views/value-filter-control tr)))
+        ownership-html (html/->str
+                        (#'views/filter-editor-shell
+                         {::r/router router
+                          :tr        tr}
+                         :ownership
+                         (#'views/ownership-select tr :private)))]
+    (is (= {:value-title?                 true
+            :value-select-unlabelled?     true
+            :value-inputs-native?         true
+            :value-input-unlabelled?      true
+            :value-controls-accessible?   true
+            :value-arrow-icon?            true
+            :value-inputs-bind-native?    true
+            :value-inputs-share-icon-row? true
+            :ownership-title?             true
+            :ownership-select-unlabelled? true
+            :ownership-select-accessible? true}
+           {:value-title?
+            (str/includes? value-html ">Filter by: Versicherungswert</strong>")
+            :value-select-unlabelled?
+            (not (str/includes? value-html " label=\"Value operator\""))
+            :value-inputs-native?
+            (and (str/includes? value-html "<input")
+                 (not (str/includes? value-html "<wa-input")))
+            :value-input-unlabelled?
+            (not (str/includes? value-html " label=\"Versicherungswert\""))
+            :value-controls-accessible?
+            (and (str/includes? value-html "aria-label=\"Value operator\"")
+                 (str/includes? value-html "aria-label=\"Versicherungswert\""))
+            :value-arrow-icon?
+            (str/includes? value-html "arrow-bend-down-right")
+            :value-inputs-bind-native?
+            (and (str/includes? value-html "data-bind=\"insuranceWorkbench.filterDraft.value\"")
+                 (str/includes? value-html "data-bind=\"insuranceWorkbench.filterDraft.valueMin\"")
+                 (str/includes? value-html "data-bind=\"insuranceWorkbench.filterDraft.valueMax\"")
+                 (not (str/includes? value-html "data-on:input=\"$insuranceWorkbench.filterDraft.value")))
+            :value-inputs-share-icon-row?
+            (and (str/includes? value-html "grid-template-columns: auto minmax(0, 1fr)")
+                 (str/includes? value-html "grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)"))
+            :ownership-title?
+            (str/includes? ownership-html ">Filter by: Ownership</strong>")
+            :ownership-select-unlabelled?
+            (not (str/includes? ownership-html " label=\"Ownership\""))
+            :ownership-select-accessible?
+            (str/includes? ownership-html "aria-label=\"Ownership\"")}))))
 
 (deftest selection-signals-predefines-active-filter-arrays
   (let [category-id      (random-uuid)
@@ -596,7 +694,7 @@
             :harmonia-cell-aligned? true}
            {:right-aligned-headers?
             (every? #(str/includes? html (str "text-align: end;\">" % "</th>"))
-                    ["photos" "insurer-id" "value" "cost"])
+                    ["photos" "insurer-id" "Versicherungswert" "cost"])
             :right-aligned-cells?
             (= 4 (count (re-seq #"<td style=\"text-align: end;\"" html)))
             :photo-cell-aligned?

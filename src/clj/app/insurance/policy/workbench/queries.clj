@@ -99,29 +99,38 @@
       (= :true value)
       (= :missing (domain/simple-keyword value))))
 
+(defn- normalized-value-filter
+  [params]
+  (domain/normalize-value-filter
+   {:operator (parameter-value params :value-operator)
+    :value    (parameter-value params :value)
+    :min      (parameter-value params :value-min)
+    :max      (parameter-value params :value-max)}))
+
 (defn- normalized-filters
   [params]
-  {:member-q          (normalized-member-q params)
-   :category-ids      (normalized-category-ids params)
-   :coverage-type-ids (normalized-coverage-type-ids params)
-   :ownership         (supported-value domain/coverage-ownership-set
-                                       :all
-                                       (parameter-value params :ownership))
-   :missing-photos?     (truthy-param? (or (parameter-value params :missing-photos)
-                                           (parameter-value params :photos)))
+  {:member-q             (normalized-member-q params)
+   :category-ids         (normalized-category-ids params)
+   :coverage-type-ids    (normalized-coverage-type-ids params)
+   :ownership            (supported-value domain/coverage-ownership-set
+                                          :all
+                                          (parameter-value params :ownership))
+   :missing-photos?      (truthy-param? (or (parameter-value params :missing-photos)
+                                            (parameter-value params :photos)))
    :missing-harmonia-id? (truthy-param? (or (parameter-value params :missing-harmonia-id)
                                             (parameter-value params :harmonia-id)))
-   :workflow-statuses   (normalized-simple-values params
-                                                  domain/simple-instrument-coverage-status-set
-                                                  :workflow-status
-                                                  :workflow-statuses)
-   :change-statuses     (normalized-simple-values params
-                                                  domain/simple-instrument-coverage-change-set
-                                                  :change-status
-                                                  :change-statuses)
-   :group             (supported-value supported-groups
-                                       :member
-                                       (parameter-value params :group))})
+   :workflow-statuses    (normalized-simple-values params
+                                                   domain/simple-instrument-coverage-status-set
+                                                   :workflow-status
+                                                   :workflow-statuses)
+   :change-statuses      (normalized-simple-values params
+                                                   domain/simple-instrument-coverage-change-set
+                                                   :change-status
+                                                   :change-statuses)
+   :value-filter         (normalized-value-filter params)
+   :group                (supported-value supported-groups
+                                          :member
+                                          (parameter-value params :group))})
 
 (defn- coverage-item-count
   [{:instrument.coverage/keys [item-count]}]
@@ -257,7 +266,7 @@
 
 (defn- quick-filter-predicate
   [{:keys [category-ids coverage-type-ids change-statuses member-q missing-harmonia-id?
-           missing-photos? ownership workflow-statuses]}]
+           missing-photos? ownership value-filter workflow-statuses]}]
   (fn [{:keys [category-id] :as row}]
     (and
      (or (nil? member-q) (member-match? member-q row))
@@ -267,6 +276,7 @@
      (or (not missing-harmonia-id?) (:missing-insurer-id? row))
      (workflow-status-match? workflow-statuses row)
      (change-status-match? change-statuses row)
+     (domain/value-filter-match? value-filter (:insured-value row))
      (case ownership
        :all true
        :band (= :band (:ownership row))

@@ -23,14 +23,20 @@
    :new            [:insurance.workbench/view-new]
    :removed        [:insurance.workbench/view-removed]})
 
-(def group-label-keys
-  {:member [:insurance.workbench/group-member]
-   :none   [:insurance.workbench/group-none]})
-
 (def ownership-label-keys
   {:all     [:insurance.workbench/ownership-all]
    :band    [:insurance.workbench/ownership-band]
    :private [:insurance.workbench/ownership-private]})
+
+(def value-filter-operator-label-keys
+  {:greater-than [:insurance.workbench/value-greater-than]
+   :less-than    [:insurance.workbench/value-less-than]
+   :equal-to     [:insurance.workbench/value-equal-to]
+   :between      [:insurance.workbench/value-between]})
+
+(defn- value-filter-operator-label
+  [tr operator]
+  (tr (value-filter-operator-label-keys operator)))
 
 (defn- policy-id
   [{:keys [parameters path-params]}]
@@ -44,6 +50,20 @@
   [params k]
   (or (get params k)
       (get params (name k))))
+
+(defn- value-filter-query-params
+  [value-filter]
+  (let [{:keys [operator value min max]} value-filter
+        operator (when operator (domain/normalize-value-filter-operator operator))]
+    (case operator
+      :between {:value-operator operator
+                :value          nil
+                :value-min      min
+                :value-max      max}
+      {:value-operator operator
+       :value          value
+       :value-min      nil
+       :value-max      nil})))
 
 (defn- query-params
   [req]
@@ -60,6 +80,10 @@
      :missing-harmonia-id (query-param params :missing-harmonia-id)
      :workflow-status     (query-param params :workflow-status)
      :change-status       (query-param params :change-status)
+     :value-operator      (query-param params :value-operator)
+     :value               (query-param params :value)
+     :value-min           (query-param params :value-min)
+     :value-max           (query-param params :value-max)
      :group               (query-param params :group)}))
 
 (defn- active-filter-params
@@ -72,7 +96,8 @@
       (contains? filters :missing-photos?) (assoc :missing-photos (:missing-photos? filters))
       (contains? filters :missing-harmonia-id?) (assoc :missing-harmonia-id (:missing-harmonia-id? filters))
       (contains? filters :workflow-statuses) (assoc :workflow-status (:workflow-statuses filters))
-      (contains? filters :change-statuses) (assoc :change-status (:change-statuses filters)))))
+      (contains? filters :change-statuses) (assoc :change-status (:change-statuses filters))
+      (contains? filters :value-filter) (merge (value-filter-query-params (:value-filter filters))))))
 
 (defn- workbench-params
   [req]
@@ -207,6 +232,15 @@
   [value]
   (when value true))
 
+(defn- value-filter-hidden-fields
+  [filters]
+  (let [{:keys [value-operator value value-min value-max]}
+        (value-filter-query-params (:value-filter filters))]
+    [["value-operator" value-operator]
+     ["value" value]
+     ["value-min" value-min]
+     ["value-max" value-max]]))
+
 (defn- query-state
   [filters view overrides]
   (merge {:view                view
@@ -219,6 +253,7 @@
           :workflow-status     (workflow-status-query-values filters)
           :change-status       (change-status-query-values filters)
           :group               (:group filters)}
+         (value-filter-query-params (:value-filter filters))
          overrides))
 
 (defn- view-button
@@ -239,15 +274,16 @@
   [tr {:keys [filters policy view]}]
   (into [:form {:method "get"
                 :action (urls/link-policy-workbench policy)}]
-        (concat (hidden-inputs [["group" (:group filters)]
-                                ["member-q" (:member-q filters)]
-                                ["category-id" (category-query-values filters)]
-                                ["coverage-type-id" (coverage-type-query-values filters)]
-                                ["ownership" (:ownership filters)]
-                                ["missing-photos" (active-boolean-query-value (:missing-photos? filters))]
-                                ["missing-harmonia-id" (active-boolean-query-value (:missing-harmonia-id? filters))]
-                                ["workflow-status" (workflow-status-query-values filters)]
-                                ["change-status" (change-status-query-values filters)]])
+        (concat (hidden-inputs (concat [["group" (:group filters)]
+                                        ["member-q" (:member-q filters)]
+                                        ["category-id" (category-query-values filters)]
+                                        ["coverage-type-id" (coverage-type-query-values filters)]
+                                        ["ownership" (:ownership filters)]
+                                        ["missing-photos" (active-boolean-query-value (:missing-photos? filters))]
+                                        ["missing-harmonia-id" (active-boolean-query-value (:missing-harmonia-id? filters))]
+                                        ["workflow-status" (workflow-status-query-values filters)]
+                                        ["change-status" (change-status-query-values filters)]]
+                                       (value-filter-hidden-fields filters)))
                 [(into [:wa-select {:name           "view"
                                     :value          (name view)
                                     :appearance     "outlined"
@@ -269,15 +305,16 @@
   [{:keys [tr]} {:keys [filters policy view]}]
   (into [:form {:method "get"
                 :action (urls/link-policy-workbench policy)}]
-        (concat (hidden-inputs [["view" view]
-                                ["group" (:group filters)]
-                                ["category-id" (category-query-values filters)]
-                                ["coverage-type-id" (coverage-type-query-values filters)]
-                                ["ownership" (:ownership filters)]
-                                ["missing-photos" (active-boolean-query-value (:missing-photos? filters))]
-                                ["missing-harmonia-id" (active-boolean-query-value (:missing-harmonia-id? filters))]
-                                ["workflow-status" (workflow-status-query-values filters)]
-                                ["change-status" (change-status-query-values filters)]])
+        (concat (hidden-inputs (concat [["view" view]
+                                        ["group" (:group filters)]
+                                        ["category-id" (category-query-values filters)]
+                                        ["coverage-type-id" (coverage-type-query-values filters)]
+                                        ["ownership" (:ownership filters)]
+                                        ["missing-photos" (active-boolean-query-value (:missing-photos? filters))]
+                                        ["missing-harmonia-id" (active-boolean-query-value (:missing-harmonia-id? filters))]
+                                        ["workflow-status" (workflow-status-query-values filters)]
+                                        ["change-status" (change-status-query-values filters)]]
+                                       (value-filter-hidden-fields filters)))
                 [[:wa-input {:name        "member-q"
                              :aria-label  (tr [:insurance.workbench/search])
                              :placeholder (tr [:insurance.workbench/member-search-placeholder])
@@ -286,9 +323,9 @@
 
 (defn- ownership-select
   [tr selected-ownership]
-  (into [:wa-select {:label      (tr [:insurance.workbench/ownership])
-                     :value      (name selected-ownership)
+  (into [:wa-select {:value      (name selected-ownership)
                      :appearance "outlined"
+                     :aria-label (tr [:insurance.workbench/ownership])
                      :data-bind  "insuranceWorkbench.filterDraft.ownership"}]
         (for [ownership [:all :band :private]]
           (option selected-ownership ownership (tr (ownership-label-keys ownership))))))
@@ -361,36 +398,60 @@
                    {:id    (name status)
                     :label (insurance-ui/change-badge tr (domain/qualified-coverage-change status))})))
 
+(defn- value-input-attrs
+  [signal-path attrs]
+  (assoc attrs :data-bind signal-path))
+
 (defn- value-filter-control
   [tr]
   [:div {:class "wa-stack wa-gap-s"}
-   [:wa-select {:label      (tr [:insurance.workbench/value-operator])
-                :value      "greater-than"
-                :appearance "outlined"
-                :data-bind  "insuranceWorkbench.filterDraft.valueOperator"}
-    [:wa-option {:value "greater-than"} (tr [:insurance.workbench/value-greater-than])]
-    [:wa-option {:value "less-than"} (tr [:insurance.workbench/value-less-than])]
-    [:wa-option {:value "equal-to"} (tr [:insurance.workbench/value-equal-to])]
-    [:wa-option {:value "between"} (tr [:insurance.workbench/value-between])]]
-   [:wa-input {:type      "number"
-               :min       "0"
-               :data-show "$insuranceWorkbench.filterDraft.valueOperator !== 'between'"
-               :data-bind "insuranceWorkbench.filterDraft.value"
-               :label     (tr [:insurance/value])}]
-   [:div {:class     "wa-cluster wa-gap-xs wa-align-items-center"
+   (into [:wa-select {:value      (name domain/default-value-filter-operator)
+                      :appearance "outlined"
+                      :aria-label (tr [:insurance.workbench/value-operator])
+                      :data-bind  "insuranceWorkbench.filterDraft.valueOperator"}]
+         (for [operator domain/value-filter-operators]
+           [:wa-option {:value (name operator)}
+            (value-filter-operator-label tr operator)]))
+   [:div {:class     "wa-flank wa-gap-3xs"
+          :style     (str "display: grid; "
+                          "grid-template-columns: auto minmax(0, 1fr); "
+                          "align-items: center;")
+          :data-show "$insuranceWorkbench.filterDraft.valueOperator !== 'between'"}
+    [ico/Icon {::ico/library :phosphor
+               ::ico/name    :arrow-bend-down-right
+               :class        "wa-color-text-quiet"}]
+    [:input (value-input-attrs
+             "insuranceWorkbench.filterDraft.value"
+             {:type        "number"
+              :min         "0"
+              :placeholder "0"
+              :aria-label  (tr [:insurance/value])})]]
+   [:div {:class     "wa-flank wa-gap-3xs"
+          :style     (str "display: grid; "
+                          "grid-template-columns: auto minmax(0, 1fr); "
+                          "align-items: center;")
           :data-show "$insuranceWorkbench.filterDraft.valueOperator === 'between'"}
-    [:wa-input {:type        "number"
-                :min         "0"
-                :data-bind   "insuranceWorkbench.filterDraft.valueMin"
-                :placeholder (tr [:insurance.workbench/value-min])
-                :aria-label  (tr [:insurance.workbench/value-min])}]
-    [:span {:class "wa-caption-s wa-color-text-quiet"}
-     (tr [:insurance.workbench/and])]
-    [:wa-input {:type        "number"
-                :min         "0"
-                :data-bind   "insuranceWorkbench.filterDraft.valueMax"
-                :placeholder (tr [:insurance.workbench/value-max])
-                :aria-label  (tr [:insurance.workbench/value-max])}]]])
+    [ico/Icon {::ico/library :phosphor
+               ::ico/name    :arrow-bend-down-right
+               :class        "wa-color-text-quiet"}]
+    [:div {:class "wa-gap-3xs"
+           :style (str "display: grid; "
+                       "grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); "
+                       "align-items: center;")}
+     [:input (value-input-attrs
+              "insuranceWorkbench.filterDraft.valueMin"
+              {:type        "number"
+               :min         "0"
+               :placeholder (tr [:insurance.workbench/value-min])
+               :aria-label  (tr [:insurance.workbench/value-min])})]
+     [:span {:class "wa-align-items-center wa-caption-s wa-color-text-quiet"}
+      (tr [:insurance.workbench/and])]
+     [:input (value-input-attrs
+              "insuranceWorkbench.filterDraft.valueMax"
+              {:type        "number"
+               :min         "0"
+               :placeholder (tr [:insurance.workbench/value-max])
+               :aria-label  (tr [:insurance.workbench/value-max])})]]]])
 
 (defn- apply-filter-js
   [req]
@@ -463,6 +524,16 @@
          "$insuranceWorkbench.filterEditor.field = 'change'; "
          "$insuranceWorkbench.filterPopover.open = false; "
          "$insuranceWorkbench.filterDraft.changeStatuses = ($insuranceWorkbench.filterDraft.changeStatuses || []).map(() => ''); "
+         (d*/action :post (d*/act req ::actions/apply-filter)))
+
+    :value
+    (str "evt.preventDefault(); evt.stopPropagation(); "
+         "el.style.opacity = '0'; el.style.pointerEvents = 'none'; "
+         "$insuranceWorkbench.filterEditor.field = 'value'; "
+         "$insuranceWorkbench.filterPopover.open = false; "
+         "$insuranceWorkbench.filterDraft.value = ''; "
+         "$insuranceWorkbench.filterDraft.valueMin = ''; "
+         "$insuranceWorkbench.filterDraft.valueMax = ''; "
          (d*/action :post (d*/act req ::actions/apply-filter)))))
 
 (defn- filter-editor-shell
@@ -477,7 +548,7 @@
                     :data-on:click "evt.preventDefault(); evt.stopPropagation(); $insuranceWorkbench.filterEditor.field = ''; $insuranceWorkbench.filterEditor.source = 'list'"}
      [ico/Icon {::ico/library :phosphor
                 ::ico/name    :caret-left}]]
-    [:strong (tr (filter-field-label-keys field))]]
+    [:strong (tr [:insurance.workbench/filter-by] [(tr (filter-field-label-keys field))])]]
    body
    [button/Button {:appearance    "filled"
                    :variant       "brand"
@@ -582,6 +653,24 @@
         (for [value (sort-by name values)]
           (label-fn tr (key-fn value)))))
 
+(defn- value-filter-value
+  [tr currency {:keys [operator value min max]}]
+  (case operator
+    :between
+    [:span {:class "wa-cluster wa-gap-2xs wa-align-items-center"}
+     (value-filter-operator-label tr :between)
+     " "
+     (ui2/money min currency)
+     " "
+     (tr [:insurance.workbench/and])
+     " "
+     (ui2/money max currency)]
+
+    [:span {:class "wa-cluster wa-gap-2xs wa-align-items-center"}
+     (value-filter-operator-label tr operator)
+     " "
+     (ui2/money value currency)]))
+
 (defn- active-filter-chips
   [{:keys [tr]} {:keys [available-categories filters policy]}]
   (cond-> []
@@ -618,7 +707,12 @@
     (seq (:change-statuses filters))
     (conj {:field :change
            :label (tr (filter-field-label-keys :change))
-           :value (status-filter-value insurance-ui/change-badge domain/qualified-coverage-change tr (:change-statuses filters))})))
+           :value (status-filter-value insurance-ui/change-badge domain/qualified-coverage-change tr (:change-statuses filters))})
+
+    (:value-filter filters)
+    (conj {:field :value
+           :label (tr (filter-field-label-keys :value))
+           :value (value-filter-value tr (:insurance.policy/currency policy) (:value-filter filters))})))
 
 (defn- active-filter-pill
   [req {:keys [field label value]}]
@@ -627,11 +721,11 @@
               :data-on:wa-remove (remove-filter-js req field)
               :class             "cursor-pointer"
               :style             "transition: opacity 1s ease-out;"}
-     [:dl {:class         "wa-cluster wa-gap-0"
+     [:dl {:class         "wa-cluster wa-gap-2xs"
            :id            chip-id
            :data-on:click (show-filter-popover-js chip-id field)}
       [:dt {:class "wa-font-weight-bold wa-color-text-quiet"} label]
-      [divider/Divider {::divider/orientation :vertical ::divider/spacing "0.2rem" :style "min-block-size: 0.5lh"}]
+      [divider/Divider {::divider/orientation :vertical :style "min-block-size: 0.5lh"}]
       [:dd {:class "wa-font-weight-bold" :style "color: var(--wa-color-green-60)"} value]]]))
 
 (defn- active-filters-bar
@@ -708,6 +802,14 @@
   [values]
   (mapv form-value values))
 
+(defn- value-filter-signal-values
+  [filters]
+  (let [{:keys [operator value min max]} (:value-filter filters)]
+    {:valueOperator (name (or operator domain/default-value-filter-operator))
+     :value         (some-> value form-value)
+     :valueMin      (some-> min form-value)
+     :valueMax      (some-> max form-value)}))
+
 (defn- selection-signals
   [policy filters]
   {:insuranceWorkbench {:policyId              (str (:insurance.policy/policy-id policy))
@@ -719,17 +821,14 @@
                                                :appliedField nil}
                         :filterPopover        {:anchor filter-button-id
                                                :open   false}
-                        :filterDraft          {:categoryIds       (signal-array-values (category-query-values filters))
-                                               :ownership         (name (:ownership filters))
-                                               :coverageTypeIds   (signal-array-values (coverage-type-query-values filters))
-                                               :missingPhotos     (boolean (:missing-photos? filters))
-                                               :missingHarmoniaId (boolean (:missing-harmonia-id? filters))
-                                               :workflowStatuses  (signal-array-values (workflow-status-query-values filters))
-                                               :changeStatuses    (signal-array-values (change-status-query-values filters))
-                                               :valueOperator     "greater-than"
-                                               :value             nil
-                                               :valueMin          nil
-                                               :valueMax          nil}
+                        :filterDraft          (merge {:categoryIds       (signal-array-values (category-query-values filters))
+                                                      :ownership         (name (:ownership filters))
+                                                      :coverageTypeIds   (signal-array-values (coverage-type-query-values filters))
+                                                      :missingPhotos     (boolean (:missing-photos? filters))
+                                                      :missingHarmoniaId (boolean (:missing-harmonia-id? filters))
+                                                      :workflowStatuses  (signal-array-values (workflow-status-query-values filters))
+                                                      :changeStatuses    (signal-array-values (change-status-query-values filters))}
+                                                     (value-filter-signal-values filters))
                         :table                {:wrapCells     false
                                                :groupByMember (= :member (:group filters))
                                                :columns       (into {}

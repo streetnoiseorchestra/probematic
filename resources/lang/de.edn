@@ -189,6 +189,7 @@
   :table-settings "Tabelleneinstellungen",
   :wrap-cells "Zellen umbrechen",
   :columns "Spalten",
+  :filter-by "Filtern nach: %1",
   :value-operator "Wertoperator",
   :value-greater-than "ist größer als",
   :value-less-than "ist kleiner als",

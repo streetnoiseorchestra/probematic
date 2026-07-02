@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Probematic\n"
-"POT-Creation-Date: 2026-07-01 13:37+0000\n"
+"POT-Creation-Date: 2026-07-01 16:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1035,6 +1035,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":insurance.workbench/group-member"
 msgid "Group by member"
+msgstr ""
+
+#: :insurance.workbench/filter-by
+#, ycp-format
+msgctxt ":insurance.workbench/filter-by"
+msgid "Filter by: %1"
 msgstr ""
 
 #: :insurance.workbench/value-min

@@ -1,9 +1,11 @@
 (ns app.urls
-  (:import [java.net URLEncoder])
-  (:require [app.config :as config]
-            [reitit.core :as r]
-            [ring.util.codec :as codec]
-            [clojure.string :as str]))
+  (:require
+   [app.config :as config]
+   [clojure.string :as str]
+   [reitit.core :as r]
+   [ring.util.codec :as codec])
+  (:import
+   [java.net URLEncoder]))
 
 (defn params->query-string [m]
   (codec/form-encode m))
@@ -77,14 +79,27 @@
 (defn link-policy-workbench
   ([policy-or-policy-id]
    (link-policy-workbench policy-or-policy-id nil))
-  ([policy-or-policy-id {:keys [view review-filter member-q category-id category-ids ownership group]}]
+  ([policy-or-policy-id {:keys [category-id category-ids change-status change-statuses
+                                coverage-type-id coverage-type-ids group member-q
+                                missing-harmonia-id missing-photos ownership review-filter
+                                value value-max value-min value-operator view workflow-status
+                                workflow-statuses]}]
    (str (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/workbench")
-        (append-qps {:view          (query-value view)
-                     :review-filter (query-value review-filter)
-                     :member-q      member-q
-                     :category-id   (query-value (or category-id category-ids))
-                     :ownership     (query-value ownership)
-                     :group         (query-value group)}))))
+        (append-qps (array-map :view                (query-value view)
+                               :review-filter       (query-value review-filter)
+                               :member-q            member-q
+                               :category-id         (query-value (or category-id category-ids))
+                               :coverage-type-id    (query-value (or coverage-type-id coverage-type-ids))
+                               :ownership           (query-value ownership)
+                               :missing-photos      (query-value missing-photos)
+                               :missing-harmonia-id (query-value missing-harmonia-id)
+                               :workflow-status     (query-value (or workflow-status workflow-statuses))
+                               :change-status       (query-value (or change-status change-statuses))
+                               :value-operator      (query-value value-operator)
+                               :value               value
+                               :value-min           value-min
+                               :value-max           value-max
+                               :group               (query-value group))))))
 (def link-policy-send-notifications (partial link-helper "/insurance-policy-notify/" :insurance.policy/policy-id))
 (def link-policy-changes (partial link-helper "/insurance-policy-changes/" :insurance.policy/policy-id))
 
@@ -126,13 +141,13 @@
   "Given a map of query parameters, return a string of query parameters (starting with ?) to append to a URL.
   nil or blank values will be omittted. If the map is empty, an empty string is returned."
   [m]
-  (let [encoded
-        (->> m
-             (filter #(not (or
-                            (when (string? (val %)) (str/blank? (val %)))
-                            (nil? (val %)))))
-             (into {})
-             (params->query-string))]
+  (let [encoded (->> m
+                     (filter #(not (or
+                                    (when (string? (val %)) (str/blank? (val %)))
+                                    (nil? (val %)))))
+                     (mapcat identity)
+                     (apply array-map)
+                     (params->query-string))]
     (if (str/blank? encoded)
       ""
       (str "?" encoded))))

@@ -94,7 +94,8 @@
 
 (defn apply-filter-signals
   [{:keys [category-ids change-statuses coverage-type-ids field missing-harmonia-id?
-           missing-photos? ownership workflow-statuses]}]
+           missing-photos? ownership value value-max value-min value-operator
+           workflow-statuses]}]
   {:insuranceWorkbench {:filterEditor {:field (name (or field :category))}
                         :filterDraft  {:categoryIds       (mapv str category-ids)
                                        :ownership         (name (or ownership :all))
@@ -102,7 +103,11 @@
                                        :missingPhotos     (boolean missing-photos?)
                                        :missingHarmoniaId (boolean missing-harmonia-id?)
                                        :workflowStatuses  (mapv name workflow-statuses)
-                                       :changeStatuses    (mapv name change-statuses)}}})
+                                       :changeStatuses    (mapv name change-statuses)
+                                       :valueOperator     (name (or value-operator :greater-than))
+                                       :value             value
+                                       :valueMin          value-min
+                                       :valueMax          value-max}}})
 
 (defn db-transact-effect
   [effects]
@@ -426,3 +431,51 @@
                     {}
                     (apply-filter-signals {:field :change
                                            :change-statuses [:changed :new]})))}))))
+
+(deftest apply-filter-action-stores-value-filter-in-page-state
+  (is (= {:greater-than [[:app.datastar/assoc-state
+                          [:insurance-workbench :filters :value-filter]
+                          {:operator :greater-than
+                           :value    1000M}]
+                         [:app.datastar/merge-signals
+                          {:insuranceWorkbench {:filterEditor  {:field ""
+                                                                :source nil
+                                                                :appliedField "value"}
+                                                :filterPopover {:open false}}}]]
+          :between      [[:app.datastar/assoc-state
+                          [:insurance-workbench :filters :value-filter]
+                          {:operator :between
+                           :min      1000M
+                           :max      3000M}]
+                         [:app.datastar/merge-signals
+                          {:insuranceWorkbench {:filterEditor  {:field ""
+                                                                :source nil
+                                                                :appliedField "value"}
+                                                :filterPopover {:open false}}}]]
+          :blank        [[:app.datastar/assoc-state
+                          [:insurance-workbench :filters :value-filter]
+                          nil]
+                         [:app.datastar/merge-signals
+                          {:insuranceWorkbench {:filterEditor  {:field ""
+                                                                :source nil
+                                                                :appliedField "value"}
+                                                :filterPopover {:open false}}}]]}
+         {:greater-than
+          (actions/apply-filter-action
+           {}
+           (apply-filter-signals {:field :value
+                                  :value-operator :greater-than
+                                  :value "1000"}))
+          :between
+          (actions/apply-filter-action
+           {}
+           (apply-filter-signals {:field :value
+                                  :value-operator :between
+                                  :value-min "1000"
+                                  :value-max "3000"}))
+          :blank
+          (actions/apply-filter-action
+           {}
+           (apply-filter-signals {:field :value
+                                  :value-operator :less-than
+                                  :value ""}))})))

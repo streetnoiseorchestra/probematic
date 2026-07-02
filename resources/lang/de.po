@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-01 13:37+0000\n"
+"POT-Creation-Date: 2026-07-01 16:44+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -1105,6 +1105,12 @@ msgstr "Wähle eine andere Ansicht oder einen anderen Filter."
 msgctxt ":insurance.workbench/group-member"
 msgid "Group by member"
 msgstr "Nach Mitglied gruppieren"
+
+#: :insurance.workbench/filter-by
+#, ycp-format
+msgctxt ":insurance.workbench/filter-by"
+msgid "Filter by: %1"
+msgstr "Filtern nach: %1"
 
 #: :insurance.workbench/value-min
 #, ycp-format

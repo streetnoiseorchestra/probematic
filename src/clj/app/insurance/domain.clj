@@ -45,6 +45,15 @@
    :reviewed :instrument.coverage.status/reviewed
    :active   :instrument.coverage.status/coverage-active})
 
+(def value-filter-operators
+  [:greater-than :less-than :equal-to :between])
+
+(def value-filter-operator-set
+  (set value-filter-operators))
+
+(def default-value-filter-operator
+  :greater-than)
+
 (defn simple-keyword
   [value]
   (cond
@@ -53,6 +62,61 @@
                        (when-not (str/blank? value)
                          (keyword (name (keyword value)))))
     :else            nil))
+
+(defn decimal-value
+  [value]
+  (try
+    (let [value (str/trim (str value))]
+      (when-not (str/blank? value)
+        (bigdec value)))
+    (catch Exception _
+      nil)))
+
+(defn normalize-value-filter-operator
+  [value]
+  (let [operator (simple-keyword value)]
+    (if (contains? value-filter-operator-set operator)
+      operator
+      default-value-filter-operator)))
+
+(defn normalize-value-filter
+  [{:keys [operator value min max]}]
+  (let [operator (normalize-value-filter-operator operator)]
+    (case operator
+      :between
+      (let [min-value (decimal-value min)
+            max-value (decimal-value max)]
+        (when (and min-value
+                   max-value
+                   (not (pos? (compare min-value max-value))))
+          {:operator :between
+           :min      min-value
+           :max      max-value}))
+
+      (when-let [value (decimal-value value)]
+        {:operator operator
+         :value    value}))))
+
+(defn value-filter-match?
+  [value-filter value]
+  (if value-filter
+    (if-let [value (decimal-value (or value 0M))]
+      (let [compare-value #(compare value %)]
+        (case (:operator value-filter)
+          :greater-than (when-let [filter-value (:value value-filter)]
+                          (pos? (compare-value filter-value)))
+          :less-than (when-let [filter-value (:value value-filter)]
+                       (neg? (compare-value filter-value)))
+          :equal-to (when-let [filter-value (:value value-filter)]
+                      (zero? (compare-value filter-value)))
+          :between (let [{:keys [min max]} value-filter]
+                     (and min
+                          max
+                          (not (neg? (compare-value min)))
+                          (not (pos? (compare-value max)))))
+          true))
+      false)
+    true))
 
 (defn qualified-coverage-status
   [status]

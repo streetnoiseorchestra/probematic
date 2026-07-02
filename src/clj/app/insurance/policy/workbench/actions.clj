@@ -148,6 +148,14 @@
   (or (true? value)
       (= "true" value)))
 
+(defn- selected-value-filter
+  [draft]
+  (domain/normalize-value-filter
+   {:operator (:valueOperator draft)
+    :value    (:value draft)
+    :min      (:valueMin draft)
+    :max      (:valueMax draft)}))
+
 (defn- clear-filter-editor-signals
   [field]
   [:app.datastar/merge-signals
@@ -202,6 +210,12 @@
       [[:app.datastar/assoc-state
         [form-key :filters :change-statuses]
         (selected-simple-values domain/simple-instrument-coverage-change-set (:changeStatuses draft))]
+       (clear-filter-editor-signals field)]
+
+      :value
+      [[:app.datastar/assoc-state
+        [form-key :filters :value-filter]
+        (selected-value-filter draft)]
        (clear-filter-editor-signals field)]
 
       [[:app.datastar/assoc-state [form-key :filters :last-applied-field] (some-> field name)]
