@@ -193,6 +193,8 @@
         root.querySelectorAll('textarea.markdown-editor').forEach(window.MarkdownEditor);
       };")]])
 
+(def currency-symbol {:EUR "€"
+                      :USD "$"})
 (def currency-default-locale
   {:EUR Locale/GERMANY
    :USD Locale/US})

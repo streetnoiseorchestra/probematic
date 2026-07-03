@@ -1,5 +1,6 @@
 (ns app.insurance.policy.dashboard.queries
   (:require
+   [app.datastar :as d*]
    [app.insurance.domain :as domain]
    [app.queries :as q]
    [clojure.string :as str]))
@@ -11,6 +12,10 @@
 (defn- coverage-insured-value
   [{:instrument.coverage/keys [value] :as coverage}]
   (* (or value 0M) (coverage-item-count coverage)))
+
+(defn- coverage-cost-total
+  [coverages]
+  (or (domain/sum-by coverages :instrument.coverage/cost) 0M))
 
 (defn- missing-photo?
   [coverage]
@@ -56,18 +61,24 @@
 
 (defn policy-dashboard
   [db policy-id]
-  (let [policy           (q/retrieve-policy db policy-id)
-        coverages        (enriched-coverages policy)
+  (let [policy            (q/retrieve-policy db policy-id)
+        coverages         (enriched-coverages policy)
+        band-coverages    (filterv (complement :instrument.coverage/private?) coverages)
+        private-coverages (filterv :instrument.coverage/private? coverages)
         total-instruments (count coverages)]
     {:policy         policy
      :coverages      coverages
      :totals         {:total-instruments        total-instruments
                       :total-insured-value      (reduce + 0M (map coverage-insured-value coverages))
-                      :total-cost               (or (domain/sum-by coverages :instrument.coverage/cost) 0M)
+                      :total-cost               (coverage-cost-total coverages)
                       :missing-photo-count      (count (filter missing-photo? coverages))
                       :missing-insurer-id-count (count (filter missing-insurer-id? coverages))
-                      :private-count            (count (filter :instrument.coverage/private? coverages))
-                      :band-count               (count (remove :instrument.coverage/private? coverages))}
+                      :private-count (+ 0 (count private-coverages))
+                      :band-count               (count band-coverages)
+                      :private-cost             (coverage-cost-total private-coverages)
+                      :band-cost                (coverage-cost-total band-coverages)}
      :status-counts  (count-by domain/instrument-coverage-statuses :instrument.coverage/status coverages)
      :change-counts  (count-by domain/instrument-coverage-changes :instrument.coverage/change coverages)
      :recent-changes (recent-changes coverages)}))
+
+(d*/refresh-all!)

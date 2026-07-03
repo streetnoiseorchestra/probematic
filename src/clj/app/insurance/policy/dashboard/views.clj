@@ -352,45 +352,167 @@
             [[:div {:class "wa-caption-s wa-text-end"}
               passed-label]]))))
 
-(defn- coverage-mix-chart-data
-  [tr {:keys [band-count private-count]}]
-  {:labels     [(tr [:insurance.dashboard/band-instruments])
-                (tr [:insurance.dashboard/private-instruments])]
-   :values     [(or band-count 0) (or private-count 0)]
-   :emptyLabel (tr [:insurance.dashboard/no-covered-instruments])})
+(defn- round-up-to
+  [value step]
+  (* step (long (Math/ceil (/ (double value) step)))))
 
-(defn- coverage-mix-legend-item
-  [label color count]
-  (dashboard-row (legend-marker color) label count))
+(defn- rounded-count-max
+  [value]
+  (let [maximum (max 0.0 (double (or value 0)))]
+    (cond
+      (zero? maximum) 10
+      (<= maximum 20) (round-up-to maximum 5)
+      (<= maximum 100) (round-up-to maximum 25)
+      :else (round-up-to maximum 100))))
+
+(defn- rounded-money-max
+  [value]
+  (let [maximum (max 0.0 (double (or value 0)))]
+    (if (zero? maximum)
+      10
+      (let [power       (Math/pow 10 (Math/floor (Math/log10 maximum)))
+            scaled      (/ maximum power)
+            nice-scaled (cond
+                          (<= scaled 1) 1
+                          (<= scaled 2) 2
+                          (<= scaled 2.5) 2.5
+                          (<= scaled 5) 5
+                          :else 10)]
+        (* nice-scaled power)))))
+
+(defn- coverage-mix-total
+  [values]
+  (reduce + 0M (map #(or % 0M) values)))
+
+(defn- coverage-mix-dataset
+  [{:keys [axis-id color data label measure]}]
+  {:label              label
+   :data               data
+   :measure            measure
+   :xAxisID            axis-id
+   :backgroundColor    color
+   :borderColor        "transparent"
+   :borderSkipped      false
+   :borderWidth        0
+   :borderRadius       4
+   :barPercentage      0.7
+   :categoryPercentage 0.75
+   :stack              measure})
+
+(defn- coverage-mix-wa-chart-data
+  [tr currency {:keys [band-count band-cost private-count private-cost]}]
+  (let [band-count    (or band-count 0)
+        private-count (or private-count 0)
+        band-cost     (or band-cost 0M)
+        private-cost  (or private-cost 0M)
+        counts        [band-count private-count]
+        costs         [band-cost private-cost]
+        count-label   (tr [:insurance/item-count])
+        cost-label    (tr [:insurance/cost])
+        currency-code (or (some-> currency name) "EUR")
+        cost-title    (str cost-label " " (ui2/currency-symbol currency))]
+    {:type    "bar"
+     :data    {:labels   [count-label cost-label]
+               :datasets [(coverage-mix-dataset {:label   (tr [:insurance.dashboard/band-instruments])
+                                                 :data    [band-count nil]
+                                                 :measure "count"
+                                                 :axis-id "count"
+                                                 :color   (:band coverage-mix-colors)})
+                          (coverage-mix-dataset {:label   (tr [:insurance.dashboard/private-instruments])
+                                                 :data    [private-count nil]
+                                                 :measure "count"
+                                                 :axis-id "count"
+                                                 :color   (:private coverage-mix-colors)})
+                          (coverage-mix-dataset {:label   (tr [:insurance.dashboard/band-instruments])
+                                                 :data    [nil band-cost]
+                                                 :measure "cost"
+                                                 :axis-id "cost"
+                                                 :color   (:band coverage-mix-colors)})
+                          (coverage-mix-dataset {:label   (tr [:insurance.dashboard/private-instruments])
+                                                 :data    [nil private-cost]
+                                                 :measure "cost"
+                                                 :axis-id "cost"
+                                                 :color   (:private coverage-mix-colors)})]}
+     :options {:indexAxis           "y"
+               :responsive          true
+               :maintainAspectRatio false
+               :animation           false
+               :interaction         {:mode "index" :intersect false}
+               :plugins             {:legend  {:display false}
+                                     :tooltip {:enabled false}}
+               :scales              {:count {:type         "linear"
+                                             :axis         "x"
+                                             :position     "top"
+                                             :stacked      true
+                                             :beginAtZero  true
+                                             :suggestedMax (rounded-count-max (coverage-mix-total counts))
+                                             :title        {:display true
+                                                            :text    count-label}
+                                             :ticks        {:precision 0}
+                                             :grid         {:drawOnChartArea false}}
+                                     :cost  {:type         "linear"
+                                             :axis         "x"
+                                             :position     "bottom"
+                                             :stacked      true
+                                             :beginAtZero  true
+                                             :suggestedMax (rounded-money-max (coverage-mix-total costs))
+                                             :title        {:display true
+                                                            :text    cost-title}
+                                             :ticks        {:format {:style                 "currency"
+                                                                     :currency              currency-code
+                                                                     :maximumFractionDigits 0}}}
+                                     :x     {:display false
+                                             :grid    {:display false}}
+                                     :y     {:stacked true
+                                             :grid    {:display false}}}}}))
+
+(defn- coverage-mix-wa-chart-signals
+  [tr currency totals]
+  {:insuranceDashboard
+   {:coverageMixChartJson
+    (j/write-value-as-string (coverage-mix-wa-chart-data tr currency totals))}})
+
+(defn- coverage-mix-caption
+  [_tr count cost currency]
+  [:div {:class "wa-cluster wa-gap-2xs"}
+   [:span
+    (or count 0)]
+
+   [divider/Divider {::divider/orientation :vertical :style "min-block-size: 0.8lh"}]
+   [:span
+    (ui2/money-format (or cost 0M) currency)]])
+
+(defn- coverage-mix-caption-row
+  [label color caption]
+  [:div {:class "wa-flank"}
+   (legend-marker color)
+   [:div {:class "wa-split wa-gap-m"}
+    [:div label]
+    caption]])
 
 (defn- coverage-mix-section
-  [{:keys [tr]} {:keys [totals]}]
-  (let [data-id "insurance-dashboard-coverage-mix-data"
-        data    (coverage-mix-chart-data tr totals)
-        total   (or (:total-instruments totals) 0)]
+  [{:keys [tr]} {:keys [policy totals]}]
+  (let [currency          (:insurance.policy/currency policy)
+        chart-description (tr [:insurance.dashboard/coverage-mix-subtitle])]
     (apply dashboard-card
            {:title    (tr [:insurance.dashboard/coverage-mix])
             :subtitle (tr [:insurance.dashboard/coverage-mix-subtitle])}
            (concat
-            [[:script {:id   data-id
-                       :type "application/json"}
-              (html/raw (j/write-value-as-string data))]
-             [:div {:style "position: relative; inline-size: min(var(--sno-size-full), 12rem); block-size: 12rem; margin-inline: auto;"}
-              [:canvas {:class             "insurance-dashboard-pie-chart"
-                        :data-ignore-morph true
-                        :data-values       (str "#" data-id)
-                        :role              "img"
-                        :aria-label        (tr [:insurance.dashboard/coverage-mix])
-                        :style             "inline-size: var(--sno-size-full); block-size: var(--sno-size-full);"}]]]
+            [[:div {:data-signals (d*/->signals (coverage-mix-wa-chart-signals tr currency totals))}
+              [:wa-chart {:description       chart-description
+                          :without-legend    true
+                          :without-animation true
+                          :data-effect       "const chartConfigJson = $insuranceDashboard.coverageMixChartJson; customElements.whenDefined('wa-chart').then(() => { el.config = JSON.parse(chartConfigJson) })"
+                          :style             "display: block; block-size: 13rem; inline-size: var(--sno-size-full);"}]]]
             (divided-rows
-             [(coverage-mix-legend-item (tr [:insurance.dashboard/band-instruments])
-                                        (:band coverage-mix-colors)
-                                        (:band-count totals))
-              (coverage-mix-legend-item (tr [:insurance.dashboard/private-instruments])
-                                        (:private coverage-mix-colors)
-                                        (:private-count totals))])
-            [[:div {:class "wa-caption-s wa-text-end"}
-              (tr [:insurance.dashboard/coverage-mix-total] [total])]]))))
+             [(coverage-mix-caption-row
+               (tr [:insurance.dashboard/band-instruments])
+               (:band coverage-mix-colors)
+               (coverage-mix-caption tr (:band-count totals) (:band-cost totals) currency))
+              (coverage-mix-caption-row
+               (tr [:insurance.dashboard/private-instruments])
+               (:private coverage-mix-colors)
+               (coverage-mix-caption tr (:private-count totals) (:private-cost totals) currency))])))))
 
 (defn- change-row
   [tr {:keys [change coverage instrument-name owner-name]}]
@@ -448,9 +570,8 @@
   (let [dashboard (queries/policy-dashboard db (policy-id req))
         policy    (:policy dashboard)]
     (ui2/datastar-page
-     [:script {:src "/vendor/chart.js@4.4.0/chart.umd.js"}]
-     [:script {:src "/vendor/chartjs-plugin-datalabels@2.2.0/chartjs-plugin-datalabels.min.js"}]
-     [:script {:src "/js/widgets/insurance-dashboard-chart.js" :type "module"}]
+     [:script {:type "module"}
+      (html/raw "import 'wa/components/chart/chart.js';")]
      [:div {:class "wa-stack"}
       (page-header req policy)
       (overview-section req dashboard)
