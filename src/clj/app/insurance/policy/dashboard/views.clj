@@ -178,15 +178,15 @@
   [marker label value]
   [:div {:class "wa-flank"}
    marker
-   [:div {:class "wa-split"}
-    [:div label]
-    [:strong value]]])
+   [:dl {:class "wa-split"}
+    [:dt label]
+    [:dd value]]])
 
 (defn- detail-row
   [label value]
-  [:div {:class "wa-split wa-gap-m"}
-   [:div {:class "wa-caption-s wa-color-text-quiet"} label]
-   [:div {:style "min-inline-size: 0; overflow-wrap: anywhere; text-align: end;"}
+  [:dl {:class "wa-split wa-gap-m"}
+   [:dt label]
+   [:dd {:style "min-inline-size: 0; overflow-wrap: anywhere; text-align: end;"}
     value]])
 
 (defn- dashboard-card-header
@@ -474,21 +474,18 @@
 
 (defn- coverage-mix-caption
   [_tr count cost currency]
-  [:div {:class "wa-cluster wa-gap-2xs"}
-   [:span
-    (or count 0)]
-
+  [:span {:class "trim-cap"}
+   [:span    (or count 0)]
    [divider/Divider {::divider/orientation :vertical :style "min-block-size: 0.8lh"}]
-   [:span
-    (ui2/money-format (or cost 0M) currency)]])
+   [:span (ui2/money-format (or cost 0M) currency)]])
 
 (defn- coverage-mix-caption-row
   [label color caption]
   [:div {:class "wa-flank"}
    (legend-marker color)
-   [:div {:class "wa-split wa-gap-m"}
-    [:div label]
-    caption]])
+   [:dl {:class "wa-split wa-gap-m"}
+    [:dt label]
+    [:dd caption]]])
 
 (defn- coverage-mix-section
   [{:keys [tr]} {:keys [policy totals]}]

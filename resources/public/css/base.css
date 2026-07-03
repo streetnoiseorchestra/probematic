@@ -31,3 +31,17 @@ app-shell header svg .logotype-snoman {
 app-shell header svg .logotype-text {
   fill: var(--sno-brand-orange);
 }
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+  text-box: trim-both cap alphabetic;
+}
+
+dt,
+dd {
+  text-wrap: balance;
+  text-box: trim-both cap alphabetic;
+}

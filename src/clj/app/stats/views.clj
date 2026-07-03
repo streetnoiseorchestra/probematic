@@ -35,7 +35,7 @@
                   ::ico/name    :square-info
                   ::ico/label   tooltip
                   :id           info-id}]
-       [:span label]
+       [:span {:class "trim-cap"} label]
        (when tooltip
          [:wa-tooltip {:for       info-id
                        :placement "top"
