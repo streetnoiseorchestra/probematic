@@ -1,13 +1,13 @@
 /* The wa-* layers come from Web Awesome's stylesheet.
-   Recheck resources/public/vendor/webawesome@3.8.0/styles/layers.css when upgrading Web Awesome. */
+   Recheck resources/public/vendor/webawesome@3.10.0/styles/layers.css when upgrading Web Awesome. */
 @layer wa-native, wa-base, sno-base, sno-ui, wa-utilities, wa-color-palette, wa-color-variant, wa-theme, wa-theme-dimension, wa-theme-overrides, sno-tokens, sno-page, sno-overrides;
 
 /* load web awesome theme+native+utils first */
 @import "webawesome-sno.css";
-@import "../vendor/webawesome@3.8.0/styles/layers.css";
-@import "../vendor/webawesome@3.8.0/styles/color/palettes/rudimentary.css";
-@import "../vendor/webawesome@3.8.0/styles/native.css";
-@import "../vendor/webawesome@3.8.0/styles/utilities.css";
+@import "../vendor/webawesome@3.10.0/styles/layers.css";
+@import "../vendor/webawesome@3.10.0/styles/color/palettes/rudimentary.css";
+@import "../vendor/webawesome@3.10.0/styles/native.css";
+@import "../vendor/webawesome@3.10.0/styles/utilities.css";
 
 @import "tokens.css";
 @import "base.css" layer(sno-base);

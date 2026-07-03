@@ -130,7 +130,7 @@
     (stylesheet req "css/compiled" "main2.css")
     [:script {:type :importmap} (html/raw (j/write-value-as-string
                                            {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
-                                                      "wa/"          "/vendor/webawesome@3.8.0/"
+                                                      "wa/"          "/vendor/webawesome@3.10.0/"
                                                       "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
     (public-script req "vendor/bprogress@1.3.4/index.global.js")
     [:script {:type "module" :blocking "render"}
@@ -159,7 +159,7 @@
       import 'wa/components/checkbox/checkbox.js';
       import 'wa/components/switch/switch.js';
       import 'wa/components/input/input.js';
-      setBasePath('/vendor/webawesome@3.8.0');
+      setBasePath('/vendor/webawesome@3.10.0');
       startLoader();
       Promise.race([
         new Promise(resolve => {document.addEventListener('wa-discovery-complete', resolve)}),
