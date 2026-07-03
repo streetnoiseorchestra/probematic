@@ -698,11 +698,11 @@
             _ (slots/template-from-active! {:main-root main-root
                                             :name "dev-current"})
             result (slots/alias-template! {:main-root main-root
-                                           :alias "prod-latest"
+                                           :alias "dev-latest"
                                            :template "dev-current"})
-            alias-link (fs/path main-root ".dev-state" "datomic-templates" "prod-latest")
+            alias-link (fs/path main-root ".dev-state" "datomic-templates" "dev-latest")
             target (fs/path main-root ".dev-state" "datomic-templates" "dev-current")]
-        (is (= {:alias "prod-latest"
+        (is (= {:alias "dev-latest"
                 :alias-path (str alias-link)
                 :template "dev-current"
                 :template-dir (str target)}
@@ -712,7 +712,7 @@
                (str (fs/read-link alias-link))))
         (is (= result
                (slots/alias-template! {:main-root main-root
-                                       :alias "prod-latest"
+                                       :alias "dev-latest"
                                        :template "dev-current"}))))))
 
   (testing "hydrates a slot from a template and removes stale Datomic files"
@@ -722,7 +722,7 @@
             _ (slots/template-from-active! {:main-root main-root
                                             :name "dev-current"})
             _ (slots/alias-template! {:main-root main-root
-                                      :alias "prod-latest"
+                                      :alias "dev-latest"
                                       :template "dev-current"})
             slot-data-dir (:datomic-data-dir (slots/slot-paths main-root :agent-1))
             stale-file (fs/path slot-data-dir "stale.txt")
@@ -730,9 +730,9 @@
             _ (spit (str stale-file) "stale")
             result (slots/hydrate-slot! {:main-root main-root
                                          :slot agent-1
-                                         :template "prod-latest"})]
+                                         :template "dev-latest"})]
         (is (= {:slot :agent-1
-                :template "prod-latest"
+                :template "dev-latest"
                 :datomic-data-dir slot-data-dir}
                result))
         (is (= "db"

@@ -12,6 +12,11 @@ Treat `.dev-state` as sensitive because Datomic templates and hydrated slot data
 Do not stage `.dev-state`, generated slot files, or ignored artifact links unless an operator explicitly asks for that.
 
 
+This file is the canonical operator reference for the dev-slot workflow.
+
+Agent skills should link here instead of duplicating the full workflow.
+
+
 ## Prepare ignored artifacts
 
 Import WebAwesome vendor files, the local WebAwesome skill, generated Java classes, and ignored Phosphor icon files from a checkout that already has them.
@@ -44,15 +49,15 @@ Create a template from an existing Datomic data directory when a restored data d
 
 
 ```bash
-bb dev-slot template restore --name prod-2026-07-03 --from data.dev/prod-sync/prod-local-2026-07-03-090000
+bb dev-slot template restore --name dev-2026-07-03 --from data.dev/prod-sync/prod-local-2026-07-03-090000
 ```
 
 
-Point a stable alias at the template operators should use by default.
+Point the stable `dev-latest` alias at the template operators should use by default.
 
 
 ```bash
-bb dev-slot template alias prod-latest prod-2026-07-03
+bb dev-slot template alias dev-latest dev-current
 ```
 
 
@@ -81,7 +86,7 @@ Hydrate the slot from a Datomic template before starting the host app.
 
 
 ```bash
-bb dev-slot hydrate agent-1 --template prod-latest
+bb dev-slot hydrate agent-1 --template dev-latest
 ```
 
 

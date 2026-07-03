@@ -1089,7 +1089,7 @@
      (cli/format-opts template-help-spec)
      "\nExamples:\n"
      "  bb dev-slot template from-active --name dev-current\n"
-     "  bb dev-slot template alias prod-latest dev-current\n")
+     "  bb dev-slot template alias dev-latest dev-current\n")
 
     "template from-active"
     (str
@@ -1119,7 +1119,7 @@
      "Options:\n"
      (cli/format-opts template-alias-help-spec)
      "\nExamples:\n"
-     "  bb dev-slot template alias prod-latest dev-current\n")
+     "  bb dev-slot template alias dev-latest dev-current\n")
 
     "hydrate"
     (str
@@ -1129,7 +1129,7 @@
      "Options:\n"
      (cli/format-opts hydrate-help-spec)
      "\nExamples:\n"
-     "  bb dev-slot hydrate agent-1 --template prod-latest\n")
+     "  bb dev-slot hydrate agent-1 --template dev-latest\n")
 
     (usage)))
 
