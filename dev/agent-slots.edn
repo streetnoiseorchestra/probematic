@@ -1,0 +1,27 @@
+[{:slot :agent-1
+  :http-port 6171
+  :nrepl-port 7011
+  :redis-port 6381
+  :datomic-port 4434
+  :datomic-console-port 8181
+  :smtp4dev-http-port 5102
+  :smtp4dev-smtp-port 2601
+  :smtp4dev-imap-port 1531}
+ {:slot :agent-2
+  :http-port 6172
+  :nrepl-port 7012
+  :redis-port 6382
+  :datomic-port 4534
+  :datomic-console-port 8281
+  :smtp4dev-http-port 5202
+  :smtp4dev-smtp-port 2602
+  :smtp4dev-imap-port 1532}
+ {:slot :agent-3
+  :http-port 6173
+  :nrepl-port 7013
+  :redis-port 6383
+  :datomic-port 4634
+  :datomic-console-port 8381
+  :smtp4dev-http-port 5302
+  :smtp4dev-smtp-port 2603
+  :smtp4dev-imap-port 1533}]

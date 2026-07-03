@@ -11,7 +11,8 @@
                                            :path      "/"}
                            :session-ttl-s 1210000 ; 14 days
                            }
- :filestore               {:store-path #profile {:dev  "/home/ramblurr/src/sno/probematic/data.dev/filestore"
+ :filestore               {:store-path #profile {:dev  #or [#env APP_FILESTORE_DIR
+                                                            "/home/ramblurr/src/sno/probematic/data.dev/filestore"]
                                                  :prod #or [#env APP_FILESTORE_DIR "/data/filestore"]}}
  :oauth2                  {:well-known-uri #ref [:secrets :oauth2 :well-known-uri]
                            :client-id      #ref [:secrets :oauth2 :client-id]

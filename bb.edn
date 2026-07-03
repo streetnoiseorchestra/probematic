@@ -69,6 +69,11 @@
                                                 "?tunnel.id=" tunnel-id
                                                 "&tunnel.weight=1")))
          dev-services        (shell "docker compose -f ./docker-compose.dev.yml up -d")
+         dev-slot           {:doc  "Manage parallel agent dev slots"
+                             :task (let [{:keys [exit]} (apply shell {:continue true} "bb scripts/dev_slots.clj" *command-line-args*)]
+                                     (System/exit exit))}
+         dev-slot:test      {:doc  "Run dev slot script tests"
+                             :task (shell "bb scripts/dev_slots_test.clj")}
          uberjar             {:override-builtin true
                               :depends          [clean]
                               :doc              "Build uberjar"

@@ -8,20 +8,20 @@ services:
       - "-c"
       - "docker-entrypoint.sh  --notify-keyspace-events AKE --requirepass devpassword123"
     ports:
-      - "6379:6379"
+      - "${PROBEMATIC_DEV_REDIS_PORT_MAPPING:-6379:6379}"
     labels:
       io.containers.autoupdate: registry
   smtp4dev:
     image: docker.io/rnwood/smtp4dev:v3
     ports:
       # web port
-      - "127.0.0.1:5002:80"
+      - "${PROBEMATIC_DEV_SMTP4DEV_WEB_PORT_MAPPING:-127.0.0.1:5002:80}"
       # smtp port
-      - "127.0.0.1:2500:25"
+      - "${PROBEMATIC_DEV_SMTP4DEV_SMTP_PORT_MAPPING:-127.0.0.1:2500:25}"
       # imap port
-      - "127.0.0.1:1430:143"
+      - "${PROBEMATIC_DEV_SMTP4DEV_IMAP_PORT_MAPPING:-127.0.0.1:1430:143}"
     volumes:
-      - ./data-smtp4dev:/smtp4dev
+      - "${PROBEMATIC_DEV_SMTP4DEV_DATA_DIR:-./data-smtp4dev}:/smtp4dev"
     restart: unless-stopped
 
   datomic-console:
@@ -30,9 +30,9 @@ services:
     environment:
       DB_URI: "datomic:sql://?jdbc:sqlite:/data/datomic-sqlite.db"
     volumes:
-      - "./data.dev/datomic/data:/data:z"
+      - "${PROBEMATIC_DEV_DATOMIC_DATA_DIR:-./data.dev/datomic/data}:/data:z"
     ports:
-      - 127.0.0.1:8081:8080
+      - "${PROBEMATIC_DEV_DATOMIC_CONSOLE_PORT_MAPPING:-127.0.0.1:8081:8080}"
 
   datomic-transactor:
     image: ghcr.io/outskirtslabs/datomic-pro:1.0.7622
@@ -40,6 +40,7 @@ services:
       DATOMIC_PROTOCOL: sql
       DATOMIC_SQL_DRIVER_CLASS: org.sqlite.JDBC
       DATOMIC_SQL_URL: jdbc:sqlite:/data/datomic-sqlite.db
+      DATOMIC_PORT: ${PROBEMATIC_DEV_DATOMIC_PORT:-4334}
       DATOMIC_JAVA_OPTS: -Xmx4g -Xms4g -Dlogback.configurationFile=/config/logback.xml
       DATOMIC_HEALTHCHECK_HOST: 127.0.0.1
       DATOMIC_HEALTHCHECK_PORT: 9999
@@ -50,10 +51,10 @@ services:
       DATOMIC_STORAGE_ADMIN_PASSWORD: admin
       DATOMIC_STORAGE_DATOMIC_PASSWORD: dev
     ports:
-      - 127.0.0.1:4334:4334
+      - "${PROBEMATIC_DEV_DATOMIC_PORT_MAPPING:-127.0.0.1:4334:4334}"
     volumes:
-      - "./data.dev/datomic/data:/data:z"
-      - "./data.dev/datomic/config:/config:z"
+      - "${PROBEMATIC_DEV_DATOMIC_DATA_DIR:-./data.dev/datomic/data}:/data:z"
+      - "${PROBEMATIC_DEV_DATOMIC_CONFIG_DIR:-./data.dev/datomic/config}:/config:z"
     restart: always
     healthcheck:
       test:
