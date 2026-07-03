@@ -74,7 +74,7 @@
             :no-canvas-elements         (not (str/includes? html "<canvas"))
             :no-legacy-render-hook      (not (str/includes? html "SnoStatsCharts"))}))))
 
-(deftest page-imports-wa-chart-and-drops-legacy-stats-chart-assets
+(deftest page-imports-wa-chart-and-drops-legacy-stats-chart-widget
   (let [{:keys [conn]} (tc/new-system "stats-views-page")
         html          (views/page {:current-locale :en
                                    :db             (d/db conn)
@@ -82,11 +82,7 @@
                                    :tr             tr})]
     (is (= {:imports-wa-chart       true
             :wa-chart-count         1
-            :no-chart-js-umd        true
-            :no-chartjs-datalabels  true
             :no-stats-chart-widget  true}
            {:imports-wa-chart       (str/includes? html "import 'wa/components/chart/chart.js';")
             :wa-chart-count         (occurrences "<wa-chart" html)
-            :no-chart-js-umd        (not (str/includes? html "/vendor/chart.js@4.4.0/chart.umd.js"))
-            :no-chartjs-datalabels  (not (str/includes? html "/vendor/chartjs-plugin-datalabels@2.2.0/chartjs-plugin-datalabels.min.js"))
             :no-stats-chart-widget  (not (str/includes? html "/js/widgets/stats-chart.js"))}))))

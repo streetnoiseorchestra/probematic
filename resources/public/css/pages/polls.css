@@ -141,13 +141,41 @@
   }
 }
 
-.poll-chart-panel {
+.poll-result-bars {
   display: grid;
-  gap: var(--wa-space-s);
+  gap: var(--wa-space-m);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.poll-chart-container {
-  min-height: 18rem;
+.poll-result-row {
+  display: grid;
+  gap: var(--wa-space-3xs);
+}
+
+.poll-result-row-header {
+  display: flex;
+  gap: var(--wa-space-m);
+  align-items: baseline;
+  justify-content: space-between;
+  color: var(--wa-color-text-quiet);
+  font-size: var(--wa-font-size-s);
+}
+
+.poll-result-label {
+  overflow-wrap: anywhere;
+}
+
+.poll-result-value {
+  flex: none;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.poll-result-row wa-progress-bar {
+  --track-color: var(--wa-color-neutral-fill-normal);
+  --track-height: 1rem;
 }
 
 .poll-edit-form-grid {

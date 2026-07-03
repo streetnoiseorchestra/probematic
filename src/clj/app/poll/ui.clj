@@ -1,11 +1,9 @@
 (ns app.poll.ui
   (:require
    [app.datastar :as d*]
-   [app.html :as html]
    [app.ui2 :as ui2]
    [app.urls :as urls]
    [clojure.string :as str]
-   [jsonista.core :as j]
    [nextjournal.markdown :as md]
    [nextjournal.markdown.transform :as md.transform]
    [tick.core :as t]))
@@ -80,28 +78,54 @@
 (defn total-votes [{:poll/keys [votes]}]
   (count votes))
 
-(defn chart-data [poll]
-  (let [rows (result-rows poll)]
-    {:labels      (mapv :label rows)
-     :totalVoters (total-voters poll)
-     :values      (mapv :votes rows)}))
+(def ^:private result-colors
+  ["var(--wa-color-success-fill-loud)"
+   "var(--wa-color-warning-fill-loud)"
+   "var(--wa-color-purple-60)"
+   "var(--wa-color-danger-fill-loud)"
+   "var(--wa-color-yellow-60)"
+   "var(--wa-color-brand-fill-loud)"])
 
-(defn chart [poll]
-  (let [data-id (str "poll-values-" (:poll/poll-id poll))]
-    [:div {:class "poll-chart-panel"}
-     [:script {:id   data-id
-               :type "application/json"}
-      (html/raw (j/write-value-as-string (chart-data poll)))]
-     [:div {:class "poll-chart-container"}
-      [:canvas {:class             "poll-chart"
-                :data-ignore-morph true
-                :data-poll-values  (str "#" data-id)
-                :aria-hidden       "true"}]]]))
+(defn- vote-percent [votes total-voters]
+  (if (pos? total-voters)
+    (* 100.0 (/ votes total-voters))
+    0.0))
 
-(defn chart-scripts []
-  [[:script {:src "/vendor/chart.js@4.4.0/chart.umd.js"}]
-   [:script {:src "/vendor/chartjs-plugin-datalabels@2.2.0/chartjs-plugin-datalabels.min.js"}]
-   [:script {:src "/js/widgets/poll-chart.js" :type "module"}]])
+(defn- rounded-percent [value]
+  (/ (Math/round (* (double value) 10.0)) 10.0))
+
+(defn- format-percent-value [value]
+  (let [tenths  (Math/round (* (double value) 10.0))
+        whole   (quot tenths 10)
+        decimal (mod tenths 10)]
+    (if (zero? decimal)
+      (str whole)
+      (str whole "." decimal))))
+
+(defn- format-percent [value]
+  (str (format-percent-value value) "%"))
+
+(defn- result-color [idx]
+  (nth result-colors (mod idx (count result-colors))))
+
+(defn- result-summary [percentage votes]
+  (str (format-percent percentage) " (" votes ")"))
+
+(defn- result-bar [total-voters idx {:keys [label votes]}]
+  (let [percentage (rounded-percent (vote-percent votes total-voters))
+        summary    (result-summary percentage votes)]
+    [:li {:class "poll-result-row"}
+     [:div {:class "poll-result-row-header"}
+      [:span {:class "poll-result-label"} label]
+      [:span {:class "poll-result-value"} summary]]
+     [:wa-progress-bar {:label (str label " " summary)
+                        :style (str "--indicator-color: " (result-color idx) ";")
+                        :value (format-percent-value percentage)}]]))
+
+(defn result-bars [poll]
+  (let [total-voters (total-voters poll)]
+    (into [:ol {:class "poll-result-bars"}]
+          (map-indexed (partial result-bar total-voters) (result-rows poll)))))
 
 (defn poll->form [poll]
   {:poll-id     (some-> (:poll/poll-id poll) str)

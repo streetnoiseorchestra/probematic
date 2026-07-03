@@ -188,7 +188,7 @@
     (result-stat (tr [:poll/total-voters]) (poll.ui/total-voters poll))
     (result-stat (tr [:poll/total-votes]) (poll.ui/total-votes poll))
     (result-stat (tr [:poll/closes-at]) (ui2/format-date-time req :medium (:poll/closes-at poll)))]
-   (poll.ui/chart poll)))
+   (poll.ui/result-bars poll)))
 
 (defn page [{:keys [db current-member-id] :as req}]
   (let [poll-id (request-poll-id req)]
@@ -201,8 +201,7 @@
         (when (or has-voted? (= :poll.status/closed (:poll/poll-status poll)))
           (results-section req poll))
         (open-dialog req poll)
-        (close-dialog req poll)]
-       (poll.ui/chart-scripts))
+        (close-dialog req poll)])
       (throw (ex-info "Poll not found" {:app/error-type :app.error.type/not-found
                                         :poll/poll-id   poll-id})))))
 
