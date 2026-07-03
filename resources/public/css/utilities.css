@@ -73,3 +73,23 @@
 .leading-expanded {
   line-height: var(--wa-line-height-expanded);
 }
+
+.trim-cap {
+  text-box: trim-both cap alphabetic;
+}
+
+.trim-ex {
+  text-box: trim-both ex alphabetic;
+}
+
+.trim-none {
+  text-box-trim: none;
+}
+
+.trim-start {
+  text-box-trim: trim-start;
+}
+
+.trim-end {
+  text-box-trim: trim-end;
+}

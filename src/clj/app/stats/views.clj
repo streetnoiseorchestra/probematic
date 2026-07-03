@@ -30,18 +30,17 @@
   (let [info-id (str id "-info")]
     [:div {:class "wa-stack" :id id}
      [:div {:class "wa-split"}
-      [:div
-       {:class "wa-cluster wa-gap-xs"}
-       [ico/Icon {::ico/library :phosphor
-                  ::ico/name    :info
+      [:div {:class "wa-cluster wa-gap-xs"}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :square-info
                   ::ico/label   tooltip
                   :id           info-id}]
+       [:span label]
        (when tooltip
          [:wa-tooltip {:for       info-id
                        :placement "top"
                        :trigger   "hover focus click"}
-          tooltip])
-       [:span label]]
+          tooltip])]
       #_[:div
          {:class "wa-cluster wa-gap-xs",
           :style {:color "var(--wa-color-green)"}}
@@ -114,47 +113,97 @@
                       (assoc :variant "brand"))
       (tr label-key)])))
 
-(defn- chart-data [values title x-axis-label y-axis-label color]
-  {:values     values
-   :xAxisLabel x-axis-label
-   :yAxisLabel y-axis-label
-   :title      title
-   :color      color})
+(defn- histogram-values-by-bin [values]
+  (into {} (map (juxt :x :y)) values))
 
-(defn- chart-json [id data]
-  [:script {:type "application/json" :id id}
-   (html/raw (j/write-value-as-string data))])
+(defn- histogram-bins [gig-histogram probe-histogram]
+  (->> (concat gig-histogram probe-histogram)
+       (map :x)
+       distinct
+       sort
+       vec))
 
-(defn- histogram-card [{:keys [canvas-id data-id title]}]
+(defn- histogram-bin-label [bin]
+  (str bin "%"))
+
+(defn- histogram-dataset [label color values-by-bin bins]
+  {:label           label
+   :data            (mapv #(get values-by-bin % 0) bins)
+   :backgroundColor color
+   :borderColor     color
+   :borderRadius    4})
+
+(defn- attendance-histogram-chart-config [{:keys [gig-histogram gig-title probe-histogram probe-title x-axis-label y-axis-label]}]
+  (let [bins            (histogram-bins gig-histogram probe-histogram)
+        gig-values     (histogram-values-by-bin gig-histogram)
+        probe-values   (histogram-values-by-bin probe-histogram)
+        gig-dataset    (histogram-dataset gig-title "var(--wa-color-warning-fill-loud)" gig-values bins)
+        probe-dataset  (histogram-dataset probe-title "var(--wa-color-success-fill-loud)" probe-values bins)
+        dataset-options {:barPercentage      0.85
+                         :categoryPercentage 0.75}]
+    {:type    "bar"
+     :data    {:labels   (mapv histogram-bin-label bins)
+               :datasets [(merge gig-dataset dataset-options)
+                          (merge probe-dataset dataset-options)]}
+     :options {:responsive          true
+               :maintainAspectRatio false
+               :font                {:size 16}
+               :interaction         {:mode "index" :intersect false}
+               :scales              {:x {:title {:display true
+                                                 :text    x-axis-label}
+                                         :grid  {:display false}
+                                         :ticks {:padding 0
+                                                 :font    {:size 14}}}
+                                     :y {:title      {:display true
+                                                      :padding 0
+                                                      :text    y-axis-label}
+                                         :ticks      {:padding   0
+                                                      :precision 0
+                                                      :font      {:size 14}}
+                                         :beginAtZero true}}
+               :plugins             {:tooltip {:enabled false}
+                                     :legend  {:position "bottom"
+                                               :labels   {:font {:size 16}}}}}}))
+
+(defn- histogram-chart-effect [signal-path]
+  (str "const chartConfigJson = $"
+       signal-path
+       "; customElements.whenDefined('wa-chart').then(() => { el.config = JSON.parse(chartConfigJson) })"))
+
+(defn- histogram-card [{:keys [description signal-path title]}]
   [:wa-card {:class "stats-chart-card"}
    [:div {:slot "header" :class "wa-split"}
     [:h2 {:class "wa-heading-l"} title]]
-   [:div {:class "stats-chart-container"
-          :data-init "if (window.SnoStatsCharts) window.SnoStatsCharts.renderAll(el)"}
-    [:canvas {:class       "histogram-chart"
-              :data-ignore-morph true
-              :data-values (str "#" data-id)
-              :id          canvas-id}]]])
+   [:div {:class "stats-chart-container"}
+    [:wa-chart {:id              "attendance-histogram"
+                :label           title
+                :description     description
+                :legend-position "bottom"
+                :without-tooltip true
+                :data-effect     (histogram-chart-effect signal-path)
+                :style           "display: block; block-size: 100%; inline-size: var(--sno-size-full);"}]]])
 
 (defn- charts-section [tr {:keys [gig-histogram probe-histogram]}]
   (let [x-axis-label (tr [:stats/attendance-rate])
         y-axis-label (tr [:stats/num-members])
         gig-title    (tr [:stats/gig-attendance])
-        probe-title  (tr [:stats/probe-attendance])]
-    [:section {:class "wa-stack wa-gap-m"}
-     [:div
-      (chart-json "gig-histogram-data"
-                  (chart-data gig-histogram gig-title x-axis-label y-axis-label "#f97316"))
-      (chart-json "probe-histogram-data"
-                  (chart-data probe-histogram probe-title x-axis-label y-axis-label "#22c55e"))]
-     [:div {:class "wa-grid wa-gap-l"
-            :style "--min-column-size: min(30rem, 100%);"}
-      (histogram-card {:canvas-id "gig-histogram"
-                       :data-id   "gig-histogram-data"
-                       :title     gig-title})
-      (histogram-card {:canvas-id "probe-histogram"
-                       :data-id   "probe-histogram-data"
-                       :title     probe-title})]]))
+        probe-title  (tr [:stats/probe-attendance])
+        title        (tr [:gig/attendance])
+        description  (tr [:stats/methodology-histograms-body])
+        signals      {:statsDashboard
+                      {:attendanceHistogramChartJson
+                       (j/write-value-as-string
+                        (attendance-histogram-chart-config {:gig-histogram   gig-histogram
+                                                            :gig-title       gig-title
+                                                            :probe-histogram probe-histogram
+                                                            :probe-title     probe-title
+                                                            :x-axis-label    x-axis-label
+                                                            :y-axis-label    y-axis-label}))}}]
+    [:section {:class        "wa-stack wa-gap-m"
+               :data-signals (d*/->signals signals)}
+     (histogram-card {:description description
+                      :signal-path "statsDashboard.attendanceHistogramChartJson"
+                      :title       title})]))
 
 (defn- methodology [{:keys [tr]}]
   [:wa-details {:class      "stats-methodology"
@@ -268,9 +317,8 @@
   (let [{:keys [from to]} (state/selected-range req)
         stats            (stats/stats-for db from to (state/sort-spec req))]
     (ui2/datastar-page
-     [:script {:src "/vendor/chart.js@4.4.0/chart.umd.js"}]
-     [:script {:src "/vendor/chartjs-plugin-datalabels@2.2.0/chartjs-plugin-datalabels.min.js"}]
-     [:script {:src "/js/widgets/stats-chart.js"}]
+     [:script {:type "module"}
+      (html/raw "import 'wa/components/chart/chart.js';")]
      [:div {:class "wa-stack wa-gap-xl"}
       (ui2/page-header
        {:title    (tr [:stats/title])

@@ -18,7 +18,7 @@
   min-block-size: 18rem;
 }
 
-.stats-chart-container canvas {
+.stats-chart-container wa-chart {
   inline-size: 100%;
   block-size: 100%;
 }
