@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-02 19:46+0000\n"
+"POT-Creation-Date: 2026-07-03 06:24+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -3070,6 +3070,12 @@ msgctxt ":action/open-insurance-survey"
 msgid "Open Insurance Survey"
 msgstr "Offene Versicherungsumfrage"
 
+#: :action/more-actions
+#, ycp-format
+msgctxt ":action/more-actions"
+msgid "More actions"
+msgstr "Weitere Aktionen"
+
 #: :action/open-poll
 #, ycp-format
 msgctxt ":action/open-poll"
@@ -3910,8 +3916,8 @@ msgstr "Review-Status"
 #: :insurance.dashboard/coverage-workbench
 #, ycp-format
 msgctxt ":insurance.dashboard/coverage-workbench"
-msgid "Coverage workbench"
-msgstr "Versicherungs-Workbench"
+msgid "Table"
+msgstr "Tabelle"
 
 #: :insurance.dashboard/recent-changes
 #, ycp-format
@@ -3922,8 +3928,8 @@ msgstr "Aktuelle Änderungen"
 #: :insurance.dashboard/review-queue
 #, ycp-format
 msgctxt ":insurance.dashboard/review-queue"
-msgid "Review queue"
-msgstr "Review-Warteschlange"
+msgid "Review"
+msgstr "Review"
 
 #: :insurance.dashboard/total-instruments-tooltip
 #, ycp-format
@@ -3977,14 +3983,20 @@ msgstr "Band-Instrumente"
 #: :insurance.dashboard/continue-reviewing
 #, ycp-format
 msgctxt ":insurance.dashboard/continue-reviewing"
-msgid "Continue reviewing"
-msgstr "Review fortsetzen"
+msgid "Review"
+msgstr "Review"
 
 #: :insurance.dashboard/next-actions
 #, ycp-format
 msgctxt ":insurance.dashboard/next-actions"
 msgid "Next actions"
 msgstr "Nächste Aktionen"
+
+#: :insurance.dashboard/policy-settings
+#, ycp-format
+msgctxt ":insurance.dashboard/policy-settings"
+msgid "Policy Settings"
+msgstr "Policeneinstellungen"
 
 #: :insurance.dashboard/total-insured-value
 #, ycp-format
@@ -4039,12 +4051,6 @@ msgstr "Band- und private Instrumente in dieser Police."
 msgctxt ":insurance.dashboard/coverage-mix"
 msgid "Coverage mix"
 msgstr "Instrumentenmix"
-
-#: :insurance.dashboard/policy-setup
-#, ycp-format
-msgctxt ":insurance.dashboard/policy-setup"
-msgid "Policy setup"
-msgstr "Policen-Setup"
 
 #: :private-instrument
 #, ycp-format
@@ -5095,6 +5101,26 @@ msgstr "Hintergrund"
 msgctxt ":song/list-title"
 msgid "Repertoire"
 msgstr "Repertoire"
+
+#, ycp-format
+#~ msgctxt ":insurance.dashboard/coverage-workbench"
+#~ msgid "Coverage workbench"
+#~ msgstr "Versicherungs-Workbench"
+
+#, ycp-format
+#~ msgctxt ":insurance.dashboard/review-queue"
+#~ msgid "Review queue"
+#~ msgstr "Review-Warteschlange"
+
+#, ycp-format
+#~ msgctxt ":insurance.dashboard/continue-reviewing"
+#~ msgid "Continue reviewing"
+#~ msgstr "Review fortsetzen"
+
+#, ycp-format
+#~ msgctxt ":insurance.dashboard/policy-setup"
+#~ msgid "Policy setup"
+#~ msgstr "Policen-Setup"
 
 #, ycp-format
 #~ msgctxt ":insurance.dashboard/health-check-missing"

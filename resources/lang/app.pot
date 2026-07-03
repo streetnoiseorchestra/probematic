@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Probematic\n"
-"POT-Creation-Date: 2026-07-02 19:46+0000\n"
+"POT-Creation-Date: 2026-07-03 06:24+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -212,7 +212,7 @@ msgstr ""
 #: :insurance/value-abbrev
 #, ycp-format
 msgctxt ":insurance/value-abbrev"
-msgid "V.S."
+msgid "Vers.-Wert"
 msgstr ""
 
 #: :insurance/total
@@ -2909,6 +2909,12 @@ msgctxt ":action/open-insurance-survey"
 msgid "Open Insurance Survey"
 msgstr ""
 
+#: :action/more-actions
+#, ycp-format
+msgctxt ":action/more-actions"
+msgid "More actions"
+msgstr ""
+
 #: :action/open-poll
 #, ycp-format
 msgctxt ":action/open-poll"
@@ -3716,7 +3722,7 @@ msgstr ""
 #: :insurance.dashboard/coverage-workbench
 #, ycp-format
 msgctxt ":insurance.dashboard/coverage-workbench"
-msgid "Coverage workbench"
+msgid "Table"
 msgstr ""
 
 #: :insurance.dashboard/recent-changes
@@ -3728,7 +3734,7 @@ msgstr ""
 #: :insurance.dashboard/review-queue
 #, ycp-format
 msgctxt ":insurance.dashboard/review-queue"
-msgid "Review queue"
+msgid "Review"
 msgstr ""
 
 #: :insurance.dashboard/total-instruments-tooltip
@@ -3782,13 +3788,19 @@ msgstr ""
 #: :insurance.dashboard/continue-reviewing
 #, ycp-format
 msgctxt ":insurance.dashboard/continue-reviewing"
-msgid "Continue reviewing"
+msgid "Review"
 msgstr ""
 
 #: :insurance.dashboard/next-actions
 #, ycp-format
 msgctxt ":insurance.dashboard/next-actions"
 msgid "Next actions"
+msgstr ""
+
+#: :insurance.dashboard/policy-settings
+#, ycp-format
+msgctxt ":insurance.dashboard/policy-settings"
+msgid "Policy Settings"
 msgstr ""
 
 #: :insurance.dashboard/total-insured-value
@@ -3843,12 +3855,6 @@ msgstr ""
 #, ycp-format
 msgctxt ":insurance.dashboard/coverage-mix"
 msgid "Coverage mix"
-msgstr ""
-
-#: :insurance.dashboard/policy-setup
-#, ycp-format
-msgctxt ":insurance.dashboard/policy-setup"
-msgid "Policy setup"
 msgstr ""
 
 #: :private-instrument

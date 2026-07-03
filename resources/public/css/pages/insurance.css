@@ -130,6 +130,15 @@
   color: var(--sno-gig-row-gray-400);
 }
 
+.insurance-dashboard-secondary-actions {
+  display: none;
+}
+
+@media (--sno-viewport-s) {
+  .insurance-dashboard-secondary-actions {
+    display: block;
+  }
+}
 .insurance-coverage-page-header .sno-page-header-main {
   align-items: start;
 }

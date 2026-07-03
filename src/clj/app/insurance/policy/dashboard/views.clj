@@ -50,14 +50,44 @@
     (tr [:nav/insurance])]
    [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]])
 
+(defn- more-actions-menu
+  [{:keys [tr]}]
+  (let [button-id "insurance-policy-dashboard-more-actions"]
+    [:div {:class "insurance-dashboard-secondary-actions"}
+     [:wa-dropdown {:placement "bottom-end"}
+      [button/Button {:id         button-id
+                      :slot       "trigger"
+                      :appearance "outlined"
+                      :aria-label (tr [:action/more-actions])}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :ellipsis}]]
+      [:wa-dropdown-item {:disabled true
+                          :value    "policy-settings"}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :cog
+                  :slot         "icon"}]
+       (tr [:insurance.dashboard/policy-settings])
+       [:span {:slot "details"}
+        (tr [:insurance.dashboard/opens-later])]]
+      [:wa-dropdown-item {:disabled true
+                          :value    "activity-log"}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :circle-dot-outline
+                  :slot         "icon"}]
+       (tr [:insurance.dashboard/activity-log])
+       [:span {:slot "details"}
+        (tr [:insurance.dashboard/opens-later])]]]
+     [:wa-tooltip {:for button-id :without-arrow true}
+      (tr [:action/more-actions])]]))
+
 (defn- page-header
   [{:keys [tr] :as req} {:insurance.policy/keys [name status] :as policy}]
   [:div
    (ui2/page-header
     {:breadcrumb (page-breadcrumb req policy)
-     :heading    [:div {:class "wa-flank wa-align-items-center"}
-                  (policy-status-badge tr status)
-                  [:h1 name]]
+     :heading    [:div {:class "wa-cluster"}
+                  [:h1 name]
+                  (policy-status-badge tr status)]
      :actions    [[button/Button {:appearance "filled"
                                   :variant    "brand"
                                   :href       (urls/link-policy-review policy)}
@@ -71,7 +101,8 @@
                    [ico/Icon {::ico/library :phosphor
                               ::ico/name    :table
                               :slot         "start"}]
-                   (tr [:insurance.dashboard/coverage-workbench])]]})
+                   (tr [:insurance.dashboard/coverage-workbench])]
+                  (more-actions-menu req)]})
    [divider/Divider]])
 
 (defn metric-card
@@ -158,17 +189,46 @@
    [:div {:style "min-inline-size: 0; overflow-wrap: anywhere; text-align: end;"}
     value]])
 
+(defn- dashboard-card-header
+  [{:keys [subtitle title]}]
+  (if subtitle
+    [:div {:slot  "header"
+           :class "wa-stack wa-gap-2xs"}
+     [:h2 {:class "wa-heading-l"
+           :style "margin: 0;"}
+      title]
+     [:p {:class "wa-caption-s wa-color-text-quiet"
+          :style "margin: 0;"}
+      subtitle]]
+    [:h2 {:slot  "header"
+          :class "wa-heading-l"
+          :style "margin: 0;"}
+     title]))
+
 (defn- dashboard-card
-  [{:keys [class subtitle title]} & children]
-  (let [body  (cond-> [:div {:class "wa-stack"}
-                       [:div {:class "wa-cluster wa-gap-xs"}
-                        [:h2 {:class "wa-heading-l"} title]]]
-                subtitle (conj [:div {:class "wa-caption-s wa-color-text-quiet"} subtitle]))
-        attrs (cond-> {:appearance "plain"
-                       :style      "background: var(--wa-color-surface-default); block-size: 100%"}
-                class (assoc :class class))]
-    [:wa-card attrs
-     (into body children)]))
+  [{:keys [class header-actions subtitle title]} & children]
+  (let [attrs (cond-> {:appearance  "plain"
+                       :with-header true
+                       :class       (ui2/cs "insurance-dashboard-card" class)
+                       :style       "background: var(--wa-color-surface-default); block-size: 100%"}
+                header-actions (assoc :with-header-actions true))]
+    (cond-> [:wa-card attrs
+             (dashboard-card-header {:subtitle subtitle
+                                     :title    title})]
+      header-actions (conj header-actions)
+      true (conj (into [:div {:class "wa-stack"}] children)))))
+
+(defn- policy-review-action
+  [{:keys [tr]} policy]
+  (let [label (tr [:insurance.dashboard/continue-reviewing])]
+    [button/Button {:slot       "header-actions"
+                    :appearance "plain"
+                    :variant    "brand"
+                    :href       (urls/link-policy-review policy)
+                    :title      label
+                    :aria-label label}
+     [ico/Icon {::ico/library :phosphor
+                ::ico/name    :hand-pointing}]]))
 
 (defn- divided-rows
   [rows]
@@ -231,14 +291,15 @@
                  (get status-counts status 0)))
 
 (defn- review-status-section
-  [{:keys [tr]} {:keys [status-counts totals]}]
+  [{:keys [tr] :as req} {:keys [policy status-counts totals]}]
   (let [total         (:total-instruments totals)
         needs-review  (get status-counts :instrument.coverage.status/needs-review 0)
         handled       (- total needs-review)
         handled-ratio (if (pos? total) (/ (double handled) total) 0.0)
         handled-label (tr [:insurance.dashboard/review-complete] [handled total])]
     (apply dashboard-card
-           {:title (tr [:insurance.dashboard/review-status])}
+           {:title          (tr [:insurance.dashboard/review-status])
+            :header-actions (policy-review-action req policy)}
            (concat
             [(review-status-bar status-counts total handled-ratio handled-label)]
             (divided-rows
@@ -277,13 +338,14 @@
                    count)))
 
 (defn- health-checklist-section
-  [{:keys [tr]} {:keys [totals]}]
+  [{:keys [tr] :as req} {:keys [policy totals]}]
   (let [total        (count health-checks)
         passed       (count (filter #(health-check-passed? totals %) health-checks))
         passed-label (tr [:insurance.dashboard/health-checks-complete] [passed total])]
     (apply dashboard-card
-           {:title    (tr [:insurance.dashboard/health-checklist])
-            :subtitle (tr [:insurance.dashboard/health-checklist-subtitle])}
+           {:title          (tr [:insurance.dashboard/health-checklist])
+            :subtitle       (tr [:insurance.dashboard/health-checklist-subtitle])
+            :header-actions (policy-review-action req policy)}
            (concat
             (divided-rows
              (map #(health-check-row tr totals %) health-checks))
@@ -330,38 +392,6 @@
             [[:div {:class "wa-caption-s wa-text-end"}
               (tr [:insurance.dashboard/coverage-mix-total] [total])]]))))
 
-(defn- future-action-row
-  [tr {:keys [href icon label-key]}]
-  (let [available? (and href (not= "#" href))]
-    [:a {:href  (or href "#")
-         :class "wa-flank"
-         :style "color: inherit; text-decoration: none;"}
-     [ico/Icon {::ico/library :snoico
-                ::ico/name    icon
-                :class        "wa-font-size-xl wa-color-text-quiet"
-                :aria-hidden  true}]
-     [:div {:class "wa-split"}
-      [:span (tr label-key)]
-      (when-not available?
-        [:wa-badge {:appearance "outlined" :pill true :variant "neutral"}
-         (tr [:insurance.dashboard/opens-later])])]]))
-
-(defn- next-actions-section
-  [{:keys [tr]} policy]
-  (apply dashboard-card
-         {:title    (tr [:insurance.dashboard/next-actions])
-          :subtitle (tr [:insurance.dashboard/action-pages-subtitle])}
-         (divided-rows
-          [(future-action-row tr {:href      (urls/link-policy-review policy)
-                                  :icon      "circle-question-outline"
-                                  :label-key [:insurance.dashboard/review-queue]})
-           (future-action-row tr {:icon      "circle-exclamation"
-                                  :label-key [:insurance.dashboard/coverage-workbench]})
-           (future-action-row tr {:icon      "circle-dot-outline"
-                                  :label-key [:insurance.dashboard/activity-log]})
-           (future-action-row tr {:icon      "cog"
-                                  :label-key [:insurance.dashboard/policy-setup]})])))
-
 (defn- change-row
   [tr {:keys [change coverage instrument-name owner-name]}]
   (let [color (insurance-ui/change-color change)]
@@ -384,16 +414,34 @@
            [[:div {:class "wa-caption-s wa-color-text-quiet"}
              (tr [:insurance.dashboard/no-recent-changes])]])))
 
+(defn- policy-settings-action
+  [{:keys [tr]}]
+  [button/Button {:slot        "header-actions"
+                  :appearance  "plain"
+                  :disabled    true
+                  :title       (tr [:insurance.dashboard/opens-later])
+                  :aria-label  (tr [:insurance.dashboard/policy-settings])}
+   [ico/Icon {::ico/library :snoico
+              ::ico/name    :cog}]])
+
 (defn- policy-details-section
   [{:keys [tr] :as req} {:insurance.policy/keys [effective-at effective-until premium-factor status] :as policy}]
-  (apply dashboard-card
-         {:title (tr [:insurance.dashboard/policy-details])}
+  [:wa-card {:appearance          "plain"
+             :with-header         true
+             :with-header-actions true
+             :style               "background: var(--wa-color-surface-default); block-size: 100%;"}
+   [:h2 {:slot  "header"
+         :class "wa-heading-l"
+         :style "margin: 0;"}
+    (tr [:insurance.dashboard/policy-details])]
+   (policy-settings-action req)
+   (into [:div {:class "wa-stack"}]
          (divided-rows
           [(detail-row (tr [:insurance/name]) (:insurance.policy/name policy))
            (detail-row (tr [:insurance.dashboard/policy-status]) (policy-status-badge tr status))
            (detail-row (tr [:insurance/effective-at]) (ui2/date-display req :medium effective-at))
            (detail-row (tr [:insurance/effective-until]) (ui2/date-display req :medium effective-until))
-           (detail-row (tr [:insurance/premium-base-factor]) premium-factor)])))
+           (detail-row (tr [:insurance/premium-base-factor]) premium-factor)]))])
 
 (defn page
   [{:keys [db] :as req}]
@@ -411,8 +459,7 @@
         (policy-details-section req policy)
         (review-status-section req dashboard)
         (health-checklist-section req dashboard)
-        (coverage-mix-section req dashboard)
-        (next-actions-section req policy)]
+        (coverage-mix-section req dashboard)]
        [:aside {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
         (recent-changes-section req dashboard)]]])))
 

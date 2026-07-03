@@ -86,11 +86,11 @@
   :effective-until "Gültig bis",
   :covered-instruments "Instrumente mit Versicherung"},
  :insurance.dashboard
- {:continue-reviewing "Review fortsetzen",
-  :review-queue "Review-Warteschlange",
-  :coverage-workbench "Versicherungs-Workbench",
+ {:continue-reviewing "Review",
+  :review-queue "Review",
+  :coverage-workbench "Tabelle",
   :activity-log "Aktivitätsprotokoll",
-  :policy-setup "Policen-Setup",
+  :policy-settings "Policeneinstellungen",
   :next-actions "Nächste Aktionen",
   :action-pages-subtitle
   "Diese Links werden im weiteren Redesign eigene Policen-Seiten.",
@@ -618,6 +618,7 @@
   :select-all "Wählen Alle",
   :quick-edit "Schnellbearbeitung",
   :mark-as "Markieren als",
+  :more-actions "Weitere Aktionen",
   :next "Nächste",
   :previous "Vorherige",
   :back "Zurück",
