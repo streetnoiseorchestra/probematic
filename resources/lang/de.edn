@@ -130,6 +130,10 @@
  :insurance.policy-settings
  {:category-factors-subtitle "Faktoren nach Instrumentenkategorie."
   :coverage-types-subtitle "Versicherungsarten in dieser Police.",
+  :add-coverage-type "Versicherungsart hinzufügen",
+  :coverage-type-delete-confirm "Versicherungsart %1 löschen?",
+  :coverage-type-in-use
+  "Diese Versicherungsart wird von %1 aktuellen Versicherungen verwendet und kann nicht gelöscht werden.",
   :current-cost "Aktuell geschätzte Kosten",
   :current-totals "Aktuelle Summen",
   :current-totals-subtitle "Sichere Summen aus der aktuellen Konfiguration.",
@@ -142,6 +146,11 @@
   :error-invalid-currency "Wähle eine unterstützte Währung.",
   :error-effective-until-before-effective-at
   "Das Enddatum muss nach dem Startdatum liegen.",
+  :edit-coverage-type "Versicherungsart bearbeiten",
+  :error-coverage-type-in-use "Versicherungsart wird noch verwendet.",
+  :error-coverage-type-not-found "Versicherungsart wurde in dieser Police nicht gefunden.",
+  :error-duplicate-coverage-type-name
+  "Eine Versicherungsart mit diesem Namen existiert bereits in dieser Police.",
   :missing-category-factors-title "Fehlende Kategoriefaktoren",
   :missing-category-factors-body
   "Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1.",

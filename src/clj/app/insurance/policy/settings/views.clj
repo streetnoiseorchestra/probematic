@@ -36,7 +36,7 @@
                    [ico/Icon {::ico/library :phosphor
                               ::ico/name    :arrow-left
                               :slot         "start"}]
-                   (tr [:insurance.policy-settings/back-to-dashboard])]]}]
+                   (tr [:action/back])]]}]
    [divider/Divider]])
 
 (defn- settings-card
@@ -60,9 +60,15 @@
                  actions))]
         children))
 
+(defn- page-state-map
+  [req key]
+  (let [value (get-in req [:page-state actions/form-key key])]
+    (when (map? value)
+      value)))
+
 (defn- policy-form-state
   [req {:keys [policy-details]}]
-  (let [submitted (get-in req [:page-state actions/form-key :policy])
+  (let [submitted (page-state-map req :policy)
         details   (merge policy-details (dissoc submitted :_error))]
     {:policy-id       (:policy-id details)
      :name            (:name details)
@@ -73,19 +79,67 @@
      :status          (:status policy-details)
      :_error          (:_error submitted)}))
 
+(defn- signal-string
+  [value]
+  (if (some? value)
+    (str value)
+    ""))
+
 (defn- policy-signal
   [{:keys [currency effective-at effective-until name policy-id premium-factor]}]
-  {:policyId       (str policy-id)
-   :name           (str name)
+  {:policyId       (signal-string policy-id)
+   :name           (signal-string name)
    :effectiveAt    (or (ui2/date-input-value effective-at) "")
    :effectiveUntil (or (ui2/date-input-value effective-until) "")
-   :premiumFactor  (str premium-factor)
+   :premiumFactor  (signal-string premium-factor)
    :currency       (clojure.core/name currency)})
+
+(defn- coverage-type-create-state
+  [req {{:keys [policy-id]} :policy-details}]
+  (let [submitted (page-state-map req :coverage-type-create)
+        details   (merge {:policy-id      policy-id
+                          :name           ""
+                          :description    ""
+                          :premium-factor ""}
+                         (dissoc submitted :_error))]
+    {:open           (:open details)
+     :policy-id      (:policy-id details)
+     :name           (:name details)
+     :description    (:description details)
+     :premium-factor (:premium-factor details)
+     :_error         (:_error submitted)}))
+
+(defn- coverage-type-edit-state
+  [req]
+  (let [submitted (page-state-map req :coverage-type)]
+    {:policy-id      (:policy-id submitted)
+     :type-id        (:type-id submitted)
+     :name           (:name submitted)
+     :description    (:description submitted)
+     :premium-factor (:premium-factor submitted)
+     :_error         (:_error submitted)}))
+
+(defn- active-coverage-type-state
+  [req settings]
+  (let [create-state (coverage-type-create-state req settings)
+        edit-state   (coverage-type-edit-state req)]
+    (if (:open create-state)
+      create-state
+      edit-state)))
+
+(defn- coverage-type-signal
+  [{:keys [description name policy-id premium-factor type-id]}]
+  (cond-> {:policyId      (signal-string policy-id)
+           :name          (signal-string name)
+           :description   (signal-string description)
+           :premiumFactor (signal-string premium-factor)}
+    type-id (assoc :typeId (signal-string type-id))))
 
 (defn- initial-signals
   [req settings]
   {:insurancePolicySettings
-   {:policy (policy-signal (policy-form-state req settings))}})
+   {:policy       (policy-signal (policy-form-state req settings))
+    :coverageType (coverage-type-signal (active-coverage-type-state req settings))}})
 
 (defn- field-error
   [errors field]
@@ -119,6 +173,17 @@
              disabled? (assoc :disabled true)
              error     (assoc :aria-invalid "true"
                               :aria-describedby (described-by-id id error)))]))
+
+(defn- textarea-input
+  [{:keys [bind disabled? error id label value]}]
+  (native-field
+   {:error error :id id :label label}
+   [:textarea (cond-> {:id        id
+                       :data-bind bind}
+                disabled? (assoc :disabled true)
+                error     (assoc :aria-invalid "true"
+                                 :aria-describedby (described-by-id id error)))
+    (or value "")]))
 
 (defn- currency-option
   [selected currency]
@@ -287,34 +352,185 @@
   [:thead
    (into [:tr]
          (for [label labels]
-           [:th label]))])
+           [:th {:scope "col"} label]))])
+
+(defn- close-dialog-on-hide
+  [req action]
+  (str "if (evt.target !== el) return; evt.preventDefault(); @post('"
+       (d*/act req action)
+       "')"))
+
+(defn- coverage-type-fields
+  [{:keys [tr]} {:keys [_error description name premium-factor]} id-prefix]
+  [:div {:class "wa-stack wa-gap-m"}
+   (top-error-callout (:_top _error))
+   (text-input {:id    (str id-prefix "-name")
+                :label (tr [:insurance/name])
+                :value name
+                :bind  "insurancePolicySettings.coverageType.name"
+                :error (field-error _error :name)})
+   (textarea-input {:id    (str id-prefix "-description")
+                    :label (tr [:insurance/coverage-type-description])
+                    :value description
+                    :bind  "insurancePolicySettings.coverageType.description"
+                    :error (field-error _error :description)})
+   (text-input {:id    (str id-prefix "-premium-factor")
+                :label (tr [:insurance/premium-factor])
+                :type  "number"
+                :value (str premium-factor)
+                :bind  "insurancePolicySettings.coverageType.premiumFactor"
+                :min   "0"
+                :step  "any"
+                :error (field-error _error :premium-factor)})])
+
+(defn- coverage-type-create-dialog
+  [{:keys [tr] :as req} settings]
+  (let [{:keys [open policy-id] :as form} (coverage-type-create-state req settings)]
+    (when open
+      [:wa-dialog {:id                    "coverage-type-create-dialog"
+                   :label                 (tr [:insurance.policy-settings/add-coverage-type])
+                   :data-init__delay.10ms "el.open = true"
+                   :data-preserve-attr    "open"
+                   :data-on:wa-hide       (close-dialog-on-hide req ::actions/close-coverage-type-create)}
+       [:form {:id             "coverage-type-create-form"
+               :data-id        "coverage-type-create"
+               :data-action    (d*/act req ::actions/create-coverage-type)
+               :data-on:submit "evt.preventDefault();"}
+        [:input {:type      "hidden"
+                 :value     policy-id
+                 :data-bind "insurancePolicySettings.coverageType.policyId"}]
+        (coverage-type-fields req form "coverage-type-create")]
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
+        (tr [:action/cancel])]
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "coverage-type-create-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'coverage-type-create'"
+                       :data-attr:loading  "$loading === 'coverage-type-create'"}
+        (tr [:action/create])]])))
+
+(defn- coverage-type-edit-dialog
+  [{:keys [tr] :as req}]
+  (let [{:keys [policy-id type-id] :as form} (coverage-type-edit-state req)]
+    (when type-id
+      [:wa-dialog {:id                    "coverage-type-edit-dialog"
+                   :label                 (tr [:insurance.policy-settings/edit-coverage-type])
+                   :data-init__delay.10ms "el.open = true"
+                   :data-preserve-attr    "open"
+                   :data-on:wa-hide       (close-dialog-on-hide req ::actions/close-coverage-type-edit)}
+       [:form {:id             "coverage-type-edit-form"
+               :data-id        "coverage-type"
+               :data-action    (d*/act req ::actions/update-coverage-type)
+               :data-on:submit "evt.preventDefault();"}
+        [:input {:type      "hidden"
+                 :value     policy-id
+                 :data-bind "insurancePolicySettings.coverageType.policyId"}]
+        [:input {:type      "hidden"
+                 :value     type-id
+                 :data-bind "insurancePolicySettings.coverageType.typeId"}]
+        (coverage-type-fields req form "coverage-type-edit")]
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
+        (tr [:action/cancel])]
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "coverage-type-edit-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'coverage-type'"
+                       :data-attr:loading  "$loading === 'coverage-type'"}
+        (tr [:action/save])]])))
+
+(defn- coverage-type-delete-dialog
+  [{:keys [tr] :as req} {:keys [name type-id usage-count used?]}]
+  (let [dialog-id  (ui2/remove-dialog-id "coverage-type" type-id)
+        loading-id (pr-str (str type-id))]
+    [:wa-dialog {:id    dialog-id
+                 :label (tr [:action/confirm-generic])}
+     [:div {:class "wa-stack wa-gap-s"}
+      [:p (tr [:insurance.policy-settings/coverage-type-delete-confirm]
+              [(str "\"" name "\"")])]
+      (when used?
+        [:wa-callout {:appearance "outlined" :variant "warning"}
+         [:div {:class "wa-stack wa-gap-2xs"}
+          [:strong (tr [:insurance.policy-settings/error-coverage-type-in-use])]
+          [:span (tr [:insurance.policy-settings/coverage-type-in-use]
+                     [usage-count])]]])]
+     [button/Button {:slot        "footer"
+                     :appearance  "outlined"
+                     :data-dialog "close"}
+      (tr [:action/cancel])]
+     [button/Button (cond-> {:slot               "footer"
+                             :appearance         "filled"
+                             :variant            "danger"
+                             :data-dialog        "close"
+                             :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                             :data-attr:loading  (str "$loading === " loading-id)
+                             :data-id            type-id
+                             :data-action        (d*/act req ::actions/delete-coverage-type)}
+                      used? (assoc :disabled true))
+      (tr [:action/confirm-delete])]]))
 
 (defn- coverage-type-row
-  [currency {:keys [current-cost description name premium-factor usage-count]}]
-  [:tr
-   [:td name]
-   [:td premium-factor]
-   [:td (ui2/muted description "")]
-   [:td usage-count]
-   [:td (ui2/money current-cost currency)]])
+  [{:keys [editable? tr] :as req} currency {:keys [current-cost description name premium-factor type-id usage-count used?]}]
+  (let [loading-id (pr-str (str type-id))]
+    (cond-> [:tr
+             [:td name]
+             [:td premium-factor]
+             [:td (ui2/muted description "")]
+             [:td usage-count]
+             [:td (ui2/money current-cost currency)]]
+      editable?
+      (conj [:td {:class "align-top text-right"}
+             (ui2/row-action-menu
+              {:button-id (str "coverage-type-actions-" type-id)
+               :items     [{:label              (tr [:action/update])
+                            :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                            :data-attr:loading  (str "$loading === " loading-id)
+                            :data-id            type-id
+                            :data-action        (d*/act req ::actions/open-coverage-type-edit)}
+                           (cond-> {:label       (tr [:action/remove])
+                                    :variant     "danger"
+                                    :data-dialog (format "open %s"
+                                                         (ui2/remove-dialog-id "coverage-type" type-id))}
+                             used? (assoc :disabled true))]})]))))
+
+(defn- coverage-type-table-head
+  [tr editable?]
+  (table-head (cond-> [(tr [:insurance/name])
+                       (tr [:insurance/premium-factor])
+                       (tr [:insurance/coverage-type-description])
+                       (tr [:insurance.policy-settings/usage])
+                       (tr [:insurance.policy-settings/current-cost])]
+                editable? (conj (tr [:actions])))))
 
 (defn- coverage-types-section
-  [{:keys [tr]} {{:keys [currency]} :policy-details :keys [coverage-type-rows]}]
+  [{:keys [tr] :as req} {{:keys [currency policy-id]} :policy-details
+                         :keys [coverage-type-rows editable?]}]
   (settings-card
    {:title    (tr [:insurance/coverage-types])
-    :subtitle (tr [:insurance.policy-settings/coverage-types-subtitle])}
-   (ui2/table-shell
-    (if (seq coverage-type-rows)
-      [:table
-       (table-head [(tr [:insurance/name])
-                    (tr [:insurance/premium-factor])
-                    (tr [:insurance/coverage-type-description])
-                    (tr [:insurance.policy-settings/usage])
-                    (tr [:insurance.policy-settings/current-cost])])
-       (into [:tbody]
-             (map (partial coverage-type-row currency))
-             coverage-type-rows)]
-      (ui2/empty-state (tr [:insurance.policy-settings/no-coverage-types]) "")))))
+    :subtitle (tr [:insurance.policy-settings/coverage-types-subtitle])
+    :actions  (when editable?
+                [[button/Button {:appearance  "outlined"
+                                 :variant     "brand"
+                                 :data-id     policy-id
+                                 :data-action (d*/act req ::actions/open-coverage-type-create)}
+                  (tr [:insurance.policy-settings/add-coverage-type])]])}
+   [:div {:class "wa-stack wa-gap-m"}
+    (top-error-callout (get-in req [:page-state actions/form-key :coverage-type-delete :_error :_top]))
+    (ui2/table-shell
+     (if (seq coverage-type-rows)
+       [:table
+        (coverage-type-table-head tr editable?)
+        (into [:tbody]
+              (map (partial coverage-type-row (assoc req :editable? editable?) currency))
+              coverage-type-rows)]
+       (ui2/empty-state (tr [:insurance.policy-settings/no-coverage-types]) "")))]))
 
 (defn- category-factor-row
   [currency {:keys [category-name current-cost factor usage-count]}]
@@ -342,10 +558,15 @@
       (ui2/empty-state (tr [:insurance.policy-settings/no-category-factors]) "")))))
 
 (defn- settings-page-content
-  [req {:keys [policy] :as settings}]
+  [req {:keys [coverage-type-rows editable? policy] :as settings}]
   [:div {:id           "insurance-policy-settings"
          :class        "wa-stack"
          :data-signals (d*/->signals (initial-signals req settings))}
+   (coverage-type-create-dialog req settings)
+   (coverage-type-edit-dialog req)
+   (when editable?
+     (for [row coverage-type-rows]
+       (coverage-type-delete-dialog req row)))
    (page-header req policy)
    (warnings-section req settings)
    [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 34ch;"}

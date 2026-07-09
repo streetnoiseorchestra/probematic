@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-09 18:17+0000\n"
+"POT-Creation-Date: 2026-07-09 18:41+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -2627,6 +2627,18 @@ msgctxt ":insurance.policy-settings/error-invalid-date"
 msgid "Enter a valid date."
 msgstr "Gib ein gültiges Datum ein."
 
+#: :insurance.policy-settings/error-duplicate-coverage-type-name
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-duplicate-coverage-type-name"
+msgid "A coverage type with this name already exists for this policy."
+msgstr "Eine Versicherungsart mit diesem Namen existiert bereits in dieser Police."
+
+#: :insurance.policy-settings/edit-coverage-type
+#, ycp-format
+msgctxt ":insurance.policy-settings/edit-coverage-type"
+msgid "Edit coverage type"
+msgstr "Versicherungsart bearbeiten"
+
 #: :insurance.policy-settings/error-invalid-currency
 #, ycp-format
 msgctxt ":insurance.policy-settings/error-invalid-currency"
@@ -2651,6 +2663,12 @@ msgctxt ":insurance.policy-settings/usage"
 msgid "Usage"
 msgstr "Verwendung"
 
+#: :insurance.policy-settings/error-coverage-type-in-use
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-coverage-type-in-use"
+msgid "Coverage type is still used."
+msgstr "Versicherungsart wird noch verwendet."
+
 #: :insurance.policy-settings/read-only-title
 #, ycp-format
 msgctxt ":insurance.policy-settings/read-only-title"
@@ -2674,6 +2692,12 @@ msgstr "Einstellungen für %1 konfigurieren."
 msgctxt ":insurance.policy-settings/current-cost"
 msgid "Current estimated cost"
 msgstr "Aktuell geschätzte Kosten"
+
+#: :insurance.policy-settings/add-coverage-type
+#, ycp-format
+msgctxt ":insurance.policy-settings/add-coverage-type"
+msgid "Add coverage type"
+msgstr "Versicherungsart hinzufügen"
 
 #: :insurance.policy-settings/error-policy-not-found
 #, ycp-format
@@ -2711,6 +2735,12 @@ msgctxt ":insurance.policy-settings/category-factors-subtitle"
 msgid "Factors by instrument category."
 msgstr "Faktoren nach Instrumentenkategorie."
 
+#: :insurance.policy-settings/coverage-type-delete-confirm
+#, ycp-format
+msgctxt ":insurance.policy-settings/coverage-type-delete-confirm"
+msgid "Delete coverage type %1?"
+msgstr "Versicherungsart %1 löschen?"
+
 #: :insurance.policy-settings/current-totals-subtitle
 #, ycp-format
 msgctxt ":insurance.policy-settings/current-totals-subtitle"
@@ -2723,6 +2753,20 @@ msgctxt ":insurance.policy-settings/missing-category-factors-body"
 msgid "Covered instruments use categories without category factors: %1."
 msgstr ""
 "Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1."
+
+#: :insurance.policy-settings/error-coverage-type-not-found
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-coverage-type-not-found"
+msgid "Coverage type not found for this policy."
+msgstr "Versicherungsart wurde in dieser Police nicht gefunden."
+
+#: :insurance.policy-settings/coverage-type-in-use
+#, ycp-format
+msgctxt ":insurance.policy-settings/coverage-type-in-use"
+msgid ""
+"This coverage type is used by %1 current coverages and cannot be deleted."
+msgstr ""
+"Diese Versicherungsart wird von %1 aktuellen Versicherungen verwendet und kann nicht gelöscht werden."
 
 #: :insurance.policy-settings/missing-category-factors-title
 #, ycp-format

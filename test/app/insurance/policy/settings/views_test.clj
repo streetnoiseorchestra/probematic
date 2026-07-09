@@ -13,7 +13,13 @@
 (def translations
   {[:action/back] "Back"
    [:action/save] "Save"
+   [:action/cancel] "Cancel"
+   [:action/confirm-delete] "Delete"
+   [:action/confirm-generic] "Confirm"
+   [:action/create] "Create"
    [:actions] "Actions"
+   [:action/remove] "Remove"
+   [:action/update] "Edit"
    [:insurance/category-factors] "Category factors"
    [:insurance/cost] "Cost"
    [:insurance/coverage-type-description] "Description"
@@ -34,11 +40,16 @@
    [:insurance.dashboard/policy-cost] "Policy cost"
    [:insurance.policy-settings/category-factors-subtitle] "Factors by instrument category."
    [:insurance.policy-settings/coverage-types-subtitle] "Insurance options available on this policy."
+   [:insurance.policy-settings/add-coverage-type] "Add coverage type"
+   [:insurance.policy-settings/coverage-type-delete-confirm] "Delete coverage type %1?"
+   [:insurance.policy-settings/coverage-type-in-use] "This coverage type is used by %1 current coverages and cannot be deleted."
    [:insurance.policy-settings/current-cost] "Current estimated cost"
    [:insurance.policy-settings/current-totals] "Current totals"
    [:insurance.policy-settings/current-totals-subtitle] "Safe totals from the current configuration."
    [:insurance.policy-settings/error-frozen-policy] "This policy is not draft, so settings cannot be changed."
    [:insurance.policy-settings/error-not-allowed] "You are not allowed to change policy settings."
+   [:insurance.policy-settings/edit-coverage-type] "Edit coverage type"
+   [:insurance.policy-settings/error-coverage-type-in-use] "Coverage type is still used."
    [:insurance.policy-settings/missing-category-factors-body] "Covered instruments use categories without category factors: %1."
    [:insurance.policy-settings/missing-category-factors-title] "Missing category factors"
    [:insurance.policy-settings/no-category-factors] "No category factors configured."
@@ -82,7 +93,15 @@
                              :description    "Base coverage"
                              :premium-factor 1.0M
                              :usage-count    2
-                             :current-cost   12.5M}]
+                             :current-cost   12.5M
+                             :used?          true}
+                            {:type-id        #uuid "00000000-0000-0000-0000-000000000202"
+                             :name           "Unused"
+                             :description    "Unused coverage"
+                             :premium-factor 0.25M
+                             :usage-count    0
+                             :current-cost   0M
+                             :used?          false}]
    :category-factor-rows   [{:category-factor-id #uuid "00000000-0000-0000-0000-000000000301"
                              :category-name      "Brass"
                              :factor             0.10M
@@ -126,7 +145,12 @@
     (is (str/includes? html "Coverage types"))
     (is (str/includes? html "Basic"))
     (is (str/includes? html "Category factors"))
-    (is (str/includes? html "Brass"))))
+    (is (str/includes? html "Brass"))
+    (is (str/includes? html "Actions"))
+    (is (str/includes? html "kw=open-coverage-type-create"))
+    (is (str/includes? html "kw=open-coverage-type-edit"))
+    (is (str/includes? html "kw=delete-coverage-type"))
+    (is (not (str/includes? html "hx-")))))
 
 (deftest policy-details-section-renders-validation-errors-from-page-state
   (let [html (html/->str
@@ -149,13 +173,47 @@
     (is (str/includes? html "value=\"2027-02-01\""))
     (is (str/includes? html "value=\"bad\""))))
 
+(deftest coverage-type-dialogs-render-native-fields-and-settings-actions
+  (let [html (html/->str
+              (#'views/settings-page-content
+               (assoc req :page-state {:insurance-policy-settings
+                                       {:coverage-type-create {:open           true
+                                                               :policy-id      policy-id
+                                                               :name           "New type"
+                                                               :description    "New description"
+                                                               :premium-factor "0.2"}
+                                        :coverage-type        {:policy-id      policy-id
+                                                               :type-id        #uuid "00000000-0000-0000-0000-000000000202"
+                                                               :name           "Unused"
+                                                               :description    "Unused coverage"
+                                                               :premium-factor 0.25M}}})
+               settings))]
+    (is (str/includes? html "coverage-type-create-dialog"))
+    (is (str/includes? html "coverage-type-edit-dialog"))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.name\""))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.description\""))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.premiumFactor\""))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.policyId\""))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.typeId\""))
+    (is (str/includes? html "kw=create-coverage-type"))
+    (is (str/includes? html "kw=update-coverage-type"))
+    (is (str/includes? html "kw=close-coverage-type-create"))
+    (is (str/includes? html "kw=close-coverage-type-edit"))
+    (is (str/includes? html "type=\"number\""))
+    (is (str/includes? html "step=\"any\""))
+    (is (str/includes? html "New type"))
+    (is (str/includes? html "Unused coverage"))))
+
 (deftest read-only-settings-disable-policy-detail-controls
   (let [html (html/->str
-              (#'views/policy-details-section
+              (#'views/settings-page-content
                req
                (assoc settings
                       :editable? false
                       :insurance-team-member? false)))]
     (is (str/includes? html "Settings are read-only"))
     (is (str/includes? html "You are not allowed to change policy settings."))
-    (is (str/includes? html "disabled"))))
+    (is (str/includes? html "disabled"))
+    (is (not (str/includes? html "kw=open-coverage-type-create")))
+    (is (not (str/includes? html "kw=open-coverage-type-edit")))
+    (is (not (str/includes? html "kw=delete-coverage-type")))))
