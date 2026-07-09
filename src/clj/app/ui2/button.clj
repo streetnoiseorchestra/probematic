@@ -99,7 +99,7 @@
         has-icon? (some icon-child? children)]
     (map (fn [child]
            (if (and has-icon? (basic-label-child? child))
-             [:span child]
+             [:span {:class "trim-cap"} child]
              child))
          children)))
 
