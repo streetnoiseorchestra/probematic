@@ -13,25 +13,10 @@
 (def form-key
   :insurance-policy-settings)
 
-(def invalid-uuid
-  ::invalid-uuid)
-
-(def invalid-currency
-  ::invalid-currency)
-
 (defn- raw-policy-form
   [signals]
   (or (get-in signals [:insurancePolicySettings :policy])
       {}))
-
-(defn- safe-uuid
-  [value]
-  (try
-    (if-let [value (form/optional-text value)]
-      (util/ensure-uuid! value)
-      invalid-uuid)
-    (catch Exception _
-      invalid-uuid)))
 
 (defn- decimal-value
   [value]
@@ -46,31 +31,19 @@
   (when-let [date (form/parse-date value)]
     (-> date (t/at (t/midnight)) t/inst)))
 
-(defn- supported-currency
-  [currency]
-  (when (contains? (set settings.queries/supported-currencies) currency)
-    currency))
-
 (defn- currency-value
   [value]
-  (let [value    (form/optional-text value)
-        currency (cond
-                   (nil? value)
-                   :currency/EUR
-
-                   (contains? #{"EUR" "currency/EUR" ":currency/EUR"} value)
-                   :currency/EUR
-
-                   :else
-                   invalid-currency)]
-    (if (= invalid-currency currency)
-      invalid-currency
-      (or (supported-currency currency) invalid-currency))))
+  (when-let [currency (some-> value form/optional-text keyword)]
+    (when (contains? (set settings.queries/supported-currencies) currency)
+      currency)))
 
 (defn- policy-form
   [signals]
   (let [raw (raw-policy-form signals)]
-    {:policy-id       (safe-uuid (:policyId raw))
+    {:policy-id       (try
+                        (some-> (:policyId raw) form/optional-text util/ensure-uuid!)
+                        (catch Exception _
+                          nil))
      :name            (or (form/trim-value (:name raw)) "")
      :effective-at    (or (form/trim-value (:effectiveAt raw)) "")
      :effective-until (or (form/trim-value (:effectiveUntil raw)) "")
@@ -114,21 +87,26 @@
         effective-until-inst (date-inst effective-until)
         premium-factor-value (decimal-value premium-factor)
         currency-value       (currency-value currency)]
-    (merge
-     (when (str/blank? name)
-       {:name (required-error tr [:insurance/name])})
-     (when-not effective-at-inst
-       {:effective-at (error tr [:insurance.policy-settings/error-invalid-date])})
-     (when-not effective-until-inst
-       {:effective-until (error tr [:insurance.policy-settings/error-invalid-date])})
-     (when (and effective-at-inst
-                effective-until-inst
-                (not (pos? (compare effective-until-inst effective-at-inst))))
-       {:effective-until (error tr [:insurance.policy-settings/error-effective-until-before-effective-at])})
-     (when-not (non-negative-decimal? premium-factor-value)
-       {:premium-factor (error tr [:insurance.policy-settings/error-invalid-premium-factor])})
-     (when (= invalid-currency currency-value)
-       {:currency (error tr [:insurance.policy-settings/error-invalid-currency])}))))
+    (cond-> {}
+      (str/blank? name)
+      (assoc :name (required-error tr [:insurance/name]))
+
+      (nil? effective-at-inst)
+      (assoc :effective-at (error tr [:insurance.policy-settings/error-invalid-date]))
+
+      (nil? effective-until-inst)
+      (assoc :effective-until (error tr [:insurance.policy-settings/error-invalid-date]))
+
+      (and effective-at-inst
+           effective-until-inst
+           (not (pos? (compare effective-until-inst effective-at-inst))))
+      (assoc :effective-until (error tr [:insurance.policy-settings/error-effective-until-before-effective-at]))
+
+      (not (non-negative-decimal? premium-factor-value))
+      (assoc :premium-factor (error tr [:insurance.policy-settings/error-invalid-premium-factor]))
+
+      (nil? currency-value)
+      (assoc :currency (error tr [:insurance.policy-settings/error-invalid-currency])))))
 
 (defn- validation-errors
   [{:keys [current-member-id db tr]} form]

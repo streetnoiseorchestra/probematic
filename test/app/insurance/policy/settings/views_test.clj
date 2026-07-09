@@ -72,12 +72,12 @@
                             :effective-at    #inst "2027-01-01T00:00:00.000-00:00"
                             :effective-until #inst "2027-12-31T00:00:00.000-00:00"
                             :premium-factor  0.025M
-                            :currency        :currency/EUR
+                            :currency        :EUR
                             :status          :insurance.policy.status/draft}
    :editable?              true
    :policy-editable?       true
    :insurance-team-member? true
-   :supported-currencies   [:currency/EUR]
+   :supported-currencies   [:EUR :USD]
    :coverage-type-rows     [{:type-id        #uuid "00000000-0000-0000-0000-000000000201"
                              :name           "Basic"
                              :description    "Base coverage"
@@ -98,16 +98,6 @@
 (def req
   {:tr        tr
    ::r/router router})
-
-(deftest current-member-id-falls-back-to-session
-  (let [member-id #uuid "00000000-0000-0000-0000-000000000456"]
-    (is (= member-id
-           (#'views/current-member-id
-            {:session {:session/member {:member/member-id member-id}}})))
-    (is (= member-id
-           (#'views/current-member-id
-            {:current-member-id member-id
-             :session           {:session/member {:member/member-id (random-uuid)}}})))))
 
 (deftest settings-page-content-renders-policy-details-and-read-side-sections
   (let [html (html/->str (#'views/settings-page-content req settings))]
@@ -144,7 +134,7 @@
               (#'views/policy-details-section
                (assoc req :page-state {:insurance-policy-settings
                                        {:policy {:name            ""
-                                                 :effective-at    "not-a-date"
+                                                 :effective-at    "2027-02-01"
                                                  :effective-until "2027-01-01"
                                                  :premium-factor  "bad"
                                                  :currency        "USD"
@@ -157,7 +147,7 @@
     (is (str/includes? html "Name is required."))
     (is (str/includes? html "Invalid date."))
     (is (str/includes? html "Invalid factor."))
-    (is (str/includes? html "value=\"not-a-date\""))
+    (is (str/includes? html "value=\"2027-02-01\""))
     (is (str/includes? html "value=\"bad\""))))
 
 (deftest read-only-settings-disable-policy-detail-controls

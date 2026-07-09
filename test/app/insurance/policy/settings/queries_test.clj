@@ -24,7 +24,7 @@
   [conn policy-id {:keys [category-factors currency]
                    :or   {category-factors {"brass"    0.10M
                                             "woodwind" 0.20M}
-                          currency         :currency/EUR}}]
+                          currency         :EUR}}]
   (let [brass-id      (random-uuid)
         woodwind-id   (random-uuid)
         percussion-id (random-uuid)
@@ -159,9 +159,9 @@
                                             policy-id
                                             {:current-member-id member-id})]
         (is (= {:editable?            true
-                :supported-currencies [:currency/EUR]
+                :supported-currencies [:EUR :USD]
                 :policy-details       {:name           "Insurance 2026"
-                                       :currency       :currency/EUR
+                                       :currency       :EUR
                                        :premium-factor 0.01M
                                        :status         :insurance.policy.status/draft}
                 :coverage-type-rows   [{:name "Basic" :usage-count 2 :current-cost 6.0M}
@@ -211,6 +211,6 @@
     (let [{:keys [conn]} (tc/new-system "insurance-settings-query-nil-currency")
           policy-id      (random-uuid)]
       (seed-settings-policy! conn policy-id {:currency omit-currency})
-      (is (= :currency/EUR
+      (is (= :EUR
              (get-in (queries/policy-settings (d/db conn) policy-id)
                      [:policy-details :currency]))))))

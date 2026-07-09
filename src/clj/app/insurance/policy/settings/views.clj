@@ -9,15 +9,8 @@
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
+   [app.util :as util]
    [clojure.string :as str]))
-
-(defn- policy-id
-  [{:keys [parameters path-params]}]
-  (let [value (or (get-in parameters [:path :policy-id])
-                  (:policy-id path-params))]
-    (cond
-      (uuid? value) value
-      (string? value) (parse-uuid value))))
 
 (defn- page-breadcrumb
   [{:keys [tr]} policy]
@@ -66,33 +59,11 @@
                  actions))]
         children))
 
-(defn- date-form-value
-  [value]
-  (if (string? value)
-    value
-    (ui2/date-input-value value)))
-
-(defn- plain-form-value
-  [value]
-  (when (some? value)
-    (str value)))
-
-(defn- currency-form-value
-  [value]
-  (cond
-    (keyword? value) (name value)
-    (seq (str value)) (str value)
-    :else "EUR"))
-
-(defn- submitted-policy
-  [{:keys [page-state]}]
-  (get-in page-state [actions/form-key :policy]))
-
 (defn- policy-form-state
   [req {:keys [policy-details]}]
-  (let [submitted (submitted-policy req)
+  (let [submitted (get-in req [:page-state actions/form-key :policy])
         details   (merge policy-details (dissoc submitted :_error))]
-    {:policy-id       (or (:policy-id details) (:policy-id policy-details))
+    {:policy-id       (:policy-id details)
      :name            (:name details)
      :effective-at    (:effective-at details)
      :effective-until (:effective-until details)
@@ -103,12 +74,12 @@
 
 (defn- policy-signal
   [{:keys [currency effective-at effective-until name policy-id premium-factor]}]
-  {:policyId       (plain-form-value policy-id)
-   :name           (or name "")
-   :effectiveAt    (or (date-form-value effective-at) "")
-   :effectiveUntil (or (date-form-value effective-until) "")
-   :premiumFactor  (or (plain-form-value premium-factor) "")
-   :currency       (currency-form-value currency)})
+  {:policyId       (str policy-id)
+   :name           (str name)
+   :effectiveAt    (or (ui2/date-input-value effective-at) "")
+   :effectiveUntil (or (ui2/date-input-value effective-until) "")
+   :premiumFactor  (str premium-factor)
+   :currency       (clojure.core/name currency)})
 
 (defn- initial-signals
   [req settings]
@@ -150,9 +121,9 @@
 
 (defn- currency-option
   [selected currency]
-  (let [value (currency-form-value currency)]
+  (let [value (name currency)]
     [:option (cond-> {:value value}
-               (= selected value) (assoc :selected true))
+               (= selected currency) (assoc :selected true))
      value]))
 
 (defn- currency-select
@@ -232,21 +203,21 @@
         (text-input {:id        "insurance-policy-settings-effective-at"
                      :label     (tr [:insurance/effective-at])
                      :type      "date"
-                     :value     (date-form-value effective-at)
+                     :value     (ui2/date-input-value effective-at)
                      :bind      "insurancePolicySettings.policy.effectiveAt"
                      :disabled? disabled?
                      :error     (field-error _error :effective-at)})
         (text-input {:id        "insurance-policy-settings-effective-until"
                      :label     (tr [:insurance/effective-until])
                      :type      "date"
-                     :value     (date-form-value effective-until)
+                     :value     (ui2/date-input-value effective-until)
                      :bind      "insurancePolicySettings.policy.effectiveUntil"
                      :disabled? disabled?
                      :error     (field-error _error :effective-until)})
         (text-input {:id        "insurance-policy-settings-premium-factor"
                      :label     (tr [:insurance/premium-base-factor])
                      :type      "number"
-                     :value     (plain-form-value premium-factor)
+                     :value     (str premium-factor)
                      :bind      "insurancePolicySettings.policy.premiumFactor"
                      :min       "0"
                      :step      "any"
@@ -254,7 +225,7 @@
                      :error     (field-error _error :premium-factor)})
         (currency-select {:id                   "insurance-policy-settings-currency"
                           :label                (tr [:insurance/currency])
-                          :selected             (currency-form-value currency)
+                          :selected             currency
                           :supported-currencies supported-currencies
                           :disabled?            disabled?
                           :error                (field-error _error :currency)})
@@ -384,16 +355,12 @@
     [:aside {:class "wa-stack"}
      (current-totals-section req settings)]]])
 
-(defn- current-member-id
-  [req]
-  (or (:current-member-id req)
-      (get-in req [:session :session/member :member/member-id])))
-
 (defn page
   [{:keys [db] :as req}]
-  (let [settings (queries/policy-settings db
-                                          (policy-id req)
-                                          {:current-member-id (current-member-id req)})]
+  (let [settings (queries/policy-settings
+                  db
+                  (util/ensure-uuid! (get-in req [:path-params :policy-id]))
+                  {:current-member-id (get-in req [:session :session/member :member/member-id])})]
     (ui2/datastar-page
      (settings-page-content req settings))))
 

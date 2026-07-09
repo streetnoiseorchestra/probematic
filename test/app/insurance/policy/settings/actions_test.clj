@@ -28,7 +28,7 @@
   @(d/transact conn [{:insurance.policy/policy-id       policy-id
                       :insurance.policy/name            "Insurance 2026"
                       :insurance.policy/status          status
-                      :insurance.policy/currency        :currency/EUR
+                      :insurance.policy/currency        :EUR
                       :insurance.policy/effective-at    (date-inst "2026-01-01")
                       :insurance.policy/effective-until (date-inst "2026-12-31")
                       :insurance.policy/premium-factor  0.01M}])
@@ -87,7 +87,7 @@
                   [:db/add policy-ref :insurance.policy/effective-at (date-inst "2027-01-01")]
                   [:db/add policy-ref :insurance.policy/effective-until (date-inst "2027-12-31")]
                   [:db/add policy-ref :insurance.policy/premium-factor 0.025M]
-                  [:db/add policy-ref :insurance.policy/currency :currency/EUR]]
+                  [:db/add policy-ref :insurance.policy/currency :EUR]]
                  member-id)
                {}]
               support/clear-loading
@@ -109,7 +109,7 @@
                                                 :effective-at    "nope"
                                                 :effective-until ""
                                                 :premium-factor  "not-a-decimal"
-                                                :currency        "USD"}
+                                                :currency        "JPY"}
                                :error-keys     #{:name
                                                  :effective-at
                                                  :effective-until
@@ -145,7 +145,7 @@
                                                  :effectiveAt    "nope"
                                                  :effectiveUntil ""
                                                  :premiumFactor  "not-a-decimal"
-                                                 :currency       "USD"})))
+                                                 :currency       "JPY"})))
               :date-order     (failure-summary
                                (actions/save-policy-details-action
                                 (state system)

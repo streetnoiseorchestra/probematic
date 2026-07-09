@@ -5,7 +5,7 @@
    [clojure.string :as str]))
 
 (def supported-currencies
-  [:currency/EUR])
+  [:EUR :USD])
 
 (defn- lower
   [value]
@@ -193,7 +193,7 @@
    :effective-at    (:insurance.policy/effective-at policy)
    :effective-until (:insurance.policy/effective-until policy)
    :premium-factor  (:insurance.policy/premium-factor policy)
-   :currency        (or (:insurance.policy/currency policy) :currency/EUR)
+   :currency        (or (:insurance.policy/currency policy) :EUR)
    :status          (:insurance.policy/status policy)})
 
 (defn policy-settings
