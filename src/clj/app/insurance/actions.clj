@@ -3,6 +3,7 @@
    [app.insurance.coverage.create.actions :as coverage-create.actions]
    [app.insurance.coverage.edit.actions :as coverage-edit.actions]
    [app.insurance.policy.review.actions :as policy-review.actions]
+   [app.insurance.policy.settings.actions :as policy-settings.actions]
    [app.insurance.policy.workbench.actions :as policy-workbench.actions]
    [app.insurance.index.queries :as queries]
    [app.nexus.actions :as support]
@@ -105,4 +106,5 @@
    coverage-edit.actions/actions
    coverage-create.actions/actions
    policy-review.actions/actions
+   policy-settings.actions/actions
    policy-workbench.actions/actions))

@@ -69,6 +69,9 @@
    (str (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/review")
         (append-qps {:filter      (some-> filter name)
                      :coverage-id coverage-id}))))
+(defn link-policy-settings
+  [policy-or-policy-id]
+  (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/settings"))
 (defn- query-value
   [value]
   (cond

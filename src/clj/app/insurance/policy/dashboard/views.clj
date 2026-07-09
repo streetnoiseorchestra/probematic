@@ -51,8 +51,9 @@
    [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]])
 
 (defn- more-actions-menu
-  [{:keys [tr]}]
-  (let [button-id "insurance-policy-dashboard-more-actions"]
+  [{:keys [tr]} policy]
+  (let [button-id    "insurance-policy-dashboard-more-actions"
+        settings-url (urls/link-policy-settings policy)]
     [:div {:class "insurance-dashboard-secondary-actions"}
      [:wa-dropdown {:placement "bottom-end"}
       [button/Button {:id         button-id
@@ -61,14 +62,12 @@
                       :aria-label (tr [:action/more-actions])}
        [ico/Icon {::ico/library :snoico
                   ::ico/name    :ellipsis}]]
-      [:wa-dropdown-item {:disabled true
-                          :value    "policy-settings"}
+      [:wa-dropdown-item {:value   settings-url
+                          :onclick "window.location = this.value"}
        [ico/Icon {::ico/library :snoico
                   ::ico/name    :cog
                   :slot         "icon"}]
-       (tr [:insurance.dashboard/policy-settings])
-       [:span {:slot "details"}
-        (tr [:insurance.dashboard/opens-later])]]
+       (tr [:insurance.dashboard/policy-settings])]
       [:wa-dropdown-item {:disabled true
                           :value    "activity-log"}
        [ico/Icon {::ico/library :snoico
@@ -102,7 +101,7 @@
                               ::ico/name    :table
                               :slot         "start"}]
                    (tr [:insurance.dashboard/coverage-workbench])]
-                  (more-actions-menu req)]})
+                  (more-actions-menu req policy)]})
    [divider/Divider]])
 
 (defn metric-card
@@ -534,11 +533,10 @@
              (tr [:insurance.dashboard/no-recent-changes])]])))
 
 (defn- policy-settings-action
-  [{:keys [tr]}]
+  [{:keys [tr]} policy]
   [button/Button {:slot        "header-actions"
                   :appearance  "plain"
-                  :disabled    true
-                  :title       (tr [:insurance.dashboard/opens-later])
+                  :href        (urls/link-policy-settings policy)
                   :aria-label  (tr [:insurance.dashboard/policy-settings])}
    [ico/Icon {::ico/library :snoico
               ::ico/name    :cog}]])
@@ -553,7 +551,7 @@
          :class "wa-heading-l"
          :style "margin: 0;"}
     (tr [:insurance.dashboard/policy-details])]
-   (policy-settings-action req)
+   (policy-settings-action req policy)
    (into [:div {:class "wa-stack"}]
          (divided-rows
           [(detail-row (tr [:insurance/name]) (:insurance.policy/name policy))

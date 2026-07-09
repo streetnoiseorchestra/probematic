@@ -248,7 +248,7 @@
     (is (= (str "https://example.test/gig/" gig-id "/log-plays")
            (urls/absolute-link-gig-log-plays {:app-base-url "https://example.test"} gig-id)))))
 
-(deftest insurance-routes-expose-policy-review-workbench-coverage-detail-and-edit-datastar-pages
+(deftest insurance-routes-expose-policy-settings-review-workbench-coverage-detail-and-edit-datastar-pages
   (let [router        (http/router ["" (insurance.routes/routes)])
         policy-id     (random-uuid)
         coverage-id   (random-uuid)
@@ -260,6 +260,14 @@
            (page-name router (urls/link-policy-review policy-id))))
     (is (= (str "/insurance-policy/" policy-id "/review?filter=changed&coverage-id=" coverage-id)
            (urls/link-policy-review policy-id {:filter :changed :coverage-id coverage-id})))
+    (is (= :app/insurance
+           (app-route-name router (urls/link-policy-settings policy-id))))
+    (assert-slashless-canonical-route router
+                                      (urls/link-policy-settings policy-id)
+                                      (str (urls/link-policy-settings policy-id) "/")
+                                      :app.insurance.routes/policy-settings)
+    (is (= (str "/insurance-policy/" policy-id "/settings")
+           (urls/link-policy-settings {:insurance.policy/policy-id policy-id})))
     (is (= :app/insurance
            (app-route-name router (urls/link-policy-workbench policy-id))))
     (assert-slashless-canonical-route router

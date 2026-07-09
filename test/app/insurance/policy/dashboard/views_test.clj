@@ -2,6 +2,7 @@
   (:require
    [app.html :as html]
    [app.insurance.policy.dashboard.views :as views]
+   [app.urls :as urls]
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]))
 
@@ -19,7 +20,10 @@
    [:insurance.dashboard/missing-photos] "Missing photos"
    [:insurance.dashboard/missing-insurer-ids] "Missing insurer IDs"
    [:insurance/item-count] "Count"
-   [:insurance/cost] "Cost"})
+   [:insurance/cost] "Cost"
+   [:insurance.dashboard/policy-settings] "Policy Settings"
+   [:insurance.dashboard/opens-later] "Coming soon"
+   [:action/more-actions] "More actions"})
 
 (defn tr
   ([path]
@@ -70,6 +74,19 @@
       (is (str/includes? card-html (str "href=\"" review-url "\"")))
       (is (str/includes? card-html "aria-label=\"Review\""))
       (is (re-find #"(?s)slot=\"header-actions\"[^>]*>\s*<svg" card-html)))))
+
+(deftest dashboard-policy-settings-actions-link-to-settings-page
+  (let [policy-id     #uuid "00000000-0000-0000-0000-000000000123"
+        policy        {:insurance.policy/policy-id policy-id}
+        settings-url  (urls/link-policy-settings policy)
+        menu-html     (html/->str (#'views/more-actions-menu {:tr tr} policy))
+        details-html  (html/->str (#'views/policy-settings-action {:tr tr} policy))]
+    (is (str/includes? menu-html (str "value=\"" settings-url "\"")))
+    (is (str/includes? menu-html "onclick=\"window.location = this.value\""))
+    (is (not (re-find #"value=\"policy-settings\"[^>]*disabled" menu-html)))
+    (is (str/includes? details-html (str "href=\"" settings-url "\"")))
+    (is (not (str/includes? details-html "disabled")))))
+
 (deftest coverage-mix-section-renders-raw-axis-chart-and-count-cost-captions
   (let [html (html/->str
               (#'views/coverage-mix-section

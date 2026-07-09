@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-03 11:23+0000\n"
+"POT-Creation-Date: 2026-07-09 14:41+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -241,6 +241,12 @@ msgstr "Insurance TODOs"
 msgctxt ":insurance/value-abbrev"
 msgid "Vers.-Wert"
 msgstr "Vers.-Wert"
+
+#: :insurance/currency
+#, ycp-format
+msgctxt ":insurance/currency"
+msgid "Currency"
+msgstr "Währung"
 
 #: :insurance/total
 #, ycp-format
@@ -2601,23 +2607,19 @@ msgctxt ":col/total-instruments"
 msgid "Total Instruments"
 msgstr "Gesamtinstrumente"
 
-#: :insurance.policy-settings/error-policy-not-found
+#: :insurance.policy-settings/no-coverage-types
 #, ycp-format
-msgctxt ":insurance.policy-settings/error-policy-not-found"
-msgid "Policy not found."
-msgstr "Police nicht gefunden."
-
-#: :insurance.policy-settings/error-not-allowed
-#, ycp-format
-msgctxt ":insurance.policy-settings/error-not-allowed"
-msgid "You are not allowed to change policy settings."
-msgstr "Du darfst Policeneinstellungen nicht ändern."
+msgctxt ":insurance.policy-settings/no-coverage-types"
+msgid "No coverage types configured."
+msgstr "Keine Versicherungsarten konfiguriert."
 
 #: :insurance.policy-settings/error-frozen-policy
 #, ycp-format
 msgctxt ":insurance.policy-settings/error-frozen-policy"
 msgid "This policy is not draft, so settings cannot be changed."
-msgstr "Diese Police ist nicht im Entwurf, daher können Einstellungen nicht geändert werden."
+msgstr ""
+"Diese Police ist nicht im Entwurf, daher können Einstellungen nicht geändert "
+"werden."
 
 #: :insurance.policy-settings/error-invalid-date
 #, ycp-format
@@ -2625,11 +2627,11 @@ msgctxt ":insurance.policy-settings/error-invalid-date"
 msgid "Enter a valid date."
 msgstr "Gib ein gültiges Datum ein."
 
-#: :insurance.policy-settings/error-invalid-premium-factor
+#: :insurance.policy-settings/back-to-dashboard
 #, ycp-format
-msgctxt ":insurance.policy-settings/error-invalid-premium-factor"
-msgid "Enter a valid non-negative premium factor."
-msgstr "Gib einen gültigen nicht-negativen Prämienfaktor ein."
+msgctxt ":insurance.policy-settings/back-to-dashboard"
+msgid "Back to dashboard"
+msgstr "Zurück zum Dashboard"
 
 #: :insurance.policy-settings/error-invalid-currency
 #, ycp-format
@@ -2637,11 +2639,107 @@ msgctxt ":insurance.policy-settings/error-invalid-currency"
 msgid "Choose a supported currency."
 msgstr "Wähle eine unterstützte Währung."
 
+#: :insurance.policy-settings/error-invalid-premium-factor
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-invalid-premium-factor"
+msgid "Enter a valid non-negative premium factor."
+msgstr "Gib einen gültigen nicht-negativen Prämienfaktor ein."
+
 #: :insurance.policy-settings/error-effective-until-before-effective-at
 #, ycp-format
 msgctxt ":insurance.policy-settings/error-effective-until-before-effective-at"
 msgid "The end date must be after the start date."
 msgstr "Das Enddatum muss nach dem Startdatum liegen."
+
+#: :insurance.policy-settings/usage
+#, ycp-format
+msgctxt ":insurance.policy-settings/usage"
+msgid "Usage"
+msgstr "Verwendung"
+
+#: :insurance.policy-settings/read-only-title
+#, ycp-format
+msgctxt ":insurance.policy-settings/read-only-title"
+msgid "Settings are read-only"
+msgstr "Einstellungen sind schreibgeschützt"
+
+#: :insurance.policy-settings/no-category-factors
+#, ycp-format
+msgctxt ":insurance.policy-settings/no-category-factors"
+msgid "No category factors configured."
+msgstr "Keine Kategoriefaktoren konfiguriert."
+
+#: :insurance.policy-settings/subtitle
+#, ycp-format
+msgctxt ":insurance.policy-settings/subtitle"
+msgid "Configure settings for %1."
+msgstr "Einstellungen für %1 konfigurieren."
+
+#: :insurance.policy-settings/current-cost
+#, ycp-format
+msgctxt ":insurance.policy-settings/current-cost"
+msgid "Current estimated cost"
+msgstr "Aktuell geschätzte Kosten"
+
+#: :insurance.policy-settings/error-policy-not-found
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-policy-not-found"
+msgid "Policy not found."
+msgstr "Police nicht gefunden."
+
+#: :insurance.policy-settings/coverage-types-subtitle
+#, ycp-format
+msgctxt ":insurance.policy-settings/coverage-types-subtitle"
+msgid "Insurance options available on this policy."
+msgstr "Versicherungsarten in dieser Police."
+
+#: :insurance.policy-settings/status-read-only
+#, ycp-format
+msgctxt ":insurance.policy-settings/status-read-only"
+msgid "Policy status is read-only here."
+msgstr "Der Policenstatus ist hier schreibgeschützt."
+
+#: :insurance.policy-settings/current-totals
+#, ycp-format
+msgctxt ":insurance.policy-settings/current-totals"
+msgid "Current totals"
+msgstr "Aktuelle Summen"
+
+#: :insurance.policy-settings/error-not-allowed
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-not-allowed"
+msgid "You are not allowed to change policy settings."
+msgstr "Du darfst Policeneinstellungen nicht ändern."
+
+#: :insurance.policy-settings/category-factors-subtitle
+#, ycp-format
+msgctxt ":insurance.policy-settings/category-factors-subtitle"
+msgid "Factors by instrument category."
+msgstr "Faktoren nach Instrumentenkategorie."
+
+#: :insurance.policy-settings/current-totals-subtitle
+#, ycp-format
+msgctxt ":insurance.policy-settings/current-totals-subtitle"
+msgid "Safe totals from the current configuration."
+msgstr "Sichere Summen aus der aktuellen Konfiguration."
+
+#: :insurance.policy-settings/missing-category-factors-body
+#, ycp-format
+msgctxt ":insurance.policy-settings/missing-category-factors-body"
+msgid "Covered instruments use categories without category factors: %1."
+msgstr "Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1."
+
+#: :insurance.policy-settings/missing-category-factors-title
+#, ycp-format
+msgctxt ":insurance.policy-settings/missing-category-factors-title"
+msgid "Missing category factors"
+msgstr "Fehlende Kategoriefaktoren"
+
+#: :insurance.policy-settings/policy-details-subtitle
+#, ycp-format
+msgctxt ":insurance.policy-settings/policy-details-subtitle"
+msgid "Edit policy metadata used for cost calculations."
+msgstr "Bearbeite die Policendaten für Kostenberechnungen."
 
 #: :instrument.coverage.status/needs-review
 #, ycp-format

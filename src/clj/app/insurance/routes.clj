@@ -8,6 +8,7 @@
    [app.insurance.index.views :as index.views]
    [app.insurance.policy.dashboard.views :as policy.dashboard.views]
    [app.insurance.policy.review.views :as policy.review.views]
+   [app.insurance.policy.settings.views :as policy.settings.views]
    [app.insurance.policy.workbench.views :as policy.workbench.views]
    [app.insurance.public.views :as public]
    [app.insurance.views :as view]
@@ -130,6 +131,9 @@
     (ds/page-routes {:page-name ::policy-workbench
                      :path      "/insurance-policy/{policy-id}/workbench"
                      :page      #'policy.workbench.views/page})
+    (ds/page-routes {:page-name ::policy-settings
+                     :path      "/insurance-policy/{policy-id}/settings"
+                     :page      #'policy.settings.views/page})
     (ds/page-routes {:page-name ::policy-dashboard
                      :path      "/insurance-policy/{policy-id}"
                      :page      #'policy.dashboard.views/page})
