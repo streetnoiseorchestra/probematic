@@ -7,6 +7,7 @@
    [app.insurance.coverage.queries :as queries]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
@@ -357,9 +358,9 @@
       (ui2/datastar-page
        [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
         (breadcrumb req coverage policy instrument)
-        (ui2/page-header {:class    "insurance-coverage-page-header"
-                          :title    ((:tr req) [:instrument.coverage/edit-title])
-                          :subtitle (:instrument/name instrument)})
+        [page-header/PageHeader {:class    "insurance-coverage-page-header"
+                                 :title    ((:tr req) [:instrument.coverage/edit-title])
+                                 :subtitle (:instrument/name instrument)}]
         (edit-form req coverage policy)
         (remove-dialog req coverage)
         (upload-script)])

@@ -7,6 +7,7 @@
    [app.poll.queries :as queries]
    [app.poll.ui :as poll.ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.urls :as urls]
@@ -164,16 +165,16 @@
     (save-button tr)]))
 
 (defn- create-header [{:keys [tr]}]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb [breadcrumb/Breadcrumb
                  {}
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
                   (tr [:nav/polls])]
                  [breadcrumb/BreadcrumbItem (tr [:polls/create-title])]]
-    :title      (tr [:polls/create-title])}))
+    :title      (tr [:polls/create-title])}])
 
 (defn- edit-header [{:keys [tr]} poll]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb [breadcrumb/Breadcrumb
                  {}
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
@@ -181,10 +182,10 @@
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-poll poll)}
                   (:poll/title poll)]
                  [breadcrumb/BreadcrumbItem (tr [:action/edit])]]
-    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
-                 [:h1 (tr [:action/edit])]
+    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center"}
+                 (tr [:action/edit])
                  (poll.ui/status-badge tr (:poll/poll-status poll))]
-    :subtitle   (:poll/title poll)}))
+    :subtitle   (:poll/title poll)}])
 
 (defn- main-fields [{:keys [tr] :as req} form-state closed? choice-read-only?]
   (let [multiple? (= "multiple" (:poll-type form-state))

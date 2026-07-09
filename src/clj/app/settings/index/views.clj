@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]))
@@ -23,8 +24,8 @@
 (defn page [{:keys [tr]}]
   (ui2/plain-page
    [:div {:class "wa-grid" :style "--min-column-size: var(--sno-settings-index-min-column-size);"}
-    (ui2/page-header {:class "wa-span-grid"
-                      :title (tr [:nav/band-settings])})
+    [page-header/PageHeader {:class "wa-span-grid"
+                             :title (tr [:nav/band-settings])}]
     [divider/Divider {:class "wa-span-grid"}]
     (settings-link-card {:href  "/band-settings/teams"
                          :icon  "users-outline"

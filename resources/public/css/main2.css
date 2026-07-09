@@ -14,6 +14,7 @@
 @import "ui2/icon.css" layer(sno-ui);
 @import "ui2/avatar.css" layer(sno-ui);
 @import "ui2/layout.css" layer(sno-ui);
+@import "ui2/page-header.css" layer(sno-ui);
 @import "ui2/dl.css" layer(sno-ui);
 @import "ui2/table.css" layer(sno-ui);
 @import "ui2/link-copy.css" layer(sno-ui);

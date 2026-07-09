@@ -4,6 +4,7 @@
    [app.insurance.policy.settings.actions :as actions]
    [app.insurance.policy.settings.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
@@ -26,16 +27,16 @@
 (defn- page-header
   [{:keys [tr] :as req} {:insurance.policy/keys [name] :as policy}]
   [:div
-   (ui2/page-header
+   [page-header/PageHeader
     {:breadcrumb (page-breadcrumb req policy)
-     :heading    [:h1 (tr [:insurance.dashboard/policy-settings])]
+     :title      (tr [:insurance.dashboard/policy-settings])
      :subtitle   (tr [:insurance.policy-settings/subtitle] [name])
      :actions    [[button/Button {:appearance "outlined"
                                   :href       (urls/link-policy policy)}
                    [ico/Icon {::ico/library :phosphor
                               ::ico/name    :arrow-left
                               :slot         "start"}]
-                   (tr [:insurance.policy-settings/back-to-dashboard])]]})
+                   (tr [:insurance.policy-settings/back-to-dashboard])]]}]
    [divider/Divider]])
 
 (defn- settings-card

@@ -7,6 +7,7 @@
    [app.insurance.index.queries :as queries]
    [app.insurance.ui :as insurance.ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
@@ -261,7 +262,7 @@
      [:div {:class "insurance-index-page wa-stack wa-gap-xl"}
       (for [policy policies]
         (policy-remove-dialog req policy))
-      (ui2/page-header {:title (tr [:insurance/title])})
+      [page-header/PageHeader {:title (tr [:insurance/title])}]
       (insurance-faq req active-policy)
       (policies-table req policies)])))
 

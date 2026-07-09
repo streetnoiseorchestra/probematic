@@ -6,6 +6,7 @@
    [app.insurance.policy.workbench.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.avatar :as avatar]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -1702,10 +1703,10 @@
                         [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
                                :data-preserve-attr "data-signals"
                                :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table (:view workbench)))}
-                         (ui2/page-header
+                         [page-header/PageHeader
                           {:breadcrumb (page-breadcrumb req policy)
                            :title      (tr [:insurance.workbench/title])
-                           :subtitle   (:insurance.policy/name policy)})
+                           :subtitle   (:insurance.policy/name policy)}]
                          (workbench-toolbar req workbench)
                          (bulk-action-bar req workbench)
                          (rows-section req workbench)])))

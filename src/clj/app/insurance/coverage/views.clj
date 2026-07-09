@@ -4,6 +4,7 @@
    [app.insurance.coverage.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
@@ -44,9 +45,9 @@
     (ui2/plain-page
      [:div {:class "insurance-coverage-detail-page wa-stack wa-gap-xl"}
       (breadcrumb req policy instrument)
-      (ui2/page-header {:class   "insurance-coverage-page-header"
-                        :title   (:instrument/name instrument)
-                        :actions (page-actions req coverage policy)})
+      [page-header/PageHeader {:class   "insurance-coverage-page-header"
+                               :title   (:instrument/name instrument)
+                               :actions (page-actions req coverage policy)}]
       [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 50ch;"}
        (insurance-ui/coverage-detail-card req {:coverage coverage
                                                :policy   policy})

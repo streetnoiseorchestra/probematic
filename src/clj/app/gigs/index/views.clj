@@ -4,6 +4,7 @@
    [app.gigs.queries :as queries]
    [app.gigs.ui :as gigs.ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.urls :as urls]))
 
@@ -11,12 +12,12 @@
   (let [{:keys [future-gigs past-gigs]} (queries/index-page-data db)]
     (ui2/plain-page
      [:div {:class "wa-stack wa-gap-l"}
-      (ui2/page-header
+      [page-header/PageHeader
        {:title   (tr [:gigs/title])
         :actions [[button/Button {:appearance "filled"
                                   :variant    "brand"
                                   :href       (urls/link-gig-create)}
-                   (tr [:action/create])]]})
+                   (tr [:action/create])]]}]
       [:div {:class "wa-grid wa-gap-m gigs-index-columns"}
        (gigs.ui/gig-section req {:title         (tr [:gigs/upcoming])
                                  :empty-message (tr [:gigs/no-future])

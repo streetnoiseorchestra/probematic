@@ -7,6 +7,7 @@
    [app.insurance.ui :as insurance-ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
@@ -293,13 +294,13 @@
         selected (:selected-coverage review)]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-xl"}
-      (ui2/page-header
+      [page-header/PageHeader
        {:breadcrumb (page-breadcrumb req policy)
         :title      (tr [:insurance.review/title])
         :subtitle   (tr [:insurance.review/subtitle] [(str/trim (:insurance.policy/name policy))])
         :actions    [[button/Button {:appearance "outlined"
                                      :href       (urls/link-policy policy)}
-                      (tr [:insurance.review/back-to-dashboard])]]})
+                      (tr [:insurance.review/back-to-dashboard])]]}]
       (filter-bar req review)
       (workbench-summary req review)
       (if selected

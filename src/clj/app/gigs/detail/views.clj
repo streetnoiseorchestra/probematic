@@ -11,6 +11,7 @@
    [app.markdown :as markdown]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
@@ -70,18 +71,18 @@
     "Log Plays"]])
 
 (defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb [breadcrumb/Breadcrumb
                  {}
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
                   (tr [:nav/gigs])]
                  [breadcrumb/BreadcrumbItem (gigs.ui/gig-breadcrumb-label req gig)]]
-    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
                  (when status
                    (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
-                 [:h1 title]
+                 title
                  [:wa-badge {:appearance "outlined" :class "wa-font-size-xs"} (tr [gig-type])]]
-    :actions    (header-actions req gig)}))
+    :actions    (header-actions req gig)}])
 
 (defn- gig-info-section
   [{:keys [tr] :as req}

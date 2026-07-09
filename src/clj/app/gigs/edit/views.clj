@@ -7,6 +7,7 @@
    [app.gigs.ui :as gigs.ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
@@ -168,17 +169,17 @@
     (save-button tr)]))
 
 (defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb (into [breadcrumb/Breadcrumb
                        {}
                        [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
                         (tr [:nav/gigs])]]
                       breadcrumb-items)
     :title      title
-    :subtitle   subtitle}))
+    :subtitle   subtitle}])
 
 (defn- edit-header [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb [breadcrumb/Breadcrumb
                  {}
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
@@ -186,11 +187,11 @@
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gig gig)}
                   (gigs.ui/gig-breadcrumb-label req gig)]
                  [breadcrumb/BreadcrumbItem (tr [:action/edit])]]
-    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-                 [:h1 (tr [:action/edit])]
+    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+                 (tr [:action/edit])
                  (when status
                    (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
-    :subtitle   (str title " · " (tr [gig-type]))}))
+    :subtitle   (str title " · " (tr [gig-type]))}])
 
 (defn- create-header [{:keys [tr] :as req}]
   (page-header req

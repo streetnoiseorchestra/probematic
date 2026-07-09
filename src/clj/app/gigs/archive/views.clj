@@ -5,6 +5,7 @@
    [app.gigs.queries :as queries]
    [app.gigs.ui :as gigs.ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.urls :as urls]
    [app.util.http :as http.util]))
@@ -41,13 +42,13 @@
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-l"
             :data-signals (d*/->signals {:gigs-archive archive-page-state})}
-      (ui2/page-header
+      [page-header/PageHeader
        {:title    (tr [:gigs/title])
         :subtitle selected-year
         :actions  [[button/Button {:appearance "filled"
                                    :variant    "brand"
                                    :href       (urls/link-gig-create)}
-                    (tr [:action/create])]]})
+                    (tr [:action/create])]]}]
       (archive-tools req archive-page-state selected-year years)
       (gigs.ui/gig-section req {:title         selected-year
                                 :empty-message (tr [:gigs/no-past])

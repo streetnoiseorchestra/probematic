@@ -6,6 +6,7 @@
    [app.insurance.policy.dashboard.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.avatar :as avatar]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -82,10 +83,10 @@
 (defn- page-header
   [{:keys [tr] :as req} {:insurance.policy/keys [name status] :as policy}]
   [:div
-   (ui2/page-header
+   [page-header/PageHeader
     {:breadcrumb (page-breadcrumb req policy)
-     :heading    [:div {:class "wa-cluster"}
-                  [:h1 name]
+     :title      [:span {:class "wa-cluster"}
+                  name
                   (policy-status-badge tr status)]
      :actions    [[button/Button {:appearance "filled"
                                   :variant    "brand"
@@ -101,7 +102,7 @@
                               ::ico/name    :table
                               :slot         "start"}]
                    (tr [:insurance.dashboard/coverage-workbench])]
-                  (more-actions-menu req policy)]})
+                  (more-actions-menu req policy)]}]
    [divider/Divider]])
 
 (defn metric-card

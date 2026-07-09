@@ -5,6 +5,7 @@
    [app.queries :as q]
    [app.settings.sections.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -219,14 +220,14 @@
   (let [title (tr [:sections])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
-      (ui2/page-header
+      [page-header/PageHeader
        {:breadcrumb [breadcrumb/Breadcrumb
                      {}
                      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
                       (tr [:nav/band-settings])]
                      [breadcrumb/BreadcrumbItem title]]
         :title      title
-        :subtitle   "Choose which sections are available and how they are ordered."})
+        :subtitle   "Choose which sections are available and how they are ordered."}]
       (sections-panel req)])))
 
 (d*/refresh-all!)

@@ -139,16 +139,18 @@
     display: block;
   }
 }
-.insurance-coverage-page-header .sno-page-header-main {
-  align-items: start;
-}
+@scope (.insurance-coverage-page-header) {
+  :scope > div {
+    align-items: start;
+  }
 
-.insurance-coverage-page-header .sno-title-block {
-  min-inline-size: 0;
-}
+  hgroup {
+    min-inline-size: 0;
+  }
 
-.insurance-coverage-page-header h1 {
-  overflow-wrap: anywhere;
+  h1 {
+    overflow-wrap: anywhere;
+  }
 }
 
 .insurance-coverage-icon {

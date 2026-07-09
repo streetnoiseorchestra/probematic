@@ -464,22 +464,6 @@
     [:h2 title]
     [divider/Divider]]))
 
-(defn page-header
-  "Renders a standard page header.
-
-  Required: none.
-  Optional: `:actions`, `:breadcrumb`, `:class`, `:heading`, `:subtitle`, `:title`.
-  Extra keys become attributes on the `header`."
-  [{:keys [actions breadcrumb class heading subtitle title] :as attrs}]
-  [:header (merge {:class (cs "sno-page-header" "wa-stack" "wa-gap-m" class)}
-                  (dissoc attrs :actions :breadcrumb :class :heading :subtitle :title))
-   breadcrumb
-   [:section {:class "sno-page-header-main"}
-    (title-block {:heading  heading
-                  :subtitle subtitle
-                  :title    title})
-    (action-bar {:class "sno-page-actions"} actions)]])
-
 (defn section-card
   "Renders a Web Awesome card section with optional header actions.
 

@@ -5,6 +5,7 @@
    [app.queries :as q]
    [app.songs.edit.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
@@ -114,17 +115,17 @@
     (save-button tr)]))
 
 (defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb (into [breadcrumb/Breadcrumb
                        {}
                        [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
                         (tr [:nav/songs])]]
                       breadcrumb-items)
     :title      title
-    :subtitle   subtitle}))
+    :subtitle   subtitle}])
 
 (defn- edit-header [{:keys [tr]} {:song/keys [active? title] :as song}]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb [breadcrumb/Breadcrumb
                  {}
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
@@ -132,10 +133,10 @@
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-song song)}
                   title]
                  [breadcrumb/BreadcrumbItem (tr [:action/edit])]]
-    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-title"}
-                 [:h1 (tr [:action/edit])]
+    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-title"}
+                 (tr [:action/edit])
                  (ui2/active-badge tr active?)]
-    :subtitle   title}))
+    :subtitle   title}])
 
 (defn- create-header [{:keys [tr] :as req}]
   (page-header req

@@ -160,9 +160,6 @@
   }
 }
 
-.songs-detail-title h1 {
-  margin: var(--sno-size-none);
-}
 
 .songs-detail-info-list,
 .songs-detail-stats-list {
@@ -293,9 +290,6 @@
   color: var(--wa-color-text-quiet);
 }
 
-.songs-edit-title h1 {
-  margin: var(--sno-size-none);
-}
 
 .songs-edit-form-grid {
   display: grid;

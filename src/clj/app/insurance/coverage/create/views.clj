@@ -6,6 +6,7 @@
    [app.insurance.coverage.queries :as queries]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
@@ -239,11 +240,11 @@
       (let [form-state (form-state req policy-id redirect instrument)]
         (ui2/datastar-page
          [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-          (ui2/page-header {:class      "insurance-coverage-page-header"
-                            :breadcrumb (breadcrumb req policy)
-                            :title      (tr [:instrument.coverage/create-title])
-                            :subtitle   (tr [:instrument.coverage/create-subtitle]
-                                            [(:insurance.policy/name policy)])})
+          [page-header/PageHeader {:class      "insurance-coverage-page-header"
+                                   :breadcrumb (breadcrumb req policy)
+                                   :title      (tr [:instrument.coverage/create-title])
+                                   :subtitle   (tr [:instrument.coverage/create-subtitle]
+                                                   [(:insurance.policy/name policy)])}]
           (create-steps tr)
           (instrument-form req policy form-state)])))))
 

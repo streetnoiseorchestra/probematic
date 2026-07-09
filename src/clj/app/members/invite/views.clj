@@ -5,6 +5,7 @@
    [app.members.invite.actions :as actions]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]))
 
@@ -97,14 +98,14 @@
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-2xl members-invite-page"
             :data-signals (d*/->signals {:member-invite form-state})}
-      (ui2/page-header
+      [page-header/PageHeader
        {:breadcrumb [breadcrumb/Breadcrumb
                      {}
                      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
                       (tr [:nav/members])]
                      [breadcrumb/BreadcrumbItem (tr [:member/invite-member])]]
         :title      (tr [:member/invite-member])
-        :subtitle   (tr [:member/invite-member-page-description])})
+        :subtitle   (tr [:member/invite-member-page-description])}]
       (ui2/section-card
        {:title    (tr [:member/invite-member])
         :subtitle (tr [:member/invite-member-form-subtitle])}

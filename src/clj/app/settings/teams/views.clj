@@ -5,6 +5,7 @@
    [app.settings.domain :as domain]
    [app.settings.teams.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.urls :as urls]
@@ -234,14 +235,14 @@
   (let [title "Teams"]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
-      (ui2/page-header
+      [page-header/PageHeader
        {:breadcrumb [breadcrumb/Breadcrumb
                      {}
                      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
                       (tr [:nav/band-settings])]
                      [breadcrumb/BreadcrumbItem title]]
         :title      title
-        :subtitle   "Create teams and manage their members."})
+        :subtitle   "Create teams and manage their members."}]
       (teams-panel req)])))
 
 (d*/refresh-all!)

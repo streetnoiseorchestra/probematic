@@ -5,6 +5,7 @@
    [app.stats.queries :as stats]
    [app.stats.state :as state]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
@@ -320,12 +321,12 @@
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
      [:div {:class "wa-stack wa-gap-xl"}
-      (ui2/page-header
+      [page-header/PageHeader
        {:title    (tr [:stats/title])
         :subtitle (tr [:stats/current-range]
                       [(ui2/format-date req :medium from)
                        (ui2/format-date req :medium to)])
-        :actions  [(timespan-controls req)]})
+        :actions  [(timespan-controls req)]}]
       (summary-card tr stats)
       (charts-section tr stats)
       (methodology req)

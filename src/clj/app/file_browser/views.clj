@@ -6,6 +6,7 @@
    [app.humanize :as humanize]
    [app.sardine :as sardine]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
@@ -185,12 +186,12 @@
             :data-signals (d*/->signals {:file-browser {:picker-id     nil
                                                         :target-dir    nil
                                                         :selected-path nil}})}
-      (ui2/page-header
-       {:heading (tr [:file/choose-file])
+      [page-header/PageHeader
+       {:title   (tr [:file/choose-file])
         :actions [[button/Button {:appearance    "filled"
                                   :variant       "brand"
                                   :data-on:click (open-demo-action req root-dir current-dir)}
-                   (tr [:file/choose-file])]]})
+                   (tr [:file/choose-file])]]}]
       (file-picker-panel req {:picker-id     actions/default-picker-id
                               :state         picker
                               :title         (tr [:file/choose-file])

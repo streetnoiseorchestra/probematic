@@ -6,6 +6,7 @@
    [app.poll.queries :as queries]
    [app.poll.ui :as poll.ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.urls :as urls]
@@ -80,13 +81,13 @@
              (tr [:poll/close-early])]))))
 
 (defn- page-header [{:keys [tr] :as req} poll]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb (breadcrumb req poll)
-    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
-                 [:h1 (:poll/title poll)]
+    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center"}
+                 (:poll/title poll)
                  (poll.ui/status-badge tr (:poll/poll-status poll))]
     :subtitle   (tr [(:poll/poll-type poll)])
-    :actions    (header-actions req poll)}))
+    :actions    (header-actions req poll)}])
 
 (defn- metadata-section [{:keys [tr] :as req} poll]
   (ui2/section-card

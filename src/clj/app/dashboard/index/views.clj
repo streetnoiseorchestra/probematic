@@ -9,6 +9,7 @@
    [app.insurance.ui :as insurance.ui]
    [app.qrcode :as qr]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
@@ -213,10 +214,10 @@
     (ui2/datastar-page
      [:div {:class        "wa-stack wa-gap-l"
             :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
-      (ui2/page-header
+      [page-header/PageHeader
        {:title   (tr [(keyword "dashboard" (name (util/time-window (util/local-time-austria!))))]
                      [(member-nick member)])
-        :actions (page-actions req)})
+        :actions (page-actions req)}]
       (when (and ledger (pos? (:ledger/balance ledger)))
         (ledger-widget req ledger))
       (insurance-todos-section req insurance-todos)

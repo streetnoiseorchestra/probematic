@@ -4,6 +4,7 @@
    [app.probeplan.actions :as actions]
    [app.probeplan.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.urls :as urls]))
 
@@ -211,9 +212,9 @@
         editing?  (true? (get-in page-state [:probeplan :editing]))]
     [:div {:class        "wa-stack wa-gap-l"
            :data-signals (d*/->signals (editable-signals rows))}
-     (ui2/page-header
+     [page-header/PageHeader
       {:title   (tr [:nav/probeplan])
-       :actions (edit-actions req editing?)})
+       :actions (edit-actions req editing?)}]
      (how-it-works req)
      (if (seq rows)
        (probe-table req all-songs editing? rows)

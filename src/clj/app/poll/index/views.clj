@@ -3,16 +3,17 @@
    [app.poll.queries :as queries]
    [app.poll.ui :as poll.ui]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.urls :as urls]))
 
 (defn- page-header [{:keys [tr]}]
-  (ui2/page-header
+  [page-header/PageHeader
    {:title   (tr [:polls/index-title])
     :actions [[button/Button {:appearance "filled"
                               :variant    "brand"
                               :href       (urls/link-polls-create)}
-               (tr [:polls/create-title])]]}))
+               (tr [:polls/create-title])]]}])
 
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [running-polls past-polls]} (queries/index-page-data db)]

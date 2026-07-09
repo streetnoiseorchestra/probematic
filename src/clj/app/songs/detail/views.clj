@@ -10,6 +10,7 @@
    [app.queries :as q]
    [app.songs.detail.actions :as actions]
    [app.ui2 :as ui2]
+   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
@@ -48,21 +49,21 @@
                  {:class "songs-detail-wide"})))
 
 (defn- song-summary [{:keys [tr]} {:song/keys [active? title] :as _song}]
-  (ui2/page-header
+  [page-header/PageHeader
    {:breadcrumb [breadcrumb/Breadcrumb
                  {}
                  [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
                   (tr [:nav/songs])]
                  [breadcrumb/BreadcrumbItem title]]
-    :heading    [:div {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
-                 [:h1 title]
+    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
+                 title
                  (ui2/active-badge tr active?)]
     :actions    [[button/Button {:appearance "outlined"
                                  :href       (urls/link-songs-home)}
                   (tr [:action/back])]
                  [button/Button {:appearance "outlined"
                                  :href       (urls/link-song-edit _song)}
-                  (tr [:action/edit])]]}))
+                  (tr [:action/edit])]]}])
 
 (defn- background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
   (ui2/section-card
