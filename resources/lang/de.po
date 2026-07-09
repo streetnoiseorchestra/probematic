@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-09 14:41+0000\n"
+"POT-Creation-Date: 2026-07-09 18:12+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -2627,12 +2627,6 @@ msgctxt ":insurance.policy-settings/error-invalid-date"
 msgid "Enter a valid date."
 msgstr "Gib ein gültiges Datum ein."
 
-#: :insurance.policy-settings/back-to-dashboard
-#, ycp-format
-msgctxt ":insurance.policy-settings/back-to-dashboard"
-msgid "Back to dashboard"
-msgstr "Zurück zum Dashboard"
-
 #: :insurance.policy-settings/error-invalid-currency
 #, ycp-format
 msgctxt ":insurance.policy-settings/error-invalid-currency"
@@ -2727,7 +2721,8 @@ msgstr "Sichere Summen aus der aktuellen Konfiguration."
 #, ycp-format
 msgctxt ":insurance.policy-settings/missing-category-factors-body"
 msgid "Covered instruments use categories without category factors: %1."
-msgstr "Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1."
+msgstr ""
+"Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1."
 
 #: :insurance.policy-settings/missing-category-factors-title
 #, ycp-format

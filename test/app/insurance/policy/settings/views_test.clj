@@ -32,7 +32,6 @@
    [:insurance.dashboard/total-insured-value] "Total insured value"
    [:insurance.dashboard/total-instruments] "Total instruments"
    [:insurance.dashboard/policy-cost] "Policy cost"
-   [:insurance.policy-settings/back-to-dashboard] "Back to dashboard"
    [:insurance.policy-settings/category-factors-subtitle] "Factors by instrument category."
    [:insurance.policy-settings/coverage-types-subtitle] "Insurance options available on this policy."
    [:insurance.policy-settings/current-cost] "Current estimated cost"

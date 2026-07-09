@@ -128,8 +128,7 @@
   :band-instruments "Band-Instrumente",
   :private-instruments "Private Instrumente"},
  :insurance.policy-settings
- {:back-to-dashboard "Zurück zum Dashboard",
-  :category-factors-subtitle "Faktoren nach Instrumentenkategorie.",
+ {:category-factors-subtitle "Faktoren nach Instrumentenkategorie."
   :coverage-types-subtitle "Versicherungsarten in dieser Police.",
   :current-cost "Aktuell geschätzte Kosten",
   :current-totals "Aktuelle Summen",

@@ -235,8 +235,7 @@
                                   :missing-insurer-ids      "Missing Harmonia IDs"
                                   :band-instruments         "Band instruments"
                                   :private-instruments      "Private instruments"}
- :insurance.policy-settings      {:back-to-dashboard                       "Back to dashboard"
-                                  :category-factors-subtitle              "Factors by instrument category."
+ :insurance.policy-settings      {:category-factors-subtitle              "Factors by instrument category."
                                   :coverage-types-subtitle                "Insurance options available on this policy."
                                   :current-cost                           "Current estimated cost"
                                   :current-totals                         "Current totals"
