@@ -3341,6 +3341,24 @@ msgctxt ":instrument.coverage/upload-progress"
 msgid "Uploading photos…"
 msgstr ""
 
+#: :instrument.coverage/create-step-instrument
+#, ycp-format
+msgctxt ":instrument.coverage/create-step-instrument"
+msgid "Instrument"
+msgstr ""
+
+#: :instrument.coverage/create-step-photos
+#, ycp-format
+msgctxt ":instrument.coverage/create-step-photos"
+msgid "Photos"
+msgstr ""
+
+#: :instrument.coverage/create-steps
+#, ycp-format
+msgctxt ":instrument.coverage/create-steps"
+msgid "Coverage creation steps"
+msgstr ""
+
 #: :instrument.coverage/private?
 #, ycp-format
 msgctxt ":instrument.coverage/private?"
@@ -3425,6 +3443,12 @@ msgctxt ":instrument.coverage/upload-help"
 msgid "PNG, JPG, or GIF up to 10 MB."
 msgstr ""
 
+#: :instrument.coverage/create-title
+#, ycp-format
+msgctxt ":instrument.coverage/create-title"
+msgid "Add Instrument Coverage"
+msgstr ""
+
 #: :instrument.coverage/status
 #, ycp-format
 msgctxt ":instrument.coverage/status"
@@ -3455,6 +3479,12 @@ msgctxt ":instrument.coverage/cost"
 msgid "Cost"
 msgstr ""
 
+#: :instrument.coverage/create-step-coverage
+#, ycp-format
+msgctxt ":instrument.coverage/create-step-coverage"
+msgid "Coverage"
+msgstr ""
+
 #: :instrument.coverage/change
 #, ycp-format
 msgctxt ":instrument.coverage/change"
@@ -3465,6 +3495,12 @@ msgstr ""
 #, ycp-format
 msgctxt ":instrument.coverage/coverage-id"
 msgid "Coverage ID"
+msgstr ""
+
+#: :instrument.coverage/create-subtitle
+#, ycp-format
+msgctxt ":instrument.coverage/create-subtitle"
+msgid "Add an instrument and register it for %1."
 msgstr ""
 
 #: :instrument.coverage/private?-hint

@@ -711,6 +711,12 @@
   :private?-hint
   "Ist dieses Instrument ein Bandinstrument oder ein Privatinstrument?",
   :edit-title "Instrumentenversicherung bearbeiten",
+ :create-title "Instrumentenversicherung hinzufügen",
+ :create-subtitle "Füge ein Instrument hinzu und melde es für %1 an.",
+ :create-steps "Schritte zur Versicherungserstellung",
+ :create-step-instrument "Instrument",
+ :create-step-photos "Fotos",
+ :create-step-coverage "Versicherung",
   :upload-drop-label "Fotos zum Hochladen auswählen",
   :upload-help "PNG, JPG oder GIF bis 10 MB.",
   :upload-progress "Fotos werden hochgeladen…",

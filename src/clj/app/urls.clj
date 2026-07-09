@@ -154,33 +154,34 @@
       ""
       (str "?" encoded))))
 
-(defn link-coverage-create-edit
-  "The link in the create coverage flow where the instrument can be edited"
-  ([policy-id instrument-id]
-   (link-coverage-edit policy-id instrument-id nil))
-  ([policy-id instrument-id redirect]
-   (str "/insurance-coverage-create/" policy-id "/"
-        (append-qps {:instrument-id instrument-id
-                     :redirect redirect}))))
-
 (defn link-coverage-create
   ([policy-id]
    (link-coverage-create policy-id nil))
   ([policy-id redirect-url]
-   (str "/insurance-coverage-create/" policy-id "/" (append-qps {:redirect redirect-url}))))
+   (str "/insurance-coverage-create/" policy-id
+        (append-qps {:redirect redirect-url}))))
+
+(defn link-coverage-create-edit
+  "The link in the create coverage flow where the instrument can be edited"
+  ([policy-id instrument-id]
+   (link-coverage-create-edit policy-id instrument-id nil))
+  ([policy-id instrument-id redirect]
+   (str "/insurance-coverage-create/" policy-id
+        (append-qps {:instrument-id instrument-id
+                     :redirect      redirect}))))
 
 (defn link-coverage-create2
   ([policy-id instrument-id]
    (link-coverage-create2 policy-id instrument-id nil))
   ([policy-id instrument-id redirect-url]
-   (str "/insurance-coverage-create2/" policy-id "/" instrument-id "/"
+   (str "/insurance-coverage-create2/" policy-id "/" instrument-id
         (append-qps {:redirect redirect-url}))))
 
 (defn link-coverage-create3
   ([policy-id instrument-id]
    (link-coverage-create3 policy-id instrument-id nil))
   ([policy-id instrument-id redirect-url]
-   (str "/insurance-coverage-create3/" policy-id "/" instrument-id "/"
+   (str "/insurance-coverage-create3/" policy-id "/" instrument-id
         (append-qps {:redirect redirect-url}))))
 
 (defn link-instrument-image-upload [instrument-id]

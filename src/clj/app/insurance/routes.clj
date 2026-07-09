@@ -1,6 +1,7 @@
 (ns app.insurance.routes
   (:require
    [app.datomic.shim :as d]
+   [app.insurance.coverage.create.views :as coverage.create.views]
    [app.insurance.coverage.edit.api :as coverage-edit.api]
    [app.insurance.coverage.edit.views :as coverage.edit.views]
    [app.insurance.coverage.views :as coverage.views]
@@ -119,7 +120,9 @@
 
    ["" {:interceptors [policy-interceptor]}
     (insurance-survey)
-    (insurance-coverage-create)
+    (ds/page-routes {:page-name ::coverage-create-instrument
+                     :path      "/insurance-coverage-create/{policy-id}"
+                     :page      #'coverage.create.views/instrument-page})
     (insurance-generate-changes)
     (ds/page-routes {:page-name ::policy-review
                      :path      "/insurance-policy/{policy-id}/review"

@@ -19,6 +19,7 @@
 @import "ui2/link-copy.css" layer(sno-ui);
 @import "ui2/breadcrumb.css" layer(sno-ui);
 @import "ui2/divider.css" layer(sno-ui);
+@import "ui2/step-circles.css" layer(sno-ui);
 @import "ui2/gig-attendance.css" layer(sno-ui);
 @import "ui2/file-browser.css" layer(sno-ui);
 @import "pages/dashboard.css" layer(sno-page);

@@ -1,5 +1,6 @@
 (ns app.insurance.actions
   (:require
+   [app.insurance.coverage.create.actions :as coverage-create.actions]
    [app.insurance.coverage.edit.actions :as coverage-edit.actions]
    [app.insurance.policy.review.actions :as policy-review.actions]
    [app.insurance.policy.workbench.actions :as policy-workbench.actions]
@@ -102,5 +103,6 @@
    {::delete-policy    #'delete-policy-action
     ::duplicate-policy #'duplicate-policy-action}
    coverage-edit.actions/actions
+   coverage-create.actions/actions
    policy-review.actions/actions
    policy-workbench.actions/actions))
