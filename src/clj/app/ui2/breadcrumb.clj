@@ -54,9 +54,9 @@
   (when (some? separator)
     (if (and (vector? separator) (keyword? (first separator)))
       (uic/assoc-attr separator
-                      :class "sno-breadcrumb-separator"
+                      :class "separator"
                       :aria-hidden true)
-      [:span {:class "sno-breadcrumb-separator"
+      [:span {:class "separator"
               :aria-hidden true}
        separator])))
 

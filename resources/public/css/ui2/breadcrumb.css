@@ -1,55 +1,74 @@
 .sno-breadcrumb {
   --sno-breadcrumbs-spacing: 0.3rem;
-  @media (--sno-viewport-s) {
-    --sno-breadcrumbs-spacing: 0.5rem;
-  }
+
   display: flex;
   color: var(--wa-color-text-quiet);
   font-size: var(--wa-font-size-s);
   line-height: 1.25rem;
+}
 
-  & ol {
+@media (--sno-viewport-s) {
+  .sno-breadcrumb {
+    --sno-breadcrumbs-spacing: 0.5rem;
+  }
+}
+
+@scope (.sno-breadcrumb) {
+  ol {
     display: flex;
     align-items: center;
+    min-inline-size: 0;
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  & li {
-    margin-inline-start: unset;
-  }
 
-  & li + li {
-    margin-inline-start: var(--sno-breadcrumbs-spacing);
-  }
-
-  & .sno-breadcrumb-step {
+  li {
     display: flex;
     align-items: center;
+    min-inline-size: 0;
+    margin-inline-start: 0;
+    padding: 0;
   }
 
-  & .sno-breadcrumb-step .sno-breadcrumb-item {
+  li + li {
     margin-inline-start: var(--sno-breadcrumbs-spacing);
   }
 
-  & a,
-  & [aria-current="page"] {
-    display: inline-flex;
-    gap: var(--wa-space-3xs);
+  li > div {
+    display: flex;
     align-items: center;
     min-inline-size: 0;
   }
 
-  & a > span,
-  & span[aria-current="page"] > span {
+  a,
+  li > div > span:not(.separator) {
+    display: flex;
+    align-items: center;
+    gap: var(--wa-space-3xs);
+    min-inline-size: 0;
+    line-height: inherit;
+    text-box: trim-both cap alphabetic;
+  }
+
+  a > span,
+  li > div > span:not(.separator) > span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  & .sno-breadcrumb-separator {
-    display: block;
-    flex-shrink: 0;
+  .separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
     color: var(--wa-color-text-quiet);
+    line-height: 1;
+  }
+
+  .separator + a,
+  .separator + span {
+    margin-inline-start: var(--sno-breadcrumbs-spacing);
   }
 }
