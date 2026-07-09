@@ -126,6 +126,16 @@
   :missing-insurer-ids "Fehlende Harmonia-IDs",
   :band-instruments "Band-Instrumente",
   :private-instruments "Private Instrumente"},
+:insurance.policy-settings
+{:error-policy-not-found "Police nicht gefunden.",
+ :error-not-allowed "Du darfst Policeneinstellungen nicht ändern.",
+ :error-frozen-policy
+ "Diese Police ist nicht im Entwurf, daher können Einstellungen nicht geändert werden.",
+ :error-invalid-date "Gib ein gültiges Datum ein.",
+ :error-invalid-premium-factor "Gib einen gültigen nicht-negativen Prämienfaktor ein.",
+ :error-invalid-currency "Wähle eine unterstützte Währung.",
+ :error-effective-until-before-effective-at
+ "Das Enddatum muss nach dem Startdatum liegen."},
  :insurance.review
  {:title "Review-Warteschlange",
   :subtitle "Versicherte Instrumente für %1 prüfen.",

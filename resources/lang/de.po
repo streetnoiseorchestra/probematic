@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-03 06:24+0000\n"
+"POT-Creation-Date: 2026-07-03 11:23+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -2600,6 +2600,48 @@ msgstr "# überprüft?"
 msgctxt ":col/total-instruments"
 msgid "Total Instruments"
 msgstr "Gesamtinstrumente"
+
+#: :insurance.policy-settings/error-policy-not-found
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-policy-not-found"
+msgid "Policy not found."
+msgstr "Police nicht gefunden."
+
+#: :insurance.policy-settings/error-not-allowed
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-not-allowed"
+msgid "You are not allowed to change policy settings."
+msgstr "Du darfst Policeneinstellungen nicht ändern."
+
+#: :insurance.policy-settings/error-frozen-policy
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-frozen-policy"
+msgid "This policy is not draft, so settings cannot be changed."
+msgstr "Diese Police ist nicht im Entwurf, daher können Einstellungen nicht geändert werden."
+
+#: :insurance.policy-settings/error-invalid-date
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-invalid-date"
+msgid "Enter a valid date."
+msgstr "Gib ein gültiges Datum ein."
+
+#: :insurance.policy-settings/error-invalid-premium-factor
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-invalid-premium-factor"
+msgid "Enter a valid non-negative premium factor."
+msgstr "Gib einen gültigen nicht-negativen Prämienfaktor ein."
+
+#: :insurance.policy-settings/error-invalid-currency
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-invalid-currency"
+msgid "Choose a supported currency."
+msgstr "Wähle eine unterstützte Währung."
+
+#: :insurance.policy-settings/error-effective-until-before-effective-at
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-effective-until-before-effective-at"
+msgid "The end date must be after the start date."
+msgstr "Das Enddatum muss nach dem Startdatum liegen."
 
 #: :instrument.coverage.status/needs-review
 #, ycp-format
