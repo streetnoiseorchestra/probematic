@@ -155,7 +155,6 @@
  :insurance.review
  {:title "Review-Warteschlange",
   :subtitle "Versicherte Instrumente für %1 prüfen.",
-  :back-to-dashboard "Zurück zum Policen-Dashboard",
   :filters "Review-Filter",
   :filter-needs-review "Todo",
   :filter-missing-insurer-id "Fehlende ID",

@@ -258,7 +258,6 @@
                                   :usage                                  "Usage"}
  :insurance.review               {:title                     "Review queue"
                                   :subtitle                  "Review covered instruments for %1."
-                                  :back-to-dashboard         "Back to policy dashboard"
                                   :filters                   "Review filters"
                                   :filter-needs-review       "Todo"
                                   :filter-missing-insurer-id "Missing ID"

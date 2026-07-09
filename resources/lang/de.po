@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-09 18:12+0000\n"
+"POT-Creation-Date: 2026-07-09 18:17+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -3515,12 +3515,6 @@ msgstr ""
 msgctxt ":insurance.review/add-comment"
 msgid "Add comment"
 msgstr "Kommentar hinzufügen"
-
-#: :insurance.review/back-to-dashboard
-#, ycp-format
-msgctxt ":insurance.review/back-to-dashboard"
-msgid "Back to policy dashboard"
-msgstr "Zurück zum Policen-Dashboard"
 
 #: :insurance.review/filter-needs-review
 #, ycp-format

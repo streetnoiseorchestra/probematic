@@ -204,7 +204,7 @@
    {:class "insurance-coverage-edit-actions"}
    [[button/Button {:appearance "outlined"
                     :href       (urls/link-policy policy)}
-     (tr [:insurance.review/back-to-dashboard])]
+     (tr [:action/back])]
     (next-button tr)]))
 
 (defn- instrument-form [req policy form-state]
