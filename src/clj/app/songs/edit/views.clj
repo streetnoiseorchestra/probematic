@@ -75,7 +75,7 @@
 (defn- song-remove-dialog-id [{:song/keys [song-id]}]
   (ui2/remove-dialog-id "song" song-id))
 
-(defn- song-remove-dialog [{:keys [tr] :as req} {:song/keys [title] :as song}]
+(defn song-remove-dialog [{:keys [tr] :as req} {:song/keys [title] :as song}]
   (ui2/remove-dialog
    {:id            (song-remove-dialog-id song)
     :label         (tr [:action/confirm-generic])
@@ -138,7 +138,7 @@
                  (ui2/active-badge tr active?)]
     :subtitle   title}])
 
-(defn- create-header [{:keys [tr] :as req}]
+(defn create-header [{:keys [tr] :as req}]
   (page-header req
                (tr [:song/create-title])
                (tr [:song/create-subtitle])
@@ -224,7 +224,7 @@
                :data-bind "song-edit.song-id"}])]
    children))
 
-(defn- edit-form [req {:song/keys [song-id] :as song}]
+(defn edit-form [req {:song/keys [song-id] :as song}]
   (let [form-state (form-state req song)]
     (song-form {:req        req
                 :action     ::actions/update-song
@@ -237,7 +237,7 @@
                   top-error])
                (edit-form-actions req song))))
 
-(defn- create-form [req]
+(defn create-form [req]
   (let [form-state (create-form-state req)]
     (song-form {:req        req
                 :action     ::actions/create-song

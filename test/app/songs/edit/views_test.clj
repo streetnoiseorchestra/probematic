@@ -1,10 +1,9 @@
 (ns app.songs.edit.views-test
   (:require
    [app.songs.edit.views :as views]
-   [app.test-common :as tc]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
-   [datomic.api :as d]
+   [lookup.core :as l]
    [reitit.core :as r]))
 
 (def translations
@@ -41,42 +40,89 @@
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
-(defn req
-  ([conn]
-   {::r/router  router
-    :db         (d/db conn)
-    :tr         tr
-    :page-state {}})
-  ([conn song-id]
-   (assoc (req conn) :path-params {:song-id (str song-id)})))
+(def request
+  {::r/router  router
+   :page-state {}
+   :tr         tr})
 
-(defn seed-song! [conn song]
-  @(d/transact conn [song]))
+(def song-id
+  #uuid "00000000-0000-0000-0000-000000000201")
 
-(deftest create-page-renders-datastar-form
-  (let [{:keys [conn]} (tc/new-system "songs-edit-create-view")
-        html           (views/page (req conn))]
-    (is (str/includes? html "Add Song"))
-    (is (str/includes? html "data-action=\"/act?ns=app.songs.edit.actions&amp;kw=create-song\""))
-    (is (str/includes? html "data-bind=\"song-edit.title\""))
-    (is (str/includes? html "data-bind=\"song-edit.active?\""))))
+(def song
+  {:song/song-id             song-id
+   :song/title               "Watermelon Man"
+   :song/active?             true
+   :song/solo-info           "Alto"
+   :song/composition-credits "Herbie Hancock"})
 
-(deftest edit-page-renders-existing-song-and-delete-dialog
-  (let [{:keys [conn]} (tc/new-system "songs-edit-edit-view")
-        song-id        (random-uuid)]
-    (seed-song! conn {:song/song-id             song-id
-                      :song/title               "Watermelon Man"
-                      :song/active?             true
-                      :song/solo-info           "Alto"
-                      :song/composition-credits "Herbie Hancock"})
-    (let [html (views/page (req conn song-id))]
-      (testing "renders the edit form"
-        (is (str/includes? html "Watermelon Man"))
-        (is (str/includes? html "data-action=\"/act?ns=app.songs.edit.actions&amp;kw=update-song\""))
-        (is (str/includes? html (str "value=\"" song-id "\"")))
-        (is (str/includes? html "Herbie Hancock")))
-      (testing "renders markdown upload wiring for existing songs"
-        (is (str/includes? html (str "data-image-upload-endpoint=\"/song-media/" song-id "\""))))
-      (testing "renders the delete action"
-        (is (str/includes? html "data-action=\"/act?ns=app.songs.edit.actions&amp;kw=delete-song\""))
-        (is (str/includes? html "Are you sure you want to delete the song Watermelon Man?"))))))
+(defn action-keyword [value]
+  (when (string? value)
+    (let [action-ns   (second (re-find #"[?&]ns=([^&'\")]+)" value))
+          action-name (second (re-find #"[?&]kw=([^&'\")]+)" value))]
+      (when (and action-ns action-name)
+        (keyword action-ns action-name)))))
+
+(defn action-keywords [view]
+  (->> (l/select '* view)
+       (mapcat #(vals (or (l/attrs %) {})))
+       (keep action-keyword)
+       set))
+
+(defn button-labelled [label view]
+  (some #(when (= label (l/text %)) %)
+        (l/select :app.ui2.button/button view)))
+
+(deftest create-song
+  (testing "A member is adding a new song."
+    (let [header (views/create-header request)
+          form   (views/create-form request)
+          title  (l/select-one "wa-input[name=title]" form)
+          active (l/select-one "input[name=active?]" form)]
+      (testing "The page identifies the song-creation flow."
+        (is (= "Add Song"
+               (:title (l/attrs header)))))
+      (testing "The form starts with an active blank song and submits the create action."
+        (is (= {:action :app.songs.edit.actions/create-song
+                :title  {:value ""
+                         :data-bind "song-edit.title"
+                         :required true}
+                :active {:data-bind "song-edit.active?"
+                         :checked   true}}
+               {:action (-> (l/attrs form) :data-action action-keyword)
+                :title  (select-keys (l/attrs title)
+                                     [:value :data-bind :required])
+                :active (select-keys (l/attrs active)
+                                     [:data-bind :checked])}))))))
+
+(deftest edit-song
+  (testing "A member is editing an existing active song."
+    (let [form          (views/edit-form request song)
+          dialog        (views/song-remove-dialog request song)
+          title         (l/select-one "wa-input[name=title]" form)
+          song-id-input (l/select-one "input[name=song-id]" form)
+          credits       (l/select-one "textarea[name=composition-credits]" form)
+          delete-button (button-labelled "Delete" form)]
+      (testing "The form contains the current song values and submits the update action."
+        (is (= {:action  :app.songs.edit.actions/update-song
+                :song-id (str song-id)
+                :title   "Watermelon Man"
+                :credits "Herbie Hancock"}
+               {:action  (-> (l/attrs form) :data-action action-keyword)
+                :song-id (:value (l/attrs song-id-input))
+                :title   (:value (l/attrs title))
+                :credits (l/text credits)})))
+      (testing "Each markdown field uploads images to the existing song."
+        (is (= [(str "/song-media/" song-id)
+                (str "/song-media/" song-id)
+                (str "/song-media/" song-id)]
+               (mapv #(get (l/attrs %) :data-image-upload-endpoint)
+                     (l/select 'textarea.markdown-editor form)))))
+      (testing "Delete opens a matching confirmation dialog that submits the delete action."
+        (is (= {:button-label "Delete"
+                :opens        (str "open " (:id (l/attrs dialog)))
+                :message      "Are you sure you want to delete the song Watermelon Man?"
+                :actions      #{:app.songs.edit.actions/delete-song}}
+               {:button-label (l/text delete-button)
+                :opens        (:data-dialog (l/attrs delete-button))
+                :message      (-> (l/select-one 'p dialog) l/text)
+                :actions      (action-keywords dialog)}))))))
