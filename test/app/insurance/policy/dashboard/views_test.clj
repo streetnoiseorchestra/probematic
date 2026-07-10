@@ -21,6 +21,7 @@
    [:insurance.dashboard/missing-insurer-ids] "Missing insurer IDs"
    [:insurance/item-count] "Count"
    [:insurance/cost] "Cost"
+   [:instrument.coverage/create-button] "Add Instrument"
    [:insurance.dashboard/policy-settings] "Policy Settings"
    [:insurance.dashboard/opens-later] "Coming soon"
    [:action/more-actions] "More actions"})
@@ -86,6 +87,14 @@
     (is (not (re-find #"value=\"policy-settings\"[^>]*disabled" menu-html)))
     (is (str/includes? details-html (str "href=\"" settings-url "\"")))
     (is (not (str/includes? details-html "disabled")))))
+
+(deftest dashboard-more-actions-links-to-coverage-create-page
+  (let [policy-id  #uuid "00000000-0000-0000-0000-000000000123"
+        policy     {:insurance.policy/policy-id policy-id}
+        create-url (urls/link-coverage-create policy-id)
+        menu-html  (html/->str (#'views/more-actions-menu {:tr tr} policy))]
+    (is (str/includes? menu-html (str "value=\"" create-url "\"")))
+    (is (str/includes? menu-html ">Add Instrument</wa-dropdown-item>"))))
 
 (deftest coverage-mix-section-renders-raw-axis-chart-and-count-cost-captions
   (let [html (html/->str

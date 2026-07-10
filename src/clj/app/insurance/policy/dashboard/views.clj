@@ -54,6 +54,8 @@
 (defn- more-actions-menu
   [{:keys [tr]} policy]
   (let [button-id    "insurance-policy-dashboard-more-actions"
+        policy-id    (:insurance.policy/policy-id policy)
+        create-url   (urls/link-coverage-create policy-id)
         settings-url (urls/link-policy-settings policy)]
     [:div {:class "insurance-dashboard-secondary-actions"}
      [:wa-dropdown {:placement "bottom-end"}
@@ -63,6 +65,12 @@
                       :aria-label (tr [:action/more-actions])}
        [ico/Icon {::ico/library :snoico
                   ::ico/name    :ellipsis}]]
+      [:wa-dropdown-item {:value   create-url
+                          :onclick "window.location = this.value"}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :circle-plus-solid
+                  :slot         "icon"}]
+       (tr [:instrument.coverage/create-button])]
       [:wa-dropdown-item {:value   settings-url
                           :onclick "window.location = this.value"}
        [ico/Icon {::ico/library :snoico
