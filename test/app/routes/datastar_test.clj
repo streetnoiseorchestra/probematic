@@ -20,15 +20,23 @@
    [reitit.http :as http]
    [reitit.ring :as ring]))
 
+(defn tr
+  ([resource-ids]
+   (if (= [:test/datastar-toggle] resource-ids)
+     "Translated Datastar toggle fixture"
+     (pr-str resource-ids)))
+  ([resource-ids _data]
+   (tr resource-ids)))
+
 (def test-req
   {:system  {:env {:ig/system {:app.ig/profile :test}}}
-   :tr      pr-str
+   :tr      tr
    :session {:session/member {:member/name "Test Member"
                               :member/nick "Tester"}}})
 
 (defn page [_req]
   [:section {:id "datastar-toggle-fixture"}
-   "Datastar toggle fixture"])
+   [:i18n/tr :test/datastar-toggle]])
 
 (defn response-body-string [response]
   (let [body (:body response)]
@@ -42,7 +50,10 @@
         (dsr/page-routes {:page-name ::toggle-fixture
                           :path      "/toggle-fixture"
                           :page      #'page})]
-    ((:get child-data) test-req)))
+    (try
+      ((:get child-data) test-req)
+      (catch IllegalArgumentException _exception
+        {:status ::unresolved-translation}))))
 
 (deftest page-get-can-render-full-page-when-shim-disabled
   (binding [dsr/*use-page-shim?* false]
@@ -55,9 +66,17 @@
               :contains-morph? true}
              {:status         (:status response)
               :content-type   (get-in response [:headers "Content-Type"])
-              :contains-page? (str/includes? body "Datastar toggle fixture")
+              :contains-page? (str/includes? body "Translated Datastar toggle fixture")
               :contains-sse?  (str/includes? body "long-lived-sse")
               :contains-morph? (str/includes? body "id=\"morph\"")})))))
+
+(deftest datastar-patch-rendering-resolves-translation-data-test
+  (is (true?
+       (try
+         (str/includes? ((#'dsr/wrap-render-fn page) test-req)
+                        "Translated Datastar toggle fixture")
+         (catch IllegalArgumentException _exception
+           false)))))
 
 (defn route-signature [route]
   {:path         (first route)

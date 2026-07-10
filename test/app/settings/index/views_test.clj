@@ -2,28 +2,18 @@
   (:require
    [app.settings.index.views :as views]
    [app.settings.views-test-support :as support]
-   [clojure.string :as str]
-   [clojure.test :refer [deftest is testing]]))
+   [clojure.test :refer [deftest is]]))
 
-(def expected-fragments
-  {:en ["Band Settings"
-        "Teams"
-        "Create teams and manage their members."
-        "Travel Discounts"
-        "Manage the reusable travel discount types members can choose."
-        "Sections"
-        "Choose which sections are available and how they are ordered."]
-   :de ["Bandeinstellungen"
-        "Teams"
-        "Erstelle Teams und verwalte ihre Mitglieder."
-        "Reiserabatte"
-        "Verwalte die wiederverwendbaren Reiserabatttypen, die Mitglieder auswählen können."
-        "Register"
-        "Wähle aus, welche Register verfügbar sind und wie sie angeordnet sind."]})
-
-(deftest settings-index-uses-fluent-translations-test
-  (doseq [[locale expected] expected-fragments]
-    (testing (name locale)
-      (let [html    (views/page {:tr (support/fluent-tr locale)})
-            missing (remove #(str/includes? html %) expected)]
-        (is (= [] missing))))))
+(deftest settings-index-returns-translation-data-test
+  (let [view (views/page {:tr support/legacy-tr})]
+    (is (= {:root :main
+            :translation-keys
+            #{:band-settings/section-page-subtitle
+              :band-settings/section-title
+              :band-settings/team-page-subtitle
+              :band-settings/team-title
+              :band-settings/title
+              :band-settings/travel-discount-page-subtitle
+              :band-settings/travel-discount-title}}
+           {:root             (first view)
+            :translation-keys (support/translation-keys view)}))))

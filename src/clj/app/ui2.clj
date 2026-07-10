@@ -34,17 +34,24 @@
   (str prefix "-remove-" (safe-dom-id ent-id)))
 
 (defn active-badge
-  "Renders a translated active/inactive badge.
+  "Renders an active or inactive badge.
 
-  Required: `tr` translation function and `active?`."
-  [tr active?]
-  [:wa-badge (cond-> {:appearance "outlined"
-                      :pill       true}
-               active?       (assoc :variant "success")
-               (not active?) (assoc :variant "neutral"))
-   (if active?
-     (tr [:status-active :Active])
-     (tr [:status-inactive :Inactive]))])
+  The one-arity form returns translation data for later resolution.
+  The two-arity form keeps legacy direct translation during migration."
+  ([active?]
+   [:wa-badge (cond-> {:appearance "outlined"
+                       :pill       true}
+                active?       (assoc :variant "success")
+                (not active?) (assoc :variant "neutral"))
+    [:i18n/tr (if active? :status-active :status-inactive)]])
+  ([tr active?]
+   [:wa-badge (cond-> {:appearance "outlined"
+                       :pill       true}
+                active?       (assoc :variant "success")
+                (not active?) (assoc :variant "neutral"))
+    (if active?
+      (tr [:status-active :Active])
+      (tr [:status-inactive :Inactive]))]))
 
 (defn cs
   "Joins truthy class names with spaces.
@@ -608,13 +615,18 @@
                                         (@post ("`${evt.target.dataset.action}`"))))}
           extra))
 
+(defn datastar-page*
+  "Returns `children` inside the standard Datastar `main` element as Hiccup."
+  [& children]
+  (into [:main (datastar-main-attrs {})] children))
+
 (defn datastar-page
   "Renders `children` inside the standard Datastar `main` element.
 
   Optional: zero or more `children`."
   [& children]
   (html/->str
-   (into [:main (datastar-main-attrs {})] children)))
+   (apply datastar-page* children)))
 
 (defn datastar-page2
   "Renders `children` inside the standard Datastar `main` element with extra attrs.
@@ -624,13 +636,18 @@
   (html/->str
    (into [:main (datastar-main-attrs extra-attrs)] children)))
 
+(defn plain-page*
+  "Returns `children` inside a plain `main` element as Hiccup."
+  [& children]
+  (into [:main {:id "main"}] children))
+
 (defn plain-page
   "Renders `children` inside a plain `main` element.
 
   Optional: zero or more `children`."
   [& children]
   (html/->str
-   (into [:main {:id "main"}] children)))
+   (apply plain-page* children)))
 
 (defn member-nick
   "Renders the nickname of the member, if available, otherwise renders the name."

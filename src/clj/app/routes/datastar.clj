@@ -125,7 +125,7 @@
 
 (defn- wrap-render-fn [render-fn]
   (fn [req]
-    (html/->str (layout2/app-shell-body req (render-fn req)))))
+    (html/->str (:tr req) (layout2/app-shell-body req (render-fn req)))))
 
 (defn page-routes
   [{:keys [extra-head page path page-name route-data]}]

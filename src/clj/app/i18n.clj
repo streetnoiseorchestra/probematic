@@ -4,6 +4,7 @@
    [app.i18n.tempura :as tempura]
    [clojure.set :refer [intersection]]
    [clojure.string :as str]
+   [clojure.walk :as walk]
    [taoensso.encore :as enc])
   (:import
    [java.util Locale]))
@@ -125,6 +126,45 @@
 
 (defn tr-from-req [req]
   (:tr req))
+
+(defn- translation-node? [value]
+  (and (vector? value)
+       (= :i18n/tr (first value))))
+
+(defn- translation-resource-ids [node]
+  (let [resource-ids (second node)]
+    (cond
+      (keyword? resource-ids) [resource-ids]
+      (vector? resource-ids)  resource-ids
+      :else
+      (throw (ex-info "Malformed :i18n/tr translation data node"
+                      {:node node})))))
+
+(defn- resolve-translation-node [translator node]
+  (when-not (<= 2 (count node) 3)
+    (throw (ex-info "Malformed :i18n/tr translation data node"
+                    {:node node})))
+  (when-not translator
+    (throw (ex-info "Cannot resolve :i18n/tr without a translator"
+                    {:node node})))
+  (let [resource-ids (translation-resource-ids node)]
+    (if (= 2 (count node))
+      (translator resource-ids)
+      (translator resource-ids (nth node 2)))))
+
+(defn resolve-translations
+  "Resolves every `:i18n/tr` data node in `value` with `translator`.
+
+  A node contains a translation key or candidate vector and optional data.
+  Resolution traverses children, attributes, component props, and nested
+  collections. Trees without translation nodes do not require a translator."
+  [translator value]
+  (walk/postwalk
+   (fn [node]
+     (if (translation-node? node)
+       (resolve-translation-node translator node)
+       node))
+   value))
 
 (defn parse-http-accept-header
   "Parses HTTP Accept header and returns sequence of [choice weight] pairs

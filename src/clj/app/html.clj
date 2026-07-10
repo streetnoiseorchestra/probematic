@@ -1,5 +1,6 @@
 (ns app.html
   (:require
+   [app.i18n :as i18n]
    [backtick         :refer [template]]
    [buddy.core.codecs :as codecs]
    [buddy.core.hash :as digest]
@@ -10,9 +11,15 @@
   (:import
    (java.io OutputStream)))
 
-(def ->str
-  "Returns an HTML string given a hiccup datstructure"
-  chassis/html)
+(defn ->str
+  "Serializes `hiccup` as HTML after resolving translation data nodes.
+
+  The one-arity form accepts trees without translation nodes.
+  The two-arity form resolves translation nodes with `translator`."
+  ([hiccup]
+   (->str nil hiccup))
+  ([translator hiccup]
+   (chassis/html (i18n/resolve-translations translator hiccup))))
 
 (defn raw
   "Wraps value as an unescaped string that will be rendered directly to HTML.

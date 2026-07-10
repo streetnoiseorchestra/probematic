@@ -178,6 +178,7 @@
 (defn html5
   [req opts body]
   (html/->str
+   (:tr req)
    [html/doctype-html5
     [:html {:lang  (html-lang req)
             :class "wa-theme-active wa-palette-rudimentary wa-brand-orange"}

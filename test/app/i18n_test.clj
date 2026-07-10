@@ -1,5 +1,6 @@
 (ns app.i18n-test
   (:require
+   [app.html :as html]
    [app.i18n :as i18n]
    [app.interceptors :as interceptors]
    [clojure.test :refer [deftest is]]))
@@ -92,3 +93,52 @@
            {:current-locale (get-in entered [:request :current-locale])
             :translation    ((get-in entered [:request :tr]) [:band-settings/team-title])
             :cookie         (get-in left [:response :cookies "lang"])}))))
+
+(defn node-translator
+  ([resource-ids]
+   (or (get {[:test/title] "Band & Settings"} resource-ids)
+       (some #(when (string? %) %) resource-ids)))
+  ([resource-ids data]
+   (case resource-ids
+     [:test/delete] (str "Delete " (:name data))
+     (node-translator resource-ids))))
+
+(defn resolve-translation-nodes [translator value]
+  (if-let [resolve-fn (ns-resolve 'app.i18n 'resolve-translations)]
+    (resolve-fn translator value)
+    ::missing-resolver))
+
+(defn render-translation-nodes [translator value]
+  (try
+    (html/->str translator value)
+    (catch Throwable _exception
+      ::missing-renderer)))
+
+(deftest translation-data-nodes-resolve-throughout-hiccup-test
+  (is (= [:div {:title "Band & Settings"}
+          [:h1 "Band & Settings"]
+          [:p "Delete <Brass>"]
+          [:p "Inline fallback"]]
+         (resolve-translation-nodes
+          node-translator
+          [:div {:title [:i18n/tr :test/title]}
+           [:h1 [:i18n/tr :test/title]]
+           [:p [:i18n/tr :test/delete {:name "<Brass>"}]]
+           [:p [:i18n/tr [:test/missing "Inline fallback"]]]]))))
+
+(deftest translation-data-nodes-render-as-escaped-html-test
+  (is (= "<p title=\"Band &amp; Settings\">Delete &lt;Brass&gt;</p>"
+         (render-translation-nodes
+          node-translator
+          [:p {:title [:i18n/tr :test/title]}
+           [:i18n/tr :test/delete {:name "<Brass>"}]]))))
+
+(deftest translation-data-nodes-require-a-translator-test
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                        #"translator"
+                        (resolve-translation-nodes nil [:i18n/tr :test/title]))))
+
+(deftest malformed-translation-data-nodes-are-rejected-test
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                        #"translation"
+                        (resolve-translation-nodes node-translator [:i18n/tr]))))

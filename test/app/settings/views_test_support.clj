@@ -1,12 +1,20 @@
 (ns app.settings.views-test-support
   (:require
-   [app.i18n :as i18n]
    [reitit.core :as r]))
 
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
-(defn fluent-tr [locale]
-  (i18n/tr-with
-   (update-vals (i18n/read-langs) #(assoc % :tempura {}))
-   [locale]))
+(defn legacy-tr
+  ([resource-ids]
+   (pr-str resource-ids))
+  ([resource-ids _data]
+   (pr-str resource-ids)))
+
+(defn translation-keys [hiccup]
+  (into #{}
+        (keep (fn [node]
+                (when (and (vector? node)
+                           (= :i18n/tr (first node)))
+                  (second node))))
+        (tree-seq coll? seq hiccup)))

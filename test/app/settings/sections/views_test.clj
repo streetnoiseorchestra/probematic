@@ -3,46 +3,44 @@
    [app.settings.sections.views :as views]
    [app.settings.views-test-support :as support]
    [app.test-common :as tc]
-   [clojure.string :as str]
-   [clojure.test :refer [deftest is testing]]
+   [clojure.test :refer [deftest is]]
    [datomic.api :as d]
    [reitit.core :as r]))
 
-(def populated-expected-fragments
-  {:en ["Sections"
-        "Choose which sections are available and how they are ordered."
-        "Manage sections"
-        "Choose which sections are visible and how they are ordered."
-        "Add Section"
-        "Section"
-        "Reorder"
-        "Drag sections to control the order in which they appear on gig pages."
-        "Done"
-        "Active"
-        "Status"
-        "Are you sure you want to delete the section “Trumpets”?"
-        "Yes, delete it"]
-   :de ["Register"
-        "Wähle aus, welche Register verfügbar sind und wie sie angeordnet sind."
-        "Register verwalten"
-        "Wähle aus, welche Register sichtbar sind und wie sie angeordnet sind."
-        "Register hinzufügen"
-        "Register"
-        "Neu anordnen"
-        "Ziehe die Register, um die Reihenfolge festzulegen, in der sie auf Gig-Seiten erscheinen."
-        "Fertig"
-        "Aktiv"
-        "Status"
-        "Bist du sicher, dass du das Register “Trumpets” löschen möchtest?"
-        "Ja, löschen"]})
+(def populated-translation-keys
+  #{:action/cancel
+    :action/confirm-delete
+    :action/confirm-generic
+    :action/create
+    :action/done
+    :action/remove
+    :action/reorder
+    :action/save
+    :action/update
+    :band-settings/section-add
+    :band-settings/section-delete-confirm
+    :band-settings/section-manage-subtitle
+    :band-settings/section-manage-title
+    :band-settings/section-name
+    :band-settings/section-page-subtitle
+    :band-settings/section-reorder-instructions
+    :band-settings/section-title
+    :band-settings/title
+    :status-active
+    :status-label})
 
-(def empty-expected-fragments
-  {:en ["No sections yet."
-        "Add sections to group members and organize gig views."]
-   :de ["Noch keine Register."
-        "Füge Register hinzu, um Mitglieder zu gruppieren und Gig-Ansichten zu organisieren."]})
+(def empty-translation-keys
+  #{:action/reorder
+    :band-settings/section-add
+    :band-settings/section-empty-subtitle
+    :band-settings/section-empty-title
+    :band-settings/section-manage-subtitle
+    :band-settings/section-manage-title
+    :band-settings/section-page-subtitle
+    :band-settings/section-title
+    :band-settings/title})
 
-(defn page-html [locale populated?]
+(defn page-view [populated?]
   (let [{:keys [conn]} (tc/new-system "settings-section-views")]
     (when populated?
       @(d/transact conn [{:section/name     "Trumpets"
@@ -55,19 +53,19 @@
                      :section         {:section-id "Trumpets"}
                      :section-reorder {:open true}}
                     {})
-      :tr         (support/fluent-tr locale)
+      :tr         support/legacy-tr
       ::r/router  support/router})))
 
-(deftest sections-page-uses-fluent-translations-test
-  (doseq [[locale expected] populated-expected-fragments]
-    (testing (name locale)
-      (let [html    (page-html locale true)
-            missing (remove #(str/includes? html %) expected)]
-        (is (= [] missing))))))
+(deftest sections-page-returns-translation-data-test
+  (let [view (page-view true)]
+    (is (= {:root             :main
+            :translation-keys populated-translation-keys}
+           {:root             (first view)
+            :translation-keys (support/translation-keys view)}))))
 
-(deftest sections-empty-state-uses-fluent-translations-test
-  (doseq [[locale expected] empty-expected-fragments]
-    (testing (name locale)
-      (let [html    (page-html locale false)
-            missing (remove #(str/includes? html %) expected)]
-        (is (= [] missing))))))
+(deftest sections-empty-state-returns-translation-data-test
+  (let [view (page-view false)]
+    (is (= {:root             :main
+            :translation-keys empty-translation-keys}
+           {:root             (first view)
+            :translation-keys (support/translation-keys view)}))))

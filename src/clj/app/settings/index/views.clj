@@ -21,23 +21,23 @@
      [:strong {:class "wa-color-text-link"} title]
      [:p body]]]])
 
-(defn page [{:keys [tr]}]
-  (ui2/plain-page
+(defn page [_req]
+  (ui2/plain-page*
    [:div {:class "wa-grid" :style "--min-column-size: var(--sno-settings-index-min-column-size);"}
     [page-header/PageHeader {:class "wa-span-grid"
-                             :title (tr [:band-settings/title])}]
+                             :title [:i18n/tr :band-settings/title]}]
     [divider/Divider {:class "wa-span-grid"}]
     (settings-link-card {:href  "/band-settings/teams"
                          :icon  "users-outline"
-                         :title (tr [:band-settings/team-title])
-                         :body  (tr [:band-settings/team-page-subtitle])})
+                         :title [:i18n/tr :band-settings/team-title]
+                         :body  [:i18n/tr :band-settings/team-page-subtitle]})
     (settings-link-card {:href  "/band-settings/travel-discounts"
                          :icon  "cog"
-                         :title (tr [:band-settings/travel-discount-title])
-                         :body  (tr [:band-settings/travel-discount-page-subtitle])})
+                         :title [:i18n/tr :band-settings/travel-discount-title]
+                         :body  [:i18n/tr :band-settings/travel-discount-page-subtitle]})
     (settings-link-card {:href  "/band-settings/sections"
                          :icon  "trumpet"
-                         :title (tr [:band-settings/section-title])
-                         :body  (tr [:band-settings/section-page-subtitle])})]))
+                         :title [:i18n/tr :band-settings/section-title]
+                         :body  [:i18n/tr :band-settings/section-page-subtitle]})]))
 
 (d*/refresh-all!)
