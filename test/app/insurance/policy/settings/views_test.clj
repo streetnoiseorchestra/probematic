@@ -40,6 +40,7 @@
    [:insurance.dashboard/policy-cost] "Policy cost"
    [:insurance.policy-settings/category-factors-subtitle] "Factors by instrument category."
    [:insurance.policy-settings/coverage-types-subtitle] "Insurance options available on this policy."
+   [:insurance/coverage-name] "Coverage Name"
    [:insurance.policy-settings/add-coverage-type] "Add coverage type"
    [:insurance.policy-settings/add-category-factor] "Add category factor"
    [:insurance.policy-settings/category-factor-create-disabled-tooltip] "Every instrument category already has a category factor."
@@ -224,6 +225,12 @@
     (is (str/includes? html "coverage-type-create-dialog"))
     (is (str/includes? html "coverage-type-edit-dialog"))
     (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.name\""))
+    (is (str/includes? html
+                       "for=\"coverage-type-create-name\"><span class=\"wa-caption-s wa-font-weight-bold\">Coverage Name</span>"))
+    (is (str/includes? html
+                       "for=\"coverage-type-edit-name\"><span class=\"wa-caption-s wa-font-weight-bold\">Coverage Name</span>"))
+    (is (str/includes? html
+                       "<thead><tr><th scope=\"col\">Coverage Name</th><th scope=\"col\">Premium Factor</th><th scope=\"col\">Description</th>"))
     (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.description\""))
     (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.premiumFactor\""))
     (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.policyId\""))

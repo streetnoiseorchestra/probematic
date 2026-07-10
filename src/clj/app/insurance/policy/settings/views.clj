@@ -420,7 +420,7 @@
   [:div {:class "wa-stack wa-gap-m"}
    (top-error-callout (:_top _error))
    (text-input {:id    (str id-prefix "-name")
-                :label (tr [:insurance/name])
+                :label (tr [:insurance/coverage-name])
                 :value name
                 :bind  "insurancePolicySettings.coverageType.name"
                 :error (field-error _error :name)})
@@ -557,7 +557,7 @@
 
 (defn- coverage-type-table-head
   [tr editable?]
-  (table-head (cond-> [(tr [:insurance/name])
+  (table-head (cond-> [(tr [:insurance/coverage-name])
                        (tr [:insurance/premium-factor])
                        (tr [:insurance/coverage-type-description])
                        (tr [:insurance.policy-settings/usage])
@@ -796,10 +796,6 @@
   [:div {:id           "insurance-policy-settings"
          :class        "wa-stack"
          :data-signals (d*/->signals (initial-signals req settings))}
-   (coverage-type-create-dialog req settings)
-   (coverage-type-edit-dialog req)
-   (category-factor-create-dialog req settings)
-   (category-factor-edit-dialog req)
    (when editable?
      (for [row coverage-type-rows]
        (coverage-type-delete-dialog req row)))
@@ -814,7 +810,11 @@
      (coverage-types-section req settings)
      (category-factors-section req settings)]
     [:aside {:class "wa-stack"}
-     (current-totals-section req settings)]]])
+     (current-totals-section req settings)]]
+   (coverage-type-create-dialog req settings)
+   (coverage-type-edit-dialog req)
+   (category-factor-create-dialog req settings)
+   (category-factor-edit-dialog req)])
 
 (defn page
   [{:keys [db] :as req}]
