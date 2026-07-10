@@ -125,10 +125,10 @@
               ;; "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
               ]}
   :run-m {:main-opts ["-m" "app.main"]
-          :jvm-opts ["-XX:-OmitStackTraceInFastThrow"
-                     "--enable-native-access=ALL-UNNAMED"]}
+          :jvm-opts  ["-XX:-OmitStackTraceInFastThrow"
+                      "--enable-native-access=ALL-UNNAMED"]}
   :run-x {:ns-default app.main
-          :jvm-opts ["-XX:-OmitStackTraceInFastThrow"
-                     "--enable-native-access=ALL-UNNAMED"]}
+          :jvm-opts   ["-XX:-OmitStackTraceInFastThrow"
+                       "--enable-native-access=ALL-UNNAMED"]}
   :build {:deps       {io.github.clojure/tools.build {:mvn/version "0.10.14"}}
           :ns-default build}}}
