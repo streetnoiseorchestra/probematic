@@ -1,6 +1,7 @@
 (ns app.insurance.coverage.create.views
   (:require
    [app.datastar :as d*]
+   [app.html :as html]
    [app.form :as form]
    [app.insurance.coverage.create.actions :as actions]
    [app.insurance.coverage.queries :as queries]
@@ -151,9 +152,9 @@
     (:insurance.policy/name policy)]
    [breadcrumb/BreadcrumbItem (tr [:instrument.coverage/create-title])]])
 
-(defn- create-steps [tr]
+(defn- create-steps [tr current-step]
   (step-circles/StepCircles {::step-circles/label        (tr [:instrument.coverage/create-steps])
-                             ::step-circles/current-step 1
+                             ::step-circles/current-step current-step
                              ::step-circles/steps
                              [{:label (tr [:instrument.coverage/create-step-instrument])}
                               {:label (tr [:instrument.coverage/create-step-photos])}
@@ -245,7 +246,124 @@
                                    :title      (tr [:instrument.coverage/create-title])
                                    :subtitle   (tr [:instrument.coverage/create-subtitle]
                                                    [(:insurance.policy/name policy)])}]
-          (create-steps tr)
+          (create-steps tr 1)
           (instrument-form req policy form-state)])))))
+
+(defn- photo-image [instrument-name {:keys [thumbnail full]}]
+  [:a {:href   full
+       :target "_blank"
+       :class  "insurance-photo-link"}
+   [:img {:src     thumbnail
+          :loading "lazy"
+          :alt     instrument-name}]])
+
+(defn- photo-grid [{:keys [tr] :as req} instrument]
+  (let [photo-uris (queries/image-uris req instrument)]
+    (if (seq photo-uris)
+      (into [:div {:class "insurance-photo-grid wa-grid wa-gap-s"}]
+            (map #(photo-image (:instrument/name instrument) %) photo-uris))
+      (ui2/empty-state (tr [:instrument/images]) (tr [:insurance/no-photos])))))
+
+(defn- photos-breadcrumb [{:keys [tr]} policy instrument]
+  [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
+   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    :shield-check-outline}]
+    (tr [:nav/insurance])]
+   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+    (:insurance.policy/name policy)]
+   [breadcrumb/BreadcrumbItem (:instrument/name instrument)]
+   [breadcrumb/BreadcrumbItem (tr [:instrument.coverage/create-step-photos])]])
+
+(defn- photo-upload-section [{:keys [tr] :as req} instrument]
+  (let [instrument-id (:instrument/instrument-id instrument)
+        input-id      "coverage-create-photo-upload"
+        status-id     "coverage-create-photo-upload-status"]
+    (ui2/section-card
+     {:title    (tr [:instrument/photo-upload])
+      :subtitle (tr [:instrument/photo-upload-subtitle])
+      :divider? true}
+     [:div {:class "insurance-coverage-upload wa-stack wa-gap-m"}
+      (photo-grid req instrument)
+      [:label {:class "insurance-coverage-upload-zone" :for input-id}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :file-image-solid
+                  :aria-hidden  true}]
+       [:span (tr [:instrument.coverage/upload-drop-label])]
+       [:small (tr [:instrument.coverage/upload-help])]
+       [:input {:id                   input-id
+                :type                 "file"
+                :name                 "file"
+                :multiple             true
+                :accept               "image/*"
+                :data-upload-endpoint (urls/link-instrument-image-upload instrument-id)
+                :data-status-id       status-id
+                :data-uploading-label (tr [:instrument.coverage/upload-progress])
+                :data-complete-label  (tr [:instrument.coverage/upload-complete])
+                :data-error-label     (tr [:instrument.coverage/upload-error])
+                :data-on:change       "window.InsuranceCoverageUpload && window.InsuranceCoverageUpload(evt.target)"}]]
+      [:p {:id status-id :class "wa-caption-s wa-color-text-quiet"}]])))
+
+(defn- photo-actions [{:keys [tr]} policy-id instrument-id redirect]
+  (ui2/action-bar
+   {:class "insurance-coverage-edit-actions"}
+   [[button/Button {:appearance "outlined"
+                    :href       (urls/link-coverage-create-edit policy-id instrument-id redirect)}
+     (tr [:action/back])]
+    [button/Button {:appearance "filled"
+                    :variant    "brand"
+                    :href       (urls/link-coverage-create3 policy-id instrument-id redirect)}
+     (tr [:action/next])]]))
+
+(defn- upload-script []
+  [:script
+   (html/raw
+    "window.InsuranceCoverageUpload ||= async function(input) {
+       const status = input.dataset.statusId ? document.getElementById(input.dataset.statusId) : null;
+       const endpoint = input.dataset.uploadEndpoint;
+       const files = Array.from(input.files || []);
+       if (!endpoint || files.length === 0) return;
+       if (status) status.textContent = input.dataset.uploadingLabel || '';
+       try {
+         for (const file of files) {
+           const body = new FormData();
+           body.append('file', file);
+           const response = await fetch(endpoint, { method: 'POST', body });
+           if (!response.ok) throw new Error('upload failed');
+         }
+         if (status) status.textContent = input.dataset.completeLabel || '';
+         input.value = '';
+         window.location.reload();
+       } catch (error) {
+         if (status) status.textContent = input.dataset.errorLabel || '';
+       }
+     };")])
+
+(defn photos-page [{:keys [db instrument tr] :as req}]
+  (let [policy-id     (http.util/path-param-uuid! req :policy-id)
+        instrument-id (http.util/path-param-uuid! req :instrument-id)
+        policy        (or (:policy req) (q/retrieve-policy db policy-id))
+        instrument    (or instrument (q/retrieve-instrument db instrument-id))
+        redirect      (query-param req :redirect)]
+    (cond
+      (nil? policy)
+      (throw (ex-info "Policy not found" {:app/error-type :app.error.type/not-found
+                                          :insurance.policy/policy-id policy-id}))
+
+      (nil? instrument)
+      (throw (ex-info "Instrument not found" {:app/error-type :app.error.type/not-found
+                                              :instrument/instrument-id instrument-id}))
+
+      :else
+      (ui2/datastar-page
+       [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
+        [page-header/PageHeader {:class      "insurance-coverage-page-header"
+                                 :breadcrumb (photos-breadcrumb req policy instrument)
+                                 :title      (tr [:instrument.coverage/create-title])
+                                 :subtitle   (:instrument/name instrument)}]
+        (create-steps tr 2)
+        (photo-upload-section req instrument)
+        (photo-actions req policy-id instrument-id redirect)
+        (upload-script)]))))
 
 (d*/refresh-all!)

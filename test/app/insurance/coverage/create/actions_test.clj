@@ -111,7 +111,7 @@
               :opts             {}
               :redirects        [[:app.datastar/redirect
                                   (urls/link-coverage-create2 (:policy-id fixture) created-id "/return")]]
-              :clear-loading?   true
+              :clear-loading?   false
               :audit?           true
               :created-id?      true}
              {:transact-effects (count (filter #(= :db/transact (first %)) effects))

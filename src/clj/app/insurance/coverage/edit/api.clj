@@ -58,4 +58,6 @@
   (let [instrument-id (util/ensure-uuid! (-> parameters :path :instrument-id))
         file          (-> parameters :multipart :file)]
     (upload-instrument-image! req instrument-id file)
-    {:status 201}))
+    {:status  201
+     :headers {"Content-Type" "application/json"}
+     :body    "{}"}))

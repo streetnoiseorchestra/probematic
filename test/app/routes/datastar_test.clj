@@ -298,6 +298,10 @@
            (urls/link-coverage-create-edit policy-id instrument-id "/return")))
     (is (= (str "/insurance-coverage-create2/" policy-id "/" instrument-id)
            (urls/link-coverage-create2 policy-id instrument-id)))
+    (assert-slashless-canonical-route router
+                                      (urls/link-coverage-create2 policy-id instrument-id)
+                                      (str (urls/link-coverage-create2 policy-id instrument-id) "/")
+                                      :app.insurance.routes/coverage-create-photos)
     (is (= (str "/insurance-coverage-create3/" policy-id "/" instrument-id)
            (urls/link-coverage-create3 policy-id instrument-id)))
     (is (= :app/instrument.coverage

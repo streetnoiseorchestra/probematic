@@ -18,14 +18,6 @@
    [ctmx.core :as ctmx]
    [reitit.ring.malli :as reitit.ring.malli]))
 
-(defn insurance-detail []
-  [""
-   (ctmx/make-routes
-    "/insurance-policy/{policy-id}/"
-    (fn [req]
-      (layout/app-shell req
-                        (view/insurance-detail-page req))))])
-
 (defn insurance-notification []
   [""
    (ctmx/make-routes
@@ -41,25 +33,12 @@
      (layout/app-shell req
                        (view/insurance-policy-changes-review req)))))
 
-(defn insurance-coverage-create []
-  (ctmx/make-routes
-   "/insurance-coverage-create/{policy-id}/"
-   (fn [req]
-     (layout/app-shell req
-                       (view/insurance-coverage-create-page req)))))
-
 (defn insurance-survey []
   (ctmx/make-routes
    "/insurance-survey/{policy-id}/"
    (fn [req]
      (layout/app-shell req (view/survey-start-page req)))))
 
-(defn insurance-coverage-create2 []
-  (ctmx/make-routes
-   "/insurance-coverage-create2/{policy-id}/{instrument-id}"
-   (fn [req]
-     (layout/app-shell req
-                       (view/image-upload req)))))
 (defn insurance-coverage-create3 []
   (ctmx/make-routes
    "/insurance-coverage-create3/{policy-id}/{instrument-id}"
@@ -154,7 +133,9 @@
                         (view/insurance-policy-changes-file req))}}]]
 
    ["" {:interceptors [policy-interceptor instrument-interceptor]}
-    (insurance-coverage-create2)
+    (ds/page-routes {:page-name ::coverage-create-photos
+                     :path      "/insurance-coverage-create2/{policy-id}/{instrument-id}"
+                     :page      #'coverage.create.views/photos-page})
     (insurance-coverage-create3)]
 
    ["" {:app.route/name :app/instrument.coverage

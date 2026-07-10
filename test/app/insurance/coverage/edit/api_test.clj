@@ -65,13 +65,15 @@
                                                           {:image/source-file [:filestore.file/file-name
                                                                                :filestore.file/mime-type]}]}]
                                    [:instrument/instrument-id instrument-id])]
-            (is (= {:status          201
+            (is (= {:response        {:status  201
+                                      :headers {"Content-Type" "application/json"}
+                                      :body    "{}"}
                     :temp-deleted?   true
                     :image-count     1
                     :share-url       (str "https://example.test/instrument-public/" instrument-id)
                     :image-file-name "test upload.jpg"
                     :image-mime-type "image/jpeg"}
-                   {:status          (:status response)
+                   {:response        (select-keys response [:status :headers :body])
                     :temp-deleted?   (not (bfs/exists? tempfile))
                     :image-count     (count (:instrument/images instrument))
                     :share-url       (:instrument/images-share-url instrument)

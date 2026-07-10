@@ -153,7 +153,6 @@
           (support/with-audit (save-instrument-step-tx-data state ctx params instrument-id)
             current-member-id)
           {}]
-         support/clear-loading
          [:app.datastar/redirect
           (urls/link-coverage-create2 (:policy-id ctx)
                                       instrument-id
