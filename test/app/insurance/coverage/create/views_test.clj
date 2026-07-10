@@ -1,9 +1,10 @@
 (ns app.insurance.coverage.create.views-test
   (:require
-   [app.insurance.coverage.create.views]
+   [app.insurance.coverage.create.views :as sut]
    [app.urls :as urls]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is]]))
+   [clojure.test :refer [deftest is testing]]
+   [lookup.core :as l]))
 
 (def translations
   {[:action/back] "Back"
@@ -16,7 +17,6 @@
    [:instrument.coverage/create-step-instrument] "Instrument"
    [:instrument.coverage/create-step-photos] "Photos"
    [:instrument.coverage/create-steps] "Coverage creation steps"
-   [:instrument.coverage/create-subtitle] "Add an instrument and register it for %1."
    [:instrument.coverage/create-title] "Add Instrument Coverage"
    [:instrument.coverage/upload-complete] "Upload complete."
    [:instrument.coverage/upload-drop-label] "Choose photos to upload"
@@ -34,15 +34,21 @@
            (tr path)
            (map-indexed vector args))))
 
-(def policy-id #uuid "00000000-0000-0000-0000-000000000123")
-(def instrument-id #uuid "00000000-0000-0000-0000-000000000456")
-(def image-id #uuid "00000000-0000-0000-0000-000000000789")
+(def policy-id
+  #uuid "00000000-0000-0000-0000-000000000123")
+
+(def instrument-id
+  #uuid "00000000-0000-0000-0000-000000000456")
+
+(def image-id
+  #uuid "00000000-0000-0000-0000-000000000789")
 
 (def policy
   {:insurance.policy/policy-id policy-id
    :insurance.policy/name      "Test Policy"})
 
-(defn request [instrument]
+(defn request
+  [instrument]
   {:path-params {:policy-id     policy-id
                  :instrument-id instrument-id}
    :params      {:redirect "/return"}
@@ -51,43 +57,84 @@
    :system      {:env {:app-base-url "https://example.test"}}
    :tr          tr})
 
-(defn render-photos-page [req]
-  (if-let [page (ns-resolve 'app.insurance.coverage.create.views 'photos-page)]
-    (page req)
-    ""))
+(defn photos-view
+  [instrument]
+  (sut/photos-page-content
+   (request instrument)
+   policy
+   instrument
+   "/return"))
 
-(deftest photos-page-renders-upload-controls-and-preserves-wizard-navigation
-  (let [page-html (render-photos-page
-                   (request {:instrument/instrument-id instrument-id
-                             :instrument/name          "Test Trumpet"}))]
-    (is (= {:photo-step?      true
-            :empty-state?     true
-            :file-input?      true
-            :upload-endpoint? true
-            :upload-script?   true
-            :back-link?       true
-            :next-link?       true}
-           {:photo-step?      (and (str/includes? page-html "<li class=\"current\">")
-                                   (str/includes? page-html "aria-label=\"Photos\" aria-current=\"step\""))
-            :empty-state?     (str/includes? page-html "No photos have been uploaded yet.")
-            :file-input?      (and (str/includes? page-html "type=\"file\"")
-                                   (str/includes? page-html "name=\"file\"")
-                                   (str/includes? page-html "multiple"))
-            :upload-endpoint? (str/includes? page-html (str "data-upload-endpoint=\"" (urls/link-instrument-image-upload instrument-id) "\""))
-            :upload-script?   (str/includes? page-html "window.InsuranceCoverageUpload")
-            :back-link?       (str/includes? page-html (str "href=\""
-                                                            (str/replace (urls/link-coverage-create-edit policy-id instrument-id "/return") "&" "&amp;")
-                                                            "\""))
-            :next-link?       (str/includes? page-html (str "href=\"" (urls/link-coverage-create3 policy-id instrument-id "/return") "\""))}))))
+(deftest photo-upload
+  (testing "The newly created instrument does not have any photos yet."
+    (let [instrument {:instrument/instrument-id instrument-id
+                      :instrument/name          "Test Trumpet"}
+          view       (photos-view instrument)
+          steps      (l/select 'li view)
+          input      (l/select-one 'input view)]
+      (testing "Photos is the current wizard step."
+        (is (= {:steps        [{:label "Instrument" :state #{"complete"}}
+                               {:label "Photos" :state #{"current"}}
+                               {:label "Coverage" :state #{"empty"}}]
+                :current-step {:aria-label "Photos" :aria-current "step"}}
+               {:steps        (mapv (fn [step]
+                                      {:label (l/text step)
+                                       :state (:class (l/attrs step))})
+                                    steps)
+                :current-step (select-keys
+                               (l/attrs (l/select-one "[aria-current=step]" view))
+                               [:aria-label :aria-current])})))
+      (testing "The empty photo state explains that nothing has been uploaded."
+        (is (= "Images No photos have been uploaded yet."
+               (-> (l/select-one 'wa-callout view) l/text))))
+      (testing "The file input accepts multiple images and targets the instrument upload endpoint."
+        (is (= {:type                 "file"
+                :name                 "file"
+                :multiple             true
+                :accept               "image/*"
+                :data-upload-endpoint (urls/link-instrument-image-upload instrument-id)}
+               (select-keys (l/attrs input)
+                            [:type :name :multiple :accept :data-upload-endpoint]))))
+      (testing "The page installs the upload handler used by the file input."
+        (is (= {:input-handler "window.InsuranceCoverageUpload && window.InsuranceCoverageUpload(evt.target)"
+                :script-count  1
+                :handler-name? true}
+               {:input-handler (:data-on:change (l/attrs input))
+                :script-count  (count (l/select 'script view))
+                :handler-name? (boolean
+                                (re-find #"window\.InsuranceCoverageUpload"
+                                         (-> (l/select-one 'script view) l/text)))})))
+      (testing "Back and Next preserve the wizard destination."
+        (is (= [{:label "Back"
+                 :href  (urls/link-coverage-create-edit
+                         policy-id instrument-id "/return")}
+                {:label "Next"
+                 :href  (urls/link-coverage-create3
+                         policy-id instrument-id "/return")}]
+               (mapv (fn [button]
+                       {:label (l/text button)
+                        :href  (:href (l/attrs button))})
+                     (l/select :app.ui2.button/button view))))))))
 
-(deftest photos-page-renders-existing-instrument-photos
-  (let [page-html (render-photos-page
-                   (request {:instrument/instrument-id instrument-id
-                             :instrument/name          "Test Trumpet"
-                             :instrument/images        [{:image/image-id image-id}]}))]
-    (is (= {:thumbnail? true
-            :full?      true
-            :alt?       true}
-           {:thumbnail? (str/includes? page-html (urls/absolute-link-instrument-image-thumbnail {:app-base-url "https://example.test"} instrument-id image-id))
-            :full?      (str/includes? page-html (urls/absolute-link-instrument-image-full {:app-base-url "https://example.test"} instrument-id image-id))
-            :alt?       (str/includes? page-html "alt=\"Test Trumpet\"")}))))
+(deftest existing-photos
+  (testing "The newly created instrument already has an uploaded photo."
+    (let [instrument {:instrument/instrument-id instrument-id
+                      :instrument/name          "Test Trumpet"
+                      :instrument/images        [{:image/image-id image-id}]}
+          view       (photos-view instrument)
+          photo-link (l/select-one 'a.insurance-photo-link view)
+          image      (l/select-one 'img photo-link)]
+      (testing "The thumbnail links to the full image and describes the instrument."
+        (is (= {:link  {:href   (urls/absolute-link-instrument-image-full
+                                 {:app-base-url "https://example.test"}
+                                 instrument-id
+                                 image-id)
+                        :target "_blank"}
+                :image {:src     (urls/absolute-link-instrument-image-thumbnail
+                                  {:app-base-url "https://example.test"}
+                                  instrument-id
+                                  image-id)
+                        :loading "lazy"
+                        :alt     "Test Trumpet"}}
+               {:link  (select-keys (l/attrs photo-link) [:href :target])
+                :image (select-keys (l/attrs image) [:src :loading :alt])}))))))

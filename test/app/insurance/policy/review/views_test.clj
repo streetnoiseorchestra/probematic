@@ -1,33 +1,28 @@
 (ns app.insurance.policy.review.views-test
   (:require
-   [app.html :as html]
-   [app.insurance.policy.review.views :as views]
-   [app.test-common :as tc]
+   [app.insurance.policy.review.views :as sut]
+   [app.test-common :as tu]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
+   [lookup.core :as l]
    [reitit.core :as r]))
 
 (def translations
-  {[:action/save]                              "Save"
-   [:action/previous]                          "Previous"
-   [:insurance.review/filters]                 "Review filters"
-   [:insurance.review/filter-needs-review]     "Todo"
+  {[:action/previous]                            "Previous"
+   [:insurance.review/filter-needs-review]       "Todo"
    [:insurance.review/filter-missing-insurer-id] "Missing ID"
-   [:insurance.review/mark-reviewed]           "Mark reviewed"
-   [:insurance.review/skip]                    "Skip"
-   [:insurance.review/approve-and-next]        "Approve and next"
-   [:insurance.review/save-and-continue]       "Save and continue"
-   [:insurance.review/items-left]              "%1 items left."
-   [:insurance.review/see-all-in-workbench]    "See all in the workbench"
-   [:insurance.review/comments]                "Comments"
-   [:insurance.review/comment-placeholder]     "Add a note about this item."
-   [:insurance.review/add-comment]             "Add comment"
-   [:insurance.review/commented]               "commented"
-   [:insurance.review/leave-reply]             "Leave a reply"
-   [:instrument.coverage/insurer-id]           "Harmonia ID"
-   [:instrument.coverage.status/needs-review]  "Todo"
-   [:instrument.coverage.status/reviewed]      "Reviewed"})
+   [:insurance.review/skip]                      "Skip"
+   [:insurance.review/approve-and-next]          "Approve and next"
+   [:insurance.review/save-and-continue]         "Save and continue"
+   [:insurance.review/items-left]                "%1 items left."
+   [:insurance.review/see-all-in-workbench]      "See all in the workbench"
+   [:insurance.review/comments]                  "Comments"
+   [:insurance.review/comment-placeholder]       "Add a note about this item."
+   [:insurance.review/add-comment]               "Add comment"
+   [:insurance.review/commented]                 "commented"
+   [:insurance.review/leave-reply]               "Leave a reply"
+   [:instrument.coverage/insurer-id]             "Harmonia ID"})
 
 (defn tr
   ([path]
@@ -38,51 +33,46 @@
               (tr path)
               (vec args))))
 
-(deftest review-filter-renders-tab-group-with-supported-review-workflows
-  (let [policy-id (random-uuid)
-        html      (html/->str
-                   (#'views/filter-bar
-                    {:tr tr}
-                    {:policy        {:insurance.policy/policy-id policy-id}
-                     :filter        :needs-review
-                     :filter-counts {:needs-review       1
-                                     :missing-insurer-id 2}
-                     :filter-order  [:needs-review
-                                     :missing-insurer-id]}))]
-    (is (str/includes? html "<wa-tab-group"))
-    (is (str/includes? html "active=\"needs-review\""))
-    (is (= 2 (count (re-seq #"<wa-tab " html))))
-    (is (= 2 (count (re-seq #"<wa-tab-panel" html))))
-    (is (str/includes? html "panel=\"needs-review\""))
-    (is (str/includes? html "panel=\"missing-insurer-id\""))
-    (is (str/includes? html ">Todo<"))
-    (is (str/includes? html ">Missing ID<"))
-    (is (str/includes? html "window.location.href"))
-    (is (not (str/includes? html "<wa-select")))
-    (is (not (str/includes? html "<wa-option")))
-    (is (not (str/includes? html "Missing photo")))
-    (is (not (str/includes? html "Modified")))
-    (is (not (str/includes? html "Added")))
-    (is (not (str/includes? html "Removed")))
-    (is (not (str/includes? html "<wa-button")))))
-
-(deftest workbench-summary-replaces-progress-visual
-  (let [policy-id (random-uuid)
-        html      (html/->str
-                   (#'views/workbench-summary
-                    {:tr tr}
-                    {:policy      {:insurance.policy/policy-id policy-id}
-                     :filter      :missing-insurer-id
-                     :queue-count 23}))]
-    (is (str/includes? html "23 items left."))
-    (is (str/includes? html "See all in the workbench"))
-    (is (str/includes? html (str "/insurance-policy/" policy-id "/workbench?review-filter=missing-id")))
-    (is (str/includes? html "wa-split"))
-    (is (not (str/includes? html "<wa-progress-bar")))
-    (is (not (str/includes? html "Progress")))))
-
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
+
+(def policy-id
+  #uuid "00000000-0000-0000-0000-000000001001")
+
+(def selected-coverage-id
+  #uuid "00000000-0000-0000-0000-000000001002")
+
+(def previous-coverage-id
+  #uuid "00000000-0000-0000-0000-000000001003")
+
+(def next-coverage-id
+  #uuid "00000000-0000-0000-0000-000000001004")
+
+(def policy
+  {:insurance.policy/policy-id policy-id
+   :insurance.policy/status    :insurance.policy.status/draft})
+
+(defn select-attrs
+  [selector hiccup]
+  (some-> (l/select-one selector hiccup)
+          l/attrs))
+
+(defn navigation-url
+  [script]
+  (when-let [[_ url] (re-find #"window\.location\.href = '([^']+)'" script)]
+    url))
+
+(defn action-keyword
+  [script]
+  (when-let [[_ value] (some->> script
+                                (re-find #"[?&]kw=([^&')]+)"))]
+    (keyword value)))
+
+(defn action-keywords
+  [hiccup]
+  (into #{}
+        (keep action-keyword)
+        (tu/select-attribute '* [:data-on:click] hiccup)))
 
 (defn seed-insurance-team!
   [conn member-id]
@@ -102,72 +92,135 @@
    :session    {:session/member {:member/member-id member-id}}
    :page-state {}})
 
-(defn workflow-actions-html
+(defn workflow-actions-view
   [filter coverage]
-  (let [{:keys [conn member-id]} (tc/new-system (str "insurance-review-actions-" (name filter)))
-        policy-id                (random-uuid)
-        previous-id              (random-uuid)
-        next-id                  (random-uuid)]
+  (let [{:keys [conn member-id]} (tu/new-system
+                                  (str "insurance-review-actions-" (name filter)))]
     (seed-insurance-team! conn member-id)
-    (html/->str
-     (#'views/review-action-row
-      (review-req conn member-id)
-      {:filter            filter
-       :selected-coverage (merge {:instrument.coverage/coverage-id (random-uuid)} coverage)
-       :previous-coverage {:instrument.coverage/coverage-id previous-id}
-       :next-coverage     {:instrument.coverage/coverage-id next-id}
-       :policy            {:insurance.policy/policy-id policy-id
-                           :insurance.policy/status    :insurance.policy.status/draft}}))))
+    (sut/review-action-row
+     (review-req conn member-id)
+     {:filter            filter
+      :selected-coverage (merge {:instrument.coverage/coverage-id selected-coverage-id}
+                                coverage)
+      :previous-coverage {:instrument.coverage/coverage-id previous-coverage-id}
+      :next-coverage     {:instrument.coverage/coverage-id next-coverage-id}
+      :policy            policy})))
 
-(deftest todo-review-renders-combined-navigation-and-approve-action-row
-  (let [html (workflow-actions-html
-              :needs-review
-              {:instrument.coverage/status :instrument.coverage.status/needs-review})]
-    (is (str/includes? html "Previous"))
-    (is (str/includes? html "Skip"))
-    (is (str/includes? html "Approve and next"))
-    (is (str/includes? html "wa-outlined"))
-    (is (str/includes? html "flex-wrap: nowrap"))
-    (is (str/includes? html "overflow-x: auto"))
-    (is (str/includes? html "mark-coverage-reviewed"))
-    (is (str/includes? html "#snoico-circle-check-outline"))
-    (is (not (str/includes? html "Mark reviewed")))
-    (is (not (str/includes? html "<wa-button-group")))
-    (is (not (str/includes? html "Change status")))
-    (is (not (str/includes? html "update-insurer-id")))
-    (is (not (str/includes? html "wa-split")))
-    (is (not (str/includes? html "Harmonia ID")))))
+(defn action-buttons
+  [view]
+  (l/select :app.ui2.button/button view))
 
-(deftest missing-id-review-renders-combined-navigation-and-harmonia-id-action-row
-  (let [html (workflow-actions-html
-              :missing-insurer-id
-              {:instrument.coverage/status     :instrument.coverage.status/coverage-active
-               :instrument.coverage/insurer-id nil})]
-    (is (str/includes? html "Previous"))
-    (is (str/includes? html "Skip"))
-    (is (str/includes? html "<wa-input"))
-    (is (str/includes? html "Harmonia ID"))
-    (is (str/includes? html "flex-wrap: wrap"))
-    (is (str/includes? html "min-inline-size: min(100%, 24rem)"))
-    (is (str/includes? html "data-bind=\"insuranceReview.insurerId\""))
-    (is (str/includes? html "$insuranceReview ="))
-    (is (str/includes? html "document.getElementById"))
-    (is (str/includes? html "update-insurer-id"))
-    (is (str/includes? html "Save and continue"))
-    (is (not (str/includes? html ">Save<")))
-    (is (not (str/includes? html "Mark reviewed")))
-    (is (not (str/includes? html "mark-coverage-reviewed")))
-    (is (not (str/includes? html "<wa-button-group")))
-    (is (not (str/includes? html "Change status")))))
+(deftest review-filters
+  (testing "The review queue supports the Todo and Missing ID workflows."
+    (let [view (sut/filter-bar
+                {:tr tr}
+                {:policy       policy
+                 :filter       :needs-review
+                 :filter-order [:needs-review :missing-insurer-id]})
+          tabs (l/select 'wa-tab view)]
+      (testing "Todo is the active workflow."
+        (is (= {:group-active "needs-review"
+                :active-tabs  [true nil]}
+               {:group-active (:active (select-attrs 'wa-tab-group view))
+                :active-tabs  (mapv #(get (l/attrs %) :active) tabs)})))
+      (testing "Each tab is labelled and navigates to its workflow."
+        (is (= [{:label "Todo"
+                 :panel "needs-review"
+                 :url   (str "/insurance-policy/" policy-id
+                             "/review?filter=needs-review")}
+                {:label "Missing ID"
+                 :panel "missing-insurer-id"
+                 :url   (str "/insurance-policy/" policy-id
+                             "/review?filter=missing-insurer-id")}]
+               (mapv (fn [tab]
+                       (let [attrs (l/attrs tab)]
+                         {:label (l/text tab)
+                          :panel (:panel attrs)
+                          :url   (navigation-url (:data-on:click attrs))}))
+                     tabs))))
+      (testing "Each workflow has a matching tab panel."
+        (is (= ["needs-review" "missing-insurer-id"]
+               (mapv #(get (l/attrs %) :name)
+                     (l/select 'wa-tab-panel view))))))))
 
-(deftest comments-aside-renders-dummy-comment-thread
-  (let [html (html/->str (#'views/review-aside {:tr tr} {}))]
-    (is (str/includes? html "<aside"))
-    (is (str/includes? html "Comments"))
-    (is (str/includes? html "<wa-textarea"))
-    (is (str/includes? html "Add comment"))
-    (is (str/includes? html "<wa-avatar"))
-    (is (str/includes? html "<wa-relative-time"))
-    (is (str/includes? html "commented"))
-    (is (str/includes? html "Leave a reply"))
-    (is (not (str/includes? html ">Queue<")))))
+(deftest workbench-summary
+  (testing "The Missing ID review queue contains 23 items."
+    (let [view (sut/workbench-summary
+                {:tr tr}
+                {:policy      policy
+                 :filter      :missing-insurer-id
+                 :queue-count 23})
+          link (l/select-one 'a view)]
+      (testing "The number of remaining items is shown."
+        (is (= "23 items left."
+               (-> (l/select-one 'span view) l/text))))
+      (testing "The workbench link preserves the active review filter."
+        (is (= {:text "See all in the workbench"
+                :href (str "/insurance-policy/" policy-id
+                           "/workbench?review-filter=missing-id")}
+               {:text (l/text link)
+                :href (:href (l/attrs link))}))))))
+
+(deftest todo-review
+  (testing "An insurance-team member is reviewing a Todo item on a draft policy."
+    (let [view    (workflow-actions-view
+                   :needs-review
+                   {:instrument.coverage/status
+                    :instrument.coverage.status/needs-review})
+          buttons (action-buttons view)]
+      (testing "Previous and Skip navigate to the adjacent queue items."
+        (is (= [{:text "Previous"
+                 :href (str "/insurance-policy/" policy-id
+                            "/review?filter=needs-review&coverage-id="
+                            previous-coverage-id)}
+                {:text "Skip"
+                 :href (str "/insurance-policy/" policy-id
+                            "/review?filter=needs-review&coverage-id="
+                            next-coverage-id)}]
+               (mapv (fn [button]
+                       {:text (l/text button)
+                        :href (:href (l/attrs button))})
+                     (take 2 buttons)))))
+      (testing "The primary action approves the item and advances the queue."
+        (is (= {:label   "Approve and next"
+                :actions #{:mark-coverage-reviewed}}
+               {:label   (-> buttons last l/text)
+                :actions (action-keywords view)}))))))
+
+(deftest missing-id-review
+  (testing "An insurance-team member is reviewing an item without a Harmonia ID."
+    (let [view  (workflow-actions-view
+                 :missing-insurer-id
+                 {:instrument.coverage/status     :instrument.coverage.status/coverage-active
+                  :instrument.coverage/insurer-id nil})
+          input (l/select-one 'wa-input view)]
+      (testing "The missing Harmonia ID can be entered."
+        (is (= {:label     "Harmonia ID"
+                :value     ""
+                :data-bind "insuranceReview.insurerId"}
+               (select-keys (l/attrs input) [:label :value :data-bind]))))
+      (testing "Saving the ID continues to the next queue item."
+        (is (= {:labels  ["Previous" "Skip" "Save and continue"]
+                :actions #{:update-insurer-id}}
+               {:labels  (mapv l/text (action-buttons view))
+                :actions (action-keywords view)}))))))
+
+(deftest comments
+  (testing "The review aside displays the temporary comment thread."
+    (let [view     (sut/review-aside {:tr tr} {})
+          textarea (l/select-one 'wa-textarea view)]
+      (testing "A reviewer can compose a comment."
+        (is (= {:heading     ["Comments"]
+                :placeholder "Add a note about this item."
+                :buttons     ["Add comment"]}
+               {:heading     (mapv l/text (l/select '[aside h2] view))
+                :placeholder (:placeholder (l/attrs textarea))
+                :buttons     (mapv l/text (action-buttons view))})))
+      (testing "The dummy thread contains three attributed comments."
+        (is (= {:authors         ["Robert Fox" "Virginia Woolf" "Clarissa Vaughan"]
+                :relative-times 3
+                :reply-link     "Leave a reply"}
+               {:authors         (mapv #(get (l/attrs %) :app.ui2.avatar/name)
+                                       (l/select :app.ui2.avatar/avatar view))
+                :relative-times (count (l/select 'wa-relative-time view))
+                :reply-link     (-> (l/select-one 'a view) l/text)}))))))

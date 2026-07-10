@@ -51,7 +51,7 @@
     (tr [:nav/insurance])]
    [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]])
 
-(defn- more-actions-menu
+(defn more-actions-menu
   [{:keys [tr]} policy]
   (let [button-id    "insurance-policy-dashboard-more-actions"
         policy-id    (:insurance.policy/policy-id policy)
@@ -213,7 +213,7 @@
           :style "margin: 0;"}
      title]))
 
-(defn- dashboard-card
+(defn dashboard-card
   [{:keys [class header-actions subtitle title]} & children]
   (let [attrs (cond-> {:appearance  "plain"
                        :with-header true
@@ -298,7 +298,7 @@
                  (tr [status])
                  (get status-counts status 0)))
 
-(defn- review-status-section
+(defn review-status-section
   [{:keys [tr] :as req} {:keys [policy status-counts totals]}]
   (let [total         (:total-instruments totals)
         needs-review  (get status-counts :instrument.coverage.status/needs-review 0)
@@ -345,7 +345,7 @@
                    (tr label-key)
                    count)))
 
-(defn- health-checklist-section
+(defn health-checklist-section
   [{:keys [tr] :as req} {:keys [policy totals]}]
   (let [total        (count health-checks)
         passed       (count (filter #(health-check-passed? totals %) health-checks))
@@ -495,7 +495,7 @@
     [:dt label]
     [:dd caption]]])
 
-(defn- coverage-mix-section
+(defn coverage-mix-section
   [{:keys [tr]} {:keys [policy totals]}]
   (let [currency          (:insurance.policy/currency policy)
         chart-description (tr [:insurance.dashboard/coverage-mix-subtitle])]
@@ -541,7 +541,7 @@
            [[:div {:class "wa-caption-s wa-color-text-quiet"}
              (tr [:insurance.dashboard/no-recent-changes])]])))
 
-(defn- policy-settings-action
+(defn policy-settings-action
   [{:keys [tr]} policy]
   [button/Button {:slot        "header-actions"
                   :appearance  "plain"

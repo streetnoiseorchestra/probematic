@@ -339,7 +339,22 @@
        }
      };")])
 
-(defn photos-page [{:keys [db instrument tr] :as req}]
+(defn photos-page-content
+  [req policy instrument redirect]
+  [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
+   [page-header/PageHeader {:class      "insurance-coverage-page-header"
+                            :breadcrumb (photos-breadcrumb req policy instrument)
+                            :title      ((:tr req) [:instrument.coverage/create-title])
+                            :subtitle   (:instrument/name instrument)}]
+   (create-steps (:tr req) 2)
+   (photo-upload-section req instrument)
+   (photo-actions req
+                  (:insurance.policy/policy-id policy)
+                  (:instrument/instrument-id instrument)
+                  redirect)
+   (upload-script)])
+
+(defn photos-page [{:keys [db instrument] :as req}]
   (let [policy-id     (http.util/path-param-uuid! req :policy-id)
         instrument-id (http.util/path-param-uuid! req :instrument-id)
         policy        (or (:policy req) (q/retrieve-policy db policy-id))
@@ -356,14 +371,6 @@
 
       :else
       (ui2/datastar-page
-       [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-        [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                                 :breadcrumb (photos-breadcrumb req policy instrument)
-                                 :title      (tr [:instrument.coverage/create-title])
-                                 :subtitle   (:instrument/name instrument)}]
-        (create-steps tr 2)
-        (photo-upload-section req instrument)
-        (photo-actions req policy-id instrument-id redirect)
-        (upload-script)]))))
+       (photos-page-content req policy instrument redirect)))))
 
 (d*/refresh-all!)

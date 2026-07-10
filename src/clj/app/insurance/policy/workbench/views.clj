@@ -106,7 +106,7 @@
       (contains? filters :change-statuses) (assoc :change-status (:change-statuses filters))
       (contains? filters :value-filter) (merge (value-filter-query-params (:value-filter filters))))))
 
-(defn- workbench-params
+(defn workbench-params
   [req]
   (merge (query-params req)
          (active-filter-params req)))
@@ -363,7 +363,7 @@
            (view-button tr workbench view-option)))
    (view-select-form tr workbench)])
 
-(defn- search-form
+(defn search-form
   [{:keys [tr] :as req} {:keys [filters pagination policy view]}]
   (into [:form {:method "get"
                 :action (urls/link-policy-workbench policy)}]
@@ -389,7 +389,7 @@
                              :data-on:input__debounce.250ms
                              (str "@post('" (d*/act req ::actions/set-member-search-phrase) "')")}]])))
 
-(defn- ownership-select
+(defn ownership-select
   [tr selected-ownership]
   (into [:wa-select {:value      (name selected-ownership)
                      :appearance "outlined"
@@ -416,7 +416,7 @@
                        (contains? selected-ids id) (assoc :checked true))]
              [:span label]]))))
 
-(defn- category-select
+(defn category-select
   [_tr categories selected-category-ids]
   (checkbox-list "insuranceWorkbench.filterDraft.categoryIds"
                  selected-category-ids
@@ -424,7 +424,7 @@
                    {:id    category-id
                     :label category-name})))
 
-(defn- coverage-type-select
+(defn coverage-type-select
   [_tr policy selected-coverage-type-ids]
   (checkbox-list "insuranceWorkbench.filterDraft.coverageTypeIds"
                  selected-coverage-type-ids
@@ -438,19 +438,19 @@
                 checked? (assoc :checked true))
    label])
 
-(defn- missing-photos-switch
+(defn missing-photos-switch
   [tr checked?]
   (boolean-switch "insuranceWorkbench.filterDraft.missingPhotos"
                   checked?
                   (tr [:insurance.workbench/missing-photos])))
 
-(defn- missing-harmonia-id-switch
+(defn missing-harmonia-id-switch
   [tr checked?]
   (boolean-switch "insuranceWorkbench.filterDraft.missingHarmoniaId"
                   checked?
                   (tr [:insurance.workbench/missing])))
 
-(defn- workflow-status-select
+(defn workflow-status-select
   [tr selected-workflow-statuses]
   (checkbox-list "insuranceWorkbench.filterDraft.workflowStatuses"
                  selected-workflow-statuses
@@ -458,7 +458,7 @@
                    {:id    (name status)
                     :label (insurance-ui/status-badge tr (domain/qualified-coverage-status status))})))
 
-(defn- change-status-select
+(defn change-status-select
   [tr selected-change-statuses]
   (checkbox-list "insuranceWorkbench.filterDraft.changeStatuses"
                  selected-change-statuses
@@ -470,7 +470,7 @@
   [signal-path attrs]
   (assoc attrs :data-bind signal-path))
 
-(defn- value-filter-control
+(defn value-filter-control
   [tr]
   [:div {:class "wa-stack wa-gap-s"}
    (into [:wa-select {:value      (name domain/default-value-filter-operator)
@@ -604,7 +604,7 @@
          "$insuranceWorkbench.filterDraft.valueMax = ''; "
          (d*/action :post (d*/act req ::actions/apply-filter)))))
 
-(defn- filter-editor-shell
+(defn filter-editor-shell
   [{:keys [tr] :as req} field & body]
   [:div {:class     "wa-stack wa-gap-s"
          :data-show (str "$insuranceWorkbench.filterEditor.field === '" (name field) "'")}
@@ -830,7 +830,7 @@
          " : "
          (pr-str none-url))))
 
-(defn- table-settings-popover
+(defn table-settings-popover
   [{:keys [tr] :as req} {:keys [filters policy table view]}]
   [:wa-popover {:id            table-settings-popover-id
                 :for           table-settings-button-id
@@ -858,7 +858,7 @@
               ::ico/name    :sliders-horizontal
               :style      "font-size: var(--wa-font-size-l);"}]])
 
-(defn- workbench-toolbar
+(defn workbench-toolbar
   [{:keys [tr] :as req} workbench]
   [:div {:class "wa-stack wa-gap-s"}
    (view-button-row tr workbench)
@@ -883,7 +883,7 @@
      :valueMin      (some-> min form-value)
      :valueMax      (some-> max form-value)}))
 
-(defn- selection-signals
+(defn selection-signals
   ([policy filters]
    (selection-signals policy filters nil :all))
   ([policy filters table]
@@ -1105,7 +1105,7 @@
    (when-not editable?
      [:small (tr [:insurance.workbench/read-only])])])
 
-(defn- bulk-action-bar
+(defn bulk-action-bar
   [{:keys [tr] :as req} {:keys [editable? filters rows]}]
   (list
    (bulk-action-sentinel)
@@ -1415,7 +1415,7 @@
        (mapcat identity)
        seq))
 
-(defn- row-cell-content
+(defn row-cell-content
   [{:keys [tr]} currency row column-id]
   (let [{:keys [category-name coverage-id coverage-type-names harmonia-id instrument-name
                 missing-insurer-id? missing-photo? photo-count private? insured-value cost]} row]
@@ -1473,7 +1473,7 @@
    (into [:tr attrs]
          (row-cells req currency columns row))))
 
-(defn- flat-table
+(defn flat-table
   [req {:keys [filters policy rows table view]}]
   (let [currency     (:insurance.policy/currency policy)
         coverage-ids (mapv :coverage-id rows)
@@ -1682,7 +1682,7 @@
        (page-size-dropdown tr workbench)
        (pagination-nav-button tr [:action/next] :caret-right next-url)]]]))
 
-(defn- rows-section
+(defn rows-section
   [req {:keys [filters rows] :as workbench}]
   (if (seq rows)
     [:div {:class "wa-stack wa-gap-xs"}

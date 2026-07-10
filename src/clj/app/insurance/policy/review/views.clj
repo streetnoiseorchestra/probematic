@@ -70,7 +70,7 @@
                             :style "--padding: 0;"}
                      (= selected-filter filter) (assoc :active true))]))
 
-(defn- filter-bar
+(defn filter-bar
   [{:keys [tr]} {:keys [filter filter-order policy]}]
   (let [selected-filter filter]
     (into [:wa-tab-group {:active (filter-panel-name selected-filter)}]
@@ -178,7 +178,7 @@
   [policy filter]
   (urls/link-policy-workbench policy {:review-filter (get workbench-filter-slugs filter filter)}))
 
-(defn- workbench-summary
+(defn workbench-summary
   [{:keys [tr]} {:keys [filter policy queue-count]}]
   [:wa-card {:appearance "plain"
              :style      "background: var(--wa-color-surface-default);"}
@@ -220,7 +220,7 @@
       (ui2/empty-state ((:tr req) [:insurance.review/empty-title])
                        ((:tr req) [:insurance.review/empty-body])))]])
 
-(defn- review-aside
+(defn review-aside
   [req _review]
   [:aside
    (insurance-ui/comments-card req insurance-ui/comments-dummy)
@@ -266,7 +266,7 @@
     (skip-button req review)
     (primary-review-action req review)]])
 
-(defn- review-action-row
+(defn review-action-row
   [req {:keys [filter] :as review}]
   (if (= filter :missing-insurer-id)
     [:div {:style (str "display: flex; flex-wrap: wrap; gap: var(--wa-space-s); "

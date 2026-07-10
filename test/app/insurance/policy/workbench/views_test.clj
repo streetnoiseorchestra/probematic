@@ -1,41 +1,32 @@
 (ns app.insurance.policy.workbench.views-test
   (:require
-   [app.html :as html]
-   [app.insurance.policy.workbench.views :as views]
+   [app.insurance.policy.workbench.views :as sut]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
+   [lookup.core :as l]
    [reitit.core :as r]))
 
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def translations
-  {[:instrument/category] "Category"
-   [:insurance/value] "Versicherungswert"
-   [:insurance/cost] "Cost"
-   [:insurance/item-count] "Count"
-   [:insurance/total] "Total"
-   [:insurance.workbench/filter-by] "Filter by: %1"
-   [:insurance.workbench/ownership] "Ownership"
-   [:insurance.workbench/view] "View"
-   [:insurance.workbench/ownership-band] "Band"
-   [:insurance.workbench/ownership-private] "Private"
-   [:insurance.workbench/selected] "selected"
-   [:insurance.workbench/mark-workflow] "Mark Workflow"
-   [:insurance.workbench/set-change] "Set Change"
-   [:insurance.workbench/status] "Status"
-   [:insurance.workbench/deselect-all] "Deselect All"
-   [:insurance.workbench/expand-all] "Expand all"
-   [:insurance.workbench/collapse-all] "Collapse all"
-   [:insurance.workbench/value-operator] "Value operator"
-   [:insurance.workbench/value-greater-than] "is greater than"
-   [:insurance.workbench/value-less-than] "is less than"
-   [:insurance.workbench/value-equal-to] "is equal to"
-   [:insurance.workbench/value-between] "is between"
-   [:insurance.workbench/value-min] "Minimum"
-   [:insurance.workbench/value-max] "Maximum"
-   [:insurance.workbench/pagination-summary] "%1–%2 of %3 results"
-   [:insurance.workbench/rows-per-page] "Rows per page"
+  {[:action/apply] "Apply"
+   [:action/back] "Back"
+   [:action/edit] "Edit"
+   [:action/filter] "Filter"
+   [:action/next] "Next"
+   [:action/previous] "Previous"
+   [:action/remove] "Remove"
+   [:action/select-all] "Select all"
+   [:action/view] "View"
+   [:actions] "Actions"
+   [:band-instrument] "Band Instrument"
+   [:band-private] "Ownership"
+   [:col/member] "Member"
+   [:instrument/category] "Category"
+   [:instrument/instrument] "Instrument"
+   [:instrument.coverage/cost] "Cost"
+   [:instrument.coverage/insurer-id] "Harmonia ID"
    [:instrument.coverage.status/needs-review] "Todo"
    [:instrument.coverage.status/reviewed] "Reviewed"
    [:instrument.coverage.status/coverage-active] "Active"
@@ -43,16 +34,48 @@
    [:instrument.coverage.change/new] "Added"
    [:instrument.coverage.change/removed] "Removed"
    [:instrument.coverage.change/none] "No changes"
-   [:band-instrument] "Band Instrument"
-   [:private-instrument] "Private Instrument"
-   [:action/apply] "Apply"
-   [:action/back] "Back"
-   [:action/edit] "Edit"
-   [:action/next] "Next"
-   [:action/previous] "Previous"
-   [:action/remove] "Remove"
-   [:action/view] "View"
-   [:actions] "Actions"})
+   [:insurance/cost] "Cost"
+   [:insurance/coverage-types] "Coverage types"
+   [:insurance/item-count] "Count"
+   [:insurance/total] "Total"
+   [:insurance/value] "Versicherungswert"
+   [:insurance/value-abbrev] "Value"
+   [:insurance.workbench/and] "and"
+   [:insurance.workbench/change-status] "Change"
+   [:insurance.workbench/collapse-all] "Collapse all"
+   [:insurance.workbench/columns] "Columns"
+   [:insurance.workbench/deselect-all] "Deselect All"
+   [:insurance.workbench/expand-all] "Expand all"
+   [:insurance.workbench/filter-by] "Filter by: %1"
+   [:insurance.workbench/group-member] "Group by member"
+   [:insurance.workbench/mark-workflow] "Mark Workflow"
+   [:insurance.workbench/member-search-placeholder] "Search members"
+   [:insurance.workbench/missing] "Missing"
+   [:insurance.workbench/missing-photos] "Missing photos"
+   [:insurance.workbench/ownership] "Ownership"
+   [:insurance.workbench/ownership-all] "All"
+   [:insurance.workbench/ownership-band] "Band"
+   [:insurance.workbench/ownership-private] "Private"
+   [:insurance.workbench/pagination] "Pagination"
+   [:insurance.workbench/pagination-summary] "%1–%2 of %3 results"
+   [:insurance.workbench/photos] "Photos"
+   [:insurance.workbench/rows-per-page] "Rows per page"
+   [:insurance.workbench/search] "Search"
+   [:insurance.workbench/select-row] "Select row"
+   [:insurance.workbench/selected] "selected"
+   [:insurance.workbench/set-change] "Set Change"
+   [:insurance.workbench/status] "Status"
+   [:insurance.workbench/table-settings] "Table settings"
+   [:insurance.workbench/value-between] "is between"
+   [:insurance.workbench/value-equal-to] "is equal to"
+   [:insurance.workbench/value-greater-than] "is greater than"
+   [:insurance.workbench/value-less-than] "is less than"
+   [:insurance.workbench/value-max] "Maximum"
+   [:insurance.workbench/value-min] "Minimum"
+   [:insurance.workbench/value-operator] "Value operator"
+   [:insurance.workbench/view] "View"
+   [:insurance.workbench/workflow-status] "Workflow"
+   [:private-instrument] "Private Instrument"})
 
 (defn tr
   ([path]
@@ -63,1194 +86,619 @@
            (tr path)
            (map-indexed vector args))))
 
-(deftest workbench-params-uses-active-category-filter-from-page-state
-  (let [category-a (random-uuid)
-        category-b (random-uuid)]
-    (is (= {:view                "todo"
-            :review-filter       nil
-            :member-q            nil
-            :category-id         [category-a category-b]
-            :coverage-type-id    nil
-            :ownership           :private
-            :missing-photos      nil
-            :missing-harmonia-id nil
-            :workflow-status     nil
-            :change-status       nil
-            :value-operator      nil
-            :value               nil
-            :value-min           nil
-            :value-max           nil
-            :group               "member"}
-           (#'views/workbench-params
-            {:parameters {:query {:view "todo"
-                                  :group "member"}}
-             :page-state {:insurance-workbench
-                          {:filters {:category-ids [category-a category-b]
-                                     :ownership :private}}}})))))
+(def policy-id
+  #uuid "00000000-0000-0000-0000-000000002001")
 
-(deftest workbench-params-uses-active-member-search-from-page-state
-  (is (= {:active-search "Zoe"
-          :cleared-search nil}
-         {:active-search
-          (:member-q
-           (#'views/workbench-params
-            {:parameters {:query {:view     "todo"
-                                  :member-q "Anna"}}
-             :page-state {:insurance-workbench
-                          {:filters {:member-q "Zoe"}}}}))
-          :cleared-search
-          (:member-q
-           (#'views/workbench-params
-            {:parameters {:query {:view     "todo"
-                                  :member-q "Anna"}}
-             :page-state {:insurance-workbench
-                          {:filters {:member-q nil}}}}))})))
+(def category-id
+  #uuid "00000000-0000-0000-0000-000000002002")
 
-(deftest empty-category-filter-in-page-state-overrides-category-query-param
-  (let [category-id (random-uuid)]
-    (is (= {:view                "todo"
-            :review-filter       nil
-            :member-q            nil
-            :category-id         []
-            :coverage-type-id    nil
-            :ownership           :all
-            :missing-photos      nil
-            :missing-harmonia-id nil
-            :workflow-status     nil
-            :change-status       nil
-            :value-operator      nil
-            :value               nil
-            :value-min           nil
-            :value-max           nil
-            :group               "member"}
-           (#'views/workbench-params
-            {:parameters {:query {:view "todo"
-                                  :group "member"
-                                  :category-id (str category-id)
-                                  :ownership "private"}}
-             :page-state {:insurance-workbench
-                          {:filters {:category-ids []
-                                     :ownership :all}}}})))))
+(def coverage-type-id
+  #uuid "00000000-0000-0000-0000-000000002003")
 
-(deftest workbench-params-uses-active-value-filter-from-page-state
-  (is (= {:view                "todo"
-          :review-filter       nil
-          :member-q            nil
-          :category-id         nil
-          :coverage-type-id    nil
-          :ownership           nil
-          :missing-photos      nil
-          :missing-harmonia-id nil
-          :workflow-status     nil
-          :change-status       nil
-          :value-operator      :between
-          :value               nil
-          :value-min           1000M
-          :value-max           3000M
-          :group               "member"}
-         (#'views/workbench-params
-          {:parameters {:query {:view  "todo"
-                                :group "member"}}
-           :page-state {:insurance-workbench
-                        {:filters {:value-filter {:operator :between
-                                                  :min      1000M
-                                                  :max      3000M}}}}}))))
+(def coverage-id
+  #uuid "00000000-0000-0000-0000-000000002004")
 
-(deftest category-filter-control-renders-checkbox-list
-  (let [category-id (random-uuid)
-        html        (html/->str
-                     (#'views/category-select
-                      tr
-                      [{:category-id category-id
-                        :category-name "Akkordeon"}]
-                      #{}))]
-    (is (= {:has-category-checkbox? true
-            :binds-checkboxes-to-draft? true
-            :uses-custom-checkbox-js? false
-            :uses-wa-select? false}
-           {:has-category-checkbox?
-            (and (str/includes? html "<input")
-                 (str/includes? html "type=\"checkbox\"")
-                 (str/includes? html "Akkordeon")
-                 (str/includes? html (str "value=\"" category-id "\"")))
-            :binds-checkboxes-to-draft?
-            (str/includes? html "data-bind=\"insuranceWorkbench.filterDraft.categoryIds\"")
-            :uses-custom-checkbox-js?
-            (or (str/includes? html "evt.target.checked")
-                (str/includes? html "el.checked ="))
-            :uses-wa-select?
-            (str/includes? html "<wa-select")}))))
+(def member-id
+  #uuid "00000000-0000-0000-0000-000000002005")
 
-(deftest extended-filter-controls-use-checkboxes-and-switches
-  (let [coverage-type-id (random-uuid)
-        html             (html/->str
-                          [:div
-                           (#'views/coverage-type-select
-                            tr
-                            {:insurance.policy/coverage-types
-                             [{:insurance.coverage.type/type-id coverage-type-id
-                               :insurance.coverage.type/name "Basic"}]}
-                            #{coverage-type-id})
-                           (#'views/missing-photos-switch tr true)
-                           (#'views/missing-harmonia-id-switch tr false)
-                           (#'views/workflow-status-select tr #{:needs-review :reviewed})
-                           (#'views/change-status-select tr #{:changed :new})])]
-    (is (= {:coverage-types-checkboxes? true
-            :missing-filters-switches? true
-            :workflow-checkboxes? true
-            :workflow-label-icons? true
-            :change-checkboxes? true
-            :change-label-icons? true
-            :badge-icons-use-start-slot? true}
-           {:coverage-types-checkboxes?
-            (and (str/includes? html "Basic")
-                 (str/includes? html "data-bind=\"insuranceWorkbench.filterDraft.coverageTypeIds\"")
-                 (str/includes? html (str "value=\"" coverage-type-id "\"")))
-            :missing-filters-switches?
-            (and (str/includes? html "<wa-switch")
-                 (str/includes? html "data-bind__prop.checked__event.change=\"insuranceWorkbench.filterDraft.missingPhotos\"")
-                 (str/includes? html "data-bind__prop.checked__event.change=\"insuranceWorkbench.filterDraft.missingHarmoniaId\""))
-            :workflow-checkboxes?
-            (and (str/includes? html "data-bind=\"insuranceWorkbench.filterDraft.workflowStatuses\"")
-                 (str/includes? html "value=\"needs-review\"")
-                 (str/includes? html "value=\"reviewed\""))
-            :workflow-label-icons?
-            (and (str/includes? html "circle-question-outline")
-                 (str/includes? html "var(--sno-dashboard-insurance-todo-needs-review-color")
-                 (str/includes? html "circle-dot-outline"))
-            :change-checkboxes?
-            (and (str/includes? html "data-bind=\"insuranceWorkbench.filterDraft.changeStatuses\"")
-                 (str/includes? html "value=\"changed\"")
-                 (str/includes? html "value=\"new\""))
-            :change-label-icons?
-            (and (str/includes? html "circle-exclamation")
-                 (str/includes? html "var(--wa-color-warning-fill-loud)")
-                 (str/includes? html "circle-plus-solid"))
-            :badge-icons-use-start-slot?
-            (str/includes? html "slot=\"start\"")}))))
+(def second-coverage-id
+  #uuid "00000000-0000-0000-0000-000000002006")
 
-(deftest filter-editors-use-filter-by-title-and-unlabelled-controls
-  (let [value-html     (html/->str
-                        (#'views/filter-editor-shell
-                         {::r/router router
-                          :tr        tr}
-                         :value
-                         (#'views/value-filter-control tr)))
-        ownership-html (html/->str
-                        (#'views/filter-editor-shell
-                         {::r/router router
-                          :tr        tr}
-                         :ownership
-                         (#'views/ownership-select tr :private)))]
-    (is (= {:value-title?                 true
-            :value-select-unlabelled?     true
-            :value-inputs-native?         true
-            :value-input-unlabelled?      true
-            :value-controls-accessible?   true
-            :value-arrow-icon?            true
-            :value-inputs-bind-native?    true
-            :value-inputs-share-icon-row? true
-            :ownership-title?             true
-            :ownership-select-unlabelled? true
-            :ownership-select-accessible? true}
-           {:value-title?
-            (str/includes? value-html ">Filter by: Versicherungswert</strong>")
-            :value-select-unlabelled?
-            (not (str/includes? value-html " label=\"Value operator\""))
-            :value-inputs-native?
-            (and (str/includes? value-html "<input")
-                 (not (str/includes? value-html "<wa-input")))
-            :value-input-unlabelled?
-            (not (str/includes? value-html " label=\"Versicherungswert\""))
-            :value-controls-accessible?
-            (and (str/includes? value-html "aria-label=\"Value operator\"")
-                 (str/includes? value-html "aria-label=\"Versicherungswert\""))
-            :value-arrow-icon?
-            (str/includes? value-html "arrow-bend-down-right")
-            :value-inputs-bind-native?
-            (and (str/includes? value-html "data-bind=\"insuranceWorkbench.filterDraft.value\"")
-                 (str/includes? value-html "data-bind=\"insuranceWorkbench.filterDraft.valueMin\"")
-                 (str/includes? value-html "data-bind=\"insuranceWorkbench.filterDraft.valueMax\"")
-                 (not (str/includes? value-html "data-on:input=\"$insuranceWorkbench.filterDraft.value")))
-            :value-inputs-share-icon-row?
-            (and (str/includes? value-html "grid-template-columns: auto minmax(0, 1fr)")
-                 (str/includes? value-html "grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)"))
-            :ownership-title?
-            (str/includes? ownership-html ">Filter by: Ownership</strong>")
-            :ownership-select-unlabelled?
-            (not (str/includes? ownership-html " label=\"Ownership\""))
-            :ownership-select-accessible?
-            (str/includes? ownership-html "aria-label=\"Ownership\"")}))))
+(def policy
+  {:insurance.policy/policy-id policy-id
+   :insurance.policy/currency  :EUR
+   :insurance.policy/coverage-types
+   [{:insurance.coverage.type/type-id coverage-type-id
+     :insurance.coverage.type/name    "Basic"}]})
 
-(deftest selection-signals-predefines-active-filter-arrays
-  (let [category-id      (random-uuid)
-        coverage-type-id (random-uuid)
-        signals          (#'views/selection-signals
-                          {:insurance.policy/policy-id (random-uuid)}
-                          {:category-ids #{category-id}
-                           :coverage-type-ids #{coverage-type-id}
-                           :ownership :private
-                           :missing-photos? true
-                           :missing-harmonia-id? true
-                           :workflow-statuses #{:needs-review :reviewed}
-                           :change-statuses #{:changed :new}
-                           :group :member})]
-    (is (= {:categoryIds       [(str category-id)]
-            :coverageTypeIds   [(str coverage-type-id)]
-            :missingPhotos     true
-            :missingHarmoniaId true
-            :workflowStatuses  ["needs-review" "reviewed"]
-            :changeStatuses    ["changed" "new"]}
-           (select-keys (get-in signals [:insuranceWorkbench :filterDraft])
-                        [:categoryIds
-                         :coverageTypeIds
-                         :missingPhotos
-                         :missingHarmoniaId
-                         :workflowStatuses
-                         :changeStatuses])))))
+(def request
+  {::r/router router
+   :tr        tr})
 
-(deftest selection-signals-use-server-table-column-state
-  (let [signals (#'views/selection-signals
-                 {:insurance.policy/policy-id (random-uuid)}
-                 {:group :member}
-                 {:columns {:cost false
-                            :harmonia-id false}})]
-    (is (= {"actions" true
-            "category" true
-            "cost" false
-            "coverage-types" true
-            "harmonia-id" false
-            "instrument" true
-            "member" true
-            "ownership" true
-            "photos" false
-            "status" true
-            "value" true}
-           (get-in signals [:insuranceWorkbench :table :columns])))))
+(def row
+  {:category-name       "Strings"
+   :coverage-id         coverage-id
+   :coverage-type-names ["Grundschutz" "Nachzeit im Auto" "Proberaum" "Basic"]
+   :harmonia-id         "H-123"
+   :instrument-name     "Violin"
+   :member-id           member-id
+   :member-label        "Anna"
+   :missing-insurer-id? false
+   :missing-photo?      false
+   :photo-count         3
+   :private?            false
+   :workflow-status     :instrument.coverage.status/needs-review
+   :change-status       :instrument.coverage.change/changed
+   :insured-value       1000M
+   :cost                12.34M})
 
-(deftest search-form-typeahead-posts-member-search-and-preserves-active-category-filter
-  (let [policy-id   (random-uuid)
-        category-id (random-uuid)
-        html        (html/->str
-                     (#'views/search-form
-                      {::r/router router
-                       :tr        tr}
-                      {:policy  {:insurance.policy/policy-id policy-id}
-                       :view    :todo
-                       :filters {:group :member
-                                 :ownership :all
-                                 :member-q "Anna"
-                                 :category-ids #{category-id}}}))]
-    (is (= {:preserves-category?      true
-            :preserves-member-search? true
-            :binds-member-search?     true
-            :posts-typeahead?         true
-            :uses-clear?              true}
-           {:preserves-category?
-            (and (str/includes? html "name=\"category-id\"")
-                 (str/includes? html (str "value=\"" category-id "\"")))
-            :preserves-member-search?
-            (str/includes? html "value=\"Anna\"")
-            :binds-member-search?
-            (str/includes? html "data-bind=\"insuranceWorkbench.memberQ\"")
-            :posts-typeahead?
-            (and (str/includes? html "data-on:input__debounce.250ms")
-                 (str/includes? html "set-member-search-phrase"))
-            :uses-clear?
-            (str/includes? html "with-clear")}))))
+(defn select-attrs
+  [selector hiccup]
+  (some-> (l/select-one selector hiccup)
+          l/attrs))
 
-(deftest toolbar-renders-responsive-view-select-and-flanked-search-controls
-  (let [policy-id   (random-uuid)
-        category-id (random-uuid)
-        html        (html/->str
-                     (#'views/workbench-toolbar
-                      {::r/router router
-                       :tr        tr}
-                      {:policy               {:insurance.policy/policy-id policy-id}
-                       :view                 :todo
-                       :available-categories []
-                       :filters              {:group :member
-                                              :ownership :all
-                                              :member-q "Anna"
-                                              :category-ids #{category-id}}}))]
-    (is (= {:view-buttons-nav?           true
-            :mobile-view-select?         true
-            :view-select-has-no-label?   true
-            :view-select-preserves-state? true
-            :search-row-flanked?         true
-            :search-actions-grouped?     true}
-           {:view-buttons-nav?
-            (and (str/includes? html "insurance-workbench-view-switcher")
-                 (str/includes? html "<nav aria-label=\"View\"")
-                 (str/includes? html "data-workbench-view=\"todo\""))
-            :mobile-view-select?
-            (and (str/includes? html "<wa-select")
-                 (str/includes? html "name=\"view\"")
-                 (str/includes? html "aria-label=\"View\"")
-                 (str/includes? html "data-on:change=\"evt.target.closest(&apos;form&apos;).requestSubmit()\""))
-            :view-select-has-no-label?
-            (not (str/includes? html " label=\"View\""))
-            :view-select-preserves-state?
-            (and (str/includes? html "name=\"member-q\"")
-                 (str/includes? html "value=\"Anna\"")
-                 (str/includes? html "name=\"category-id\"")
-                 (str/includes? html (str "value=\"" category-id "\"")))
-            :search-row-flanked?
-            (str/includes? html "class=\"wa-flank:end wa-gap-2xs\"")
-            :search-actions-grouped?
-            (str/includes? html "class=\"wa-cluster wa-gap-2xs\"")}))))
+(defn action-keyword
+  [value]
+  (when-let [[_ action] (and (string? value)
+                             (re-find #"[?&]kw=([^&')]+)" value))]
+    (keyword action)))
 
-(deftest table-settings-group-switch-navigates-and-preserves-toolbar-state
-  (let [policy-id   (random-uuid)
-        category-id (random-uuid)
-        html        (html/->str
-                     (#'views/table-settings-popover
-                      {::r/router router
-                       :tr        tr}
-                      {:policy  {:insurance.policy/policy-id policy-id}
-                       :view    :todo
-                       :filters {:group :member
-                                 :ownership :private
-                                 :member-q "Anna"
-                                 :category-ids #{category-id}}}))]
-    (is (= {:navigates-on-change? true
-            :can-switch-to-flat-list? true
-            :can-switch-back-to-member-groups? true
-            :preserves-category? true
-            :preserves-member-search? true}
-           {:navigates-on-change?
-            (str/includes? html "window.location.href")
-            :can-switch-to-flat-list?
-            (str/includes? html "group=none")
-            :can-switch-back-to-member-groups?
-            (str/includes? html "group=member")
-            :preserves-category?
-            (str/includes? html (str "category-id=" category-id))
-            :preserves-member-search?
-            (str/includes? html "member-q=Anna")}))))
+(defn action-keywords
+  [hiccup]
+  (->> (l/select '* hiccup)
+       (mapcat #(vals (or (l/attrs %) {})))
+       (keep action-keyword)
+       set))
 
-(deftest table-settings-column-toggles-post-round-trip-action
-  (let [policy-id (random-uuid)
-        html      (html/->str
-                   (#'views/table-settings-popover
-                    {::r/router router
-                     :tr        tr}
-                    {:policy  {:insurance.policy/policy-id policy-id}
-                     :view    :todo
-                     :filters {:group :member
-                               :ownership :all}
-                     :table   {:columns {:cost false}}}))
-        cost-start (or (str/index-of html "data-workbench-column-toggle=\"cost\"") 0)
-        cost-tag   (subs html cost-start (inc (or (str/index-of html ">" cost-start) cost-start)))]
-    (is (= {:renders-column-toggle?      true
-            :posts-toggle-action?        true
-            :sets-column-signal?         true
-            :sets-visibility-signal?     true
-            :does-not-hide-front-end?     true
-            :unchecked-from-server-state? true}
-           {:renders-column-toggle?
-            (str/includes? html "data-workbench-column-toggle=\"cost\"")
-            :posts-toggle-action?
-            (str/includes? html "kw=toggle-table-column")
-            :sets-column-signal?
-            (str/includes? html "$insuranceWorkbench.table.column = &apos;cost&apos;")
-            :sets-visibility-signal?
-            (str/includes? html "$insuranceWorkbench.table.columnVisible = evt.target.checked")
-            :does-not-hide-front-end?
-            (not (str/includes? html "table.columns["))
-            :unchecked-from-server-state?
-            (not (str/includes? cost-tag " checked"))}))))
+(defn input-values-by-binding
+  [hiccup]
+  (reduce (fn [values input]
+            (let [{:keys [data-bind value]} (l/attrs input)]
+              (if data-bind
+                (update values data-bind (fnil conj []) value)
+                values)))
+          {}
+          (l/select 'input hiccup)))
 
-(deftest active-category-filter-renders-removable-editor-chip
-  (let [category-id (random-uuid)
-        html        (html/->str
-                     (#'views/workbench-toolbar
-                      {::r/router router
-                       :tr        tr}
-                      {:policy               {:insurance.policy/policy-id (random-uuid)}
-                       :view                 :todo
-                       :available-categories [{:category-id category-id
-                                               :category-name "Akkordeon"}]
-                       :filters              {:group :member
-                                              :ownership :all
-                                              :category-ids #{category-id}}}))]
-    (is (= {:renders-bar? true
-            :renders-category-tag? true
-            :renders-divider? true
-            :opens-category-editor? true
-            :uses-chip-editor-context? true
-            :hides-back-button-in-chip-context? true
-            :controls-popover-with-signals? true
-            :fades-on-remove? true
-            :removes-category-filter? true}
-           {:renders-bar?
-            (and (str/includes? html "data-workbench-active-filters=\"true\"")
-                 (str/includes? html "var(--wa-color-neutral-fill-quiet)"))
-            :renders-category-tag?
-            (and (str/includes? html "<wa-tag")
-                 (str/includes? html "with-remove")
-                 (str/includes? html "data-on:wa-remove")
-                 (str/includes? html "Category")
-                 (str/includes? html "Akkordeon"))
-            :renders-divider?
-            (str/includes? html "class=\"sno-divider\"")
-            :opens-category-editor?
-            (str/includes? html "$insuranceWorkbench.filterEditor.field = &apos;category&apos;")
-            :uses-chip-editor-context?
-            (str/includes? html "$insuranceWorkbench.filterEditor.source = &apos;chip&apos;")
-            :hides-back-button-in-chip-context?
-            (str/includes? html "data-show=\"$insuranceWorkbench.filterEditor.source !== &apos;chip&apos;\"")
-            :controls-popover-with-signals?
-            (and (str/includes? html "$insuranceWorkbench.filterPopover.anchor = &apos;insurance-workbench-filter-chip-category&apos;")
-                 (str/includes? html "$insuranceWorkbench.filterPopover.open = true")
-                 (str/includes? html "data-attr:open=\"$insuranceWorkbench.filterPopover.open\"")
-                 (str/includes? html "document.getElementById($insuranceWorkbench.filterPopover.anchor)"))
-            :fades-on-remove?
-            (and (str/includes? html "transition: opacity")
-                 (str/includes? html "el.style.opacity = &apos;0&apos;")
-                 (str/includes? html "el.style.pointerEvents = &apos;none&apos;"))
-            :removes-category-filter?
-            (and (str/includes? html "evt.stopPropagation()")
-                 (str/includes? html "$insuranceWorkbench.filterPopover.open = false")
-                 (str/includes? html "$insuranceWorkbench.filterDraft.categoryIds = ($insuranceWorkbench.filterDraft.categoryIds || []).map(() =&gt; &apos;&apos;)")
-                 (str/includes? html "@post")
-                 (str/includes? html "kw=apply-filter"))}))))
+(defn hidden-fields
+  [form]
+  (reduce (fn [fields input]
+            (let [{:keys [name value]} (l/attrs input)]
+              (update fields name (fnil conj []) value)))
+          {}
+          (l/select "input[type=hidden]" form)))
 
-(deftest active-ownership-filter-renders-removable-editor-chip
-  (let [html (html/->str
-              (#'views/workbench-toolbar
-               {::r/router router
-                :tr        tr}
-               {:policy               {:insurance.policy/policy-id (random-uuid)}
-                :view                 :todo
-                :available-categories []
-                :filters              {:group :member
-                                       :ownership :private
-                                       :category-ids #{}}}))]
-    (is (= {:renders-ownership-tag? true
-            :opens-ownership-editor? true
-            :removes-ownership-filter? true}
-           {:renders-ownership-tag?
-            (and (str/includes? html "<wa-tag")
-                 (str/includes? html "Ownership")
-                 (str/includes? html "Private"))
-            :opens-ownership-editor?
-            (and (str/includes? html "$insuranceWorkbench.filterEditor.field = &apos;ownership&apos;")
-                 (str/includes? html "$insuranceWorkbench.filterPopover.anchor = &apos;insurance-workbench-filter-chip-ownership&apos;"))
-            :removes-ownership-filter?
-            (and (str/includes? html "$insuranceWorkbench.filterDraft.ownership = &apos;all&apos;")
-                 (str/includes? html "kw=apply-filter"))}))))
+(defn embedded-urls
+  [script]
+  (re-seq #"/insurance-policy/[^\" ]+" (or script "")))
 
-(deftest workbench-table-uses-short-ownership-labels
-  (let [coverage-id (random-uuid)
-        rows        [{:category-name       "Strings"
-                      :coverage-id         coverage-id
-                      :coverage-type-names ["Basic"]
-                      :harmonia-id         "H-123"
-                      :instrument-name     "Violin"
-                      :missing-insurer-id? false
-                      :missing-photo?      false
-                      :photo-count         3
-                      :private?            false
-                      :workflow-status     :instrument.coverage.status/needs-review
-                      :change-status       :instrument.coverage.change/changed
-                      :insured-value       1000M
-                      :cost                12.34M}
-                     {:category-name       "Strings"
-                      :coverage-id         (random-uuid)
-                      :coverage-type-names ["Basic"]
-                      :harmonia-id         "H-124"
-                      :instrument-name     "Cello"
-                      :missing-insurer-id? false
-                      :missing-photo?      false
-                      :photo-count         1
-                      :private?            true
-                      :workflow-status     :instrument.coverage.status/reviewed
-                      :change-status       :instrument.coverage.change/none
-                      :insured-value       2000M
-                      :cost                23.45M}]
-        html        (html/->str
-                     (#'views/flat-table
-                      {:tr tr}
-                      {:filters {:group :member}
-                       :policy  {:insurance.policy/currency :EUR}
-                       :rows    rows}))]
-    (is (= {:uses-short-band-label?    true
-            :uses-short-private-label? true
-            :omits-long-labels?        true}
-           {:uses-short-band-label?
-            (str/includes? html ">Band</wa-badge>")
-            :uses-short-private-label?
-            (str/includes? html ">Private</wa-badge>")
-            :omits-long-labels?
-            (not (or (str/includes? html "Band Instrument")
-                     (str/includes? html "Private Instrument")))}))))
+(defn query-map
+  [url]
+  (let [[_ query] (str/split url #"\?" 2)]
+    (into {}
+          (map #(str/split % #"=" 2))
+          (str/split (or query "") #"&"))))
 
-(deftest workbench-table-collapses-workflow-and-change-into-status-icon-column
-  (let [coverage-id       (random-uuid)
-        html              (html/->str
-                           (#'views/flat-table
-                            {:tr tr}
-                            {:filters {:group :none}
-                             :policy  {:insurance.policy/currency :EUR}
-                             :rows    [{:category-name       "Strings"
-                                        :coverage-id         coverage-id
-                                        :coverage-type-names ["Basic"]
-                                        :harmonia-id         "H-123"
-                                        :instrument-name     "Violin"
-                                        :member-id           (random-uuid)
-                                        :member-label        "Anna"
-                                        :missing-insurer-id? false
-                                        :missing-photo?      false
-                                        :photo-count         3
-                                        :private?            false
-                                        :workflow-status     :instrument.coverage.status/needs-review
-                                        :change-status       :instrument.coverage.change/changed
-                                        :insured-value       1000M
-                                        :cost                12.34M}]}))
-        select-pos        (str/index-of html "data-workbench-select-all")
-        status-pos        (str/index-of html ">Status</th>")
-        member-pos        (str/index-of html ">member</th>")
-        status-cell-start (str/index-of html "class=\"insurance-workbench-status-cell\"")
-        status-cell-end   (some->> status-cell-start
-                                   (str/index-of html "</td>"))
-        status-cell-html  (when (and status-cell-start status-cell-end)
-                            (subs html status-cell-start status-cell-end))]
-    (is (= {:status-column-after-selection? true
-            :omits-separate-status-columns? true
-            :renders-workflow-icon?         true
-            :renders-change-icon?           true
-            :uses-tooltips?                 true
-            :omits-badges-in-status-cell?   true}
-           {:status-column-after-selection?
-            (and select-pos status-pos member-pos (< select-pos status-pos member-pos))
-            :omits-separate-status-columns?
-            (not (or (str/includes? html ">workflow</th>")
-                     (str/includes? html ">change</th>")))
-            :renders-workflow-icon?
-            (and (str/includes? (or status-cell-html "") "data-workbench-status-icon=\"workflow\"")
-                 (str/includes? (or status-cell-html "") "circle-question-outline"))
-            :renders-change-icon?
-            (and (str/includes? (or status-cell-html "") "data-workbench-status-icon=\"change\"")
-                 (str/includes? (or status-cell-html "") "circle-exclamation"))
-            :uses-tooltips?
-            (and (str/includes? (or status-cell-html "") "<wa-tooltip")
-                 (str/includes? (or status-cell-html "") ">Todo</wa-tooltip>")
-                 (str/includes? (or status-cell-html "") ">Modified</wa-tooltip>"))
-            :omits-badges-in-status-cell?
-            (not (str/includes? (or status-cell-html "") "<wa-badge"))}))))
+(def uuid-pattern
+  #"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
-(deftest workbench-coverage-type-column-renders-known-types-as-icons
-  (let [coverage-id (random-uuid)
-        html        (html/->str
-                     (#'views/row-cell-content
-                      {:tr tr}
-                      :EUR
-                      {:coverage-id         coverage-id
-                       :coverage-type-names ["Grundschutz" "Nachzeit im Auto" "Proberaum"]}
-                      :coverage-types))]
-    (is (= {:renders-grundschutz-icon?    true
-            :renders-auto-icon?           true
-            :renders-proberaum-icon?      true
-            :labels-icons-accessibly?     true
-            :uses-tooltips?               true
-            :omits-comma-list?            true
-            :omits-wrapper-cluster?       true
-            :omits-unused-custom-classes? true}
-           {:renders-grundschutz-icon?
-            (and (str/includes? html "data-workbench-coverage-type-icon=\"grundschutz\"")
-                 (str/includes? html "phosphor-shield"))
-            :renders-auto-icon?
-            (and (str/includes? html "data-workbench-coverage-type-icon=\"nachzeit-im-auto\"")
-                 (str/includes? html "phosphor-car-profile"))
-            :renders-proberaum-icon?
-            (and (str/includes? html "data-workbench-coverage-type-icon=\"proberaum\"")
-                 (str/includes? html "phosphor-warehouse"))
-            :labels-icons-accessibly?
-            (and (str/includes? html "aria-label=\"Grundschutz\"")
-                 (str/includes? html "aria-label=\"Nachzeit im Auto\"")
-                 (str/includes? html "aria-label=\"Proberaum\""))
-            :uses-tooltips?
-            (and (str/includes? html ">Grundschutz</wa-tooltip>")
-                 (str/includes? html ">Nachzeit im Auto</wa-tooltip>")
-                 (str/includes? html ">Proberaum</wa-tooltip>"))
-            :omits-comma-list?
-            (not (str/includes? html "Grundschutz, Nachzeit im Auto, Proberaum"))
-            :omits-wrapper-cluster?
-            (not (str/includes? html "wa-cluster wa-gap-2xs wa-align-items-center"))
-            :omits-unused-custom-classes?
-            (not (str/includes? html "class=\"insurance-workbench-coverage-type"))}))))
+(defn referenced-ids
+  [script]
+  (set (re-seq uuid-pattern (or script ""))))
 
-(deftest workbench-coverage-type-column-keeps-unknown-type-labels
-  (let [html (html/->str
-              (#'views/row-cell-content
-               {:tr tr}
-               :EUR
-               {:coverage-id         (random-uuid)
-                :coverage-type-names ["Basic"]}
-               :coverage-types))]
-    (is (= {:shows-unknown-label? true
-            :does-not-invent-icon? true}
-           {:shows-unknown-label?
-            (str/includes? html ">Basic</span>")
-            :does-not-invent-icon?
-            (not (str/includes? html "data-workbench-coverage-type-icon"))}))))
+(defn flat-table
+  ([rows]
+   (flat-table :all nil rows))
+  ([view table rows]
+   (sut/flat-table
+    {:tr tr}
+    {:view    view
+     :filters {:group :none}
+     :table   table
+     :policy  policy
+     :rows    rows})))
 
-(deftest workbench-row-actions-render-stripe-style-sticky-button-group
-  (let [coverage-id (random-uuid)
-        html        (html/->str
-                     (#'views/flat-table
-                      {:tr tr}
-                      {:filters {:group :none}
-                       :policy  {:insurance.policy/currency :EUR}
-                       :rows    [{:category-name       "Strings"
-                                  :coverage-id         coverage-id
-                                  :coverage-type-names ["Basic"]
-                                  :harmonia-id         "H-123"
-                                  :instrument-name     "Violin"
-                                  :member-id           (random-uuid)
-                                  :member-label        "Anna"
-                                  :missing-insurer-id? false
-                                  :missing-photo?      false
-                                  :photo-count         3
-                                  :private?            false
-                                  :workflow-status     :instrument.coverage.status/needs-review
-                                  :change-status       :instrument.coverage.change/changed
-                                  :insured-value       1000M
-                                  :cost                12.34M}]}))]
-    (is (= {:has-sticky-action-heading? true
-            :has-sticky-action-cell? true
-            :has-ellipsis-trigger? true
-            :uses-horizontal-button-group? true
-            :renders-two-action-buttons? true
-            :buttons-are-xs-filled-wa-buttons? true
-            :links-existing-actions? true
-            :uses-icon-sprite-actions? true
-            :has-action-tooltips? true
-            :keeps-ellipsis-in-hover-button-group? true
-            :has-desktop-overflow-dropdown? true
-            :has-small-viewport-dropdown? true
-            :dropdown-items-have-icon-and-text? true}
-           {:has-sticky-action-heading?
-            (str/includes? html "<th class=\"insurance-workbench-row-actions-cell\"")
-            :has-sticky-action-cell?
-            (str/includes? html "<td class=\"insurance-workbench-row-actions-cell\"")
-            :has-ellipsis-trigger?
-            (and (str/includes? html "insurance-workbench-row-actions-trigger")
-                 (str/includes? html "snoico-ellipsis"))
-            :uses-horizontal-button-group?
-            (and (str/includes? html "<wa-button-group")
-                 (str/includes? html "orientation=\"horizontal\""))
-            :renders-two-action-buttons?
-            (= 2 (count (re-seq #"insurance-workbench-row-action-button" html)))
-            :buttons-are-xs-filled-wa-buttons?
-            (and (= 2 (count (re-seq #"insurance-workbench-row-action-button" html)))
-                 (<= 2 (count (re-seq #"size=\"xs\"" html)))
-                 (<= 2 (count (re-seq #"appearance=\"filled\"" html))))
-            :links-existing-actions?
-            (and (str/includes? html (str "href=\"/insurance-coverage/" coverage-id "/\""))
-                 (str/includes? html (str "href=\"/insurance-coverage-edit/" coverage-id "/\"")))
-            :uses-icon-sprite-actions?
-            (and (str/includes? html "phosphor-eye")
-                 (str/includes? html "phosphor-pencil-simple"))
-            :has-action-tooltips?
-            (and (str/includes? html ">View</wa-tooltip>")
-                 (str/includes? html ">Edit</wa-tooltip>"))
-            :keeps-ellipsis-in-hover-button-group?
-            (let [group-start (str/index-of html "<wa-button-group")
-                  group-end   (some->> group-start
-                                       (str/index-of html "</wa-button-group>"))
-                  group-html  (when (and group-start group-end)
-                                (subs html group-start group-end))
-                  positions   (map #(some-> group-html (str/index-of %))
-                                   ["phosphor-eye"
-                                    "phosphor-pencil-simple"
-                                    "insurance-workbench-row-actions-trigger--group"
-                                    "snoico-ellipsis"])]
-              (and group-html
-                   (every? some? positions)
-                   (apply < positions)))
-            :has-desktop-overflow-dropdown?
-            (let [group-start (str/index-of html "<wa-button-group")
-                  group-end   (some->> group-start
-                                       (str/index-of html "</wa-button-group>"))
-                  group-html  (when (and group-start group-end)
-                                (subs html group-start group-end))]
-              (and group-html
-                   (str/includes? group-html "insurance-workbench-row-actions-dropdown--group")
-                   (= 2 (count (re-seq #"<wa-dropdown-item" group-html)))
-                   (str/includes? group-html "onclick=\"window.location = this.value\"")
-                   (str/includes? group-html (str "value=\"/insurance-coverage/" coverage-id "/\""))
-                   (str/includes? group-html (str "value=\"/insurance-coverage-edit/" coverage-id "/\""))))
-            :has-small-viewport-dropdown?
-            (let [dropdown-start (str/index-of html "insurance-workbench-row-actions-dropdown--mobile")
-                  dropdown-end   (some->> dropdown-start
-                                          (str/index-of html "</wa-dropdown>"))
-                  dropdown-html  (when (and dropdown-start dropdown-end)
-                                   (subs html dropdown-start dropdown-end))]
-              (and dropdown-html
-                   (= 2 (count (re-seq #"<wa-dropdown-item" dropdown-html)))
-                   (str/includes? dropdown-html "onclick=\"window.location = this.value\"")
-                   (str/includes? dropdown-html (str "value=\"/insurance-coverage/" coverage-id "/\""))
-                   (str/includes? dropdown-html (str "value=\"/insurance-coverage-edit/" coverage-id "/\""))))
-            :dropdown-items-have-icon-and-text?
-            (and (str/includes? html "slot=\"icon\"")
-                 (str/includes? html ">View</wa-dropdown-item>")
-                 (str/includes? html ">Edit</wa-dropdown-item>"))}))))
-(deftest workbench-table-omits-hidden-columns-from-server-render
-  (let [coverage-id (random-uuid)
-        html        (html/->str
-                     (#'views/flat-table
-                      {:tr tr}
-                      {:filters {:group :none}
-                       :table   {:columns {:cost false
-                                           :harmonia-id false}}
-                       :policy  {:insurance.policy/currency :EUR}
-                       :rows    [{:category-name       "Strings"
-                                  :coverage-id         coverage-id
-                                  :coverage-type-names ["Basic"]
-                                  :harmonia-id         "H-123"
-                                  :instrument-name     "Violin"
-                                  :member-id           (random-uuid)
-                                  :member-label        "Anna"
-                                  :missing-insurer-id? false
-                                  :missing-photo?      false
-                                  :photo-count         3
-                                  :private?            false
-                                  :workflow-status     :instrument.coverage.status/needs-review
-                                  :change-status       :instrument.coverage.change/changed
-                                  :insured-value       1000M
-                                  :cost                12.34M}]}))]
-    (is (= {:keeps-selection-column? true
-            :keeps-visible-column?   true
-            :omits-cost-header?      true
-            :omits-cost-cell?        true
-            :omits-harmonia-header?  true
-            :omits-harmonia-cell?    true}
-           {:keeps-selection-column?
-            (str/includes? html "data-workbench-select-all=\"true\"")
-            :keeps-visible-column?
-            (and (str/includes? html ">Violin</a>")
-                 (str/includes? html "1.000,00"))
-            :omits-cost-header?
-            (not (str/includes? html ">cost</th>"))
-            :omits-cost-cell?
-            (not (str/includes? html "12,34"))
-            :omits-harmonia-header?
-            (not (str/includes? html ">insurer-id</th>"))
-            :omits-harmonia-cell?
-            (not (str/includes? html "H-123"))}))))
+(defn headings
+  [table]
+  (mapv l/text (l/select '[thead th] table)))
 
-(deftest workbench-table-uses-active-view-column-defaults
-  (let [coverage-id (random-uuid)
-        html        (html/->str
-                     (#'views/flat-table
-                      {:tr tr}
-                      {:view    :missing-id
-                       :filters {:group :none}
-                       :policy  {:insurance.policy/currency :EUR}
-                       :rows    [{:category-name       "Strings"
-                                  :coverage-id         coverage-id
-                                  :coverage-type-names ["Basic"]
-                                  :harmonia-id         ""
-                                  :instrument-name     "Violin"
-                                  :member-id           (random-uuid)
-                                  :member-label        "Anna"
-                                  :missing-insurer-id? true
-                                  :missing-photo?      false
-                                  :photo-count         3
-                                  :private?            false
-                                  :workflow-status     :instrument.coverage.status/needs-review
-                                  :change-status       :instrument.coverage.change/changed
-                                  :insured-value       1000M
-                                  :cost                12.34M}]}))]
-    (is (= {:shows-preset-column? true
-            :keeps-selection-column? true
-            :hides-cost-column? true
-            :hides-value-column? true
-            :hides-coverage-types-column? true}
-           {:shows-preset-column?
-            (and (str/includes? html ">insurer-id</th>")
-                 (str/includes? html "missing"))
-            :keeps-selection-column?
-            (str/includes? html "data-workbench-select-all=\"true\"")
-            :hides-cost-column?
-            (and (not (str/includes? html ">cost</th>"))
-                 (not (str/includes? html "12,34")))
-            :hides-value-column?
-            (not (str/includes? html ">Versicherungswert</th>"))
-            :hides-coverage-types-column?
-            (and (not (str/includes? html ">coverage-types</th>"))
-                 (not (str/includes? html ">Basic</td>")))}))))
+(deftest active-parameters
+  (testing "The URL and Datastar page state contain different active filters."
+    (let [params (sut/workbench-params
+                  {:parameters {:query {:view        "todo"
+                                        :group       "member"
+                                        :member-q    "Anna"
+                                        :category-id (str (random-uuid))
+                                        :ownership   "band"}}
+                   :page-state {:insurance-workbench
+                                {:filters {:member-q       "Zoe"
+                                           :category-ids   [category-id]
+                                           :ownership      :private
+                                           :value-filter   {:operator :between
+                                                            :min      1000M
+                                                            :max      3000M}}}}})]
+      (testing "The active page state takes precedence without replacing view or grouping."
+        (is (= {:view           "todo"
+                :group          "member"
+                :member-q       "Zoe"
+                :category-id    [category-id]
+                :ownership      :private
+                :value-operator :between
+                :value-min      1000M
+                :value-max      3000M}
+               (select-keys params
+                            [:view :group :member-q :category-id :ownership
+                             :value-operator :value-min :value-max])))))
+    (testing "Explicitly cleared page-state filters override stale URL values."
+      (is (= {:member-q    nil
+              :category-id []
+              :ownership   :all}
+             (select-keys
+              (sut/workbench-params
+               {:parameters {:query {:member-q    "Anna"
+                                     :category-id (str category-id)
+                                     :ownership   "private"}}
+                :page-state {:insurance-workbench
+                             {:filters {:member-q     nil
+                                        :category-ids []
+                                        :ownership    :all}}}})
+              [:member-q :category-id :ownership]))))))
 
-(deftest workbench-table-column-overrides-are-scoped-to-active-view
-  (let [coverage-id (random-uuid)
-        html        (html/->str
-                     (#'views/flat-table
-                      {:tr tr}
-                      {:view    :missing-id
-                       :filters {:group :none}
-                       :table   {:columns-by-view {:missing-id {:harmonia-id false}}}
-                       :policy  {:insurance.policy/currency :EUR}
-                       :rows    [{:category-name       "Strings"
-                                  :coverage-id         coverage-id
-                                  :coverage-type-names ["Basic"]
-                                  :harmonia-id         "H-123"
-                                  :instrument-name     "Violin"
-                                  :member-id           (random-uuid)
-                                  :member-label        "Anna"
-                                  :missing-insurer-id? false
-                                  :missing-photo?      false
-                                  :photo-count         3
-                                  :private?            false
-                                  :workflow-status     :instrument.coverage.status/needs-review
-                                  :change-status       :instrument.coverage.change/changed
-                                  :insured-value       1000M
-                                  :cost                12.34M}]}))]
-    (is (= {:hides-overridden-preset-column? true
-            :does-not-render-legacy-global-toggle-js? true}
-           {:hides-overridden-preset-column?
-            (and (not (str/includes? html ">insurer-id</th>"))
-                 (not (str/includes? html "H-123")))
-            :does-not-render-legacy-global-toggle-js?
-            (not (str/includes? html "table.columns["))}))))
+(deftest filter-controls
+  (testing "The policy has one category and one coverage type available for filtering."
+    (let [view [:div
+                (sut/ownership-select tr :private)
+                (sut/category-select
+                 tr
+                 [{:category-id category-id :category-name "Akkordeon"}]
+                 #{category-id})
+                (sut/coverage-type-select tr policy #{coverage-type-id})
+                (sut/missing-photos-switch tr true)
+                (sut/missing-harmonia-id-switch tr false)
+                (sut/workflow-status-select tr #{:needs-review :reviewed})
+                (sut/change-status-select tr #{:changed :new})]
+          bindings (input-values-by-binding view)]
+      (testing "Multi-value filters bind native checkboxes to signal arrays."
+        (is (= {"insuranceWorkbench.filterDraft.categoryIds"
+                [(str category-id)]
+                "insuranceWorkbench.filterDraft.coverageTypeIds"
+                [(str coverage-type-id)]
+                "insuranceWorkbench.filterDraft.workflowStatuses"
+                ["needs-review" "reviewed" "coverage-active"]
+                "insuranceWorkbench.filterDraft.changeStatuses"
+                ["changed" "new" "removed" "none"]}
+               bindings)))
+      (testing "Ownership is an accessible single-value selection."
+        (is (= {:value     "private"
+                :aria-label "Ownership"
+                :data-bind "insuranceWorkbench.filterDraft.ownership"}
+               (select-keys (select-attrs 'wa-select view)
+                            [:value :aria-label :data-bind]))))
+      (testing "Missing-photo and missing-ID filters bind switches to boolean signals."
+        (is (= [{:label   "Missing photos"
+                 :binding "insuranceWorkbench.filterDraft.missingPhotos"
+                 :checked true}
+                {:label   "Missing"
+                 :binding "insuranceWorkbench.filterDraft.missingHarmoniaId"
+                 :checked nil}]
+               (mapv (fn [switch]
+                       (let [attrs (l/attrs switch)]
+                         {:label   (l/text switch)
+                          :binding (:data-bind__prop.checked__event.change attrs)
+                          :checked (:checked attrs)}))
+                     (l/select 'wa-switch view)))))
+      (testing "Workflow and change options retain their translated labels."
+        (is (= ["Todo" "Reviewed" "Active" "Modified" "Added" "Removed" "No changes"]
+               (mapv l/text (l/select 'wa-badge view))))))))
 
-(deftest workbench-table-selection-heading-selects-all-rows
-  (let [coverage-a (random-uuid)
-        coverage-b (random-uuid)
-        html       (html/->str
-                    (#'views/flat-table
-                     {:tr tr}
-                     {:filters {:group :member}
-                      :policy  {:insurance.policy/currency :EUR}
-                      :rows    [{:category-name       "Strings"
-                                 :coverage-id         coverage-a
-                                 :coverage-type-names ["Basic"]
-                                 :harmonia-id         "H-123"
-                                 :instrument-name     "Violin"
-                                 :missing-insurer-id? false
-                                 :missing-photo?      false
-                                 :photo-count         3
-                                 :private?            false
-                                 :workflow-status     :instrument.coverage.status/needs-review
-                                 :change-status       :instrument.coverage.change/changed
-                                 :insured-value       1000M
-                                 :cost                12.34M}
-                                {:category-name       "Strings"
-                                 :coverage-id         coverage-b
-                                 :coverage-type-names ["Basic"]
-                                 :harmonia-id         "H-124"
-                                 :instrument-name     "Cello"
-                                 :missing-insurer-id? false
-                                 :missing-photo?      false
-                                 :photo-count         1
-                                 :private?            true
-                                 :workflow-status     :instrument.coverage.status/reviewed
-                                 :change-status       :instrument.coverage.change/none
-                                 :insured-value       2000M
-                                 :cost                23.45M}]}))]
-    (is (= {:header-checkbox?               true
-            :no-selection-text?             true
-            :selects-all-row-ids?           true
-            :click-checked-deselects-all?   true
-            :click-indeterminate-selects-all? true
-            :syncs-header-checked?          true
-            :syncs-header-indeterminate?    true
-            :syncs-row-checkboxes?          true}
-           {:header-checkbox?
-            (str/includes? html "data-workbench-select-all=\"true\"")
-            :no-selection-text?
-            (not (str/includes? html ">selection</th>"))
-            :selects-all-row-ids?
-            (and (str/includes? html (str coverage-a))
-                 (str/includes? html (str coverage-b)))
-            :click-checked-deselects-all?
-            (str/includes? html "? [] : [")
-            :click-indeterminate-selects-all?
-            (not (str/includes? html "evt.target.checked ?"))
-            :syncs-header-checked?
-            (str/includes? html "el.checked = [")
-            :syncs-header-indeterminate?
-            (and (str/includes? html "el.indeterminate = [")
-                 (str/includes? html ".some(id =&gt; ($insuranceWorkbench.selectedCoverageIds || []).includes(id))")
-                 (str/includes? html "&amp;&amp; !["))
-            :syncs-row-checkboxes?
-            (str/includes? html "data-effect=\"el.checked = ($insuranceWorkbench.selectedCoverageIds || []).includes")}))))
+(deftest filter-editor
+  (testing "The value filter editor is open."
+    (let [view   (sut/filter-editor-shell
+                  request
+                  :value
+                  (sut/value-filter-control tr))
+          inputs (l/select 'input view)
+          buttons (l/select :app.ui2.button/button view)]
+      (testing "The editor identifies the field being filtered."
+        (is (= ["Filter by: Versicherungswert"]
+               (mapv l/text (l/select 'strong view)))))
+      (testing "The operator and numeric inputs are accessible and signal-bound."
+        (is (= {:operator {:aria-label "Value operator"
+                           :data-bind  "insuranceWorkbench.filterDraft.valueOperator"}
+                :inputs   [{:aria-label "Versicherungswert"
+                            :data-bind  "insuranceWorkbench.filterDraft.value"}
+                           {:aria-label "Minimum"
+                            :data-bind  "insuranceWorkbench.filterDraft.valueMin"}
+                           {:aria-label "Maximum"
+                            :data-bind  "insuranceWorkbench.filterDraft.valueMax"}]}
+               {:operator (select-keys (select-attrs 'wa-select view)
+                                       [:aria-label :data-bind])
+                :inputs   (mapv #(select-keys (l/attrs %) [:aria-label :data-bind])
+                                inputs)})))
+      (testing "Back exits the editor and Apply submits the draft filter."
+        (is (= {:back-label "Back"
+                :apply-text "Apply"
+                :actions    #{:apply-filter}}
+               {:back-label (:aria-label (l/attrs (first buttons)))
+                :apply-text (l/text (second buttons))
+                :actions    (action-keywords view)}))))))
 
-(deftest bulk-action-bar-is-stable-and-supports-workflow-and-change-updates
-  (let [html (html/->str
-              (#'views/bulk-action-bar
-               {::r/router router
-                :tr        tr}
-               {:editable? true
-                :filters   {:group :member}
-                :rows      [{}]}))]
-    (is (= {:always-visible?                         true
-            :shows-zero-selected?                    true
-            :uses-semantic-action-groups?            true
-            :uses-dropdowns?                         true
-            :omits-wa-selects?                       true
-            :has-workflow-trigger?                   true
-            :has-change-trigger?                     true
-            :workflow-items-have-icons?              true
-            :workflow-items-have-colors?             true
-            :change-items-have-icons?                true
-            :change-items-have-colors?               true
-            :workflow-action-posts-only-workflow?    true
-            :change-action-posts-only-change?        true
-            :posts-mark-and-set-actions?             true
-            :has-deselect-all?                       true
-            :has-expansion-actions?                  true
-            :uses-intersection-sentinel-when-sticky? true
-            :selection-actions-disabled?             true}
-           {:always-visible?
-            (not (str/includes? html "data-show="))
-            :shows-zero-selected?
-            (and (str/includes? html ">0</span>")
-                 (str/includes? html "selected"))
-            :uses-semantic-action-groups?
-            (and (str/includes? html "<section")
-                 (str/includes? html "<p><strong")
-                 (str/includes? html "<menu><li"))
-            :uses-dropdowns?
-            (str/includes? html "<wa-dropdown")
-            :omits-wa-selects?
-            (not (str/includes? html "<wa-select"))
-            :has-workflow-trigger?
-            (and (str/includes? html "Mark Workflow")
-                 (str/includes? html "value=\"todo\"")
-                 (str/includes? html "value=\"reviewed\"")
-                 (str/includes? html "value=\"active\""))
-            :has-change-trigger?
-            (and (str/includes? html "Set Change")
-                 (str/includes? html "value=\"changed\"")
-                 (str/includes? html "value=\"new\"")
-                 (str/includes? html "value=\"removed\"")
-                 (str/includes? html "value=\"none\""))
-            :workflow-items-have-icons?
-            (and (str/includes? html "circle-question-outline")
-                 (str/includes? html "circle-dot-outline")
-                 (str/includes? html "circle-check-outline"))
-            :workflow-items-have-colors?
-            (and (str/includes? html "var(--sno-dashboard-insurance-todo-needs-review-color")
-                 (str/includes? html "var(--sno-gig-row-gray-400)")
-                 (str/includes? html "var(--wa-color-success-fill-loud)"))
-            :change-items-have-icons?
-            (and (str/includes? html "circle-exclamation")
-                 (str/includes? html "circle-plus-solid")
-                 (str/includes? html "circle-xmark-outline")
-                 (str/includes? html "minus"))
-            :change-items-have-colors?
-            (and (str/includes? html "var(--wa-color-warning-fill-loud)")
-                 (str/includes? html "var(--wa-color-success-fill-loud)")
-                 (str/includes? html "var(--wa-color-danger-fill-loud)")
-                 (str/includes? html "var(--wa-color-neutral-fill-loud)"))
-            :workflow-action-posts-only-workflow?
-            (and (str/includes? html "$insuranceWorkbench.targetWorkflowStatus = evt.detail.item.value")
-                 (str/includes? html "$insuranceWorkbench.targetChangeStatus = &apos;keep&apos;"))
-            :change-action-posts-only-change?
-            (and (str/includes? html "$insuranceWorkbench.targetChangeStatus = evt.detail.item.value")
-                 (str/includes? html "$insuranceWorkbench.targetWorkflowStatus = &apos;keep&apos;"))
-            :posts-mark-and-set-actions?
-            (and (str/includes? html "kw=bulk-mark-workflow")
-                 (str/includes? html "kw=bulk-set-change"))
-            :has-deselect-all?
-            (and (str/includes? html "Deselect All")
-                 (str/includes? html "$insuranceWorkbench.selectedCoverageIds = []"))
-            :has-expansion-actions?
-            (and (str/includes? html "Expand all")
-                 (str/includes? html "Collapse all")
-                 (str/includes? html "setAttribute(&apos;aria-expanded&apos;, &apos;true&apos;)")
-                 (str/includes? html "setAttribute(&apos;aria-expanded&apos;, &apos;false&apos;)")
-                 (not (str/includes? html "row.hidden")))
-            :uses-intersection-sentinel-when-sticky?
-            (and (str/includes? html "data-class:insurance-workbench-bulk-action-bar--sticky")
-                 (str/includes? html "insurance-workbench-bulk-action-sentinel")
-                 (str/includes? html "data-on-intersect=")
-                 (str/includes? html "data-on-intersect__exit=")
-                 (str/includes? html "$insuranceWorkbench.bulkActionStuck")
-                 (str/includes? html "insurance-workbench-bulk-action-bar--stuck")
-                 (not (str/includes? html "data-on:scroll__window")))
-            :selection-actions-disabled?
-            (str/includes? html "($insuranceWorkbench.selectedCoverageIds || []).length === 0")}))))
+(deftest selection-state
+  (testing "The workbench has active filters and server-controlled column visibility."
+    (let [signals (sut/selection-signals
+                   policy
+                   {:category-ids        [category-id]
+                    :coverage-type-ids   [coverage-type-id]
+                    :ownership           :private
+                    :missing-photos?     true
+                    :missing-harmonia-id? true
+                    :workflow-statuses   [:needs-review :reviewed]
+                    :change-statuses     [:changed :new]
+                    :group               :member}
+                   {:columns {:cost false
+                              :harmonia-id false}}
+                   :all)]
+      (testing "Filter arrays and booleans are initialized from server state."
+        (is (= {:categoryIds       [(str category-id)]
+                :coverageTypeIds   [(str coverage-type-id)]
+                :ownership         "private"
+                :missingPhotos     true
+                :missingHarmoniaId true
+                :workflowStatuses  ["needs-review" "reviewed"]
+                :changeStatuses    ["changed" "new"]}
+               (select-keys (get-in signals [:insuranceWorkbench :filterDraft])
+                            [:categoryIds :coverageTypeIds :ownership
+                             :missingPhotos :missingHarmoniaId
+                             :workflowStatuses :changeStatuses]))))
+      (testing "Column signals use the server-rendered table state."
+        (is (= {"actions" true
+                "category" true
+                "cost" false
+                "coverage-types" true
+                "harmonia-id" false
+                "instrument" true
+                "member" true
+                "ownership" true
+                "photos" false
+                "status" true
+                "value" true}
+               (get-in signals [:insuranceWorkbench :table :columns])))))))
 
-(deftest bulk-action-bar-omits-expansion-actions-outside-grouped-table
-  (let [html (html/->str
-              (#'views/bulk-action-bar
-               {::r/router router
-                :tr        tr}
-               {:editable? true
-                :filters   {:group :none}}))]
-    (is (= {:omits-expand-all?   true
-            :omits-collapse-all? true
-            :omits-expansion-js? true}
-           {:omits-expand-all?
-            (not (str/includes? html "Expand all"))
-            :omits-collapse-all?
-            (not (str/includes? html "Collapse all"))
-            :omits-expansion-js?
-            (not (str/includes? html "aria-expanded"))}))))
+(deftest toolbar
+  (testing "The Todo workbench has an active member search and category filter."
+    (let [view (sut/workbench-toolbar
+                request
+                {:policy               policy
+                 :view                 :todo
+                 :pagination           {:page-size 20}
+                 :available-categories [{:category-id category-id
+                                         :category-name "Akkordeon"}]
+                 :filters              {:group        :member
+                                        :ownership    :all
+                                        :member-q     "Anna"
+                                        :category-ids #{category-id}}})
+          forms (l/select 'form view)
+          view-select (l/select-one "wa-select[name=view]" view)
+          search-input (l/select-one "wa-input[name=member-q]" view)]
+      (testing "Desktop navigation and the mobile view selector expose the active view."
+        (is (= {:nav-label "View"
+                :select    {:value "todo" :aria-label "View"}}
+               {:nav-label (:aria-label (select-attrs 'nav view))
+                :select    (select-keys (l/attrs view-select)
+                                        [:value :aria-label])})))
+      (testing "The mobile selector preserves the active toolbar state."
+        (is (= {"group"       ["member"]
+                "page"        ["1"]
+                "page-size"   ["20"]
+                "member-q"    ["Anna"]
+                "category-id" [(str category-id)]
+                "ownership"   ["all"]}
+               (hidden-fields (first forms)))))
+      (testing "Member search is prefilled, signal-bound, and posts after typing pauses."
+        (is (= {:value      "Anna"
+                :with-clear true
+                :data-bind  "insuranceWorkbench.memberQ"
+                :actions    #{:set-member-search-phrase}}
+               (merge (select-keys (l/attrs search-input)
+                                   [:value :with-clear :data-bind])
+                      {:actions (action-keywords (second forms))})))))))
 
-(deftest rows-section-renders-pagination-controls-with-page-size-dropdown
-  (let [policy-id   (random-uuid)
-        coverage-id (random-uuid)
-        html        (html/->str
-                     (#'views/rows-section
-                      {:tr tr}
-                      {:policy     {:insurance.policy/policy-id policy-id
-                                    :insurance.policy/currency :EUR}
-                       :view       :all
-                       :filters    {:group :none
-                                    :ownership :all}
-                       :pagination {:page 1
-                                    :page-size 20
-                                    :page-sizes [20 50 100]
-                                    :total-results 85
-                                    :total-pages 5
-                                    :range-start 1
-                                    :range-end 20
-                                    :has-prev? false
-                                    :has-next? true
-                                    :prev-page nil
-                                    :next-page 2}
-                       :rows       [{:category-name       "Strings"
-                                     :coverage-id         coverage-id
-                                     :coverage-type-names ["Basic"]
-                                     :harmonia-id         "H-123"
-                                     :instrument-name     "Violin"
-                                     :member-id           (random-uuid)
-                                     :member-label        "Anna"
-                                     :missing-insurer-id? false
-                                     :missing-photo?      false
-                                     :photo-count         3
-                                     :private?            false
-                                     :workflow-status     :instrument.coverage.status/needs-review
-                                     :change-status       :instrument.coverage.change/changed
-                                     :insured-value       1000M
-                                     :cost                12.34M}]}))]
-    (is (= {:renders-summary-trigger?           true
-            :uses-dropdown?                     true
-            :labels-page-size-menu?             true
-            :renders-page-size-items?           true
-            :marks-current-size-with-icon?      true
-            :reserves-icon-slot-for-each-size?  true
-            :hides-unselected-icons-inline?     true
-            :omits-checkbox-items?              true
-            :uses-custom-check-icon?            true
-            :omits-inline-title-style?          true
-            :uses-justify-utility?              true
-            :navigates-to-page-size?            true
-            :previous-disabled?                 true
-            :next-link?                         true
-            :sticky-pagination-shell?           true
-            :pagination-uses-inner-wrapper?     true
-            :omits-pagination-js?               true
-            :omits-static-pagination-shadow?    true
-            :omits-pagination-padding?          true
-            :omits-inline-pagination-position?  true}
-           {:renders-summary-trigger?
-            (str/includes? html "1–20 of 85 results")
-            :uses-dropdown?
-            (str/includes? html "<wa-dropdown")
-            :labels-page-size-menu?
-            (str/includes? html "Rows per page")
-            :renders-page-size-items?
-            (and (str/includes? html "value=\"20\"")
-                 (str/includes? html "value=\"50\"")
-                 (str/includes? html "value=\"100\""))
-            :marks-current-size-with-icon?
-            (and (str/includes? html "slot=\"icon\"")
-                 (str/includes? html "phosphor-check"))
-            :reserves-icon-slot-for-each-size?
-            (let [dropdown-start (str/index-of html "data-workbench-page-size")
-                  dropdown-end   (some->> dropdown-start
-                                          (str/index-of html "</wa-dropdown>"))
-                  dropdown-html  (when (and dropdown-start dropdown-end)
-                                   (subs html dropdown-start dropdown-end))]
-              (= 3 (count (re-seq #"slot=\"icon\"" (or dropdown-html "")))))
-            :hides-unselected-icons-inline?
-            (str/includes? html "visibility: hidden;")
-            :omits-checkbox-items?
-            (not (str/includes? html "type=\"checkbox\""))
-            :uses-custom-check-icon?
-            (str/includes? html "slot=\"icon\"")
-            :omits-inline-title-style?
-            (not (str/includes? html "padding-inline: var(--wa-space-xs)"))
-            :uses-justify-utility?
-            (str/includes? html "wa-justify-content-end")
-            :navigates-to-page-size?
-            (and (str/includes? html "page-size=50")
-                 (str/includes? html "page=1"))
-            :previous-disabled?
-            (str/includes? html "aria-label=\"Previous\" disabled")
-            :next-link?
-            (and (str/includes? html "aria-label=\"Next\"")
-                 (str/includes? html "page=2"))
-            :sticky-pagination-shell?
-            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
-                  pagination-html  (when pagination-start
-                                     (subs html
-                                           pagination-start
-                                           (min (count html) (+ pagination-start 2000))))]
-              (str/includes? (or pagination-html "") "insurance-workbench-pagination"))
-            :pagination-uses-inner-wrapper?
-            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
-                  pagination-html  (when pagination-start
-                                     (subs html
-                                           pagination-start
-                                           (min (count html) (+ pagination-start 2000))))]
-              (str/includes? (or pagination-html "") "insurance-workbench-pagination__inner"))
-            :omits-pagination-js?
-            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
-                  pagination-html  (when pagination-start
-                                     (subs html
-                                           pagination-start
-                                           (min (count html) (+ pagination-start 2000))))]
-              (and (not (str/includes? (or pagination-html "") "data-effect="))
-                   (not (str/includes? (or pagination-html "") "data-on:scroll__window"))
-                   (not (str/includes? (or pagination-html "") "insurance-workbench-pagination--stuck"))))
-            :omits-static-pagination-shadow?
-            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
-                  pagination-html  (when pagination-start
-                                     (subs html
-                                           pagination-start
-                                           (min (count html) (+ pagination-start 2000))))]
-              (not (str/includes? (or pagination-html "") "box-shadow")))
-            :omits-pagination-padding?
-            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
-                  pagination-html  (when pagination-start
-                                     (subs html
-                                           pagination-start
-                                           (min (count html) (+ pagination-start 2000))))]
-              (not (str/includes? (or pagination-html "") "padding-block")))
-            :omits-inline-pagination-position?
-            (let [pagination-start (str/index-of html "data-workbench-pagination=\"true\"")
-                  pagination-html  (when pagination-start
-                                     (subs html
-                                           pagination-start
-                                           (min (count html) (+ pagination-start 2000))))]
-              (not (str/includes? (or pagination-html "") "position: sticky")))}))))
+(deftest active-filters
+  (testing "Private ownership and the Akkordeon category are active filters."
+    (let [view (sut/workbench-toolbar
+                request
+                {:policy               policy
+                 :view                 :todo
+                 :pagination           {:page-size 20}
+                 :available-categories [{:category-id category-id
+                                         :category-name "Akkordeon"}]
+                 :filters              {:group        :member
+                                        :ownership    :private
+                                        :category-ids #{category-id}}})
+          tags (l/select 'wa-tag view)]
+      (testing "Each active filter is presented as a removable, labelled chip."
+        (is (= [{:text "Ownership Private" :with-remove true}
+                {:text "Category Akkordeon" :with-remove true}]
+               (mapv (fn [tag]
+                       {:text        (l/text tag)
+                        :with-remove (:with-remove (l/attrs tag))})
+                     tags))))
+      (testing "Selecting a chip opens its editor and removing it applies the change."
+        (is (= {:fields  ["ownership" "category"]
+                :actions #{:apply-filter}}
+               {:fields  (mapv (fn [tag]
+                                 (some->> (l/select-one 'dl tag)
+                                          l/attrs
+                                          :data-on:click
+                                          (re-find #"filterEditor\.field = '([^']+)'")
+                                          second))
+                               tags)
+                :actions (action-keywords tags)}))))))
 
-(deftest sticky-workbench-bars-use-slide-transitions
-  (let [css (slurp "resources/public/css/pages/insurance.css")]
-    (is (= {:pagination-scroll-state-container? true
-            :pagination-scroll-state-query?     true
-            :pagination-inner-transitions?      true
-            :pagination-slides-when-stuck?      true
-            :bulk-bar-transitions?              true
-            :bulk-bar-slides-when-stuck?        true
-            :reduced-motion-disables?           true}
-           {:pagination-scroll-state-container?
-            (boolean (re-find #"(?s)\.insurance-workbench-pagination \{.*container-type: scroll-state;" css))
-            :pagination-scroll-state-query?
-            (boolean (re-find #"(?s)@container scroll-state\(stuck: bottom\)" css))
-            :pagination-inner-transitions?
-            (boolean (re-find #"(?s)\.insurance-workbench-pagination__inner \{.*transition:" css))
-            :pagination-slides-when-stuck?
-            (boolean (re-find #"(?s)@container scroll-state\(stuck: bottom\).*\.insurance-workbench-pagination__inner \{.*transform: translateY\(0\);" css))
-            :bulk-bar-transitions?
-            (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar \{.*transition:" css))
-            :bulk-bar-slides-when-stuck?
-            (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar--stuck \{.*transform: translateY\(0\);" css))
-            :reduced-motion-disables?
-            (boolean (re-find #"(?s)@media \(prefers-reduced-motion: reduce\).*\.insurance-workbench-pagination__inner,.*\.insurance-workbench-bulk-action-bar" css))}))))
+(deftest table-settings
+  (testing "The Todo table is grouped by member and has Cost disabled."
+    (let [view (sut/table-settings-popover
+                request
+                {:policy  policy
+                 :view    :todo
+                 :filters {:group        :member
+                           :ownership    :private
+                           :member-q     "Anna"
+                           :category-ids #{category-id}}
+                 :table   {:columns {:cost false}}})
+          group-switch (l/select-one 'wa-switch view)
+          cost-toggle (l/select-one
+                       "wa-checkbox[data-workbench-column-toggle=cost]"
+                       view)]
+      (testing "Changing grouping preserves the active toolbar filters."
+        (let [urls (embedded-urls (:data-on:change (l/attrs group-switch)))]
+          (is (= [{"member-q"    "Anna"
+                   "category-id" (str category-id)
+                   "ownership"   "private"
+                   "group"       "member"}
+                  {"member-q"    "Anna"
+                   "category-id" (str category-id)
+                   "ownership"   "private"
+                   "group"       "none"}]
+                 (mapv #(select-keys (query-map %)
+                                     ["member-q" "category-id" "ownership" "group"])
+                       urls)))))
+      (testing "Column toggles reflect server state and submit the changed column."
+        (is (= {:column  "cost"
+                :checked nil
+                :actions #{:toggle-table-column}}
+               {:column  (:data-workbench-column-toggle (l/attrs cost-toggle))
+                :checked (:checked (l/attrs cost-toggle))
+                :actions (action-keywords cost-toggle)}))))))
+
+(deftest row-content
+  (testing "A workbench row has ownership, workflow, change, and coverage-type data."
+    (let [status-view   (sut/row-cell-content {:tr tr} :EUR row :status)
+          coverage-view (sut/row-cell-content {:tr tr} :EUR row :coverage-types)]
+      (testing "Ownership uses short labels."
+        (is (= ["Band" "Private"]
+               [(-> (sut/row-cell-content {:tr tr} :EUR row :ownership) l/text)
+                (-> (sut/row-cell-content
+                     {:tr tr} :EUR (assoc row :private? true) :ownership)
+                    l/text)])))
+      (testing "Workflow and change are accessible icons with matching tooltips."
+        (is (= {:icons [{:kind "workflow" :label "Todo"}
+                        {:kind "change" :label "Modified"}]
+                :tooltips ["Todo" "Modified"]}
+               {:icons (mapv (fn [icon]
+                               (let [attrs (l/attrs icon)]
+                                 {:kind  (:data-workbench-status-icon attrs)
+                                  :label (:aria-label attrs)}))
+                             (l/select "[data-workbench-status-icon]" status-view))
+                :tooltips (mapv l/text (l/select 'wa-tooltip status-view))})))
+      (testing "Known coverage types use labelled icons and unknown types keep their label."
+        (is (= {:icons [{:kind "grundschutz" :label "Grundschutz"}
+                        {:kind "nachzeit-im-auto" :label "Nachzeit im Auto"}
+                        {:kind "proberaum" :label "Proberaum"}]
+                :tooltips ["Grundschutz" "Nachzeit im Auto" "Proberaum"]
+                :unknown ["Basic"]}
+               {:icons (mapv (fn [icon]
+                               (let [attrs (l/attrs icon)]
+                                 {:kind  (:data-workbench-coverage-type-icon attrs)
+                                  :label (:aria-label attrs)}))
+                             (l/select "[data-workbench-coverage-type-icon]"
+                                       coverage-view))
+                :tooltips (mapv l/text (l/select 'wa-tooltip coverage-view))
+                :unknown (->> (l/select 'span coverage-view)
+                              (map l/text)
+                              (remove str/blank?)
+                              vec)}))))))
+
+(deftest table-columns
+  (testing "The server chooses visible columns from the active view and overrides."
+    (testing "The All view uses its default columns."
+      (is (= ["" "Status" "Member" "Instrument" "Category" "Ownership"
+              "Value" "Cost" "Coverage types" "Actions"]
+             (headings (flat-table [row])))))
+    (testing "Legacy server overrides can hide an otherwise visible column."
+      (is (= ["" "Status" "Member" "Instrument" "Category" "Ownership"
+              "Value" "Coverage types" "Actions"]
+             (headings (flat-table
+                        :all
+                        {:columns {:cost false
+                                   :harmonia-id false}}
+                        [row])))))
+    (testing "The Missing ID view uses its own preset."
+      (is (= ["" "Status" "Member" "Instrument" "Category" "Harmonia ID" "Actions"]
+             (headings (flat-table :missing-id nil [row])))))
+    (testing "View-scoped overrides apply only to the active preset."
+      (is (= ["" "Status" "Member" "Instrument" "Category" "Actions"]
+             (headings (flat-table
+                        :missing-id
+                        {:columns-by-view {:missing-id {:harmonia-id false}}}
+                        [row])))))))
+
+(deftest row-selection
+  (testing "The table contains two selectable coverage rows."
+    (let [table (flat-table
+                 [row (assoc row
+                             :coverage-id second-coverage-id
+                             :instrument-name "Cello")])
+          header (l/select-one
+                  "wa-checkbox[data-workbench-select-all=true]"
+                  table)
+          row-checkboxes (rest (l/select 'wa-checkbox table))]
+      (testing "The header checkbox selects or clears both row IDs."
+        (is (= #{(str coverage-id) (str second-coverage-id)}
+               (referenced-ids (:data-on:change (l/attrs header))))))
+      (testing "The header tracks checked and indeterminate state for both IDs."
+        (is (= #{(str coverage-id) (str second-coverage-id)}
+               (referenced-ids (:data-effect (l/attrs header))))))
+      (testing "Each row checkbox tracks its own coverage ID."
+        (is (= [#{(str coverage-id)} #{(str second-coverage-id)}]
+               (mapv #(referenced-ids (:data-effect (l/attrs %)))
+                     row-checkboxes)))))))
+
+(deftest row-actions
+  (testing "A table row represents an existing coverage."
+    (let [actions-view (sut/row-cell-content {:tr tr} :EUR row :actions)
+          table        (flat-table [row])
+          action-buttons (->> (l/select :app.ui2.button/button actions-view)
+                              (filter #(contains? (:class (l/attrs %))
+                                                  "insurance-workbench-row-action-button")))]
+      (testing "The sticky action column is present in the heading and row."
+        (is (= {:headings 1 :cells 1}
+               {:headings (count (l/select 'th.insurance-workbench-row-actions-cell table))
+                :cells    (count (l/select 'td.insurance-workbench-row-actions-cell table))})))
+      (testing "View and Edit are direct compact links."
+        (is (= [{:label "View"
+                 :href  (str "/insurance-coverage/" coverage-id "/")}
+                {:label "Edit"
+                 :href  (str "/insurance-coverage-edit/" coverage-id "/")}]
+               (mapv (fn [button]
+                       {:label (:aria-label (l/attrs button))
+                        :href  (:href (l/attrs button))})
+                     action-buttons))))
+      (testing "Desktop and mobile overflow menus offer the same destinations."
+        (is (= {{:label "View"
+                 :value (str "/insurance-coverage/" coverage-id "/")} 2
+                {:label "Edit"
+                 :value (str "/insurance-coverage-edit/" coverage-id "/")} 2}
+               (frequencies
+                (map (fn [item]
+                       {:label (l/text item)
+                        :value (:value (l/attrs item))})
+                     (l/select 'wa-dropdown-item actions-view)))))))))
+
+(deftest bulk-actions
+  (testing "The editable grouped table has rows but no current selection."
+    (let [grouped (sut/bulk-action-bar
+                   request
+                   {:editable? true
+                    :filters   {:group :member}
+                    :rows      [{}]})
+          flat    (sut/bulk-action-bar
+                   request
+                   {:editable? true
+                    :filters   {:group :none}
+                    :rows      [{}]})]
+      (testing "Selection and status actions remain visible but disabled at zero selections."
+        (is (= {:labels   ["Deselect All" "Mark Workflow" "Set Change"
+                           "Expand all" "Collapse all"]
+                :disabled [true true true]}
+               {:labels   (mapv l/text
+                                (l/select :app.ui2.button/button grouped))
+                :disabled (->> (l/select :app.ui2.button/button grouped)
+                               (keep #(get (l/attrs %) :disabled))
+                               vec)})))
+      (testing "Workflow and change menus submit their matching bulk actions."
+        (is (= {:values  ["todo" "reviewed" "active"
+                          "changed" "new" "removed" "none"]
+                :actions #{:bulk-mark-workflow :bulk-set-change}}
+               {:values  (mapv #(get (l/attrs %) :value)
+                               (l/select 'wa-dropdown-item grouped))
+                :actions (action-keywords grouped)})))
+      (testing "Intersection state controls the sticky bulk bar."
+        (is (= {:enter "$insuranceWorkbench.bulkActionStuck = false"
+                :exit  "$insuranceWorkbench.bulkActionStuck = el.getBoundingClientRect().top < 0"}
+               (let [attrs (select-attrs
+                            '.insurance-workbench-bulk-action-sentinel
+                            grouped)]
+                 {:enter (:data-on-intersect attrs)
+                  :exit  (:data-on-intersect__exit attrs)}))))
+      (testing "Expansion controls are offered only for grouped rows."
+        (is (= ["Deselect All" "Mark Workflow" "Set Change"]
+               (mapv l/text (l/select :app.ui2.button/button flat))))))))
+
+(deftest pagination
+  (testing "The first page shows 20 of 85 results and has another page."
+    (let [view (sut/rows-section
+                {:tr tr}
+                {:policy     policy
+                 :view       :all
+                 :filters    {:group :none
+                              :ownership :all}
+                 :pagination {:page          1
+                              :page-size     20
+                              :page-sizes    [20 50 100]
+                              :total-results 85
+                              :total-pages   5
+                              :range-start   1
+                              :range-end     20
+                              :has-prev?     false
+                              :has-next?     true
+                              :prev-page     nil
+                              :next-page     2}
+                 :rows       [row]})
+          dropdown (l/select-one
+                    "wa-dropdown[data-workbench-page-size=true]"
+                    view)
+          items (l/select 'wa-dropdown-item dropdown)
+          nav (l/select-one "nav[aria-label=Pagination]" view)
+          buttons (l/select :app.ui2.button/button nav)]
+      (testing "The page-size menu identifies the current size and available choices."
+        (is (= {:summary "1–20 of 85 results"
+                :values  ["20" "50" "100"]
+                :icon-visibility [nil "visibility: hidden;" "visibility: hidden;"]}
+               {:summary (-> (l/select-one :app.ui2.button/button dropdown) l/text)
+                :values  (mapv #(get (l/attrs %) :value) items)
+                :icon-visibility
+                (mapv #(some-> (l/select-one :app.ui2.icon/icon %) l/attrs :style)
+                      items)})))
+      (testing "Selecting a page size resets the page and preserves workbench state."
+        (is (= #{{"page" "1" "page-size" "20"}
+                 {"page" "1" "page-size" "50"}
+                 {"page" "1" "page-size" "100"}}
+               (->> (embedded-urls (:data-on:wa-select (l/attrs dropdown)))
+                    (map #(select-keys (query-map %) ["page" "page-size"]))
+                    set))))
+      (testing "Previous is disabled and Next links to page two."
+        (is (= {:previous {:aria-label "Previous" :disabled true}
+                :next     {:aria-label "Next"
+                           :href (str "/insurance-policy/" policy-id
+                                      "/workbench?view=all&ownership=all&group=none&page=2&page-size=20")}}
+               {:previous (select-keys (l/attrs (first buttons))
+                                       [:aria-label :disabled])
+                :next     (select-keys (l/attrs (last buttons))
+                                       [:aria-label :href])}))))))
+
+(deftest sticky-bars
+  (testing "Pagination and bulk actions slide into view when they become sticky."
+    (let [css (slurp "resources/public/css/pages/insurance.css")]
+      (testing "Scroll-state containers and transitions are defined."
+        (is (= {:pagination-container true
+                :pagination-query     true
+                :pagination-transition true
+                :pagination-slide     true
+                :bulk-transition       true
+                :bulk-slide            true
+                :reduced-motion        true}
+               {:pagination-container
+                (boolean (re-find #"(?s)\.insurance-workbench-pagination \{.*container-type: scroll-state;" css))
+                :pagination-query
+                (boolean (re-find #"(?s)@container scroll-state\(stuck: bottom\)" css))
+                :pagination-transition
+                (boolean (re-find #"(?s)\.insurance-workbench-pagination__inner \{.*transition:" css))
+                :pagination-slide
+                (boolean (re-find #"(?s)@container scroll-state\(stuck: bottom\).*\.insurance-workbench-pagination__inner \{.*transform: translateY\(0\);" css))
+                :bulk-transition
+                (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar \{.*transition:" css))
+                :bulk-slide
+                (boolean (re-find #"(?s)\.insurance-workbench-bulk-action-bar--stuck \{.*transform: translateY\(0\);" css))
+                :reduced-motion
+                (boolean (re-find #"(?s)@media \(prefers-reduced-motion: reduce\).*\.insurance-workbench-pagination__inner,.*\.insurance-workbench-bulk-action-bar" css))}))))))
