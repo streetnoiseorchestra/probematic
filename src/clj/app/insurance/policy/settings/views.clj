@@ -130,11 +130,50 @@
            :premiumFactor (signal-string premium-factor)}
     type-id (assoc :typeId (signal-string type-id))))
 
+(defn- category-factor-create-state
+  [req {{:keys [policy-id]} :policy-details}]
+  (let [submitted (page-state-map req :category-factor-create)
+        details   (merge {:policy-id   policy-id
+                          :category-id ""
+                          :factor      ""}
+                         (dissoc submitted :_error))]
+    {:open        (:open details)
+     :policy-id   (:policy-id details)
+     :category-id (:category-id details)
+     :factor      (:factor details)
+     :_error      (:_error submitted)}))
+
+(defn- category-factor-edit-state
+  [req]
+  (let [submitted (page-state-map req :category-factor)]
+    {:policy-id          (:policy-id submitted)
+     :category-factor-id (:category-factor-id submitted)
+     :category-id        (:category-id submitted)
+     :category-name      (:category-name submitted)
+     :factor             (:factor submitted)
+     :_error             (:_error submitted)}))
+
+(defn- active-category-factor-state
+  [req settings]
+  (let [create-state (category-factor-create-state req settings)
+        edit-state   (category-factor-edit-state req)]
+    (if (:open create-state)
+      create-state
+      edit-state)))
+
+(defn- category-factor-signal
+  [{:keys [category-factor-id category-id factor policy-id]}]
+  (cond-> {:policyId   (signal-string policy-id)
+           :categoryId (signal-string category-id)
+           :factor     (signal-string factor)}
+    category-factor-id (assoc :categoryFactorId (signal-string category-factor-id))))
+
 (defn- initial-signals
   [req settings]
   {:insurancePolicySettings
-   {:policy       (policy-signal (policy-form-state req settings))
-    :coverageType (coverage-type-signal (active-coverage-type-state req settings))}})
+   {:policy         (policy-signal (policy-form-state req settings))
+    :coverageType   (coverage-type-signal (active-coverage-type-state req settings))
+    :categoryFactor (category-factor-signal (active-category-factor-state req settings))}})
 
 (defn- field-error
   [errors field]
@@ -198,6 +237,27 @@
                                      :aria-describedby (described-by-id id error)))]
          (map (partial currency-option selected))
          supported-currencies)))
+
+(defn- category-option
+  [selected {:keys [category-id category-name]}]
+  (let [value (signal-string category-id)]
+    [:option (cond-> {:value value}
+               (= value (signal-string selected)) (assoc :selected true))
+     category-name]))
+
+(defn- category-select
+  [{:keys [categories disabled? error id label selected]}]
+  (native-field
+   {:error error :id id :label label}
+   (into [:select (cond-> {:id        id
+                           :data-bind "insurancePolicySettings.categoryFactor.categoryId"}
+                    disabled? (assoc :disabled true)
+                    error     (assoc :aria-invalid "true"
+                                     :aria-describedby (described-by-id id error)))]
+         (cons [:option (cond-> {:value ""}
+                          (str/blank? (signal-string selected)) (assoc :selected true))
+                ""]
+               (map (partial category-option selected) categories)))))
 
 (def policy-status-variants
   {:insurance.policy.status/active "success"
@@ -527,41 +587,225 @@
               coverage-type-rows)]
        (ui2/empty-state (tr [:insurance.policy-settings/no-coverage-types]) "")))]))
 
+(defn- category-factor-create-fields
+  [{:keys [tr]} {:keys [_error category-id factor]} unused-categories id-prefix]
+  [:div {:class "wa-stack wa-gap-m"}
+   (top-error-callout (:_top _error))
+   (category-select {:id         (str id-prefix "-category")
+                     :label      (tr [:instrument/category])
+                     :selected   category-id
+                     :categories unused-categories
+                     :error      (field-error _error :category-id)})
+   (text-input {:id    (str id-prefix "-factor")
+                :label (tr [:insurance/premium-factor])
+                :type  "number"
+                :value (str factor)
+                :bind  "insurancePolicySettings.categoryFactor.factor"
+                :min   "0"
+                :step  "any"
+                :error (field-error _error :factor)})])
+
+(defn- read-only-field
+  [label value]
+  [:div {:class "wa-stack wa-gap-2xs"}
+   [:span {:class "wa-caption-s wa-font-weight-bold"} label]
+   [:span value]])
+
+(defn- category-factor-edit-fields
+  [{:keys [tr]} {:keys [_error category-id category-name factor]} id-prefix]
+  [:div {:class "wa-stack wa-gap-m"}
+   (top-error-callout (:_top _error))
+   [:input {:type      "hidden"
+            :value     category-id
+            :data-bind "insurancePolicySettings.categoryFactor.categoryId"}]
+   (read-only-field (tr [:instrument/category]) category-name)
+   (text-input {:id    (str id-prefix "-factor")
+                :label (tr [:insurance/premium-factor])
+                :type  "number"
+                :value (str factor)
+                :bind  "insurancePolicySettings.categoryFactor.factor"
+                :min   "0"
+                :step  "any"
+                :error (field-error _error :factor)})])
+
+(defn- category-factor-create-dialog
+  [{:keys [tr] :as req} {:keys [unused-categories] :as settings}]
+  (let [{:keys [open policy-id] :as form} (category-factor-create-state req settings)]
+    (when open
+      [:wa-dialog {:id                    "category-factor-create-dialog"
+                   :label                 (tr [:insurance.policy-settings/add-category-factor])
+                   :data-init__delay.10ms "el.open = true"
+                   :data-preserve-attr    "open"
+                   :data-on:wa-hide       (close-dialog-on-hide req ::actions/close-category-factor-create)}
+       [:form {:id             "category-factor-create-form"
+               :data-id        "category-factor-create"
+               :data-action    (d*/act req ::actions/create-category-factor)
+               :data-on:submit "evt.preventDefault();"}
+        [:input {:type      "hidden"
+                 :value     policy-id
+                 :data-bind "insurancePolicySettings.categoryFactor.policyId"}]
+        (category-factor-create-fields req form unused-categories "category-factor-create")]
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
+        (tr [:action/cancel])]
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "category-factor-create-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'category-factor-create'"
+                       :data-attr:loading  "$loading === 'category-factor-create'"}
+        (tr [:action/create])]])))
+
+(defn- category-factor-edit-dialog
+  [{:keys [tr] :as req}]
+  (let [{:keys [category-factor-id policy-id] :as form} (category-factor-edit-state req)]
+    (when category-factor-id
+      [:wa-dialog {:id                    "category-factor-edit-dialog"
+                   :label                 (tr [:insurance.policy-settings/edit-category-factor])
+                   :data-init__delay.10ms "el.open = true"
+                   :data-preserve-attr    "open"
+                   :data-on:wa-hide       (close-dialog-on-hide req ::actions/close-category-factor-edit)}
+       [:form {:id             "category-factor-edit-form"
+               :data-id        "category-factor"
+               :data-action    (d*/act req ::actions/update-category-factor)
+               :data-on:submit "evt.preventDefault();"}
+        [:input {:type      "hidden"
+                 :value     policy-id
+                 :data-bind "insurancePolicySettings.categoryFactor.policyId"}]
+        [:input {:type      "hidden"
+                 :value     category-factor-id
+                 :data-bind "insurancePolicySettings.categoryFactor.categoryFactorId"}]
+        (category-factor-edit-fields req form "category-factor-edit")]
+       [button/Button {:slot        "footer"
+                       :appearance  "outlined"
+                       :data-dialog "close"}
+        (tr [:action/cancel])]
+       [button/Button {:slot               "footer"
+                       :appearance         "filled"
+                       :variant            "brand"
+                       :type               "submit"
+                       :form               "category-factor-edit-form"
+                       :data-attr:disabled "!!$loading && $loading !== 'category-factor'"
+                       :data-attr:loading  "$loading === 'category-factor'"}
+        (tr [:action/save])]])))
+
+(defn- category-factor-delete-dialog
+  [{:keys [tr] :as req} {:keys [category-factor-id category-name usage-count used?]}]
+  (let [dialog-id  (ui2/remove-dialog-id "category-factor" category-factor-id)
+        loading-id (pr-str (str category-factor-id))]
+    [:wa-dialog {:id    dialog-id
+                 :label (tr [:action/confirm-generic])}
+     [:div {:class "wa-stack wa-gap-s"}
+      [:p (tr [:insurance.policy-settings/category-factor-delete-confirm]
+              [(str "\"" category-name "\"")])]
+      (when used?
+        [:wa-callout {:appearance "outlined" :variant "warning"}
+         [:div {:class "wa-stack wa-gap-2xs"}
+          [:strong (tr [:insurance.policy-settings/error-category-factor-in-use])]
+          [:span (tr [:insurance.policy-settings/category-factor-in-use]
+                     [usage-count])]]])]
+     [button/Button {:slot        "footer"
+                     :appearance  "outlined"
+                     :data-dialog "close"}
+      (tr [:action/cancel])]
+     [button/Button (cond-> {:slot               "footer"
+                             :appearance         "filled"
+                             :variant            "danger"
+                             :data-dialog        "close"
+                             :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                             :data-attr:loading  (str "$loading === " loading-id)
+                             :data-id            category-factor-id
+                             :data-action        (d*/act req ::actions/delete-category-factor)}
+                      used? (assoc :disabled true))
+      (tr [:action/confirm-delete])]]))
+
 (defn- category-factor-row
-  [currency {:keys [category-name current-cost factor usage-count]}]
-  [:tr
-   [:td category-name]
-   [:td factor]
-   [:td usage-count]
-   [:td (ui2/money current-cost currency)]])
+  [{:keys [editable? tr] :as req} currency {:keys [category-factor-id category-name current-cost factor usage-count used?]}]
+  (let [loading-id (pr-str (str category-factor-id))]
+    (cond-> [:tr
+             [:td category-name]
+             [:td factor]
+             [:td usage-count]
+             [:td (ui2/money current-cost currency)]]
+      editable?
+      (conj [:td {:class "align-top text-right"}
+             (ui2/row-action-menu
+              {:button-id (str "category-factor-actions-" category-factor-id)
+               :items     [{:label              (tr [:action/update])
+                            :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
+                            :data-attr:loading  (str "$loading === " loading-id)
+                            :data-id            category-factor-id
+                            :data-action        (d*/act req ::actions/open-category-factor-edit)}
+                           (cond-> {:label       (tr [:action/remove])
+                                    :variant     "danger"
+                                    :data-dialog (format "open %s"
+                                                         (ui2/remove-dialog-id "category-factor" category-factor-id))}
+                             used? (assoc :disabled true))]})]))))
+
+(defn- category-factor-table-head
+  [tr editable?]
+  (table-head (cond-> [(tr [:instrument/category])
+                       (tr [:insurance/premium-factor])
+                       (tr [:insurance.policy-settings/usage])
+                       (tr [:insurance.policy-settings/current-cost])]
+                editable? (conj (tr [:actions])))))
+
+(def category-factor-create-disabled-id
+  "category-factor-create-disabled")
+
+(defn- category-factor-create-actions
+  [{:keys [tr] :as req} policy-id unused-categories]
+  (if (seq unused-categories)
+    [[button/Button {:appearance  "outlined"
+                     :variant     "brand"
+                     :data-id     policy-id
+                     :data-action (d*/act req ::actions/open-category-factor-create)}
+      (tr [:insurance.policy-settings/add-category-factor])]]
+    [[:span {:id    category-factor-create-disabled-id
+             :style "display: inline-block;"}
+      [button/Button {:appearance "outlined"
+                      :variant    "brand"
+                      :disabled   true}
+       (tr [:insurance.policy-settings/add-category-factor])]]
+     [:wa-tooltip {:for category-factor-create-disabled-id}
+      (tr [:insurance.policy-settings/category-factor-create-disabled-tooltip])]]))
 
 (defn- category-factors-section
-  [{:keys [tr]} {{:keys [currency]} :policy-details :keys [category-factor-rows]}]
+  [{:keys [tr] :as req} {{:keys [currency policy-id]} :policy-details
+                         :keys [category-factor-rows editable? unused-categories]}]
   (settings-card
    {:title    (tr [:insurance/category-factors])
-    :subtitle (tr [:insurance.policy-settings/category-factors-subtitle])}
-   (ui2/table-shell
-    (if (seq category-factor-rows)
-      [:table
-       (table-head [(tr [:instrument/category])
-                    (tr [:insurance/premium-factor])
-                    (tr [:insurance.policy-settings/usage])
-                    (tr [:insurance.policy-settings/current-cost])])
-       (into [:tbody]
-             (map (partial category-factor-row currency))
-             category-factor-rows)]
-      (ui2/empty-state (tr [:insurance.policy-settings/no-category-factors]) "")))))
+    :subtitle (tr [:insurance.policy-settings/category-factors-subtitle])
+    :actions  (when editable?
+                (category-factor-create-actions req policy-id unused-categories))}
+   [:div {:class "wa-stack wa-gap-m"}
+    (top-error-callout (get-in req [:page-state actions/form-key :category-factor-delete :_error :_top]))
+    (ui2/table-shell
+     (if (seq category-factor-rows)
+       [:table
+        (category-factor-table-head tr editable?)
+        (into [:tbody]
+              (map (partial category-factor-row (assoc req :editable? editable?) currency))
+              category-factor-rows)]
+       (ui2/empty-state (tr [:insurance.policy-settings/no-category-factors]) "")))]))
 
 (defn- settings-page-content
-  [req {:keys [coverage-type-rows editable? policy] :as settings}]
+  [req {:keys [category-factor-rows coverage-type-rows editable? policy] :as settings}]
   [:div {:id           "insurance-policy-settings"
          :class        "wa-stack"
          :data-signals (d*/->signals (initial-signals req settings))}
    (coverage-type-create-dialog req settings)
    (coverage-type-edit-dialog req)
+   (category-factor-create-dialog req settings)
+   (category-factor-edit-dialog req)
    (when editable?
      (for [row coverage-type-rows]
        (coverage-type-delete-dialog req row)))
+   (when editable?
+     (for [row category-factor-rows]
+       (category-factor-delete-dialog req row)))
    (page-header req policy)
    (warnings-section req settings)
    [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 34ch;"}

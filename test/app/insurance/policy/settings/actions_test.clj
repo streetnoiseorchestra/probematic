@@ -100,6 +100,79 @@
                           :premiumFactor "0.75"}
                          overrides)}})
 
+(defn seed-category-factors!
+  [conn policy-id]
+  (let [used-category-id   (random-uuid)
+        unused-category-id (random-uuid)
+        new-category-id    (random-uuid)
+        foreign-policy-id  (random-uuid)
+        foreign-category-id (random-uuid)
+        used-factor-id     (random-uuid)
+        unused-factor-id   (random-uuid)
+        foreign-factor-id  (random-uuid)
+        coverage-id        (random-uuid)]
+    (seed-policy! conn foreign-policy-id :insurance.policy.status/draft)
+    @(d/transact
+      conn
+      [{:db/id                           "used-category"
+        :instrument.category/category-id used-category-id
+        :instrument.category/name        "Brass"
+        :instrument.category/code        (str "brass-" policy-id)}
+       {:db/id                           "unused-category"
+        :instrument.category/category-id unused-category-id
+        :instrument.category/name        "Woodwind"
+        :instrument.category/code        (str "woodwind-" policy-id)}
+       {:db/id                           "new-category"
+        :instrument.category/category-id new-category-id
+        :instrument.category/name        "Percussion"
+        :instrument.category/code        (str "percussion-" policy-id)}
+       {:db/id                           "foreign-category"
+        :instrument.category/category-id foreign-category-id
+        :instrument.category/name        "Foreign"
+        :instrument.category/code        (str "foreign-" policy-id)}
+       {:db/id                                                "used-factor"
+        :insurance.category.factor/category-factor-id         used-factor-id
+        :insurance.category.factor/category                   "used-category"
+        :insurance.category.factor/factor                     0.10M}
+       {:db/id                                                "unused-factor"
+        :insurance.category.factor/category-factor-id         unused-factor-id
+        :insurance.category.factor/category                   "unused-category"
+        :insurance.category.factor/factor                     0.20M}
+       {:db/id                                                "foreign-factor"
+        :insurance.category.factor/category-factor-id         foreign-factor-id
+        :insurance.category.factor/category                   "foreign-category"
+        :insurance.category.factor/factor                     0.30M}
+       {:db/id                    "used-instrument"
+        :instrument/instrument-id (random-uuid)
+        :instrument/name          "Trumpet"
+        :instrument/category      "used-category"}
+       {:db/id                           "used-coverage"
+        :instrument.coverage/coverage-id coverage-id
+        :instrument.coverage/instrument  "used-instrument"
+        :instrument.coverage/status      :instrument.coverage.status/reviewed
+        :instrument.coverage/change      :instrument.coverage.change/none}
+       [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/category-factors "used-factor"]
+       [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/category-factors "unused-factor"]
+       [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/covered-instruments "used-coverage"]
+       [:db/add [:insurance.policy/policy-id foreign-policy-id] :insurance.policy/category-factors "foreign-factor"]])
+    {:used-category-id    used-category-id
+     :unused-category-id  unused-category-id
+     :new-category-id     new-category-id
+     :foreign-policy-id   foreign-policy-id
+     :foreign-category-id foreign-category-id
+     :used-factor-id      used-factor-id
+     :unused-factor-id    unused-factor-id
+     :foreign-factor-id   foreign-factor-id
+     :coverage-id         coverage-id}))
+
+(defn category-factor-signals
+  [policy-id overrides]
+  {:insurancePolicySettings
+   {:categoryFactor (merge {:policyId   (str policy-id)
+                            :categoryId ""
+                            :factor     "0.35"}
+                           overrides)}})
+
 (defn transact-effect?
   [effect]
   (= :db/transact (first effect)))
@@ -134,6 +207,19 @@
                                          :name
                                          :description
                                          :premium-factor])
+     :error-keys     (set (keys (:_error value)))
+     :top-error      (get-in value [:_error :_top :error])}))
+
+(defn category-factor-failure-summary
+  [effects]
+  (let [[_ path value] (assoc-state-effect effects)]
+    {:transact?      (boolean (some transact-effect? effects))
+     :clear-loading? (boolean (some #{support/clear-loading} effects))
+     :state-path     path
+     :submitted      (select-keys value [:policy-id
+                                         :category-factor-id
+                                         :category-id
+                                         :factor])
      :error-keys     (set (keys (:_error value)))
      :top-error      (get-in value [:_error :_top :error])}))
 
@@ -522,6 +608,256 @@
                             {:targetid (str unused-type-id)})
                 :close-edit (actions/close-coverage-type-edit-action (state system) {})}))))))
 
+(deftest category-factor-create-update-delete-action-test
+  (testing "creates, updates, and deletes policy category factors"
+    (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-settings-category-factor-actions")
+          policy-id                           (random-uuid)
+          policy-ref                          [:insurance.policy/policy-id policy-id]]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [new-category-id unused-category-id unused-factor-id used-factor-id]} (seed-category-factors! conn policy-id)
+            unused-factor-ref [:insurance.category.factor/category-factor-id unused-factor-id]
+            create-effects    (actions/create-category-factor-action
+                               (state system)
+                               (category-factor-signals policy-id
+                                                        {:categoryId (str new-category-id)}))
+            [[_ create-tx create-opts] create-clear create-state] create-effects
+            [new-factor-tx policy-add-tx create-audit-tx] create-tx]
+        (is (= {:create {:transact?      true
+                         :opts           {}
+                         :factor-id?     true
+                         :factor-tx      {:insurance.category.factor/category [:instrument.category/category-id new-category-id]
+                                          :insurance.category.factor/factor   0.35M}
+                         :policy-add     [:db/add policy-ref :insurance.policy/category-factors]
+                         :same-tempid?   true
+                         :audit          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
+                         :clear-loading? true
+                         :clear-state    [:app.datastar/assoc-state
+                                          [:insurance-policy-settings :category-factor-create]
+                                          false]}
+                :update [[:db/transact
+                          (support/with-audit
+                            [[:db/add unused-factor-ref :insurance.category.factor/factor 0.45M]]
+                            member-id)
+                          {}]
+                         support/clear-loading
+                         [:app.datastar/assoc-state [:insurance-policy-settings :category-factor] false]]
+                :delete [[:db/transact
+                          (support/with-audit
+                            [[:db/retract policy-ref :insurance.policy/category-factors unused-factor-ref]
+                             [:db/retractEntity unused-factor-ref]]
+                            member-id)
+                          {}]
+                         support/clear-loading
+                         [:app.datastar/assoc-state
+                          [:insurance-policy-settings :category-factor-delete]
+                          false]]
+                :delete-used {:transact?      false
+                              :clear-loading? true
+                              :state-path     [:insurance-policy-settings :category-factor-delete]
+                              :submitted      {:category-factor-id used-factor-id}
+                              :error-keys     #{:_top}
+                              :top-error      [:insurance.policy-settings/error-category-factor-in-use]}}
+               {:create {:transact?      (boolean (some transact-effect? create-effects))
+                         :opts           create-opts
+                         :factor-id?     (uuid? (:insurance.category.factor/category-factor-id new-factor-tx))
+                         :factor-tx      (dissoc new-factor-tx :db/id :insurance.category.factor/category-factor-id)
+                         :policy-add     (subvec (vec policy-add-tx) 0 3)
+                         :same-tempid?   (= (:db/id new-factor-tx) (nth policy-add-tx 3))
+                         :audit          create-audit-tx
+                         :clear-loading? (= support/clear-loading create-clear)
+                         :clear-state    create-state}
+                :update (actions/update-category-factor-action
+                         (state system)
+                         (category-factor-signals policy-id
+                                                  {:categoryFactorId (str unused-factor-id)
+                                                   :categoryId       (str unused-category-id)
+                                                   :factor           "0.45"}))
+                :delete (actions/delete-category-factor-action
+                         (state system)
+                         {:targetid (str unused-factor-id)})
+                :delete-used (category-factor-failure-summary
+                              (actions/delete-category-factor-action
+                               (state system)
+                               {:targetid (str used-factor-id)}))}))))))
+
+(deftest category-factor-validation-test
+  (testing "validates category factor fields, duplicate categories, and policy membership"
+    (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-settings-category-factor-validation")
+          policy-id                           (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [foreign-factor-id unused-factor-id used-category-id]} (seed-category-factors! conn policy-id)]
+        (is (= {:invalid-create {:transact?      false
+                                 :clear-loading? true
+                                 :state-path     [:insurance-policy-settings :category-factor-create]
+                                 :submitted      {:policy-id   policy-id
+                                                  :category-id nil
+                                                  :factor      "nope"}
+                                 :error-keys     #{:category-id :factor :_top}
+                                 :top-error      [:error/form-has-errors]}
+                :duplicate-create {:transact?      false
+                                   :clear-loading? true
+                                   :state-path     [:insurance-policy-settings :category-factor-create]
+                                   :submitted      {:policy-id   policy-id
+                                                    :category-id used-category-id
+                                                    :factor      "0.1"}
+                                   :error-keys     #{:category-id :_top}
+                                   :top-error      [:error/form-has-errors]}
+                :invalid-update {:transact?      false
+                                 :clear-loading? true
+                                 :state-path     [:insurance-policy-settings :category-factor]
+                                 :submitted      {:policy-id           policy-id
+                                                  :category-factor-id  unused-factor-id
+                                                  :category-id         used-category-id
+                                                  :factor              "-1"}
+                                 :error-keys     #{:factor :_top}
+                                 :top-error      [:error/form-has-errors]}
+                :foreign-update {:transact?      false
+                                 :clear-loading? true
+                                 :state-path     [:insurance-policy-settings :category-factor]
+                                 :submitted      {:policy-id           policy-id
+                                                  :category-factor-id  foreign-factor-id
+                                                  :category-id         used-category-id
+                                                  :factor              "0.5"}
+                                 :error-keys     #{:_top}
+                                 :top-error      [:insurance.policy-settings/error-category-factor-not-found]}}
+               {:invalid-create (category-factor-failure-summary
+                                 (actions/create-category-factor-action
+                                  (state system)
+                                  (category-factor-signals policy-id
+                                                           {:categoryId ""
+                                                            :factor     "nope"})))
+                :duplicate-create (category-factor-failure-summary
+                                   (actions/create-category-factor-action
+                                    (state system)
+                                    (category-factor-signals policy-id
+                                                             {:categoryId (str used-category-id)
+                                                              :factor     "0.1"})))
+                :invalid-update (category-factor-failure-summary
+                                 (actions/update-category-factor-action
+                                  (state system)
+                                  (category-factor-signals policy-id
+                                                           {:categoryFactorId (str unused-factor-id)
+                                                            :categoryId       (str used-category-id)
+                                                            :factor           "-1"})))
+                :foreign-update (category-factor-failure-summary
+                                 (actions/update-category-factor-action
+                                  (state system)
+                                  (category-factor-signals policy-id
+                                                           {:categoryFactorId (str foreign-factor-id)
+                                                            :categoryId       (str used-category-id)
+                                                            :factor           "0.5"})))}))))))
+
+(deftest category-factor-create-validation-keeps-dialog-open-test
+  (testing "keeps the create dialog open so validation errors are visible"
+    (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-settings-category-factor-create-open")
+          policy-id                           (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (seed-category-factors! conn policy-id)
+      (let [[_ _ value] (assoc-state-effect
+                         (actions/create-category-factor-action
+                          (state system)
+                          (category-factor-signals policy-id
+                                                   {:categoryId ""
+                                                    :factor     "bad"})))]
+        (is (= {:open       true
+                :error-keys #{:category-id :factor :_top}}
+               {:open       (:open value)
+                :error-keys (set (keys (:_error value)))}))))))
+
+(deftest category-factor-authorization-test
+  (testing "rejects category factor mutations for non-team members and frozen policies"
+    (let [{draft-conn :conn :as draft-system} (tc/new-system "insurance-settings-category-factor-not-team")
+          {frozen-conn :conn frozen-member-id :member-id :as frozen-system}
+          (tc/new-system "insurance-settings-category-factor-frozen")
+          draft-policy-id  (random-uuid)
+          frozen-policy-id (random-uuid)]
+      (seed-policy! draft-conn draft-policy-id :insurance.policy.status/draft)
+      (seed-insurance-team! frozen-conn frozen-member-id)
+      (seed-policy! frozen-conn frozen-policy-id :insurance.policy.status/sent)
+      (let [{draft-new-category-id :new-category-id} (seed-category-factors! draft-conn draft-policy-id)
+            {:keys [unused-factor-id used-category-id]} (seed-category-factors! frozen-conn frozen-policy-id)]
+        (is (= {:create-not-team {:transact?      false
+                                  :clear-loading? true
+                                  :state-path     [:insurance-policy-settings :category-factor-create]
+                                  :submitted      {:policy-id   draft-policy-id
+                                                   :category-id draft-new-category-id
+                                                   :factor      "0.35"}
+                                  :error-keys     #{:_top}
+                                  :top-error      [:insurance.policy-settings/error-not-allowed]}
+                :update-frozen {:transact?      false
+                                :clear-loading? true
+                                :state-path     [:insurance-policy-settings :category-factor]
+                                :submitted      {:policy-id           frozen-policy-id
+                                                 :category-factor-id  unused-factor-id
+                                                 :category-id         used-category-id
+                                                 :factor              "0.5"}
+                                :error-keys     #{:_top}
+                                :top-error      [:insurance.policy-settings/error-frozen-policy]}
+                :delete-frozen {:transact?      false
+                                :clear-loading? true
+                                :state-path     [:insurance-policy-settings :category-factor-delete]
+                                :submitted      {:category-factor-id unused-factor-id}
+                                :error-keys     #{:_top}
+                                :top-error      [:insurance.policy-settings/error-frozen-policy]}}
+               {:create-not-team (category-factor-failure-summary
+                                  (actions/create-category-factor-action
+                                   (state draft-system)
+                                   (category-factor-signals draft-policy-id
+                                                            {:categoryId (str draft-new-category-id)})))
+                :update-frozen (category-factor-failure-summary
+                                (actions/update-category-factor-action
+                                 (state frozen-system)
+                                 (category-factor-signals frozen-policy-id
+                                                          {:categoryFactorId (str unused-factor-id)
+                                                           :categoryId       (str used-category-id)
+                                                           :factor           "0.5"})))
+                :delete-frozen (category-factor-failure-summary
+                                (actions/delete-category-factor-action
+                                 (state frozen-system)
+                                 {:targetid (str unused-factor-id)}))}))))))
+
+(deftest category-factor-dialog-actions-test
+  (testing "opens and closes create and edit category factor dialog state"
+    (let [{:keys [conn member-id] :as system} (tc/new-system "insurance-settings-category-factor-dialogs")
+          policy-id                           (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [unused-category-id unused-factor-id]} (seed-category-factors! conn policy-id)]
+        (is (= {:open-create [support/clear-loading
+                              [:app.datastar/assoc-state
+                               [:insurance-policy-settings :category-factor-create]
+                               {:open        true
+                                :policy-id   policy-id
+                                :category-id ""
+                                :factor      ""}]]
+                :close-create [support/clear-loading
+                               [:app.datastar/assoc-state
+                                [:insurance-policy-settings :category-factor-create]
+                                false]]
+                :open-edit [support/clear-loading
+                            [:app.datastar/assoc-state
+                             [:insurance-policy-settings :category-factor]
+                             {:policy-id          policy-id
+                              :category-factor-id unused-factor-id
+                              :category-id        unused-category-id
+                              :category-name      "Woodwind"
+                              :factor             0.20M}]]
+                :close-edit [support/clear-loading
+                             [:app.datastar/assoc-state
+                              [:insurance-policy-settings :category-factor]
+                              false]]}
+               {:open-create (actions/open-category-factor-create-action
+                              (state system)
+                              {:targetid (str policy-id)})
+                :close-create (actions/close-category-factor-create-action (state system) {})
+                :open-edit (actions/open-category-factor-edit-action
+                            (state system)
+                            {:targetid (str unused-factor-id)})
+                :close-edit (actions/close-category-factor-edit-action (state system) {})}))))))
+
 (deftest settings-actions-are-registered-test
   (is (every? #(contains? insurance.actions/actions %)
               [:app.insurance.policy.settings.actions/save-policy-details
@@ -531,4 +867,11 @@
                :app.insurance.policy.settings.actions/open-coverage-type-edit
                :app.insurance.policy.settings.actions/close-coverage-type-edit
                :app.insurance.policy.settings.actions/update-coverage-type
-               :app.insurance.policy.settings.actions/delete-coverage-type])))
+               :app.insurance.policy.settings.actions/delete-coverage-type
+               :app.insurance.policy.settings.actions/open-category-factor-create
+               :app.insurance.policy.settings.actions/close-category-factor-create
+               :app.insurance.policy.settings.actions/create-category-factor
+               :app.insurance.policy.settings.actions/open-category-factor-edit
+               :app.insurance.policy.settings.actions/close-category-factor-edit
+               :app.insurance.policy.settings.actions/update-category-factor
+               :app.insurance.policy.settings.actions/delete-category-factor])))

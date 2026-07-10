@@ -131,9 +131,15 @@
  {:category-factors-subtitle "Faktoren nach Instrumentenkategorie."
   :coverage-types-subtitle "Versicherungsarten in dieser Police.",
   :add-coverage-type "Versicherungsart hinzufügen",
+  :add-category-factor "Kategoriefaktor hinzufügen"
+  :category-factor-create-disabled-tooltip
+  "Jede Instrumentenkategorie hat bereits einen Kategoriefaktor."
   :coverage-type-delete-confirm "Versicherungsart %1 löschen?",
   :coverage-type-in-use
   "Diese Versicherungsart wird von %1 aktuellen Versicherungen verwendet und kann nicht gelöscht werden.",
+  :category-factor-delete-confirm "Kategoriefaktor für %1 löschen?"
+  :category-factor-in-use
+  "Dieser Kategoriefaktor wird von %1 aktuellen Versicherungen verwendet und kann nicht gelöscht werden."
   :current-cost "Aktuell geschätzte Kosten",
   :current-totals "Aktuelle Summen",
   :current-totals-subtitle "Sichere Summen aus der aktuellen Konfiguration.",
@@ -147,10 +153,16 @@
   :error-effective-until-before-effective-at
   "Das Enddatum muss nach dem Startdatum liegen.",
   :edit-coverage-type "Versicherungsart bearbeiten",
+  :edit-category-factor "Kategoriefaktor bearbeiten"
   :error-coverage-type-in-use "Versicherungsart wird noch verwendet.",
   :error-coverage-type-not-found "Versicherungsart wurde in dieser Police nicht gefunden.",
   :error-duplicate-coverage-type-name
   "Eine Versicherungsart mit diesem Namen existiert bereits in dieser Police.",
+  :error-category-factor-in-use "Kategoriefaktor wird noch verwendet."
+  :error-category-factor-not-found "Kategoriefaktor wurde in dieser Police nicht gefunden."
+  :error-category-not-found "Kategorie nicht gefunden."
+  :error-duplicate-category-factor
+  "Ein Kategoriefaktor für diese Kategorie existiert bereits in dieser Police."
   :missing-category-factors-title "Fehlende Kategoriefaktoren",
   :missing-category-factors-body
   "Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1.",

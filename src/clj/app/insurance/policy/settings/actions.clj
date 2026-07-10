@@ -20,6 +20,12 @@
 (def clear-coverage-type
   [:app.datastar/assoc-state [form-key :coverage-type] false])
 
+(def clear-category-factor-create
+  [:app.datastar/assoc-state [form-key :category-factor-create] false])
+
+(def clear-category-factor
+  [:app.datastar/assoc-state [form-key :category-factor] false])
+
 (defn- raw-policy-form
   [signals]
   (or (get-in signals [:insurancePolicySettings :policy])
@@ -30,20 +36,22 @@
   (or (get-in signals [:insurancePolicySettings :coverageType])
       {}))
 
+(defn- raw-category-factor-form
+  [signals]
+  (or (get-in signals [:insurancePolicySettings :categoryFactor])
+      {}))
+
 (defn- decimal-value
   [value]
-  (try
-    (when-let [value (form/optional-text value)]
-      (bigdec value))
-    (catch Exception _
-      nil)))
+  (when-let [value (form/optional-text value)]
+    (try
+      (bigdec value)
+      (catch NumberFormatException _
+        nil))))
 
 (defn- uuid-value
   [value]
-  (try
-    (some-> value form/optional-text util/ensure-uuid!)
-    (catch Exception _
-      nil)))
+  (some-> value form/optional-text util/ensure-uuid!))
 
 (defn- date-inst
   [value]
@@ -75,6 +83,15 @@
              :description    (or (form/trim-value (:description raw)) "")
              :premium-factor (or (form/trim-value (:premiumFactor raw)) "")}
       type-id (assoc :type-id type-id))))
+
+(defn- category-factor-form
+  [signals]
+  (let [raw                (raw-category-factor-form signals)
+        category-factor-id (uuid-value (:categoryFactorId raw))]
+    (cond-> {:policy-id   (uuid-value (:policyId raw))
+             :category-id (uuid-value (:categoryId raw))
+             :factor      (or (form/trim-value (:factor raw)) "")}
+      category-factor-id (assoc :category-factor-id category-factor-id))))
 
 (defn- retrieve-policy
   [db policy-id]
@@ -232,6 +249,85 @@
           (seq field-errors)
           (assoc :_top (error tr [:error/form-has-errors])))))))
 
+(defn- category-factor-uuid
+  [{:insurance.category.factor/keys [category-factor-id]}]
+  category-factor-id)
+
+(defn- category-factor-category-id
+  [category-factor]
+  (get-in category-factor [:insurance.category.factor/category
+                           :instrument.category/category-id]))
+
+(defn- category-factor-category-name
+  [category-factor]
+  (get-in category-factor [:insurance.category.factor/category
+                           :instrument.category/name]))
+
+(defn- policy-category-factor-ids
+  [policy]
+  (set (map category-factor-uuid (:insurance.policy/category-factors policy))))
+
+(defn- category-factor-belongs-to-policy?
+  [policy category-factor-id]
+  (contains? (policy-category-factor-ids policy) category-factor-id))
+
+(defn- category-exists?
+  [db category-id]
+  (boolean
+   (when (uuid? category-id)
+     (d/entid db [:instrument.category/category-id category-id]))))
+
+(defn- duplicate-category-factor?
+  [policy {:keys [category-id category-factor-id]}]
+  (boolean
+   (when (uuid? category-id)
+     (some (fn [category-factor]
+             (and (= category-id (category-factor-category-id category-factor))
+                  (not= category-factor-id (category-factor-uuid category-factor))))
+           (:insurance.policy/category-factors policy)))))
+
+(defn- category-factor-field-validation-errors
+  [db tr policy {:keys [category-id factor] :as form} mode]
+  (let [factor-value (decimal-value factor)]
+    (cond-> {}
+      (not (uuid? category-id))
+      (assoc :category-id (required-error tr [:instrument/category]))
+
+      (and (uuid? category-id)
+           (not (category-exists? db category-id)))
+      (assoc :category-id (error tr [:insurance.policy-settings/error-category-not-found]))
+
+      (not (non-negative-decimal? factor-value))
+      (assoc :factor (error tr [:insurance.policy-settings/error-invalid-premium-factor]))
+
+      (and (= :create mode)
+           (duplicate-category-factor? policy form))
+      (assoc :category-id (error tr [:insurance.policy-settings/error-duplicate-category-factor])))))
+
+(defn- category-factor-validation-errors
+  [{:keys [db tr] :as state} {:keys [policy-id category-factor-id] :as form} mode]
+  (let [{:keys [policy]} (policy-context db form)
+        context-error-key (cond
+                            (not (uuid? policy-id))
+                            [:insurance.policy-settings/error-policy-not-found]
+
+                            :else
+                            (mutation-context-error-key state policy))]
+    (cond
+      context-error-key
+      {:_top (error tr context-error-key)}
+
+      (and (= :update mode)
+           (or (not (uuid? category-factor-id))
+               (not (category-factor-belongs-to-policy? policy category-factor-id))))
+      {:_top (error tr [:insurance.policy-settings/error-category-factor-not-found])}
+
+      :else
+      (let [field-errors (category-factor-field-validation-errors db tr policy form mode)]
+        (cond-> field-errors
+          (seq field-errors)
+          (assoc :_top (error tr [:error/form-has-errors])))))))
+
 (defn- policy-failure-effects
   [form errors]
   [support/clear-loading
@@ -243,6 +339,16 @@
   [state-key form errors]
   (let [form-state (cond-> form
                      (= :coverage-type-create state-key)
+                     (assoc :open true))]
+    [support/clear-loading
+     [:app.datastar/assoc-state
+      [form-key state-key]
+      (assoc form-state :_error errors)]]))
+
+(defn- category-factor-failure-effects
+  [state-key form errors]
+  (let [form-state (cond-> form
+                     (= :category-factor-create state-key)
                      (assoc :open true))]
     [support/clear-loading
      [:app.datastar/assoc-state
@@ -411,12 +517,164 @@
   [_state _signals]
   [support/clear-loading clear-coverage-type])
 
+(defn- create-category-factor-tx-data
+  [{:keys [policy-id category-id factor]}]
+  (let [tempid "category-factor-create"]
+    [{:db/id                                                tempid
+      :insurance.category.factor/category-factor-id         (sq/generate-squuid)
+      :insurance.category.factor/category                   [:instrument.category/category-id category-id]
+      :insurance.category.factor/factor                     (decimal-value factor)}
+     [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/category-factors tempid]]))
+
+(defn create-category-factor-action
+  [{:keys [current-member-id] :as state} signals]
+  (let [form   (category-factor-form signals)
+        errors (category-factor-validation-errors state form :create)]
+    (if (seq errors)
+      (category-factor-failure-effects :category-factor-create form errors)
+      [[:db/transact
+        (support/with-audit (create-category-factor-tx-data form)
+          current-member-id)
+        {}]
+       support/clear-loading
+       clear-category-factor-create])))
+
+(defn- update-category-factor-tx-data
+  [{:keys [category-factor-id factor]}]
+  [[:db/add [:insurance.category.factor/category-factor-id category-factor-id]
+    :insurance.category.factor/factor
+    (decimal-value factor)]])
+
+(defn update-category-factor-action
+  [{:keys [current-member-id] :as state} signals]
+  (let [form   (category-factor-form signals)
+        errors (category-factor-validation-errors state form :update)]
+    (if (seq errors)
+      (category-factor-failure-effects :category-factor form errors)
+      [[:db/transact
+        (support/with-audit (update-category-factor-tx-data form)
+          current-member-id)
+        {}]
+       support/clear-loading
+       clear-category-factor])))
+
+(defn- policy-id-for-category-factor
+  [db category-factor-id]
+  (when (uuid? category-factor-id)
+    (d/q '[:find ?policy-id .
+           :in $ ?category-factor-id
+           :where
+           [?factor :insurance.category.factor/category-factor-id ?category-factor-id]
+           [?policy :insurance.policy/category-factors ?factor]
+           [?policy :insurance.policy/policy-id ?policy-id]]
+         db
+         category-factor-id)))
+
+(defn- coverage-category-id
+  [coverage]
+  (get-in coverage [:instrument.coverage/instrument
+                    :instrument/category
+                    :instrument.category/category-id]))
+
+(defn- category-factor-usage-count
+  [policy category-factor-id]
+  (let [category-id (some (fn [category-factor]
+                            (when (= category-factor-id (category-factor-uuid category-factor))
+                              (category-factor-category-id category-factor)))
+                          (:insurance.policy/category-factors policy))]
+    (count
+     (filter #(= category-id (coverage-category-id %))
+             (:insurance.policy/covered-instruments policy)))))
+
+(defn- delete-category-factor-form
+  [{:keys [targetid]}]
+  {:category-factor-id (uuid-value targetid)})
+
+(defn- delete-category-factor-validation-errors
+  [{:keys [db tr] :as state} {:keys [category-factor-id]}]
+  (let [policy-id         (policy-id-for-category-factor db category-factor-id)
+        policy            (when policy-id (retrieve-policy db policy-id))
+        context-error-key (mutation-context-error-key state policy)]
+    (cond
+      (not (uuid? category-factor-id))
+      {:_top (error tr [:insurance.policy-settings/error-category-factor-not-found])}
+
+      (nil? policy-id)
+      {:_top (error tr [:insurance.policy-settings/error-category-factor-not-found])}
+
+      context-error-key
+      {:_top (error tr context-error-key)}
+
+      (pos? (category-factor-usage-count policy category-factor-id))
+      {:_top (error tr [:insurance.policy-settings/error-category-factor-in-use])})))
+
+(defn delete-category-factor-action
+  [{:keys [current-member-id db] :as state} signals]
+  (let [form      (delete-category-factor-form signals)
+        policy-id (policy-id-for-category-factor db (:category-factor-id form))
+        errors    (delete-category-factor-validation-errors state form)]
+    (if (seq errors)
+      (category-factor-failure-effects :category-factor-delete form errors)
+      [[:db/transact
+        (support/with-audit
+          [[:db/retract [:insurance.policy/policy-id policy-id]
+            :insurance.policy/category-factors
+            [:insurance.category.factor/category-factor-id (:category-factor-id form)]]
+           [:db/retractEntity [:insurance.category.factor/category-factor-id (:category-factor-id form)]]]
+          current-member-id)
+        {}]
+       support/clear-loading
+       [:app.datastar/assoc-state [form-key :category-factor-delete] false]])))
+
+(defn open-category-factor-create-action
+  [_state {:keys [targetid]}]
+  [support/clear-loading
+   [:app.datastar/assoc-state
+    [form-key :category-factor-create]
+    {:open        true
+     :policy-id   (uuid-value targetid)
+     :category-id ""
+     :factor      ""}]])
+
+(defn close-category-factor-create-action
+  [_state _signals]
+  [support/clear-loading clear-category-factor-create])
+
+(defn- category-factor-entity
+  [db category-factor-id]
+  (when (uuid? category-factor-id)
+    (d/entity db [:insurance.category.factor/category-factor-id category-factor-id])))
+
+(defn open-category-factor-edit-action
+  [{:keys [db]} {:keys [targetid]}]
+  (let [category-factor-id (uuid-value targetid)
+        category-factor    (category-factor-entity db category-factor-id)]
+    [support/clear-loading
+     [:app.datastar/assoc-state
+      [form-key :category-factor]
+      {:policy-id          (policy-id-for-category-factor db category-factor-id)
+       :category-factor-id category-factor-id
+       :category-id        (category-factor-category-id category-factor)
+       :category-name      (category-factor-category-name category-factor)
+       :factor             (:insurance.category.factor/factor category-factor)}]]))
+
+(defn close-category-factor-edit-action
+  [_state _signals]
+  [support/clear-loading clear-category-factor])
+
 (def actions
-  {::save-policy-details          #'save-policy-details-action
-   ::open-coverage-type-create    #'open-coverage-type-create-action
-   ::close-coverage-type-create   #'close-coverage-type-create-action
-   ::create-coverage-type         #'create-coverage-type-action
-   ::open-coverage-type-edit      #'open-coverage-type-edit-action
-   ::close-coverage-type-edit     #'close-coverage-type-edit-action
-   ::update-coverage-type         #'update-coverage-type-action
-   ::delete-coverage-type         #'delete-coverage-type-action})
+  {::save-policy-details           #'save-policy-details-action
+   ::open-coverage-type-create     #'open-coverage-type-create-action
+   ::close-coverage-type-create    #'close-coverage-type-create-action
+   ::create-coverage-type          #'create-coverage-type-action
+   ::open-coverage-type-edit       #'open-coverage-type-edit-action
+   ::close-coverage-type-edit      #'close-coverage-type-edit-action
+   ::update-coverage-type          #'update-coverage-type-action
+   ::delete-coverage-type          #'delete-coverage-type-action
+   ::open-category-factor-create   #'open-category-factor-create-action
+   ::close-category-factor-create  #'close-category-factor-create-action
+   ::create-category-factor        #'create-category-factor-action
+   ::open-category-factor-edit     #'open-category-factor-edit-action
+   ::close-category-factor-edit    #'close-category-factor-edit-action
+   ::update-category-factor        #'update-category-factor-action
+   ::delete-category-factor        #'delete-category-factor-action})

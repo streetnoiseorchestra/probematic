@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-09 18:41+0000\n"
+"POT-Creation-Date: 2026-07-10 06:04+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -2607,6 +2607,12 @@ msgctxt ":col/total-instruments"
 msgid "Total Instruments"
 msgstr "Gesamtinstrumente"
 
+#: :insurance.policy-settings/category-factor-delete-confirm
+#, ycp-format
+msgctxt ":insurance.policy-settings/category-factor-delete-confirm"
+msgid "Delete category factor for %1?"
+msgstr "Kategoriefaktor für %1 löschen?"
+
 #: :insurance.policy-settings/no-coverage-types
 #, ycp-format
 msgctxt ":insurance.policy-settings/no-coverage-types"
@@ -2621,6 +2627,12 @@ msgstr ""
 "Diese Police ist nicht im Entwurf, daher können Einstellungen nicht geändert "
 "werden."
 
+#: :insurance.policy-settings/add-category-factor
+#, ycp-format
+msgctxt ":insurance.policy-settings/add-category-factor"
+msgid "Add category factor"
+msgstr "Kategoriefaktor hinzufügen"
+
 #: :insurance.policy-settings/error-invalid-date
 #, ycp-format
 msgctxt ":insurance.policy-settings/error-invalid-date"
@@ -2631,7 +2643,14 @@ msgstr "Gib ein gültiges Datum ein."
 #, ycp-format
 msgctxt ":insurance.policy-settings/error-duplicate-coverage-type-name"
 msgid "A coverage type with this name already exists for this policy."
-msgstr "Eine Versicherungsart mit diesem Namen existiert bereits in dieser Police."
+msgstr ""
+"Eine Versicherungsart mit diesem Namen existiert bereits in dieser Police."
+
+#: :insurance.policy-settings/edit-category-factor
+#, ycp-format
+msgctxt ":insurance.policy-settings/edit-category-factor"
+msgid "Edit category factor"
+msgstr "Kategoriefaktor bearbeiten"
 
 #: :insurance.policy-settings/edit-coverage-type
 #, ycp-format
@@ -2651,11 +2670,29 @@ msgctxt ":insurance.policy-settings/error-invalid-premium-factor"
 msgid "Enter a valid non-negative premium factor."
 msgstr "Gib einen gültigen nicht-negativen Prämienfaktor ein."
 
+#: :insurance.policy-settings/error-category-factor-not-found
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-category-factor-not-found"
+msgid "Category factor not found for this policy."
+msgstr "Kategoriefaktor wurde in dieser Police nicht gefunden."
+
 #: :insurance.policy-settings/error-effective-until-before-effective-at
 #, ycp-format
 msgctxt ":insurance.policy-settings/error-effective-until-before-effective-at"
 msgid "The end date must be after the start date."
 msgstr "Das Enddatum muss nach dem Startdatum liegen."
+
+#: :insurance.policy-settings/category-factor-create-disabled-tooltip
+#, ycp-format
+msgctxt ":insurance.policy-settings/category-factor-create-disabled-tooltip"
+msgid "Every instrument category already has a category factor."
+msgstr "Jede Instrumentenkategorie hat bereits einen Kategoriefaktor."
+
+#: :insurance.policy-settings/error-category-factor-in-use
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-category-factor-in-use"
+msgid "Category factor is still used."
+msgstr "Kategoriefaktor wird noch verwendet."
 
 #: :insurance.policy-settings/usage
 #, ycp-format
@@ -2705,6 +2742,15 @@ msgctxt ":insurance.policy-settings/error-policy-not-found"
 msgid "Policy not found."
 msgstr "Police nicht gefunden."
 
+#: :insurance.policy-settings/category-factor-in-use
+#, ycp-format
+msgctxt ":insurance.policy-settings/category-factor-in-use"
+msgid ""
+"This category factor is used by %1 current coverages and cannot be deleted."
+msgstr ""
+"Dieser Kategoriefaktor wird von %1 aktuellen Versicherungen verwendet und "
+"kann nicht gelöscht werden."
+
 #: :insurance.policy-settings/coverage-types-subtitle
 #, ycp-format
 msgctxt ":insurance.policy-settings/coverage-types-subtitle"
@@ -2729,6 +2775,13 @@ msgctxt ":insurance.policy-settings/error-not-allowed"
 msgid "You are not allowed to change policy settings."
 msgstr "Du darfst Policeneinstellungen nicht ändern."
 
+#: :insurance.policy-settings/error-duplicate-category-factor
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-duplicate-category-factor"
+msgid "A category factor for this category already exists for this policy."
+msgstr ""
+"Ein Kategoriefaktor für diese Kategorie existiert bereits in dieser Police."
+
 #: :insurance.policy-settings/category-factors-subtitle
 #, ycp-format
 msgctxt ":insurance.policy-settings/category-factors-subtitle"
@@ -2746,6 +2799,12 @@ msgstr "Versicherungsart %1 löschen?"
 msgctxt ":insurance.policy-settings/current-totals-subtitle"
 msgid "Safe totals from the current configuration."
 msgstr "Sichere Summen aus der aktuellen Konfiguration."
+
+#: :insurance.policy-settings/error-category-not-found
+#, ycp-format
+msgctxt ":insurance.policy-settings/error-category-not-found"
+msgid "Category not found."
+msgstr "Kategorie nicht gefunden."
 
 #: :insurance.policy-settings/missing-category-factors-body
 #, ycp-format
@@ -2766,7 +2825,8 @@ msgctxt ":insurance.policy-settings/coverage-type-in-use"
 msgid ""
 "This coverage type is used by %1 current coverages and cannot be deleted."
 msgstr ""
-"Diese Versicherungsart wird von %1 aktuellen Versicherungen verwendet und kann nicht gelöscht werden."
+"Diese Versicherungsart wird von %1 aktuellen Versicherungen verwendet und "
+"kann nicht gelöscht werden."
 
 #: :insurance.policy-settings/missing-category-factors-title
 #, ycp-format

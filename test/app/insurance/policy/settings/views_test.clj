@@ -41,8 +41,12 @@
    [:insurance.policy-settings/category-factors-subtitle] "Factors by instrument category."
    [:insurance.policy-settings/coverage-types-subtitle] "Insurance options available on this policy."
    [:insurance.policy-settings/add-coverage-type] "Add coverage type"
+   [:insurance.policy-settings/add-category-factor] "Add category factor"
+   [:insurance.policy-settings/category-factor-create-disabled-tooltip] "Every instrument category already has a category factor."
    [:insurance.policy-settings/coverage-type-delete-confirm] "Delete coverage type %1?"
    [:insurance.policy-settings/coverage-type-in-use] "This coverage type is used by %1 current coverages and cannot be deleted."
+   [:insurance.policy-settings/category-factor-delete-confirm] "Delete category factor for %1?"
+   [:insurance.policy-settings/category-factor-in-use] "This category factor is used by %1 current coverages and cannot be deleted."
    [:insurance.policy-settings/current-cost] "Current estimated cost"
    [:insurance.policy-settings/current-totals] "Current totals"
    [:insurance.policy-settings/current-totals-subtitle] "Safe totals from the current configuration."
@@ -50,6 +54,8 @@
    [:insurance.policy-settings/error-not-allowed] "You are not allowed to change policy settings."
    [:insurance.policy-settings/edit-coverage-type] "Edit coverage type"
    [:insurance.policy-settings/error-coverage-type-in-use] "Coverage type is still used."
+   [:insurance.policy-settings/edit-category-factor] "Edit category factor"
+   [:insurance.policy-settings/error-category-factor-in-use] "Category factor is still used."
    [:insurance.policy-settings/missing-category-factors-body] "Covered instruments use categories without category factors: %1."
    [:insurance.policy-settings/missing-category-factors-title] "Missing category factors"
    [:insurance.policy-settings/no-category-factors] "No category factors configured."
@@ -103,10 +109,21 @@
                              :current-cost   0M
                              :used?          false}]
    :category-factor-rows   [{:category-factor-id #uuid "00000000-0000-0000-0000-000000000301"
+                             :category-id        #uuid "00000000-0000-0000-0000-000000000401"
                              :category-name      "Brass"
                              :factor             0.10M
                              :usage-count        2
-                             :current-cost       12.5M}]
+                             :current-cost       12.5M
+                             :used?              true}
+                            {:category-factor-id #uuid "00000000-0000-0000-0000-000000000302"
+                             :category-id        #uuid "00000000-0000-0000-0000-000000000402"
+                             :category-name      "Woodwind"
+                             :factor             0.20M
+                             :usage-count        0
+                             :current-cost       0M
+                             :used?              false}]
+   :unused-categories      [{:category-id   #uuid "00000000-0000-0000-0000-000000000403"
+                             :category-name "Percussion"}]
    :current-totals         {:total-instruments   3
                             :total-insured-value 7000M
                             :total-cost          12.5M}
@@ -150,7 +167,23 @@
     (is (str/includes? html "kw=open-coverage-type-create"))
     (is (str/includes? html "kw=open-coverage-type-edit"))
     (is (str/includes? html "kw=delete-coverage-type"))
+    (is (str/includes? html "kw=open-category-factor-create"))
+    (is (str/includes? html "kw=open-category-factor-edit"))
+    (is (str/includes? html "kw=delete-category-factor"))
     (is (not (str/includes? html "hx-")))))
+
+(deftest category-factor-create-button-is-disabled-when-no-unused-categories
+  (let [html (html/->str
+              (#'views/settings-page-content
+               req
+               (assoc settings :unused-categories [])))]
+    (is (str/includes? html "Add category factor"))
+    (is (str/includes? html "category-factor-create-disabled"))
+    (is (str/includes? html "disabled"))
+    (is (str/includes? html "wa-tooltip"))
+    (is (str/includes? html "for=\"category-factor-create-disabled\""))
+    (is (str/includes? html "Every instrument category already has a category factor."))
+    (is (not (str/includes? html "kw=open-category-factor-create")))))
 
 (deftest policy-details-section-renders-validation-errors-from-page-state
   (let [html (html/->str
@@ -204,6 +237,37 @@
     (is (str/includes? html "New type"))
     (is (str/includes? html "Unused coverage"))))
 
+(deftest category-factor-dialogs-render-native-fields-and-settings-actions
+  (let [html (html/->str
+              (#'views/settings-page-content
+               (assoc req :page-state {:insurance-policy-settings
+                                       {:category-factor-create {:open        true
+                                                                 :policy-id   policy-id
+                                                                 :category-id #uuid "00000000-0000-0000-0000-000000000403"
+                                                                 :factor      "0.4"}
+                                        :category-factor        {:policy-id          policy-id
+                                                                 :category-factor-id #uuid "00000000-0000-0000-0000-000000000302"
+                                                                 :category-id        #uuid "00000000-0000-0000-0000-000000000402"
+                                                                 :category-name      "Woodwind"
+                                                                 :factor             0.20M}}})
+               settings))]
+    (is (str/includes? html "category-factor-create-dialog"))
+    (is (str/includes? html "category-factor-edit-dialog"))
+    (is (str/includes? html "<select"))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.categoryId\""))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.factor\""))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.policyId\""))
+    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.categoryFactorId\""))
+    (is (str/includes? html "kw=create-category-factor"))
+    (is (str/includes? html "kw=update-category-factor"))
+    (is (str/includes? html "kw=close-category-factor-create"))
+    (is (str/includes? html "kw=close-category-factor-edit"))
+    (is (str/includes? html "type=\"number\""))
+    (is (str/includes? html "min=\"0\""))
+    (is (str/includes? html "step=\"any\""))
+    (is (str/includes? html "Percussion"))
+    (is (str/includes? html "Woodwind"))))
+
 (deftest read-only-settings-disable-policy-detail-controls
   (let [html (html/->str
               (#'views/settings-page-content
@@ -216,4 +280,7 @@
     (is (str/includes? html "disabled"))
     (is (not (str/includes? html "kw=open-coverage-type-create")))
     (is (not (str/includes? html "kw=open-coverage-type-edit")))
-    (is (not (str/includes? html "kw=delete-coverage-type")))))
+    (is (not (str/includes? html "kw=delete-coverage-type")))
+    (is (not (str/includes? html "kw=open-category-factor-create")))
+    (is (not (str/includes? html "kw=open-category-factor-edit")))
+    (is (not (str/includes? html "kw=delete-category-factor")))))
