@@ -20,8 +20,8 @@
   [:span {:class class}
    (ui2/active-badge (:tr req) active?)])
 
-(defn- song-row [{:keys [tr] :as req} {:song/keys [active? last-played-on score title total-plays]
-                                       :as        song}]
+(defn song-row [{:keys [tr] :as req} {:song/keys [active? last-played-on score title total-plays]
+                                      :as        song}]
   [:div {:class "songs-index-row"}
    [:div {:class "songs-index-row-main"}
     [:div {:class "songs-index-title-line"}
@@ -83,7 +83,7 @@
    [:wa-option {:value "old"} (tr [:gig/probeplan-repertoire-old])]
    [:wa-option {:value "all"} (tr [:gig/probeplan-repertoire-all])]])
 
-(defn- toolbar-actions [{:keys [tr] :as req}]
+(defn toolbar-actions [{:keys [tr] :as req}]
   [[button/Button {:appearance         "plain"
                    :data-indicator     "songsIndexSyncing"
                    :data-attr:loading  "$songsIndexSyncing"
