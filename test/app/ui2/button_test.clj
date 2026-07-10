@@ -115,7 +115,7 @@
         (is (not (str/includes? html "<wa-button")))
         (is (str/includes? html "<svg"))
         (is (str/includes? html "slot=\"start\""))
-        (is (str/includes? html "<span>Edit</span>"))))))
+        (is (str/includes? html "<span class=\"trim-cap\">Edit</span>"))))))
 
 (deftest loading-buttons-use-the-advanced-web-awesome-branch
   (let [button (button-alias)]
