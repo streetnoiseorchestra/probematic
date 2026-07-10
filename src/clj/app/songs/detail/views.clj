@@ -48,7 +48,7 @@
                  (markdown/render markdown-text)
                  {:class "songs-detail-wide"})))
 
-(defn- song-summary [{:keys [tr]} {:song/keys [active? title] :as _song}]
+(defn song-summary [{:keys [tr]} {:song/keys [active? title] :as _song}]
   [page-header/PageHeader
    {:breadcrumb [breadcrumb/Breadcrumb
                  {}
@@ -65,7 +65,7 @@
                                  :href       (urls/link-song-edit _song)}
                   (tr [:action/edit])]]}])
 
-(defn- background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
+(defn background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
   (ui2/section-card
    {:title (tr [:song/background-title])}
    [:dl {:class "particulars songs-detail-info-list"}
@@ -82,7 +82,7 @@
      (or (:gig/title gig)
          (ui2/format-date req :compact-with-weekday (:gig/date gig)))]))
 
-(defn- play-stats-section [{:keys [tr] :as req} {:song/keys [last-played-on last-performance last-rehearsal total-performances total-plays total-rehearsals]}]
+(defn play-stats-section [{:keys [tr] :as req} {:song/keys [last-played-on last-performance last-rehearsal total-performances total-plays total-rehearsals]}]
   (ui2/section-card
    {:title (tr [:song/play-stats-title])}
    [:dl {:class "particulars songs-detail-stats-list"}
@@ -224,7 +224,7 @@
          [ico/Icon {::ico/library :snoico ::ico/name :circle-plus-solid}]
          [:span ((:tr req) [:action/add])]])]]))
 
-(defn- sheet-music-content
+(defn sheet-music-content
   ([req song-id root-dir current-dir sections picker]
    (sheet-music-content req song-id root-dir current-dir sections picker file-browser.view/file-picker-panel))
   ([req song-id root-dir current-dir sections picker render-picker]
