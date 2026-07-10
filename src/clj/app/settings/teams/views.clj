@@ -11,15 +11,18 @@
    [app.urls :as urls]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
+(defn- team-type-translation-key [team-type]
+  (keyword "team" (str (name team-type) "-team")))
+
 (defn team-type-label [tr team-type]
   (if team-type
-    (tr [team-type])
+    (tr [(team-type-translation-key team-type)])
     "—"))
 
 (defn team-type-options [tr]
   (into [{:value "" :label " - "}]
         (map (fn [team-type]
-               {:label (tr [team-type])
+               {:label (tr [(team-type-translation-key team-type)])
                 :value (name team-type)})
              domain/team-types)))
 
@@ -156,7 +159,7 @@
   (let [loading-id (pr-str (str team-id))]
     [:wa-dialog {:id    (ui2/remove-dialog-id "team" team-id)
                  :label (tr [:action/confirm-generic])}
-     [:p (tr [:action/confirm-delete-team] [(str "\"" team-name "\"")])]
+     [:p (tr [:action/confirm-delete-team] {:team-name team-name})]
      [button/Button {:slot        "footer"
                      :appearance  "outlined"
                      :data-dialog "close"}
@@ -207,8 +210,8 @@
      (for [team teams]
        (team-remove-dialog req team))
      (ui2/section-card
-      {:title    "Manage teams"
-       :subtitle "Teams help organize members around responsibilities."
+      {:title    (tr [:team/manage-teams])
+       :subtitle (tr [:team/manage-teams-subtitle])
        :actions  [[button/Button {:appearance  "outlined"
                                   :variant     "brand"
                                   :size        "m"
@@ -220,29 +223,29 @@
          [:table
           [:thead
            [:tr
-            [:th "Team"]
-            [:th "Members"]
-            [:th "Type"]
+            [:th (tr [:team/team])]
+            [:th (tr [:team/members])]
+            [:th (tr [:team/type])]
             [:th]]]
           [:tbody
            (for [team teams]
              (team-table-row req team))]]
          (ui2/empty-state
-          "No teams yet."
-          "Create a team to organize members around responsibilities."))))]))
+          (tr [:team/no-teams])
+          (tr [:team/no-teams-subtitle])))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [title "Teams"]
+  (let [title (tr [:team/teams])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [page-header/PageHeader
        {:breadcrumb [breadcrumb/Breadcrumb
                      {}
                      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
-                      (tr [:nav/band-settings])]
+                      (tr [:settings/band-settings])]
                      [breadcrumb/BreadcrumbItem title]]
         :title      title
-        :subtitle   "Create teams and manage their members."}]
+        :subtitle   (tr [:team/page-subtitle])}]
       (teams-panel req)])))
 
 (d*/refresh-all!)

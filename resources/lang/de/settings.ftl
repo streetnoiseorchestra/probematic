@@ -1,0 +1,3 @@
+### Bandeinstellungen
+
+band-settings = Bandeinstellungen
