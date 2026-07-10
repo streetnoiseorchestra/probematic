@@ -1091,7 +1091,6 @@
             :omits-expansion-js?
             (not (str/includes? html "aria-expanded"))}))))
 
-
 (deftest rows-section-renders-pagination-controls-with-page-size-dropdown
   (let [policy-id   (random-uuid)
         coverage-id (random-uuid)
