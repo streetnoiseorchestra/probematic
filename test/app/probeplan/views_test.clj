@@ -1,25 +1,14 @@
 (ns app.probeplan.views-test
   (:require
    [app.probeplan.views :as views]
-   [clojure.string :as str]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
+   [lookup.core :as l]
    [tick.core :as t]))
 
 (defn tr [[k]]
   (name k))
 
-(deftest how-it-works-renders-collapsed-web-awesome-details
-  (let [[tag attrs & body] (views/how-it-works {:tr tr})]
-    (is (= {:tag        :wa-details
-            :summary    "how-it-works-title"
-            :open?      false
-            :body-tags  [:p :ul]}
-           {:tag       tag
-            :summary   (:summary attrs)
-            :open?     (contains? attrs :open)
-            :body-tags (mapv first body)}))))
-
-(defn one-intensive-row []
+(def intensive-row
   {:idx         0
    :date        (t/date "2026-05-20")
    :gig-id      #uuid "019ddbb1-53fb-8b93-9058-015b57799c51"
@@ -47,48 +36,61 @@
                   :position     4
                   :emphasis     :probeplan.emphasis/none}]})
 
-(defn normalized-one-intensive-row []
-  (update (one-intensive-row) :songs views/songs-by-position))
+(def positioned-intensive-row
+  (update intensive-row :songs views/songs-by-position))
 
-(defn hiccup-text [form]
-  (->> (tree-seq #(and (coll? %) (not (map? %))) seq form)
-       (filter string?)
-       (str/join " ")))
+(deftest instructions
+  (testing "The probe plan includes an explanation of how it works."
+    (let [view    (views/how-it-works {:tr tr})
+          details (l/select-one 'wa-details view)]
+      (testing "The explanation starts collapsed with its translated summary."
+        (is (= {:summary "how-it-works-title"
+                :open?   false}
+               {:summary (:summary (l/attrs details))
+                :open?   (contains? (l/attrs details) :open)})))
+      (testing "The explanation contains an introduction and five guidance steps."
+        (is (= {:intro "how-it-works-intro"
+                :steps ["how-it-works-generate"
+                        "how-it-works-fixed"
+                        "how-it-works-human-edit"
+                        "how-it-works-future-update"
+                        "how-it-works-gigs-column"]}
+               {:intro (-> (l/select-one 'p details) l/text)
+                :steps (mapv l/text (l/select 'li details))}))))))
 
-(defn non-empty-song-texts [cells]
-  (->> cells
-       (map hiccup-text)
-       (remove #{"—"})
-       (remove str/blank?)
-       (vec)))
+(deftest fixed-row
+  (testing "A fixed probe-plan row contains one intensive song and four playthrough songs."
+    (let [view      (views/probe-row
+                     {:current-locale :de}
+                     []
+                     false
+                     6
+                     0
+                     positioned-intensive-row)
+          song-text (fn [selector]
+                      (->> (l/select selector view)
+                           (map l/text)
+                           (remove #{"—"})
+                           vec))]
+      (testing "Songs are placed in columns according to their emphasis."
+        (is (= {:intensive   ["Dude"]
+                :playthrough ["Alerta Feminista"
+                              "Burkan Čoček"
+                              "Rave de la Relation"
+                              "Ti-cul"]}
+               {:intensive   (song-text ".probeplan-cell--intensive")
+                :playthrough (song-text ".probeplan-cell--normal")}))))))
 
-(defn song-cells [row]
-  (let [[_tag _attrs _number-cell _date-cell _gigs-cell & cells] (views/probe-row {:current-locale :de} [] false 6 0 row)]
-    (if (and (= 1 (count cells))
-             (sequential? (first cells)))
-      (vec (first cells))
-      (vec cells))))
-
-(defn signal-emphases [signals]
-  (->> (get-in signals [:probeplan :rows "r0" :songs])
-       (map (fn [[slot song]]
-              [slot (select-keys song [:position :emphasis])]))
-       (into {})))
-
-(deftest fixed-row-song-columns-follow-emphasis-not-position
-  (let [cells (song-cells (normalized-one-intensive-row))]
-    (is (= {:intensive-column-texts   ["Dude"]
-            :playthrough-column-texts ["Alerta Feminista"
-                                       "Burkan Čoček"
-                                       "Rave de la Relation"
-                                       "Ti-cul"]}
-           {:intensive-column-texts   (non-empty-song-texts (take 2 cells))
-            :playthrough-column-texts (non-empty-song-texts (drop 2 cells))}))))
-
-(deftest editable-signals-preserve-existing-emphasis
-  (is (= {"s0" {:position 0, :emphasis "intensive"}
-          "s1" {:position 1, :emphasis "none"}
-          "s2" {:position 2, :emphasis "none"}
-          "s3" {:position 3, :emphasis "none"}
-          "s4" {:position 4, :emphasis "none"}}
-         (signal-emphases (views/editable-signals [(normalized-one-intensive-row)])))))
+(deftest editable-signals
+  (testing "A fixed probe-plan row already contains songs with saved emphasis."
+    (testing "The edit state preserves each song's position and emphasis."
+      (is (= {"s0" {:position 0, :emphasis "intensive"}
+              "s1" {:position 1, :emphasis "none"}
+              "s2" {:position 2, :emphasis "none"}
+              "s3" {:position 3, :emphasis "none"}
+              "s4" {:position 4, :emphasis "none"}}
+             (->> (get-in (views/editable-signals [positioned-intensive-row])
+                          [:probeplan :rows "r0" :songs])
+                  (map (fn [[slot song]]
+                         [slot (select-keys song [:position :emphasis])]))
+                  (into {})))))))
