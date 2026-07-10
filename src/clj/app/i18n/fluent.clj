@@ -3,6 +3,8 @@
    [clojure.java.io :as io]
    [noahtheduke.fluent :as fluent]))
 
+(def ^:private default-resource-ns :app)
+
 (defn resource-path
   "Returns the classpath resource for `locale` and `resource-ns`."
   [locale resource-ns]
@@ -33,13 +35,14 @@
     (and id (not errors))))
 
 (defn translate
-  "Translates namespaced keyword `id` with map `data`.
+  "Translates keyword `id` with map `data`.
 
-  The keyword namespace selects `lang/<locale>/<namespace>.ftl`, and the
-  keyword name selects the Fluent message identifier. Returns `nil` when the
-  resource or message does not exist."
+  Qualified keywords select `lang/<locale>/<namespace>.ftl`.
+  Unqualified keywords select `lang/<locale>/app.ftl`.
+  The keyword name selects the Fluent message identifier.
+  Returns `nil` when the resource or message does not exist."
   [locale-state id data]
-  (when-let [resource-ns (some-> id namespace keyword)]
+  (let [resource-ns (or (some-> id namespace keyword) default-resource-ns)]
     (when-let [bundle (bundle-for locale-state resource-ns)]
       (try
         (fluent/format bundle (name id) data)

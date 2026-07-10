@@ -25,19 +25,19 @@
   (ui2/plain-page
    [:div {:class "wa-grid" :style "--min-column-size: var(--sno-settings-index-min-column-size);"}
     [page-header/PageHeader {:class "wa-span-grid"
-                             :title (tr [:nav/band-settings])}]
+                             :title (tr [:band-settings/title])}]
     [divider/Divider {:class "wa-span-grid"}]
     (settings-link-card {:href  "/band-settings/teams"
                          :icon  "users-outline"
-                         :title "Teams"
-                         :body  "Create teams and manage their members."})
+                         :title (tr [:band-settings/team-title])
+                         :body  (tr [:band-settings/team-page-subtitle])})
     (settings-link-card {:href  "/band-settings/travel-discounts"
                          :icon  "cog"
-                         :title "Travel Discounts"
-                         :body  "Manage the reusable travel discount types members can choose."})
+                         :title (tr [:band-settings/travel-discount-title])
+                         :body  (tr [:band-settings/travel-discount-page-subtitle])})
     (settings-link-card {:href  "/band-settings/sections"
                          :icon  "trumpet"
-                         :title "Sections"
-                         :body  "Choose which sections are available and how they are ordered."})]))
+                         :title (tr [:band-settings/section-title])
+                         :body  (tr [:band-settings/section-page-subtitle])})]))
 
 (d*/refresh-all!)

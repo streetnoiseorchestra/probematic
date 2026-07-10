@@ -14,7 +14,7 @@
         dt-name-error   (-> error :discount-type-name :error)]
     (when (get-in page-state [:discount-type-create :open])
       [:wa-dialog {:id                    "discount-type-create-dialog"
-                   :label                 (tr [:travel-discounts/add-discount-type])
+                   :label                 (tr [:band-settings/travel-discount-type-add])
                    :data-init__delay.10ms "el.open = true"
                    :data-preserve-attr    "open"
                    :data-on:wa-hide       (->expr
@@ -27,7 +27,7 @@
         [:wa-input {:placeholder  "Klimaticket Mond"
                     :type         :text
                     :required     true
-                    :label        (tr [:travel-discounts/discount-type-name])
+                    :label        (tr [:band-settings/travel-discount-type-name])
                     :autofocus    true
                     :hint         dt-name-error
                     :data-invalid (if dt-name-error "true" nil)
@@ -51,7 +51,7 @@
         dt-name-error                    (-> error :discount-type-name :error)]
     (when discount-type-id
       [:wa-dialog {:id                    "discount-type-edit-dialog"
-                   :label                 (tr [:travel-discounts/discount-type-name])
+                   :label                 (tr [:band-settings/travel-discount-type-name])
                    :data-init__delay.10ms "el.open = true"
                    :data-preserve-attr    "open"
                    :data-on:wa-hide       (->expr
@@ -65,7 +65,7 @@
         [:wa-input {:placeholder  "Klimaticket Mond"
                     :type         :text
                     :required     true
-                    :label        (tr [:travel-discounts/discount-type-name])
+                    :label        (tr [:band-settings/travel-discount-type-name])
                     :autofocus    true
                     :hint         dt-name-error
                     :data-invalid (if dt-name-error "true" nil)
@@ -73,7 +73,7 @@
                     :name         :discount-type-name}]
         [:wa-switch {:data-attr:checked "$discount-type.discount-type-enabled"
                      :data-on:change    "$discount-type.discount-type-enabled = !$discount-type.discount-type-enabled"}
-         "Active"]]
+         (tr [:status-active])]]
        [button/Button {:slot        "footer"
                        :appearance  "outlined"
                        :data-dialog "close"}
@@ -90,7 +90,7 @@
 (defn travel-discount-type-remove-dialog [{:keys [tr] :as req} {:travel.discount.type/keys [discount-type-id discount-type-name]}]
   [:wa-dialog {:id    (ui2/remove-dialog-id "discount-type" discount-type-id)
                :label (tr [:action/confirm-generic])}
-   [:p (tr [:action/confirm-delete-discount-type] [(str "\"" discount-type-name "\"")])]
+   [:p (tr [:band-settings/travel-discount-delete-confirm] {:discount-type-name discount-type-name})]
    [button/Button {:slot        "footer"
                    :appearance  "outlined"
                    :data-dialog "close"}
@@ -132,41 +132,41 @@
      (for [discount-type discount-types]
        (travel-discount-type-remove-dialog req discount-type))
      (ui2/section-card
-      {:title    "Manage travel discounts"
-       :subtitle "Reusable labels for member travel discounts."
+      {:title    (tr [:band-settings/travel-discount-manage-title])
+       :subtitle (tr [:band-settings/travel-discount-manage-subtitle])
        :actions  [[button/Button {:appearance  "outlined"
                                   :variant     "brand"
                                   :size        "m"
                                   :data-id     "discount-type-create"
                                   :data-action (d*/act req ::actions/open-discount-type-create)}
-                   (tr [:travel-discounts/add-discount-type])]]}
+                   (tr [:band-settings/travel-discount-type-add])]]}
       (ui2/table-shell
        (if (seq discount-types)
          [:table
           [:thead
            [:tr
-            [:th (tr [:travel-discounts/discount-type-name])]
-            [:th "Status"]
+            [:th (tr [:band-settings/travel-discount-type-name])]
+            [:th (tr [:status-label])]
             [:th]]]
           [:tbody
            (for [discount-type discount-types]
              (travel-discount-type-table-row req discount-type))]]
          (ui2/empty-state
-          "No travel discount types yet."
-          "Add discount types so members can select them consistently."))))]))
+          (tr [:band-settings/travel-discount-empty-title])
+          (tr [:band-settings/travel-discount-empty-subtitle])))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [title (tr [:travel-discounts/title])]
+  (let [title (tr [:band-settings/travel-discount-title])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [page-header/PageHeader
        {:breadcrumb [breadcrumb/Breadcrumb
                      {}
                      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
-                      (tr [:nav/band-settings])]
+                      (tr [:band-settings/title])]
                      [breadcrumb/BreadcrumbItem title]]
         :title      title
-        :subtitle   "Manage the reusable travel discount types members can choose."}]
+        :subtitle   (tr [:band-settings/travel-discount-page-subtitle])}]
       (travel-discount-types req)])))
 
 (d*/refresh-all!)

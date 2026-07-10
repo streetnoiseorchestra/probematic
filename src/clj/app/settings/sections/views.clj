@@ -22,7 +22,7 @@
                                          (@post ~(d*/act req ::actions/close-section-reorder)))}
      [:div {:class "wa-stack wa-gap-m"}
       [:wa-callout {:appearance "outlined" :variant "neutral"}
-       "Drag sections to control the order in which they appear on gig pages."]
+       (tr [:band-settings/section-reorder-instructions])]
       [:div {:id                "sortContainer"
              :class             "wa-stack"
              :data-on:reordered (->expr
@@ -66,7 +66,7 @@
         section-name-error (-> error :section-name :error)]
     (when (get-in page-state [:section-create :open])
       [:wa-dialog {:id                    "section-create-dialog"
-                   :label                 (tr [:section-add])
+                   :label                 (tr [:band-settings/section-add])
                    :data-init__delay.10ms "el.open = true"
                    :data-preserve-attr    "open"
                    :data-on:wa-hide       (->expr
@@ -79,7 +79,7 @@
         [:wa-input {:placeholder  "Bass"
                     :type         :text
                     :required     true
-                    :label        (tr [:section])
+                    :label        (tr [:band-settings/section-name])
                     :autofocus    true
                     :hint         section-name-error
                     :data-invalid (if section-name-error "true" nil)
@@ -103,7 +103,7 @@
         section-name-error         (-> error :section-name :error)]
     (when section-id
       [:wa-dialog {:id                    "section-edit-dialog"
-                   :label                 (tr [:section])
+                   :label                 (tr [:band-settings/section-name])
                    :data-init__delay.10ms "el.open = true"
                    :data-preserve-attr    "open"
                    :data-on:wa-hide       (->expr
@@ -117,7 +117,7 @@
         [:wa-input {:placeholder  "Bass"
                     :type         :text
                     :required     true
-                    :label        (tr [:section])
+                    :label        (tr [:band-settings/section-name])
                     :autofocus    true
                     :hint         section-name-error
                     :data-invalid (if section-name-error "true" nil)
@@ -125,7 +125,7 @@
                     :name         :section-name}]
         [:wa-switch {:data-attr:checked "$section.section-enabled"
                      :data-on:change    "$section.section-enabled = !$section.section-enabled"}
-         "Active"]]
+         (tr [:status-active])]]
        [button/Button {:slot        "footer"
                        :appearance  "outlined"
                        :data-dialog "close"}
@@ -143,7 +143,7 @@
   (let [loading-id (pr-str (str name))]
     [:wa-dialog {:id    (ui2/remove-dialog-id "section" name)
                  :label (tr [:action/confirm-generic])}
-     [:p (tr [:action/confirm-delete-section] [(str "\"" name "\"")])]
+     [:p (tr [:band-settings/section-delete-confirm] {:section-name name})]
      [button/Button {:slot        "footer"
                      :appearance  "outlined"
                      :data-dialog "close"}
@@ -188,14 +188,14 @@
      (for [section sections]
        (section-remove-dialog req section))
      (ui2/section-card
-      {:title    "Manage sections"
-       :subtitle "Choose which sections are visible and how they are ordered."
+      {:title    (tr [:band-settings/section-manage-title])
+       :subtitle (tr [:band-settings/section-manage-subtitle])
        :actions  [[button/Button {:appearance  "outlined"
                                   :variant     "brand"
                                   :size        "m"
                                   :data-id     "section-create"
                                   :data-action (d*/act req ::actions/open-section-create)}
-                   (tr [:section-add])]
+                   (tr [:band-settings/section-add])]
                   [button/Button {:appearance  "outlined"
                                   :size        "m"
                                   :data-id     "section-reorder"
@@ -206,28 +206,28 @@
          [:table
           [:thead
            [:tr
-            [:th (tr [:section])]
-            [:th "Status"]
+            [:th (tr [:band-settings/section-name])]
+            [:th (tr [:status-label])]
             [:th]]]
           [:tbody
            (for [section sections]
              (section-table-row req section))]]
          (ui2/empty-state
-          "No sections yet."
-          "Add sections to group members and organize gig views."))))]))
+          (tr [:band-settings/section-empty-title])
+          (tr [:band-settings/section-empty-subtitle])))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [title (tr [:sections])]
+  (let [title (tr [:band-settings/section-title])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [page-header/PageHeader
        {:breadcrumb [breadcrumb/Breadcrumb
                      {}
                      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
-                      (tr [:nav/band-settings])]
+                      (tr [:band-settings/title])]
                      [breadcrumb/BreadcrumbItem title]]
         :title      title
-        :subtitle   "Choose which sections are available and how they are ordered."}]
+        :subtitle   (tr [:band-settings/section-page-subtitle])}]
       (sections-panel req)])))
 
 (d*/refresh-all!)

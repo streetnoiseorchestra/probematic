@@ -43,8 +43,8 @@
                active?       (assoc :variant "success")
                (not active?) (assoc :variant "neutral"))
    (if active?
-     (tr [:Active])
-     (tr [:Inactive]))])
+     (tr [:status-active :Active])
+     (tr [:status-inactive :Inactive]))])
 
 (defn cs
   "Joins truthy class names with spaces.

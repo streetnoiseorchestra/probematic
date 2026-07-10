@@ -102,8 +102,9 @@
 (defn tr
   "Translates `resource-ids` with Fluent first and Tempura second.
 
-  Namespaced Fluent keys select a matching FTL filename. Fluent translation
-  data must be a map. Tempura translation data remains a vector."
+  Qualified Fluent keys select a matching FTL filename; unqualified Fluent
+  keys select `app.ftl`. Fluent translation data must be a map. Tempura
+  translation data remains a vector."
   ([opts locales resource-ids]
    (tr opts locales resource-ids nil))
   ([opts locales resource-ids resource-data]

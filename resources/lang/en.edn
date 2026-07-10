@@ -69,7 +69,6 @@
                     :title              "Travel Discounts"
                     :subtitle           "Add your ÖBB travel discounts"
                     :none               "No travel discounts"
-                    :add-discount-type  "Add a ÖBB discount type"
                     :add-discount       "Add a ÖBB discount"}
  :oebb-discount    "ÖBB Discount"
 
@@ -485,8 +484,6 @@
  :instruments                    "Instruments"
  :none                           "None"
  :section                        "Section"
- :sections                       "Sections"
- :section-add                    "Add Section"
  :section-none                   "No Section"
  :selected                       "selected"
  :choose-calendar-app            "Choose Your Calendar App"
@@ -508,9 +505,6 @@
                                   :confirm-delete-instrument    "Are you sure you want to delete the instrument %1?"
                                   :confirm-delete-poll          "Are you sure you want to delete the poll '%1'?"
                                   :confirm-delete-song          "Are you sure you want to delete the song %1?"
-                                  :confirm-delete-team          "Are you sure you want to delete the team %1?"
-                                  :confirm-delete-discount-type "Are you sure you want to delete the discount type %1?"
-                                  :confirm-delete-section       "Are you sure you want to delete the section %1?"
                                   :confirm-delete               "Yes, delete it"
                                   :confirm-generic              "Are you sure?"
                                   :confirm-open-poll            "Yes, open the poll"
@@ -534,7 +528,6 @@
                                   :quick-edit                   "Quick Edit"
                                   :remove                       "Remove"
                                   :reset                        "Reset"
-                                  :reorder                      "Reorder"
                                   :save                         "Save"
                                   :search                       "Search"
                                   :select-all                   "Select All"
@@ -801,15 +794,8 @@
                             :payment-direction-debit  "The band paid %1"
                             :payment-direction-credit "%1 paid the band"}
  :money-input-format-error "Enter currency amount like 42,05"
- :team                     {:name                  "Team Name"
-                            :members               "Members"
-                            :create-team           "Create Team"
-                            :add-member            "Add Member"
-                            :choose-add-member     "Choose member to add"
-                            :choose-remove-members "Choose members to remove"
-                            :no-members            "No members"
-                            :team-type             "Team Type"}
- :team.type                {:insurance "Insurance Team"}
+ :team                     {:add-member            "Add Member"
+                            :choose-remove-members "Choose members to remove"}
  :insurance.survey         {:admin-title               "Band Insurance Survey"
                             :admin-subtitle            "Get the whole band to check/control all their insured instruments."
                             :cta-p1                    "%1, it's time to review your insured instruments/items."

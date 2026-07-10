@@ -363,7 +363,6 @@
  :now "jetzt",
  :private-instrument-description
  "Ein privates Instrument ist ein Instrument, das der Besitzer auf eigene Kosten versichern wird.",
- :sections "Registers",
  :Contact-Download "Kontakt herunterladen",
  :band-private "Band/Privat",
  :Contact-Information "Kontakt Informationen",
@@ -387,7 +386,6 @@
   :title "Reiserabatte",
   :subtitle "Fügen Sie Ihre ÖBB-Reiserabatte hinzu",
   :none "Keine Reiseermäßigungen",
-  :add-discount-type "ÖBB-Rabatttyp hinzufügen",
   :add-discount "ÖBB-Rabatt hinzufügen"},
  :money-input-format-error
  "Gib den Währungsbetrag ein, zum Beispiel 42,05",
@@ -398,7 +396,6 @@
  {:choose-file "Wähle eine Datei aus",
   :name "Dateiname",
   :size "Größe"},
- :team.type {:insurance "Versicherungsteam"},
  :choose-calendar-app "Wählen Sie Ihre Kalender-App",
  :dashboard
  {:afternoon "Guten Tag, %1",
@@ -594,12 +591,8 @@
  "Du hast %1 Aufgaben erledigt! Noch %2 übrig!",
  :Phone "Telefon",
  :team
- {:name "Teamname",
-  :members "Mitglieder",
-  :create-team "Team erstellen",
-  :add-member "Mitglied hinzufügen",
-  :choose-remove-members "Wähle Mitglieder zum Entfernen aus",
-  :team-type "Teamtyp"},
+ {:add-member            "Mitglied hinzufügen",
+  :choose-remove-members "Wähle Mitglieder zum Entfernen aus"},
  :private-instrument-payment
  "Die Kosten der Versicherung privater Instrumente werden nicht von Street Noise übernommen.",
  :col
@@ -629,7 +622,6 @@
  "Die Band schuldet dir %1! Bitte kontaktiere den Kassier.",
  :updating "Aktualisierung…",
  :time-left "Verbleibende Zeit",
- :section-add "Register hinzufügen",
  :action
  {:confirm-open-poll "Ja, öffnen die Umfrage.",
   :confirm-delete-instrument
@@ -660,7 +652,6 @@
   :filter "Filter",
   :confirm-close-poll
   "Sind Sie sicher, dass Sie die Umfrage „%1“ schließen möchten?",
-  :reorder "Neu anordnen",
   :confirm-delete-poll
   "Sind Sie sicher, dass Sie die Umfrage „%1“ löschen möchten?",
   :ignore "Ignorieren",
@@ -672,12 +663,6 @@
   :previous "Vorherige",
   :back "Zurück",
   :apply "Anwenden",
-  :confirm-delete-team
-  "Bist du sicher, dass du das Team %1 löschen möchtest?",
-  :confirm-delete-discount-type
-  "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?",
-  :confirm-delete-section
-  "Bist du sicher, dass du das Register %1 löschen möchtest?",
   :comment "Kommentar",
   :send "Senden",
   :add-to-calendar "Zum Kalender hinzufügen",

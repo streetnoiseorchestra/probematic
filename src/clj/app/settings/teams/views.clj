@@ -11,18 +11,15 @@
    [app.urls :as urls]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
-(defn- team-type-translation-key [team-type]
-  (keyword "team" (str (name team-type) "-team")))
-
 (defn team-type-label [tr team-type]
-  (if team-type
-    (tr [(team-type-translation-key team-type)])
-    "—"))
+  (case team-type
+    :team.type/insurance (tr [:band-settings/team-type-insurance])
+    nil                  "—"))
 
 (defn team-type-options [tr]
   (into [{:value "" :label " - "}]
         (map (fn [team-type]
-               {:label (tr [(team-type-translation-key team-type)])
+               {:label (team-type-label tr team-type)
                 :value (name team-type)})
              domain/team-types)))
 
@@ -36,7 +33,7 @@
         team-name-error (-> error :team-name :error)]
     (when (get-in page-state [:team-create :open])
       [:wa-dialog {:id                    "team-create-dialog"
-                   :label                 (tr [:team/create-team])
+                   :label                 (tr [:band-settings/team-create])
                    :data-init__delay.10ms "el.open = true"
                    :data-preserve-attr    "open"
                    :data-on:wa-hide       (->expr
@@ -46,10 +43,10 @@
                :data-id        "team-create"
                :data-action    (d*/act req ::actions/create-team)
                :data-on:submit "evt.preventDefault();"}
-        [:wa-input {:placeholder  (tr [:team/name])
+        [:wa-input {:placeholder  (tr [:band-settings/team-name])
                     :type         :text
                     :required     true
-                    :label        (tr [:team/name])
+                    :label        (tr [:band-settings/team-name])
                     :autofocus    true
                     :hint         team-name-error
                     :data-invalid (if team-name-error "true" nil)
@@ -87,17 +84,17 @@
                :data-on:submit "evt.preventDefault();"}
         [:input {:type :hidden :name "team.team-id" :value nil}]
         [:div {:class "wa-stack wa-gap-m"}
-         [:wa-input {:placeholder  (tr [:team/name])
+         [:wa-input {:placeholder  (tr [:band-settings/team-name])
                      :type         :text
                      :required     true
-                     :label        (tr [:team/name])
+                     :label        (tr [:band-settings/team-name])
                      :autofocus    true
                      :hint         team-name-error
                      :data-invalid (if team-name-error "true" nil)
                      :data-bind    "team.team-name"
                      :name         :team-name}]
          (into
-          [:wa-select {:label     (tr [:team/team-type])
+          [:wa-select {:label     (tr [:band-settings/team-type])
                        :name      :team-type
                        :value     (or team-type "")
                        :data-bind "team.team-type"}]
@@ -105,7 +102,7 @@
             [:wa-option {:value value} label]))
          [:div {:class "wa-stack wa-gap-s"}
           [:div {:class "wa-stack wa-gap-2xs"}
-           [:span {:class "wa-caption-s"} (tr [:team/members])]
+           [:span {:class "wa-caption-s"} (tr [:band-settings/team-members])]
            (if (seq (:team/members team))
              (into
               [:div {:class "wa-stack wa-gap-2xs"}]
@@ -123,10 +120,10 @@
                                    :data-on:mousedown  (->expr (set! $team.remove-member-id ~(str member-id)))}
                     (tr [:action/remove])]])))
              [:span {:class "wa-caption-s wa-color-text-quiet italic"}
-              (tr [:team/no-members])])]
+              (tr [:band-settings/team-no-members])])]
           [:div {:class "wa-cluster wa-align-items-end"}
            (into
-            [:wa-select {:label     (tr [:team/choose-add-member])
+            [:wa-select {:label     (tr [:band-settings/team-member-add])
                          :name      :member-id
                          :value     (or member-id "")
                          :data-bind "team.member-id"}
@@ -159,7 +156,7 @@
   (let [loading-id (pr-str (str team-id))]
     [:wa-dialog {:id    (ui2/remove-dialog-id "team" team-id)
                  :label (tr [:action/confirm-generic])}
-     [:p (tr [:action/confirm-delete-team] {:team-name team-name})]
+     [:p (tr [:band-settings/team-delete-confirm] {:team-name team-name})]
      [button/Button {:slot        "footer"
                      :appearance  "outlined"
                      :data-dialog "close"}
@@ -186,7 +183,7 @@
            [:a {:href (urls/link-member member)}
             name])]
         [:span {:class "wa-color-text-quiet italic"}
-         (tr [:team/no-members])])]
+         (tr [:band-settings/team-no-members])])]
      [:td {:class "align-middle"} (team-type-label tr team-type)]
      [:td {:class "align-top text-right"}
       (ui2/row-action-menu
@@ -210,42 +207,42 @@
      (for [team teams]
        (team-remove-dialog req team))
      (ui2/section-card
-      {:title    (tr [:team/manage-teams])
-       :subtitle (tr [:team/manage-teams-subtitle])
+      {:title    (tr [:band-settings/team-manage-title])
+       :subtitle (tr [:band-settings/team-manage-subtitle])
        :actions  [[button/Button {:appearance  "outlined"
                                   :variant     "brand"
                                   :size        "m"
                                   :data-id     "team-create"
                                   :data-action (d*/act req ::actions/open-team-create)}
-                   (tr [:team/create-team])]]}
+                   (tr [:band-settings/team-create])]]}
       (ui2/table-shell
        (if (seq teams)
          [:table
           [:thead
            [:tr
-            [:th (tr [:team/team])]
-            [:th (tr [:team/members])]
-            [:th (tr [:team/type])]
+            [:th (tr [:band-settings/team-column-name])]
+            [:th (tr [:band-settings/team-members])]
+            [:th (tr [:band-settings/team-column-type])]
             [:th]]]
           [:tbody
            (for [team teams]
              (team-table-row req team))]]
          (ui2/empty-state
-          (tr [:team/no-teams])
-          (tr [:team/no-teams-subtitle])))))]))
+          (tr [:band-settings/team-empty-title])
+          (tr [:band-settings/team-empty-subtitle])))))]))
 
 (defn page [{:keys [tr] :as req}]
-  (let [title (tr [:team/teams])]
+  (let [title (tr [:band-settings/team-title])]
     (ui2/datastar-page
      [:div {:class "wa-stack wa-gap-2xl"}
       [page-header/PageHeader
        {:breadcrumb [breadcrumb/Breadcrumb
                      {}
                      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
-                      (tr [:settings/band-settings])]
+                      (tr [:band-settings/title])]
                      [breadcrumb/BreadcrumbItem title]]
         :title      title
-        :subtitle   (tr [:team/page-subtitle])}]
+        :subtitle   (tr [:band-settings/team-page-subtitle])}]
       (teams-panel req)])))
 
 (d*/refresh-all!)
