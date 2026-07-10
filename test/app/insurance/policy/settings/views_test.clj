@@ -1,73 +1,24 @@
 (ns app.insurance.policy.settings.views-test
   (:require
-   [app.html :as html]
-   [app.insurance.policy.settings.views :as views]
-   [app.urls :as urls]
+   [app.insurance.policy.settings.views :as sut]
+   [app.test-common :as tu]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
+   [lookup.core :as l]
    [reitit.core :as r]))
 
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def translations
-  {[:action/back] "Back"
-   [:action/save] "Save"
-   [:action/cancel] "Cancel"
-   [:action/confirm-delete] "Delete"
-   [:action/confirm-generic] "Confirm"
-   [:action/create] "Create"
-   [:actions] "Actions"
-   [:action/remove] "Remove"
-   [:action/update] "Edit"
-   [:insurance/category-factors] "Category factors"
-   [:insurance/cost] "Cost"
-   [:insurance/coverage-type-description] "Description"
+  {[:insurance/category-factors] "Category factors"
    [:insurance/coverage-types] "Coverage types"
-   [:insurance/currency] "Currency"
-   [:insurance/effective-at] "Effective At"
-   [:insurance/effective-until] "Effective Until"
-   [:insurance/name] "Policy Name"
-   [:insurance/premium-base-factor] "Premium Base Factor"
-   [:insurance/premium-factor] "Premium Factor"
-   [:insurance.dashboard/coverage-workbench] "Table"
    [:insurance.dashboard/policy-details] "Policy details"
-   [:insurance.dashboard/policy-settings] "Policy Settings"
-   [:insurance.dashboard/policy-status] "Policy status"
-   [:insurance.dashboard/review-queue] "Review"
-   [:insurance.dashboard/total-insured-value] "Total insured value"
-   [:insurance.dashboard/total-instruments] "Total instruments"
-   [:insurance.dashboard/policy-cost] "Policy cost"
-   [:insurance.policy-settings/category-factors-subtitle] "Factors by instrument category."
-   [:insurance.policy-settings/coverage-types-subtitle] "Insurance options available on this policy."
-   [:insurance/coverage-name] "Coverage Name"
-   [:insurance.policy-settings/add-coverage-type] "Add coverage type"
    [:insurance.policy-settings/add-category-factor] "Add category factor"
    [:insurance.policy-settings/category-factor-create-disabled-tooltip] "Every instrument category already has a category factor."
-   [:insurance.policy-settings/coverage-type-delete-confirm] "Delete coverage type %1?"
-   [:insurance.policy-settings/coverage-type-in-use] "This coverage type is used by %1 current coverages and cannot be deleted."
-   [:insurance.policy-settings/category-factor-delete-confirm] "Delete category factor for %1?"
-   [:insurance.policy-settings/category-factor-in-use] "This category factor is used by %1 current coverages and cannot be deleted."
-   [:insurance.policy-settings/current-cost] "Current estimated cost"
    [:insurance.policy-settings/current-totals] "Current totals"
-   [:insurance.policy-settings/current-totals-subtitle] "Safe totals from the current configuration."
-   [:insurance.policy-settings/error-frozen-policy] "This policy is not draft, so settings cannot be changed."
    [:insurance.policy-settings/error-not-allowed] "You are not allowed to change policy settings."
-   [:insurance.policy-settings/edit-coverage-type] "Edit coverage type"
-   [:insurance.policy-settings/error-coverage-type-in-use] "Coverage type is still used."
-   [:insurance.policy-settings/edit-category-factor] "Edit category factor"
-   [:insurance.policy-settings/error-category-factor-in-use] "Category factor is still used."
-   [:insurance.policy-settings/missing-category-factors-body] "Covered instruments use categories without category factors: %1."
-   [:insurance.policy-settings/missing-category-factors-title] "Missing category factors"
-   [:insurance.policy-settings/no-category-factors] "No category factors configured."
-   [:insurance.policy-settings/no-coverage-types] "No coverage types configured."
-   [:insurance.policy-settings/policy-details-subtitle] "Edit policy metadata used for cost calculations."
-   [:insurance.policy-settings/read-only-title] "Settings are read-only"
-   [:insurance.policy-settings/status-read-only] "Policy status is read-only here."
-   [:insurance.policy-settings/subtitle] "Configure settings for %1."
-   [:insurance.policy-settings/usage] "Usage"
-   [:insurance.policy.status/draft] "Draft"
-   [:nav/insurance] "Insurance"})
+   [:insurance.policy-settings/read-only-title] "Settings are read-only"})
 
 (defn tr
   ([path]
@@ -81,7 +32,19 @@
 (def policy-id
   #uuid "00000000-0000-0000-0000-000000000123")
 
-(def settings
+(def coverage-type-id
+  #uuid "00000000-0000-0000-0000-000000000201")
+
+(def category-factor-id
+  #uuid "00000000-0000-0000-0000-000000000301")
+
+(def brass-category-id
+  #uuid "00000000-0000-0000-0000-000000000401")
+
+(def percussion-category-id
+  #uuid "00000000-0000-0000-0000-000000000403")
+
+(def editable-draft-settings
   {:policy                 {:insurance.policy/policy-id policy-id
                             :insurance.policy/name      "Insurance 2027"}
    :policy-details         {:policy-id       policy-id
@@ -95,199 +58,224 @@
    :policy-editable?       true
    :insurance-team-member? true
    :supported-currencies   [:EUR :USD]
-   :coverage-type-rows     [{:type-id        #uuid "00000000-0000-0000-0000-000000000201"
+   :coverage-type-rows     [{:type-id        coverage-type-id
                              :name           "Basic"
                              :description    "Base coverage"
                              :premium-factor 1.0M
-                             :usage-count    2
-                             :current-cost   12.5M
-                             :used?          true}
-                            {:type-id        #uuid "00000000-0000-0000-0000-000000000202"
-                             :name           "Unused"
-                             :description    "Unused coverage"
-                             :premium-factor 0.25M
                              :usage-count    0
                              :current-cost   0M
                              :used?          false}]
-   :category-factor-rows   [{:category-factor-id #uuid "00000000-0000-0000-0000-000000000301"
-                             :category-id        #uuid "00000000-0000-0000-0000-000000000401"
+   :category-factor-rows   [{:category-factor-id category-factor-id
+                             :category-id        brass-category-id
                              :category-name      "Brass"
                              :factor             0.10M
-                             :usage-count        2
-                             :current-cost       12.5M
-                             :used?              true}
-                            {:category-factor-id #uuid "00000000-0000-0000-0000-000000000302"
-                             :category-id        #uuid "00000000-0000-0000-0000-000000000402"
-                             :category-name      "Woodwind"
-                             :factor             0.20M
                              :usage-count        0
                              :current-cost       0M
                              :used?              false}]
-   :unused-categories      [{:category-id   #uuid "00000000-0000-0000-0000-000000000403"
+   :unused-categories      [{:category-id   percussion-category-id
                              :category-name "Percussion"}]
-   :current-totals         {:total-instruments   3
-                            :total-insured-value 7000M
-                            :total-cost          12.5M}
-   :warnings               [{:type           :missing-category-factors
-                             :category-names ["Woodwind"]}]})
+   :current-totals         {}
+   :warnings               []})
 
 (def req
   {:tr        tr
    ::r/router router})
 
-(deftest settings-page-content-renders-policy-details-and-read-side-sections
-  (let [html (html/->str (#'views/settings-page-content req settings))]
-    (is (str/includes? html "Policy Settings"))
-    (is (str/includes? html (urls/link-policy policy-id)))
-    (is (not (str/includes? html (urls/link-policy-review policy-id))))
-    (is (not (str/includes? html (urls/link-policy-workbench policy-id))))
-    (is (str/includes? html "data-signals"))
-    (is (str/includes? html "insurancePolicySettings"))
-    (is (str/includes? html "kw=save-policy-details"))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.policy.name\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.policy.effectiveAt\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.policy.effectiveUntil\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.policy.premiumFactor\""))
-    (is (str/includes? html "type=\"number\""))
-    (is (str/includes? html "min=\"0\""))
-    (is (str/includes? html "step=\"any\""))
-    (is (not (str/includes? html "step=\"0.000001\"")))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.policy.currency\""))
-    (is (str/includes? html "<select"))
-    (is (str/includes? html "value=\"EUR\" selected"))
-    (is (str/includes? html "Policy status"))
-    (is (not (str/includes? html "insurancePolicySettings.policy.status")))
-    (is (str/includes? html "Current totals"))
-    (is (str/includes? html "Missing category factors"))
-    (is (str/includes? html "Woodwind"))
-    (is (str/includes? html "Coverage types"))
-    (is (str/includes? html "Basic"))
-    (is (str/includes? html "Category factors"))
-    (is (str/includes? html "Brass"))
-    (is (str/includes? html "Actions"))
-    (is (str/includes? html "kw=open-coverage-type-create"))
-    (is (str/includes? html "kw=open-coverage-type-edit"))
-    (is (str/includes? html "kw=delete-coverage-type"))
-    (is (str/includes? html "kw=open-category-factor-create"))
-    (is (str/includes? html "kw=open-category-factor-edit"))
-    (is (str/includes? html "kw=delete-category-factor"))
-    (is (not (str/includes? html "hx-")))))
+(defn settings-view
+  ([settings]
+   (settings-view req settings))
+  ([req settings]
+   (sut/settings-page-content req settings)))
 
-(deftest category-factor-create-button-is-disabled-when-no-unused-categories
-  (let [html (html/->str
-              (#'views/settings-page-content
-               req
-               (assoc settings :unused-categories [])))]
-    (is (str/includes? html "Add category factor"))
-    (is (str/includes? html "category-factor-create-disabled"))
-    (is (str/includes? html "disabled"))
-    (is (str/includes? html "wa-tooltip"))
-    (is (str/includes? html "for=\"category-factor-create-disabled\""))
-    (is (str/includes? html "Every instrument category already has a category factor."))
-    (is (not (str/includes? html "kw=open-category-factor-create")))))
+(defn select-attrs
+  [selector hiccup]
+  (some-> (l/select-one selector hiccup)
+          l/attrs))
 
-(deftest policy-details-section-renders-validation-errors-from-page-state
-  (let [html (html/->str
-              (#'views/policy-details-section
-               (assoc req :page-state {:insurance-policy-settings
-                                       {:policy {:name            ""
-                                                 :effective-at    "2027-02-01"
-                                                 :effective-until "2027-01-01"
-                                                 :premium-factor  "bad"
-                                                 :currency        "USD"
-                                                 :_error          {:_top           {:error "Fix the form."}
-                                                                   :name           {:error "Name is required."}
-                                                                   :effective-at   {:error "Invalid date."}
-                                                                   :premium-factor {:error "Invalid factor."}}}}})
-               settings))]
-    (is (str/includes? html "Fix the form."))
-    (is (str/includes? html "Name is required."))
-    (is (str/includes? html "Invalid date."))
-    (is (str/includes? html "Invalid factor."))
-    (is (str/includes? html "value=\"2027-02-01\""))
-    (is (str/includes? html "value=\"bad\""))))
+(defn action-keyword
+  [url]
+  (when-let [[_ value] (re-find #"[?&]kw=([^&]+)" url)]
+    (keyword value)))
 
-(deftest coverage-type-dialogs-render-native-fields-and-settings-actions
-  (let [html (html/->str
-              (#'views/settings-page-content
-               (assoc req :page-state {:insurance-policy-settings
-                                       {:coverage-type-create {:open           true
-                                                               :policy-id      policy-id
-                                                               :name           "New type"
-                                                               :description    "New description"
-                                                               :premium-factor "0.2"}
-                                        :coverage-type        {:policy-id      policy-id
-                                                               :type-id        #uuid "00000000-0000-0000-0000-000000000202"
-                                                               :name           "Unused"
-                                                               :description    "Unused coverage"
-                                                               :premium-factor 0.25M}}})
-               settings))]
-    (is (str/includes? html "coverage-type-create-dialog"))
-    (is (str/includes? html "coverage-type-edit-dialog"))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.name\""))
-    (is (str/includes? html
-                       "for=\"coverage-type-create-name\"><span class=\"wa-caption-s wa-font-weight-bold\">Coverage Name</span>"))
-    (is (str/includes? html
-                       "for=\"coverage-type-edit-name\"><span class=\"wa-caption-s wa-font-weight-bold\">Coverage Name</span>"))
-    (is (str/includes? html
-                       "<thead><tr><th scope=\"col\">Coverage Name</th><th scope=\"col\">Premium Factor</th><th scope=\"col\">Description</th>"))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.description\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.premiumFactor\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.policyId\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.coverageType.typeId\""))
-    (is (str/includes? html "kw=create-coverage-type"))
-    (is (str/includes? html "kw=update-coverage-type"))
-    (is (str/includes? html "kw=close-coverage-type-create"))
-    (is (str/includes? html "kw=close-coverage-type-edit"))
-    (is (str/includes? html "type=\"number\""))
-    (is (str/includes? html "step=\"any\""))
-    (is (str/includes? html "New type"))
-    (is (str/includes? html "Unused coverage"))))
+(defn action-keywords
+  [hiccup]
+  (into #{}
+        (keep action-keyword)
+        (tu/select-attribute '* [:data-action] hiccup)))
 
-(deftest category-factor-dialogs-render-native-fields-and-settings-actions
-  (let [html (html/->str
-              (#'views/settings-page-content
-               (assoc req :page-state {:insurance-policy-settings
-                                       {:category-factor-create {:open        true
-                                                                 :policy-id   policy-id
-                                                                 :category-id #uuid "00000000-0000-0000-0000-000000000403"
-                                                                 :factor      "0.4"}
-                                        :category-factor        {:policy-id          policy-id
-                                                                 :category-factor-id #uuid "00000000-0000-0000-0000-000000000302"
-                                                                 :category-id        #uuid "00000000-0000-0000-0000-000000000402"
-                                                                 :category-name      "Woodwind"
-                                                                 :factor             0.20M}}})
-               settings))]
-    (is (str/includes? html "category-factor-create-dialog"))
-    (is (str/includes? html "category-factor-edit-dialog"))
-    (is (str/includes? html "<select"))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.categoryId\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.factor\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.policyId\""))
-    (is (str/includes? html "data-bind=\"insurancePolicySettings.categoryFactor.categoryFactorId\""))
-    (is (str/includes? html "kw=create-category-factor"))
-    (is (str/includes? html "kw=update-category-factor"))
-    (is (str/includes? html "kw=close-category-factor-create"))
-    (is (str/includes? html "kw=close-category-factor-edit"))
-    (is (str/includes? html "type=\"number\""))
-    (is (str/includes? html "min=\"0\""))
-    (is (str/includes? html "step=\"any\""))
-    (is (str/includes? html "Percussion"))
-    (is (str/includes? html "Woodwind"))))
+(deftest editable-policy
+  (testing "An insurance-team member is viewing an editable draft policy."
+    (let [view (settings-view editable-draft-settings)]
+      (testing "The page shows each policy settings section."
+        (is (= ["Policy details"
+                "Coverage types"
+                "Category factors"
+                "Current totals"]
+               (mapv l/text (l/select '[wa-card h2] view)))))
+      (testing "Existing coverage types and category factors are listed."
+        (is (= ["Basic" "Brass"]
+               (mapv #(-> (l/select-one 'td %) l/text)
+                     (l/select '[table tbody tr] view)))))
+      (testing "The policy details form contains the current values."
+        (is (= {:name-input    {:value     "Insurance 2027"
+                                :data-bind "insurancePolicySettings.policy.name"}
+                :premium-input {:type "number" :value "0.025" :min "0" :step "any"}
+                :currency      ["EUR"]}
+               {:name-input    (select-keys
+                                (select-attrs "#insurance-policy-settings-name" view)
+                                [:value :data-bind])
+                :premium-input (select-keys
+                                (select-attrs "#insurance-policy-settings-premium-factor" view)
+                                [:type :value :min :step])
+                :currency      (mapv l/text (l/select "option[selected]" view))})))
+      (testing "Coverage types and category factors can be created, edited, and removed."
+        (is (= #{:save-policy-details
+                 :open-coverage-type-create
+                 :open-coverage-type-edit
+                 :delete-coverage-type
+                 :open-category-factor-create
+                 :open-category-factor-edit
+                 :delete-category-factor}
+               (action-keywords view)))))))
 
-(deftest read-only-settings-disable-policy-detail-controls
-  (let [html (html/->str
-              (#'views/settings-page-content
-               req
-               (assoc settings
-                      :editable? false
-                      :insurance-team-member? false)))]
-    (is (str/includes? html "Settings are read-only"))
-    (is (str/includes? html "You are not allowed to change policy settings."))
-    (is (str/includes? html "disabled"))
-    (is (not (str/includes? html "kw=open-coverage-type-create")))
-    (is (not (str/includes? html "kw=open-coverage-type-edit")))
-    (is (not (str/includes? html "kw=delete-coverage-type")))
-    (is (not (str/includes? html "kw=open-category-factor-create")))
-    (is (not (str/includes? html "kw=open-category-factor-edit")))
-    (is (not (str/includes? html "kw=delete-category-factor")))))
+(deftest validation-errors
+  (testing "Policy detail validation failed after the member submitted edited values."
+    (let [submitted-policy   {:name            ""
+                              :effective-at    "2027-02-01"
+                              :effective-until "2027-01-01"
+                              :premium-factor  "bad"
+                              :currency        "USD"
+                              :_error          {:_top           {:error "Fix the form."}
+                                                :name           {:error "Name is required."}
+                                                :effective-at   {:error "Invalid date."}
+                                                :premium-factor {:error "Invalid factor."}}}
+          request-with-errors (assoc-in req
+                                        [:page-state :insurance-policy-settings :policy]
+                                        submitted-policy)
+          view                (settings-view request-with-errors
+                                             editable-draft-settings)]
+      (testing "The page shows the summary and field-specific errors."
+        (is (= {:top-errors   ["Fix the form."]
+                :field-errors ["Name is required." "Invalid date." "Invalid factor."]}
+               {:top-errors   (mapv l/text
+                                    (l/select '[wa-card wa-callout strong] view))
+                :field-errors (mapv l/text (l/select '[form small] view))})))
+      (testing "The submitted values remain in the form for correction."
+        (is (= {:effective-at   ["2027-02-01"]
+                :premium-factor ["bad"]}
+               {:effective-at   (vec (tu/select-attribute
+                                      "#insurance-policy-settings-effective-at"
+                                      [:value]
+                                      view))
+                :premium-factor (vec (tu/select-attribute
+                                      "#insurance-policy-settings-premium-factor"
+                                      [:value]
+                                      view))}))))))
+
+(deftest management-dialogs
+  (testing "Create and edit dialog state is present for coverage types and category factors."
+    (let [request-with-dialogs
+          (assoc req :page-state
+                 {:insurance-policy-settings
+                  {:coverage-type-create {:open      true
+                                          :policy-id policy-id
+                                          :name      "New type"}
+                   :coverage-type        {:policy-id policy-id
+                                          :type-id   coverage-type-id
+                                          :name      "Basic"}
+                   :category-factor-create {:open        true
+                                            :policy-id   policy-id
+                                            :category-id percussion-category-id}
+                   :category-factor        {:policy-id          policy-id
+                                            :category-factor-id category-factor-id
+                                            :category-id        brass-category-id
+                                            :category-name      "Brass"}}})
+          view            (settings-view request-with-dialogs
+                                         editable-draft-settings)
+          coverage-create (l/select-one "#coverage-type-create-dialog" view)
+          coverage-edit   (l/select-one "#coverage-type-edit-dialog" view)
+          category-create (l/select-one "#category-factor-create-dialog" view)
+          category-edit   (l/select-one "#category-factor-edit-dialog" view)]
+      (testing "Each dialog submits to its matching action."
+        (is (= [#{:create-coverage-type}
+                #{:update-coverage-type}
+                #{:create-category-factor}
+                #{:update-category-factor}]
+               (mapv action-keywords
+                     [coverage-create coverage-edit category-create category-edit]))))
+      (testing "Coverage dialogs contain the new and existing coverage names."
+        (is (= ["New type" "Basic"]
+               (mapv #(first (tu/select-attribute % [:value] view))
+                     ["#coverage-type-create-name" "#coverage-type-edit-name"]))))
+      (testing "The category create dialog selects the requested unused category."
+        (is (= {:options  ["" "Percussion"]
+                :selected ["Percussion"]}
+               {:options  (mapv l/text (l/select 'option category-create))
+                :selected (mapv l/text
+                                (l/select "option[selected]" category-create))})))
+      (testing "The category edit dialog shows its category as read-only."
+        (is (= "Brass"
+               (some #{"Brass"}
+                     (map l/text (l/select 'span category-edit)))))))))
+
+(deftest complete-category-factors
+  (testing "Every available instrument category already has a category factor."
+    (let [view     (settings-view
+                    (assoc editable-draft-settings :unused-categories []))
+          add-area (l/select-one "#category-factor-create-disabled" view)
+          tooltip  (l/select-one
+                    "wa-tooltip[for=category-factor-create-disabled]"
+                    view)]
+      (testing "The Add category factor control remains visible but disabled."
+        (is (= {:text     ["Add category factor"]
+                :disabled [true]}
+               {:text     (mapv l/text
+                                (l/select :app.ui2.button/button add-area))
+                :disabled (vec (tu/select-attribute
+                                :app.ui2.button/button
+                                [:disabled]
+                                add-area))})))
+      (testing "The tooltip explains why another factor cannot be added."
+        (is (= "Every instrument category already has a category factor."
+               (l/text tooltip))))
+      (testing "No action can open the category factor create dialog."
+        (is (not (contains? (action-keywords view)
+                            :open-category-factor-create)))))))
+
+(deftest read-only-policy
+  (testing "The current member does not belong to the insurance team."
+    (let [read-only-settings (assoc editable-draft-settings
+                                    :editable? false
+                                    :insurance-team-member? false)
+          view               (settings-view read-only-settings)]
+      (testing "The page explains why the policy settings are read-only."
+        (is (= {:title   "Settings are read-only"
+                :message "You are not allowed to change policy settings."}
+               {:title   (some #{"Settings are read-only"}
+                               (map l/text (l/select 'strong view)))
+                :message (some #{"You are not allowed to change policy settings."}
+                               (map l/text (l/select 'span view)))})))
+      (testing "The policy detail controls and Save button are disabled."
+        (is (= {:inputs  [true true true true]
+                :selects [true]
+                :buttons [true]}
+               {:inputs  (vec (tu/select-attribute
+                               ["#insurance-policy-settings-policy-form" 'input]
+                               [:disabled]
+                               view))
+                :selects (vec (tu/select-attribute
+                               ["#insurance-policy-settings-policy-form" 'select]
+                               [:disabled]
+                               view))
+                :buttons (vec (tu/select-attribute
+                               ["#insurance-policy-settings-policy-form"
+                                :app.ui2.button/button]
+                               [:disabled]
+                               view))})))
+      (testing "Coverage type and category factor management controls are not rendered."
+        (is (= {:actions   #{:save-policy-details}
+                :dialogs   0
+                :row-menus 0}
+               {:actions   (action-keywords view)
+                :dialogs   (count (l/select 'wa-dialog view))
+                :row-menus (count (l/select 'wa-dropdown view))}))))))

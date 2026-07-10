@@ -791,7 +791,7 @@
               category-factor-rows)]
        (ui2/empty-state (tr [:insurance.policy-settings/no-category-factors]) "")))]))
 
-(defn- settings-page-content
+(defn settings-page-content
   [req {:keys [category-factor-rows coverage-type-rows editable? policy] :as settings}]
   [:div {:id           "insurance-policy-settings"
          :class        "wa-stack"

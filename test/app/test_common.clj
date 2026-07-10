@@ -1,5 +1,6 @@
 (ns app.test-common
   (:require
+   [lookup.core :as l]
    [app.datomic.system :as datomic.system]
    [app.nexus :as app-nexus]
    [datomic.api :as d]))
@@ -19,3 +20,11 @@
         ctx         ((:enter interceptor) {:request req})
         response    (handler (:request ctx))]
     (:response ((:leave interceptor) (assoc ctx :response response)))))
+
+(defn select-attribute
+  [selector path data]
+  (let [elements (l/select selector data)]
+    (->> (keep (fn [element]
+                 (when (map? (second element))
+                   (get-in (second element) path)))
+               elements))))
