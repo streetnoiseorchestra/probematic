@@ -184,7 +184,7 @@
                 :data-effect     (histogram-chart-effect signal-path)
                 :style           "display: block; block-size: 100%; inline-size: var(--sno-size-full);"}]]])
 
-(defn- charts-section [tr {:keys [gig-histogram probe-histogram]}]
+(defn charts-section [tr {:keys [gig-histogram probe-histogram]}]
   (let [x-axis-label (tr [:stats/attendance-rate])
         y-axis-label (tr [:stats/num-members])
         gig-title    (tr [:stats/gig-attendance])
