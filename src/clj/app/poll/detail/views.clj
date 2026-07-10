@@ -182,7 +182,7 @@
    [:dt label]
    [:dd value]])
 
-(defn- results-section [{:keys [tr] :as req} poll]
+(defn results-section [{:keys [tr] :as req} poll]
   (ui2/section-card
    {:title (tr [:poll/results])}
    [:dl {:class "poll-result-stats"}
