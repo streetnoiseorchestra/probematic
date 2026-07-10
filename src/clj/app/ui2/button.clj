@@ -115,3 +115,28 @@
              tag   (if link? :a :button)]
          (into [tag (native-attrs attrs link?)]
                (native-children children)))))))
+
+(def doc-back-button
+  {:examples ["[button/BackButton {:href \"/members\"}]"]
+   :ns       *ns*
+   :as       'back-button
+   :name     'BackButton
+   :desc     "Renders a back button with an href"
+   :alias    ::back-button
+   :schema   [:map {}
+              [:tr {:doc "The translate function"} :any]
+              [:href {:doc "The destination"} :string]]})
+
+(def ^{:doc (uic/generate-docstring doc-back-button)} BackButton
+  ::back-button)
+
+(defmethod c/resolve-alias ::back-button
+  [_ {:keys [tr href] :as attrs} _children]
+  (uic/validate-opts! doc-back-button attrs)
+  (cc/compile
+   [Button {:appearance "outlined"
+            :href href}
+    [ico/Icon {::ico/library :phosphor
+               ::ico/name    :arrow-left
+               :slot         "start"}]
+    (when tr (tr [:action/back]))]))

@@ -298,9 +298,7 @@
        {:breadcrumb (page-breadcrumb req policy)
         :title      (tr [:insurance.review/title])
         :subtitle   (tr [:insurance.review/subtitle] [(str/trim (:insurance.policy/name policy))])
-        :actions    [[button/Button {:appearance "outlined"
-                                     :href       (urls/link-policy policy)}
-                      (tr [:insurance.review/back-to-dashboard])]]}]
+        :actions    [[button/BackButton {:href (urls/link-policy policy)}]]}]
       (filter-bar req review)
       (workbench-summary req review)
       (if selected
