@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-10 19:05+0000\n"
+"POT-Creation-Date: 2026-07-11 10:20+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -92,7 +92,9 @@ msgstr ""
 #, ycp-format
 msgctxt ":insurance/no-private-payments"
 msgid "No private instrument payments need to be requested for this policy."
-msgstr "Für diese Police müssen keine Zahlungen für private Instrumente angefordert werden."
+msgstr ""
+"Für diese Police müssen keine Zahlungen für private Instrumente angefordert "
+"werden."
 
 #: :insurance/error-invalid-coverage-type
 #, ycp-format
@@ -116,7 +118,9 @@ msgctxt ":insurance/item-count-hint"
 msgid ""
 "How many identical items are being insured (for example, one trumpet or four "
 "drumsticks)?"
-msgstr "Wie viele identische Produkte möchtest du versichern (z. B. eine Trompete oder vier Drumsticks)?"
+msgstr ""
+"Wie viele identische Produkte möchtest du versichern (z. B. eine Trompete "
+"oder vier Drumsticks)?"
 
 #: :insurance/total-needs-review-tooltip
 #, ycp-format
@@ -320,7 +324,9 @@ msgstr ""
 #, ycp-format
 msgctxt ":insurance/value-hint"
 msgid "For multiple identical insured items, enter the value of one item."
-msgstr "Gib bei mehreren identischen versicherten Gegenständen den Wert eines Gegenstands ein."
+msgstr ""
+"Gib bei mehreren identischen versicherten Gegenständen den Wert eines "
+"Gegenstands ein."
 
 #: :insurance/email-p2
 #, ycp-format
@@ -885,12 +891,6 @@ msgstr ""
 "Ein privates Instrument ist ein Instrument, das der Besitzer auf eigene "
 "Kosten versichern wird."
 
-#: :sections
-#, ycp-format
-msgctxt ":sections"
-msgid "Sections"
-msgstr "Registers"
-
 #: :Contact-Download
 #, ycp-format
 msgctxt ":Contact-Download"
@@ -1389,12 +1389,6 @@ msgctxt ":travel-discounts/none"
 msgid "No travel discounts"
 msgstr "Keine Reiseermäßigungen"
 
-#: :travel-discounts/add-discount-type
-#, ycp-format
-msgctxt ":travel-discounts/add-discount-type"
-msgid "Add a ÖBB discount type"
-msgstr "ÖBB-Rabatttyp hinzufügen"
-
 #: :travel-discounts/add-discount
 #, ycp-format
 msgctxt ":travel-discounts/add-discount"
@@ -1442,12 +1436,6 @@ msgstr "Dateiname"
 msgctxt ":file/size"
 msgid "Size"
 msgstr "Größe"
-
-#: :team.type/insurance
-#, ycp-format
-msgctxt ":team.type/insurance"
-msgid "Insurance Team"
-msgstr "Versicherungsteam"
 
 #: :choose-calendar-app
 #, ycp-format
@@ -2528,53 +2516,17 @@ msgctxt ":Phone"
 msgid "Phone"
 msgstr "Telefon"
 
-#: :team/name
-#, ycp-format
-msgctxt ":team/name"
-msgid "Team Name"
-msgstr "Teamname"
-
-#: :team/members
-#, ycp-format
-msgctxt ":team/members"
-msgid "Members"
-msgstr "Mitglieder"
-
-#: :team/create-team
-#, ycp-format
-msgctxt ":team/create-team"
-msgid "Create Team"
-msgstr "Team erstellen"
-
 #: :team/add-member
 #, ycp-format
 msgctxt ":team/add-member"
 msgid "Add Member"
 msgstr "Mitglied hinzufügen"
 
-#: :team/choose-add-member
-#, ycp-format
-msgctxt ":team/choose-add-member"
-msgid "Choose member to add"
-msgstr ""
-
 #: :team/choose-remove-members
 #, ycp-format
 msgctxt ":team/choose-remove-members"
 msgid "Choose members to remove"
 msgstr "Wähle Mitglieder zum Entfernen aus"
-
-#: :team/no-members
-#, ycp-format
-msgctxt ":team/no-members"
-msgid "No members"
-msgstr ""
-
-#: :team/team-type
-#, ycp-format
-msgctxt ":team/team-type"
-msgid "Team Type"
-msgstr "Teamtyp"
 
 #: :private-instrument-payment
 #, ycp-format
@@ -2994,12 +2946,6 @@ msgctxt ":time-left"
 msgid "Time Remaining"
 msgstr "Verbleibende Zeit"
 
-#: :section-add
-#, ycp-format
-msgctxt ":section-add"
-msgid "Add Section"
-msgstr "Register hinzufügen"
-
 #: :action/confirm-open-poll
 #, ycp-format
 msgctxt ":action/confirm-open-poll"
@@ -3053,12 +2999,6 @@ msgstr "Fertig"
 msgctxt ":action/reset"
 msgid "Reset"
 msgstr "Zurücksetzen"
-
-#: :action/confirm-delete-section
-#, ycp-format
-msgctxt ":action/confirm-delete-section"
-msgid "Are you sure you want to delete the section %1?"
-msgstr "Bist du sicher, dass du das Register %1 löschen möchtest?"
 
 #: :action/continue
 #, ycp-format
@@ -3162,12 +3102,6 @@ msgctxt ":action/confirm-close-poll"
 msgid "Are you sure you want to close the poll '%1'?"
 msgstr "Sind Sie sicher, dass Sie die Umfrage „%1“ schließen möchten?"
 
-#: :action/reorder
-#, ycp-format
-msgctxt ":action/reorder"
-msgid "Reorder"
-msgstr "Neu anordnen"
-
 #: :action/confirm-delete-poll
 #, ycp-format
 msgctxt ":action/confirm-delete-poll"
@@ -3210,12 +3144,6 @@ msgctxt ":action/next"
 msgid "Next"
 msgstr "Nächste"
 
-#: :action/confirm-delete-discount-type
-#, ycp-format
-msgctxt ":action/confirm-delete-discount-type"
-msgid "Are you sure you want to delete the discount type %1?"
-msgstr "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?"
-
 #: :action/previous
 #, ycp-format
 msgctxt ":action/previous"
@@ -3227,12 +3155,6 @@ msgstr "Vorherige"
 msgctxt ":action/back"
 msgid "Back"
 msgstr "Zurück"
-
-#: :action/confirm-delete-team
-#, ycp-format
-msgctxt ":action/confirm-delete-team"
-msgid "Are you sure you want to delete the team %1?"
-msgstr "Bist du sicher, dass du das Team %1 löschen möchtest?"
 
 #: :action/comment
 #, ycp-format
@@ -5385,6 +5307,66 @@ msgstr "Hintergrund"
 msgctxt ":song/list-title"
 msgid "Repertoire"
 msgstr "Repertoire"
+
+#, ycp-format
+#~ msgctxt ":sections"
+#~ msgid "Sections"
+#~ msgstr "Registers"
+
+#, ycp-format
+#~ msgctxt ":travel-discounts/add-discount-type"
+#~ msgid "Add a ÖBB discount type"
+#~ msgstr "ÖBB-Rabatttyp hinzufügen"
+
+#, ycp-format
+#~ msgctxt ":team.type/insurance"
+#~ msgid "Insurance Team"
+#~ msgstr "Versicherungsteam"
+
+#, ycp-format
+#~ msgctxt ":team/name"
+#~ msgid "Team Name"
+#~ msgstr "Teamname"
+
+#, ycp-format
+#~ msgctxt ":team/members"
+#~ msgid "Members"
+#~ msgstr "Mitglieder"
+
+#, ycp-format
+#~ msgctxt ":team/create-team"
+#~ msgid "Create Team"
+#~ msgstr "Team erstellen"
+
+#, ycp-format
+#~ msgctxt ":team/team-type"
+#~ msgid "Team Type"
+#~ msgstr "Teamtyp"
+
+#, ycp-format
+#~ msgctxt ":section-add"
+#~ msgid "Add Section"
+#~ msgstr "Register hinzufügen"
+
+#, ycp-format
+#~ msgctxt ":action/confirm-delete-section"
+#~ msgid "Are you sure you want to delete the section %1?"
+#~ msgstr "Bist du sicher, dass du das Register %1 löschen möchtest?"
+
+#, ycp-format
+#~ msgctxt ":action/reorder"
+#~ msgid "Reorder"
+#~ msgstr "Neu anordnen"
+
+#, ycp-format
+#~ msgctxt ":action/confirm-delete-discount-type"
+#~ msgid "Are you sure you want to delete the discount type %1?"
+#~ msgstr "Bist du sicher, dass du den Rabatttyp %1 löschen möchtest?"
+
+#, ycp-format
+#~ msgctxt ":action/confirm-delete-team"
+#~ msgid "Are you sure you want to delete the team %1?"
+#~ msgstr "Bist du sicher, dass du das Team %1 löschen möchtest?"
 
 #, ycp-format
 #~ msgctxt ":insurance/item-count-hint"
