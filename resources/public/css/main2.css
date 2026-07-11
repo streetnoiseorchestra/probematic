@@ -38,10 +38,22 @@
 @import "utilities.css" layer(wa-utilities);
 @import "../vendor/bprogress@1.3.4/index.css";
 
-wa-tooltip:not(:defined) {
-  display: none;
-}
+@layer wa-theme-overrides {
+  wa-dialog:not(:defined),
+  wa-tooltip:not(:defined),
+  wa-option:not(:defined) {
+    display: none;
+  }
 
-wa-option:not(:defined) {
-  display: none;
+  wa-select:not(:defined) {
+    visibility: hidden;
+  }
+
+  wa-dropdown:not(:defined) {
+    display: contents;
+  }
+
+  wa-dropdown:not(:defined) > :not([slot="trigger"]) {
+    display: none !important;
+  }
 }

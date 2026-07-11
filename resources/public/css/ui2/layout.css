@@ -106,14 +106,6 @@ app-shell {
   }
 }
 
-app-shell wa-dropdown:not(:defined) {
-  display: inline-block;
-}
-
-app-shell wa-dropdown:not(:defined) > :not([slot="trigger"]) {
-  display: none !important;
-}
-
 app-shell-user,
 app-shell-account,
 app-shell-content {
