@@ -26,16 +26,12 @@ a.brand-link {
   }
 }
 
-wa-page [slot="navigation"] wa-button#account-dropdown-button {
+wa-page [slot="navigation"] #account-dropdown-button {
   inline-size: var(--sno-size-full);
+  justify-content: start;
 
-  &::part(base) {
-    justify-content: start;
-  }
-
-  &::part(caret) {
-    flex: auto;
-    justify-content: end;
+  & > .caret {
+    margin-inline-start: auto;
   }
 }
 
@@ -51,9 +47,9 @@ wa-page [slot="navigation"] wa-button#account-dropdown-button {
     color: var(--sno-brand-green);
   }
 
-  & .subheader-user wa-button#account-dropdown-button {
-    & .member-nick,
-    &::part(caret) {
+  & .subheader-user #account-dropdown-button {
+    & > .member-nick,
+    & > .caret {
       display: none;
     }
   }

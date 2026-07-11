@@ -125,24 +125,20 @@ app-shell-user {
   min-inline-size: var(--app-shell-topbar-size);
   justify-self: end;
 
-  & wa-button#account-dropdown-button {
-    & > span,
-    &::part(caret) {
+  & #account-dropdown-button {
+    & > .member-nick,
+    & > .caret {
       display: none;
     }
   }
 }
 
-app-shell-account wa-button#account-dropdown-button {
+app-shell-account #account-dropdown-button {
   inline-size: var(--sno-size-full);
+  justify-content: start;
 
-  &::part(base) {
-    justify-content: start;
-  }
-
-  &::part(caret) {
-    flex: auto;
-    justify-content: end;
+  & > .caret {
+    margin-inline-start: auto;
   }
 }
 

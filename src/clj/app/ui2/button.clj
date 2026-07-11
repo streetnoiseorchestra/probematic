@@ -56,10 +56,12 @@
   (apply uic/cs
          (concat
           (when link? ["wa-button"])
+          ["sno-button"]
           (appearance-classes (:appearance attrs))
           [(variant-class (:variant attrs))
            (size-class (:size attrs))
-           (when (:pill attrs) "wa-pill")]
+           (when (:pill attrs) "wa-pill")
+           (when (true? (:with-caret attrs)) "with-caret")]
           [(:class attrs)])))
 
 (defn- native-attrs [attrs link?]
@@ -73,35 +75,53 @@
   (and (vector? child)
        (#{:wa-icon ico/Icon} (first child))))
 
+(defn- child-attrs [child]
+  (when (and (vector? child) (map? (second child)))
+    (second child)))
+
+(defn- slotted-decoration-child? [child]
+  (contains? #{"start" "end"} (token-value (:slot (child-attrs child)))))
+
 (defn- basic-label-child? [child]
   (and (some? child)
-       (not (vector? child))))
+       (or (not (vector? child))
+           (and (= :span (first child))
+                (not (slotted-decoration-child? child))))))
+
+(defn- basic-decoration-child? [child]
+  (or (icon-child? child)
+      (slotted-decoration-child? child)))
 
 (defn- basic-shape? [children]
-  (let [children    (filter some? children)
-        icon-count  (count (filter icon-child? children))
-        label-count (count (filter basic-label-child? children))]
-    (and (= (count children) (+ icon-count label-count))
-         (<= icon-count 1)
-         (or (and (= 1 label-count)
-                  (<= icon-count 1))
+  (let [children         (filter some? children)
+        decoration-count (count (filter basic-decoration-child? children))
+        label-count      (count (filter basic-label-child? children))]
+    (and (= (count children) (+ decoration-count label-count))
+         (<= decoration-count 2)
+         (or (= 1 label-count)
              (and (= 0 label-count)
-                  (= 1 icon-count))))))
+                  (= 1 decoration-count))))))
 
 (defn- advanced? [attrs children]
   (or (present-attr? attrs :loading)
       (present-attr? attrs :data-attr:loading)
-      (true? (:with-caret attrs))
       (not (basic-shape? children))))
 
-(defn- native-children [children]
-  (let [children (filter some? children)
-        has-icon? (some icon-child? children)]
-    (map (fn [child]
-           (if (and has-icon? (basic-label-child? child))
-             [:span {:class "trim-cap"} child]
-             child))
-         children)))
+(defn- caret-child []
+  [ico/Icon {::ico/library :snoico
+             ::ico/name    :chevron-down
+             :class        "caret"}])
+
+(defn- native-children [attrs children]
+  (let [children  (filter some? children)
+        has-icon? (some icon-child? children)
+        children  (map (fn [child]
+                         (if (and has-icon? (basic-label-child? child))
+                           [:span {:class "trim-cap"} child]
+                           child))
+                       children)]
+    (cond-> children
+      (true? (:with-caret attrs)) (concat [(caret-child)]))))
 
 (defmethod c/resolve-alias ::button
   [_ attrs children]
@@ -114,7 +134,7 @@
        (let [link? (present-attr? attrs :href)
              tag   (if link? :a :button)]
          (into [tag (native-attrs attrs link?)]
-               (native-children children)))))))
+               (native-children attrs children)))))))
 
 (def doc-back-button
   {:examples ["[button/BackButton {:href \"/members\"}]"]

@@ -68,7 +68,7 @@
                        :slot "start"
                        :shape "rounded"
                        :style "--size: 2rem"}]
-       [:span (ui2/member-nick member)]]]
+       [:span {:class "member-nick"} (ui2/member-nick member)]]]
      [:wa-dropdown-item {:value   (url/link-member member)
                          :onclick "window.location = this.value"}
       [ico/Icon (merge {::ico/library :snoico

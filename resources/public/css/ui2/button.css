@@ -1,0 +1,33 @@
+/*! Copyright 2026 Fonticons, Inc. - https://webawesome.com/license */
+/* Adapted from Web Awesome 3.10.0's button decoration styles. */
+@scope (.sno-button) {
+  :scope > :is([slot='start'], [slot='end']) {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  :scope > [slot='start'] {
+    margin-inline-end: 0.75em;
+  }
+
+  :scope > [slot='end'] {
+    margin-inline-start: 0.75em;
+  }
+
+  :scope.with-caret > .caret {
+    display: flex;
+    align-self: center;
+    align-items: center;
+    width: 0.875em;
+    height: 0.875em;
+    min-width: 0.875em;
+    min-height: 0.875em;
+    margin-inline-start: 0.75em;
+  }
+
+  :scope.with-caret > [slot='end'] {
+    display: none;
+  }
+}

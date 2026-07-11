@@ -13,7 +13,7 @@
     (icons/build-sprite-manifest
      [{:id          :snoico
        :source-root "public/img/snoico"
-       :icons       [:home :calendar]}])))
+       :icons       [:home :calendar :chevron-down]}])))
 
 (defn install-test-manifest [f]
   (let [manifest_ (deref #'icons/sprite-manifest_)
@@ -130,12 +130,31 @@
         (is (str/includes? html "variant=\"brand\""))
         (is (str/includes? html "data-attr:loading=\"$loading === &apos;save&apos;\""))))))
 
-(deftest caret-buttons-use-the-advanced-web-awesome-branch
+(deftest caret-buttons-use-the-native-branch
   (let [button (button-alias)]
     (is (not= missing-component button) "Button alias should exist")
     (when-not (= missing-component button)
       (let [html (button-html {:appearance "outlined"
                                :with-caret true}
                               "More")]
-        (is (str/includes? html "<wa-button"))
-        (is (str/includes? html "with-caret"))))))
+        (is (str/includes? html "<button"))
+        (is (not (str/includes? html "<wa-button")))
+        (is (str/includes? html "class=\"sno-button wa-outlined with-caret\""))
+        (is (not (re-find #"\swith-caret(?:\s|=|>)" html)))
+        (is (str/includes? html "<svg"))
+        (is (str/includes? html "caret"))
+        (is (str/includes? html "#snoico-chevron-down"))))))
+
+(deftest slotted-decoration-and-rich-label-use-the-native-branch
+  (let [button (button-alias)]
+    (is (not= missing-component button) "Button alias should exist")
+    (when-not (= missing-component button)
+      (let [html (button-html {:appearance "plain"
+                               :with-caret true}
+                              [:span {:slot "start" :class "avatar"} "AL"]
+                              [:span {:class "member-nick"} "Ada"])]
+        (is (str/includes? html "<button"))
+        (is (not (str/includes? html "<wa-button")))
+        (is (str/includes? html "class=\"avatar\" slot=\"start\""))
+        (is (str/includes? html "class=\"member-nick\">Ada</span>"))
+        (is (str/includes? html "class=\"sno-icon caret\""))))))
