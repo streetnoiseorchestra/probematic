@@ -321,7 +321,8 @@
                   :hand-coins
                   :hand-pointing
                   :table
-                  :warehouse]}])
+                  :warehouse
+                  :sign-out]}])
 
 (defonce sprite-manifest_ (atom nil))
 

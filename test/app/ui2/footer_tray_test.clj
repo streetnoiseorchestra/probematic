@@ -11,12 +11,19 @@
    :member/nick "Ada"
    :member/avatar-template "/user_avatar/forum.streetnoise.at/ada/{size}/1.png"})
 
-(def labels
-  {:footer "Application shortcuts"
-   :account "Account settings"
-   :profile "My Profile"
-   :band-settings "Band Settings"
-   :logout "Logout"})
+(def footer-tray-translations
+  {:footer-tray-label "Application shortcuts"
+   :footer-tray-account "Account settings"
+   :footer-tray-account-title "My Account"
+   :footer-tray-account-settings "Account & Settings"
+   :footer-tray-profile "My Profile"
+   :footer-tray-logout "Logout"})
+
+(defn footer-tray-translator
+  ([resource-ids]
+   (get footer-tray-translations (last resource-ids) (name (last resource-ids))))
+  ([resource-ids _resource-data]
+   (footer-tray-translator resource-ids)))
 
 (def shortcuts
   [{:id "assignment-panel"
@@ -40,7 +47,7 @@
        :icons [:user :cog :xmark]}
       {:id :phosphor
        :source-root "public/img/phosphor/phosphor-regular"
-       :icons [:check :calendar]}])))
+       :icons [:check :calendar :sign-out]}])))
 
 (defn install-test-manifest [f]
   (let [manifest_ (deref #'icons/sprite-manifest_)
@@ -62,27 +69,37 @@
 (defn footer-tray-html []
   (when-let [footer-tray (some-> (resolve-footer-tray) deref)]
     (html/->str
-     [footer-tray
+     footer-tray-translator
+     (footer-tray
       {:app.ui2.footer-tray/member member
-       :app.ui2.footer-tray/labels labels
        :app.ui2.footer-tray/shortcuts shortcuts
        :app.ui2.footer-tray/notification notification
        :id "application-footer"
-       :class "custom-footer"}])))
+       :class "custom-footer"}))))
 
 (deftest footer-tray-renders-datastar-toggle-controls
   (let [footer-tray (resolve-footer-tray)]
-    (is (some? footer-tray) "FooterTray alias should exist")
+    (is (some? footer-tray) "FooterTray should exist")
     (when footer-tray
-      (let [rendered (footer-tray-html)]
+      (let [rendered (footer-tray-html)
+            dropdown-items (re-seq #"<wa-dropdown-item[^>]*>.*?</wa-dropdown-item>" rendered)
+            account-settings-item (some #(when (str/includes? % "Account &amp; Settings") %) dropdown-items)
+            logout-item (some #(when (str/includes? % "Logout") %) dropdown-items)]
         (is (= {:root? true
                 :nav? true
                 :dropdown? true
+                :large-account-menu? true
                 :account-label? true
+                :account-title? true
+                :account-settings-static? true
                 :avatar? true
                 :menu-values ["/member/11111111-1111-4111-8111-111111111111"
-                              "/band-settings"
                               "/logout"]
+                :logout-danger? false
+                :logout-icon? true
+                :account-menu-divider-count 0
+                :account-menu-item-count 3
+                :navigation-handler-count 2
                 :sheet-targets ["assignment-panel"
                                 "calendar-panel"
                                 "notification-panel"]
@@ -97,9 +114,19 @@
                {:root? (str/includes? rendered "<footer id=\"application-footer\" class=\"footer-tray custom-footer\"")
                 :nav? (str/includes? rendered "<nav aria-label=\"Application shortcuts\"")
                 :dropdown? (str/includes? rendered "<wa-dropdown placement=\"top-start\"")
+                :large-account-menu? (str/includes? rendered "size=\"l\"")
                 :account-label? (str/includes? rendered "aria-label=\"Account settings\"")
+                :account-title? (str/includes? rendered "<header class=\"account-menu-header\"><h2 class=\"wa-heading-l\">My Account</h2></header>")
+                :account-settings-static? (and account-settings-item
+                                               (not (str/includes? account-settings-item "value="))
+                                               (not (str/includes? account-settings-item "onclick=")))
                 :avatar? (str/includes? rendered "class=\"sno-avatar\"")
                 :menu-values (mapv second (re-seq #"<wa-dropdown-item[^>]+value=\"([^\"]+)\"" rendered))
+                :logout-danger? (some-> logout-item (str/includes? "variant=\"danger\""))
+                :logout-icon? (str/includes? rendered "#phosphor-sign-out")
+                :account-menu-divider-count (count (re-seq #"<hr class=\"sno-divider\"" rendered))
+                :account-menu-item-count (count dropdown-items)
+                :navigation-handler-count (count (re-seq #"<wa-dropdown-item[^>]+onclick=" rendered))
                 :sheet-targets (mapv second (re-seq #"aria-controls=\"([^\"]+)\"" rendered))
                 :toggle-binding-count (count (re-seq #"data-on:click=\"\$footerTraySheet" rendered))
                 :expanded-binding-count (count (re-seq #"data-attr:aria-expanded=" rendered))

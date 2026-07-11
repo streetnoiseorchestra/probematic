@@ -3,7 +3,6 @@
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.core :as uic]
-   [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as url]
    [dev.onionpancakes.chassis.compiler :as cc]
@@ -11,11 +10,10 @@
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (def doc-footer-tray
-  {:examples ["[footer-tray/FooterTray
+  {:examples ["(footer-tray/FooterTray
               {::footer-tray/member member
-               ::footer-tray/labels translated-labels
                ::footer-tray/shortcuts shortcuts
-               ::footer-tray/notification notification}]"]
+               ::footer-tray/notification notification})"]
    :ns       *ns*
    :as       'footer-tray
    :name     'FooterTray
@@ -24,13 +22,6 @@
    :schema   [:map {}
               [::member {:doc "The signed-in member shown by the account menu."}
                :map]
-              [::labels {:doc "Translated accessible labels for the tray and account menu."}
-               [:map
-                [:footer :string]
-                [:account :string]
-                [:profile :string]
-                [:band-settings :string]
-                [:logout :string]]]
               [::shortcuts {:doc "Ordered shortcut definitions containing drawer ids, labels, and icons."}
                [:sequential
                 [:map
@@ -43,11 +34,20 @@
                 [:id :string]
                 [:label :string]]]]})
 
+(def ^:private account-menu-labels
+  {:footer [:i18n/tr :footer-tray-label]
+   :account [:i18n/tr :footer-tray-account]
+   :account-title [:i18n/tr :footer-tray-account-title]
+   :account-settings [:i18n/tr :footer-tray-account-settings]
+   :profile [:i18n/tr :footer-tray-profile]
+   :logout [:i18n/tr :footer-tray-logout]})
+
 (def ^{:doc (uic/generate-docstring doc-footer-tray)} FooterTray
-  ::footer-tray)
+  (fn [attrs]
+    [::footer-tray (assoc attrs ::account-menu-labels account-menu-labels)]))
 
 (def ^:private consumed-props
-  #{::member ::labels ::shortcuts ::notification})
+  #{::member ::account-menu-labels ::shortcuts ::notification})
 
 (def ^:private menu-icon-opts
   {:slot "icon"})
@@ -63,14 +63,18 @@
                              (if (=== $footerTraySheet ~id) "true" "false"))
    :data-class:selected (->expr (=== $footerTraySheet ~id))})
 
-(defn- menu-icon [name]
-  [ico/Icon (merge {::ico/library :snoico
-                    ::ico/name name}
-                   menu-icon-opts)])
+(defn- menu-icon
+  ([name]
+   (menu-icon :snoico name))
+  ([library name]
+   [ico/Icon (merge {::ico/library library
+                     ::ico/name name}
+                    menu-icon-opts)]))
 
 (defn- account-menu [member labels]
   [:wa-dropdown {:placement "top-start"
-                 :distance 4}
+                 :distance 4
+                 :size "l"}
    [button/Button {:slot "trigger"
                    :class "tray-button account"
                    :appearance "plain"
@@ -81,19 +85,18 @@
                     ::avatar/link? false
                     :slot "start"}]
     [:span {:class "wa-visually-hidden"} (:account labels)]]
+   [:header {:class "account-menu-header"}
+    [:h2 {:class "wa-heading-l"} (:account-title labels)]]
    [:wa-dropdown-item {:value (url/link-member member)
                        :onclick "window.location = this.value"}
     (menu-icon :user)
     (:profile labels)]
-   [:wa-dropdown-item {:value "/band-settings"
-                       :onclick "window.location = this.value"}
+   [:wa-dropdown-item
     (menu-icon :cog)
-    (:band-settings labels)]
-   [divider/Divider]
+    (:account-settings labels)]
    [:wa-dropdown-item {:value (url/link-logout)
-                       :variant "danger"
                        :onclick "window.location = this.value"}
-    (menu-icon :xmark)
+    (menu-icon :phosphor :sign-out)
     (:logout labels)]])
 
 (defn- shortcut-button [{:keys [id label icon-library icon]}]
@@ -120,7 +123,7 @@
   (let [attrs (or attrs {})
         _ (uic/validate-opts! doc-footer-tray attrs)
         member (::member attrs)
-        labels (::labels attrs)
+        labels (::account-menu-labels attrs)
         shortcuts (::shortcuts attrs)
         notification (::notification attrs)
         footer-attrs (-> (apply dissoc attrs consumed-props)

@@ -92,13 +92,6 @@
                        menu-icon-opts)]
       (tr [:nav/logout])]]))
 
-(def ^:private footer-tray-labels
-  {:footer        [:i18n/tr :footer-tray-label]
-   :account       [:i18n/tr :footer-tray-account]
-   :profile       [:i18n/tr :footer-tray-profile]
-   :band-settings [:i18n/tr :footer-tray-band-settings]
-   :logout        [:i18n/tr :footer-tray-logout]})
-
 (def ^:private footer-tray-shortcuts
   [{:id           "footer-tray-assignments"
     :label        [:i18n/tr :footer-tray-assignments]
@@ -316,11 +309,10 @@
             :tabindex   "-1"}]
        [:app-shell-content
         body]]
-      [footer-tray/FooterTray
+      (footer-tray/FooterTray
        {::footer-tray/member member
-        ::footer-tray/labels footer-tray-labels
         ::footer-tray/shortcuts footer-tray-shortcuts
-        ::footer-tray/notification footer-tray-notification}]
+        ::footer-tray/notification footer-tray-notification})
       #_(when (config/dev-mode? (-> req :system :env))
           [:datastar-inspector])]
      (footer-tray-sheets))))

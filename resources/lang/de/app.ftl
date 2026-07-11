@@ -8,8 +8,9 @@ status-label = Status
 
 footer-tray-label = Schnellzugriffe
 footer-tray-account = Kontoeinstellungen
+footer-tray-account-title = Mein Konto
+footer-tray-account-settings = Konto & Einstellungen
 footer-tray-profile = Mein Profil
-footer-tray-band-settings = Bandeinstellungen
 footer-tray-logout = Abmelden
 footer-tray-assignments = Aufgaben
 footer-tray-calendar = Kalender

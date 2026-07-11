@@ -8,8 +8,9 @@ status-label = Status
 
 footer-tray-label = Application shortcuts
 footer-tray-account = Account settings
+footer-tray-account-title = My Account
+footer-tray-account-settings = Account & Settings
 footer-tray-profile = My Profile
-footer-tray-band-settings = Band Settings
 footer-tray-logout = Logout
 footer-tray-assignments = Assignments
 footer-tray-calendar = Calendar
