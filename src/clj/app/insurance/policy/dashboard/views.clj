@@ -10,6 +10,7 @@
    [app.ui2.avatar :as avatar]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.card :as card]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
@@ -115,7 +116,7 @@
 
 (defn metric-card
   [{:keys [id tooltip icon label value library]}]
-  [:wa-card {:style "flex: auto;"}
+  [card/Card {:style "flex: auto;"}
    [:div {:class "wa-flank wa-align-items-start"}
     [avatar/Avatar {::avatar/icon icon
                     ::avatar/icon-library (or library :phosphor)
@@ -215,12 +216,10 @@
 
 (defn dashboard-card
   [{:keys [class header-actions subtitle title]} & children]
-  (let [attrs (cond-> {:appearance  "plain"
-                       :with-header true
-                       :class       (ui2/cs "insurance-dashboard-card" class)
-                       :style       "background: var(--wa-color-surface-default); block-size: 100%"}
-                header-actions (assoc :with-header-actions true))]
-    (cond-> [:wa-card attrs
+  (let [attrs {:appearance "plain"
+               :class      (ui2/cs "insurance-dashboard-card" class)
+               :style      "background: var(--wa-color-surface-default); block-size: 100%"}]
+    (cond-> [card/Card attrs
              (dashboard-card-header {:subtitle subtitle
                                      :title    title})]
       header-actions (conj header-actions)
@@ -566,10 +565,8 @@
 
 (defn- policy-details-section
   [{:keys [tr] :as req} {:insurance.policy/keys [effective-at effective-until premium-factor status] :as policy}]
-  [:wa-card {:appearance          "plain"
-             :with-header         true
-             :with-header-actions true
-             :style               "background: var(--wa-color-surface-default); block-size: 100%;"}
+  [card/Card {:appearance "plain"
+              :style      "background: var(--wa-color-surface-default); block-size: 100%;"}
    [:h2 {:slot  "header"
          :class "wa-heading-l"
          :style "margin: 0;"}

@@ -1,0 +1,164 @@
+/*! Copyright 2026 Fonticons, Inc. - https://webawesome.com/license */
+/* Adapted from Web Awesome 3.10.0's card styles. */
+.sno-card {
+  --spacing: var(--wa-space-l);
+
+  /* Internal calculated properties */
+  --inner-border-radius: calc(var(--wa-panel-border-radius) - var(--wa-panel-border-width));
+
+  display: flex;
+  flex-direction: column;
+  background-color: var(--wa-color-surface-default);
+  border-color: var(--wa-color-surface-border);
+  border-radius: var(--wa-panel-border-radius);
+  border-style: var(--wa-panel-border-style);
+  box-shadow: var(--wa-shadow-s);
+  border-width: var(--wa-panel-border-width);
+  color: var(--wa-color-text-normal);
+}
+
+@scope (.sno-card) {
+  /* Size modifiers inherited by Web Awesome's card implementation. */
+  :scope[size='xs'] {
+    font-size: var(--wa-font-size-xs);
+  }
+
+  :scope:is([size='s'], [size='small']) {
+    font-size: var(--wa-font-size-s);
+  }
+
+  :scope:is([size='m'], [size='medium']) {
+    font-size: var(--wa-font-size-m);
+  }
+
+  :scope:is([size='l'], [size='large']) {
+    font-size: var(--wa-font-size-l);
+  }
+
+  :scope[size='xl'] {
+    font-size: var(--wa-font-size-xl);
+  }
+
+  /* Appearance modifiers */
+  :scope[appearance='plain'] {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  :scope[appearance='outlined'] {
+    background-color: var(--wa-color-surface-default);
+    border-color: var(--wa-color-surface-border);
+  }
+
+  :scope[appearance='filled'] {
+    background-color: var(--wa-color-neutral-fill-quiet);
+    border-color: transparent;
+  }
+
+  :scope[appearance='filled-outlined'] {
+    background-color: var(--wa-color-neutral-fill-quiet);
+    border-color: var(--wa-color-surface-border);
+  }
+
+  :scope[appearance='accent'] {
+    color: var(--wa-color-neutral-on-loud);
+    background-color: var(--wa-color-neutral-fill-loud);
+    border-color: transparent;
+  }
+
+  /* Take care of top and bottom radii. */
+  :scope > .media,
+  :scope:not(:has(> .media)) > .header,
+  :scope:not(:has(> .media)):not(:has(> .header)) > .body {
+    border-start-start-radius: var(--inner-border-radius);
+    border-start-end-radius: var(--inner-border-radius);
+  }
+
+  :scope:not(:has(> .footer)) > .body,
+  :scope > .footer {
+    border-end-start-radius: var(--inner-border-radius);
+    border-end-end-radius: var(--inner-border-radius);
+  }
+
+  :scope > .media {
+    display: flex;
+    overflow: hidden;
+  }
+
+  :scope > .media > * {
+    display: block;
+    width: 100%;
+    border-radius: 0 !important;
+  }
+
+  /* Round all corners for plain appearance. */
+  :scope[appearance='plain'] > .media {
+    border-radius: var(--inner-border-radius);
+  }
+
+  :scope[appearance='plain'] > .media > * {
+    border-radius: inherit !important;
+  }
+
+  :scope > .header {
+    display: block;
+    border-block-end-style: inherit;
+    border-block-end-color: var(--wa-color-surface-border);
+    border-block-end-width: var(--wa-panel-border-width);
+    padding: calc(var(--spacing) / 2) var(--spacing);
+  }
+
+  :scope > .body {
+    display: block;
+    padding: var(--spacing);
+  }
+
+  :scope > .footer {
+    display: block;
+    border-block-start-style: inherit;
+    border-block-start-color: var(--wa-color-surface-border);
+    border-block-start-width: var(--wa-panel-border-width);
+    padding: var(--spacing);
+  }
+
+  /* Push slots to sides when an action section renders. */
+  :scope > .has-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Orientation styles */
+  :scope[orientation='horizontal'] {
+    flex-direction: row;
+  }
+
+  :scope[orientation='horizontal'] > .media {
+    border-start-start-radius: var(--inner-border-radius);
+    border-end-start-radius: var(--inner-border-radius);
+    border-start-end-radius: 0;
+  }
+
+  :scope[orientation='horizontal'] > .media > * {
+    block-size: 100%;
+    inline-size: 100%;
+    object-fit: cover;
+  }
+
+  :scope[orientation='horizontal'] > .body > * {
+    display: block;
+    height: 100%;
+    margin: 0;
+  }
+
+  :scope[orientation='horizontal'] > .actions {
+    display: contents;
+  }
+
+  :scope[orientation='horizontal'] > .actions > * {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing);
+  }
+}

@@ -83,6 +83,23 @@
                   :headings (mapv l/text (l/select 'h2 header))
                   :captions (mapv l/text (l/select 'p header))})))))))
 
+(deftest dashboard-uses-card-chassis
+  (testing "Every policy dashboard card uses the native Card chassis alias."
+    (let [metric  (sut/metric-card {:icon :bank :label "Value" :value "€100"})
+          summary (sut/dashboard-card {:title "Summary"} [:p "Body"])
+          details (#'sut/policy-details-section
+                   {:tr tr}
+                   (merge policy
+                          {:insurance.policy/name            "Orchestra"
+                           :insurance.policy/status          :insurance.policy.status/draft
+                           :insurance.policy/premium-factor  1M
+                           :insurance.policy/effective-at    nil
+                           :insurance.policy/effective-until nil}))]
+      (is (= [:app.ui2.card/card
+              :app.ui2.card/card
+              :app.ui2.card/card]
+             (mapv first [metric summary details]))))))
+
 (deftest review-actions
   (testing "A draft policy has outstanding review and health-check work."
     (let [review-view (sut/review-status-section
