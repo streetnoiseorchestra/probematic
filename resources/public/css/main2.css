@@ -16,6 +16,7 @@
 @import "ui2/button.css" layer(sno-ui);
 @import "ui2/card.css" layer(sno-ui);
 @import "ui2/footer-tray.css" layer(sno-ui);
+@import "ui2/jump-menu.css" layer(sno-ui);
 @import "ui2/layout.css" layer(sno-ui);
 @import "ui2/page-header.css" layer(sno-ui);
 @import "ui2/dl.css" layer(sno-ui);
@@ -42,6 +43,7 @@
 
 @layer wa-theme-overrides {
   wa-dialog:not(:defined),
+  wa-popover:not(:defined),
   wa-tooltip:not(:defined),
   wa-option:not(:defined) {
     display: none;

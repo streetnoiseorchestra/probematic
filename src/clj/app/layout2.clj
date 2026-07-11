@@ -12,6 +12,7 @@
    [app.ui2.divider :as divider]
    [app.ui2.footer-tray :as footer-tray]
    [app.ui2.icon :as ico]
+   [app.ui2.jump-menu :as jump-menu]
    [app.urls :as url]
    [app.util :as util]
    [jsonista.core :as j]
@@ -281,17 +282,10 @@
      [:div {:id "morph"}
       [:app-shell
        [:header
-        [button/Button {:href       "#app-shell-navigation"
-                        :appearance "plain"
-                        :aria-label "Toggle navigation"}
-         [ico/Icon {::ico/library :snoico
-                    ::ico/name    :bars
-                    :slot         "start"}]]
-        [:a {:href "/" :aria-label "Home"}
-         [ico/Icon {::ico/library :snoico
-                    ::ico/name    :snoman
-                    :style        "color: var(--sno-brand-green)"}]]
-        [:app-shell-user (nav-user-dropdown req member)]]
+        (jump-menu/JumpMenu
+         {::jump-menu/logotype
+          (icon/logotype {:class "logotype"
+                          :aria-hidden "true"})})]
        [:aside {:id "app-shell-navigation"}
         [:header
          (brand-link)

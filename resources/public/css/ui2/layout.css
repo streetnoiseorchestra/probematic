@@ -18,37 +18,12 @@ app-shell {
     inset-block-start: 0;
     z-index: var(--sno-nav-header-z-index);
     display: grid;
-    grid-template-columns:
-      var(--app-shell-topbar-size)
-      minmax(0, 1fr)
-      var(--app-shell-topbar-size);
-    align-items: center;
+    place-items: center;
     block-size: var(--app-shell-topbar-size);
     padding-inline: var(--wa-space-s);
     border-block-end: var(--wa-panel-border-width) var(--wa-border-style)
       var(--wa-color-surface-border);
     background-color: var(--wa-color-surface-default);
-  }
-
-  & > header > wa-button {
-    justify-self: start;
-  }
-
-  & > header > wa-button .sno-icon {
-    font-size: var(--sno-nav-toggle-icon-size);
-  }
-
-  & > header > a {
-    display: grid;
-    place-items: center;
-    justify-self: center;
-    color: var(--sno-brand-green);
-    text-decoration: none;
-  }
-
-  & > header > a .sno-icon {
-    color: currentColor;
-    font-size: var(--wa-font-size-xl);
   }
 
   & > aside {
@@ -95,7 +70,7 @@ app-shell {
     font-size: var(--sno-nav-icon-size);
   }
 
-  & > aside + a {
+  & > a[aria-label="Close navigation"] {
     position: fixed;
     inset: 0;
     z-index: 30;
@@ -106,23 +81,9 @@ app-shell {
   }
 }
 
-app-shell-user,
 app-shell-account,
 app-shell-content {
   display: block;
-}
-
-app-shell-user {
-  inline-size: var(--app-shell-topbar-size);
-  min-inline-size: var(--app-shell-topbar-size);
-  justify-self: end;
-
-  & #account-dropdown-button {
-    & > .member-nick,
-    & > .caret {
-      display: none;
-    }
-  }
 }
 
 app-shell-account #account-dropdown-button {
@@ -194,12 +155,15 @@ app-shell-content {
     );
 
     grid-template:
-      "navigation content" minmax(100dvb, auto) /
-      var(--app-shell-navigation-width) minmax(0, 1fr);
+      "topbar" var(--app-shell-topbar-size)
+      "content" minmax(
+        calc(100dvb - var(--app-shell-topbar-size)),
+        auto
+      ) /
+      minmax(0, 1fr);
   }
 
-  app-shell > header,
-  app-shell > aside + a,
+  app-shell > a[aria-label="Close navigation"],
   app-shell > aside > header > wa-button {
     display: none;
   }
@@ -221,7 +185,7 @@ app-shell-content {
 
 @media (prefers-reduced-motion: reduce) {
   app-shell > aside,
-  app-shell > aside + a {
+  app-shell > a[aria-label="Close navigation"] {
     transition: none;
   }
 }
