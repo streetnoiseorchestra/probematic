@@ -19,6 +19,10 @@
    [:insurance.dashboard/health-checks-complete]      "%1 of %2 checks passed"
    [:insurance.dashboard/missing-photos]              "Missing photos"
    [:insurance.dashboard/missing-insurer-ids]         "Missing insurer IDs"
+   [:insurance.policy-settings/missing-category-factors-title] "Missing category factors"
+   [:insurance.dashboard/recent-changes]              "Recent changes"
+   [:insurance.dashboard/recent-changes-subtitle]     "Current changes."
+   [:instrument.coverage/cost]                        "Cost"
    [:insurance/item-count]                            "Count"
    [:insurance/cost]                                  "Cost"
    [:instrument.coverage/create-button]               "Add Instrument"
@@ -104,6 +108,37 @@
                        [:slot :href :aria-label])
                      [review-view health-view])))))))
 
+(deftest missing-category-factor-health-check
+  (testing "The policy is missing a category factor used by one or more coverages."
+    (let [totals        {:missing-photo-count            1
+                         :missing-insurer-id-count       0
+                         :missing-category-factor-count  1}
+          team-view     (sut/health-checklist-section
+                         {:tr tr}
+                         {:policy                 policy
+                          :totals                 totals
+                          :insurance-team-member? true})
+          ordinary-view (sut/health-checklist-section
+                         {:tr tr}
+                         {:policy                 policy
+                          :totals                 totals
+                          :insurance-team-member? false})
+          settings-link (l/select-one 'a team-view)]
+      (testing "The health checklist includes the missing category factor and incomplete-check count."
+        (is (= {:labels  ["Missing photos" "Missing insurer IDs" "Missing category factors"]
+                :counts  ["1" "0" "1"]
+                :summary "1 of 3 checks passed"}
+               {:labels  (mapv l/text (l/select '[dl dt] team-view))
+                :counts  (mapv l/text (l/select '[dl dd] team-view))
+                :summary (-> (l/select-one 'div.wa-text-end team-view) l/text)})))
+      (testing "Only an insurance-team member receives a settings link for resolving it."
+        (is (= {:team-link     {:label "Missing category factors"
+                                :href  (str "/insurance-policy/" policy-id "/settings")}
+                :ordinary-link nil}
+               {:team-link     {:label (l/text settings-link)
+                                :href  (:href (l/attrs settings-link))}
+                :ordinary-link (l/select-one 'a ordinary-view)}))))))
+
 (deftest policy-actions
   (testing "The policy dashboard is showing a draft policy."
     (let [menu            (sut/more-actions-menu {:tr tr} policy)
@@ -179,3 +214,27 @@
                 :values ["2" "12,34 €" "1" "5,00 €"]}
                {:labels (mapv l/text (l/select '[dl dt] view))
                 :values (mapv l/text (l/select '[dl dd > span > span] view))}))))))
+
+(deftest recent-change-costs
+  (testing "Recent changes include one priced and one unavailable coverage."
+    (let [view (#'sut/recent-changes-section
+                {:tr tr}
+                {:policy policy
+                 :recent-changes
+                 [{:change          :instrument.coverage.change/new
+                   :coverage        {:instrument.coverage/coverage-id (random-uuid)
+                                     :instrument.coverage/cost        nil}
+                   :instrument-name "Missing factor"
+                   :owner-name      "Ada"}
+                  {:change          :instrument.coverage.change/changed
+                   :coverage        {:instrument.coverage/coverage-id (random-uuid)
+                                     :instrument.coverage/cost        0.77M}
+                   :instrument-name "Priced"
+                   :owner-name      "Bea"}]})]
+      (testing "Each individual cost remains visible without inventing a zero."
+        (is (= [{:label "Cost" :value "&mdash;"}
+                {:label "Cost" :value "0,77 €"}]
+               (mapv (fn [cost]
+                       {:label (-> (l/select-one 'dt cost) l/text)
+                        :value (-> (l/select-one 'dd cost) l/text)})
+                     (l/select "[data-dashboard-coverage-cost]" view))))))))

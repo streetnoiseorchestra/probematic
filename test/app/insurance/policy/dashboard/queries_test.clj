@@ -71,6 +71,27 @@
                                              "band-two-coverage"
                                              "private-coverage"]}]))
 
+(defn remove-dashboard-category-factor!
+  [conn policy-id]
+  (let [factor-eid (d/q '[:find ?factor .
+                          :in $ ?policy-id
+                          :where
+                          [?policy :insurance.policy/policy-id ?policy-id]
+                          [?policy :insurance.policy/category-factors ?factor]]
+                        (d/db conn)
+                        policy-id)]
+    @(d/transact conn [[:db/retract
+                        [:insurance.policy/policy-id policy-id]
+                        :insurance.policy/category-factors
+                        factor-eid]])))
+
+(defn seed-dashboard-insurance-team!
+  [conn member-id]
+  @(d/transact conn [{:team/team-id   (random-uuid)
+                      :team/name      "Insurance Team"
+                      :team/team-type :team.type/insurance
+                      :team/members   [[:member/member-id member-id]]}]))
+
 (deftest policy-dashboard-totals-split-count-and-cost-by-coverage-ownership
   (testing "coverage mix totals include separate band/private counts and costs"
     (let [{:keys [conn]} (tc/new-system "insurance-dashboard-coverage-mix")
@@ -87,3 +108,36 @@
                                     :band-cost
                                     :private-cost
                                     :total-cost])))))))
+
+(deftest policy-dashboard-tolerates-missing-category-factor
+  (testing "A covered instrument uses a category without a policy category factor."
+    (let [{:keys [conn member-id]} (tc/new-system "insurance-dashboard-missing-category-factor")
+          policy-id                (random-uuid)]
+      (seed-dashboard-policy! conn policy-id)
+      (seed-dashboard-insurance-team! conn member-id)
+      (remove-dashboard-category-factor! conn policy-id)
+      (testing "The dashboard marks unavailable coverage costs and excludes them from aggregates."
+        (let [db                         (d/db conn)
+              {:keys [coverages totals] :as dashboard}
+              (queries/policy-dashboard db policy-id {:current-member-id member-id})
+              ordinary-dashboard         (queries/policy-dashboard db policy-id)]
+          (is (= {:totals          {:total-instruments             3
+                                    :total-insured-value           550M
+                                    :total-cost                    0M
+                                    :private-cost                  0M
+                                    :band-cost                     0M
+                                    :missing-category-factor-count 1}
+                  :coverage-costs  #{nil}
+                  :missing-factors #{true}
+                  :team-member?    true
+                  :ordinary-member? false}
+                 {:totals          (select-keys totals [:total-instruments
+                                                        :total-insured-value
+                                                        :total-cost
+                                                        :private-cost
+                                                        :band-cost
+                                                        :missing-category-factor-count])
+                  :coverage-costs  (set (map :instrument.coverage/cost coverages))
+                  :missing-factors (set (map :instrument.coverage/missing-category-factor? coverages))
+                  :team-member?    (:insurance-team-member? dashboard)
+                  :ordinary-member? (:insurance-team-member? ordinary-dashboard)})))))))

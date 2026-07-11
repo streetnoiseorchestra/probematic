@@ -39,13 +39,6 @@
    (fn [req]
      (layout/app-shell req (view/survey-start-page req)))))
 
-(defn insurance-coverage-create3 []
-  (ctmx/make-routes
-   "/insurance-coverage-create3/{policy-id}/{instrument-id}"
-   (fn [req]
-     (layout/app-shell req
-                       (view/insurance-coverage-create-page3 req)))))
-
 (defn insurance-create []
   (ctmx/make-routes
    "/insurance-new/"
@@ -136,7 +129,9 @@
     (ds/page-routes {:page-name ::coverage-create-photos
                      :path      "/insurance-coverage-create2/{policy-id}/{instrument-id}"
                      :page      #'coverage.create.views/photos-page})
-    (insurance-coverage-create3)]
+    (ds/page-routes {:page-name ::coverage-create-coverage
+                     :path      "/insurance-coverage-create3/{policy-id}/{instrument-id}"
+                     :page      #'coverage.create.views/coverage-page})]
 
    ["" {:app.route/name :app/instrument.coverage
         :interceptors [coverage-interceptor]}

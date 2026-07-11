@@ -3,6 +3,7 @@
    [app.insurance.coverage.create.actions :as actions]
    [app.nexus.actions :as support]
    [app.test-common :as tc]
+   [app.queries :as q]
    [app.urls :as urls]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
@@ -16,15 +17,27 @@
      [:error/is-required] (str (first args) " is required.")
      [:error/not-found-title] "Not Found"
      [:insurance/error-edit-frozen-policy] "Cannot update instrument and coverage on a policy that is not in draft status"
+     [:insurance/error-invalid-number] (str (first args) " must be a whole number greater than zero.")
+     [:insurance/error-invalid-coverage-type] "Please choose valid coverage types."
      [:instrument/owner] "Owner"
      [:instrument/category] "Category"
      [:instrument/name] "Instrument Name"
      [:instrument/make] "Make"
+     [:insurance/item-count] "Count"
+     [:insurance/value] "Value"
+     [:band-private] "Band or private"
      (name (peek k)))))
 
 (defn new-system []
   (assoc (tc/new-system "insurance-coverage-create-actions")
          :env {:app-base-url "https://example.test"}))
+
+(defn seed-insurance-team!
+  [conn member-id]
+  @(d/transact conn [{:team/team-id   (random-uuid)
+                      :team/name      "Insurance Team"
+                      :team/team-type :team.type/insurance
+                      :team/members   [[:member/member-id member-id]]}]))
 
 (defn state-for [{:keys [conn env member-id]}]
   {:db                (d/db conn)
@@ -209,3 +222,276 @@
                [:coverage-create :_error :instrument-name]
                {:error "Instrument Name is required."}]]
              (actions/validate-instrument-field-action (state-for system) signals))))))
+
+(defn seed-step3!
+  [conn {:keys [coverage-types? policy-status]
+         :or   {coverage-types? true
+                policy-status  :insurance.policy.status/draft}}]
+  (let [owner-id      (random-uuid)
+        category-id   (random-uuid)
+        instrument-id (random-uuid)
+        policy-id     (random-uuid)
+        type-a-id     (random-uuid)
+        type-b-id     (random-uuid)
+        owner          {:db/id            "coverage-owner"
+                        :member/member-id owner-id
+                        :member/name      "Coverage Owner"
+                        :member/active?   true}
+        category       {:db/id                           "coverage-category"
+                        :instrument.category/category-id category-id
+                        :instrument.category/name        "Brass"
+                        :instrument.category/code        "1"}
+        instrument     {:instrument/instrument-id instrument-id
+                        :instrument/name          "Test Trumpet"
+                        :instrument/owner         "coverage-owner"
+                        :instrument/category      "coverage-category"
+                        :instrument/make          "Yamaha"
+                        :instrument/model         "YTR-8335"}
+        type-a          {:db/id                                  "coverage-type-a"
+                         :insurance.coverage.type/type-id        type-a-id
+                         :insurance.coverage.type/name           "Base"
+                         :insurance.coverage.type/description    "Base coverage"
+                         :insurance.coverage.type/premium-factor 0.01M}
+        type-b          {:db/id                                  "coverage-type-b"
+                         :insurance.coverage.type/type-id        type-b-id
+                         :insurance.coverage.type/name           "Extended"
+                         :insurance.coverage.type/description    "Extended coverage"
+                         :insurance.coverage.type/premium-factor 0.02M}
+        policy          (cond-> {:insurance.policy/policy-id       policy-id
+                                 :insurance.policy/name            "Coverage Policy"
+                                 :insurance.policy/status          policy-status
+                                 :insurance.policy/currency        :currency/EUR
+                                 :insurance.policy/effective-at    #inst "2026-01-01T00:00:00.000-00:00"
+                                 :insurance.policy/effective-until #inst "2027-01-01T00:00:00.000-00:00"
+                                 :insurance.policy/premium-factor  0.01M}
+                          coverage-types?
+                          (assoc :insurance.policy/coverage-types
+                                 ["coverage-type-a" "coverage-type-b"]))
+        tx-data         (cond-> [owner category instrument]
+                          coverage-types? (into [type-a type-b])
+                          true (conj policy))]
+    @(d/transact conn tx-data)
+    (let [policy-type-ids (mapv :insurance.coverage.type/type-id
+                                (:insurance.policy/coverage-types
+                                 (q/retrieve-policy (d/db conn) policy-id)))]
+      {:owner-id       owner-id
+       :category-id    category-id
+       :instrument-id  instrument-id
+       :policy-id      policy-id
+       :policy-type-ids policy-type-ids
+       :base-type-id   (first policy-type-ids)
+       :extra-type-id  (second policy-type-ids)})))
+
+(defn coverage-signals
+  [{:keys [instrument-id policy-id]}]
+  {:coverage-create {:policy-id      (str policy-id)
+                     :instrument-id  (str instrument-id)
+                     :redirect       "/return"
+                     :item-count     "2"
+                     :value          "1500"
+                     :private-band   "band"
+                     :coverage-types []
+                     :insurer-id     " H-42 "}})
+
+(defn coverage-tx [effects]
+  (first (filter :instrument.coverage/coverage-id (tx-data effects))))
+
+(defn coverage-type-ids [effects]
+  (->> (tx-data effects)
+       (keep (fn [tx]
+               (when (and (vector? tx)
+                          (= :db/add (first tx))
+                          (= "covered_instrument" (second tx))
+                          (= :instrument.coverage/types (nth tx 2 nil)))
+                 (second (nth tx 3 nil)))))
+       set))
+
+(defn form-errors [effects]
+  (get-in (first (filter #(= :app.datastar/assoc-state (first %)) effects))
+          [2 :_error]))
+
+(deftest create-coverage-action-creates-band-coverage-with-all-policy-types-test
+  (testing "band coverage ignores submitted type ids and uses every policy type"
+    (let [{:keys [conn member-id] :as system} (new-system)
+          _           (seed-insurance-team! conn member-id)
+          fixture     (seed-step3! conn {})
+          unknown-id  (random-uuid)
+          signals     (assoc-in (coverage-signals fixture)
+                                [:coverage-create :coverage-types]
+                                [(str unknown-id)])
+          effects     (actions/create-coverage-action (state-for system) signals)
+          coverage    (coverage-tx effects)
+          coverage-id (:instrument.coverage/coverage-id coverage)]
+      (is (= {:transact-count 1
+              :opts           {}
+              :coverage       {:db/id                           "covered_instrument"
+                               :instrument.coverage/coverage-id coverage-id
+                               :instrument.coverage/instrument  [:instrument/instrument-id (:instrument-id fixture)]
+                               :instrument.coverage/value       1500M
+                               :instrument.coverage/item-count  2
+                               :instrument.coverage/status      :instrument.coverage.status/needs-review
+                               :instrument.coverage/change      :instrument.coverage.change/new
+                               :instrument.coverage/private?    false
+                               :instrument.coverage/insurer-id  "H-42"}
+              :coverage-types (set (:policy-type-ids fixture))
+              :policy-link?   true
+              :audit?         true
+              :clear-loading? true
+              :redirects      [[:app.datastar/redirect "/return"]]}
+             {:transact-count (count (filter #(= :db/transact (first %)) effects))
+              :opts           (nth (transact-effect effects) 2)
+              :coverage       coverage
+              :coverage-types (coverage-type-ids effects)
+              :policy-link?   (contains? (tx-set effects)
+                                         [:db/add
+                                          [:insurance.policy/policy-id (:policy-id fixture)]
+                                          :insurance.policy/covered-instruments
+                                          "covered_instrument"])
+              :audit?         (contains? (tx-set effects)
+                                         [:db/add "datomic.tx" :audit/user [:member/member-id member-id]])
+              :clear-loading? (contains? (set effects) support/clear-loading)
+              :redirects      (redirects effects)}))
+      (is (uuid? coverage-id)))))
+
+(deftest create-coverage-action-protects-harmonia-id-test
+  (testing "An ordinary member creates coverage without authority to set a Harmonia ID."
+    (let [{:keys [conn] :as system} (new-system)
+          fixture          (seed-step3! conn {})
+          signals           (coverage-signals fixture)
+          absent-effects    (actions/create-coverage-action
+                             (state-for system)
+                             (update signals :coverage-create dissoc :insurer-id))
+          submitted-effects (actions/create-coverage-action (state-for system) signals)]
+      (testing "Coverage creation still works when the Harmonia ID signal is absent."
+        (is (= {:transact?  true
+                :insurer-id nil}
+               {:transact?  (some? (transact-effect absent-effects))
+                :insurer-id (:instrument.coverage/insurer-id
+                             (coverage-tx absent-effects))})))
+      (testing "A manually submitted Harmonia ID is ignored for an ordinary member."
+        (is (= {:transact?   true
+                :insurer-id? false}
+               {:transact?   (some? (transact-effect submitted-effects))
+                :insurer-id? (contains? (coverage-tx submitted-effects)
+                                        :instrument.coverage/insurer-id)}))))))
+
+(deftest create-coverage-action-creates-private-coverage-with-base-and-selected-types-test
+  (testing "private coverage enforces the base type and deduplicates selected policy types"
+    (let [{:keys [conn] :as system} (new-system)
+          fixture (seed-step3! conn {})
+          signals (-> (coverage-signals fixture)
+                      (assoc-in [:coverage-create :redirect] "")
+                      (assoc-in [:coverage-create :private-band] "private")
+                      (assoc-in [:coverage-create :coverage-types]
+                                [(str (:extra-type-id fixture))
+                                 (str (:extra-type-id fixture))])
+                      (assoc-in [:coverage-create :insurer-id] ""))
+          effects  (actions/create-coverage-action (state-for system) signals)
+          coverage (coverage-tx effects)]
+      (is (= {:private?       true
+              :coverage-types #{(:base-type-id fixture) (:extra-type-id fixture)}
+              :insurer-id?    false
+              :redirects      [[:app.datastar/redirect
+                                (urls/link-policy (:policy-id fixture))]]}
+             {:private?       (:instrument.coverage/private? coverage)
+              :coverage-types (coverage-type-ids effects)
+              :insurer-id?    (contains? coverage :instrument.coverage/insurer-id)
+              :redirects      (redirects effects)})))))
+
+(deftest create-coverage-action-rejects-invalid-coverage-type-test
+  (testing "private coverage rejects type ids outside the current policy"
+    (let [{:keys [conn] :as system} (new-system)
+          fixture (seed-step3! conn {})
+          signals (-> (coverage-signals fixture)
+                      (assoc-in [:coverage-create :private-band] "private")
+                      (assoc-in [:coverage-create :coverage-types] [(str (random-uuid))]))
+          effects (actions/create-coverage-action (state-for system) signals)]
+      (is (= {:transact? false
+              :errors    {:coverage-types {:error "Please choose valid coverage types."}
+                          :_top            {:error "Please fix the errors in the form."}}}
+             {:transact? (boolean (transact-effect effects))
+              :errors    (form-errors effects)})))))
+
+(deftest create-coverage-action-validates-number-fields-test
+  (testing "blank, zero, negative, fractional, and non-numeric values are rejected"
+    (let [{:keys [conn] :as system} (new-system)
+          fixture (seed-step3! conn {})]
+      (doseq [[field invalid-value label] [[:item-count "" "Count"]
+                                           [:item-count "0" "Count"]
+                                           [:item-count "-1" "Count"]
+                                           [:item-count "1.5" "Count"]
+                                           [:item-count "many" "Count"]
+                                           [:value "" "Value"]
+                                           [:value "0" "Value"]
+                                           [:value "-1" "Value"]
+                                           [:value "1.5" "Value"]
+                                           [:value "many" "Value"]]]
+        (testing (str (name field) " rejects " (pr-str invalid-value))
+          (let [signals (assoc-in (coverage-signals fixture)
+                                  [:coverage-create field]
+                                  invalid-value)
+                effects (actions/create-coverage-action (state-for system) signals)]
+            (is (= {:transact? false
+                    :field-error {:error (str label " must be a whole number greater than zero.")}}
+                   {:transact?   (boolean (transact-effect effects))
+                    :field-error (get (form-errors effects) field)}))))))))
+
+(deftest create-coverage-action-rejects-invalid-ownership-test
+  (testing "ownership must be exactly band or private"
+    (let [{:keys [conn] :as system} (new-system)
+          fixture (seed-step3! conn {})
+          signals (assoc-in (coverage-signals fixture)
+                            [:coverage-create :private-band]
+                            "borrowed")
+          effects (actions/create-coverage-action (state-for system) signals)]
+      (is (= {:transact? false
+              :errors    {:private-band {:error "Band or private is required."}
+                          :_top         {:error "Please fix the errors in the form."}}}
+             {:transact? (boolean (transact-effect effects))
+              :errors    (form-errors effects)})))))
+
+(deftest create-coverage-action-rejects-invalid-context-test
+  (testing "invalid ids, missing instruments, frozen policies, and policies without coverage types do not transact"
+    (let [{:keys [conn] :as system} (new-system)
+          missing-fixture  (seed-step3! conn {})
+          frozen-fixture   (seed-step3! conn {:policy-status :insurance.policy.status/active})
+          no-types-fixture (seed-step3! conn {:coverage-types? false})
+          cases             [{:label   "malformed policy id"
+                              :signals (assoc-in (coverage-signals missing-fixture)
+                                                 [:coverage-create :policy-id]
+                                                 "not-a-uuid")
+                              :error   "Not Found"}
+                             {:label   "missing instrument"
+                              :signals (assoc-in (coverage-signals missing-fixture)
+                                                 [:coverage-create :instrument-id]
+                                                 (str (random-uuid)))
+                              :error   "Not Found"}
+                             {:label   "frozen policy"
+                              :signals (coverage-signals frozen-fixture)
+                              :error   "Cannot update instrument and coverage on a policy that is not in draft status"}
+                             {:label   "policy without coverage types"
+                              :signals (coverage-signals no-types-fixture)
+                              :error   "Please choose valid coverage types."}]]
+      (doseq [{:keys [label signals error]} cases]
+        (testing label
+          (let [effects (actions/create-coverage-action (state-for system) signals)]
+            (is (= {:transact? false
+                    :top-error error}
+                   {:transact? (boolean (transact-effect effects))
+                    :top-error (get-in (form-errors effects) [:_top :error])}))))))))
+
+(deftest validate-coverage-field-action-test
+  (testing "one representative step 3 field is validated into page state"
+    (let [{:keys [conn] :as system} (new-system)
+          fixture (seed-step3! conn {})
+          signals (-> (coverage-signals fixture)
+                      (assoc-in [:coverage-create :item-count] "0")
+                      (assoc-in [:coverage-create :validate-field] "item-count"))
+          params  (-> (:coverage-create signals)
+                      (dissoc :validate-field)
+                      (assoc :insurer-id "H-42"))]
+      (is (= [[:app.datastar/merge-state [:coverage-create] params]
+              [:app.datastar/assoc-state
+               [:coverage-create :_error :item-count]
+               {:error "Count must be a whole number greater than zero."}]]
+             (actions/validate-coverage-field-action (state-for system) signals))))))

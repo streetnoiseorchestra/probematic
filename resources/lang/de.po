@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2026-07-10 06:04+0000\n"
+"POT-Creation-Date: 2026-07-10 19:05+0000\n"
 "PO-Revision-Date: 2024-05-17 09:56+0000\n"
 "Last-Translator: casey <me@caseylink.com>\n"
 "Language-Team: German <https://translate.streetnoise.at/projects/snorga/"
@@ -88,6 +88,12 @@ msgstr ""
 "Du kannst ein Instrument und den Versicherungsschutz für eine Police, die "
 "sich nicht im Entwurfsstatus befindet, nicht aktualisieren"
 
+#: :insurance/no-private-payments
+#, ycp-format
+msgctxt ":insurance/no-private-payments"
+msgid "No private instrument payments need to be requested for this policy."
+msgstr "Für diese Police müssen keine Zahlungen für private Instrumente angefordert werden."
+
 #: :insurance/error-invalid-coverage-type
 #, ycp-format
 msgctxt ":insurance/error-invalid-coverage-type"
@@ -108,11 +114,9 @@ msgstr ""
 #, ycp-format
 msgctxt ":insurance/item-count-hint"
 msgid ""
-"Wieviele identische Produkte möchtest du versichern (z.B. 1x Trompete/ 4x "
-"Drumsticks…)?"
-msgstr ""
-"Wieviele identische Produkte möchtest du versichern (z.B. 1x Trompete/ 4x "
-"Drumsticks…)?"
+"How many identical items are being insured (for example, one trumpet or four "
+"drumsticks)?"
+msgstr "Wie viele identische Produkte möchtest du versichern (z. B. eine Trompete oder vier Drumsticks)?"
 
 #: :insurance/total-needs-review-tooltip
 #, ycp-format
@@ -165,7 +169,7 @@ msgstr "Name der Versicherungspolice"
 #: :insurance/value
 #, ycp-format
 msgctxt ":insurance/value"
-msgid "Versicherungswert"
+msgid "Insured value"
 msgstr "Versicherungswert"
 
 #: :insurance/request-payments-title
@@ -239,7 +243,7 @@ msgstr "Insurance TODOs"
 #: :insurance/value-abbrev
 #, ycp-format
 msgctxt ":insurance/value-abbrev"
-msgid "Vers.-Wert"
+msgid "Insured value"
 msgstr "Vers.-Wert"
 
 #: :insurance/currency
@@ -315,9 +319,8 @@ msgstr ""
 #: :insurance/value-hint
 #, ycp-format
 msgctxt ":insurance/value-hint"
-msgid "Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben"
-msgstr ""
-"Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben"
+msgid "For multiple identical insured items, enter the value of one item."
+msgstr "Gib bei mehreren identischen versicherten Gegenständen den Wert eines Gegenstands ein."
 
 #: :insurance/email-p2
 #, ycp-format
@@ -733,8 +736,8 @@ msgstr "Was ist die Modellnummer?"
 #: :instrument/description-hint
 #, ycp-format
 msgctxt ":instrument/description-hint"
-msgid "Z.B. farbe, material"
-msgstr "Z.B. farbe, material"
+msgid "e.g., color or material"
+msgstr "z. B. Farbe oder Material"
 
 #: :instrument/photo-upload-title
 #, ycp-format
@@ -745,7 +748,7 @@ msgstr "Lade Instrumentenfotos hoch"
 #: :instrument/name-hint
 #, ycp-format
 msgctxt ":instrument/name-hint"
-msgid "e.g., Trompet, Yamaha or Mouthpiece Tenorsax"
+msgid "e.g., trumpet, Yamaha, or tenor sax mouthpiece"
 msgstr "z. B. Trompete, Yamaha oder Mundstück Tenorsax"
 
 #: :instrument/images-share-url-hint
@@ -3688,6 +3691,12 @@ msgctxt ":insurance.review/empty-body"
 msgid "Try another filter or return to the dashboard."
 msgstr "Wähle einen anderen Filter oder gehe zurück zum Dashboard."
 
+#: :insurance.review/item-left
+#, ycp-format
+msgctxt ":insurance.review/item-left"
+msgid "%1 item left."
+msgstr "%1 Eintrag übrig."
+
 #: :insurance.review/reviewing-owner
 #, ycp-format
 msgctxt ":insurance.review/reviewing-owner"
@@ -3825,7 +3834,7 @@ msgstr "Instrument hinzufügen"
 #: :instrument.coverage/value
 #, ycp-format
 msgctxt ":instrument.coverage/value"
-msgid "Versicherungswert"
+msgid "Insured value"
 msgstr "Versicherungswert"
 
 #: :instrument.coverage/band
@@ -3857,6 +3866,12 @@ msgstr "Upload abgeschlossen."
 msgctxt ":instrument.coverage/types"
 msgid "Coverage Types"
 msgstr "Versicherungsarten"
+
+#: :instrument.coverage/insurer-id-hint
+#, ycp-format
+msgctxt ":instrument.coverage/insurer-id-hint"
+msgid "Enter the identifier assigned by Harmonia."
+msgstr "Gib die von Harmonia vergebene Kennung ein."
 
 #: :instrument.coverage/upload-help
 #, ycp-format
@@ -5370,6 +5385,37 @@ msgstr "Hintergrund"
 msgctxt ":song/list-title"
 msgid "Repertoire"
 msgstr "Repertoire"
+
+#, ycp-format
+#~ msgctxt ":insurance/item-count-hint"
+#~ msgid ""
+#~ "Wieviele identische Produkte möchtest du versichern (z.B. 1x Trompete/ 4x "
+#~ "Drumsticks…)?"
+#~ msgstr ""
+#~ "Wieviele identische Produkte möchtest du versichern (z.B. 1x Trompete/ 4x "
+#~ "Drumsticks…)?"
+
+#, ycp-format
+#~ msgctxt ":insurance/value"
+#~ msgid "Versicherungswert"
+#~ msgstr "Versicherungswert"
+
+#, ycp-format
+#~ msgctxt ":insurance/value-abbrev"
+#~ msgid "Vers.-Wert"
+#~ msgstr "Vers.-Wert"
+
+#, ycp-format
+#~ msgctxt ":insurance/value-hint"
+#~ msgid ""
+#~ "Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben"
+#~ msgstr ""
+#~ "Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben"
+
+#, ycp-format
+#~ msgctxt ":instrument.coverage/value"
+#~ msgid "Versicherungswert"
+#~ msgstr "Versicherungswert"
 
 #, ycp-format
 #~ msgctxt ":insurance.dashboard/coverage-workbench"

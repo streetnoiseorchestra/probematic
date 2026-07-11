@@ -13,7 +13,8 @@
    [app.ui2.icon :as ico]
    [app.ui2.step-circles :as step-circles]
    [app.urls :as urls]
-   [app.util.http :as http.util]))
+   [app.util.http :as http.util]
+   [clojure.string :as str]))
 
 (defn- query-param [req k]
   (or (get-in req [:params k])
@@ -31,13 +32,27 @@
 (defn- field-error [form-state field]
   (form/field-error form-state field))
 
-(defn- field-attrs [req form-state field]
-  (let [error (field-error form-state field)]
-    {:data-bind      (str "coverage-create." (name field))
-     :data-invalid   (when error "true")
-     :data-on:change (validate-field-action req field)}))
+(defn- hint-id [field]
+  (str (name field) "-hint"))
 
-(defn- field-wrapper [label field form-state & children]
+(defn- error-id [field]
+  (str (name field) "-error"))
+
+(defn- described-by [field hint error]
+  (when-let [ids (seq (remove nil?
+                              [(when hint (hint-id field))
+                               (when error (error-id field))]))]
+    (str/join " " ids)))
+
+(defn- field-attrs [req form-state field hint]
+  (let [error (field-error form-state field)]
+    {:data-bind        (str "coverage-create." (name field))
+     :data-invalid     (when error "true")
+     :aria-invalid     (when error "true")
+     :aria-describedby (described-by field hint error)
+     :data-on:change   (validate-field-action req field)}))
+
+(defn- field-wrapper [label field form-state hint & children]
   (let [error (field-error form-state field)]
     (into
      [:div {:class "insurance-coverage-create-field wa-stack wa-gap-2xs"}
@@ -46,33 +61,40 @@
        label]]
      (concat
       children
-      [(when error
-         [:span {:class "wa-caption-s text-danger"}
+      [(when hint
+         [:small {:id    (hint-id field)
+                  :class "wa-caption-s wa-color-text-quiet"}
+          hint])
+       (when error
+         [:span {:id    (error-id field)
+                 :class "wa-caption-s text-danger"}
           error])]))))
 
-(defn- input-field [req form-state field label value attrs]
+(defn- input-field [req form-state field label value attrs hint]
   (field-wrapper
    label
    field
    form-state
+   hint
    [:input (merge {:id    (name field)
                    :name  (name field)
                    :type  "text"
                    :value (form/text-value value)}
-                  (field-attrs req form-state field)
+                  (field-attrs req form-state field hint)
                   attrs)]))
 
-(defn- textarea-field [req form-state field label value attrs]
+(defn- textarea-field [req form-state field label value attrs hint]
   (field-wrapper
    label
    field
    form-state
+   hint
    [:textarea (merge {:id             (name field)
                       :name           (name field)
                       :class          "insurance-coverage-edit-textarea"
                       :rows           5
                       :data-auto-size "true"}
-                     (field-attrs req form-state field)
+                     (field-attrs req form-state field hint)
                      attrs)
     (form/text-value value)]))
 
@@ -94,11 +116,12 @@
      (tr [:instrument/owner])
      :owner-member-id
      form-state
+     nil
      (into
       [:select (merge {:id       "owner-member-id"
                        :name     "owner-member-id"
                        :required true}
-                      (field-attrs req form-state :owner-member-id))
+                      (field-attrs req form-state :owner-member-id nil))
        (option "" "—" (form/text-value selected))]
       (for [member members]
         (member-option selected member))))))
@@ -111,16 +134,18 @@
 
 (defn- category-select [{:keys [db tr] :as req} form-state]
   (let [selected   (:category-id form-state)
-        categories (queries/instrument-categories db)]
+        categories (queries/instrument-categories db)
+        hint       (tr [:instrument/category-hint])]
     (field-wrapper
      (tr [:instrument/category])
      :category-id
      form-state
+     hint
      (into
       [:select (merge {:id       "category-id"
                        :name     "category-id"
                        :required true}
-                      (field-attrs req form-state :category-id))
+                      (field-attrs req form-state :category-id hint))
        (option "" "—" (form/text-value selected))]
       (for [category categories]
         (category-option selected category))))))
@@ -132,15 +157,26 @@
       :subtitle (tr [:instrument/create-subtitle])
       :divider? true}
      [:div {:class "insurance-coverage-edit-form-grid"}
-      (input-field req form-state :instrument-name (tr [:instrument/name]) (:instrument-name form-state) {:required true})
+      (input-field req form-state :instrument-name (tr [:instrument/name]) (:instrument-name form-state)
+                   {:required true}
+                   (tr [:instrument/name-hint]))
       (member-select req form-state)
       (category-select req form-state)
-      (input-field req form-state :make (tr [:instrument/make]) (:make form-state) {:required true})
-      (input-field req form-state :model (tr [:instrument/model]) (:model form-state) {})
-      (input-field req form-state :serial-number (tr [:instrument/serial-number]) (:serial-number form-state) {})
-      (input-field req form-state :build-year (tr [:instrument/build-year]) (:build-year form-state) {})
+      (input-field req form-state :make (tr [:instrument/make]) (:make form-state)
+                   {:required true}
+                   (tr [:instrument/make-hint]))
+      (input-field req form-state :model (tr [:instrument/model]) (:model form-state)
+                   {}
+                   (str (tr [:instrument/model-hint]) " " (tr [:instrument/if-available])))
+      (input-field req form-state :serial-number (tr [:instrument/serial-number]) (:serial-number form-state)
+                   {}
+                   (tr [:instrument/if-available]))
+      (input-field req form-state :build-year (tr [:instrument/build-year]) (:build-year form-state)
+                   {}
+                   (tr [:instrument/if-available]))
       (textarea-field req form-state :description (tr [:instrument/description]) (:description form-state)
-                      {:class "insurance-coverage-edit-textarea insurance-coverage-edit-wide"})])))
+                      {:class "insurance-coverage-edit-textarea insurance-coverage-edit-wide"}
+                      (tr [:instrument/description-hint]))])))
 
 (defn- breadcrumb [{:keys [tr]} policy]
   [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
@@ -221,7 +257,20 @@
    (top-error-callout form-state)
    (form-actions req policy)])
 
-(defn instrument-page [{:keys [db tr] :as req}]
+(defn instrument-page-content [req policy instrument redirect]
+  (let [tr         (:tr req)
+        policy-id  (:insurance.policy/policy-id policy)
+        form-state (form-state req policy-id redirect instrument)]
+    [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
+     [page-header/PageHeader {:class      "insurance-coverage-page-header"
+                              :breadcrumb (breadcrumb req policy)
+                              :title      (tr [:instrument.coverage/create-title])
+                              :subtitle   (tr [:instrument.coverage/create-subtitle]
+                                              [(:insurance.policy/name policy)])}]
+     (create-steps tr 1)
+     (instrument-form req policy form-state)]))
+
+(defn instrument-page [{:keys [db] :as req}]
   (let [policy-id     (http.util/path-param-uuid! req :policy-id)
         policy        (or (:policy req) (q/retrieve-policy db policy-id))
         instrument-id (http.util/query-param-uuid req :instrument-id)
@@ -238,16 +287,8 @@
                                               :instrument/instrument-id instrument-id}))
 
       :else
-      (let [form-state (form-state req policy-id redirect instrument)]
-        (ui2/datastar-page
-         [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-          [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                                   :breadcrumb (breadcrumb req policy)
-                                   :title      (tr [:instrument.coverage/create-title])
-                                   :subtitle   (tr [:instrument.coverage/create-subtitle]
-                                                   [(:insurance.policy/name policy)])}]
-          (create-steps tr 1)
-          (instrument-form req policy form-state)])))))
+      (ui2/datastar-page
+       (instrument-page-content req policy instrument redirect)))))
 
 (defn- photo-image [instrument-name {:keys [thumbnail full]}]
   [:a {:href   full
@@ -278,6 +319,7 @@
 (defn- photo-upload-section [{:keys [tr] :as req} instrument]
   (let [instrument-id (:instrument/instrument-id instrument)
         input-id      "coverage-create-photo-upload"
+        hint-id       "coverage-create-photo-upload-hint"
         status-id     "coverage-create-photo-upload-status"]
     (ui2/section-card
      {:title    (tr [:instrument/photo-upload])
@@ -290,12 +332,13 @@
                   ::ico/name    :file-image-solid
                   :aria-hidden  true}]
        [:span (tr [:instrument.coverage/upload-drop-label])]
-       [:small (tr [:instrument.coverage/upload-help])]
+       [:small {:id hint-id} (tr [:instrument.coverage/upload-help])]
        [:input {:id                   input-id
                 :type                 "file"
                 :name                 "file"
                 :multiple             true
                 :accept               "image/*"
+                :aria-describedby     hint-id
                 :data-upload-endpoint (urls/link-instrument-image-upload instrument-id)
                 :data-status-id       status-id
                 :data-uploading-label (tr [:instrument.coverage/upload-progress])
@@ -372,5 +415,238 @@
       :else
       (ui2/datastar-page
        (photos-page-content req policy instrument redirect)))))
+
+(defn- coverage-validate-field-action [req field]
+  (str "$coverage-create.validate-field = '"
+       (name field)
+       "'; @post('"
+       (d*/act req ::actions/validate-coverage-field)
+       "')"))
+
+(defn- coverage-field-attrs [req form-state field hint]
+  (let [error (field-error form-state field)]
+    {:data-bind        (str "coverage-create." (name field))
+     :data-invalid     (when error "true")
+     :aria-invalid     (when error "true")
+     :aria-describedby (described-by field hint error)
+     :data-on:change   (coverage-validate-field-action req field)}))
+
+(defn- coverage-input-field [req form-state field label value attrs hint]
+  (field-wrapper
+   label
+   field
+   form-state
+   hint
+   [:input (merge {:id    (name field)
+                   :name  (name field)
+                   :type  "text"
+                   :value (form/text-value value)}
+                  (coverage-field-attrs req form-state field hint)
+                  attrs)]))
+
+(defn- coverage-breadcrumb [{:keys [tr]} policy instrument]
+  [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
+   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    :shield-check-outline}]
+    (tr [:nav/insurance])]
+   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+    (:insurance.policy/name policy)]
+   [breadcrumb/BreadcrumbItem (:instrument/name instrument)]
+   [breadcrumb/BreadcrumbItem (tr [:instrument.coverage/create-step-coverage])]])
+
+(defn- coverage->form [policy instrument redirect]
+  (let [base-type-id (some-> policy
+                             :insurance.policy/coverage-types
+                             first
+                             :insurance.coverage.type/type-id
+                             str)]
+    {:policy-id      (str (:insurance.policy/policy-id policy))
+     :instrument-id  (str (:instrument/instrument-id instrument))
+     :redirect       (form/text-value redirect)
+     :item-count     "1"
+     :value          ""
+     :private-band   "band"
+     :coverage-types (cond-> [] base-type-id (conj base-type-id))
+     :insurer-id     ""
+     :_error         {}}))
+
+(defn- coverage-form-state [{:keys [page-state]} policy instrument redirect]
+  (merge (coverage->form policy instrument redirect)
+         (:coverage-create page-state)))
+
+(defn- coverage-type-change-action [type-id]
+  (let [type-id (str type-id)]
+    (str "if (evt.target.checked) { "
+         "$coverage-create.coverage-types = Array.from(new Set([...$coverage-create.coverage-types, '" type-id "'])); "
+         "} else { "
+         "$coverage-create.coverage-types = $coverage-create.coverage-types.filter((id) => id !== '" type-id "'); "
+         "}")))
+
+(defn- coverage-type-checkbox
+  [selected-type-ids base? {:insurance.coverage.type/keys [type-id name description]}]
+  (let [type-id-str (str type-id)
+        checked?    (or base? (contains? selected-type-ids type-id-str))]
+    [:wa-checkbox (cond-> {:value             type-id-str
+                           :data-attr:checked (str "$coverage-create.coverage-types.includes('" type-id-str "')")}
+                    checked? (assoc :checked true)
+                    base? (assoc :disabled true)
+                    (not base?) (assoc :data-on:change (coverage-type-change-action type-id)))
+     [:span {:class "wa-stack wa-gap-3xs"}
+      [:span name]
+      (when-not (str/blank? (str description))
+        [:small {:class "wa-color-text-quiet"} description])]]))
+
+(defn- coverage-types-field [{:keys [tr]} form-state coverage-types]
+  (let [selected-type-ids (set (:coverage-types form-state))
+        error             (field-error form-state :coverage-types)]
+    [:div {:class     (ui2/cs "insurance-coverage-edit-wide"
+                              "insurance-coverage-edit-choice-list")
+           :data-show "$coverage-create.private-band === 'private'"}
+     [:div {:class "insurance-coverage-edit-field-label"}
+      [:span (tr [:insurance/coverage-types])]
+      (when error
+        [:span {:class "wa-caption-s text-danger"} error])]
+     (into
+      [:div {:class "wa-stack wa-gap-xs"}]
+      (map-indexed (fn [idx coverage-type]
+                     (coverage-type-checkbox selected-type-ids
+                                             (zero? idx)
+                                             coverage-type))
+                   coverage-types))]))
+
+(defn- private-band-field [{:keys [tr] :as req} form-state]
+  (let [error     (field-error form-state :private-band)
+        hint      (tr [:instrument.coverage/private?-hint])
+        on-change (str "$coverage-create.private-band = evt.target.value; "
+                       (coverage-validate-field-action req :private-band))]
+    [:wa-radio-group (cond-> {:label          (tr [:band-private])
+                              :name           "private-band"
+                              :value          (:private-band form-state)
+                              :required       true
+                              :with-hint      true
+                              :data-bind      "coverage-create.private-band"
+                              :data-on:change on-change}
+                       error (assoc :data-invalid "true"))
+     [:span {:slot "hint" :class "wa-stack wa-gap-3xs"}
+      [:span hint]
+      (when error
+        [:span {:class "text-danger"} error])]
+     [:wa-radio {:value "band"}
+      [:span {:class "wa-stack wa-gap-3xs"}
+       [:span (tr [:band-instrument])]
+       [:small {:class "wa-color-text-quiet"}
+        (tr [:band-instrument-description])]]]
+     [:wa-radio {:value "private"}
+      [:span {:class "wa-stack wa-gap-3xs"}
+       [:span (tr [:private-instrument])]
+       [:small {:class "wa-color-text-quiet"}
+        (tr [:private-instrument-description])]]]]))
+
+(defn- instrument-summary [{:keys [tr]} instrument]
+  (ui2/section-card
+   {:title    (tr [:instrument/instrument])
+    :subtitle (:instrument/name instrument)
+    :divider? true}
+   [:dl {:class "particulars wa-grid wa-gap-m"}
+    (ui2/detail-item (tr [:instrument/owner])
+                     (get-in instrument [:instrument/owner :member/name]))
+    (ui2/detail-item (tr [:instrument/category])
+                     (get-in instrument [:instrument/category :instrument.category/name]))
+    (ui2/detail-item (tr [:instrument/make])
+                     (:instrument/make instrument))
+    (ui2/detail-item (tr [:instrument/model])
+                     (:instrument/model instrument))]))
+
+(defn- insurance-team-member? [{:keys [db] :as req}]
+  (q/insurance-team-member? db (get-in req [:session :session/member])))
+
+(defn- coverage-section [{:keys [tr] :as req} policy form-state]
+  (ui2/section-card
+   {:title    (tr [:insurance/instrument-coverage])
+    :subtitle (tr [:insurance/coverage-for] [(:insurance.policy/name policy)])
+    :divider? true}
+   [:div {:class "insurance-coverage-edit-form-grid"}
+    (coverage-input-field req form-state :item-count (tr [:insurance/item-count]) (:item-count form-state)
+                          {:type "number" :min 1 :step 1 :required true}
+                          (tr [:insurance/item-count-hint]))
+    (coverage-input-field req form-state :value (tr [:insurance/value]) (:value form-state)
+                          {:type "number" :min 1 :step 1 :required true}
+                          (tr [:instrument.coverage/value-hint]))
+    (private-band-field req form-state)
+    (when (insurance-team-member? req)
+      (coverage-input-field req form-state :insurer-id (tr [:instrument.coverage/insurer-id]) (:insurer-id form-state)
+                            {} (tr [:instrument.coverage/insurer-id-hint])))
+    (coverage-types-field req form-state (:insurance.policy/coverage-types policy))]))
+
+(defn- coverage-actions [{:keys [tr]} policy-id instrument-id redirect disabled?]
+  (ui2/action-bar
+   {:class "insurance-coverage-edit-actions"}
+   [[button/Button {:appearance "outlined"
+                    :href       (urls/link-coverage-create2 policy-id instrument-id redirect)}
+     (tr [:action/back])]
+    [button/Button (cond-> {:appearance "filled"
+                            :variant    "brand"
+                            :type       "submit"
+                            :form       "coverage-create-coverage-form"
+                            :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
+                            :data-attr:loading  "$loading === 'coverage-create'"}
+                     disabled? (assoc :disabled true))
+     (tr [:action/save])]]))
+
+(defn- no-coverage-types-callout [{:keys [tr]}]
+  [:wa-callout {:appearance "outlined"
+                :variant    "warning"}
+   (tr [:insurance.policy-settings/no-coverage-types])])
+
+(defn- coverage-form [req policy instrument redirect]
+  (let [form-state      (coverage-form-state req policy instrument redirect)
+        coverage-types (:insurance.policy/coverage-types policy)
+        disabled?      (empty? coverage-types)]
+    [:form {:id             "coverage-create-coverage-form"
+            :class          "wa-stack wa-gap-xl"
+            :data-id        "coverage-create"
+            :data-action    (d*/act req ::actions/create-coverage)
+            :data-on:submit "evt.preventDefault();"
+            :data-signals   (d*/->signals {:coverage-create (dissoc form-state :_error)})}
+     (if disabled?
+       (no-coverage-types-callout req)
+       (coverage-section req policy form-state))
+     (top-error-callout form-state)
+     (coverage-actions req
+                       (:insurance.policy/policy-id policy)
+                       (:instrument/instrument-id instrument)
+                       redirect
+                       disabled?)]))
+
+(defn coverage-page-content [req policy instrument redirect]
+  [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
+   [page-header/PageHeader {:class      "insurance-coverage-page-header"
+                            :breadcrumb (coverage-breadcrumb req policy instrument)
+                            :title      ((:tr req) [:instrument.coverage/create-title])
+                            :subtitle   ((:tr req) [:insurance/coverage-for]
+                                                   [(:insurance.policy/name policy)])}]
+   (create-steps (:tr req) 3)
+   (instrument-summary req instrument)
+   (coverage-form req policy instrument redirect)])
+
+(defn coverage-page [{:keys [db instrument] :as req}]
+  (let [policy-id     (http.util/path-param-uuid! req :policy-id)
+        instrument-id (http.util/path-param-uuid! req :instrument-id)
+        policy        (or (:policy req) (q/retrieve-policy db policy-id))
+        instrument    (or instrument (q/retrieve-instrument db instrument-id))
+        redirect      (query-param req :redirect)]
+    (cond
+      (nil? policy)
+      (throw (ex-info "Policy not found" {:app/error-type :app.error.type/not-found
+                                          :insurance.policy/policy-id policy-id}))
+
+      (nil? instrument)
+      (throw (ex-info "Instrument not found" {:app/error-type :app.error.type/not-found
+                                              :instrument/instrument-id instrument-id}))
+
+      :else
+      (ui2/datastar-page
+       (coverage-page-content req policy instrument redirect)))))
 
 (d*/refresh-all!)

@@ -196,6 +196,8 @@
               :editable?                true
               :available-category-names ["Brass" "Woodwind"]
               :row-names                ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
+              :first-row-coverage-types [{:insurance.coverage.type/name "Basic"
+                                          :insurance.coverage.type/cost 0.1M}]
               :groups                   []
               :summary-counts           {:all 5
                                          :todo 2
@@ -216,6 +218,10 @@
               :editable?                (:editable? result)
               :available-category-names (category-names result)
               :row-names                (row-names result)
+              :first-row-coverage-types
+              (mapv #(select-keys % [:insurance.coverage.type/name
+                                     :insurance.coverage.type/cost])
+                    (:coverage-types (first (:rows result))))
               :groups                   (group-summary result)
               :summary-counts           (:summary-counts result)
               :totals                   (select-keys (:totals result)

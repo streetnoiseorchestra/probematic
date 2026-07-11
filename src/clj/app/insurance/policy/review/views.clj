@@ -179,15 +179,26 @@
   (urls/link-policy-workbench policy {:review-filter (get workbench-filter-slugs filter filter)}))
 
 (defn workbench-summary
-  [{:keys [tr]} {:keys [filter policy queue-count]}]
-  [:wa-card {:appearance "plain"
-             :style      "background: var(--wa-color-surface-default);"}
-   [:div {:class "wa-split wa-gap-m"}
-    [:span {:class "wa-font-weight-semibold"}
-     (tr [:insurance.review/items-left] [queue-count])]
-    [:a {:href  (workbench-link policy filter)
-         :style "text-align: end;"}
-     (tr [:insurance.review/see-all-in-workbench])]]])
+  [{:keys [tr]} {:keys [filter policy queue-count totals]}]
+  (let [items-left-key (if (= 1 queue-count)
+                         [:insurance.review/item-left]
+                         [:insurance.review/items-left])]
+    [:wa-card {:appearance "plain"
+               :style      "background: var(--wa-color-surface-default);"}
+     [:div {:class "wa-stack wa-gap-s"}
+      [:div {:class "wa-split wa-gap-m"}
+       [:span {:class                  "wa-font-weight-semibold"
+               :data-review-items-left true}
+        (tr items-left-key [queue-count])]
+       [:a {:href  (workbench-link policy filter)
+            :style "text-align: end;"}
+        (tr [:insurance.review/see-all-in-workbench])]]
+      [:dl {:class                    "wa-cluster wa-gap-xs wa-justify-content-end"
+            :data-review-policy-total true}
+       [:dt {:class "wa-caption-s wa-color-text-quiet"}
+        (tr [:insurance.dashboard/policy-cost])]
+       [:dd {:class "wa-font-weight-semibold"}
+        (ui2/money (:total-cost totals) (:insurance.policy/currency policy))]]]]))
 
 (defn- queue-item
   [{:keys [tr]} policy filter selected coverage]

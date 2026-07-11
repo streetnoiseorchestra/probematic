@@ -31,7 +31,7 @@
   :email-p3
   "Möchtest du genau wissen woraus sich deine Kosten zusammenstellen, kannst du dies im Forum unter folgendem Link nachlesen.",
   :item-count-hint
-  "Wieviele identische Produkte möchtest du versichern (z.B. 1x Trompete/ 4x Drumsticks…)?",
+  "Wie viele identische Produkte möchtest du versichern (z. B. eine Trompete oder vier Drumsticks)?",
   :total-needs-review-tooltip "Insgesamt zu überprüfende Instrumente",
   :coverage-for
   "Die folgenden Informationen sind für die Versicherungspolice '%1'",
@@ -85,6 +85,8 @@
   :confirm-mark-as-title "Als %1 markieren?",
   :create-subtitle "Details zur neuen Versicherungspolice.",
   :effective-until "Gültig bis",
+  :no-private-payments
+  "Für diese Police müssen keine Zahlungen für private Instrumente angefordert werden.",
   :covered-instruments "Instrumente mit Versicherung"},
  :insurance.dashboard
  {:continue-reviewing "Review",
@@ -180,6 +182,7 @@
   :filter-needs-review "Todo",
   :filter-missing-insurer-id "Fehlende ID",
   :items-left "%1 Einträge übrig.",
+  :item-left "%1 Eintrag übrig.",
   :see-all-in-workbench "Alle in der Workbench anzeigen",
   :queue "Warteschlange",
   :empty-title "Keine passenden Versicherungen",
@@ -330,7 +333,7 @@
   :name "Instrumentenname",
   :create-title "Neues Instrument",
   :model-hint "Was ist die Modellnummer?",
-  :description-hint "Z.B. farbe, material",
+  :description-hint "z. B. Farbe oder Material",
   :photo-upload-title "Lade Instrumentenfotos hoch",
   :name-hint "z. B. Trompete, Yamaha oder Mundstück Tenorsax",
   :images-share-url-hint
@@ -753,6 +756,7 @@
   :cost "Kosten",
   :change "Status ändern",
   :insurer-id "Harmonia ID",
+  :insurer-id-hint "Gib die von Harmonia vergebene Kennung ein.",
   :coverage-id "Coverage ID",
   :private?-hint
   "Ist dieses Instrument ein Bandinstrument oder ein Privatinstrument?",

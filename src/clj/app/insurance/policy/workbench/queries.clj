@@ -330,7 +330,13 @@
      :insured-value       insured-value
      :cost                (:instrument.coverage/cost coverage)
      :coverage-type-ids   (set (map :insurance.coverage.type/type-id coverage-types))
-     :coverage-type-names (mapv :insurance.coverage.type/name coverage-types)}))
+     :coverage-type-names (mapv :insurance.coverage.type/name coverage-types)
+     :coverage-types      (mapv #(select-keys
+                                  %
+                                  [:insurance.coverage.type/type-id
+                                   :insurance.coverage.type/name
+                                   :insurance.coverage.type/cost])
+                                coverage-types)}))
 
 (defn- lower
   [value]

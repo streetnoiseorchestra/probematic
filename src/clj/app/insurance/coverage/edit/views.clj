@@ -106,20 +106,24 @@
        (category-option selected category)))))
 
 (defn- private-band-field [{:keys [tr] :as req} form-state]
-  [:wa-radio-group (merge {:label      (tr [:band-private])
-                           :name       "private-band"
-                           :value      (:private-band form-state)
-                           :required   true
-                           :appearance "outlined"}
-                          (validate-select-attrs req form-state :private-band))
-   [:wa-radio {:value "band"}
-    [:span {:class "wa-stack wa-gap-3xs"}
-     [:span (tr [:band-instrument])]
-     [:small {:class "wa-color-text-quiet"} (tr [:band-instrument-description])]]]
-   [:wa-radio {:value "private"}
-    [:span {:class "wa-stack wa-gap-3xs"}
-     [:span (tr [:private-instrument])]
-     [:small {:class "wa-color-text-quiet"} (tr [:private-instrument-description])]]]])
+  (let [attrs (assoc (merge {:label      (tr [:band-private])
+                             :name       "private-band"
+                             :value      (:private-band form-state)
+                             :required   true
+                             :appearance "outlined"}
+                            (validate-select-attrs req form-state :private-band))
+                     :data-on:change
+                     (str "$coverage-edit.private-band = evt.target.value; "
+                          (validate-field-action req :private-band)))]
+    [:wa-radio-group attrs
+     [:wa-radio {:value "band"}
+      [:span {:class "wa-stack wa-gap-3xs"}
+       [:span (tr [:band-instrument])]
+       [:small {:class "wa-color-text-quiet"} (tr [:band-instrument-description])]]]
+     [:wa-radio {:value "private"}
+      [:span {:class "wa-stack wa-gap-3xs"}
+       [:span (tr [:private-instrument])]
+       [:small {:class "wa-color-text-quiet"} (tr [:private-instrument-description])]]]]))
 
 (defn- coverage-type-change-action [type-id]
   (let [type-id (str type-id)]
@@ -267,7 +271,12 @@
     (input (tr [:insurance/value]) "value" (:value form-state) (merge {:type "number" :min 1 :step 1 :required true}
                                                                       (validate-field-attrs req form-state :value)))
     (private-band-field req form-state)
-    (input (tr [:instrument.coverage/insurer-id]) "insurer-id" (:insurer-id form-state) (validate-field-attrs req form-state :insurer-id))
+    (input (tr [:instrument.coverage/insurer-id])
+           "insurer-id"
+           (:insurer-id form-state)
+           (update (validate-field-attrs req form-state :insurer-id)
+                   :hint
+                   #(or % (tr [:instrument.coverage/insurer-id-hint]))))
     (coverage-types-field req form-state (:insurance.policy/coverage-types policy))]))
 
 (defn- remove-dialog-id [{:instrument.coverage/keys [coverage-id]}]

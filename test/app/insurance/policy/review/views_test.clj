@@ -16,6 +16,8 @@
    [:insurance.review/approve-and-next]          "Approve and next"
    [:insurance.review/save-and-continue]         "Save and continue"
    [:insurance.review/items-left]                "%1 items left."
+   [:insurance.review/item-left]                 "%1 item left."
+   [:insurance.dashboard/policy-cost]            "Policy cost"
    [:insurance.review/see-all-in-workbench]      "See all in the workbench"
    [:insurance.review/comments]                  "Comments"
    [:insurance.review/comment-placeholder]       "Add a note about this item."
@@ -50,7 +52,8 @@
 
 (def policy
   {:insurance.policy/policy-id policy-id
-   :insurance.policy/status    :insurance.policy.status/draft})
+   :insurance.policy/status    :insurance.policy.status/draft
+   :insurance.policy/currency  :EUR})
 
 (defn select-attrs
   [selector hiccup]
@@ -144,16 +147,28 @@
                      (l/select 'wa-tab-panel view))))))))
 
 (deftest workbench-summary
-  (testing "The Missing ID review queue contains 23 items."
-    (let [view (sut/workbench-summary
-                {:tr tr}
-                {:policy      policy
-                 :filter      :missing-insurer-id
-                 :queue-count 23})
-          link (l/select-one 'a view)]
-      (testing "The number of remaining items is shown."
-        (is (= "23 items left."
-               (-> (l/select-one 'span view) l/text))))
+  (testing "The review queue summarizes remaining work and known policy costs."
+    (let [singular-view (sut/workbench-summary
+                         {:tr tr}
+                         {:policy      policy
+                          :filter      :needs-review
+                          :queue-count 1
+                          :totals      {:total-cost 0M}})
+          plural-view   (sut/workbench-summary
+                         {:tr tr}
+                         {:policy      policy
+                          :filter      :missing-insurer-id
+                          :queue-count 23
+                          :totals      {:total-cost 12.34M}})
+          link          (l/select-one 'a plural-view)]
+      (testing "Remaining item labels use the correct singular or plural form."
+        (is (= ["1 item left." "23 items left."]
+               (mapv #(-> (l/select-one "[data-review-items-left]" %) l/text)
+                     [singular-view plural-view]))))
+      (testing "The known-cost policy aggregate remains visible."
+        (is (= ["Policy cost 0,00 €" "Policy cost 12,34 €"]
+               (mapv #(-> (l/select-one "[data-review-policy-total]" %) l/text)
+                     [singular-view plural-view]))))
       (testing "The workbench link preserves the active review filter."
         (is (= {:text "See all in the workbench"
                 :href (str "/insurance-policy/" policy-id

@@ -149,8 +149,8 @@
   ;; (tap> {:ms ms :k k})
   (when (seq ms)
     (->> ms
-         (map k)
-         (reduce + 0))))
+         (keep k)
+         (reduce + 0M))))
 
 (defn reconcile-coverage-types [eid existing-type-ids new-type-ids]
   (let [[added removed] (clojure.data/diff (set existing-type-ids)  (set new-type-ids))
@@ -183,21 +183,29 @@
                           (:insurance.coverage.type/premium-factor coverage-type)))) (:instrument.coverage/types coverage))))
 
 (defn update-total-coverage-price
-  "Given a policy and a specific instrument coverage, calculate the total price for the instrument"
+  "Calculates the total insurance cost for `coverage` under `policy`.
+
+  When the policy has no factor for the instrument category, marks the
+  coverage as missing that factor and leaves its cost unavailable."
   [policy {:instrument.coverage/keys [instrument] :as coverage}]
   ;;  value * category factor * premium factor * coverage factor
   (let [category-id (-> instrument :instrument/category :instrument.category/category-id)
-        _  (assert category-id)
-        category-factor (get  (make-category-factor-lookup policy) category-id)
-        ;; _ (tap> {:lookup (make-category-factor-lookup policy) :cat-id category-id})
-        _  (assert category-factor)
-        ;; _ (tap> {:cat-id category-id :cat-fact category-factor :lookup (make-category-factor-lookup policy) :policy policy})
-        premium-factor (-> policy :insurance.policy/premium-factor)
-        coverage  (update-coverage-price category-factor premium-factor coverage)
-        ;; _ (tap> {:cov coverage})
-        total-cost (sum-by (:instrument.coverage/types coverage) :insurance.coverage.type/cost)]
-
-    (assoc coverage :instrument.coverage/cost total-cost)))
+        _           (assert category-id)]
+    (if-let [category-factor (get (make-category-factor-lookup policy) category-id)]
+      (let [premium-factor (-> policy :insurance.policy/premium-factor)
+            coverage       (update-coverage-price category-factor premium-factor coverage)
+            total-cost     (sum-by (:instrument.coverage/types coverage)
+                                   :insurance.coverage.type/cost)]
+        (assoc coverage
+               :instrument.coverage/cost total-cost
+               :instrument.coverage/missing-category-factor? false))
+      (-> coverage
+          (assoc :instrument.coverage/cost nil
+                 :instrument.coverage/missing-category-factor? true)
+          (update :instrument.coverage/types
+                  (fn [coverage-types]
+                    (mapv #(dissoc % :insurance.coverage.type/cost)
+                          coverage-types)))))))
 
 (defn get-coverage-type-from-coverage [instrument-coverage type-id]
   (m/find-first #(= type-id (:insurance.coverage.type/type-id %))

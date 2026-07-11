@@ -25,6 +25,27 @@
   [{:instrument.coverage/keys [insurer-id]}]
   (str/blank? (str insurer-id)))
 
+(defn- coverage-category-id
+  [coverage]
+  (get-in coverage [:instrument.coverage/instrument
+                    :instrument/category
+                    :instrument.category/category-id]))
+
+(defn- missing-category-factor-count
+  [coverages]
+  (->> coverages
+       (filter :instrument.coverage/missing-category-factor?)
+       (keep coverage-category-id)
+       set
+       count))
+
+(defn- insurance-team-member?
+  [db current-member-id]
+  (boolean
+   (when current-member-id
+     (when-let [member (q/retrieve-member db current-member-id)]
+       (q/insurance-team-member? db member)))))
+
 (defn- count-by
   [ks f xs]
   (merge (zipmap ks (repeat 0))
@@ -60,25 +81,29 @@
        (mapv recent-change-item)))
 
 (defn policy-dashboard
-  [db policy-id]
-  (let [policy            (q/retrieve-policy db policy-id)
-        coverages         (enriched-coverages policy)
-        band-coverages    (filterv (complement :instrument.coverage/private?) coverages)
-        private-coverages (filterv :instrument.coverage/private? coverages)
-        total-instruments (count coverages)]
-    {:policy         policy
-     :coverages      coverages
-     :totals         {:total-instruments        total-instruments
-                      :total-insured-value      (reduce + 0M (map coverage-insured-value coverages))
-                      :total-cost               (coverage-cost-total coverages)
-                      :missing-photo-count      (count (filter missing-photo? coverages))
-                      :missing-insurer-id-count (count (filter missing-insurer-id? coverages))
-                      :private-count (+ 0 (count private-coverages))
-                      :band-count               (count band-coverages)
-                      :private-cost             (coverage-cost-total private-coverages)
-                      :band-cost                (coverage-cost-total band-coverages)}
-     :status-counts  (count-by domain/instrument-coverage-statuses :instrument.coverage/status coverages)
-     :change-counts  (count-by domain/instrument-coverage-changes :instrument.coverage/change coverages)
-     :recent-changes (recent-changes coverages)}))
+  ([db policy-id]
+   (policy-dashboard db policy-id {}))
+  ([db policy-id {:keys [current-member-id]}]
+   (let [policy            (q/retrieve-policy db policy-id)
+         coverages         (enriched-coverages policy)
+         band-coverages    (filterv (complement :instrument.coverage/private?) coverages)
+         private-coverages (filterv :instrument.coverage/private? coverages)
+         total-instruments (count coverages)]
+     {:policy                  policy
+      :coverages               coverages
+      :insurance-team-member? (insurance-team-member? db current-member-id)
+      :totals                  {:total-instruments             total-instruments
+                                :total-insured-value           (reduce + 0M (map coverage-insured-value coverages))
+                                :total-cost                    (coverage-cost-total coverages)
+                                :missing-photo-count           (count (filter missing-photo? coverages))
+                                :missing-insurer-id-count      (count (filter missing-insurer-id? coverages))
+                                :missing-category-factor-count (missing-category-factor-count coverages)
+                                :private-count                 (+ 0 (count private-coverages))
+                                :band-count                    (count band-coverages)
+                                :private-cost                  (coverage-cost-total private-coverages)
+                                :band-cost                     (coverage-cost-total band-coverages)}
+      :status-counts           (count-by domain/instrument-coverage-statuses :instrument.coverage/status coverages)
+      :change-counts           (count-by domain/instrument-coverage-changes :instrument.coverage/change coverages)
+      :recent-changes          (recent-changes coverages)})))
 
 (d*/refresh-all!)

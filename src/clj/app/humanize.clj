@@ -12,7 +12,7 @@
      :seconds.ago "%1 seconds ago"
      :minute.ago "a minute ago"
      :minutes.ago "%1 minutes ago"
-     :hour.ago "a hour ago"
+     :hour.ago "an hour ago"
      :hours.ago "%1 hours ago"
      :day.ago "a day ago"
      :days.ago "%1 days ago"

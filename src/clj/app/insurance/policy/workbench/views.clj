@@ -1405,20 +1405,32 @@
                        :placement     "top"
                        :without-arrow true}
           label]])
-      [[:span label]])))
+      [[:span {:data-workbench-coverage-type-label true} label]])))
+
+(defn- coverage-type-with-cost
+  [currency coverage-id index {:insurance.coverage.type/keys [name cost]}]
+  (when-let [label (coverage-type-label name)]
+    (into [:span {:class "wa-cluster wa-gap-2xs"}]
+          (concat
+           (coverage-type-token coverage-id index label)
+           [[:span {:class                             "wa-caption-s"
+                    :data-workbench-coverage-type-cost true}
+             (ui2/money cost currency)]]))))
 
 (defn- coverage-type-icons
-  [coverage-id coverage-type-names]
-  (->> coverage-type-names
-       (keep coverage-type-label)
-       (map-indexed #(coverage-type-token coverage-id %1 %2))
-       (mapcat identity)
+  [currency coverage-id coverage-types]
+  (->> coverage-types
+       (map-indexed #(coverage-type-with-cost currency coverage-id %1 %2))
+       (remove nil?)
        seq))
 
 (defn row-cell-content
   [{:keys [tr]} currency row column-id]
-  (let [{:keys [category-name coverage-id coverage-type-names harmonia-id instrument-name
-                missing-insurer-id? missing-photo? photo-count private? insured-value cost]} row]
+  (let [{:keys [category-name coverage-id coverage-type-names coverage-types harmonia-id instrument-name
+                missing-insurer-id? missing-photo? photo-count private? insured-value cost]} row
+        coverage-types (or (seq coverage-types)
+                           (map (fn [name] {:insurance.coverage.type/name name})
+                                coverage-type-names))]
     (case column-id
       :selection
       [:wa-checkbox (merge {:aria-label (tr [:insurance.workbench/select-row])}
@@ -1456,7 +1468,7 @@
       (ui2/money cost currency)
 
       :coverage-types
-      (coverage-type-icons coverage-id coverage-type-names)
+      (coverage-type-icons currency coverage-id coverage-types)
 
       :actions
       (row-actions {:tr tr} coverage-id))))
@@ -1473,8 +1485,62 @@
    (into [:tr attrs]
          (row-cells req currency columns row))))
 
+(def ^:private flat-footer-total-columns
+  #{:value :cost})
+
+(defn- flat-footer-cell-attrs
+  [edge kind]
+  (cond-> {:class "insurance-workbench-member-footer-cell"}
+    edge (assoc :data-workbench-member-footer-edge (name edge))
+    kind (assoc :data-workbench-member-footer-cell (name kind))))
+
+(defn- flat-footer-total-cell
+  [{:keys [tr]} currency totals {:keys [id]}]
+  (case id
+    :value
+    [:td (merge {:title      (tr [:insurance/value])
+                 :aria-label (tr [:insurance/value])}
+                (flat-footer-cell-attrs nil :total-value))
+     (ui2/money (:total-insured-value totals) currency)]
+
+    :cost
+    [:td (merge {:title      (tr [:insurance/cost])
+                 :aria-label (tr [:insurance/cost])}
+                (flat-footer-cell-attrs nil :total-value))
+     (ui2/money (:total-cost totals) currency)]))
+
+(defn- flat-footer-row
+  [{:keys [tr] :as req} currency columns totals]
+  (let [columns       (vec columns)
+        total-indexes (keep-indexed (fn [idx {:keys [id]}]
+                                      (when (contains? flat-footer-total-columns id)
+                                        idx))
+                                    columns)]
+    (into [:tr {:data-workbench-flat-footer true}]
+          (if (seq total-indexes)
+            (let [first-total-idx (first total-indexes)
+                  last-total-idx  (last total-indexes)
+                  trailing-count  (- (count columns) (inc last-total-idx))]
+              (concat
+               (when (pos? first-total-idx)
+                 [[:th (assoc (flat-footer-cell-attrs :start :total-label)
+                              :scope "row"
+                              :colspan first-total-idx)
+                   [:strong {:class "wa-caption-s wa-color-text-quiet"}
+                    (tr [:insurance/total])]]])
+               (for [idx total-indexes]
+                 (flat-footer-total-cell req currency totals (nth columns idx)))
+               (when (pos? trailing-count)
+                 [[:td (assoc (flat-footer-cell-attrs :end :spacer)
+                              :colspan trailing-count)]])))
+            [[:th (assoc (flat-footer-cell-attrs :start :total-label)
+                         :scope "row"
+                         :colspan (count columns))
+              [:strong {:class "wa-caption-s wa-color-text-quiet"}
+               (tr [:insurance/total])]]]))))
+
 (defn flat-table
-  [req {:keys [filters policy rows table view]}]
+  [req {:keys [filters policy rows table totals view]}]
   (let [currency     (:insurance.policy/currency policy)
         coverage-ids (mapv :coverage-id rows)
         columns      (table-columns-for (:group filters) view table)]
@@ -1482,7 +1548,9 @@
      [:table {:class "wa-table leading-condensed"}
       (table-headings (:tr req) columns coverage-ids)
       (into [:tbody]
-            (map #(coverage-row req currency columns %) rows))])))
+            (map #(coverage-row req currency columns %) rows))
+      [:tfoot
+       (flat-footer-row req currency columns totals)]])))
 
 (defn- member-group-id
   [{:keys [member-id member-label]}]

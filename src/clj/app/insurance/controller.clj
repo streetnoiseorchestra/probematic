@@ -707,28 +707,51 @@
        (filter #(> (:total-needs-review %) 0))))
 
 (defn build-data-notification-table [{:keys [db] :as req}]
-  (let [policy-id (util.http/path-param-uuid! req :policy-id)
-        {:insurance.policy/keys [effective-at effective-until] :as  policy} (q/retrieve-policy db policy-id)
+  (let [policy-id       (util.http/path-param-uuid! req :policy-id)
+        {:insurance.policy/keys [effective-at effective-until] :as policy}
+        (q/retrieve-policy db policy-id)
         grouped-by-owner (coverages-grouped-by-owner policy)]
-    {:policy policy
-     :time-range (format "%s - %s" (t/year effective-at) (t/year effective-until))
+    {:policy      policy
+     :time-range  (format "%s - %s" (t/year effective-at) (t/year effective-until))
      :sender-name (:member/name (auth/get-current-member req))
-     :members-data (->> grouped-by-owner
-                        (map (fn [{:member/keys [name member-id] :keys [coverages total] :as member}]
-                               (let [private-coverages (filter :instrument.coverage/private? coverages)
-                                     private-cost-total-decimal (reduce + (map :instrument.coverage/cost private-coverages))
-                                     private-cost-total (-> private-cost-total-decimal
-                                                            (double)
-                                                            (* 100)
-                                                            (Math/round)
-                                                            (int))]
-                                 (when (seq private-coverages)
-                                   {:member member
-                                    :private-coverages private-coverages
-                                    :count-private (count private-coverages)
-                                    :private-cost-total private-cost-total}))))
+     :members-data
+     (->> grouped-by-owner
+          (map (fn [{:keys [coverages] :as member}]
+                 (let [private-coverages              (filterv :instrument.coverage/private? coverages)
+                       unavailable-private-coverages  (filterv :instrument.coverage/missing-category-factor?
+                                                               private-coverages)
+                       unavailable-private-cost-count (count unavailable-private-coverages)
+                       private-cost-total-decimal     (or (domain/sum-by private-coverages
+                                                                         :instrument.coverage/cost)
+                                                          0M)
+                       private-cost-total             (-> private-cost-total-decimal
+                                                          (double)
+                                                          (* 100)
+                                                          (Math/round)
+                                                          (int))
+                       missing-category-names         (->> unavailable-private-coverages
+                                                           (keep #(get-in % [:instrument.coverage/instrument
+                                                                             :instrument/category
+                                                                             :instrument.category/name]))
+                                                           distinct
+                                                           sort
+                                                           vec)]
+                   (when (seq private-coverages)
+                     {:member                         member
+                      :private-coverages              private-coverages
+                      :count-private                  (count private-coverages)
+                      :private-cost-total             private-cost-total
+                      :unavailable-private-cost-count unavailable-private-cost-count
+                      :private-costs-available?       (zero? unavailable-private-cost-count)
+                      :missing-category-names         missing-category-names}))))
+          (util/remove-nils))}))
 
-                        (util/remove-nils))}))
+(defn select-notification-members
+  [members-data member-ids]
+  (let [selected (filterv #(member-ids (get-in % [:member :member/member-id]))
+                          members-data)]
+    {:to-send     (filterv :private-costs-available? selected)
+     :unavailable (filterv (complement :private-costs-available?) selected)}))
 
 (defn member-debited-for-policy? [db policy-id member-id]
   (let [existing-entries (q/ledger-entry-debit-for-policy db member-id policy-id)]
@@ -750,23 +773,30 @@
        (remove #(member-debited-for-policy? db policy-id (-> % :member :member/member-id)))
        (reduce #(concat %1 (txs-new-transaction-for-member db policy-id policy-name %2)) (list))))
 
-(defn send-notifications! [{:keys [db] :as req}]
+(defn send-notifications! [{:keys [tr] :as req}]
   (let [{:keys [policy time-range members-data sender-name]} (build-data-notification-table req)
-        policy-id (util.http/path-param-uuid! req :policy-id)
-        params (util.http/unwrap-params req)
-        member-ids (set (map util/ensure-uuid! (util/ensure-coll (:member-ids params))))
-        to-send (filter #(member-ids (-> % :member :member/member-id))
-                        members-data)
-        tx-data (prepare-new-transaction-txs req policy-id (:insurance.policy/name policy) to-send)]
-    ;; (tap> [:to-send to-send :tx-data tx-data])
-    (try
-      (let [result (d/transact-wrapper! req {:tx-data tx-data})]
-        (email/send-insurance-debt-notifications! req sender-name time-range to-send)
-        {:count-sent (count to-send) :policy policy})
-      (catch Exception e
-        (tap> e)
-        (errors/report-error! e)
-        {:error "Failed to send notifications" :ex e}))))
+        policy-id    (util.http/path-param-uuid! req :policy-id)
+        params       (util.http/unwrap-params req)
+        member-ids   (set (map util/ensure-uuid! (util/ensure-coll (:member-ids params))))
+        {:keys [to-send unavailable]} (select-notification-members members-data member-ids)]
+    (if (seq unavailable)
+      {:error  (tr [:insurance.policy-settings/missing-category-factors-body]
+                   [(->> unavailable
+                         (mapcat :missing-category-names)
+                         distinct
+                         sort
+                         (str/join ", "))])
+       :policy policy}
+      (let [tx-data (prepare-new-transaction-txs req policy-id (:insurance.policy/name policy) to-send)]
+        ;; (tap> [:to-send to-send :tx-data tx-data])
+        (try
+          (d/transact-wrapper! req {:tx-data tx-data})
+          (email/send-insurance-debt-notifications! req sender-name time-range to-send)
+          {:count-sent (count to-send) :policy policy}
+          (catch Exception e
+            (tap> e)
+            (errors/report-error! e)
+            {:error "Failed to send notifications" :ex e}))))))
 
 (defn report-belongs-to-current? [req report]
   (let [current-member (auth/get-current-member req)

@@ -304,6 +304,10 @@
                                       :app.insurance.routes/coverage-create-photos)
     (is (= (str "/insurance-coverage-create3/" policy-id "/" instrument-id)
            (urls/link-coverage-create3 policy-id instrument-id)))
+    (assert-slashless-canonical-route router
+                                      (urls/link-coverage-create3 policy-id instrument-id)
+                                      (str (urls/link-coverage-create3 policy-id instrument-id) "/")
+                                      :app.insurance.routes/coverage-create-coverage)
     (is (= :app/instrument.coverage
            (app-route-name router (str "/insurance-coverage/" coverage-id "/"))))
     (is (= :app.insurance.routes/coverage-detail

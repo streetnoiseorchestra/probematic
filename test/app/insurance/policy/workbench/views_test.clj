@@ -119,6 +119,14 @@
   {:category-name       "Strings"
    :coverage-id         coverage-id
    :coverage-type-names ["Grundschutz" "Nachzeit im Auto" "Proberaum" "Basic"]
+   :coverage-types      [{:insurance.coverage.type/name "Grundschutz"
+                          :insurance.coverage.type/cost 1M}
+                         {:insurance.coverage.type/name "Nachzeit im Auto"
+                          :insurance.coverage.type/cost 2M}
+                         {:insurance.coverage.type/name "Proberaum"
+                          :insurance.coverage.type/cost 3M}
+                         {:insurance.coverage.type/name "Basic"
+                          :insurance.coverage.type/cost nil}]
    :harmonia-id         "H-123"
    :instrument-name     "Violin"
    :member-id           member-id
@@ -491,23 +499,26 @@
                                   :label (:aria-label attrs)}))
                              (l/select "[data-workbench-status-icon]" status-view))
                 :tooltips (mapv l/text (l/select 'wa-tooltip status-view))})))
-      (testing "Known coverage types use labelled icons and unknown types keep their label."
-        (is (= {:icons [{:kind "grundschutz" :label "Grundschutz"}
-                        {:kind "nachzeit-im-auto" :label "Nachzeit im Auto"}
-                        {:kind "proberaum" :label "Proberaum"}]
+      (testing "Coverage types keep their labels and expose each known or unavailable cost."
+        (is (= {:icons    [{:kind "grundschutz" :label "Grundschutz"}
+                           {:kind "nachzeit-im-auto" :label "Nachzeit im Auto"}
+                           {:kind "proberaum" :label "Proberaum"}]
                 :tooltips ["Grundschutz" "Nachzeit im Auto" "Proberaum"]
-                :unknown ["Basic"]}
-               {:icons (mapv (fn [icon]
-                               (let [attrs (l/attrs icon)]
-                                 {:kind  (:data-workbench-coverage-type-icon attrs)
-                                  :label (:aria-label attrs)}))
-                             (l/select "[data-workbench-coverage-type-icon]"
-                                       coverage-view))
+                :unknown  ["Basic"]
+                :costs    ["1,00 €" "2,00 €" "3,00 €" "&mdash;"]}
+               {:icons    (mapv (fn [icon]
+                                  (let [attrs (l/attrs icon)]
+                                    {:kind  (:data-workbench-coverage-type-icon attrs)
+                                     :label (:aria-label attrs)}))
+                                (l/select "[data-workbench-coverage-type-icon]"
+                                          coverage-view))
                 :tooltips (mapv l/text (l/select 'wa-tooltip coverage-view))
-                :unknown (->> (l/select 'span coverage-view)
-                              (map l/text)
-                              (remove str/blank?)
-                              vec)}))))))
+                :unknown  (mapv l/text
+                                (l/select "[data-workbench-coverage-type-label]"
+                                          coverage-view))
+                :costs    (mapv l/text
+                                (l/select "[data-workbench-coverage-type-cost]"
+                                          coverage-view))}))))))
 
 (deftest table-columns
   (testing "The server chooses visible columns from the active view and overrides."
@@ -532,6 +543,25 @@
                         :missing-id
                         {:columns-by-view {:missing-id {:harmonia-id false}}}
                         [row])))))))
+
+(deftest flat-table-total
+  (testing "The ungrouped table includes a known-cost aggregate."
+    (let [table (sut/flat-table
+                 {:tr tr}
+                 {:view    :all
+                  :filters {:group :none}
+                  :table   nil
+                  :policy  policy
+                  :rows    [row]
+                  :totals  {:total-insured-value 1000M
+                            :total-cost          12.34M}})]
+      (is (= {:label  "Total"
+              :values ["1.000,00 €" "12,34 €"]}
+             {:label  (-> (l/select-one '[tfoot th] table) l/text)
+              :values (->> (l/select '[tfoot td] table)
+                           (map l/text)
+                           (remove str/blank?)
+                           vec)})))))
 
 (deftest row-selection
   (testing "The table contains two selectable coverage rows."

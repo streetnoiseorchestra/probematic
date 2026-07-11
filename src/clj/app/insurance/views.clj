@@ -1954,26 +1954,42 @@ document.addEventListener('DOMContentLoaded', function() {
         [:a {:class "link-blue" :href (urls/link-policy policy)} "Back to Insurance"]]])))
 
 (ctmx/defcomponent ^:endpoint insurance-notify-page [{:keys [db tr] :as req}]
-  (let [{:keys [policy sender-name members-data time-range]} (controller/build-data-notification-table req)]
+  (let [{:keys [policy sender-name members-data time-range]} (controller/build-data-notification-table req)
+        available-members-data (filterv :private-costs-available? members-data)
+        missing-category-names (->> members-data
+                                    (mapcat :missing-category-names)
+                                    distinct
+                                    sort
+                                    vec)
+        selectable? (seq available-members-data)]
     [:div {:id :comp/insurance-notify-page}
      (breadcrumb-payments tr policy)
      (ui/panel {:title (tr [:insurance/request-payments-title])
                 :subtitle (tr [:insurance/request-payments-subtitle])}
                [:form {:class "max-w-xl" :hx-post (util/endpoint-path insurance-send-notifications) :tx-target (util/hash :comp/insurance-notify-page)}
+                (when (seq missing-category-names)
+                  [:p {:class "mb-4 text-sm text-red-700"}
+                   (tr [:insurance.policy-settings/missing-category-factors-body]
+                       [(str/join ", " missing-category-names)])])
+                (when-not (seq members-data)
+                  [:p {:class                         "rounded-md bg-gray-100 px-4 py-3 text-sm text-gray-700"
+                       :data-insurance-payments-empty true}
+                   (tr [:insurance/no-private-payments])])
                 [:table {:class "table-auto w-full"}
                  [:thead
                   [:th {:class "text-left px-2"}
                    [:input {:type "checkbox" :id "instr-select-all"
-                            :checked "true"
+                            :checked (when selectable? "true")
+                            :disabled (not selectable?)
                             :_ (format "on checkboxChanged
-                     if length of <tbody.instrgrid--body input[type=checkbox]:checked/> == length of <tbody.instrgrid--body input[type=checkbox]/>
+                     if length of <tbody.instrgrid--body input[type=checkbox]:not(:disabled):checked/> == length of <tbody.instrgrid--body input[type=checkbox]:not(:disabled)/>
                           log \"some\"
                          set my.indeterminate to false
                          then set my.checked to true
                          then set #send-payment@disabled to null
                      else
                        log \"not all\"
-                       if length of <tbody.instrgrid--body input[type=checkbox]:checked/> > 0
+                       if length of <tbody.instrgrid--body input[type=checkbox]:not(:disabled):checked/> > 0
                          set my.indeterminate to true
                          then set #send-payment@disabled to null
                        else
@@ -1982,43 +1998,61 @@ document.addEventListener('DOMContentLoaded', function() {
                          then set #send-payment@disabled to true
                        end
                      end
-                     on click set the checked of <tbody.instrgrid--body input[type=checkbox]/> to my.checked
-                       then if length of <tbody.instrgrid--body input[type=checkbox]:checked/> == length of <tbody.instrgrid--body input[type=checkbox]/>
+                     on click set the checked of <tbody.instrgrid--body input[type=checkbox]:not(:disabled)/> to my.checked
+                       then if length of <tbody.instrgrid--body input[type=checkbox]:not(:disabled):checked/> == length of <tbody.instrgrid--body input[type=checkbox]:not(:disabled)/>
                             set my.checked to true
                             end
                        then trigger checkboxChanged on me")
                             :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"}]]
-
                   [:th {:class "text-left px-2"} "Member"]
                   [:th {:class "text-right px-2 max-w-32 text-pretty"} (str "# " (tr [:private-instruments]))]
                   [:th {:class "text-right"} (tr [:total])]]
                  [:tbody {:class "instrgrid--body"}
-                  (map (fn [{:keys [member private-cost-total count-private]}]
-                         (let [{:member/keys [name member-id]} member]
-                           [:tr {:class "odd:bg-gray-200 even:bg-white"}
+                  (map (fn [{:keys [member private-cost-total count-private
+                                    private-costs-available? missing-category-names]}]
+                         (let [{:member/keys [member-id]} member
+                               unavailable-message (when-not private-costs-available?
+                                                     (tr [:insurance.policy-settings/missing-category-factors-body]
+                                                         [(str/join ", " missing-category-names)]))]
+                           [:tr {:class "odd:bg-gray-200 even:bg-white"
+                                 :title unavailable-message}
                             [:td {:class "px-2"}
                              [:input {:type "checkbox" :id "foo" :name "member-ids" :class "h-4 w-4 rounded-sm border-gray-300 text-sno-orange-600 focus:ring-sno-orange-500"
                                       :value (str member-id)
-                                      :checked "true"
+                                      :checked (when private-costs-available? "true")
+                                      :disabled (not private-costs-available?)
                                       :_ "on click trigger checkboxChanged on #instr-select-all"}]]
                             [:td {:class "text-left px-2 py-1"} (ui/member member (urls/link-policy-table-member policy member))]
                             [:td {:class "text-right px-2"} count-private]
-                            [:td {:class "text-right px-2"} (ui/money-cents private-cost-total :EUR)]]))
-
+                            [:td {:class "text-right px-2"}
+                             (if private-costs-available?
+                               (ui/money-cents private-cost-total :EUR)
+                               "—")]]))
                        members-data)]]
-                [:div {:class "mt-4"}
-                 [:p "Example of what the email will look like:"]
-                 [:div {:class "bg-gray-200 px-8 py-1  rounded-md prose"}
-                  (email/render-insurance-debt-email-template req sender-name time-range (second members-data))]]
+                (when-let [sample-data (first available-members-data)]
+                  [:div {:class "mt-4"}
+                   [:p "Example of what the email will look like:"]
+                   [:div {:class "bg-gray-200 px-8 py-1  rounded-md prose"}
+                    (email/render-insurance-debt-email-template req sender-name time-range sample-data)]])
                 [:div {:class "mt-4 text-right"}
                  [:input {:type :hidden :name "dummy" :value "dummy"}]
                  (ui/button :label (tr [:insurance/send-payment-notifications])
                             :id "send-payment"
                             :icon icon/envelope
-                            :priority :primary)]])]))
+                            :priority :primary
+                            :disabled? (not selectable?))]])]))
+
+(defn- money-format-or-unavailable
+  [value currency]
+  (if (some? value)
+    (ui/money-format value currency)
+    "—"))
 
 (defn band-or-private-bubble [tr private?]
-  (ui/bool-bubble (not private?) {true "Band" false "Privat"}))
+  (ui/bool-bubble
+   (not private?)
+   {true  (tr [:insurance.workbench/ownership-band])
+    false (tr [:insurance.workbench/ownership-private])}))
 
 (defn kw->hint [kw]
   (keyword (namespace kw) (str (name kw) "-hint")))
@@ -2052,8 +2086,9 @@ document.addEventListener('DOMContentLoaded', function() {
                  (when private?
                    (make-detail :instrument.coverage/cost
                                 (if private?
-                                  [:span  {:class "text-red-600 tooltip underline decoration-dashed" :data-tooltip (tr [:instrument.coverage/cost-hint-direct])} (ui/money-format cost :EUR)]
-                                  (ui/money-format cost :EUR))))
+                                  [:span {:class "text-red-600 tooltip underline decoration-dashed" :data-tooltip (tr [:instrument.coverage/cost-hint-direct])}
+                                   (money-format-or-unavailable cost :EUR)]
+                                  (money-format-or-unavailable cost :EUR))))
                  (make-detail :instrument.coverage/value (ui/money-format value :EUR))
                  (make-detail :instrument.coverage/item-count (or item-count 1))
                  (make-detail :instrument.coverage/types (str/join ", " (map :insurance.coverage.type/name types)))
@@ -2104,13 +2139,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                          (fn [{:keys [active-report]}]
                                            (let [coverage (:insurance.survey.report/coverage active-report)
                                                  cost (:instrument.coverage/cost coverage)]
-                                             (tr [:insurance.survey/keep-insured-private-cost] [(ui/money-format cost :EUR)])))]}
+                                             (tr [:insurance.survey/keep-insured-private-cost] [(money-format-or-unavailable cost :EUR)])))]}
                 :answers [{:label (tr [:insurance.survey/no-stop]) :icon icon/xmark :next-flow-key :confirm-private-removal}
                           {:label (tr [:insurance.survey/yes-pay]) :icon icon/checkmark :next-flow-key :data-check :vals {:decisions [:confirm-keep-insured]}}]}
    :confirm-go-private {:question {:primary (fn [{:keys [active-report]}]
                                               (let [coverage (:insurance.survey.report/coverage active-report)
                                                     cost (:instrument.coverage/cost coverage)]
-                                                (tr [:insurance.survey/pay-cost-confirm] [(ui/money-format cost :EUR)])))}
+                                                (tr [:insurance.survey/pay-cost-confirm] [(money-format-or-unavailable cost :EUR)])))}
                         :answers [{:label (tr [:insurance.survey/no]) :next-flow-key :go-private}
                                   {:label (tr [:insurance.survey/yes-pay]) :next-flow-key :data-check :vals {:decisions [:confirm-keep-insured]}}]}
    :data-check {:question {:primary  (tr [:insurance.survey/data-correct])

@@ -74,7 +74,8 @@
 (defn default-exception-handler
   [^Exception _e _]
   {:status  500
-   :headers {"Content-Type"           "text/plain"}
+   :headers {"Content-Type"           "text/plain"
+             "App-Exception" "default-exception-handler"}
    :body    "Internal server error"})
 
 (defn default-not-found-handler
@@ -94,7 +95,8 @@
 
 (defn request-parsing-handler [e _]
   {:status  400
-   :headers {"Content-Type" "text/plain"}
+   :headers {"Content-Type" "text/plain"
+             "App-Exception" "request-parsing-handler"}
    :body    (str "Malformed " (-> e ex-data :format pr-str) " request")})
 
 (def default-exception-handlers

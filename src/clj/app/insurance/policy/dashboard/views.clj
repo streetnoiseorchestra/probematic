@@ -319,7 +319,10 @@
   [{:label-key [:insurance.dashboard/missing-photos]
     :count-key :missing-photo-count}
    {:label-key [:insurance.dashboard/missing-insurer-ids]
-    :count-key :missing-insurer-id-count}])
+    :count-key :missing-insurer-id-count}
+   {:label-key     [:insurance.policy-settings/missing-category-factors-title]
+    :count-key     :missing-category-factor-count
+    :settings-link? true}])
 
 (defn- health-check-icon
   [healthy?]
@@ -338,15 +341,19 @@
   (zero? (get totals count-key 0)))
 
 (defn- health-check-row
-  [tr totals {:keys [count-key label-key] :as check}]
+  [tr totals policy insurance-team-member? {:keys [count-key label-key settings-link?] :as check}]
   (let [count    (get totals count-key 0)
-        healthy? (health-check-passed? totals check)]
+        healthy? (health-check-passed? totals check)
+        label    (tr label-key)
+        label    (if (and settings-link? insurance-team-member? (pos? count))
+                   [:a {:href (urls/link-policy-settings policy)} label]
+                   label)]
     (dashboard-row (health-check-icon healthy?)
-                   (tr label-key)
+                   label
                    count)))
 
 (defn health-checklist-section
-  [{:keys [tr] :as req} {:keys [policy totals]}]
+  [{:keys [tr] :as req} {:keys [insurance-team-member? policy totals]}]
   (let [total        (count health-checks)
         passed       (count (filter #(health-check-passed? totals %) health-checks))
         passed-label (tr [:insurance.dashboard/health-checks-complete] [passed total])]
@@ -356,7 +363,7 @@
             :header-actions (policy-review-action req policy)}
            (concat
             (divided-rows
-             (map #(health-check-row tr totals %) health-checks))
+             (map #(health-check-row tr totals policy insurance-team-member? %) health-checks))
             [[:div {:class "wa-caption-s wa-text-end"}
               passed-label]]))))
 
@@ -520,7 +527,7 @@
                (coverage-mix-caption tr (:private-count totals) (:private-cost totals) currency))])))))
 
 (defn- change-row
-  [tr {:keys [change coverage instrument-name owner-name]}]
+  [tr currency {:keys [change coverage instrument-name owner-name]}]
   (let [color (insurance-ui/change-color change)]
     [:div {:class "wa-flank"}
      (legend-marker (or color "var(--wa-color-neutral-fill-loud)"))
@@ -528,18 +535,25 @@
       [:div {:class "wa-stack wa-gap-3xs" :style "min-inline-size: 0;"}
        [:a {:href (urls/link-coverage coverage)} instrument-name]
        [:span {:class "wa-caption-s wa-color-text-quiet"} owner-name]]
-      (insurance-ui/change-badge tr change)]]))
+      [:div {:class "wa-stack wa-gap-3xs wa-align-items-end"}
+       [:dl {:class                        "wa-cluster wa-gap-2xs"
+             :data-dashboard-coverage-cost true}
+        [:dt {:class "wa-caption-s wa-color-text-quiet"}
+         (tr [:instrument.coverage/cost])]
+        [:dd (ui2/money (:instrument.coverage/cost coverage) currency)]]
+       (insurance-ui/change-badge tr change)]]]))
 
 (defn- recent-changes-section
-  [{:keys [tr]} {:keys [recent-changes]}]
-  (apply dashboard-card
-         {:title    (tr [:insurance.dashboard/recent-changes])
-          :subtitle (tr [:insurance.dashboard/recent-changes-subtitle])}
-         (if (seq recent-changes)
-           (divided-rows
-            (map #(change-row tr %) (take 8 recent-changes)))
-           [[:div {:class "wa-caption-s wa-color-text-quiet"}
-             (tr [:insurance.dashboard/no-recent-changes])]])))
+  [{:keys [tr]} {:keys [policy recent-changes]}]
+  (let [currency (:insurance.policy/currency policy)]
+    (apply dashboard-card
+           {:title    (tr [:insurance.dashboard/recent-changes])
+            :subtitle (tr [:insurance.dashboard/recent-changes-subtitle])}
+           (if (seq recent-changes)
+             (divided-rows
+              (map #(change-row tr currency %) (take 8 recent-changes)))
+             [[:div {:class "wa-caption-s wa-color-text-quiet"}
+               (tr [:insurance.dashboard/no-recent-changes])]]))))
 
 (defn policy-settings-action
   [{:keys [tr]} policy]
@@ -571,7 +585,10 @@
 
 (defn page
   [{:keys [db] :as req}]
-  (let [dashboard (queries/policy-dashboard db (policy-id req))
+  (let [dashboard (queries/policy-dashboard
+                   db
+                   (policy-id req)
+                   {:current-member-id (get-in req [:session :session/member :member/member-id])})
         policy    (:policy dashboard)]
     (ui2/datastar-page
      [:script {:type "module"}
