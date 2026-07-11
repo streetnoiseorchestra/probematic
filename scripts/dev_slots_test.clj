@@ -526,7 +526,8 @@
         wa-dir (fs/path source-root "resources" "public" "vendor" "webawesome@3.8.0")
         skill-dir (fs/path source-root ".agents" "skills" "webawesome")
         java-classes-dir (fs/path source-root "src" "java-classes" "com" "outskirtslabs" "nextcloudcal4j")
-        phosphor-dir (fs/path source-root "resources" "public" "img" "phosphor" "phosphor-regular")]
+        phosphor-dir (fs/path source-root "resources" "public" "img" "phosphor" "phosphor-regular")
+        inspector-file (fs/path source-root "resources" "public" "js" "datastar-inspector@1.1.4.js")]
     (fs/create-dirs (fs/parent layout-file))
     (spit (str layout-file) "{:imports {\"wa/\" \"/vendor/webawesome@3.8.0/\"}}")
     (fs/create-dirs wa-dir)
@@ -537,10 +538,13 @@
     (spit (str (fs/path java-classes-dir "Event.class")) "bytecode")
     (fs/create-dirs phosphor-dir)
     (spit (str (fs/path phosphor-dir "info.svg")) "<svg/>")
+    (fs/create-dirs (fs/parent inspector-file))
+    (spit (str inspector-file) "// datastar inspector")
     {:wa-dir (str wa-dir)
      :skill-dir (str skill-dir)
      :java-classes-dir (str (fs/path source-root "src" "java-classes"))
-     :phosphor-dir (str (fs/path source-root "resources" "public" "img" "phosphor"))}))
+     :phosphor-dir (str (fs/path source-root "resources" "public" "img" "phosphor"))
+     :inspector-file (str inspector-file)}))
 
 (deftest artifact-bootstrap-test
   (testing "detects the active WebAwesome version from layout2"
@@ -561,6 +565,17 @@
                (slots/import-artifacts! {:main-root (str main-root)
                                          :source-root (str source-root)})))))))
 
+  (testing "import fails fast when the Datastar inspector artifact is missing"
+    (fs/with-temp-dir [main-root {}]
+      (fs/with-temp-dir [source-root {}]
+        (let [{:keys [inspector-file]} (fake-webawesome-source! source-root)]
+          (fs/delete inspector-file)
+          (is (thrown-with-msg?
+               clojure.lang.ExceptionInfo
+               #"Datastar inspector file is missing"
+               (slots/import-artifacts! {:main-root (str main-root)
+                                         :source-root (str source-root)})))))))
+
   (testing "imports WebAwesome vendor files and project-local WebAwesome skill into the main-root artifact cache idempotently"
     (fs/with-temp-dir [main-root {}]
       (fs/with-temp-dir [source-root {}]
@@ -571,12 +586,14 @@
               wa-cache (fs/path cache-root "resources" "public" "vendor" "webawesome@3.8.0")
               skill-cache (fs/path cache-root ".agents" "skills" "webawesome")
               java-classes-cache (fs/path cache-root "src" "java-classes")
-              phosphor-cache (fs/path cache-root "resources" "public" "img" "phosphor")]
+              phosphor-cache (fs/path cache-root "resources" "public" "img" "phosphor")
+              inspector-cache (fs/path cache-root "resources" "public" "js" "datastar-inspector@1.1.4.js")]
           (is (= {:webawesome-version "3.8.0"
                   :webawesome-cache-dir (str wa-cache)
                   :webawesome-skill-cache-dir (str skill-cache)
                   :java-classes-cache-dir (str java-classes-cache)
-                  :phosphor-icons-cache-dir (str phosphor-cache)}
+                  :phosphor-icons-cache-dir (str phosphor-cache)
+                  :datastar-inspector-cache-file (str inspector-cache)}
                  result))
           (is (= "// webawesome"
                  (slurp (str (fs/path wa-cache "webawesome.js")))))
@@ -586,6 +603,10 @@
                  (slurp (str (fs/path java-classes-cache "com" "outskirtslabs" "nextcloudcal4j" "Event.class")))))
           (is (= "<svg/>"
                  (slurp (str (fs/path phosphor-cache "phosphor-regular" "info.svg")))))
+          (is (= {:file? true :content "// datastar inspector"}
+                 {:file? (fs/regular-file? inspector-cache)
+                  :content (when (fs/regular-file? inspector-cache)
+                             (slurp (str inspector-cache)))}))
           (is (= result
                  (slots/import-artifacts! {:main-root (str main-root)
                                            :source-root (str source-root)})))))))
@@ -603,17 +624,20 @@
               wa-link (fs/path worktree "resources" "public" "vendor" "webawesome@3.8.0")
               skill-link (fs/path worktree ".agents" "skills" "webawesome")
               java-classes-link (fs/path worktree "src" "java-classes")
-              phosphor-link (fs/path worktree "resources" "public" "img" "phosphor")]
+              phosphor-link (fs/path worktree "resources" "public" "img" "phosphor")
+              inspector-link (fs/path worktree "resources" "public" "js" "datastar-inspector@1.1.4.js")]
           (is (= {:webawesome-version "3.8.0"
                   :webawesome-link (str wa-link)
                   :webawesome-skill-link (str skill-link)
                   :java-classes-link (str java-classes-link)
-                  :phosphor-icons-link (str phosphor-link)}
+                  :phosphor-icons-link (str phosphor-link)
+                  :datastar-inspector-link (str inspector-link)}
                  result))
           (is (fs/sym-link? wa-link))
           (is (fs/sym-link? skill-link))
           (is (fs/sym-link? phosphor-link))
           (is (fs/sym-link? java-classes-link))
+          (is (fs/sym-link? inspector-link))
           (fs/delete-if-exists skill-link)
           (fs/create-sym-link skill-link (fs/path main-root "missing-skill-target"))
           (is (= result
@@ -622,6 +646,21 @@
           (is (fs/sym-link? skill-link))
           (is (= (str (fs/path (:artifact-cache-root (slots/state-paths (str main-root))) ".agents" "skills" "webawesome"))
                  (str (fs/read-link skill-link))))))))
+
+  (testing "linking fails fast when the cached Datastar inspector is missing"
+    (fs/with-temp-dir [main-root {}]
+      (fs/with-temp-dir [source-root {}]
+        (let [worktree (fs/path main-root "worktree")
+              _ (fs/create-dirs worktree)
+              _ (fake-webawesome-source! source-root)
+              imported (slots/import-artifacts! {:main-root (str main-root)
+                                                 :source-root (str source-root)})]
+          (fs/delete (:datastar-inspector-cache-file imported))
+          (is (thrown-with-msg?
+               clojure.lang.ExceptionInfo
+               #"Cached Datastar inspector file is missing"
+               (slots/link-artifacts! {:main-root (str main-root)
+                                       :worktree (str worktree)})))))))
 
   (testing "links cached artifacts into a claimed slot worktree"
     (fs/with-temp-dir [main-root {}]

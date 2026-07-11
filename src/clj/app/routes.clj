@@ -1,6 +1,7 @@
 (ns app.routes
   (:require
    [app.auth :as auth]
+   [app.config :as config]
    [app.dashboard.routes :as dashboard]
    [app.datastar :as ds]
    [app.file-browser.routes :as file-browser]
@@ -69,13 +70,18 @@
   (assoc coercion/default-parameter-coercion
          :datastar (coercion/->ParameterCoercion :datastar-params :string true true)))
 
+(defn- resource-handler-options
+  [system]
+  {:path "/"
+   :allow-symlinks? (config/dev-mode? (:env system))})
+
 (defn default-handler [system]
   (http/ring-handler
    (http/router (routes system) {::coercion/parameter-coercion parameter-coercion
 
                                  #_#_:reitit.interceptor/transform diff/print-context-diffs})
    (ring/routes
-    (ring/create-resource-handler {:path "/"})
+    (ring/create-resource-handler (resource-handler-options system))
     (ring/redirect-trailing-slash-handler)
     (ring/create-default-handler))
    {:executor     sieppari/executor

@@ -7,6 +7,7 @@
    [clojure.string :as str]))
 
 (def script-version "dev-slots-1")
+(def ^:private datastar-inspector-filename "datastar-inspector@1.1.4.js")
 (def slot-port-keys
   [:http-port
    :nrepl-port
@@ -366,7 +367,8 @@
      :webawesome-cache-dir (path-str artifact-cache-root "resources" "public" "vendor" webawesome-dir-name)
      :webawesome-skill-cache-dir (path-str artifact-cache-root ".agents" "skills" "webawesome")
      :java-classes-cache-dir (path-str artifact-cache-root "src" "java-classes")
-     :phosphor-icons-cache-dir (path-str artifact-cache-root "resources" "public" "img" "phosphor")}))
+     :phosphor-icons-cache-dir (path-str artifact-cache-root "resources" "public" "img" "phosphor")
+     :datastar-inspector-cache-file (path-str artifact-cache-root "resources" "public" "js" datastar-inspector-filename)}))
 
 (defn- copy-tree-replacing!
   [source target]
@@ -380,6 +382,12 @@
     (fs/copy-tree source target)
     (str target)))
 
+(defn- copy-file-replacing!
+  [source target]
+  (fs/create-dirs (fs/parent target))
+  (fs/copy source target {:replace-existing true})
+  (str target))
+
 (defn import-artifacts!
   [{:keys [main-root source-root webawesome-version]}]
   (let [main-root (-> main-root state-paths :main-root)
@@ -390,11 +398,15 @@
         source-webawesome-dir (path-str source-root "resources" "public" "vendor" (str "webawesome@" webawesome-version))
         source-skill-dir (path-str source-root ".agents" "skills" "webawesome")
         source-java-classes-dir (path-str source-root "src" "java-classes")
-        source-phosphor-icons-dir (path-str source-root "resources" "public" "img" "phosphor")]
+        source-phosphor-icons-dir (path-str source-root "resources" "public" "img" "phosphor")
+        source-datastar-inspector-file (path-str source-root "resources" "public" "js" datastar-inspector-filename)]
     (when-not (fs/directory? source-webawesome-dir)
       (throw (ex-info "WebAwesome vendor directory is missing"
                       {:source source-webawesome-dir
                        :webawesome-version webawesome-version})))
+    (when-not (fs/regular-file? source-datastar-inspector-file)
+      (throw (ex-info "Datastar inspector file is missing"
+                      {:source source-datastar-inspector-file})))
     (copy-tree-replacing! source-webawesome-dir (:webawesome-cache-dir paths))
     (when (fs/directory? source-skill-dir)
       (copy-tree-replacing! source-skill-dir (:webawesome-skill-cache-dir paths)))
@@ -402,7 +414,8 @@
       (copy-tree-replacing! source-java-classes-dir (:java-classes-cache-dir paths)))
     (when (fs/directory? source-phosphor-icons-dir)
       (copy-tree-replacing! source-phosphor-icons-dir (:phosphor-icons-cache-dir paths)))
-    (cond-> (select-keys paths [:webawesome-version :webawesome-cache-dir])
+    (copy-file-replacing! source-datastar-inspector-file (:datastar-inspector-cache-file paths))
+    (cond-> (select-keys paths [:webawesome-version :webawesome-cache-dir :datastar-inspector-cache-file])
       (fs/directory? (:webawesome-skill-cache-dir paths))
       (assoc :webawesome-skill-cache-dir (:webawesome-skill-cache-dir paths))
 
@@ -448,13 +461,19 @@
         webawesome-link (path-str worktree "resources" "public" "vendor" (str "webawesome@" webawesome-version))
         skill-link (path-str worktree ".agents" "skills" "webawesome")
         java-classes-link (path-str worktree "src" "java-classes")
-        phosphor-icons-link (path-str worktree "resources" "public" "img" "phosphor")]
+        phosphor-icons-link (path-str worktree "resources" "public" "img" "phosphor")
+        datastar-inspector-link (path-str worktree "resources" "public" "js" datastar-inspector-filename)]
     (when-not (fs/directory? (:webawesome-cache-dir paths))
       (throw (ex-info "Cached WebAwesome vendor directory is missing"
                       {:cache-dir (:webawesome-cache-dir paths)})))
+    (when-not (fs/regular-file? (:datastar-inspector-cache-file paths))
+      (throw (ex-info "Cached Datastar inspector file is missing"
+                      {:cache-file (:datastar-inspector-cache-file paths)})))
     (ensure-symlink! webawesome-link (:webawesome-cache-dir paths))
     (cond-> {:webawesome-version webawesome-version
-             :webawesome-link webawesome-link}
+             :webawesome-link webawesome-link
+             :datastar-inspector-link
+             (ensure-symlink! datastar-inspector-link (:datastar-inspector-cache-file paths))}
       (fs/directory? (:webawesome-skill-cache-dir paths))
       (assoc :webawesome-skill-link
              (ensure-symlink! skill-link (:webawesome-skill-cache-dir paths)))

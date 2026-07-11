@@ -19,7 +19,7 @@ Agent skills should link here instead of duplicating the full workflow.
 
 ## Prepare ignored artifacts
 
-Import WebAwesome vendor files, the local WebAwesome skill, generated Java classes, and ignored Phosphor icon files from a checkout that already has them.
+Import WebAwesome vendor files, the local WebAwesome skill, the Datastar inspector, generated Java classes, and ignored Phosphor icon files from a checkout that already has them.
 
 
 ```bash
@@ -33,6 +33,9 @@ Link cached artifacts into the claimed slot worktree after the worktree exists.
 ```bash
 bb dev-slot artifacts link agent-1
 ```
+
+
+The application permits these external classpath symlinks only under the development profile.
 
 
 ## Prepare a Datomic template
