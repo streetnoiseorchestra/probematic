@@ -8,10 +8,15 @@
     devenv.inputs.nixpkgs.follows = "nixpkgs";
     clj-helpers.url = "github:outskirtslabs/clojure-nix-locker-helpers";
     clj-helpers.inputs.nixpkgs.follows = "nixpkgs";
+    fluent-tooling.url = "github:outskirtslabs/fluent-tooling";
+    fluent-tooling.inputs.nixpkgs.follows = "nixpkgs";
+    fluent-tooling.inputs.devenv.follows = "devenv";
+    fluent-tooling.inputs.devshell.follows = "devshell";
   };
   outputs =
     inputs@{
       clj-helpers,
+      fluent-tooling,
       self,
       devenv,
       devshell,
@@ -76,6 +81,7 @@
             # { package = pkgs.bazqux; }
           ];
           packages = [
+            fluent-tooling.packages.${pkgs.system}.default
             pkgs.lightningcss
             pkgs.watchexec
             pkgs.gitleaks
