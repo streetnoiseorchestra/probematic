@@ -276,8 +276,10 @@
 
 (defn app-shell-body
   [req body]
-  (let [member (auth/get-current-member req)
-        body   (if (string? body) (html/raw body) body)]
+  (let [member     (auth/get-current-member req)
+        home-page? (= :app.dashboard.routes/index
+                      (-> req :reitit.core/match :data :name))
+        body       (if (string? body) (html/raw body) body)]
     (into
      [:div {:id "morph"}
       [:app-shell
@@ -286,6 +288,16 @@
          {::jump-menu/logotype
           (icon/logotype {:class "logotype"
                           :aria-hidden "true"})})]
+       (when-not home-page?
+         [button/Button {:class      "home-button wa-gap-2xs"
+                         :href       (url/link-dashboard)
+                         :appearance "plain"
+                         :size       "small"
+                         :style      "--wa-form-control-padding-inline: var(--wa-space-xs)"
+                         :aria-label "Home"}
+          [ico/Icon {::ico/library :snoico
+                     ::ico/name :home}]
+          [:span {:class "home-label"} "Home"]])
        [:aside {:id "app-shell-navigation"}
         [:header
          (brand-link)

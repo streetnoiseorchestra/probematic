@@ -105,6 +105,7 @@
    [button/Button {:id "jump-menu-trigger"
                    :class "trigger"
                    :appearance "plain"
+                   :size "small"
                    :with-caret true
                    :aria-controls "jump-menu-popover"
                    :aria-expanded "false"

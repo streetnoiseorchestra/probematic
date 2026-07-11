@@ -9,6 +9,7 @@ app-shell {
   grid-template:
     "topbar" auto
     "content" 1fr / minmax(0, 1fr);
+  position: relative;
   min-block-size: 100dvb;
   background-color: var(--wa-color-surface-default);
 
@@ -21,9 +22,14 @@ app-shell {
     place-items: center;
     block-size: var(--app-shell-topbar-size);
     padding-inline: var(--wa-space-s);
-    border-block-end: var(--wa-panel-border-width) var(--wa-border-style)
-      var(--wa-color-surface-border);
-    background-color: var(--wa-color-surface-default);
+    pointer-events: none;
+  }
+
+  & > .home-button {
+    position: absolute;
+    inset-block-start: var(--wa-space-s);
+    inset-inline-start: var(--wa-space-s);
+    z-index: var(--sno-nav-header-z-index);
   }
 
   & > aside {
@@ -100,6 +106,8 @@ app-shell-content {
   min-inline-size: 0;
   padding-block: var(--app-shell-content-padding-block);
   padding-inline: var(--app-shell-content-padding-inline);
+  border-block-start: var(--wa-panel-border-width) var(--wa-border-style)
+    var(--wa-color-surface-border);
 }
 
 @media (--sno-index-collapsed) {
@@ -187,6 +195,12 @@ app-shell-content {
   app-shell > aside,
   app-shell > a[aria-label="Close navigation"] {
     transition: none;
+  }
+}
+
+@media (width < 24rem) {
+  app-shell > .home-button .home-label {
+    display: none;
   }
 }
 
