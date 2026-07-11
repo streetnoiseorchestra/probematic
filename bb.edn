@@ -42,7 +42,7 @@
 
          lint:ftl
          {:doc  "Lint Fluent FTL resources"
-          :task (apply shell "fl-lint" (sort (map str (fs/glob "resources/lang" "**/*.ftl"))))}
+          :task (apply shell "ftl-lint" (sort (map str (fs/glob "resources/lang" "**/*.ftl"))))}
 
          lint
          {:doc  "Lint code with clj-kondo"

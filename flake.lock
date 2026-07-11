@@ -175,11 +175,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1783770060,
-        "narHash": "sha256-GlcYJplzduXPoUu1OIyeFNQYmjn53UsVh5u4bIW4t/I=",
+        "lastModified": 1783795827,
+        "narHash": "sha256-fsjHHHW6A12RKFcT117KJgiJI6COqretTdA/j+f1pRQ=",
         "owner": "outskirtslabs",
         "repo": "fluent-tooling",
-        "rev": "829245f0deef4e0e6ea423feac9b518f71a290bd",
+        "rev": "1e760f0034b704a68ae969a8a2b8a7674c41c1d9",
         "type": "github"
       },
       "original": {
