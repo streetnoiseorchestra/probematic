@@ -309,7 +309,7 @@
    :untouched {:nested true}})
 
 (def expected-agent-1-secrets
-  {:app-base-url "http://127.0.0.1:6171"
+  {:app-base-url "http://agent-1.probematic.localhost:6171"
    :redis {:conn-spec {:host "127.0.0.1"
                        :port 6381
                        :password "devpassword123"}}
@@ -922,7 +922,11 @@
                        :filestore-link :http-port-free :nrepl-port-free :compose-ps]]
           (is (contains? checks-by-name check)))
         (is (= [(slots/compose-command main-root agent-1 ["ps"])]
-               @calls)))))
+               @calls))
+        (is (= {:app             "http://agent-1.probematic.localhost:6171"
+                :smtp4dev        "http://agent-1.probematic.localhost:5102"
+                :datomic-console "http://agent-1.probematic.localhost:8181"}
+               (:urls result))))))
 
   (testing "doctor completes all checks and returns failures"
     (fs/with-temp-dir [main-root {}]

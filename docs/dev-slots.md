@@ -127,13 +127,19 @@ bb dev
 ```
 
 
-The app URL for `agent-1` is `http://127.0.0.1:6171`.
+Each slot's browser-facing services use `<slot>.probematic.localhost` so they remain distinct trustworthy local origins.
 
 
-The smtp4dev URL for `agent-1` is `http://127.0.0.1:5102`.
+The app URL for `agent-1` is `http://agent-1.probematic.localhost:6171`.
 
 
-The Datomic console URL for `agent-1` is `http://127.0.0.1:8181`.
+The matching OAuth callback URL is `http://agent-1.probematic.localhost:6171/oauth2/callback`.
+
+
+The smtp4dev URL for `agent-1` is `http://agent-1.probematic.localhost:5102`.
+
+
+The Datomic console URL for `agent-1` is `http://agent-1.probematic.localhost:8181`.
 
 
 ## Stop and release

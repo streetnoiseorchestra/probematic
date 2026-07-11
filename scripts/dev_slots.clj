@@ -43,6 +43,12 @@
 (defn- slot-id [slot-or-name]
   (name (slot-key slot-or-name)))
 
+(defn- slot-hostname [slot]
+  (str (slot-id slot) ".probematic.localhost"))
+
+(defn- slot-http-url [slot port-key]
+  (str "http://" (slot-hostname slot) ":" (get slot port-key)))
+
 (defn- absolutize-str [path]
   (str (fs/normalize (fs/absolutize (fs/expand-home path)))))
 
@@ -177,7 +183,7 @@
 (defn merge-slot-secrets
   [base-secrets slot]
   (-> base-secrets
-      (assoc :app-base-url (str "http://127.0.0.1:" (:http-port slot)))
+      (assoc :app-base-url (slot-http-url slot :http-port))
       (assoc-in [:redis :conn-spec]
                 {:host "127.0.0.1"
                  :port (:redis-port slot)
@@ -802,9 +808,9 @@
         ok? (every? :ok? checks)]
     {:ok? ok?
      :checks checks
-     :urls {:app (str "http://127.0.0.1:" (:http-port slot-map))
-            :smtp4dev (str "http://127.0.0.1:" (:smtp4dev-http-port slot-map))
-            :datomic-console (str "http://127.0.0.1:" (:datomic-console-port slot-map))}
+     :urls {:app (slot-http-url slot-map :http-port)
+            :smtp4dev (slot-http-url slot-map :smtp4dev-http-port)
+            :datomic-console (slot-http-url slot-map :datomic-console-port)}
      :ports (select-keys slot-map slot-port-keys)
      :shared-filestore-dir (:shared-filestore-dir slot-paths)}))
 
