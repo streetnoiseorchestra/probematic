@@ -58,9 +58,26 @@
    :ns       *ns*
    :as       'avatar
    :name     'Avatar
-   :desc     "Renders a Web Awesome avatar with project defaults for member images, initials, optional member text, member links, and SVG icon fallbacks."
+   :desc     "Renders a native HTML avatar with project defaults for member images, initials, optional member text, member links, and SVG icon fallbacks."
    :alias    ::avatar
    :schema   [:map {}
+              [:image {:optional true
+                       :doc      "Web Awesome-compatible image source. `::image` takes precedence when both are present."}
+               :string]
+              [:label {:optional true
+                       :doc      "Web Awesome-compatible accessible label."}
+               :string]
+              [:initials {:optional true
+                          :doc      "Web Awesome-compatible initials shown when no image is present."}
+               :string]
+              [:loading {:optional true
+                         :default  "eager"
+                         :doc      "Web Awesome-compatible image loading behavior."}
+               [:enum "eager" "lazy"]]
+              [:shape {:optional true
+                       :default  "circle"
+                       :doc      "Web Awesome-compatible avatar shape."}
+               [:enum "circle" "square" "rounded"]]
               [::member {:optional true
                          :doc      "Member map used to derive label, image, initials, text, and profile link."}
                :map]
@@ -71,14 +88,14 @@
                                   :doc      "Discourse avatar template with an optional `{size}` placeholder."}
                [:maybe :string]]
               [::image {:optional true
-                        :doc      "Avatar image URL. Overrides member avatar templates."}
+                        :doc      "Avatar image URL. Overrides `:image` and member avatar templates."}
                :string]
               [::image-size {:optional true
                              :default  80
                              :doc      "Size used when expanding an avatar template."}
                [:or :int :string]]
               [::initials {:optional true
-                           :doc      "Initials to show as an image fallback."}
+                           :doc      "Initials to show as an image fallback. Overrides `:initials`."}
                :string]
               [::text {:optional true
                        :default  :none
@@ -115,6 +132,9 @@
   #{::member ::name ::avatar-template ::image ::image-size ::initials ::text ::link? ::href
     ::wrapper-attrs ::text-attrs ::icon ::icon-library ::icon-attrs})
 
+(def ^:private content-props
+  #{:image :label :initials :loading})
+
 (defn- avatar-name
   [attrs]
   (or (::name attrs)
@@ -123,6 +143,7 @@
 (defn- avatar-image
   [attrs]
   (or (::image attrs)
+      (:image attrs)
       (avatar-template-src
        (or (::avatar-template attrs)
            (some-> attrs ::member member-avatar-template))
@@ -131,27 +152,46 @@
 (defn- avatar-initials
   [attrs name]
   (or (::initials attrs)
+      (:initials attrs)
       (initials name)))
+
+(defn- avatar-values
+  [attrs]
+  (let [name     (avatar-name attrs)
+        image    (not-empty (avatar-image attrs))
+        initials (not-empty (avatar-initials attrs name))]
+    {:image    image
+     :initials initials
+     :label    (or (:label attrs) name initials)
+     :loading  (if (contains? attrs :loading) (:loading attrs) "eager")}))
 
 (defn- avatar-attrs
   [attrs]
-  (let [name     (avatar-name attrs)
-        image    (avatar-image attrs)
-        initials (avatar-initials attrs name)
-        label    (or (:label attrs) name initials)
-        attrs    (apply dissoc attrs consumed-props)]
-    (cond-> attrs
-      label    (assoc :label label)
-      image    (assoc :image image)
-      initials (assoc :initials initials))))
+  (-> (apply dissoc attrs (into consumed-props content-props))
+      (uic/merge-attrs :class "sno-avatar")))
 
 (defn- icon-child
   [attrs]
-  (when-let [icon (::icon attrs)]
-    [ico/Icon (merge {::ico/library (or (::icon-library attrs) :snoico)
-                      ::ico/name    icon
-                      :slot         "icon"}
-                     (::icon-attrs attrs))]))
+  [ico/Icon (merge {::ico/library (or (::icon-library attrs) :snoico)
+                    ::ico/name    (or (::icon attrs) :user)}
+                   (::icon-attrs attrs))])
+
+(defn- avatar-content
+  [attrs children {:keys [image initials label loading]}]
+  (cond
+    image
+    [:img {:src        image
+           :loading    loading
+           :role       "img"
+           :aria-label label
+           :class      "image"}]
+
+    initials
+    [:span {:role "img" :aria-label label :class "initials"} initials]
+
+    :else
+    (into [:span {:role "img" :aria-label label :class "icon"}]
+          (if (seq children) children [(icon-child attrs)]))))
 
 (defn- member-text
   [attrs]
@@ -191,10 +231,8 @@
         text            (member-text attrs)
         href            (link-href attrs)
         wrapper?        (or text href (seq (::wrapper-attrs attrs)))
-        avatar-element  (into [:wa-avatar (avatar-attrs attrs)]
-                              (if (seq children)
-                                children
-                                (keep identity [(icon-child attrs)])))
+        avatar-element  [:span (avatar-attrs attrs)
+                         (avatar-content attrs children (avatar-values attrs))]
         wrapper-element (if href :a :span)]
     (uic/validate-opts! doc-avatar attrs)
     (cc/compile

@@ -143,7 +143,6 @@
       import 'wa/components/icon/icon.js';
       import 'wa/components/card/card.js';
       import 'wa/components/button/button.js';
-      import 'wa/components/avatar/avatar.js';
       import 'wa/components/divider/divider.js';
       import 'wa/components/relative-time/relative-time.js';
       import 'wa/components/textarea/textarea.js';

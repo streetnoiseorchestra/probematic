@@ -1,14 +1,17 @@
-/* Match Web Awesome's avatar host dimensions before upgrade to avoid layout shift. */
-wa-avatar:not(:defined) {
+/*! Copyright 2026 Fonticons, Inc. - MIT Licensed https://webawesome.com/license */
+/* Adapted from Web Awesome 3.10.0's avatar styles. */
+.sno-avatar {
+  --size: 3rem;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  width: var(--size, 3rem);
-  height: var(--size, 3rem);
+  width: var(--size);
+  height: var(--size);
   color: var(--wa-color-neutral-on-normal);
   font: inherit;
-  font-size: calc(var(--size, 3rem) * 0.4);
+  font-size: calc(var(--size) * 0.4);
   vertical-align: middle;
   background-color: var(--wa-color-neutral-fill-normal);
   border-radius: var(--wa-border-radius-circle);
@@ -16,10 +19,39 @@ wa-avatar:not(:defined) {
   -webkit-user-select: none;
 }
 
-wa-avatar:not(:defined)[shape="square"] {
-  border-radius: 0;
-}
+@scope (.sno-avatar) {
+  :scope[shape="square"] {
+    border-radius: 0;
+  }
 
-wa-avatar:not(:defined)[shape="rounded"] {
-  border-radius: var(--wa-border-radius-m);
+  :scope[shape="rounded"] {
+    border-radius: var(--wa-border-radius-m);
+  }
+
+  .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .initials {
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    overflow: hidden;
+    border-radius: inherit;
+  }
 }
