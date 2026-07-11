@@ -15,6 +15,7 @@
 @import "ui2/avatar.css" layer(sno-ui);
 @import "ui2/button.css" layer(sno-ui);
 @import "ui2/card.css" layer(sno-ui);
+@import "ui2/footer-tray.css" layer(sno-ui);
 @import "ui2/layout.css" layer(sno-ui);
 @import "ui2/page-header.css" layer(sno-ui);
 @import "ui2/dl.css" layer(sno-ui);

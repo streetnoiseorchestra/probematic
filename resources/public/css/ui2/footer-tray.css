@@ -1,0 +1,243 @@
+:is(.footer-tray, .tray-sheet-backdrop, .tray-sheet) {
+  --footer-tray-block-size: calc(
+    var(--wa-space-2xl) + var(--wa-space-2xs) +
+      max(var(--wa-space-2xs), env(safe-area-inset-bottom)) +
+      var(--wa-border-width-s)
+  );
+}
+
+.footer-tray {
+  box-sizing: border-box;
+  position: fixed;
+  z-index: calc(var(--sno-nav-header-z-index) + 3);
+  inset-inline: 0;
+  inset-block-end: 0;
+  min-block-size: var(--footer-tray-block-size);
+  padding-block: var(--wa-space-2xs);
+  padding-block-end: max(var(--wa-space-2xs), env(safe-area-inset-bottom));
+  padding-left: max(var(--wa-space-xs), env(safe-area-inset-left));
+  padding-right: max(var(--wa-space-xs), env(safe-area-inset-right));
+  background-color: var(--wa-color-surface-raised);
+  border-block-start: var(--wa-border-width-s) solid
+    var(--wa-color-surface-border);
+  box-shadow: var(--wa-shadow-s);
+}
+
+app-shell:has(+ .footer-tray) app-shell-content {
+  padding-block-end: calc(
+    var(--app-shell-content-padding-block) + var(--wa-space-2xl) +
+      var(--wa-space-2xs) +
+      max(var(--wa-space-2xs), env(safe-area-inset-bottom)) +
+      var(--wa-border-width-s)
+  );
+}
+
+@scope (.footer-tray) {
+  nav {
+    display: grid;
+    grid-template-columns:
+      minmax(var(--wa-space-2xl), 1fr) auto
+      minmax(var(--wa-space-2xl), 1fr);
+    align-items: center;
+    inline-size: 100%;
+    min-block-size: var(--wa-space-2xl);
+  }
+
+  .actions {
+    justify-self: center;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .shortcut-label {
+    display: none;
+  }
+
+  .account {
+    justify-self: start;
+  }
+
+  .tray-button.ping {
+    justify-self: end;
+    background-color: var(--wa-color-brand-fill-quiet);
+    color: var(--wa-color-brand-on-quiet);
+  }
+
+  .tray-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--wa-space-2xl);
+    block-size: var(--wa-space-2xl);
+    min-inline-size: var(--wa-space-2xl);
+    min-block-size: var(--wa-space-2xl);
+    padding: 0;
+    color: var(--wa-color-text-normal);
+    font-size: var(--wa-font-size-l);
+    line-height: 1;
+    background-color: transparent;
+    border: 0;
+    border-radius: var(--wa-border-radius-circle);
+    cursor: pointer;
+    transition: background-color var(--wa-transition-fast);
+  }
+
+  .tray-button > :is(.sno-avatar, .ping-mark)[slot="start"] {
+    margin-inline-end: 0;
+  }
+
+  .account .sno-avatar {
+    --size: var(--wa-space-xl);
+  }
+
+  .tray-button:hover {
+    background-color: var(--wa-color-neutral-fill-quiet);
+  }
+
+  .tray-button:focus-visible {
+    outline: var(--wa-focus-ring);
+    outline-offset: var(--wa-focus-ring-offset);
+  }
+
+  .tray-button.ping:hover {
+    background-color: var(--wa-color-brand-fill-normal);
+  }
+
+  .tray-button.selected {
+    background-color: var(--wa-color-neutral-fill-loud);
+    color: var(--wa-color-neutral-on-loud);
+  }
+
+  .tray-button.ping.selected {
+    background-color: var(--wa-color-brand-fill-normal);
+    color: var(--wa-color-brand-on-normal);
+  }
+
+  .ping-mark {
+    position: relative;
+    inline-size: var(--wa-space-m);
+    block-size: var(--wa-space-m);
+    background-color: color-mix(
+      in oklab,
+      var(--wa-color-brand-fill-loud) 15%,
+      transparent
+    );
+    border-radius: var(--wa-border-radius-circle);
+  }
+
+  .ping-mark::after {
+    position: absolute;
+    inset: var(--wa-space-2xs);
+    background-color: var(--wa-color-brand-fill-loud);
+    border-radius: var(--wa-border-radius-circle);
+    content: "";
+  }
+}
+
+.tray-sheet-backdrop {
+  position: fixed;
+  z-index: calc(var(--sno-nav-header-z-index) + 1);
+  inset-block-start: 0;
+  inset-block-end: var(--footer-tray-block-size);
+  inset-inline: 0;
+  visibility: hidden;
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.tray-sheet-backdrop.open {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.tray-sheet {
+  position: fixed;
+  z-index: calc(var(--sno-nav-header-z-index) + 2);
+  padding: var(--wa-space-m);
+  overflow: auto;
+  overscroll-behavior: contain;
+  visibility: hidden;
+  color: var(--wa-color-text-normal);
+  background-color: var(--wa-color-surface-raised);
+  border: var(--wa-border-width-s) solid var(--wa-color-surface-border);
+  border-radius: 0;
+  border-top-right-radius: var(--wa-border-radius-s);
+  border-top-left-radius: var(--wa-border-radius-s);
+  box-shadow: var(--wa-shadow-l);
+  pointer-events: none;
+  transition:
+    transform var(--wa-transition-normal) var(--wa-transition-easing),
+    visibility 0s linear var(--wa-transition-normal);
+}
+
+.tray-sheet.bottom {
+  inset-block-start: auto;
+  inset-block-end: var(--footer-tray-block-size);
+  inset-inline: 0;
+  inline-size: min(
+    calc(100dvi - 2 * var(--wa-space-m)),
+    calc(var(--wa-space-5xl) * 7)
+  );
+  max-block-size: calc(
+    100dvb - var(--footer-tray-block-size) - var(--wa-space-l)
+  );
+  margin: 0 auto;
+  transform: translateY(calc(100% + var(--footer-tray-block-size)));
+}
+
+.tray-sheet.end {
+  inset-block-start: 0;
+  inset-block-end: var(--footer-tray-block-size);
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  inline-size: min(
+    calc(100dvi - var(--wa-space-l)),
+    calc(var(--wa-space-5xl) * 5)
+  );
+  block-size: calc(100dvb - var(--footer-tray-block-size));
+  margin: 0;
+  transform: translateX(100%);
+}
+
+.tray-sheet.end:dir(rtl) {
+  transform: translateX(-100%);
+}
+
+.tray-sheet.open {
+  visibility: visible;
+  transform: translate(0);
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+@media (--sno-viewport-s) {
+  @scope (.footer-tray) {
+    .actions .tray-button {
+      inline-size: auto;
+      padding-inline: var(--wa-space-s);
+      border-radius: var(--wa-border-radius-pill);
+    }
+
+    .actions .tray-button > .trim-cap {
+      margin-inline-start: var(--wa-space-xs);
+      font-size: var(--wa-font-size-s);
+    }
+
+    .shortcut-label {
+      display: inline;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @scope (.footer-tray) {
+    .tray-button {
+      transition: none;
+    }
+  }
+
+  .tray-sheet {
+    transition: none;
+  }
+}

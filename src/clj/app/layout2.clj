@@ -10,10 +10,12 @@
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
+   [app.ui2.footer-tray :as footer-tray]
    [app.ui2.icon :as ico]
    [app.urls :as url]
    [app.util :as util]
-   [jsonista.core :as j]))
+   [jsonista.core :as j]
+   [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn- nav-items
   [tr]
@@ -89,6 +91,63 @@
                         ::ico/name    :xmark}
                        menu-icon-opts)]
       (tr [:nav/logout])]]))
+
+(def ^:private footer-tray-labels
+  {:footer        [:i18n/tr :footer-tray-label]
+   :account       [:i18n/tr :footer-tray-account]
+   :profile       [:i18n/tr :footer-tray-profile]
+   :band-settings [:i18n/tr :footer-tray-band-settings]
+   :logout        [:i18n/tr :footer-tray-logout]})
+
+(def ^:private footer-tray-shortcuts
+  [{:id           "footer-tray-assignments"
+    :label        [:i18n/tr :footer-tray-assignments]
+    :icon-library :phosphor
+    :icon         :check}
+   {:id           "footer-tray-calendar"
+    :label        [:i18n/tr :footer-tray-calendar]
+    :icon-library :phosphor
+    :icon         :calendar}
+   {:id           "footer-tray-bookmarks"
+    :label        [:i18n/tr :footer-tray-bookmarks]
+    :icon-library :snoico
+    :icon         :folder-open}
+   {:id           "footer-tray-notes"
+    :label        [:i18n/tr :footer-tray-notes]
+    :icon-library :snoico
+    :icon         :file-solid}])
+
+(def ^:private footer-tray-notification
+  {:id        "footer-tray-notifications"
+   :label     [:i18n/tr :footer-tray-notifications]
+   :placement :end})
+
+(defn- footer-tray-sheet [{:keys [id label placement]}]
+  (let [placement (or placement :bottom)]
+    [:dialog {:id id
+              :class (str "tray-sheet " (name placement))
+              :open true
+              :inert true
+              :tabindex "-1"
+              :aria-label label
+              :aria-hidden "true"
+              :data-class:open (->expr (=== $footerTraySheet ~id))
+              :data-attr:inert (->expr (not (=== $footerTraySheet ~id)))
+              :data-attr:aria-hidden (->expr
+                                      (if (=== $footerTraySheet ~id) "false" "true"))
+              :data-effect (->expr
+                            (when (=== $footerTraySheet ~id) (.focus el)))
+              :data-on:keydown "evt.key === 'Escape' && ($footerTraySheet = '')"}
+     [:i18n/tr :footer-tray-placeholder]]))
+
+(defn- footer-tray-sheets []
+  (into
+   [[:div {:class "tray-sheet-backdrop"
+           :aria-hidden "true"
+           :data-class:open "$footerTraySheet !== ''"
+           :data-on:click "$footerTraySheet = ''"}]]
+   (map footer-tray-sheet)
+   (conj footer-tray-shortcuts footer-tray-notification)))
 
 (def ^:private memoed-sha384-resource (memoize secret-box/sha384-resource))
 
@@ -226,38 +285,45 @@
   [req body]
   (let [member (auth/get-current-member req)
         body   (if (string? body) (html/raw body) body)]
-    [:div {:id "morph"}
-     [:app-shell
-      [:header
-       [button/Button {:href       "#app-shell-navigation"
-                       :appearance "plain"
-                       :aria-label "Toggle navigation"}
-        [ico/Icon {::ico/library :snoico
-                   ::ico/name    :bars
-                   :slot         "start"}]]
-       [:a {:href "/" :aria-label "Home"}
-        [ico/Icon {::ico/library :snoico
-                   ::ico/name    :snoman
-                   :style        "color: var(--sno-brand-green)"}]]
-       [:app-shell-user (nav-user-dropdown req member)]]
-      [:aside {:id "app-shell-navigation"}
+    (into
+     [:div {:id "morph"}
+      [:app-shell
        [:header
-        (brand-link)
-        [button/Button {:href       "#"
+        [button/Button {:href       "#app-shell-navigation"
                         :appearance "plain"
-                        :aria-label "Close navigation"}
+                        :aria-label "Toggle navigation"}
          [ico/Icon {::ico/library :snoico
-                    ::ico/name :xmark}]]]
-       [:app-shell-account
-        (nav-user-dropdown req member)]
-       (navigation req)]
-      [:a {:href       "#"
-           :aria-label "Close navigation"
-           :tabindex   "-1"}]
-      [:app-shell-content
-       body]]
-     #_(when (config/dev-mode? (-> req :system :env))
-         [:datastar-inspector])]))
+                    ::ico/name    :bars
+                    :slot         "start"}]]
+        [:a {:href "/" :aria-label "Home"}
+         [ico/Icon {::ico/library :snoico
+                    ::ico/name    :snoman
+                    :style        "color: var(--sno-brand-green)"}]]
+        [:app-shell-user (nav-user-dropdown req member)]]
+       [:aside {:id "app-shell-navigation"}
+        [:header
+         (brand-link)
+         [button/Button {:href       "#"
+                         :appearance "plain"
+                         :aria-label "Close navigation"}
+          [ico/Icon {::ico/library :snoico
+                     ::ico/name :xmark}]]]
+        [:app-shell-account
+         (nav-user-dropdown req member)]
+        (navigation req)]
+       [:a {:href       "#"
+            :aria-label "Close navigation"
+            :tabindex   "-1"}]
+       [:app-shell-content
+        body]]
+      [footer-tray/FooterTray
+       {::footer-tray/member member
+        ::footer-tray/labels footer-tray-labels
+        ::footer-tray/shortcuts footer-tray-shortcuts
+        ::footer-tray/notification footer-tray-notification}]
+      #_(when (config/dev-mode? (-> req :system :env))
+          [:datastar-inspector])]
+     (footer-tray-sheets))))
 
 (defn datastar-page-html
   [req opts body]
