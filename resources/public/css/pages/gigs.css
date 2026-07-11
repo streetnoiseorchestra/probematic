@@ -559,7 +559,7 @@ dl.gigs-detail-info-list {
   --spacing: var(--sno-size-none);
 }
 
-.gigs-list-card::part(body) {
+.gigs-list-card > .body {
   padding: var(--sno-size-none);
 }
 

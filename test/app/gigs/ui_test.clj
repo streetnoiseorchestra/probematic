@@ -1,6 +1,7 @@
 (ns app.gigs.ui-test
   (:require
    [app.gigs.ui :as gigs.ui]
+   [app.ui2.card :as card]
    [app.html :as html]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -36,3 +37,20 @@
     (let [html (render-gig-row {:gig/location "Proberaum"})]
       (is (str/includes? html "location-dot"))
       (is (str/includes? html "Proberaum")))))
+
+(deftest gig-section-uses-native-card-chassis
+  (let [footer    [:a {:href "/gigs/archive"} "Open archive"]
+        view      (gigs.ui/gig-section
+                   {:current-locale :en}
+                   {:empty-message "No gigs"
+                    :footer        footer
+                    :gigs          []
+                    :id            "future-gigs"
+                    :title         "Future gigs"})
+        card-view (last view)]
+    (is (= {:tag    card/Card
+            :attrs  {:class "gigs-list-card"}
+            :footer footer}
+           {:tag    (first card-view)
+            :attrs  (second card-view)
+            :footer (last card-view)}))))

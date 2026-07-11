@@ -4,6 +4,7 @@
    [app.insurance.policy.settings.actions :as actions]
    [app.insurance.policy.settings.queries :as queries]
    [app.ui2 :as ui2]
+   [app.ui2.card :as card]
    [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -36,10 +37,8 @@
 
 (defn- settings-card
   [{:keys [actions subtitle title]} & children]
-  (into [:wa-card (cond-> {:appearance  "plain"
-                           :with-header true
-                           :style       "background: var(--wa-color-surface-default);"}
-                    (seq actions) (assoc :with-header-actions true))
+  (into [card/Card {:appearance "plain"
+                    :style      "background: var(--wa-color-surface-default);"}
          [:div {:slot  "header"
                 :class "wa-stack wa-gap-2xs"}
           [:h2 {:class "wa-heading-l"

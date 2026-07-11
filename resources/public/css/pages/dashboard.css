@@ -108,7 +108,7 @@
   line-height: var(--sno-line-height-tight);
 }
 
-.dashboard-ledger-card::part(body) {
+.dashboard-ledger-card > .body {
   padding: var(--wa-space-m);
 }
 

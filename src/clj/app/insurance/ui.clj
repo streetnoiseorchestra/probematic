@@ -3,6 +3,7 @@
    [app.insurance.coverage.queries :as coverage.queries]
    [app.ui2 :as ui2]
    [app.ui2.avatar :as avatar]
+   [app.ui2.card :as card]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
@@ -288,8 +289,8 @@
 (defn coverage-detail-card
   [{:keys [tr] :as req} {:keys [actions coverage error-message policy subtitle]}]
   (let [instrument (:instrument.coverage/instrument coverage)]
-    [:wa-card {:appearance "plain"
-               :style      "background: var(--wa-color-surface-default);"}
+    [card/Card {:appearance "plain"
+                :style      "background: var(--wa-color-surface-default);"}
      [:div {:class "wa-stack wa-gap-l"}
       [:div {:class "wa-stack wa-gap-xs"}
        [:div {:class "wa-cluster wa-gap-xs"}
@@ -376,8 +377,8 @@
 
 (defn comments-card
   [{:keys [tr] :as req} comments]
-  [:wa-card {:appearance "plain"
-             :style      "background: var(--wa-color-surface-default);"}
+  [card/Card {:appearance "plain"
+              :style      "background: var(--wa-color-surface-default);"}
    [:div {:class "wa-stack"}
     [:h2 {:class "wa-heading-l"} (tr [:insurance.review/comments])]
     [:wa-textarea {:aria-label  (tr [:insurance.review/comments])

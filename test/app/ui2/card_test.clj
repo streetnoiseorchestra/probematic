@@ -25,12 +25,7 @@
                                  :class           "policy-summary elevated"
                                  :aria-label      "Policy summary"
                                  :data-on:click   "selectCard()"
-                                 :style           "--spacing: 2rem"
-                                 :with-header     true
-                                 :with-media      true
-                                 :with-footer     true
-                                 :with-header-actions true
-                                 :with-footer-actions true}
+                                 :style           "--spacing: 2rem"}
                                 "Policy details")]
         (is (str/starts-with? rendered "<div"))
         (is (not (str/includes? rendered "<wa-card")))
@@ -40,8 +35,7 @@
         (is (str/includes? rendered "id=\"policy-card\""))
         (is (str/includes? rendered "aria-label=\"Policy summary\""))
         (is (str/includes? rendered "data-on:click=\"selectCard()\""))
-        (is (str/includes? rendered "style=\"--spacing: 2rem\""))
-        (is (not (re-find #"with-(?:header|media|footer|header-actions|footer-actions)" rendered)))))))
+        (is (str/includes? rendered "style=\"--spacing: 2rem\""))))))
 
 (deftest card-supports-every-appearance
   (let [card (card-alias)]
@@ -91,15 +85,11 @@
         (is (not (str/includes? rendered "class=\"header")))
         (is (not (str/includes? rendered "class=\"footer")))))))
 
-(deftest vertical-card-renders-sections-from-content-instead-of-ssr-flags
+(deftest vertical-card-renders-sections-from-slotted-content
   (let [card (card-alias)]
     (is (some? card) "Card alias should exist")
     (when card
-      (let [rendered (card-html {:with-header false
-                                 :with-media false
-                                 :with-footer false
-                                 :with-header-actions false
-                                 :with-footer-actions false}
+      (let [rendered (card-html {}
                                 [:img {:slot "media" :src "/policy.png" :alt ""}]
                                 [:h2 {:slot "header"} "Policy"]
                                 [:button {:slot "header-actions"} "Edit"]

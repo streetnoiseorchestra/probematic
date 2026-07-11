@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.ui2 :as ui2]
+   [app.ui2.card :as card]
    [app.urls :as urls]
    [clojure.string :as str]
    [nextjournal.markdown :as md]
@@ -57,7 +58,7 @@
 (defn poll-section [req {:keys [empty-message polls title]}]
   [:section {:class "wa-stack wa-gap-xs"}
    (ui2/section-divider title)
-   [:wa-card {:class "polls-list-card"}
+   [card/Card {:class "polls-list-card"}
     (if (seq polls)
       (for [poll polls]
         (poll-row req poll))

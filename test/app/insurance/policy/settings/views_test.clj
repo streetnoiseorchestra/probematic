@@ -1,6 +1,7 @@
 (ns app.insurance.policy.settings.views-test
   (:require
    [app.insurance.policy.settings.views :as sut]
+   [app.ui2.card :as card]
    [app.test-common :as tu]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -107,11 +108,14 @@
   (testing "An insurance-team member is viewing an editable draft policy."
     (let [view (settings-view editable-draft-settings)]
       (testing "The page shows each policy settings section."
-        (is (= ["Policy details"
-                "Coverage types"
-                "Category factors"
-                "Current totals"]
-               (mapv l/text (l/select '[wa-card h2] view)))))
+        (let [cards (l/select card/Card view)]
+          (is (= {:count    4
+                  :headings ["Policy details"
+                             "Coverage types"
+                             "Category factors"
+                             "Current totals"]}
+                 {:count    (count cards)
+                  :headings (mapv #(-> (l/select-one 'h2 %) l/text) cards)}))))
       (testing "Existing coverage types and category factors are listed."
         (is (= ["Basic" "Brass"]
                (mapv #(-> (l/select-one 'td %) l/text)
@@ -155,11 +159,12 @@
           view                (settings-view request-with-errors
                                              editable-draft-settings)]
       (testing "The page shows the summary and field-specific errors."
-        (is (= {:top-errors   ["Fix the form."]
-                :field-errors ["Name is required." "Invalid date." "Invalid factor."]}
-               {:top-errors   (mapv l/text
-                                    (l/select '[wa-card wa-callout strong] view))
-                :field-errors (mapv l/text (l/select '[form small] view))})))
+        (let [cards (l/select card/Card view)]
+          (is (= {:top-errors   ["Fix the form."]
+                  :field-errors ["Name is required." "Invalid date." "Invalid factor."]}
+                 {:top-errors   (mapv l/text
+                                      (mapcat #(l/select '[wa-callout strong] %) cards))
+                  :field-errors (mapv l/text (l/select '[form small] view))}))))
       (testing "The submitted values remain in the form for correction."
         (is (= {:effective-at   ["2027-02-01"]
                 :premium-factor ["bad"]}

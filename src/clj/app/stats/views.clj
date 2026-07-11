@@ -5,6 +5,7 @@
    [app.stats.queries :as stats]
    [app.stats.state :as state]
    [app.ui2 :as ui2]
+   [app.ui2.card :as card]
    [app.ui2.page-header :as page-header]
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
@@ -51,7 +52,7 @@
      [:div {:class "wa-heading-2xl stats-metric-value"} value]]))
 
 (defn- summary-card [tr stats]
-  [:wa-card {:class "stats-summary-card"}
+  [card/Card {:class "stats-summary-card"}
    [:div {:class "wa-grid wa-gap-3xl" :style "--min-column-size: 24ch;"}
     (metric-cell {:id      "stats-gig-attendance-rate"
                   :label   (tr [:stats/gig-attendance-rate])
@@ -172,7 +173,7 @@
        "; customElements.whenDefined('wa-chart').then(() => { el.config = JSON.parse(chartConfigJson) })"))
 
 (defn- histogram-card [{:keys [description signal-path title]}]
-  [:wa-card {:class "stats-chart-card"}
+  [card/Card {:class "stats-chart-card"}
    [:div {:slot "header" :class "wa-split"}
     [:h2 {:class "wa-heading-l"} title]]
    [:div {:class "stats-chart-container"}

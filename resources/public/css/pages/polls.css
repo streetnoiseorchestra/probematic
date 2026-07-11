@@ -11,7 +11,7 @@
 .polls-list-card {
   --spacing: var(--sno-size-none);
 
-  &::part(body) {
+  > .body {
     padding: var(--sno-size-none);
   }
 }

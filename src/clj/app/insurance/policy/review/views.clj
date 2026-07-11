@@ -7,6 +7,7 @@
    [app.insurance.ui :as insurance-ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.card :as card]
    [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -183,8 +184,8 @@
   (let [items-left-key (if (= 1 queue-count)
                          [:insurance.review/item-left]
                          [:insurance.review/items-left])]
-    [:wa-card {:appearance "plain"
-               :style      "background: var(--wa-color-surface-default);"}
+    [card/Card {:appearance "plain"
+                :style      "background: var(--wa-color-surface-default);"}
      [:div {:class "wa-stack wa-gap-s"}
       [:div {:class "wa-split wa-gap-m"}
        [:span {:class                  "wa-font-weight-semibold"
@@ -220,8 +221,8 @@
 
 (defn- queue-card
   [req {:keys [filter policy queue selected-coverage]}]
-  [:wa-card {:appearance "plain"
-             :style      "background: var(--wa-color-surface-default);"}
+  [card/Card {:appearance "plain"
+              :style      "background: var(--wa-color-surface-default);"}
    [:div {:class "wa-stack"}
     [:h2 {:class "wa-heading-l"} ((:tr req) [:insurance.review/queue])]
     (if (seq queue)

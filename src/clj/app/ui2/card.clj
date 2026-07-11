@@ -26,9 +26,6 @@
 (def ^{:doc (uic/generate-docstring doc-card)} Card
   ::card)
 
-(def ^:private ssr-attrs
-  #{:with-header :with-media :with-footer :with-header-actions :with-footer-actions})
-
 (defn- token-value [value]
   (cond
     (keyword? value) (name value)
@@ -69,7 +66,7 @@
 (defn- root-attrs [attrs]
   (let [appearance  (or (token-value (:appearance attrs)) "outlined")
         orientation (or (token-value (:orientation attrs)) "vertical")]
-    (-> (apply dissoc attrs :class :appearance :orientation ssr-attrs)
+    (-> (dissoc attrs :class :appearance :orientation)
         (assoc :appearance appearance
                :orientation orientation)
         (uic/merge-attrs :class (uic/cs "sno-card" (:class attrs))))))

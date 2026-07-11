@@ -9,6 +9,7 @@
    [app.insurance.ui :as insurance.ui]
    [app.qrcode :as qr]
    [app.ui2 :as ui2]
+   [app.ui2.card :as card]
    [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
@@ -128,7 +129,7 @@
   (let [{:keys [iban bic account-name]} (config/band-bank-info (-> system :env))]
     (ui2/section-card
      {:title (tr [:dashboard/you-owe])}
-     [:wa-card {:class "dashboard-ledger-card"}
+     [card/Card {:class "dashboard-ledger-card"}
       [:div {:class "dashboard-ledger-grid"}
        [:div {:class "wa-stack wa-gap-xs"}
         [:span {:class "wa-caption-s"} (tr [:outstanding-balance])]

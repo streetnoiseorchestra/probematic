@@ -1,6 +1,7 @@
 (ns app.insurance.policy.review.views-test
   (:require
    [app.insurance.policy.review.views :as sut]
+   [app.ui2.card :as card]
    [app.test-common :as tu]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -175,6 +176,19 @@
                            "/workbench?review-filter=missing-id")}
                {:text (l/text link)
                 :href (:href (l/attrs link))}))))))
+
+(deftest review-cards-use-native-card-chassis
+  (let [review {:filter            :needs-review
+                :policy            policy
+                :queue             []
+                :queue-count       0
+                :selected-coverage nil
+                :totals            {:total-cost 0M}}
+        cards  [(sut/workbench-summary {:tr tr} review)
+                (second (sut/review-aside {:tr tr} review))
+                (#'sut/queue-card {:tr tr} review)]]
+    (is (= [card/Card card/Card card/Card]
+           (mapv first cards)))))
 
 (deftest todo-review
   (testing "An insurance-team member is reviewing a Todo item on a draft policy."

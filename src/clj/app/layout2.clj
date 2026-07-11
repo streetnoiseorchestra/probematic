@@ -193,7 +193,6 @@
       // initializes so d* can interact with their value and change attrs.
       // Keep wa-icon defined because some Web Awesome components render internal icons.
       import 'wa/components/icon/icon.js';
-      import 'wa/components/card/card.js';
       import 'wa/components/button/button.js';
       import 'wa/components/divider/divider.js';
       import 'wa/components/relative-time/relative-time.js';

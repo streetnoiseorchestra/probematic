@@ -1,5 +1,6 @@
 (ns app.stats.views-test
   (:require
+   [app.ui2.card :as card]
    [app.stats.views :as views]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -30,6 +31,19 @@
                     j/read-value)]
     (-> (get-in signals ["statsDashboard" "attendanceHistogramChartJson"])
         j/read-value)))
+
+(deftest cards-use-native-card-chassis
+  (let [summary       (#'views/summary-card tr {})
+        chart-section (views/charts-section tr {:gig-histogram []
+                                                :probe-histogram []})
+        chart         (nth chart-section 2)]
+    (is (= [{:tag card/Card :class "stats-summary-card"}
+            {:tag card/Card :class "stats-chart-card" :header-slot "header"}]
+           [{:tag (first summary)
+             :class (:class (l/attrs summary))}
+            {:tag         (first chart)
+             :class       (:class (l/attrs chart))
+             :header-slot (:slot (l/attrs (l/select-one "div[slot=header]" chart)))}]))))
 
 (deftest attendance-chart
   (testing "Gig and rehearsal attendance histograms contain three percentage bins."

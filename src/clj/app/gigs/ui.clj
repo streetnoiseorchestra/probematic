@@ -1,6 +1,7 @@
 (ns app.gigs.ui
   (:require
    [app.ui2 :as ui2]
+   [app.ui2.card :as card]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
@@ -77,7 +78,7 @@
   [:section {:id    id
              :class "wa-stack wa-gap-xs"}
    (section-heading title)
-   [:wa-card {:class "gigs-list-card"}
+   [card/Card {:class "gigs-list-card"}
     (if (seq gigs)
       (for [gig gigs]
         (gig-row req gig))
