@@ -3,6 +3,12 @@
 status-active = Aktiv
 status-inactive = Inaktiv
 status-label = Status
+my-responses = Meine Antworten
+responses-empty = Alles erledigt.
+greeting-morning = Guten Morgen, { $name }
+greeting-afternoon = Guten Tag, { $name }
+greeting-evening = Guten Abend, { $name }
+greeting-nightowl = Hallo, { $name }
 
 ### Fußleiste
 

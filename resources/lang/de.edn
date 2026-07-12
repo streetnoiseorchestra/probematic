@@ -398,16 +398,12 @@
   :size "Größe"},
  :choose-calendar-app "Wählen Sie Ihre Kalender-App",
  :dashboard
- {:afternoon "Guten Tag, %1",
-  :welcome "Willkommen %1!",
-  :morning "Guten Morgen, %1",
+ {:welcome "Willkommen %1!",
   :upcoming "Alle kommenden Termine",
-  :nightowl "Hallo Nachteule, %1",
   :unanswered "Zukünftige Termine: Sag Bescheid!",
   :insurance-todo "Versicherungsteam TODOs",
   :you-owe "Du schuldest der Band etwas Geld!",
-  :polls-open "Wir haben offene Umfragen!",
-  :evening "Guten Abend, %1"},
+  :polls-open "Wir haben offene Umfragen!"},
  :history
  {:title "Änderungsverlauf",
   :subtitle-coverage
@@ -639,7 +635,6 @@
   "Sind Sie sicher, dass Sie die Versicherungspolice %1 löschen möchten?",
   :create "Erstellen",
   :create-gig "Gig erstellen",
-  :edit "Bearbeiten",
   :copy-link-confirm "Kopiert",
   :update "Aktualisieren",
   :delete "Löschen",
@@ -658,7 +653,6 @@
   :select-all "Wählen Alle",
   :quick-edit "Schnellbearbeitung",
   :mark-as "Markieren als",
-  :more-actions "Weitere Aktionen",
   :next "Nächste",
   :previous "Vorherige",
   :back "Zurück",
@@ -714,7 +708,6 @@
   :poll-not-found "Umfrage nicht gefunden."}
  :reminders
  {:remind-me-in "Erinnere mich in",
-  :remind-all "Erinnern alle",
   :reminded-all-at "Alle erinnert um:",
   :confirm-remind-all-title "Alle daran erinnern?",
   :confirm-remind-all
@@ -767,8 +760,7 @@
   :payment-direction-debit "Die Band hat %1 bezahlt",
   :payment-direction-credit "%1 hat die Band bezahlt"},
  :gigs
- {:title "Gigs & Proben",
-  :upcoming "Kommend",
+ {:upcoming "Kommend",
   :past "Vergangen",
   :no-past "Keine Gigs/Proben in den letzten 2 Wochen",
   :no-future "Keine bevorstehenden Gigs/Proben",

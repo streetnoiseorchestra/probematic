@@ -10,8 +10,8 @@
    [app.qrcode :as qr]
    [app.ui2 :as ui2]
    [app.ui2.card :as card]
-   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
+   [app.ui2.core :as uic]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
    [app.util :as util]
@@ -19,9 +19,6 @@
 
 (defn- member-nick [{:member/keys [name nick]}]
   (if (str/blank? nick) name nick))
-
-(defn- js-value [value]
-  (d*/->signals value))
 
 (defn- dashboard-list [class rows]
   (into [:div {:class (ui2/cs "dashboard-list" class)}]
@@ -102,6 +99,53 @@
                      (tr [:dashboard/insurance-todo])
                      (mapv #(insurance-todo-row req %) policies)))
 
+(defn- dashboard-card [class title actions & children]
+  (into
+   [card/Card {:class (ui2/cs "dashboard-home-card" class)}
+    [:h2 {:slot "header"} title]]
+   (concat (map #(uic/assoc-attr % :slot "header-actions")
+                (filter some? actions))
+           children)))
+
+(defn- response-count [unanswered insurance-todos]
+  (+ (count unanswered) (count insurance-todos)))
+
+(defn- responses-card [{:keys [tr] :as req} unanswered insurance-todos]
+  (let [count (response-count unanswered insurance-todos)]
+    (dashboard-card
+     "responses"
+     [:i18n/tr :my-responses]
+     [[:wa-badge {:appearance "filled"
+                  :variant    (if (pos? count) "warning" "neutral")
+                  :pill       true}
+       count]]
+     (if (pos? count)
+       (list
+        (when (seq unanswered)
+          (gig-section req
+                       [:i18n/tr :gigs/attendance-needed]
+                       unanswered))
+        (when (seq insurance-todos)
+          (insurance-todos-section
+           (assoc req :tr tr)
+           insurance-todos)))
+       [:p {:class "empty"}
+        [:i18n/tr :responses-empty]]))))
+
+(defn- upcoming-card [req upcoming]
+  (dashboard-card
+   "upcoming"
+   [:i18n/tr :gigs/upcoming-gigs-rehearsals]
+   nil
+   (if (seq upcoming)
+     (dashboard-list "dashboard-gig-list" (mapv #(gig-row req %) upcoming))
+     [:p {:class "empty"}
+      [:i18n/tr :gigs/upcoming-empty]])
+   [button/Button {:slot       "footer-actions"
+                   :appearance "plain"
+                   :href       (urls/link-gigs-home)}
+    [:i18n/tr :gigs/view-all]]))
+
 (defn- currency-format [cents]
   (ui2/money-format (/ (or cents 0) 100.0) :EUR))
 
@@ -150,81 +194,85 @@
           [:wa-qr-code {:value qr-value
                         :label (tr [:or-scan-qr-code])}]])]])))
 
-(defn- calendar-url-data [env]
-  (when-let [https (config/public-calendar-url env)]
-    (let [webcal         (str/replace https "https" "webcal")
-          encoded-webcal (urls/url-encode webcal)]
-      {:https       https
-       :webcal      webcal
-       :google      (format "https://calendar.google.com/calendar/render?cid=%s" encoded-webcal)
-       :outlook-365 (str "https://outlook.office.com/owa?path=%2Fcalendar%2Faction%2Fcompose&rru=addsubscription"
-                         "&url=" encoded-webcal "&name=SNO-Kalender")
-       :outlook-live (str "https://outlook.live.com/owa?path=%2Fcalendar%2Faction%2Fcompose&rru=addsubscription"
-                          "&url=" encoded-webcal "&name=SNO-Kalender")})))
+(def ^:private activity-fixtures
+  [{:icon :calendar
+    :title :activity/rehearsal-updated-title
+    :detail :activity/rehearsal-updated-detail
+    :when :activity/rehearsal-updated-when}
+   {:icon :question
+    :title :activity/poll-created-title
+    :detail :activity/poll-created-detail
+    :when :activity/poll-created-when}
+   {:icon :music-note-outline
+    :title :activity/repertoire-updated-title
+    :detail :activity/repertoire-updated-detail
+    :when :activity/repertoire-updated-when}])
 
-(defn- calendar-menu-icon
-  ([icon-name]
-   (calendar-menu-icon icon-name nil))
-  ([icon-name extra-class]
-   [ico/Icon {::ico/library :snoico
-              ::ico/name    icon-name
-              :slot         "icon"
-              :class        (ui2/cs "dashboard-calendar-service-icon" extra-class)}]))
+(defn- greeting [member]
+  [:i18n/tr
+   (keyword (str "greeting-"
+                 (name (util/time-window (util/local-time-austria!)))))
+   {:name (member-nick member)}])
 
-(defn- calendar-subscribe-button [{:keys [tr system]}]
-  (when-let [{:keys [https webcal google outlook-365 outlook-live]} (calendar-url-data (:env system))]
-    [:wa-dropdown {:placement "bottom-end"}
-     [button/Button {:slot       "trigger"
-                     :appearance "outlined"
-                     :with-caret true}
-      [ico/Icon {::ico/library :snoico
-                 ::ico/name    :calendar
-                 :slot         "start"}]
-      (tr [:action/add-to-calendar])]
-     [:wa-dropdown-item {:data-on:click (str "navigator.clipboard.writeText(" (js-value https) ")")}
-      (calendar-menu-icon "copy" "dashboard-calendar-service-icon--copy")
-      (tr [:action/copy-link])]
-     [:wa-dropdown-item {:value   outlook-365
-                         :onclick "window.location = this.value"}
-      (calendar-menu-icon "microsoft-365")
-      "Microsoft 365"]
-     [:wa-dropdown-item {:value   outlook-live
-                         :onclick "window.location = this.value"}
-      (calendar-menu-icon "outlook")
-      "Outlook Live"]
-     [:wa-dropdown-item {:value   google
-                         :onclick "window.location = this.value"}
-      (calendar-menu-icon "google-calendar")
-      "Google Calendar"]
-     [:wa-dropdown-item {:value   webcal
-                         :onclick "window.location = this.value"}
-      (calendar-menu-icon "apple-calendar" "dashboard-calendar-service-icon--apple")
-      "Apple Calendar"]]))
-
-(defn- page-actions [req]
-  [(calendar-subscribe-button req)
-   [button/Button {:appearance "filled"
-                   :variant    "brand"
+(defn- quick-actions []
+  [:div {:class "quick-actions"}
+   [button/Button {:class      "dashboard-home-quick-action"
+                   :appearance "outlined"
                    :href       (urls/link-gig-create)}
-    ((:tr req) [:action/create-gig])]])
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    :circle-plus-solid
+               :slot         "start"}]
+    [:i18n/tr :gigs/new-gig]]
+   [button/Button {:class      "dashboard-home-quick-action"
+                   :appearance "outlined"
+                   :href       (urls/link-polls-create)}
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    :circle-plus-solid
+               :slot         "start"}]
+    [:i18n/tr :polls/new-poll]]])
 
-(defn page [{:keys [db tr] :as req}]
+(defn- activity-entry [{:keys [detail icon title when]}]
+  [:li {:class "activity-entry"}
+   [:div {:class "icon" :aria-hidden "true"}
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    icon}]]
+   [:div {:class "copy"}
+    [:strong [:i18n/tr title]]
+    [:p [:i18n/tr detail]]
+    [:span [:i18n/tr when]]]])
+
+(defn- activity-preview []
+  [:aside {:class "activity"}
+   [:div {:class "activity-heading"}
+    [:h2 [:i18n/tr :activity/recent]]
+    [button/Button {:appearance "plain"
+                    :size       "small"
+                    :disabled   true}
+     [:i18n/tr :action/view-all]]]
+   (into [:ol] (map activity-entry activity-fixtures))])
+
+(defn- home-content
+  [req member {:keys [insurance-todos ledger unanswered upcoming]}]
+  [:div {:class        "dashboard-home"
+         :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
+   [:section {:class "personal"}
+    [:h1 {:class "greeting"} (greeting member)]
+    [:h1 {:class "mobile-title"}
+     [:i18n/tr :gigs/title]]
+    (quick-actions)]
+   [:section {:class "focus"}
+    [:div {:class "wa-stack wa-gap-l"}
+     (responses-card req unanswered insurance-todos)
+     (when (and ledger (pos? (:ledger/balance ledger)))
+       (ledger-widget req ledger))
+     (upcoming-card req upcoming)]]
+   (activity-preview)])
+
+(defn page [{:keys [db] :as req}]
   (let [member (auth/get-current-member req)
         _      (assert member)
-        {:keys [answered insurance-todos ledger unanswered]} (queries/dashboard-data db member)]
-    (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l"
-            :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
-      [page-header/PageHeader
-       {:title   (tr [(keyword "dashboard" (name (util/time-window (util/local-time-austria!))))]
-                     [(member-nick member)])
-        :actions (page-actions req)}]
-      (when (and ledger (pos? (:ledger/balance ledger)))
-        (ledger-widget req ledger))
-      (insurance-todos-section req insurance-todos)
-      (gig-section req (tr [:dashboard/unanswered]) unanswered)
-      (gig-section req (tr [:dashboard/upcoming]) answered)
-      (when-not (or (seq answered) (seq unanswered))
-        (ui2/empty-state (tr [:gigs/no-future]) (tr [:action/create-gig])))])))
+        data   (queries/dashboard-data db member)]
+    (ui2/datastar-page*
+     (home-content req member data))))
 
 (d*/refresh-all!)

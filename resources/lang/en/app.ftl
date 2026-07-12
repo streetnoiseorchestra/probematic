@@ -3,6 +3,12 @@
 status-active = Active
 status-inactive = Inactive
 status-label = Status
+my-responses = My Responses
+responses-empty = You’re all caught up.
+greeting-morning = Good morning, { $name }
+greeting-afternoon = Good afternoon, { $name }
+greeting-evening = Good evening, { $name }
+greeting-nightowl = Hi there, { $name }
 
 ### Footer tray
 

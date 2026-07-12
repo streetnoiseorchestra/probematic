@@ -11,7 +11,7 @@ app-shell {
     "content" 1fr / minmax(0, 1fr);
   position: relative;
   min-block-size: 100dvb;
-  background-color: var(--wa-color-surface-default);
+  background-color: var(--wa-color-surface-lowered);
 
   & > header {
     grid-area: topbar;
@@ -103,6 +103,7 @@ app-shell-account #account-dropdown-button {
 
 app-shell-content {
   grid-area: content;
+  container: app-content / inline-size;
   min-inline-size: 0;
   padding-block: var(--app-shell-content-padding-block);
   padding-inline: var(--app-shell-content-padding-inline);
@@ -150,6 +151,10 @@ app-shell-content {
 }
 
 @media (--sno-index-expanded) {
+  app-shell-content:has(> main > .sno-page-surface) {
+    padding-block-start: var(--wa-space-s);
+  }
+
   app-shell {
     --app-shell-content-padding-block: clamp(
       var(--wa-space-xl),

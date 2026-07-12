@@ -71,8 +71,14 @@
          vec)))
 
 (defn gig-buckets [db member]
-  {:answered   (answered-gigs db member)
-   :unanswered (unanswered-gigs db member)})
+  (let [answered   (answered-gigs db member)
+        unanswered (unanswered-gigs db member)]
+    {:answered   answered
+     :unanswered unanswered
+     :upcoming   (->> (concat answered unanswered)
+                      (sort-by :gig/call-time)
+                      (sort-by :gig/date)
+                      vec)}))
 
 (defn- policy-totals [{:insurance.policy/keys [covered-instruments]}]
   {:total-needs-review (count (filter #(= :instrument.coverage.status/needs-review

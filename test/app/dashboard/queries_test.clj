@@ -86,7 +86,12 @@
               member  (q/retrieve-member db member-id)
               buckets (queries/gig-buckets db member)]
           (is (= ["Answered future"] (titles (:answered buckets))))
-          (is (= ["Unanswered future" "Unknown future"] (titles (:unanswered buckets)))))))))
+          (is (= ["Unanswered future" "Unknown future"] (titles (:unanswered buckets))))
+          (is (= ["Answered future" "Unanswered future" "Unknown future"]
+                 (titles (:upcoming buckets))))
+          (is (= [:plan/definitely :plan/no-response :plan/unknown]
+                 (mapv #(get-in % [:attendance :attendance/plan])
+                       (:upcoming buckets)))))))))
 
 (deftest policies-with-todos-test
   (testing "returns only policies with coverages needing review and includes dashboard totals"

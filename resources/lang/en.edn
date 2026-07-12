@@ -20,10 +20,6 @@
                        :restart-login   "Restart login"
                        :log-out         "Log out"}
  :dashboard           {:welcome        "Welcome %1!"
-                       :morning        "Good morning, %1"
-                       :afternoon      "Good afternoon, %1"
-                       :evening        "Good evening, %1"
-                       :nightowl       "Hi there nightowl, %1"
                        :unanswered     "Need Attention!"
                        :upcoming       "All Upcoming Gigs"
                        :polls-open     "We have open polls!"
@@ -142,8 +138,7 @@
                     :end-time-warning         "WARNING: The end time is only estimated.. someone didn't fill out that field in SNOrga."}
  :orange-and-green "orange and green"
 
- :gigs                           {:title        "Gigs & Proben"
-                                  :upcoming     "Upcoming"
+ :gigs                           {:upcoming     "Upcoming"
                                   :past         "Past"
                                   :no-past      "No gigs/probes in the past 2 weeks"
                                   :no-future    "No upcoming gigs/probes"
@@ -518,9 +513,7 @@
                                   :download                     "Download"
                                   :filter                       "Filter"
                                   :duplicate                    "Duplicate"
-                                  :edit                         "Edit"
                                   :mark-as                      "Mark As"
-                                  :more-actions                 "More actions"
                                   :next                         "Next"
                                   :previous                     "Previous"
                                   :open-poll                    "Open Poll"
@@ -669,7 +662,6 @@
              :does-not-match "The passwords do not match."}
  :login     "Login"
  :reminders {:remind-me-in             "Remind me in"
-             :remind-all               "Remind all"
              :reminded-all-at          "Reminded everyone at:"
              :confirm-remind-all-title "Remind everyone?"
              :confirm-remind-all       "This will email everyone who hasn't responded yet. Are you sure?"

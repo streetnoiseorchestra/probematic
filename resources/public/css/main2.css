@@ -19,6 +19,8 @@
 @import "ui2/jump-menu.css" layer(sno-ui);
 @import "ui2/layout.css" layer(sno-ui);
 @import "ui2/page-header.css" layer(sno-ui);
+@import "ui2/page-surface.css" layer(sno-ui);
+@import "ui2/page-toolbar.css" layer(sno-ui);
 @import "ui2/dl.css" layer(sno-ui);
 @import "ui2/table.css" layer(sno-ui);
 @import "ui2/link-copy.css" layer(sno-ui);

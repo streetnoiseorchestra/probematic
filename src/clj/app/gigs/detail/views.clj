@@ -12,6 +12,8 @@
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
@@ -61,28 +63,13 @@
     (ui2/date-range-display req :compact-with-weekday date end-date)
     (muted nil)))
 
-(defn- header-actions [{:keys [tr]} gig]
-  [[button/Button {:appearance "outlined"
-                   :href       (urls/link-gig-edit gig)}
-    (tr [:action/edit])]
-   [button/Button {:appearance "outlined"
-                   :variant    "brand"
-                   :href       (urls/link-gig-log-plays gig)}
-    "Log Plays"]])
-
-(defn- gig-summary [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
+(defn- gig-summary [{:keys [tr]} {:gig/keys [title gig-type status]}]
   [page-header/PageHeader
-   {:breadcrumb [breadcrumb/Breadcrumb
-                 {}
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
-                  (tr [:nav/gigs])]
-                 [breadcrumb/BreadcrumbItem (gigs.ui/gig-breadcrumb-label req gig)]]
-    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-                 (when status
-                   (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
-                 title
-                 [:wa-badge {:appearance "outlined" :class "wa-font-size-xs"} (tr [gig-type])]]
-    :actions    (header-actions req gig)}])
+   {:title [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+            (when status
+              (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
+            title
+            [:wa-badge {:appearance "outlined" :class "wa-font-size-xs"} (tr [gig-type])]]}])
 
 (defn- gig-info-section
   [{:keys [tr] :as req}
@@ -163,29 +150,52 @@
     (< (- (System/currentTimeMillis) (inst-ms sent-at))
        (* 24 60 60 1000))))
 
-(defn- remind-all-button [{:keys [tr page-state] :as req} _gig-id]
+(defn- remind-all-menu-item [{:keys [page-state] :as req}]
   (let [sent-at       (get-in page-state actions/remind-all-sent-at-path)
         recent?       (recent-reminder? sent-at)
-        button-id     "gig-detail-remind-all-button"
-        dialog-id     "gig-detail-remind-all-dialog"
-        button        [button/Button (cond-> {:id          button-id
-                                              :appearance  (if recent? "filled" "outlined")
-                                              :variant     "neutral"
-                                              :size        "s"
-                                              :data-dialog (str "open " dialog-id)}
-                                       recent? (assoc :class "gigs-remind-all-button--sent"))
-                       (when recent?
-                         [ico/Icon {::ico/library :snoico
-                                    ::ico/name    :circle-check
-                                    :slot         "start"}])
-                       (tr [:reminders/remind-all])]]
-    (if recent?
-      [:span
-       [:wa-tooltip {:for button-id :placement "top"}
-        [:span (str (tr [:reminders/reminded-all-at]) " ")
-         (ui2/format-date-time req :medium sent-at)]]
-       button]
-      button)))
+        dialog-id     "gig-detail-remind-all-dialog"]
+    [:wa-dropdown-item {:data-dialog (str "open " dialog-id)}
+     (when recent?
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :circle-check
+                  :slot         "icon"}])
+     [:i18n/tr :gigs/remind-all]
+     (when recent?
+       [:span {:slot "details"}
+        (ui2/format-date-time req :medium sent-at)])]))
+
+(defn- gig-toolbar [req {:gig/keys [gig-id] :as gig}]
+  (let [archived? (domain/gig-archived? gig)]
+    [page-toolbar/PageToolbar
+     {::page-toolbar/breadcrumb
+      [breadcrumb/Breadcrumb
+       {}
+       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+        [:i18n/tr :gigs/navigation-label]]
+       [breadcrumb/BreadcrumbItem (gigs.ui/gig-breadcrumb-label req gig)]]
+      ::page-toolbar/mobile-back
+      [button/Button {:appearance "plain"
+                      :href       (urls/link-gigs-home)}
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :arrow-left
+                  :slot         "start"}]
+       [:i18n/tr :gigs/navigation-label]]
+      ::page-toolbar/actions
+      [[button/Button {:appearance "outlined"
+                       :variant    "brand"
+                       :href       (urls/link-gig-log-plays gig-id)}
+        [:i18n/tr :gigs/log-plays]]]
+      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+      ::page-toolbar/overflow-items
+      (cond->
+       [[:wa-dropdown-item {:value   (urls/link-gig-edit gig-id)
+                            :onclick "window.location = this.value"}
+         [ico/Icon {::ico/library :phosphor
+                    ::ico/name    :pencil-simple
+                    :slot         "icon"}]
+         [:i18n/tr :action/edit]]]
+        (not archived?) (conj (remind-all-menu-item req)))
+      :aria-label [:i18n/tr :gigs/detail-toolbar-label]}]))
 
 (defn- remind-all-dialog [{:keys [tr] :as req} gig-id]
   [:wa-dialog {:id    "gig-detail-remind-all-dialog"
@@ -204,10 +214,9 @@
                                                            {:gig-id gig-id})}
     (tr [:reminders/confirm])]])
 
-(defn- attendance-actions [req archived? gig-id show-committed?]
+(defn- attendance-actions [req archived? show-committed?]
   (when-not archived?
-    [(remind-all-button req gig-id)
-     [button/Button (merge {:appearance "filled"
+    [[button/Button (merge {:appearance "filled"
                             :variant    "brand"
                             :size       "s"}
                            (attendance.ui/action-attrs req
@@ -225,9 +234,7 @@
       :title    (tr [:gig/attendance])
       :class    "gigs-attendance-card"
       :divider? true
-      :actions  (attendance-actions req archived? gig-id show-committed?)}
-     (when-not archived?
-       (remind-all-dialog req gig-id))
+      :actions  (attendance-actions req archived? show-committed?)}
      (attendance.ui/summary-counts tr summary)
      [:div {:class "gigs-attendance-sections"}
       (map-indexed (fn [idx section]
@@ -270,14 +277,19 @@ window.DiscourseEmbed = %s;
   (let [gig-id (http.util/path-param-uuid! req :gig/gig-id)
         gig    (q/retrieve-gig db gig-id)]
     (if gig
-      (ui2/datastar-page
-       [:div {:class        "wa-stack wa-gap-2xl"
-              :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
-        (gig-summary req gig)
-        (gig-info-section req gig)
-        (planned-songs-section req gig)
-        (attendance-section req gig)
-        (discourse-comments-section req gig)])
+      (ui2/datastar-page*
+       [page-surface/PageSurface
+        {::page-surface/width :wide
+         ::page-surface/toolbar (gig-toolbar req gig)}
+        [:div {:class        "wa-stack wa-gap-2xl"
+               :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
+         (gig-summary req gig)
+         (gig-info-section req gig)
+         (planned-songs-section req gig)
+         (attendance-section req gig)
+         (discourse-comments-section req gig)]]
+       (when-not (domain/gig-archived? gig)
+         (remind-all-dialog req gig-id)))
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id})))))
 

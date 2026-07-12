@@ -113,6 +113,7 @@
     --sno-table-cell-padding: 0.5em;
     --sno-table-border-radius: 0;
     --sno-nav-header-z-index: 20;
+    --sno-page-toolbar-z-index: 10;
     --sno-table-bulk-action-z-index: 30;
   }
 }

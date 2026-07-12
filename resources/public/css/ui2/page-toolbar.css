@@ -1,0 +1,76 @@
+.sno-page-toolbar {
+  position: relative;
+  z-index: var(--sno-page-toolbar-z-index);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--wa-space-s);
+  align-items: center;
+  min-block-size: var(--app-shell-topbar-size);
+  padding: var(--wa-space-xs) var(--wa-space-m);
+  background-color: color-mix(
+    in oklab,
+    var(--wa-color-surface-raised) 94%,
+    transparent
+  );
+  border-block-end: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-surface-border);
+  backdrop-filter: blur(var(--wa-shadow-blur-l));
+}
+
+@scope (.sno-page-toolbar) {
+  .context,
+  .desktop {
+    min-inline-size: 0;
+  }
+
+  .desktop {
+    overflow: hidden;
+  }
+
+  .mobile {
+    display: none;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wa-space-2xs);
+    align-items: center;
+    justify-content: end;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .actions > li {
+    display: flex;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@media (--sno-viewport-s) {
+  .sno-page-toolbar {
+    position: sticky;
+    inset-block-start: var(--app-shell-topbar-size);
+  }
+}
+
+@media (--sno-viewport-below-s) {
+  @scope (.sno-page-toolbar) {
+    .desktop {
+      display: none;
+    }
+
+    .mobile {
+      display: block;
+      min-inline-size: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sno-page-toolbar {
+    scroll-behavior: auto;
+  }
+}
