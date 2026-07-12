@@ -12,16 +12,20 @@
 
   padding: var(--wa-space-2xs);
   pointer-events: auto;
-  background-color: color-mix(
-    in oklab,
-    var(--wa-color-surface-default) 60%,
-    transparent
-  );
   border-radius: var(--wa-border-radius-pill);
-  backdrop-filter: blur(calc(var(--wa-shadow-blur-l) * 2));
 }
 
 @scope (.jump-menu) {
+  :scope.stuck {
+    background-color: color-mix(
+      in oklab,
+      var(--wa-color-surface-default) 60%,
+      transparent
+    );
+    box-shadow: var(--wa-shadow-s);
+    backdrop-filter: blur(calc(var(--wa-shadow-blur-l) * 2));
+  }
+
   .trigger > .brand {
     display: flex;
   }

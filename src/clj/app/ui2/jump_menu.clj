@@ -101,7 +101,12 @@
     gigs)])
 
 (defn JumpMenu [{::keys [logotype]}]
-  [:div {:class "jump-menu"}
+  [:div {:class "jump-menu"
+         :data-signals:jump-menu-stuck__ifmissing "false"
+         :data-init "$jumpMenuStuck = window.scrollY > 0"
+         :data-on:scroll__window__throttle.50ms
+         "$jumpMenuStuck = window.scrollY > 0"
+         :data-class:stuck "$jumpMenuStuck"}
    [button/Button {:id "jump-menu-trigger"
                    :class "trigger"
                    :appearance "plain"

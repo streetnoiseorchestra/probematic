@@ -23,8 +23,14 @@
                                    :ledger nil
                                    :unanswered []
                                    :upcoming []}))]
-        (is (str/includes? rendered "class=\"dashboard-home\""))
-        (is (str/includes? rendered "class=\"personal\""))
+        (is (str/includes? rendered
+                           "class=\"dashboard-home wa-grid wa-gap-l\""))
+        (is (str/includes?
+             rendered
+             "class=\"personal wa-stack wa-gap-l wa-text-end\""))
+        (is (str/includes? rendered
+                           (str "class=\"quick-actions wa-stack wa-gap-xs "
+                                "wa-align-items-end\"")))
         (is (str/includes? rendered "class=\"focus\""))
         (is (str/includes? rendered "class=\"activity\""))
         (is (= ["/gigs/create" "/polls/new"]

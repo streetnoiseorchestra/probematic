@@ -81,7 +81,7 @@ app-shell {
     inset: 0;
     z-index: 30;
     opacity: 0;
-    background-color: rgb(0 0 0 / 45%);
+    background-color: var(--wa-color-overlay-modal);
     pointer-events: none;
     transition: opacity var(--wa-transition-normal) var(--wa-transition-easing);
   }

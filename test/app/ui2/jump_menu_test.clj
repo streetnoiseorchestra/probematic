@@ -67,6 +67,10 @@
             see-all    (l/select-one ".see-all" view)
             translation-nodes (l/select :i18n/tr view)]
         (is (= {:root-class "jump-menu"
+                :root-signals "false"
+                :root-init "$jumpMenuStuck = window.scrollY > 0"
+                :root-scroll "$jumpMenuStuck = window.scrollY > 0"
+                :root-stuck "$jumpMenuStuck"
                 :trigger {:id "jump-menu-trigger"
                           :appearance "plain"
                           :with-caret true
@@ -89,6 +93,12 @@
                 :see-all-href "/gigs"
                 :translation-node-count 0}
                {:root-class (-> view l/attrs :class)
+                :root-signals
+                (-> view l/attrs :data-signals:jump-menu-stuck__ifmissing)
+                :root-init (-> view l/attrs :data-init)
+                :root-scroll
+                (-> view l/attrs :data-on:scroll__window__throttle.50ms)
+                :root-stuck (-> view l/attrs :data-class:stuck)
                 :trigger (select-keys (l/attrs trigger)
                                       [:id :appearance :with-caret :aria-controls
                                        :aria-expanded :aria-haspopup :aria-label])

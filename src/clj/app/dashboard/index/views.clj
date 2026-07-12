@@ -215,7 +215,7 @@
    {:name (member-nick member)}])
 
 (defn- quick-actions []
-  [:div {:class "quick-actions"}
+  [:div {:class "quick-actions wa-stack wa-gap-xs wa-align-items-end"}
    [button/Button {:class      "dashboard-home-quick-action"
                    :appearance "outlined"
                    :href       (urls/link-gig-create)}
@@ -253,9 +253,9 @@
 
 (defn- home-content
   [req member {:keys [insurance-todos ledger unanswered upcoming]}]
-  [:div {:class        "dashboard-home"
+  [:div {:class        "dashboard-home wa-grid wa-gap-l"
          :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
-   [:section {:class "personal"}
+   [:section {:class "personal wa-stack wa-gap-l wa-text-end"}
     [:h1 {:class "greeting"} (greeting member)]
     [:h1 {:class "mobile-title"}
      [:i18n/tr :gigs/title]]
