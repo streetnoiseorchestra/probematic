@@ -3,10 +3,9 @@
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
-   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
    [app.urls :as urls]))
 
 (defn pop-helper-script []
@@ -34,19 +33,25 @@
                                (.remove target.classList animation-class))
                              duration))))))))
 
-(defn page-summary [{:keys [tr] :as req} gig title-kw]
-  [page-header/PageHeader
-   {:breadcrumb [breadcrumb/Breadcrumb
-                 {}
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
-                  (tr [:nav/gigs])]
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gig gig)}
-                  (gigs.ui/gig-breadcrumb-label req gig)]
-                 [breadcrumb/BreadcrumbItem (tr title-kw)]]
-    :title      (tr title-kw)
-    :actions    [[button/Button {:appearance "outlined"
-                                 :href       (urls/link-gig gig)}
-                  (tr [:action/back])]]}])
+(defn page-toolbar [req gig title-key]
+  (let [gig-url   (urls/link-gig gig)
+        gig-label (gigs.ui/gig-breadcrumb-label req gig)]
+    (gigs.ui/page-toolbar
+     {:breadcrumb   (gigs.ui/breadcrumb-trail
+                     (gigs.ui/breadcrumb-link (urls/link-gigs-home)
+                                              [:i18n/tr :gigs/title])
+                     (gigs.ui/gig-breadcrumb req gig)
+                     (gigs.ui/breadcrumb-current [:i18n/tr title-key]))
+      :mobile-href  gig-url
+      :mobile-label gig-label
+      :actions      [[button/Button {:appearance "filled"
+                                     :variant    "brand"
+                                     :href       gig-url}
+                      [:i18n/tr :action/done]]]
+      :aria-label   [:i18n/tr :gigs/tool-toolbar-label]})))
+
+(defn page-summary [title-key]
+  [page-header/PageHeader {:title [:i18n/tr title-key]}])
 
 (defn selected-song-ids [songs]
   (set (map :song/song-id songs)))

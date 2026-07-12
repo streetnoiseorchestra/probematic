@@ -3,6 +3,7 @@
 add = Add
 cancel = Cancel
 create = Create
+delete = Delete
 done = Done
 edit = Edit
 more-actions = More actions

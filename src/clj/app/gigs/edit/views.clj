@@ -7,9 +7,9 @@
    [app.gigs.ui :as gigs.ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
-   [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -139,65 +139,64 @@
                     :data-action (d*/act req ::actions/delete-gig)}}
    [:p (tr [:action/confirm-delete-gig] [title])]))
 
-(defn- save-button [tr]
+(defn- save-button []
   [button/Button {:appearance         "filled"
                   :variant            "brand"
                   :type               "submit"
                   :form               "gig-edit-form"
                   :data-attr:disabled "!!$loading && $loading !== 'gig-edit'"
                   :data-attr:loading  "$loading === 'gig-edit'"}
-   (tr [:action/save])])
+   [:i18n/tr :action/save]])
 
-(defn- edit-form-actions [{:keys [tr]} gig]
-  (ui2/action-bar
-   {}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-gig gig)}
-     (tr [:action/cancel])]
-    [button/Button {:appearance  "outlined"
-                    :variant     "danger"
-                    :data-dialog (str "open " (gig-remove-dialog-id gig))}
-     (tr [:action/delete])]
-    (save-button tr)]))
+(defn- cancel-button [href]
+  [button/Button {:appearance "plain"
+                  :href       href}
+   [:i18n/tr :action/cancel]])
 
-(defn- create-form-actions [{:keys [tr]}]
-  (ui2/action-bar
-   {}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-gigs-home)}
-     (tr [:action/cancel])]
-    (save-button tr)]))
+(defn- delete-menu-item [gig]
+  [:wa-dropdown-item {:variant     "danger"
+                      :data-dialog (str "open " (gig-remove-dialog-id gig))}
+   [:i18n/tr :action/delete]])
 
-(defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
+(defn- create-toolbar []
+  (gigs.ui/page-toolbar
+   {:breadcrumb   (gigs.ui/breadcrumb-trail
+                   (gigs.ui/breadcrumb-link (urls/link-gigs-home)
+                                            [:i18n/tr :gigs/title])
+                   (gigs.ui/breadcrumb-current [:i18n/tr :gigs/new-gig]))
+    :mobile-href  (urls/link-gigs-home)
+    :mobile-label [:i18n/tr :gigs/title]
+    :actions      [(cancel-button (urls/link-gigs-home))
+                   (save-button)]
+    :aria-label   [:i18n/tr :gigs/edit-toolbar-label]}))
+
+(defn- edit-toolbar [req gig]
+  (let [gig-url   (urls/link-gig gig)
+        gig-label (gigs.ui/gig-breadcrumb-label req gig)]
+    (gigs.ui/page-toolbar
+     {:breadcrumb     (gigs.ui/breadcrumb-trail
+                       (gigs.ui/breadcrumb-link (urls/link-gigs-home)
+                                                [:i18n/tr :gigs/title])
+                       (gigs.ui/gig-breadcrumb req gig)
+                       (gigs.ui/breadcrumb-current [:i18n/tr :action/edit]))
+      :mobile-href    gig-url
+      :mobile-label   gig-label
+      :actions        [(cancel-button gig-url)
+                       (save-button)]
+      :overflow-items [(delete-menu-item gig)]
+      :overflow-label [:i18n/tr :action/more-actions]
+      :aria-label     [:i18n/tr :gigs/edit-toolbar-label]})))
+
+(defn- edit-header [{:keys [tr]} {:gig/keys [title gig-type status]}]
   [page-header/PageHeader
-   {:breadcrumb (into [breadcrumb/Breadcrumb
-                       {}
-                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
-                        (tr [:nav/gigs])]]
-                      breadcrumb-items)
-    :title      title
-    :subtitle   subtitle}])
+   {:title    [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+               [:i18n/tr :action/edit]
+               (when status
+                 (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
+    :subtitle (str title " · " (tr [gig-type]))}])
 
-(defn- edit-header [{:keys [tr] :as req} {:gig/keys [title gig-type status] :as gig}]
-  [page-header/PageHeader
-   {:breadcrumb [breadcrumb/Breadcrumb
-                 {}
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
-                  (tr [:nav/gigs])]
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gig gig)}
-                  (gigs.ui/gig-breadcrumb-label req gig)]
-                 [breadcrumb/BreadcrumbItem (tr [:action/edit])]]
-    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-                 (tr [:action/edit])
-                 (when status
-                   (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
-    :subtitle   (str title " · " (tr [gig-type]))}])
-
-(defn- create-header [{:keys [tr] :as req}]
-  (page-header req
-               (tr [:gig/create-title])
-               nil
-               [breadcrumb/BreadcrumbItem (tr [:gig/create-title])]))
+(defn- create-header []
+  [page-header/PageHeader {:title [:i18n/tr :gigs/new-gig]}])
 
 (defn- gig->form [{:gig/keys [call-time contact date description end-date end-time gig-id gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title]
                    :forum.topic/keys [topic-id]}]
@@ -358,8 +357,7 @@
               (when-let [top-error (form/field-error form-state :_top)]
                 [:wa-callout {:appearance "outlined"
                               :variant    "danger"}
-                 top-error])
-              (edit-form-actions req gig))))
+                 top-error]))))
 
 (defn- create-form [req]
   (let [form-state (create-form-state req)]
@@ -372,28 +370,33 @@
               (when-let [top-error (form/field-error form-state :_top)]
                 [:wa-callout {:appearance "outlined"
                               :variant    "danger"}
-                 top-error])
-              (create-form-actions req))))
+                 top-error]))))
 
 (defn- edit-page [{:keys [db] :as req}]
   (let [gig-id (http.util/path-param-uuid! req :gig/gig-id)
         gig    (q/retrieve-gig db gig-id)]
     (if gig
-      (ui2/datastar-page
-       [:div {:class "wa-stack wa-gap-2xl"}
-        (edit-header req gig)
-        (edit-form req gig)
-        (gig-remove-dialog req gig)]
-       (ui2/markdown-editor-scripts))
+      (ui2/datastar-page*
+       (ui2/markdown-editor-scripts)
+       [page-surface/PageSurface
+        {::page-surface/width   :wide
+         ::page-surface/toolbar (edit-toolbar req gig)}
+        [:div {:class "wa-stack wa-gap-2xl"}
+         (edit-header req gig)
+         (edit-form req gig)]]
+       (gig-remove-dialog req gig))
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id})))))
 
 (defn- create-page [req]
-  (ui2/datastar-page
-   [:div {:class "wa-stack wa-gap-2xl"}
-    (create-header req)
-    (create-form req)]
-   (ui2/markdown-editor-scripts)))
+  (ui2/datastar-page*
+   (ui2/markdown-editor-scripts)
+   [page-surface/PageSurface
+    {::page-surface/width   :wide
+     ::page-surface/toolbar (create-toolbar)}
+    [:div {:class "wa-stack wa-gap-2xl"}
+     (create-header)
+     (create-form req)]]))
 
 (defn page [req]
   (if (http.util/path-param req :gig/gig-id)

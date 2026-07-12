@@ -8,6 +8,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -151,16 +152,19 @@
                                                                 :gig/gig-id     gig-id}))
 
       :else
-      (ui2/datastar-page
-       [:div {:class        "wa-stack wa-gap-xl gigs-probeplan-editor-page"
-              :data-signals (d*/->signals {:gig-probeplan {:gig-id            (str gig-id)
-                                                           :repertoire-filter repertoire-filter
-                                                           :songs             (selected-song-signals selected-songs)
-                                                           :order             []}})}
-        (plan.views/page-summary req gig [:gig/probeplan])
-        (plan.views/error-callout error)
-        (plan.views/pop-helper-script)
-        (song-choices req gig-id songs repertoire-filter selected-songs)
-        (selected-songs-list req gig-id selected-songs)]))))
+      (ui2/datastar-page*
+       [page-surface/PageSurface
+        {::page-surface/width   :wide
+         ::page-surface/toolbar (plan.views/page-toolbar req gig :gigs/probeplan)}
+        [:div {:class        "wa-stack wa-gap-xl gigs-probeplan-editor-page"
+               :data-signals (d*/->signals {:gig-probeplan {:gig-id            (str gig-id)
+                                                            :repertoire-filter repertoire-filter
+                                                            :songs             (selected-song-signals selected-songs)
+                                                            :order             []}})}
+         (plan.views/page-summary :gigs/probeplan)
+         (plan.views/error-callout error)
+         (song-choices req gig-id songs repertoire-filter selected-songs)
+         (selected-songs-list req gig-id selected-songs)
+         (plan.views/pop-helper-script)]]))))
 
 (d*/refresh-all!)

@@ -17,6 +17,7 @@
 
   h1 {
     margin: 0;
+    font-size: var(--wa-font-size-xl);
     line-height: var(--wa-line-height-condensed);
     text-box: trim-start cap alphabetic;
   }
@@ -58,6 +59,10 @@
 
 @media (--sno-viewport-s) {
   @scope (.sno-page-header) {
+    h1 {
+      font-size: var(--wa-font-size-2xl);
+    }
+
     :scope > div {
       display: flex;
       align-items: start;

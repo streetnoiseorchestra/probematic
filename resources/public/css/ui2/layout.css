@@ -223,8 +223,12 @@ app-shell-content {
 
 .sno-section-divider h2 {
   margin: 0;
-  font-size: var(--wa-font-size-l);
+  font-size: var(--wa-font-size-m);
   line-height: var(--sno-line-height-tight);
+}
+
+.sno-section-header .sno-title-block h2 {
+  font-size: var(--wa-font-size-m);
 }
 
 .sno-section-header,
@@ -246,6 +250,11 @@ app-shell-content {
 }
 
 @media (--sno-viewport-s) {
+  .sno-section-divider h2,
+  .sno-section-header .sno-title-block h2 {
+    font-size: var(--wa-font-size-l);
+  }
+
   .sno-section-header {
     display: flex;
     align-items: start;

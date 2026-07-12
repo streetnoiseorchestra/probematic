@@ -3,6 +3,7 @@
 add = Hinzufügen
 cancel = Abbrechen
 create = Erstellen
+delete = Löschen
 done = Fertig
 edit = Bearbeiten
 more-actions = Weitere Aktionen

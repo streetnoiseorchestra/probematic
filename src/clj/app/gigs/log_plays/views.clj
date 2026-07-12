@@ -8,6 +8,7 @@
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
    [app.util.http :as http.util]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -227,13 +228,16 @@
     (if-not gig
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id}))
-      (ui2/datastar-page
-       [:div {:class        "wa-stack wa-gap-xl gigs-log-plays-page"
-              :data-signals (d*/->signals {:gig-log-plays {:gig-id            (str gig-id)
-                                                           :repertoire-filter repertoire-filter
-                                                           :plays             (play-signals rows)}})}
-        (plan.views/page-summary req gig [:song/log-play])
-        (plan.views/pop-helper-script)
-        (plays-list req gig-id rows repertoire-filter)]))))
+      (ui2/datastar-page*
+       [page-surface/PageSurface
+        {::page-surface/width   :wide
+         ::page-surface/toolbar (plan.views/page-toolbar req gig :gigs/log-plays)}
+        [:div {:class        "wa-stack wa-gap-xl gigs-log-plays-page"
+               :data-signals (d*/->signals {:gig-log-plays {:gig-id            (str gig-id)
+                                                            :repertoire-filter repertoire-filter
+                                                            :plays             (play-signals rows)}})}
+         (plan.views/page-summary :gigs/log-plays)
+         (plays-list req gig-id rows repertoire-filter)
+         (plan.views/pop-helper-script)]]))))
 
 (d*/refresh-all!)
