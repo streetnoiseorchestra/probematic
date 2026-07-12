@@ -24,7 +24,7 @@
   }
 
   .greeting {
-    font-size: clamp(var(--wa-font-size-l), 2cqi, var(--wa-font-size-xl));
+    font-size: var(--wa-font-size-l);
     line-height: var(--wa-line-height-condensed);
   }
 
@@ -34,7 +34,7 @@
 
   .mobile-title {
     display: none;
-    font-size: var(--wa-font-size-2xl);
+    font-size: var(--wa-font-size-xl);
   }
 
   .focus {
@@ -74,7 +74,7 @@
   }
 
   .activity h2 {
-    font-size: var(--wa-font-size-l);
+    font-size: var(--wa-font-size-m);
   }
 
   .activity ol {
