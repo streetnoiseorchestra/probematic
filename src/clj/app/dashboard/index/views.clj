@@ -215,7 +215,7 @@
    {:name (member-nick member)}])
 
 (defn- quick-actions []
-  [:div {:class "quick-actions wa-stack wa-gap-xs wa-align-items-end"}
+  [:div {:class "quick-actions wa-cluster wa-gap-xs wa-align-items-end"}
    [button/Button {:class      "dashboard-home-quick-action"
                    :appearance "outlined"
                    :href       (urls/link-gig-create)}

@@ -2,6 +2,7 @@
   (:require
    [app.gigs.detail.views :as views]
    [app.html :as html]
+   [app.util :as util]
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [tick.core :as t]))
@@ -12,22 +13,43 @@
   ([path _args]
    (tr path)))
 
-(deftest gig-toolbar-keeps-log-plays-visible-and-puts-edit-and-remind-in-overflow
-  (let [gig-toolbar (ns-resolve 'app.gigs.detail.views 'gig-toolbar)]
-    (is (some? gig-toolbar) "Gig detail toolbar should exist")
-    (when gig-toolbar
-      (let [gig      {:gig/gig-id (random-uuid)
-                      :gig/title "Summer Concert"
-                      :gig/gig-type :gig.type/gig
-                      :gig/date (t/>> (t/date) (t/new-period 2 :months))}
-            rendered (html/->str tr (gig-toolbar {:tr tr :page-state {}} gig))
-            dropdown (second (re-find #"(?s)(<wa-dropdown.*</wa-dropdown>)" rendered))]
-        (is (str/includes? rendered "class=\"sno-page-toolbar\""))
-        (is (str/includes? rendered (str "href=\"/gig/" (:gig/gig-id gig) "/log-plays\"")))
-        (is (str/includes? dropdown (str "value=\"/gig/" (:gig/gig-id gig) "/edit\"")))
-        (is (str/includes? dropdown "data-dialog=\"open gig-detail-remind-all-dialog\""))
-        (is (str/includes? dropdown ">edit</wa-dropdown-item>"))
-        (is (str/includes? dropdown ">remind-all</wa-dropdown-item>"))))))
+(defn- toolbar-parts [gig]
+  (let [gig-toolbar (ns-resolve 'app.gigs.detail.views 'gig-toolbar)
+        rendered    (html/->str tr (gig-toolbar {:tr tr :page-state {}} gig))
+        [visible]   (str/split rendered #"<wa-dropdown" 2)
+        overflow    (second (re-find #"(?s)(<wa-dropdown.*</wa-dropdown>)" rendered))]
+    {:visible  visible
+     :overflow overflow}))
+
+(deftest current-and-past-gigs-keep-log-plays-visible
+  (let [gig-id (random-uuid)
+        today  (t/date (util/local-time-austria!))]
+    (doseq [date [today
+                  (t/<< today (t/new-period 1 :days))]]
+      (let [{:keys [visible overflow]}
+            (toolbar-parts {:gig/gig-id   gig-id
+                            :gig/title    "Summer Concert"
+                            :gig/gig-type :gig.type/gig
+                            :gig/date     date})]
+        (is (str/includes? visible (str "href=\"/gig/" gig-id "/log-plays\"")))
+        (is (not (str/includes? visible (str "href=\"/gig/" gig-id "/edit\""))))
+        (is (str/includes? overflow (str "value=\"/gig/" gig-id "/edit\"")))
+        (is (not (str/includes? overflow (str "/gig/" gig-id "/log-plays"))))
+        (is (str/includes? overflow "data-dialog=\"open gig-detail-remind-all-dialog\""))))))
+
+(deftest future-gigs-keep-edit-visible
+  (let [today              (t/date (util/local-time-austria!))
+        gig-id             (random-uuid)
+        {:keys [visible overflow]}
+        (toolbar-parts {:gig/gig-id   gig-id
+                        :gig/title    "Summer Concert"
+                        :gig/gig-type :gig.type/gig
+                        :gig/date     (t/>> today (t/new-period 1 :days))})]
+    (is (str/includes? visible (str "href=\"/gig/" gig-id "/edit\"")))
+    (is (not (str/includes? visible (str "href=\"/gig/" gig-id "/log-plays\""))))
+    (is (str/includes? overflow (str "value=\"/gig/" gig-id "/log-plays\"")))
+    (is (not (str/includes? overflow (str "/gig/" gig-id "/edit"))))
+    (is (str/includes? overflow "data-dialog=\"open gig-detail-remind-all-dialog\""))))
 
 (deftest archived-gig-toolbar-omits-remind-all
   (let [gig-toolbar (ns-resolve 'app.gigs.detail.views 'gig-toolbar)]

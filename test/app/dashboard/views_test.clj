@@ -29,7 +29,7 @@
              rendered
              "class=\"personal wa-stack wa-gap-l wa-text-end\""))
         (is (str/includes? rendered
-                           (str "class=\"quick-actions wa-stack wa-gap-xs "
+                           (str "class=\"quick-actions wa-cluster wa-gap-xs "
                                 "wa-align-items-end\"")))
         (is (str/includes? rendered "class=\"focus\""))
         (is (str/includes? rendered "class=\"activity\""))

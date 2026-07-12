@@ -28,6 +28,10 @@
     line-height: var(--wa-line-height-condensed);
   }
 
+  .quick-actions {
+    flex-direction: column;
+  }
+
   .mobile-title {
     display: none;
     font-size: var(--wa-font-size-2xl);
@@ -150,7 +154,9 @@
     }
 
     .quick-actions {
+      flex-direction: row;
       align-items: center;
+      justify-content: center;
     }
   }
 }

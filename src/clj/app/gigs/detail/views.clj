@@ -18,8 +18,10 @@
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
+   [app.util :as util]
    [app.util.http :as http.util]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [tick.core :as t]))
 
 (defn- muted [value]
   (if (str/blank? (str value))
@@ -165,8 +167,26 @@
         [:i18n/tr :gigs/reminded-all-at
          {:time (ui2/format-date-time req :medium sent-at)}]])]))
 
+(defn- toolbar-action [href label]
+  [button/Button {:appearance "outlined"
+                  :variant    "brand"
+                  :href       href}
+   label])
+
+(defn- toolbar-menu-item [href icon label]
+  [:wa-dropdown-item {:value   href
+                      :onclick "window.location = this.value"}
+   [ico/Icon (assoc icon :slot "icon")]
+   label])
+
 (defn- gig-toolbar [req {:gig/keys [gig-id] :as gig}]
-  (let [archived? (domain/gig-archived? gig)]
+  (let [archived?     (domain/gig-archived? gig)
+        today         (t/date (util/local-time-austria!))
+        future?       (t/> (:gig/date gig) today)
+        edit-url      (urls/link-gig-edit gig-id)
+        log-plays-url (urls/link-gig-log-plays gig-id)
+        edit-label    [:i18n/tr :action/edit]
+        log-label     [:i18n/tr :gigs/log-plays]]
     [page-toolbar/PageToolbar
      {::page-toolbar/breadcrumb
       [breadcrumb/Breadcrumb
@@ -182,19 +202,21 @@
                   :slot         "start"}]
        [:i18n/tr :gigs/navigation-label]]
       ::page-toolbar/actions
-      [[button/Button {:appearance "outlined"
-                       :variant    "brand"
-                       :href       (urls/link-gig-log-plays gig-id)}
-        [:i18n/tr :gigs/log-plays]]]
+      [(if future?
+         (toolbar-action edit-url edit-label)
+         (toolbar-action log-plays-url log-label))]
       ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
       ::page-toolbar/overflow-items
       (cond->
-       [[:wa-dropdown-item {:value   (urls/link-gig-edit gig-id)
-                            :onclick "window.location = this.value"}
-         [ico/Icon {::ico/library :phosphor
-                    ::ico/name    :pencil-simple
-                    :slot         "icon"}]
-         [:i18n/tr :action/edit]]]
+       [(if future?
+          (toolbar-menu-item log-plays-url
+                             {::ico/library :snoico
+                              ::ico/name    :music-note-outline}
+                             log-label)
+          (toolbar-menu-item edit-url
+                             {::ico/library :phosphor
+                              ::ico/name    :pencil-simple}
+                             edit-label))]
         (not archived?) (conj (remind-all-menu-item req)))
       :aria-label [:i18n/tr :gigs/detail-toolbar-label]}]))
 
