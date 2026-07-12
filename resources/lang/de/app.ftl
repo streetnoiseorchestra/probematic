@@ -1,5 +1,6 @@
 ### Gemeinsam verwendete Anwendungsnachrichten
 
+home = Startseite
 status-active = Aktiv
 status-inactive = Inaktiv
 status-label = Status

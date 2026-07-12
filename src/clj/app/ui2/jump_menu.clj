@@ -2,13 +2,14 @@
   (:require
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
-   [app.ui2.icon :as ico]))
+   [app.ui2.icon :as ico]
+   [app.urls :as urls]))
 
 (def ^:private shortcuts
-  [{:label "Activity" :icon :comments}
-   {:label "Calendar" :icon :calendar}
-   {:label "Reports" :icon :chart-bar-square}
-   {:label "Everything" :icon :folder-open}])
+  [{:label "Gigs" :icon :trumpet :href (urls/link-dashboard)}
+   {:label "Calendar" :icon :calendar :href (urls/link-calendar)}
+   {:label "Repertoire" :icon :music-note-outline :href (urls/link-songs-home)}
+   {:label "Everything" :icon :folder-open :href (urls/link-everything)}])
 
 (def ^:private recent-items
   [{:label "Dashboard" :icon :home :selected? true}
@@ -28,9 +29,10 @@
   [ico/Icon {::ico/library :snoico
              ::ico/name name}])
 
-(defn- shortcut-button [{:keys [icon label]}]
+(defn- shortcut-button [{:keys [href icon label]}]
   [:li
    [button/Button {:class "shortcut wa-stack wa-gap-0 wa-align-items-center"
+                   :href href
                    :appearance "plain"}
     (menu-icon icon)
     label]])

@@ -16,12 +16,12 @@
      [{:id          :snoico
        :source-root "public/img/snoico"
        :icons       [:calendar
-                     :chart-bar-square
                      :chevron-down
                      :cog
                      :comments
                      :folder-open
                      :home
+                     :music-note-outline
                      :trumpet]}])))
 
 (defn install-test-manifest [f]
@@ -82,7 +82,8 @@
                           :for "jump-menu-trigger"
                           :placement "bottom"
                           :without-arrow true}
-                :shortcut-labels ["Activity" "Calendar" "Reports" "Everything"]
+                :shortcut-labels ["Gigs" "Calendar" "Repertoire" "Everything"]
+                :shortcut-hrefs ["/" "/calendar" "/songs" "/everything"]
                 :search {:type "search"
                          :name "jump-menu-search"
                          :aria-label "Search or jump"
@@ -105,6 +106,7 @@
                 :popover (select-keys (l/attrs popover)
                                       [:id :for :placement :without-arrow])
                 :shortcut-labels (mapv l/text shortcuts)
+                :shortcut-hrefs (mapv #(-> % l/attrs :href) shortcuts)
                 :search (select-keys (l/attrs search)
                                      [:type :name :aria-label :placeholder])
                 :section-headings (mapv l/text (l/select 'h2 view))

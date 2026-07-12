@@ -26,6 +26,7 @@
   (some-> string str (URLEncoder/encode "UTF-8") (.replace "+" "%20")))
 
 (defn link-dashboard [] "/")
+(defn link-everything [] "/everything")
 (defn link-member
   ([member-or-member-id]
    (link-helper "/member/" :member/member-id member-or-member-id ""))

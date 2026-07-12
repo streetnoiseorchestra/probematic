@@ -4,6 +4,7 @@
    [app.config :as config]
    [app.dashboard.routes :as dashboard]
    [app.datastar :as ds]
+   [app.everything.routes :as everything]
    [app.file-browser.routes :as file-browser]
    [app.gigs.routes :as gigs]
    [app.insurance.routes :as insurance]
@@ -50,6 +51,7 @@
 
     (datastar-routes/act-route system)
     (dashboard/routes)
+    (everything/routes)
     (settings/routes)
     (file-browser/routes)
     (gigs/routes)

@@ -294,6 +294,7 @@
    {:id          :phosphor
     :source-root "public/img/phosphor/phosphor-regular"
     :icons       [:arrow-bend-down-right
+                  :arrow-square-out
                   :arrow-left
                   :calendar
                   :car-profile

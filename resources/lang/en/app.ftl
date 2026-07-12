@@ -1,5 +1,6 @@
 ### Shared application messages
 
+home = Home
 status-active = Active
 status-inactive = Inactive
 status-label = Status
