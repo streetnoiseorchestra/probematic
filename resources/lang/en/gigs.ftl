@@ -10,3 +10,5 @@ view-all = See all gigs & rehearsals
 detail-toolbar-label = Gig controls
 log-plays = Log Plays
 remind-all = Remind all
+# $time (String) - Localized date and time when the reminder was sent.
+reminded-all-at = Reminded at { $time }

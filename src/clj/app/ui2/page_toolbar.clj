@@ -11,7 +11,9 @@
               {::page-toolbar/breadcrumb breadcrumb
                ::page-toolbar/mobile-back back-link
                ::page-toolbar/actions [log-plays-button]
-               ::page-toolbar/overflow-items overflow-items}]"]
+               ::page-toolbar/overflow-items overflow-items
+               ::page-toolbar/overflow-label \"More gig actions\"
+               :aria-label \"Gig controls\"}]"]
    :ns       *ns*
    :as       'page-toolbar
    :name     'PageToolbar
@@ -32,7 +34,6 @@
                        :doc      "Web Awesome dropdown items for secondary actions."}
      :any]
     [::overflow-label {:optional true
-                       :default  "More actions"
                        :doc      "Accessible label for the overflow trigger."}
      :any]]})
 
@@ -55,6 +56,7 @@
 (defn- overflow-menu [label items]
   (let [items (nodes items)]
     (when (seq items)
+      (assert label "PageToolbar overflow items require ::overflow-label")
       (into
        [:wa-dropdown {:placement "bottom-end"}
         [button/Button {:slot       "trigger"
@@ -72,12 +74,13 @@
         mobile-back    (get attrs ::mobile-back)
         actions        (nodes (get attrs ::actions))
         overflow-items (get attrs ::overflow-items)
-        overflow-label (get attrs ::overflow-label "More actions")
+        overflow-label (get attrs ::overflow-label)
         overflow       (overflow-menu overflow-label overflow-items)
         attrs          (-> (apply dissoc attrs consumed-props)
                            (uic/merge-attrs :class "sno-page-toolbar")
-                           (update :role #(or % "toolbar"))
-                           (update :aria-label #(or % "Page controls")))]
+                           (update :role #(or % "toolbar")))
+        _              (assert (:aria-label attrs)
+                               "PageToolbar requires an accessible :aria-label")]
     (cc/compile
      [:header attrs
       [:div {:class "context"}

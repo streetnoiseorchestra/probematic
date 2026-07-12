@@ -10,3 +10,5 @@ view-all = Alle Gigs & Proben anzeigen
 detail-toolbar-label = Gig-Aktionen
 log-plays = Gespielte Stücke erfassen
 remind-all = Alle erinnern
+# $time (String) - Lokalisierte Zeit, zu der die Erinnerung versendet wurde.
+reminded-all-at = Erinnert um { $time }

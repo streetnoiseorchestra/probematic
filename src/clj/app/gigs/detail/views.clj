@@ -162,7 +162,8 @@
      [:i18n/tr :gigs/remind-all]
      (when recent?
        [:span {:slot "details"}
-        (ui2/format-date-time req :medium sent-at)])]))
+        [:i18n/tr :gigs/reminded-all-at
+         {:time (ui2/format-date-time req :medium sent-at)}]])]))
 
 (defn- gig-toolbar [req {:gig/keys [gig-id] :as gig}]
   (let [archived? (domain/gig-archived? gig)]

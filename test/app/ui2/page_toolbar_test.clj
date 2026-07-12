@@ -47,7 +47,8 @@
     (is (some? page-toolbar) "PageToolbar alias should exist")
     (when page-toolbar
       (let [rendered (page-toolbar-html
-                      {:app.ui2.page-toolbar/breadcrumb [:span "Gigs"]
+                      {:aria-label "Page context"
+                       :app.ui2.page-toolbar/breadcrumb [:span "Gigs"]
                        :app.ui2.page-toolbar/mobile-back [:a {:href "/gigs"} "Gigs"]})]
         (is (not (str/includes? rendered "<menu")))
         (is (not (str/includes? rendered "<wa-dropdown")))))))

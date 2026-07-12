@@ -42,6 +42,23 @@
                                    :gig/date (t/<< (t/date) (t/new-period 2 :months))}))]
         (is (not (str/includes? rendered "gig-detail-remind-all-dialog")))))))
 
+(deftest recently-sent-reminder-identifies-its-time-in-the-overflow-menu
+  (let [gig-toolbar (ns-resolve 'app.gigs.detail.views 'gig-toolbar)]
+    (is (some? gig-toolbar) "Gig detail toolbar should exist")
+    (when gig-toolbar
+      (let [rendered (html/->str
+                      tr
+                      (gig-toolbar
+                       {:tr tr
+                        :page-state {:gig-detail
+                                     {:attendance
+                                      {:remind-all-sent-at (java.util.Date.)}}}}
+                       {:gig/gig-id (random-uuid)
+                        :gig/title "Summer Concert"
+                        :gig/gig-type :gig.type/gig
+                        :gig/date (t/>> (t/date) (t/new-period 2 :months))}))]
+        (is (str/includes? rendered "reminded-all-at"))))))
+
 (deftest gig-date-uses-compact-date-range
   (let [html (html/->str
               (#'views/gig-date
