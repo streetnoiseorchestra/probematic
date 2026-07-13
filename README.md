@@ -4,15 +4,17 @@
 
 > "Probe" = "rehearsal" in German. Pronounced PRO-beh ([listen](https://upload.wikimedia.org/wikipedia/commons/f/f9/De-probe.ogg))
 
-Probematic is a web tool to help an anarchist band manage itself. Built with Clojure and HTMX.
+Probematic is a web tool that helps an anarchist band manage itself.
+
+
+It uses Clojure, Datastar, and Web Awesome.
 
 Canonical repo: https://github.com/Ramblurr/probematic
 
 ### Pre-req
 
-1. You need clojure installed `clj`
-2. You need node/npm installed to build the CSS
-3. You probably want some editor that can connect to the dev repl
+1. You need Clojure installed as `clj`.
+2. You probably want an editor that can connect to the development REPL.
 
 ## Run in dev mode
 

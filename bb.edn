@@ -58,9 +58,6 @@
          {:doc     "Run CI checks: test, format check, and lint"
           :depends [test fmt:check lint:ftl lint]}
 
-         tw-css              (shell "tailwindcss -i resources/public/css/main.css -o resources/public/css/compiled/main.css")
-         tw-watch-css        (shell "tailwindcss --watch --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
-         tw-prod-css         (shell "tailwindcss --minify --input resources/public/css/main.css --output resources/public/css/compiled/main.css")
          css                 (shell "lightningcss --bundle --custom-media --targets 'defaults' resources/public/css/main2.css -o resources/public/css/compiled/main2.css")
          watch-css           (shell "watchexec -e css bb css")
          dev-tunnel          (let [token (System/getenv "PROBEMATIC_DEV_TUNNEL_TOKEN")

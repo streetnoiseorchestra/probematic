@@ -1,17 +1,9 @@
 (ns app.util.http
-  (:refer-clojure :exclude [parse-long])
   (:require
    [clojure.set :as set]
    [app.util :as util]
    [clojure.string :as str]
-   [ctmx.form :as form]
-   [ctmx.rt :as rt]
    [medley.core :as m]))
-
-(defn unwrap-params
-  ([req] (-> req :form-params form/json-params-pruned))
-  ([req name]
-   (-> req :form-params form/json-params-pruned name)))
 
 (defn path-param
   "Fetches the path param k"
@@ -61,14 +53,6 @@
 (defn check->bool [v]
   (= "on" v))
 
-(defn parse-long
-  "Attempts to parse a long value. Returns nil if it cannot be parsed"
-  [v]
-  (try
-    (rt/parse-long v)
-    (catch NumberFormatException e
-      nil)))
-
 (defn order-invert [o]
   (get {:asc :desc
         :desc :asc} o))
@@ -91,7 +75,7 @@
       {:field  field
        :order order})))
 
-(defn sort-param [{:keys [query-params] :as req} query-param-field-mapping]
+(defn sort-param [{:keys [query-params]} query-param-field-mapping]
   (let [sort-spec (->> (util/ensure-coll (get query-params "sort" []))
                        (remove str/blank?)
                        (mapv (partial parse-sort-param query-param-field-mapping)))]

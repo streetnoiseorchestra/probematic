@@ -55,9 +55,9 @@
   The 2-arity version is memoized.
 
   Example:
-  (sri-integrity (io/resource \"js/app.js\")
+  (sri-integrity (io/resource \"public/css/main2.css\"))
 
-  (let [res (io/resource \"js/app.js\")]
+  (let [res (io/resource \"public/css/main2.css\")]
     (sri-integrity res (resource-last-modified res)))
   "
   ([resource]

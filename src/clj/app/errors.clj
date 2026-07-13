@@ -63,7 +63,6 @@
   (-> req
       (update :params (fn [params]
                         (-> {:params params}
-                            (assoc :htmx? (:htmx? req))
                             (assoc :current-locale (:current-locale req))
                             (assoc :will-change-lang (:will-change-lang req))
                             (assoc :form-params (:form-params req))

@@ -5,7 +5,6 @@
    [clojure.pprint :as pprint]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [ctmx.form :as form]
    [app.datomic.shim :as datomic]
    [medley.core :as m]
    [ring.util.codec :as codec]
@@ -72,12 +71,6 @@
   (sort-by
    (comp clojure.string/lower-case keyfn) coll))
 
-(defn unwrap-params
-  [req] (-> req :params form/json-params-pruned))
-
-(defn json-params
-  [req] (-> req :params form/json-params))
-
 (defn remove-nils
   "Returns the list/vec/map less any keys that have nil values"
   [m]
@@ -128,8 +121,7 @@
   (= :delete request-method))
 
 (defn make-get-request
-  "Returns a new GET request based on passed in request. Refreshes the db connection.
-    See: https://github.com/spookylukey/django-htmx-patterns/blob/master/view_restart.rst"
+  "Returns a new GET request based on `old-req` with a refreshed database value."
   ([old-req]
    (-> old-req
        (assoc :request-method :get)

@@ -2,7 +2,6 @@
   (:require
    [app.email :as email]
    [app.errors :as error.util]
-   [app.html :as html]
    [app.ui2 :as ui2]))
 
 (defn- error-copy [tr status]
@@ -35,26 +34,6 @@
        [:button {:type "submit"}
         (tr [:error/notify])]]]]))
 
-(defn- error-fragment-body [req status]
-  [:body
-   [:style (html/raw ui2/standalone-page-style)]
-   [:main {:id "main"}
-    (into [:section]
-          (error-content req status))]])
-
-(defn- html-response
-  ([status body]
-   (html-response status {} body))
-  ([status headers body]
-   {:status status
-    :headers (merge {"Content-Type" "text/html"} headers)
-    :body (html/->str body)}))
-
-(defn- error-page-response-fragment [_cause req status]
-  (html-response (or status 404)
-                 {"HX-Retarget" "body"}
-                 (error-fragment-body req status)))
-
 (defn- error-page-response [_cause req status]
   (let [{:keys [title message]} (error-copy (:tr req) status)]
     (apply ui2/standalone-page
@@ -67,10 +46,7 @@
   (assert (map? req))
   (error.util/log-error! req ex)
   (error.util/send-event! req ex)
-  ;; TODO once htmx is gone, remove this
-  (if (:htmx? req)
-    (error-page-response-fragment ex req status)
-    (error-page-response ex req status)))
+  (error-page-response ex req status))
 
 (defn unauthorized-error [ex req]
   (handle-error ex req 401))
@@ -95,17 +71,15 @@
         human-id (notify-human-id req)
         member (-> req :session :session/member)]
     (email/send-admin-email! req member human-id)
-    (if (:htmx? req)
-      (html-response 200 [:span (tr [:action/done])])
-      (ui2/standalone-page
-       {:status 200
-        :title (tr [:action/done])
-        :description (tr [:action/done])}
-       [:header
-        [:h1 (tr [:action/done])]]
-       [:footer
-        [:a {:href "/"}
-         (tr [:error/go-home])]]))))
+    (ui2/standalone-page
+     {:status 200
+      :title (tr [:action/done])
+      :description (tr [:action/done])}
+     [:header
+      [:h1 (tr [:action/done])]]
+     [:footer
+      [:a {:href "/"}
+       (tr [:error/go-home])]])))
 
 (defn routes []
   [""

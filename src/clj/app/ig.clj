@@ -16,18 +16,12 @@
             [app.routes :as routes]
             [app.sardine :as sardine]
             [com.brunobonacci.mulog :as μ]
-            [ctmx.render :as ctmx.render]
-            [hiccup2.core :as hiccup2]
             [integrant.core :as ig]
             [nrepl.server :as nrepl]
             [ol.jobs.ig]
             [app.system :as system]
             [app.datastar]
             [taoensso.carmine :as car]))
-;; Ensure ctmx is using the XSS safe hiccup render function
-(alter-var-root #'ctmx.render/html (constantly
-                                    #(-> % ctmx.render/walk-attrs hiccup2/html str)))
-
 (defmethod ig/init-key ::profile [_ profile]
   profile)
 

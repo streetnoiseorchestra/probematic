@@ -99,22 +99,6 @@
 
                      :app.interceptors.errors/default errors/unknown-error}}))
 
-(def htmx-interceptor
-  "Sets :htmx? to true if the request originates from htmx"
-  {:name  ::htmx
-   :enter (fn [ctx]
-            (let [request (:request ctx)
-                  headers (:headers request)]
-              (if (some? (get headers "hx-request"))
-                (-> ctx
-                    (assoc-in [:request :htmx]
-                              (->> headers
-                                   (filter (fn [[key _]] (.startsWith key "hx-")))
-                                   (map (fn [[key val]] [(keyword key) val]))
-                                   (into {})))
-                    (assoc-in [:request :htmx?] true))
-                (assoc-in ctx [:request :htmx?] false))))})
-
 (defn system-interceptor
   "Install the integrant system map into the request under the :system key"
   [system]
@@ -313,8 +297,6 @@
                     (coercion/coerce-response-interceptor)
                     ;; coercing request parameters
                     (coercion/coerce-request-interceptor)
-                    htmx-interceptor
-                    ;; htmx reequires all params (query, form etc) to be keywordized
                     keyword-params-interceptor
                     ;; multipart
                     (multipart/multipart-interceptor)])))

@@ -58,6 +58,6 @@
       (encrypt "hunter2")
       (decrypt "hunter2")) ;; rcf
 
-  (sha384-resource "public/js/app.js") ;; rcf
+  (sha384-resource "public/css/main2.css") ;; rcf
   ;;
   )
