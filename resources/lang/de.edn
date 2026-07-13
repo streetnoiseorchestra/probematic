@@ -356,7 +356,6 @@
  :now "jetzt",
  :private-instrument-description
  "Ein privates Instrument ist ein Instrument, das der Besitzer auf eigene Kosten versichern wird.",
- :Contact-Download "Kontakt herunterladen",
  :band-private "Band/Privat",
  :Contact-Information "Kontakt Informationen",
  :instrument.coverage.change
@@ -539,9 +538,6 @@
   "Eine Einladung zum Erstellen einer SNO-ID wird an die Person per E-Mail gesendet, damit sie ein Konto erstellen und auf alle SNO-Online-Systeme zugreifen kann.",
   :probes-attended "Proben besuchtaProben Attended",
   :new-member "Neues Mitglied",
-  :invite-member "Mitglied einladen",
-  :invite-member-page-description "Erstelle ein Mitglied und sende optional eine SNO-ID-Einladung.",
-  :invite-member-form-subtitle "Alle Felder aus dem bisherigen Einladungsablauf sind hier verfügbar.",
   :browse-empty "Keine Mitglieder gefunden.",
   :browse-empty-subtitle "Versuche einen anderen Suchbegriff oder Filter.",
   :sno-id-enabled-disabled "SNO-ID aktiviert/deaktiviert"},

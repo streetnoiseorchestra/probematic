@@ -5,9 +5,12 @@
    [app.members.invite.actions :as actions]
    [app.queries :as q]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
-   [app.ui2.breadcrumb :as breadcrumb]))
+   [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]))
 
 (defn- default-form-state []
   {:member-id     (str (random-uuid))
@@ -79,36 +82,46 @@
     (toggle-field "member-invite.active"
                   (tr [:Active])
                   nil
-                  (:active form-state))
-    (ui2/action-bar
-     {}
-     [[button/Button {:appearance "outlined"
-                      :href       "/members"}
-       (tr [:action/cancel])]
-      [button/Button {:appearance         "filled"
-                      :variant            "brand"
-                      :type               "submit"
-                      :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
-                      :data-attr:loading  "$loading === 'member-invite'"}
-       (tr [:member/invite-member])]])]])
+                  (:active form-state))]])
 
-(defn page [{:keys [db page-state tr] :as req}]
+(defn page [{:keys [db page-state] :as req}]
   (let [form-state (merge (default-form-state) (:member-invite page-state))
         sections   (q/retrieve-sections db)]
-    (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-2xl members-invite-page"
-            :data-signals (d*/->signals {:member-invite form-state})}
-      [page-header/PageHeader
-       {:breadcrumb [breadcrumb/Breadcrumb
-                     {}
-                     [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
-                      (tr [:nav/members])]
-                     [breadcrumb/BreadcrumbItem (tr [:member/invite-member])]]
-        :title      (tr [:member/invite-member])
-        :subtitle   (tr [:member/invite-member-page-description])}]
-      (ui2/section-card
-       {:title    (tr [:member/invite-member])
-        :subtitle (tr [:member/invite-member-form-subtitle])}
-       (invite-form req form-state sections))])))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :standard
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
+           [:i18n/tr :members/title]]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :members/invite-member]]]
+         ::page-toolbar/mobile-back
+         [button/Button {:appearance "plain"
+                         :href       "/members"}
+          [ico/Icon {::ico/library :phosphor
+                     ::ico/name    :arrow-left
+                     :slot         "start"}]
+          [:i18n/tr :members/title]]
+         ::page-toolbar/actions
+         [[button/Button {:appearance "plain"
+                          :href       "/members"}
+           [:i18n/tr :action/cancel]]
+          [button/Button {:appearance         "filled"
+                          :variant            "brand"
+                          :type               "submit"
+                          :form               "member-invite-form"
+                          :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
+                          :data-attr:loading  "$loading === 'member-invite'"}
+           [:i18n/tr :members/invite-member]]]
+         :aria-label [:i18n/tr :members/invite-toolbar-label]}]}
+      [:div {:class        "wa-stack wa-gap-2xl"
+             :data-signals (d*/->signals {:member-invite form-state})}
+       [page-header/PageHeader
+        {::page-header/title    [:i18n/tr :members/invite-member]
+         ::page-header/subtitle [:i18n/tr :members/invite-description]}]
+       (invite-form req form-state sections)]])))
 
 (d*/refresh-all!)

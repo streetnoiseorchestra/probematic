@@ -5,7 +5,12 @@
    [app.members.index.queries :as queries]
    [app.members.ui :as members.ui]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -72,21 +77,6 @@
    [:wa-option {:value "active"} (tr [:member/filter-active])]
    [:wa-option {:value "inactive"} (tr [:member/filter-inactive])]
    [:wa-option {:value "all"} (tr [:member/filter-all])]])
-
-(defn- invite-button [{:keys [tr]}]
-  [button/Button {:appearance "filled"
-                  :variant    "brand"
-                  :href       "/members/invite"}
-   (tr [:member/invite-member])])
-
-(defn- members-toolbar [{:keys [tr] :as req} page-state total]
-  [:div {:class "members-index-toolbar"}
-   (ui2/title-block {:title    (tr [:nav/members])
-                     :subtitle (str (tr [:total]) ": " total)})
-   [:div {:class "members-index-toolbar-controls"}
-    (search-control req page-state)
-    (filter-control req page-state)
-    (invite-button req)]])
 
 (defn- invite-loading? [invite-code action]
   (format "$invite.inflight && $invite.code === %s && $invite.action === %s"
@@ -190,14 +180,43 @@
   (let [page-state       (queries/normalize-page-state (:members-index page-state))
         members          (queries/members db page-state)
         open-invitations (queries/open-invitations req)]
-    (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l"
-            :data-signals (d*/->signals {:members-index page-state
-                                         :invite        {:action nil
-                                                         :code nil
-                                                         :inflight false}})}
-      (members-toolbar req page-state (count members))
-      (open-invitations-panel req open-invitations)
-      (members-table req page-state members)])))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+           [:i18n/tr :home]]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :members/title]]]
+         ::page-toolbar/mobile-back
+         [button/Button {:appearance "plain"
+                         :href       (urls/link-dashboard)}
+          [ico/Icon {::ico/library :phosphor
+                     ::ico/name    :arrow-left
+                     :slot         "start"}]
+          [:i18n/tr :home]]
+         ::page-toolbar/actions
+         [[button/Button {:appearance "filled"
+                          :variant    "brand"
+                          :href       "/members/invite"}
+           [:i18n/tr :members/invite-member]]]
+         :aria-label [:i18n/tr :members/directory-toolbar-label]}]}
+      [:div {:class        "wa-stack wa-gap-l"
+             :data-signals (d*/->signals {:members-index page-state
+                                          :invite        {:action nil
+                                                          :code nil
+                                                          :inflight false}})}
+       [page-header/PageHeader
+        {::page-header/title    [:i18n/tr :members/title]
+         ::page-header/subtitle [:i18n/tr :members/member-count {:count (count members)}]}]
+       [:div {:class "wa-grid wa-gap-s"
+              :style "--min-column-size: min(100%, 16rem);"}
+        (search-control req page-state)
+        (filter-control req page-state)]
+       (open-invitations-panel req open-invitations)
+       (members-table req page-state members)]])))
 
 (d*/refresh-all!)

@@ -1,10 +1,3 @@
-.members-invite-page {
-  inline-size: min(
-    var(--sno-size-full),
-    var(--sno-narrow-form-max-inline-size)
-  );
-}
-
 .members-invite-accept-page {
   display: grid;
   place-items: center;
@@ -27,21 +20,6 @@
 
 .members-invite-accept-logo {
   font-size: var(--sno-brand-logotype-size);
-}
-
-.members-index-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  justify-content: space-between;
-  gap: var(--wa-space-s) var(--wa-space-l);
-}
-
-.members-index-toolbar-controls {
-  display: grid;
-  gap: var(--wa-space-s);
-  align-items: end;
-  inline-size: var(--sno-size-full);
 }
 
 .members-index-table {
@@ -98,17 +76,6 @@
 @media (--sno-viewport-s) {
   .member-insurance-row-meta {
     display: none;
-  }
-
-  .members-index-toolbar-controls {
-    grid-template-columns:
-      minmax(
-        var(--sno-members-index-search-min-inline-size),
-        var(--sno-grid-track-max)
-      )
-      var(--sno-members-index-filter-inline-size)
-      auto;
-    inline-size: auto;
   }
 
   :where(

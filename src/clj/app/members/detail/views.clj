@@ -14,6 +14,10 @@
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.divider :as divider]
+   [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -180,19 +184,7 @@
                      :data-on:change "$member-detail.contact.active = !$member-detail.contact.active"}
          (tr [:Active])]]]
       (when (auth/current-user-admin? req)
-        (sno-id-admin-fields req form-state))
-      (ui2/action-bar
-       {}
-       [[button/Button {:appearance  "outlined"
-                        :data-id     "member-contact-cancel"
-                        :data-action (d*/act req ::actions/close-contact-edit)}
-         (tr [:action/cancel])]
-        [button/Button {:appearance         "filled"
-                        :variant            "brand"
-                        :type               "submit"
-                        :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
-                        :data-attr:loading  "$loading === 'member-contact'"}
-         (tr [:action/save])]])]]))
+        (sno-id-admin-fields req form-state))]]))
 
 (defn- keycloak-link [{:keys [system]} keycloak-id]
   (if (seq keycloak-id)
@@ -726,28 +718,6 @@
        (insurance-policy-summary req policy)
        (insurance-coverages-table req coverages)])]))
 
-(defn- profile-summary [{:keys [tr] :as req} member]
-  [:section {:class "wa-stack wa-gap-l"}
-   [:div {:class "sno-section-header"}
-    [:div {:class "sno-title-block wa-flank wa-flex-nowrap wa-align-items-center"}
-     [avatar/Avatar {::avatar/member member
-                     ::avatar/image-size 200
-                     ::avatar/icon :user
-                     :shape "rounded"
-                     :style "--size: var(--sno-member-detail-avatar-size)"}]
-     [:h1 (:member/name member)]]
-    (ui2/action-bar
-     {}
-     [[button/Button {:appearance "outlined"
-                      :href       (str "/member-vcard/" (:member/member-id member))}
-       (tr [:Contact-Download])]
-      [button/Button {:appearance  "outlined"
-                      :variant     "brand"
-                      :data-id     (:member/member-id member)
-                      :data-action (d*/act req ::actions/open-contact-edit)}
-       (tr [:action/edit])]])]
-   (profile-details req member)])
-
 (defn- contact-form-state [{:keys [page-state] :as req} member]
   (let [form-state (get-in page-state [:member-detail :contact])]
     (cond-> form-state
@@ -756,24 +726,6 @@
 
       (and form-state (auth/current-user-admin? req) (not (contains? form-state :sno-id-enabled-original)))
       (assoc :sno-id-enabled-original (boolean (keycloak-enabled? req (:member/keycloak-id member)))))))
-
-(defn- member-header [{:keys [db tr] :as req} member]
-  (let [form-state (contact-form-state req member)
-        sections   (when form-state (q/retrieve-sections db))]
-    [:header {:class "member-detail-header wa-stack wa-gap-m"}
-     [breadcrumb/Breadcrumb
-      {}
-      [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
-       (tr [:nav/members])]
-      [breadcrumb/BreadcrumbItem (cond-> {}
-                                   form-state (assoc ::breadcrumb/href (urls/link-member member)))
-       (:member/name member)]
-      (when form-state
-        [breadcrumb/BreadcrumbItem (tr [:action/edit])])]
-     (if form-state
-       (ui2/section-card {:title    (tr [:action/edit])}
-                         (contact-form req form-state sections))
-       (profile-summary req member))]))
 
 (def default-active-tab "travel")
 
@@ -818,33 +770,97 @@
 (defn page [{:keys [db page-state tr] :as req}]
   (let [member-id                       (http.util/path-param-uuid! req :member-id)
         member                          (q/retrieve-member db member-id)
+        member-url                      (urls/link-member member)
         form-state                      (contact-form-state req member)
+        sections                        (when form-state (q/retrieve-sections db))
         contact-signals                 (form-state->signals form-state)
         active-tab                      (active-tab req page-state)
         travel-discount-create-signals  (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))
         travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))
         ledger-entry-signals            (form-state->signals (get-in page-state [:member-detail :ledger-entry]))]
-    (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-2xl"
-            :data-effect  (tab-url-effect member)
-            :data-signals (d*/->signals {:member-detail {:active-tab             active-tab
-                                                         :contact                contact-signals
-                                                         :travel-discount-create travel-discount-create-signals
-                                                         :travel-discount        travel-discount-signals
-                                                         :ledger-entry           ledger-entry-signals}})}
-      (member-header req member)
-      (when-not form-state
-        [:wa-tab-group {:id "member-detail-tabs"
-                        :active active-tab}
-         (tab req active-tab "travel" (tr [:travel-discounts/title]))
-         (tab req active-tab "money" "Money Stuff")
-         (tab req active-tab "insurance" (tr [:member/insurance-title]))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
+           [:i18n/tr :members/title]]
+          [breadcrumb/BreadcrumbItem (cond-> {}
+                                       form-state (assoc ::breadcrumb/href member-url))
+           (:member/name member)]
+          (when form-state
+            [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]])]
+         ::page-toolbar/mobile-back
+         [button/Button {:appearance "plain"
+                         :href       (if form-state member-url "/members")}
+          [ico/Icon {::ico/library :phosphor
+                     ::ico/name    :arrow-left
+                     :slot         "start"}]
+          (if form-state
+            (:member/name member)
+            [:i18n/tr :members/title])]
+         ::page-toolbar/actions
+         (if form-state
+           [[button/Button {:appearance  "plain"
+                            :data-id     "member-contact-cancel"
+                            :data-action (d*/act req ::actions/close-contact-edit)}
+             [:i18n/tr :action/cancel]]
+            [button/Button {:appearance         "filled"
+                            :variant            "brand"
+                            :type               "submit"
+                            :form               "member-contact-form"
+                            :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
+                            :data-attr:loading  "$loading === 'member-contact'"}
+             [:i18n/tr :action/save]]]
+           [[button/Button {:appearance  "filled"
+                            :variant     "brand"
+                            :data-id     (:member/member-id member)
+                            :data-action (d*/act req ::actions/open-contact-edit)}
+             [:i18n/tr :action/edit]]])
+         ::page-toolbar/overflow-items
+         (when-not form-state
+           [[:wa-dropdown-item {:value   (str "/member-vcard/" (:member/member-id member))
+                                :onclick "window.location = this.value"}
+             [:i18n/tr :members/download-contact]]])
+         ::page-toolbar/overflow-label
+         (when-not form-state [:i18n/tr :action/more-actions])
+         :aria-label
+         (if form-state
+           [:i18n/tr :members/edit-toolbar-label]
+           [:i18n/tr :members/detail-toolbar-label])}]}
+      [:div {:class        "wa-stack wa-gap-2xl"
+             :data-effect  (tab-url-effect member)
+             :data-signals (d*/->signals {:member-detail {:active-tab             active-tab
+                                                          :contact                contact-signals
+                                                          :travel-discount-create travel-discount-create-signals
+                                                          :travel-discount        travel-discount-signals
+                                                          :ledger-entry           ledger-entry-signals}})}
+       [:div {:class "wa-cluster wa-gap-s wa-align-items-center"}
+        [avatar/Avatar {::avatar/member     member
+                        ::avatar/image-size 200
+                        ::avatar/icon       :user
+                        :shape              "rounded"
+                        :style              "--size: var(--sno-member-detail-avatar-size)"}]
+        [page-header/PageHeader
+         {::page-header/title (:member/name member)}]]
+       (if form-state
+         (contact-form req form-state sections)
+         (profile-details req member))
+       (when-not form-state
+         [:wa-tab-group {:id     "member-detail-tabs"
+                         :active active-tab}
+          (tab req active-tab "travel" (tr [:travel-discounts/title]))
+          (tab req active-tab "money" "Money Stuff")
+          (tab req active-tab "insurance" (tr [:member/insurance-title]))
 
-         (tab-panel active-tab "travel"
-                    (travel-discounts-panel req member))
-         (tab-panel active-tab "money"
-                    (member-ledger-panel req member))
-         (tab-panel active-tab "insurance"
-                    (member-insurance-panel req member))])])))
+          (tab-panel active-tab "travel"
+                     (travel-discounts-panel req member))
+          (tab-panel active-tab "money"
+                     (member-ledger-panel req member))
+          (tab-panel active-tab "insurance"
+                     (member-insurance-panel req member))])]])))
 
 (d*/refresh-all!)
