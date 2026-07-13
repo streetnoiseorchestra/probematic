@@ -6,9 +6,12 @@
    [app.poll.queries :as queries]
    [app.poll.ui :as poll.ui]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [app.util.http :as http.util]))
 
@@ -55,46 +58,51 @@
                            (poll.ui/action-button-attrs req ::actions/close-poll poll-id))
       [:i18n/tr :polls/confirm-close]]]))
 
-(defn- edit-button [poll]
-  [button/Button {:appearance "filled"
-                  :href       (urls/link-poll-edit poll)}
-   [:i18n/tr :action/edit]])
-
-(defn- open-button [poll]
-  [button/Button {:appearance  "filled"
-                  :variant     "brand"
-                  :data-dialog (str "open " (dialog-id "poll-open" poll))}
-   [:i18n/tr :polls/open-poll]])
-
-(defn- edit-menu-item [poll]
-  [:wa-dropdown-item {:value   (urls/link-poll-edit poll)
-                      :onclick "window.location = this.value"}
-   [:i18n/tr :action/edit]])
-
-(defn- close-menu-item [poll]
-  [:wa-dropdown-item {:variant     "danger"
-                      :data-dialog (str "open " (dialog-id "poll-close" poll))}
-   [:i18n/tr :polls/close-early]])
-
 (defn- page-toolbar [poll]
   (let [status (:poll/poll-status poll)]
-    (poll.ui/page-toolbar
-     {:breadcrumb     (poll.ui/breadcrumb-trail
-                       (poll.ui/breadcrumb-link (urls/link-polls-home)
-                                                [:i18n/tr :polls/title])
-                       (poll.ui/breadcrumb-current (:poll/title poll)))
-      :mobile-href    (urls/link-polls-home)
-      :mobile-label   [:i18n/tr :polls/title]
-      :actions        (case status
-                        :poll.status/draft [(open-button poll)]
-                        :poll.status/open [(edit-button poll)]
-                        [])
-      :overflow-items (case status
-                        :poll.status/draft [(edit-menu-item poll)]
-                        :poll.status/open [(close-menu-item poll)]
-                        [])
-      :overflow-label [:i18n/tr :action/more-actions]
-      :aria-label     [:i18n/tr :polls/detail-toolbar-label]})))
+    [page-toolbar/PageToolbar
+     {::page-toolbar/breadcrumb
+      [breadcrumb/Breadcrumb
+       {}
+       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
+        [:i18n/tr :polls/title]]
+       [breadcrumb/BreadcrumbItem (:poll/title poll)]]
+      ::page-toolbar/mobile-back
+      [button/Button {:appearance "plain"
+                      :href       (urls/link-polls-home)}
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :arrow-left
+                  :slot         "start"}]
+       [:i18n/tr :polls/title]]
+      ::page-toolbar/actions
+      (case status
+        :poll.status/draft
+        [[button/Button {:appearance  "filled"
+                         :variant     "brand"
+                         :data-dialog (str "open " (dialog-id "poll-open" poll))}
+          [:i18n/tr :polls/open-poll]]]
+
+        :poll.status/open
+        [[button/Button {:appearance "filled"
+                         :href       (urls/link-poll-edit poll)}
+          [:i18n/tr :action/edit]]]
+
+        [])
+      ::page-toolbar/overflow-items
+      (case status
+        :poll.status/draft
+        [[:wa-dropdown-item {:value   (urls/link-poll-edit poll)
+                             :onclick "window.location = this.value"}
+          [:i18n/tr :action/edit]]]
+
+        :poll.status/open
+        [[:wa-dropdown-item {:variant     "danger"
+                             :data-dialog (str "open " (dialog-id "poll-close" poll))}
+          [:i18n/tr :polls/close-early]]]
+
+        [])
+      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+      :aria-label                    [:i18n/tr :polls/detail-toolbar-label]}]))
 
 (defn- page-header [{:keys [tr]} poll]
   [page-header/PageHeader

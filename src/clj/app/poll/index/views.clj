@@ -3,24 +3,35 @@
    [app.poll.queries :as queries]
    [app.poll.ui :as poll.ui]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]))
 
 (defn- page-toolbar []
-  (poll.ui/page-toolbar
-   {:breadcrumb   (poll.ui/breadcrumb-trail
-                   (poll.ui/breadcrumb-link (urls/link-dashboard)
-                                            [:i18n/tr :home])
-                   (poll.ui/breadcrumb-current [:i18n/tr :polls/title]))
-    :mobile-href  (urls/link-dashboard)
-    :mobile-label [:i18n/tr :home]
-    :actions      [[button/Button {:appearance "filled"
-                                   :variant    "brand"
-                                   :href       (urls/link-polls-create)}
-                    [:i18n/tr :polls/new-poll]]]
-    :aria-label   [:i18n/tr :polls/index-toolbar-label]}))
+  [page-toolbar/PageToolbar
+   {::page-toolbar/breadcrumb
+    [breadcrumb/Breadcrumb
+     {}
+     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+      [:i18n/tr :home]]
+     [breadcrumb/BreadcrumbItem [:i18n/tr :polls/title]]]
+    ::page-toolbar/mobile-back
+    [button/Button {:appearance "plain"
+                    :href       (urls/link-dashboard)}
+     [ico/Icon {::ico/library :phosphor
+                ::ico/name    :arrow-left
+                :slot         "start"}]
+     [:i18n/tr :home]]
+    ::page-toolbar/actions
+    [[button/Button {:appearance "filled"
+                     :variant    "brand"
+                     :href       (urls/link-polls-create)}
+      [:i18n/tr :polls/new-poll]]]
+    :aria-label [:i18n/tr :polls/index-toolbar-label]}])
 
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [running-polls past-polls]} (queries/index-page-data db)]

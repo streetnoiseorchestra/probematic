@@ -7,9 +7,12 @@
    [app.gigs.ui :as gigs.ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -148,44 +151,57 @@
                   :data-attr:loading  "$loading === 'gig-edit'"}
    [:i18n/tr :action/save]])
 
-(defn- cancel-button [href]
-  [button/Button {:appearance "plain"
-                  :href       href}
-   [:i18n/tr :action/cancel]])
-
-(defn- delete-menu-item [gig]
-  [:wa-dropdown-item {:variant     "danger"
-                      :data-dialog (str "open " (gig-remove-dialog-id gig))}
-   [:i18n/tr :action/delete]])
-
 (defn- create-toolbar []
-  (gigs.ui/page-toolbar
-   {:breadcrumb   (gigs.ui/breadcrumb-trail
-                   (gigs.ui/breadcrumb-link (urls/link-gigs-home)
-                                            [:i18n/tr :gigs/title])
-                   (gigs.ui/breadcrumb-current [:i18n/tr :gigs/new-gig]))
-    :mobile-href  (urls/link-gigs-home)
-    :mobile-label [:i18n/tr :gigs/title]
-    :actions      [(cancel-button (urls/link-gigs-home))
-                   (save-button)]
-    :aria-label   [:i18n/tr :gigs/edit-toolbar-label]}))
+  [page-toolbar/PageToolbar
+   {::page-toolbar/breadcrumb
+    [breadcrumb/Breadcrumb
+     {}
+     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+      [:i18n/tr :gigs/title]]
+     [breadcrumb/BreadcrumbItem [:i18n/tr :gigs/new-gig]]]
+    ::page-toolbar/mobile-back
+    [button/Button {:appearance "plain"
+                    :href       (urls/link-gigs-home)}
+     [ico/Icon {::ico/library :phosphor
+                ::ico/name    :arrow-left
+                :slot         "start"}]
+     [:i18n/tr :gigs/title]]
+    ::page-toolbar/actions
+    [[button/Button {:appearance "plain"
+                     :href       (urls/link-gigs-home)}
+      [:i18n/tr :action/cancel]]
+     (save-button)]
+    :aria-label [:i18n/tr :gigs/edit-toolbar-label]}])
 
 (defn- edit-toolbar [req gig]
   (let [gig-url   (urls/link-gig gig)
         gig-label (gigs.ui/gig-breadcrumb-label req gig)]
-    (gigs.ui/page-toolbar
-     {:breadcrumb     (gigs.ui/breadcrumb-trail
-                       (gigs.ui/breadcrumb-link (urls/link-gigs-home)
-                                                [:i18n/tr :gigs/title])
-                       (gigs.ui/gig-breadcrumb req gig)
-                       (gigs.ui/breadcrumb-current [:i18n/tr :action/edit]))
-      :mobile-href    gig-url
-      :mobile-label   gig-label
-      :actions        [(cancel-button gig-url)
-                       (save-button)]
-      :overflow-items [(delete-menu-item gig)]
-      :overflow-label [:i18n/tr :action/more-actions]
-      :aria-label     [:i18n/tr :gigs/edit-toolbar-label]})))
+    [page-toolbar/PageToolbar
+     {::page-toolbar/breadcrumb
+      [breadcrumb/Breadcrumb
+       {}
+       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+        [:i18n/tr :gigs/title]]
+       (gigs.ui/gig-breadcrumb req gig)
+       [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
+      ::page-toolbar/mobile-back
+      [button/Button {:appearance "plain"
+                      :href       gig-url}
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :arrow-left
+                  :slot         "start"}]
+       gig-label]
+      ::page-toolbar/actions
+      [[button/Button {:appearance "plain"
+                       :href       gig-url}
+        [:i18n/tr :action/cancel]]
+       (save-button)]
+      ::page-toolbar/overflow-items
+      [[:wa-dropdown-item {:variant     "danger"
+                           :data-dialog (str "open " (gig-remove-dialog-id gig))}
+        [:i18n/tr :action/delete]]]
+      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+      :aria-label                    [:i18n/tr :gigs/edit-toolbar-label]}]))
 
 (defn- edit-header [{:keys [tr]} {:gig/keys [title gig-type status]}]
   (let [type-label (tr [gig-type])]

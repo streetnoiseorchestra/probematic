@@ -3,9 +3,11 @@
    [app.gigs.ui :as gigs.ui]
    [app.html :as html]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]))
 
 (defn pop-helper-script []
@@ -36,19 +38,27 @@
 (defn page-toolbar [req gig title-key]
   (let [gig-url   (urls/link-gig gig)
         gig-label (gigs.ui/gig-breadcrumb-label req gig)]
-    (gigs.ui/page-toolbar
-     {:breadcrumb   (gigs.ui/breadcrumb-trail
-                     (gigs.ui/breadcrumb-link (urls/link-gigs-home)
-                                              [:i18n/tr :gigs/title])
-                     (gigs.ui/gig-breadcrumb req gig)
-                     (gigs.ui/breadcrumb-current [:i18n/tr title-key]))
-      :mobile-href  gig-url
-      :mobile-label gig-label
-      :actions      [[button/Button {:appearance "filled"
-                                     :variant    "brand"
-                                     :href       gig-url}
-                      [:i18n/tr :action/done]]]
-      :aria-label   [:i18n/tr :gigs/tool-toolbar-label]})))
+    [page-toolbar/PageToolbar
+     {::page-toolbar/breadcrumb
+      [breadcrumb/Breadcrumb
+       {}
+       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+        [:i18n/tr :gigs/title]]
+       (gigs.ui/gig-breadcrumb req gig)
+       [breadcrumb/BreadcrumbItem [:i18n/tr title-key]]]
+      ::page-toolbar/mobile-back
+      [button/Button {:appearance "plain"
+                      :href       gig-url}
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :arrow-left
+                  :slot         "start"}]
+       gig-label]
+      ::page-toolbar/actions
+      [[button/Button {:appearance "filled"
+                       :variant    "brand"
+                       :href       gig-url}
+        [:i18n/tr :action/done]]]
+      :aria-label [:i18n/tr :gigs/tool-toolbar-label]}]))
 
 (defn page-summary [title-key]
   [page-header/PageHeader {:title [:i18n/tr title-key]}])

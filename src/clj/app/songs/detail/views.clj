@@ -9,12 +9,13 @@
    [app.markdown :as markdown]
    [app.queries :as q]
    [app.songs.detail.actions :as actions]
-   [app.songs.ui :as songs.ui]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -56,17 +57,25 @@
             (ui2/active-badge tr active?)]}])
 
 (defn- detail-toolbar [{:song/keys [title] :as song}]
-  (songs.ui/page-toolbar
-   {:breadcrumb   (songs.ui/breadcrumb-trail
-                   (songs.ui/breadcrumb-link (urls/link-songs-home)
-                                             [:i18n/tr :repertoire/title])
-                   (songs.ui/breadcrumb-current title))
-    :mobile-href  (urls/link-songs-home)
-    :mobile-label [:i18n/tr :repertoire/title]
-    :actions      [[button/Button {:appearance "filled"
-                                   :href       (urls/link-song-edit song)}
-                    [:i18n/tr :action/edit]]]
-    :aria-label   [:i18n/tr :repertoire/detail-toolbar-label]}))
+  [page-toolbar/PageToolbar
+   {::page-toolbar/breadcrumb
+    [breadcrumb/Breadcrumb
+     {}
+     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+      [:i18n/tr :repertoire/title]]
+     [breadcrumb/BreadcrumbItem title]]
+    ::page-toolbar/mobile-back
+    [button/Button {:appearance "plain"
+                    :href       (urls/link-songs-home)}
+     [ico/Icon {::ico/library :phosphor
+                ::ico/name    :arrow-left
+                :slot         "start"}]
+     [:i18n/tr :repertoire/title]]
+    ::page-toolbar/actions
+    [[button/Button {:appearance "filled"
+                     :href       (urls/link-song-edit song)}
+      [:i18n/tr :action/edit]]]
+    :aria-label [:i18n/tr :repertoire/detail-toolbar-label]}])
 
 (defn background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
   (ui2/section-card

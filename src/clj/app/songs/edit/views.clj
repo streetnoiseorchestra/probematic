@@ -4,11 +4,13 @@
    [app.form :as form]
    [app.queries :as q]
    [app.songs.edit.actions :as actions]
-   [app.songs.ui :as songs.ui]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -95,43 +97,57 @@
                   :data-attr:loading  "$loading === 'song-edit'"}
    [:i18n/tr :action/save]])
 
-(defn- cancel-button [href]
-  [button/Button {:appearance "plain"
-                  :href       href}
-   [:i18n/tr :action/cancel]])
-
-(defn- delete-menu-item [song]
-  [:wa-dropdown-item {:variant     "danger"
-                      :data-dialog (str "open " (song-remove-dialog-id song))}
-   [:i18n/tr :action/delete]])
-
 (defn- create-toolbar []
-  (songs.ui/page-toolbar
-   {:breadcrumb   (songs.ui/breadcrumb-trail
-                   (songs.ui/breadcrumb-link (urls/link-songs-home)
-                                             [:i18n/tr :repertoire/title])
-                   (songs.ui/breadcrumb-current [:i18n/tr :repertoire/add-song]))
-    :mobile-href  (urls/link-songs-home)
-    :mobile-label [:i18n/tr :repertoire/title]
-    :actions      [(cancel-button (urls/link-songs-home))
-                   (save-button)]
-    :aria-label   [:i18n/tr :repertoire/edit-toolbar-label]}))
+  [page-toolbar/PageToolbar
+   {::page-toolbar/breadcrumb
+    [breadcrumb/Breadcrumb
+     {}
+     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+      [:i18n/tr :repertoire/title]]
+     [breadcrumb/BreadcrumbItem [:i18n/tr :repertoire/add-song]]]
+    ::page-toolbar/mobile-back
+    [button/Button {:appearance "plain"
+                    :href       (urls/link-songs-home)}
+     [ico/Icon {::ico/library :phosphor
+                ::ico/name    :arrow-left
+                :slot         "start"}]
+     [:i18n/tr :repertoire/title]]
+    ::page-toolbar/actions
+    [[button/Button {:appearance "plain"
+                     :href       (urls/link-songs-home)}
+      [:i18n/tr :action/cancel]]
+     (save-button)]
+    :aria-label [:i18n/tr :repertoire/edit-toolbar-label]}])
 
 (defn- edit-toolbar [song]
   (let [song-url (urls/link-song song)]
-    (songs.ui/page-toolbar
-     {:breadcrumb     (songs.ui/breadcrumb-trail
-                       (songs.ui/breadcrumb-link (urls/link-songs-home)
-                                                 [:i18n/tr :repertoire/title])
-                       (songs.ui/breadcrumb-link song-url (:song/title song))
-                       (songs.ui/breadcrumb-current [:i18n/tr :action/edit]))
-      :mobile-href    song-url
-      :mobile-label   (:song/title song)
-      :actions        [(cancel-button song-url)
-                       (save-button)]
-      :overflow-items [(delete-menu-item song)]
-      :overflow-label [:i18n/tr :action/more-actions]
-      :aria-label     [:i18n/tr :repertoire/edit-toolbar-label]})))
+    [page-toolbar/PageToolbar
+     {::page-toolbar/breadcrumb
+      [breadcrumb/Breadcrumb
+       {}
+       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+        [:i18n/tr :repertoire/title]]
+       [breadcrumb/BreadcrumbItem {::breadcrumb/href song-url}
+        (:song/title song)]
+       [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
+      ::page-toolbar/mobile-back
+      [button/Button {:appearance "plain"
+                      :href       song-url}
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :arrow-left
+                  :slot         "start"}]
+       (:song/title song)]
+      ::page-toolbar/actions
+      [[button/Button {:appearance "plain"
+                       :href       song-url}
+        [:i18n/tr :action/cancel]]
+       (save-button)]
+      ::page-toolbar/overflow-items
+      [[:wa-dropdown-item {:variant     "danger"
+                           :data-dialog (str "open " (song-remove-dialog-id song))}
+        [:i18n/tr :action/delete]]]
+      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+      :aria-label                    [:i18n/tr :repertoire/edit-toolbar-label]}]))
 
 (defn- edit-header [{:keys [tr]} {:song/keys [active? title]}]
   [page-header/PageHeader
