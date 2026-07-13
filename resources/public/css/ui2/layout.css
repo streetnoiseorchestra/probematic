@@ -1,6 +1,4 @@
 app-shell {
-  --app-shell-navigation-width: 16rem;
-  --app-shell-drawer-width: min(25rem, 88vi);
   --app-shell-topbar-size: 4rem;
   --app-shell-content-padding-block: var(--wa-space-s);
   --app-shell-content-padding-inline: var(--wa-space-s);
@@ -32,76 +30,10 @@ app-shell {
     z-index: var(--sno-nav-header-z-index);
   }
 
-  & > aside {
-    grid-area: navigation;
-    background-color: var(--wa-color-surface-default);
-  }
-
-  & > aside > header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--wa-space-s);
-    align-items: center;
-  }
-
-  & > aside > header > a {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    color: inherit;
-    text-decoration: none;
-  }
-
-  & > aside > header > a .sno-icon {
-    color: inherit;
-    font-size: var(--sno-brand-logotype-size);
-  }
-
-  & > aside > header > .wa-button {
-    justify-self: end;
-  }
-
-  & > aside > nav .wa-button {
-    inline-size: var(--sno-size-full);
-  }
-
-  & > aside > nav .wa-button,
-  & > aside > nav wa-button::part(base) {
-    justify-content: start;
-  }
-
-  & > aside > nav .sno-icon[slot="start"],
-  & wa-dropdown-item .sno-icon[slot="icon"] {
-    flex: none;
-    font-size: var(--sno-nav-icon-size);
-  }
-
-  & > a[aria-label="Close navigation"] {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    opacity: 0;
-    background-color: var(--wa-color-overlay-modal);
-    pointer-events: none;
-    transition: opacity var(--wa-transition-normal) var(--wa-transition-easing);
-  }
 }
 
-app-shell-account,
 app-shell-content {
   display: block;
-}
-
-app-shell-account #account-dropdown-button {
-  inline-size: var(--sno-size-full);
-  justify-content: start;
-
-  & > .caret {
-    margin-inline-start: auto;
-  }
-}
-
-app-shell-content {
   grid-area: content;
   container: app-content / inline-size;
   min-inline-size: 0;
@@ -109,45 +41,6 @@ app-shell-content {
   padding-inline: var(--app-shell-content-padding-inline);
   border-block-start: var(--wa-panel-border-width) var(--wa-border-style)
     var(--wa-color-surface-border);
-}
-
-@media (--sno-index-collapsed) {
-  app-shell > aside {
-    position: fixed;
-    inset-block: 0;
-    inset-inline-start: 0;
-    z-index: 40;
-    display: grid;
-    grid-template-rows: auto;
-    align-content: start;
-    gap: var(--wa-space-l);
-    inline-size: var(--app-shell-drawer-width);
-    padding: var(--wa-space-l);
-    border-inline-end: var(--wa-panel-border-width) var(--wa-border-style)
-      var(--wa-color-surface-border);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    visibility: hidden;
-    translate: -100% 0;
-    transition:
-      translate var(--wa-transition-normal) var(--wa-transition-easing),
-      visibility 0s linear var(--wa-transition-normal);
-
-    &:target {
-      visibility: visible;
-      translate: 0 0;
-      transition-delay: 0s;
-    }
-
-    &:target + a {
-      opacity: 1;
-      pointer-events: auto;
-    }
-  }
-
-  app-shell-account {
-    display: none;
-  }
 }
 
 @media (--sno-index-expanded) {
@@ -174,32 +67,6 @@ app-shell-content {
         auto
       ) /
       minmax(0, 1fr);
-  }
-
-  app-shell > a[aria-label="Close navigation"],
-  app-shell > aside > header > wa-button {
-    display: none;
-  }
-
-  app-shell > aside {
-    position: sticky;
-    inset-block-start: 0;
-    display: grid;
-    grid-template-rows: auto auto auto;
-    align-content: start;
-    gap: var(--wa-space-m);
-    block-size: 100dvb;
-    padding: var(--wa-space-l) var(--wa-space-m);
-    border-inline-end: var(--wa-panel-border-width) var(--wa-border-style)
-      var(--wa-color-surface-border);
-    overflow-y: auto;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  app-shell > aside,
-  app-shell > a[aria-label="Close navigation"] {
-    transition: none;
   }
 }
 

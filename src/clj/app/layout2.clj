@@ -3,13 +3,9 @@
    [app.auth :as auth]
    [app.config :as config]
    [app.html :as html]
-   [app.i18n :as i18n]
    [app.icons :as icon]
    [app.secret-box :as secret-box]
-   [app.ui2 :as ui2]
-   [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
-   [app.ui2.divider :as divider]
    [app.ui2.footer-tray :as footer-tray]
    [app.ui2.icon :as ico]
    [app.ui2.jump-menu :as jump-menu]
@@ -17,81 +13,6 @@
    [app.util :as util]
    [jsonista.core :as j]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
-
-(defn- nav-items
-  [tr]
-  [{:label (tr [:nav/home])          :icon :home                 :href "/"                                       :route-name :app/dashboard}
-   {:label (tr [:nav/gigs])          :icon :trumpet              :href (url/link-gigs-home)                      :route-name :app/gigs}
-   {:label (tr [:nav/songs])         :icon :music-note-outline   :href "/songs"                                  :route-name :app/songs}
-   {:label (tr [:nav/members])       :icon :users-outline        :href "/members"                                :route-name :app/members}
-   {:label (tr [:nav/insurance])     :icon :shield-check-outline :href "/insurance"                              :route-name :app/insurance}
-   {:label (tr [:nav/probeplan])     :icon :calendar             :href "/probeplan"                              :route-name :app/probeplan}
-   {:label (tr [:nav/polls])         :icon :question             :href "/polls"                                  :route-name :app/polls}
-   {:label (tr [:nav/forum])         :icon :snomegaphone         :href "https://forum.streetnoise.at"            :route-name :app/forum}
-   {:label (tr [:nav/nextcloud])     :icon :folder-open          :href "https://data.streetnoise.at/apps/files/" :route-name :app/nextcloud}
-   {:label (tr [:nav/chat])          :icon :comments             :href "https://chat.streetnoise.at"             :route-name :app/chat}
-   {:label (tr [:nav/stats])         :icon :chart-bar-square     :href "/stats"                                  :route-name :app/stats}
-   {:label (tr [:nav/band-settings]) :icon :cog                  :href "/band-settings"                          :route-name :app/band-settings}])
-
-(defn- active? [req route-name]
-  (= route-name (-> req :reitit.core/match :data :app.route/name)))
-
-(defn- nav-button [req {:keys [label icon href route-name]}]
-  [button/Button (cond-> {:href       href
-                          :appearance "plain"}
-                   (active? req route-name) (assoc :variant "brand"
-                                                   :aria-current "page"))
-   [ico/Icon {::ico/library :snoico
-              ::ico/name    icon
-              :slot         "start"}]
-   label])
-
-(defn navigation [req]
-  (let [tr (i18n/tr-from-req req)]
-    (into [:nav {:class "wa-stack wa-gap-0"}]
-          (map (partial nav-button req) (nav-items tr)))))
-
-(def ^:private menu-icon-opts {:slot "icon"})
-
-(defn brand-link []
-  [:a {:href "/" :aria-label "Home"}
-   (icon/logotype {:class      ""})])
-
-(defn nav-user-dropdown [req member]
-  (let [tr (i18n/tr-from-req req)]
-    [:wa-dropdown {:distance "4"}
-     [:div {:slot "trigger"}
-      [button/Button {:id         "account-dropdown-button"
-                      :appearance "plain"
-                      :with-caret true}
-       [avatar/Avatar {::avatar/member member
-                       ::avatar/image-size 200
-                       ::avatar/icon :user
-                       ::avatar/link? false
-                       :slot "start"
-                       :shape "rounded"
-                       :style "--size: 2rem"}]
-       [:span {:class "member-nick"} (ui2/member-nick member)]]]
-     [:wa-dropdown-item {:value   (url/link-member member)
-                         :onclick "window.location = this.value"}
-      [ico/Icon (merge {::ico/library :snoico
-                        ::ico/name    :user}
-                       menu-icon-opts)]
-      (tr [:my-profile])]
-     [:wa-dropdown-item {:value   "/band-settings"
-                         :onclick "window.location = this.value"}
-      [ico/Icon (merge {::ico/library :snoico
-                        ::ico/name    :cog}
-                       menu-icon-opts)]
-      (tr [:nav/band-settings])]
-     [divider/Divider]
-     [:wa-dropdown-item {:value   (url/link-logout)
-                         :variant "danger"
-                         :onclick "window.location = this.value"}
-      [ico/Icon (merge {::ico/library :snoico
-                        ::ico/name    :xmark}
-                       menu-icon-opts)]
-      (tr [:nav/logout])]]))
 
 (def ^:private footer-tray-shortcuts
   [{:id           "footer-tray-assignments"
@@ -303,20 +224,6 @@
           [ico/Icon {::ico/library :snoico
                      ::ico/name :home}]
           [:span {:class "home-label"} "Home"]])
-       [:aside {:id "app-shell-navigation"}
-        [:header
-         (brand-link)
-         [button/Button {:href       "#"
-                         :appearance "plain"
-                         :aria-label "Close navigation"}
-          [ico/Icon {::ico/library :snoico
-                     ::ico/name :xmark}]]]
-        [:app-shell-account
-         (nav-user-dropdown req member)]
-        (navigation req)]
-       [:a {:href       "#"
-            :aria-label "Close navigation"
-            :tabindex   "-1"}]
        [:app-shell-content
         body]]
       (footer-tray/FooterTray
