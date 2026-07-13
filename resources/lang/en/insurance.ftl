@@ -53,3 +53,29 @@ instrument-step = Instrument
 photos-step = Photos
 coverage-step = Coverage
 edit-coverage = Edit Instrument Coverage
+
+### Payment notifications
+
+request-payments-title = Request insurance payments
+request-payments-subtitle = Select the members who should receive a payment request for privately insured instruments.
+send-payment-notifications = Send notifications
+send-payment-notifications-failed = The payment notifications could not be completed. Check the policy ledger and outgoing email before trying again.
+payment-members-title = Members to notify
+payment-members-subtitle = Members with calculable private-instrument costs are selected by default.
+member = Member
+private-instruments = Private instruments
+total = Total
+cost-unavailable = Cost unavailable
+select-member-for-payment = Select { $member-name } for a payment request
+select-payment-members = Select at least one member to notify.
+payments-missing-category-factors = Costs are unavailable for instruments in these categories because their policy factors are missing: { $category-names }.
+no-private-payments-title = No payments to request
+no-private-payments = No private instrument payments need to be requested for this policy.
+payment-email-preview-title = Email preview
+payment-email-preview-subtitle = This example uses the first selected member’s instruments and total.
+payment-notifications-sent-title = Notifications sent
+payment-notifications-sent =
+    { $count ->
+        [one] One payment notification was sent.
+       *[other] { $count } payment notifications were sent.
+    }

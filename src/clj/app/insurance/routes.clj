@@ -9,6 +9,7 @@
    [app.insurance.policy.changes.views :as policy.changes.views]
    [app.insurance.policy.create.views :as policy.create.views]
    [app.insurance.policy.dashboard.views :as policy.dashboard.views]
+   [app.insurance.policy.notifications.views :as policy.notifications.views]
    [app.insurance.policy.review.views :as policy.review.views]
    [app.insurance.policy.settings.views :as policy.settings.views]
    [app.insurance.policy.workbench.views :as policy.workbench.views]
@@ -19,14 +20,6 @@
    [app.routes.datastar :as ds]
    [ctmx.core :as ctmx]
    [reitit.ring.malli :as reitit.ring.malli]))
-
-(defn insurance-notification []
-  [""
-   (ctmx/make-routes
-    "/insurance-policy-notify/{policy-id}/"
-    (fn [req]
-      (layout/app-shell req
-                        (view/insurance-notify-page req))))])
 
 (defn insurance-survey []
   (ctmx/make-routes
@@ -102,7 +95,15 @@
     (ds/page-routes {:page-name ::policy-dashboard
                      :path      "/insurance-policy/{policy-id}"
                      :page      #'policy.dashboard.views/page})
-    (insurance-notification)
+    (ds/page-routes {:page-name ::policy-notifications
+                     :path      "/insurance-policy-notify/{policy-id}/"
+                     :page      #'policy.notifications.views/page})
+    ["/insurance-policy-notify/{policy-id}/insurance-notify-page"
+     (fn [req]
+       (view/insurance-notify-page req))]
+    ["/insurance-policy-notify/{policy-id}/insurance-send-notifications"
+     (fn [req]
+       (view/insurance-send-notifications req))]
 
     ["/insurance-changes-excel-download/{policy-id}/"
      {:get {:summary "Download the changes excel file"

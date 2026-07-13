@@ -4,6 +4,7 @@
    [app.insurance.coverage.edit.actions :as coverage-edit.actions]
    [app.insurance.policy.changes.actions :as policy-changes.actions]
    [app.insurance.policy.create.actions :as policy-create.actions]
+   [app.insurance.policy.notifications.actions :as policy-notifications.actions]
    [app.insurance.policy.review.actions :as policy-review.actions]
    [app.insurance.policy.settings.actions :as policy-settings.actions]
    [app.insurance.policy.workbench.actions :as policy-workbench.actions]
@@ -109,6 +110,7 @@
    coverage-create.actions/actions
    policy-changes.actions/actions
    policy-create.actions/actions
+   policy-notifications.actions/actions
    policy-review.actions/actions
    policy-settings.actions/actions
    policy-workbench.actions/actions))

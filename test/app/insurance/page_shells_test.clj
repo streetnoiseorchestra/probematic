@@ -7,10 +7,12 @@
    [app.insurance.policy.changes.views :as policy-changes.views]
    [app.insurance.policy.create.views :as policy-create.views]
    [app.insurance.policy.dashboard.views :as dashboard.views]
+   [app.insurance.policy.notifications.views :as policy-notifications.views]
    [app.insurance.policy.review.views :as review.views]
    [app.insurance.policy.settings.views :as settings.views]
    [app.insurance.policy.workbench.views :as workbench.views]
    [app.insurance.test-support :as insurance-test]
+   [app.queries :as q]
    [app.test-common :as tc]
    [app.ui2.page-shell-test-support :as page-shell]
    [app.urls :as urls]
@@ -43,7 +45,7 @@
              ::r/router      router}})))
 
 (deftest directory-dashboard-and-coverage-use-shared-page-shells
-  (let [{:keys [request policy-id coverage-id]} (fixture)]
+  (let [{:keys [conn request policy-id coverage-id]} (fixture)]
     (testing "The Insurance directory owns collection context and policy creation."
       (is (= {:width       :wide
               :breadcrumbs [:home :insurance/title]
@@ -67,11 +69,27 @@
                             {:label :insurance/add-coverage
                              :value (str "/insurance-coverage-create/" policy-id)}
                             {:label :insurance/policy-settings
-                             :value (str "/insurance-policy/" policy-id "/settings")}]}
+                             :value (str "/insurance-policy/" policy-id "/settings")}
+                            {:label :insurance/send-changes
+                             :value (str "/insurance-policy-changes/" policy-id "/")}]}
              (-> request
                  (assoc :path-params {:policy-id policy-id})
                  dashboard.views/page
                  page-shell/page-contract))))
+    (testing "An active policy exposes its payment-request workflow."
+      (let [active-db (:db-after
+                       @(d/transact conn [[:db/add
+                                           [:insurance.policy/policy-id policy-id]
+                                           :insurance.policy/status
+                                           :insurance.policy.status/active]]))]
+        (is (some #{{:label :insurance/request-payments-title
+                     :value (str "/insurance-policy-notify/" policy-id "/")}}
+                  (-> request
+                      (assoc :db active-db
+                             :path-params {:policy-id policy-id})
+                      dashboard.views/page
+                      page-shell/page-contract
+                      :overflow)))))
     (testing "Coverage detail keeps the policy and instrument in context."
       (is (= {:width       :wide
               :breadcrumbs [:insurance/title "Insurance 2026" "Test Trumpet"]
@@ -157,6 +175,29 @@
            (-> request
                (assoc :path-params {:policy-id policy-id})
                policy-changes.views/page
+               page-shell/page-contract)))))
+
+(deftest payment-notifications-use-a-wide-policy-surface
+  (let [{:keys [request policy-id]} (fixture)
+        policy     (q/retrieve-policy (:db request) policy-id)
+        policy-url (urls/link-policy policy-id)]
+    (is (= {:width       :wide
+            :breadcrumbs [:insurance/title "Insurance 2026"
+                          :insurance/request-payments-title]
+            :mobile      {:label "Insurance 2026" :href policy-url}
+            :actions     [{:label :action/cancel
+                           :href  policy-url
+                           :appearance "outlined"}
+                          {:label :insurance/send-payment-notifications
+                           :form "insurance-payment-notifications-form"
+                           :type "submit"
+                           :appearance "filled"
+                           :variant "brand"}]
+            :overflow    []}
+           (-> request
+               (assoc :path-params {:policy-id policy-id}
+                      :policy policy)
+               policy-notifications.views/page
                page-shell/page-contract)))))
 
 (deftest coverage-creation-uses-standard-step-surfaces

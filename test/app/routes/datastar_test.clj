@@ -289,6 +289,18 @@
              (slash-redirect-summary router (subs changes-path 0 (dec (count changes-path))))))
       (is (some? (r/match-by-path router
                                   (str changes-path "insurance-policy-changes-review")))))
+    (let [notifications-path (urls/link-policy-send-notifications policy-id)
+          slashless-path     (subs notifications-path 0 (dec (count notifications-path)))]
+      (is (= :app.insurance.routes/policy-notifications
+             (page-name router notifications-path)))
+      (is (nil? (r/match-by-path router slashless-path)))
+      (is (= {:status   301
+              :location notifications-path}
+             (slash-redirect-summary router slashless-path)))
+      (is (some? (r/match-by-path router
+                                  (str notifications-path "insurance-notify-page"))))
+      (is (some? (r/match-by-path router
+                                  (str notifications-path "insurance-send-notifications")))))
     (is (= :app/insurance
            (app-route-name router (urls/link-policy-review policy-id))))
     (is (= :app.insurance.routes/policy-review

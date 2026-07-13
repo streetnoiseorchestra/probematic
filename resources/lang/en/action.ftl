@@ -12,6 +12,7 @@ next = Next
 remove = Remove
 reorder = Reorder
 save = Save
+select-all = Select all
 update = Update
 view-all = View all
 confirm-generic = Are you sure?

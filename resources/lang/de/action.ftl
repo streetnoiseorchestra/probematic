@@ -12,6 +12,7 @@ next = Weiter
 remove = Entfernen
 reorder = Neu anordnen
 save = Speichern
+select-all = Alle auswählen
 update = Aktualisieren
 view-all = Alle anzeigen
 confirm-generic = Bist du sicher?

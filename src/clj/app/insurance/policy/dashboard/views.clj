@@ -509,12 +509,41 @@
            (detail-row (tr [:insurance/premium-base-factor]) premium-factor)]))])
 
 (defn page
-  [{:keys [db] :as req}]
+  [{:keys [db tr] :as req}]
   (let [dashboard (queries/policy-dashboard
                    db
                    (policy-id req)
                    {:current-member-id (get-in req [:session :session/member :member/member-id])})
-        policy    (:policy dashboard)]
+        policy    (:policy dashboard)
+        status    (:insurance.policy/status policy)
+        send-changes? (and (:insurance-team-member? dashboard)
+                           (= :insurance.policy.status/draft status))
+        send-changes-disabled? (pos? (get-in dashboard [:status-counts
+                                                        :instrument.coverage.status/needs-review]
+                                             0))
+        overflow-items
+        (cond-> [[:wa-dropdown-item {:value   (urls/link-policy-workbench policy)
+                                     :onclick "window.location = this.value"}
+                  [:i18n/tr :insurance/workbench]]
+                 [:wa-dropdown-item {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
+                                     :onclick "window.location = this.value"}
+                  [:i18n/tr :insurance/add-coverage]]
+                 [:wa-dropdown-item {:value   (urls/link-policy-settings policy)
+                                     :onclick "window.location = this.value"}
+                  [:i18n/tr :insurance/policy-settings]]]
+          send-changes?
+          (conj [:wa-dropdown-item
+                 (cond-> {:value   (urls/link-policy-changes policy)
+                          :onclick "window.location = this.value"}
+                   send-changes-disabled?
+                   (assoc :disabled true
+                          :title    (tr [:insurance/send-changes-disabled-hint])))
+                 [:i18n/tr :insurance/send-changes]])
+
+          (= :insurance.policy.status/active status)
+          (conj [:wa-dropdown-item {:value   (urls/link-policy-send-notifications policy)
+                                    :onclick "window.location = this.value"}
+                 [:i18n/tr :insurance/request-payments-title]]))]
     (ui2/datastar-page*
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
@@ -540,16 +569,7 @@
                       :slot         "start"}]
            [:i18n/tr :insurance/review]]]
          ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-         ::page-toolbar/overflow-items
-         [[:wa-dropdown-item {:value   (urls/link-policy-workbench policy)
-                              :onclick "window.location = this.value"}
-           [:i18n/tr :insurance/workbench]]
-          [:wa-dropdown-item {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
-                              :onclick "window.location = this.value"}
-           [:i18n/tr :insurance/add-coverage]]
-          [:wa-dropdown-item {:value   (urls/link-policy-settings policy)
-                              :onclick "window.location = this.value"}
-           [:i18n/tr :insurance/policy-settings]]]
+         ::page-toolbar/overflow-items overflow-items
          :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "wa-stack"}
        (page-header req policy)

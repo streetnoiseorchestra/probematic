@@ -151,7 +151,6 @@
                                   :value                       "Insured value"
                                   :value-abbrev                "Insured value"
                                   :value-hint                  "For multiple identical insured items, enter the value of one item."
-                                  :total                       "Total"
                                   :no-photos                   "No photos have been uploaded yet."
                                   :insurance-policy            "Insurance Policy"
                                   :currency                    "Currency"
@@ -164,7 +163,6 @@
                                   :instrument-coverage         "Instrument Coverage"
                                   :coverage-for                "The following information is for the insurance policy '%1'"
                                   :send-changes-disabled-hint  "Changes cannot be sent while there are open TODOs"
-                                  :send-payment-notifications  "Send Payment Notifications"
                                   :error-edit-frozen-policy    "Cannot update instrument and coverage on a policy that is not in draft status"
                                   :error-invalid-number         "%1 must be a whole number greater than zero."
                                   :error-invalid-coverage-type  "Please choose valid coverage types."
@@ -178,10 +176,7 @@
                                   :bank-data                   "Bankdaten"
                                   :email-p3                    "Möchtest du genau wissen woraus sich deine Kosten zusammenstellen, kannst du dies im Forum unter folgendem Link nachlesen."
                                   :email-p4                    "Im Falle eines Schadens findest du die Anleitung für eine Schadensmeldung und das dazu gehörige Schadensformular im Anhang."
-                                  :email-p5                    "Solltest du weitere Fragen haben, kannst du dich gerne bei uns melden."
-                                  :request-payments-title      "Request Insurance Payments"
-                                  :request-payments-subtitle   "The following members have private instruments insured, and need to be notified."
-                                  :no-private-payments          "No private instrument payments need to be requested for this policy."}
+                                  :email-p5                    "Solltest du weitere Fragen haben, kannst du dich gerne bei uns melden."}
  :insurance.dashboard            {:continue-reviewing       "Review"
                                   :review-queue             "Review"
                                   :coverage-workbench       "Table"

@@ -53,3 +53,29 @@ instrument-step = Instrument
 photos-step = Fotos
 coverage-step = Versicherungsschutz
 edit-coverage = Instrumentenversicherung bearbeiten
+
+### Zahlungsbenachrichtigungen
+
+request-payments-title = Versicherungszahlungen anfordern
+request-payments-subtitle = Wähle die Mitglieder aus, die eine Zahlungsaufforderung für privat versicherte Instrumente erhalten sollen.
+send-payment-notifications = Benachrichtigungen senden
+send-payment-notifications-failed = Die Zahlungsbenachrichtigungen konnten nicht abgeschlossen werden. Prüfe das Policenkonto und die ausgehenden E-Mails, bevor du es erneut versuchst.
+payment-members-title = Zu benachrichtigende Mitglieder
+payment-members-subtitle = Mitglieder mit berechenbaren Kosten für private Instrumente sind standardmäßig ausgewählt.
+member = Mitglied
+private-instruments = Private Instrumente
+total = Gesamt
+cost-unavailable = Kosten nicht verfügbar
+select-member-for-payment = { $member-name } für eine Zahlungsaufforderung auswählen
+select-payment-members = Wähle mindestens ein Mitglied aus.
+payments-missing-category-factors = Für Instrumente in diesen Kategorien sind keine Kosten verfügbar, weil Policenfaktoren fehlen: { $category-names }.
+no-private-payments-title = Keine Zahlungen anzufordern
+no-private-payments = Für diese Police müssen keine Zahlungen für private Instrumente angefordert werden.
+payment-email-preview-title = E-Mail-Vorschau
+payment-email-preview-subtitle = Dieses Beispiel verwendet die Instrumente und den Gesamtbetrag des ersten ausgewählten Mitglieds.
+payment-notifications-sent-title = Benachrichtigungen gesendet
+payment-notifications-sent =
+    { $count ->
+        [one] Eine Zahlungsbenachrichtigung wurde gesendet.
+       *[other] { $count } Zahlungsbenachrichtigungen wurden gesendet.
+    }

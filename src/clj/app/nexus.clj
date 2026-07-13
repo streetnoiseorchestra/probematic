@@ -235,6 +235,7 @@
                          :app.datastar/merge-state                 merge-page-state-fx
                          :app.datastar/redirect                    redirect-fx
                          :app.insurance/send-policy-changes        insurance.effects/send-policy-changes-fx
+                         :app.insurance/send-payment-notifications insurance.effects/send-payment-notifications-fx
                          :app.gigs/trigger-gig-details-edited      gigs.effects/trigger-gig-details-edited-fx
                          :app.gigs/trigger-gig-created             gigs.effects/trigger-gig-created-fx
                          :app.gigs/trigger-gig-deleted             gigs.effects/trigger-gig-deleted-fx
