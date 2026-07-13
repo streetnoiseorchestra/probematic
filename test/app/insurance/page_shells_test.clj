@@ -4,6 +4,8 @@
    [app.insurance.coverage.edit.views :as coverage-edit.views]
    [app.insurance.coverage.views :as coverage.views]
    [app.insurance.index.views :as index.views]
+   [app.insurance.policy.changes.views :as policy-changes.views]
+   [app.insurance.policy.create.views :as policy-create.views]
    [app.insurance.policy.dashboard.views :as dashboard.views]
    [app.insurance.policy.review.views :as review.views]
    [app.insurance.policy.settings.views :as settings.views]
@@ -118,6 +120,44 @@
                  (assoc :path-params {:policy-id policy-id})
                  settings.views/page
                  page-shell/page-contract))))))
+
+(deftest policy-creation-uses-a-standard-form-surface
+  (let [{:keys [request]} (fixture)]
+    (is (= {:width       :standard
+            :breadcrumbs [:insurance/title :insurance/create-title]
+            :mobile      {:label :insurance/title :href "/insurance"}
+            :actions     [{:label :action/cancel
+                           :href  "/insurance"
+                           :appearance "outlined"}
+                          {:label :action/create
+                           :form "insurance-policy-create-form"
+                           :type "submit"
+                           :appearance "filled"
+                           :variant "brand"}]
+            :overflow    []}
+           (-> request
+               policy-create.views/page
+               page-shell/page-contract)))))
+
+(deftest policy-changes-use-a-standard-confirmation-surface
+  (let [{:keys [request policy-id]} (fixture)
+        policy-url (urls/link-policy policy-id)]
+    (is (= {:width       :standard
+            :breadcrumbs [:insurance/title "Insurance 2026" :insurance/send-changes]
+            :mobile      {:label "Insurance 2026" :href policy-url}
+            :actions     [{:label :action/cancel
+                           :href  policy-url
+                           :appearance "outlined"}
+                          {:label :insurance/confirm-and-send
+                           :data-dialog "open insurance-policy-send-changes-dialog"
+                           :appearance "filled"
+                           :variant "brand"}]
+            :overflow    [{:label :insurance/confirm-skip-send
+                           :data-dialog "open insurance-policy-confirm-changes-dialog"}]}
+           (-> request
+               (assoc :path-params {:policy-id policy-id})
+               policy-changes.views/page
+               page-shell/page-contract)))))
 
 (deftest coverage-creation-uses-standard-step-surfaces
   (let [{:keys [request policy-id instrument-id]} (fixture)

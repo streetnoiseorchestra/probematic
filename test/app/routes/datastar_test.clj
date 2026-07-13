@@ -3,8 +3,8 @@
    [app.dashboard.routes :as dashboard.routes]
    [app.datastar :as datastar]
    [app.gigs.routes :as gigs.routes]
-   [app.members.routes :as members.routes]
    [app.insurance.routes :as insurance.routes]
+   [app.members.routes :as members.routes]
    [app.nexus :as app-nexus]
    [app.probeplan.routes :as probeplan.routes]
    [app.poll.routes :as poll.routes]
@@ -273,6 +273,22 @@
         coverage-id   (random-uuid)
         category-id   (random-uuid)
         instrument-id (random-uuid)]
+    (is (= :app.insurance.routes/policy-create
+           (page-name router "/insurance-new/")))
+    (is (nil? (r/match-by-path router "/insurance-new")))
+    (is (= {:status   301
+            :location "/insurance-new/"}
+           (slash-redirect-summary router "/insurance-new")))
+    (is (some? (r/match-by-path router "/insurance-new/insurance-create-page")))
+    (let [changes-path (str "/insurance-policy-changes/" policy-id "/")]
+      (is (= :app.insurance.routes/policy-changes
+             (page-name router changes-path)))
+      (is (nil? (r/match-by-path router (subs changes-path 0 (dec (count changes-path))))))
+      (is (= {:status   301
+              :location changes-path}
+             (slash-redirect-summary router (subs changes-path 0 (dec (count changes-path))))))
+      (is (some? (r/match-by-path router
+                                  (str changes-path "insurance-policy-changes-review")))))
     (is (= :app/insurance
            (app-route-name router (urls/link-policy-review policy-id))))
     (is (= :app.insurance.routes/policy-review

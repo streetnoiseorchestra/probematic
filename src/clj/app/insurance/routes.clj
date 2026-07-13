@@ -6,6 +6,8 @@
    [app.insurance.coverage.edit.views :as coverage.edit.views]
    [app.insurance.coverage.views :as coverage.views]
    [app.insurance.index.views :as index.views]
+   [app.insurance.policy.changes.views :as policy.changes.views]
+   [app.insurance.policy.create.views :as policy.create.views]
    [app.insurance.policy.dashboard.views :as policy.dashboard.views]
    [app.insurance.policy.review.views :as policy.review.views]
    [app.insurance.policy.settings.views :as policy.settings.views]
@@ -26,25 +28,11 @@
       (layout/app-shell req
                         (view/insurance-notify-page req))))])
 
-(defn insurance-generate-changes []
-  (ctmx/make-routes
-   "/insurance-policy-changes/{policy-id}"
-   (fn [req]
-     (layout/app-shell req
-                       (view/insurance-policy-changes-review req)))))
-
 (defn insurance-survey []
   (ctmx/make-routes
    "/insurance-survey/{policy-id}/"
    (fn [req]
      (layout/app-shell req (view/survey-start-page req)))))
-
-(defn insurance-create []
-  (ctmx/make-routes
-   "/insurance-new/"
-   (fn [req]
-     (layout/app-shell req
-                       (view/insurance-create-page req)))))
 
 (def policy-interceptor {:name ::insurance-policy--interceptor
                          :enter (fn [ctx]
@@ -96,7 +84,12 @@
     (ds/page-routes {:page-name ::coverage-create-instrument
                      :path      "/insurance-coverage-create/{policy-id}"
                      :page      #'coverage.create.views/instrument-page})
-    (insurance-generate-changes)
+    (ds/page-routes {:page-name ::policy-changes
+                     :path      "/insurance-policy-changes/{policy-id}/"
+                     :page      #'policy.changes.views/page})
+    ["/insurance-policy-changes/{policy-id}/insurance-policy-changes-review"
+     (fn [req]
+       (view/insurance-policy-changes-review req))]
     (ds/page-routes {:page-name ::policy-review
                      :path      "/insurance-policy/{policy-id}/review"
                      :page      #'policy.review.views/page})
@@ -142,7 +135,12 @@
                      :path      "/insurance-coverage-edit/{coverage-id}/"
                      :page      #'coverage.edit.views/page})]
 
-   (insurance-create)])
+   (ds/page-routes {:page-name ::policy-create
+                    :path      "/insurance-new/"
+                    :page      #'policy.create.views/page})
+   ["/insurance-new/insurance-create-page"
+    (fn [req]
+      (view/insurance-create-page req))]])
 
 (defn unauthenticated-routes []
   [""

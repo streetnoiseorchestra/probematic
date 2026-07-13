@@ -5,6 +5,7 @@
    [app.gigs.actions]
    [app.gigs.effects :as gigs.effects]
    [app.insurance.actions]
+   [app.insurance.effects :as insurance.effects]
    [app.members.actions]
    [app.members.effects :as members.effects]
    [app.probeplan.actions]
@@ -233,6 +234,7 @@
                          :app.datastar/assoc-state                 assoc-page-state-fx
                          :app.datastar/merge-state                 merge-page-state-fx
                          :app.datastar/redirect                    redirect-fx
+                         :app.insurance/send-policy-changes        insurance.effects/send-policy-changes-fx
                          :app.gigs/trigger-gig-details-edited      gigs.effects/trigger-gig-details-edited-fx
                          :app.gigs/trigger-gig-created             gigs.effects/trigger-gig-created-fx
                          :app.gigs/trigger-gig-deleted             gigs.effects/trigger-gig-deleted-fx

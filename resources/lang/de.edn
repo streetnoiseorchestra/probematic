@@ -39,25 +39,19 @@
   :policies "Versicherungspolicen",
   :insurance-policy "Versicherungspolice",
   :total-total-removed-tooltip "Insgesamt entfernte Instrumente",
-  :name "Name der Versicherungspolice",
   :value "Versicherungswert",
   :request-payments-title "Versicherungszahlungen beantragen",
-  :send-changes "Änderungen senden",
-  :confirm-and-send "Bestätigen und Senden",
   :email-p5
   "Solltest du weitere Fragen haben, kannst du dich gerne bei uns melden.",
   :send-changes-disabled-hint
   "Änderungen können nicht gesendet werden, solange offene Aufgaben vorhanden sind",
   :email-p1
   "wir möchten dich darum bitten deine Versicherungskosten an das Street Noise Orchestra zu überweisen. Es handelt sich dabei um Kosten für privat versicherte Instrumente für den Zeitraum: ",
-  :effective-at "Gültig bei",
   :title "Versicherung & Instrumente",
   :dashboard-title "Insurance TODOs",
   :value-abbrev "Vers.-Wert"
   :total "Gesamt",
   :no-photos "Es wurden noch keine Fotos hochgeladen.",
-  :create-title "Neue Versicherungspolice",
-  :confirm-skip-send "Bestätigen ohne zu senden",
   :send-payment-notifications "Zahlungsbenachrichtigungen senden",
   :coverage-types "Art der Versicherungsdeckung",
   :confirm-mark-as-button "Markieren als",
@@ -69,7 +63,6 @@
   :value-hint
   "Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben",
   :email-p2 "Versicherungskosten %1:",
-  :premium-base-factor "Premium-Basisfaktor",
   :currency "Währung",
   :premium-factor "Premium-Faktor",
   :instrument-coverage "Versicherungsdeckung für Instrumente",
@@ -83,8 +76,6 @@
   :email-subject "%1 Versicherungskosten %2 SNO",
   :total-total-new-tooltip "Insgesamt hinzugefügte Instrumente",
   :confirm-mark-as-title "Als %1 markieren?",
-  :create-subtitle "Details zur neuen Versicherungspolice.",
-  :effective-until "Gültig bis",
   :no-private-payments
   "Für diese Police müssen keine Zahlungen für private Instrumente angefordert werden.",
   :covered-instruments "Instrumente mit Versicherung"},
