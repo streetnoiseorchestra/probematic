@@ -6,7 +6,6 @@
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
-   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
@@ -224,12 +223,8 @@
            [:i18n/tr :home]]
           [breadcrumb/BreadcrumbItem [:i18n/tr :probeplan/title]]]
          ::page-toolbar/mobile-back
-         [button/Button {:appearance "plain"
-                         :href       (urls/link-dashboard)}
-          [ico/Icon {::ico/library :phosphor
-                     ::ico/name    :arrow-left
-                     :slot         "start"}]
-          [:i18n/tr :home]]
+         [button/BackButton {:href  (urls/link-dashboard)
+                             :label [:i18n/tr :home]}]
          ::page-toolbar/actions actions
          :aria-label            [:i18n/tr :probeplan/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"

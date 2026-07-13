@@ -333,12 +333,8 @@
            [:i18n/tr :home]]
           [breadcrumb/BreadcrumbItem [:i18n/tr :statistics/title]]]
          ::page-toolbar/mobile-back
-         [button/Button {:appearance "plain"
-                         :href       (url/link-dashboard)}
-          [ico/Icon {::ico/library :phosphor
-                     ::ico/name    :arrow-left
-                     :slot         "start"}]
-          [:i18n/tr :home]]
+         [button/BackButton {:href  (url/link-dashboard)
+                             :label [:i18n/tr :home]}]
          :aria-label [:i18n/tr :statistics/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-xl"}
        [page-header/PageHeader

@@ -7,7 +7,6 @@
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
-   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
@@ -25,12 +24,8 @@
      (when include-year?
        [breadcrumb/BreadcrumbItem selected-year])]
     ::page-toolbar/mobile-back
-    [button/Button {:appearance "plain"
-                    :href       (urls/link-gigs-home)}
-     [ico/Icon {::ico/library :phosphor
-                ::ico/name    :arrow-left
-                :slot         "start"}]
-     [:i18n/tr :gigs/title]]
+    [button/BackButton {:href  (urls/link-gigs-home)
+                        :label [:i18n/tr :gigs/title]}]
     :aria-label [:i18n/tr :gigs/archive-toolbar-label]}])
 
 (defn- year-button [selected-year year]

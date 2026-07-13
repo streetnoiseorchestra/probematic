@@ -7,7 +7,6 @@
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
-   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]))
@@ -99,12 +98,8 @@
            [:i18n/tr :members/title]]
           [breadcrumb/BreadcrumbItem [:i18n/tr :members/invite-member]]]
          ::page-toolbar/mobile-back
-         [button/Button {:appearance "plain"
-                         :href       "/members"}
-          [ico/Icon {::ico/library :phosphor
-                     ::ico/name    :arrow-left
-                     :slot         "start"}]
-          [:i18n/tr :members/title]]
+         [button/BackButton {:href  "/members"
+                             :label [:i18n/tr :members/title]}]
          ::page-toolbar/actions
          [[button/Button {:appearance "plain"
                           :href       "/members"}

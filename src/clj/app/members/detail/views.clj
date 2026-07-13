@@ -14,7 +14,6 @@
    [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.divider :as divider]
-   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
@@ -794,14 +793,10 @@
           (when form-state
             [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]])]
          ::page-toolbar/mobile-back
-         [button/Button {:appearance "plain"
-                         :href       (if form-state member-url "/members")}
-          [ico/Icon {::ico/library :phosphor
-                     ::ico/name    :arrow-left
-                     :slot         "start"}]
-          (if form-state
-            (:member/name member)
-            [:i18n/tr :members/title])]
+         [button/BackButton {:href  (if form-state member-url "/members")
+                             :label (if form-state
+                                      (:member/name member)
+                                      [:i18n/tr :members/title])}]
          ::page-toolbar/actions
          (if form-state
            [[button/Button {:appearance  "plain"

@@ -8,7 +8,6 @@
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
-   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
@@ -68,12 +67,8 @@
         [:i18n/tr :polls/title]]
        [breadcrumb/BreadcrumbItem (:poll/title poll)]]
       ::page-toolbar/mobile-back
-      [button/Button {:appearance "plain"
-                      :href       (urls/link-polls-home)}
-       [ico/Icon {::ico/library :phosphor
-                  ::ico/name    :arrow-left
-                  :slot         "start"}]
-       [:i18n/tr :polls/title]]
+      [button/BackButton {:href  (urls/link-polls-home)
+                          :label [:i18n/tr :polls/title]}]
       ::page-toolbar/actions
       (case status
         :poll.status/draft

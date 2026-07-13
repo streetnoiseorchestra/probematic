@@ -47,12 +47,8 @@
        (gigs.ui/gig-breadcrumb req gig)
        [breadcrumb/BreadcrumbItem [:i18n/tr title-key]]]
       ::page-toolbar/mobile-back
-      [button/Button {:appearance "plain"
-                      :href       gig-url}
-       [ico/Icon {::ico/library :phosphor
-                  ::ico/name    :arrow-left
-                  :slot         "start"}]
-       gig-label]
+      [button/BackButton {:href  gig-url
+                          :label gig-label}]
       ::page-toolbar/actions
       [[button/Button {:appearance "filled"
                        :variant    "brand"

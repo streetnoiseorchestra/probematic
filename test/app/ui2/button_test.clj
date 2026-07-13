@@ -2,9 +2,12 @@
   (:require
    [app.html :as html]
    [app.icons :as icons]
+   [app.ui2.button :as button]
    [app.ui2.icon :as ico]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is use-fixtures]]))
+   [clojure.test :refer [deftest is use-fixtures]]
+   [dev.onionpancakes.chassis.core :as c]
+   [lookup.core :as l]))
 
 (def missing-component ::missing-component)
 
@@ -13,7 +16,10 @@
     (icons/build-sprite-manifest
      [{:id          :snoico
        :source-root "public/img/snoico"
-       :icons       [:home :calendar :chevron-down]}])))
+       :icons       [:home :calendar :chevron-down]}
+      {:id          :phosphor
+       :source-root "public/img/phosphor/phosphor-regular"
+       :icons       [:arrow-left]}])))
 
 (defn install-test-manifest [f]
   (let [manifest_ (deref #'icons/sprite-manifest_)
@@ -158,3 +164,19 @@
         (is (str/includes? html "class=\"avatar\" slot=\"start\""))
         (is (str/includes? html "class=\"member-nick\">Ada</span>"))
         (is (str/includes? html "class=\"sno-icon caret\""))))))
+
+(deftest back-button-accepts-a-contextual-label
+  (let [view   (c/resolve-alias button/BackButton
+                                {:href  "/members"
+                                 :label "Members"}
+                                [])
+        anchor (l/select-one :a view)
+        icon   (l/select-one ico/Icon view)]
+    (is (= {:href  "/members"
+            :class #{"wa-button" "sno-button" "wa-plain"}}
+           (l/attrs anchor)))
+    (is (= "Members" (l/text anchor)))
+    (is (= {::ico/library :phosphor
+            ::ico/name    :arrow-left
+            :slot         "start"}
+           (l/attrs icon)))))

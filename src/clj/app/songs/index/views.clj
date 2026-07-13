@@ -104,12 +104,8 @@
       [:i18n/tr :home]]
      [breadcrumb/BreadcrumbItem [:i18n/tr :repertoire/title]]]
     ::page-toolbar/mobile-back
-    [button/Button {:appearance "plain"
-                    :href       (urls/link-dashboard)}
-     [ico/Icon {::ico/library :phosphor
-                ::ico/name    :arrow-left
-                :slot         "start"}]
-     [:i18n/tr :home]]
+    [button/BackButton {:href  (urls/link-dashboard)
+                        :label [:i18n/tr :home]}]
     ::page-toolbar/actions
     [[button/Button {:appearance "filled"
                      :variant    "brand"

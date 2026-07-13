@@ -310,7 +310,8 @@
        {:breadcrumb (page-breadcrumb req policy)
         :title      (tr [:insurance.review/title])
         :subtitle   (tr [:insurance.review/subtitle] [(str/trim (:insurance.policy/name policy))])
-        :actions    [[button/BackButton {:href (urls/link-policy policy)}]]}]
+        :actions    [[button/BackButton {:href  (urls/link-policy policy)
+                                         :label [:i18n/tr :action/back]}]]}]
       (filter-bar req review)
       (workbench-summary req review)
       (if selected

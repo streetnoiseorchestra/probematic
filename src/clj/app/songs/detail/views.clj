@@ -65,12 +65,8 @@
       [:i18n/tr :repertoire/title]]
      [breadcrumb/BreadcrumbItem title]]
     ::page-toolbar/mobile-back
-    [button/Button {:appearance "plain"
-                    :href       (urls/link-songs-home)}
-     [ico/Icon {::ico/library :phosphor
-                ::ico/name    :arrow-left
-                :slot         "start"}]
-     [:i18n/tr :repertoire/title]]
+    [button/BackButton {:href  (urls/link-songs-home)
+                        :label [:i18n/tr :repertoire/title]}]
     ::page-toolbar/actions
     [[button/Button {:appearance "filled"
                      :href       (urls/link-song-edit song)}

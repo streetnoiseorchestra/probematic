@@ -195,12 +195,8 @@
         [:i18n/tr :gigs/navigation-label]]
        [breadcrumb/BreadcrumbItem (gigs.ui/gig-breadcrumb-label req gig)]]
       ::page-toolbar/mobile-back
-      [button/Button {:appearance "plain"
-                      :href       (urls/link-gigs-home)}
-       [ico/Icon {::ico/library :phosphor
-                  ::ico/name    :arrow-left
-                  :slot         "start"}]
-       [:i18n/tr :gigs/navigation-label]]
+      [button/BackButton {:href  (urls/link-gigs-home)
+                          :label [:i18n/tr :gigs/navigation-label]}]
       ::page-toolbar/actions
       [(if future?
          (toolbar-action edit-url edit-label)

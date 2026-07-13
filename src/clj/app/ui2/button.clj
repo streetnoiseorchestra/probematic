@@ -137,26 +137,29 @@
                (native-children attrs children)))))))
 
 (def doc-back-button
-  {:examples ["[button/BackButton {:href \"/members\"}]"]
+  {:examples ["[button/BackButton {:href \"/members\" :label \"Members\"}]"
+              "[button/BackButton {:href \"/members\" :label [:i18n/tr :action/back]}]"]
    :ns       *ns*
    :as       'back-button
    :name     'BackButton
-   :desc     "Renders a back button with an href"
+   :desc     "Renders a plain back link with a leading arrow and contextual label."
    :alias    ::back-button
    :schema   [:map {}
-              [:tr {:doc "The translate function"} :any]
-              [:href {:doc "The destination"} :string]]})
+              [:href {:doc "The destination."} :string]
+              [:label {:doc "The visible label, including translation data nodes."}
+               :any]]})
 
 (def ^{:doc (uic/generate-docstring doc-back-button)} BackButton
   ::back-button)
 
 (defmethod c/resolve-alias ::back-button
-  [_ {:keys [tr href] :as attrs} _children]
+  [_ {:keys [label] :as attrs} _children]
   (uic/validate-opts! doc-back-button attrs)
-  (cc/compile
-   [Button {:appearance "outlined"
-            :href href}
-    [ico/Icon {::ico/library :phosphor
+  (c/resolve-alias
+   ::button
+   (-> (dissoc attrs :label)
+       (update :appearance #(or % "plain")))
+   [[ico/Icon {::ico/library :phosphor
                ::ico/name    :arrow-left
                :slot         "start"}]
-    (when tr (tr [:action/back]))]))
+    [:span label]]))

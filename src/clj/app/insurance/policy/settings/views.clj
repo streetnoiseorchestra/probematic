@@ -32,7 +32,8 @@
     {:breadcrumb (page-breadcrumb req policy)
      :title      (tr [:insurance.dashboard/policy-settings])
      :subtitle   (tr [:insurance.policy-settings/subtitle] [name])
-     :actions    [[button/BackButton {:tr tr :href (urls/link-policy policy)}]]}]
+     :actions    [[button/BackButton {:href  (urls/link-policy policy)
+                                      :label [:i18n/tr :action/back]}]]}]
    [divider/Divider]])
 
 (defn- settings-card

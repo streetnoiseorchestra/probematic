@@ -193,12 +193,8 @@
            [:i18n/tr :home]]
           [breadcrumb/BreadcrumbItem [:i18n/tr :files/choose-file]]]
          ::page-toolbar/mobile-back
-         [button/Button {:appearance "plain"
-                         :href       (urls/link-dashboard)}
-          [ico/Icon {::ico/library :phosphor
-                     ::ico/name    :arrow-left
-                     :slot         "start"}]
-          [:i18n/tr :home]]
+         [button/BackButton {:href  (urls/link-dashboard)
+                             :label [:i18n/tr :home]}]
          ::page-toolbar/actions
          (when-not (:open? picker)
            [[button/Button {:appearance    "filled"
