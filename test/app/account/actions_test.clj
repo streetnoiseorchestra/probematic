@@ -1,0 +1,474 @@
+(ns app.account.actions-test
+  (:require
+   [app.account.test-support :as support]
+   [app.nexus :as app-nexus]
+   [app.nexus.actions :as nexus-actions]
+   [app.queries :as queries]
+   [app.test-common :as tc]
+   [clojure.test :refer [deftest is testing]]
+   [datomic.api :as d]))
+
+(def max-avatar-size (* 5 1024 1024))
+
+(defn action [symbol]
+  (let [action-fn (support/public-fn symbol)]
+    (is (fn? action-fn) (str symbol " should exist"))
+    action-fn))
+
+(defn seed-member!
+  ([conn member-id]
+   (seed-member! conn member-id {}))
+  ([conn member-id overrides]
+   @(d/transact
+     conn
+     [(merge {:member/member-id  member-id
+              :member/name       "Ada Lovelace"
+              :member/nick       "ada"
+              :member/email      "ada@example.test"
+              :member/username   "ada_l"
+              :member/phone      "+436601111111"
+              :member/active?    true
+              :member/keycloak-id (str member-id)}
+             overrides)])))
+
+(defn action-state [{:keys [conn member-id]}]
+  {:db                (d/db conn)
+   :current-member-id member-id
+   :now               #inst "2026-07-13T12:00:00.000-00:00"})
+
+(def valid-profile
+  {:member-id      "00000000-0000-0000-0000-000000000099"
+   :name           "  Ada Byron  "
+   :nick           "  Countess  "
+   :email          "  ADA.BYRON@EXAMPLE.TEST  "
+   :username       "  ADA_BYRON  "
+   :phone          "+43 660 1234567"
+   :current-status "  Rehearsing tonight  "
+   :date-of-birth  "1815-12-10"
+   :avatar-removed? false
+   :avatar         {:filename "portrait.png"
+                    :mime-type "image/png"
+                    :size 2048
+                    :staged? true}})
+
+(def normalized-profile
+  {:name           "Ada Byron"
+   :nick           "Countess"
+   :email          "ada.byron@example.test"
+   :username       "ada_byron"
+   :phone          "+436601234567"
+   :current-status "Rehearsing tonight"
+   :date-of-birth  "1815-12-10"
+   :avatar-removed? false
+   :avatar         {:filename "portrait.png"
+                    :mime-type "image/png"
+                    :size 2048
+                    :staged? true}})
+
+(def valid-notifications
+  {:enabled? true
+   :what "everything"
+   :reminders {:attendance? true
+               :polls? true}
+   :delivery {:email? true
+              :browser? true
+              :browser-capable? true
+              :browser-permission "default"}
+   :unread-style "numbered"
+   :when "right-away"
+   :batch-time "morning"})
+
+(def valid-break
+  {:active true
+   :start-choice "date"
+   :start-date "2026-07-15"
+   :end-date "2026-07-20"
+   :time-zone "Europe/Berlin"})
+
+(deftest account-action-map-owns-every-public-action-keyword
+  (let [actions (support/public-value 'app.account.actions/actions)]
+    (is (map? actions) "app.account.actions/actions should exist")
+    (when (map? actions)
+      (is (= #{:app.account.actions/validate-profile-field
+               :app.account.actions/stage-avatar
+               :app.account.actions/remove-avatar
+               :app.account.actions/save-profile
+               :app.account.actions/save-date-time-preferences
+               :app.account.actions/toggle-notifications
+               :app.account.actions/enable-browser-notifications
+               :app.account.actions/update-notification-settings
+               :app.account.actions/update-break-settings
+               :app.account.actions/end-break
+               :app.account.actions/launch-app}
+             (set (keys actions)))))))
+
+(deftest validate-profile-field-normalizes-the-complete-signal-map
+  (when-let [validate-field (action 'app.account.actions/validate-profile-field-action)]
+    (is (= [[:app.datastar/merge-state [:account-profile] normalized-profile]
+            [:app.datastar/assoc-state [:account-profile :_error :email] nil]]
+           (validate-field
+            {}
+            {:account-profile (assoc valid-profile :validate-field "email")})))
+    (is (= [:i18n/tr :account-settings/error-name-required]
+           (-> (validate-field
+                {}
+                {:account-profile (assoc valid-profile
+                                         :name " "
+                                         :validate-field "name")})
+               second
+               last
+               :error)))
+    (is (= [:i18n/tr :account-settings/error-date-invalid]
+           (-> (validate-field
+                {}
+                {:account-profile (assoc valid-profile
+                                         :date-of-birth "1815-02-30"
+                                         :validate-field "date-of-birth")})
+               second
+               last
+               :error)))))
+
+(deftest avatar-actions-validate-real-file-metadata-and-preserve-the-form
+  (when-let [stage-avatar (action 'app.account.actions/stage-avatar-action)]
+    (is (= [nexus-actions/clear-loading
+            [:app.datastar/assoc-state
+             [:account-profile :avatar]
+             {:filename "portrait.webp"
+              :mime-type "image/webp"
+              :size 4096
+              :staged? true}]
+            [:app.datastar/assoc-state
+             [:account-profile :avatar-removed?]
+             false]
+            [:app.datastar/assoc-state [:account-profile :_error :avatar] nil]
+            [:app.datastar/assoc-state
+             [:account-profile :_feedback]
+             [:i18n/tr :account-settings/avatar-staged-feedback]]]
+           (stage-avatar
+            {}
+            {:account-profile
+             (assoc valid-profile
+                    :avatar {:filename "portrait.webp"
+                             :mime-type "image/webp"
+                             :size 4096})})))
+    (doseq [[metadata error-key]
+            [[{:filename "portrait.svg" :mime-type "image/svg+xml" :size 1024}
+              :account-settings/error-avatar-type]
+             [{:filename "portrait.png" :mime-type "image/png" :size (inc max-avatar-size)}
+              :account-settings/error-avatar-size]
+             [{:filename "" :mime-type "image/png" :size 1024}
+              :account-settings/error-avatar-name]]]
+      (let [effects (stage-avatar
+                     {}
+                     {:account-profile (assoc valid-profile :avatar metadata)})]
+        (is (= nexus-actions/clear-loading (first effects)))
+        (is (= [:i18n/tr error-key]
+               (get-in effects [1 2 :error])))
+        (is (= 2 (count effects))))))
+  (when-let [remove-avatar (action 'app.account.actions/remove-avatar-action)]
+    (is (= [nexus-actions/clear-loading
+            [:app.datastar/assoc-state [:account-profile :avatar] nil]
+            [:app.datastar/assoc-state [:account-profile :avatar-removed?] true]
+            [:app.datastar/assoc-state
+             [:account-profile :_feedback]
+             [:i18n/tr :account-settings/avatar-removed-feedback]]]
+           (remove-avatar {} {:account-profile valid-profile})))))
+
+(deftest save-profile-targets-only-the-authenticated-member
+  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
+    (let [{:keys [conn member-id] :as system} (tc/new-system "account-save-self")
+          other-id                            (random-uuid)]
+      (seed-member! conn member-id)
+      (seed-member! conn other-id
+                    {:member/name        "Other Member"
+                     :member/nick        "other"
+                     :member/email       "other@example.test"
+                     :member/username    "other_user"
+                     :member/phone       "+436602222222"
+                     :member/keycloak-id (str other-id)})
+      (let [effects (save-profile
+                     (action-state system)
+                     {:account-profile
+                      (assoc valid-profile :member-id (str other-id))})]
+        (is (= [[:db/transact
+                 [{:db/id            [:member/member-id member-id]
+                   :member/name      "Ada Byron"
+                   :member/nick      "Countess"
+                   :member/email     "ada.byron@example.test"
+                   :member/username  "ada_byron"
+                   :member/phone     "+436601234567"}
+                  [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+                 {:transact-w-nils? true}]
+                [:app.members/update-keycloak-meta member-id]
+                nexus-actions/clear-loading
+                [:app.datastar/assoc-state
+                 [:account-profile]
+                 (assoc normalized-profile
+                        :_error {}
+                        :_saved? true
+                        :_feedback [:i18n/tr :account-settings/profile-saved-feedback])]]
+               effects))
+        (let [[_ tx-data opts] (first effects)]
+          @(d/transact conn (app-nexus/batch-transactions [[tx-data opts]])))
+        (is (= {:member/name     "Ada Byron"
+                :member/nick     "Countess"
+                :member/email    "ada.byron@example.test"
+                :member/username "ada_byron"
+                :member/phone    "+436601234567"}
+               (select-keys (queries/retrieve-member (d/db conn) member-id)
+                            [:member/name
+                             :member/nick
+                             :member/email
+                             :member/username
+                             :member/phone])))
+        (is (= {:member/name     "Other Member"
+                :member/email    "other@example.test"
+                :member/username "other_user"}
+               (select-keys (queries/retrieve-member (d/db conn) other-id)
+                            [:member/name :member/email :member/username])))))))
+
+(deftest save-profile-retracts-cleared-optional-existing-attributes
+  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
+    (let [{:keys [conn member-id] :as system} (tc/new-system "account-save-retract")]
+      (seed-member! conn member-id)
+      (let [effects (save-profile
+                     (action-state system)
+                     {:account-profile (assoc valid-profile :nick " " :phone " ")})
+            [_ tx-data opts] (first effects)]
+        @(d/transact conn (app-nexus/batch-transactions [[tx-data opts]]))
+        (is (= {:member/nick nil :member/phone nil}
+               (select-keys (merge {:member/nick nil :member/phone nil}
+                                   (queries/retrieve-member (d/db conn) member-id))
+                            [:member/nick :member/phone])))))))
+
+(deftest save-profile-preserves-complete-input-on-validation-errors
+  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
+    (let [{:keys [conn member-id] :as system} (tc/new-system "account-save-invalid")
+          other-id                            (random-uuid)]
+      (seed-member! conn member-id)
+      (seed-member! conn other-id
+                    {:member/nick        "taken"
+                     :member/email       "taken@example.test"
+                     :member/username    "taken_user"
+                     :member/phone       "+436609999999"
+                     :member/keycloak-id (str other-id)})
+      (let [submitted (assoc valid-profile
+                             :name " "
+                             :nick " taken "
+                             :email " TAKEN@EXAMPLE.TEST "
+                             :username " TAKEN_USER "
+                             :phone "+43 660 9999999"
+                             :date-of-birth "1815-02-30")
+            effects   (save-profile (action-state system)
+                                    {:account-profile submitted})
+            saved     (get-in effects [1 2])]
+        (is (= nexus-actions/clear-loading (first effects)))
+        (is (= [:app.datastar/assoc-state :account-profile]
+               [(get-in effects [1 0]) (get-in effects [1 1 0])]))
+        (is (= {:name           ""
+                :nick           "taken"
+                :email          "taken@example.test"
+                :username       "taken_user"
+                :phone          "+436609999999"
+                :current-status "Rehearsing tonight"
+                :date-of-birth  "1815-02-30"
+                :avatar-removed? false
+                :avatar         (:avatar normalized-profile)}
+               (select-keys saved (keys normalized-profile))))
+        (is (= #{:name :nick :email :username :phone :date-of-birth :_top}
+               (set (keys (:_error saved)))))
+        (is (not-any? #(= :db/transact (first %)) effects))))))
+
+(deftest save-profile-rejects-a-missing-authenticated-member
+  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
+    (let [{:keys [conn]} (tc/new-system "account-save-missing")
+          effects (save-profile {:db (d/db conn)
+                                 :current-member-id (random-uuid)}
+                                {:account-profile valid-profile})]
+      (is (= nexus-actions/clear-loading (first effects)))
+      (is (= [:i18n/tr :account-settings/error-current-member-missing]
+             (get-in effects [1 2 :_error :_top :error])))
+      (is (not-any? #(= :db/transact (first %)) effects)))))
+
+(deftest save-date-time-preferences-validates-the-complete-prototype
+  (when-let [save-preferences
+             (action 'app.account.actions/save-date-time-preferences-action)]
+    (let [valid {:time-zone "Europe/Vienna"
+                 :week-start "sunday"
+                 :time-format "12-hour"}]
+      (is (= [nexus-actions/clear-loading
+              [:app.datastar/assoc-state
+               [:account-preferences]
+               (assoc valid
+                      :_error {}
+                      :_saved? true
+                      :_feedback [:i18n/tr :account-settings/preferences-saved-feedback])]]
+             (save-preferences {} {:account-preferences valid}))))
+    (doseq [[field value error-key]
+            [[:time-zone "Mars/Olympus" :account-settings/error-time-zone-invalid]
+             [:week-start "friday" :account-settings/error-week-start-invalid]
+             [:time-format "decimal" :account-settings/error-time-format-invalid]]]
+      (let [submitted {:time-zone "Europe/Berlin"
+                       :week-start "monday"
+                       :time-format "24-hour"}
+            effects   (save-preferences
+                       {}
+                       {:account-preferences (assoc submitted field value)})]
+        (is (= nexus-actions/clear-loading (first effects)))
+        (is (= [:i18n/tr error-key]
+               (get-in effects [1 2 :_error field :error])))
+        (is (false? (get-in effects [1 2 :_saved?])))))))
+
+(deftest notification-toggle-and-browser-enable-apply-immediately
+  (when-let [toggle (action 'app.account.actions/toggle-notifications-action)]
+    (doseq [enabled? [false true]]
+      (is (= [nexus-actions/clear-loading
+              [:app.datastar/merge-state
+               [:account-notifications]
+               {:enabled? enabled? :_error {} :_saved? true}]]
+             (toggle {} {:account-notifications (assoc valid-notifications
+                                                       :enabled? enabled?)})))))
+  (when-let [enable-browser
+             (action 'app.account.actions/enable-browser-notifications-action)]
+    (is (= [nexus-actions/clear-loading
+            [:app.datastar/merge-state
+             [:account-notifications]
+             {:delivery {:browser-capable? true
+                         :browser-permission "default"
+                         :browser? true}
+              :_error {}
+              :_saved? true}]]
+           (enable-browser
+            {}
+            {:account-notifications
+             (assoc-in valid-notifications [:delivery :browser?] false)})))
+    (is (= [:i18n/tr :account-settings/error-browser-unsupported]
+           (-> (enable-browser
+                {}
+                {:account-notifications
+                 (-> valid-notifications
+                     (assoc-in [:delivery :browser-capable?] false)
+                     (assoc-in [:delivery :browser?] false))})
+               second
+               last
+               :_error
+               :browser
+               :error)))))
+
+(deftest update-notification-settings-validates-and-applies-every-choice-immediately
+  (when-let [update-notifications
+             (action 'app.account.actions/update-notification-settings-action)]
+    (is (= [nexus-actions/clear-loading
+            [:app.datastar/assoc-state
+             [:account-notifications]
+             (assoc valid-notifications
+                    :_error {}
+                    :_saved? true)]]
+           (update-notifications
+            {}
+            {:account-notifications valid-notifications})))
+    (doseq [[path value error-path error-key]
+            [[[:what] "some" [:what] :account-settings/error-notification-what-invalid]
+             [[:unread-style] "dots" [:unread-style] :account-settings/error-unread-style-invalid]
+             [[:when] "weekly" [:when] :account-settings/error-notification-when-invalid]
+             [[:batch-time] "midnight" [:batch-time] :account-settings/error-batch-time-invalid]
+             [[:delivery :browser-permission] "maybe" [:browser-permission]
+              :account-settings/error-browser-permission-invalid]]]
+      (let [submitted (-> valid-notifications
+                          (assoc :when "daily-batch")
+                          (assoc-in path value))
+            effects   (update-notifications
+                       {}
+                       {:account-notifications submitted})]
+        (is (= [:i18n/tr error-key]
+               (get-in effects (into [1 2 :_error] (conj error-path :error)))))))
+    (testing "right-away retains the inactive batch choice"
+      (is (= "evening"
+             (-> (update-notifications
+                  {}
+                  {:account-notifications (assoc valid-notifications
+                                                 :when "right-away"
+                                                 :batch-time "evening")})
+                 second
+                 last
+                 :batch-time))))))
+
+(deftest break-actions-update-every-change-and-derive-preview-status
+  (when-let [update-break
+             (action 'app.account.actions/update-break-settings-action)]
+    (is (= [nexus-actions/clear-loading
+            [:app.datastar/assoc-state
+             [:account-break]
+             (assoc valid-break
+                    :status "scheduled"
+                    :_error {}
+                    :_saved? true)]]
+           (update-break
+            {:now #inst "2026-07-13T12:00:00.000-00:00"}
+            {:account-break valid-break})))
+    (is (= "away"
+           (-> (update-break
+                {:now #inst "2026-07-13T12:00:00.000-00:00"}
+                {:account-break (assoc valid-break
+                                       :start-choice "now"
+                                       :start-date "")})
+               second last :status)))
+    (doseq [[submitted field error-key]
+            [[(assoc valid-break :active "yes")
+              :active :account-settings/error-break-availability-invalid]
+             [(assoc valid-break :time-zone "Mars/Olympus")
+              :time-zone :account-settings/error-time-zone-invalid]
+             [(assoc valid-break :start-date "2026-02-30")
+              :start-date :account-settings/error-date-invalid]
+             [(assoc valid-break :end-date "2026-07-14")
+              :end-date :account-settings/error-break-date-order]]]
+      (let [effects (update-break
+                     {:now #inst "2026-07-13T12:00:00.000-00:00"}
+                     {:account-break submitted})]
+        (is (= [:i18n/tr error-key]
+               (get-in effects [1 2 :_error field :error])))
+        (is (false? (get-in effects [1 2 :_saved?])))))
+    (is (= "available"
+           (-> (update-break
+                {:now #inst "2026-07-13T12:00:00.000-00:00"}
+                {:account-break {:active false
+                                 :start-choice "now"
+                                 :start-date ""
+                                 :end-date ""
+                                 :time-zone "Europe/Berlin"}})
+               second last :status))))
+  (when-let [end-break (action 'app.account.actions/end-break-action)]
+    (is (= [nexus-actions/clear-loading
+            [:app.datastar/assoc-state
+             [:account-break]
+             {:active false
+              :start-choice "now"
+              :start-date ""
+              :end-date ""
+              :time-zone "Europe/Berlin"
+              :status "available"
+              :_error {}
+              :_saved? true
+              :_feedback [:i18n/tr :account-settings/break-ended-feedback]}]]
+           (end-break
+            {}
+            {:account-break valid-break})))))
+
+(deftest launch-app-records-prototype-feedback-without-navigation-or-persistence
+  (when-let [launch-app (action 'app.account.actions/launch-app-action)]
+    (doseq [platform ["ios" "android" "pwa"]]
+      (let [effects (launch-app {} {:account-app {:platform platform}})]
+        (is (= [nexus-actions/clear-loading
+                [:app.datastar/assoc-state
+                 [:account-app]
+                 {:platform platform
+                  :_feedback [:i18n/tr
+                              :account-settings/app-prototype-feedback
+                              {:platform platform}]}]]
+               effects))
+        (is (not-any? #(contains? #{:db/transact :app.datastar/redirect}
+                                  (first %))
+                      effects))))
+    (is (= [:i18n/tr :account-settings/error-app-platform-invalid]
+           (-> (launch-app {} {:account-app {:platform "blackberry"}})
+               second last :_error :platform :error)))))

@@ -27,6 +27,11 @@
 
 (defn link-dashboard [] "/")
 (defn link-everything [] "/everything")
+(defn link-account-settings [] "/account-settings")
+(defn link-account-profile [] "/account-settings/profile")
+(defn link-account-preferences [] "/account-settings/preferences")
+(defn link-account-notifications [] "/account-settings/notifications")
+(defn link-account-break [] "/account-settings/on-a-break")
 (defn link-member
   ([member-or-member-id]
    (link-helper "/member/" :member/member-id member-or-member-id ""))

@@ -294,9 +294,12 @@
    {:id          :phosphor
     :source-root "public/img/phosphor/phosphor-regular"
     :icons       [:arrow-bend-down-right
+                  :arrow-fat-down
                   :arrow-square-out
                   :arrow-left
+                  :bell
                   :bell-ringing
+                  :bell-slash
                   :calendar
                   :car-profile
                   :caret-left
@@ -304,18 +307,24 @@
                   :check
                   :clipboard-text
                   :download
+                  :download-simple
                   :eye
                   :funnel
                   :gear
                   :hash
                   :info
                   :magnifying-glass
+                  :monitor
+                  :moon
+                  :palette
                   :paper-plane-right
+                  :pause-circle
                   :pencil-simple
                   :plus-circle
                   :shield
                   :sliders-horizontal
                   :star
+                  :sun
                   :trend-up
                   :warning
                   :money

@@ -95,6 +95,18 @@
                    :app.poll.detail.actions/close-poll))
     (is (contains? (:nexus/actions nexus-config)
                    :app.poll.detail.actions/cast-vote))
+    (is (every? (:nexus/actions nexus-config)
+                #{:app.account.actions/validate-profile-field
+                  :app.account.actions/stage-avatar
+                  :app.account.actions/remove-avatar
+                  :app.account.actions/save-profile
+                  :app.account.actions/save-date-time-preferences
+                  :app.account.actions/toggle-notifications
+                  :app.account.actions/enable-browser-notifications
+                  :app.account.actions/update-notification-settings
+                  :app.account.actions/update-break-settings
+                  :app.account.actions/end-break
+                  :app.account.actions/launch-app}))
     (is (contains? (:nexus/effects nexus-config) :db/transact))
     (is (contains? (:nexus/effects nexus-config) :app.datastar/redirect))
     (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-details-edited))

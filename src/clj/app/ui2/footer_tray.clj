@@ -91,7 +91,8 @@
                        :onclick "window.location = this.value"}
     (menu-icon :user)
     (:profile labels)]
-   [:wa-dropdown-item
+   [:wa-dropdown-item {:value (url/link-account-settings)
+                       :onclick "window.location = this.value"}
     (menu-icon :cog)
     (:account-settings labels)]
    [:wa-dropdown-item {:value (url/link-logout)

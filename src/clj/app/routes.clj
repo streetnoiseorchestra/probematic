@@ -1,5 +1,6 @@
 (ns app.routes
   (:require
+   [app.account.routes :as account]
    [app.auth :as auth]
    [app.config :as config]
    [app.dashboard.routes :as dashboard]
@@ -50,6 +51,7 @@
                        (interceptors/webdav-interceptor system)]}
 
     (datastar-routes/act-route system)
+    (account/routes)
     (dashboard/routes)
     (everything/routes)
     (settings/routes)

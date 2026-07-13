@@ -91,15 +91,16 @@
                 :large-account-menu? true
                 :account-label? true
                 :account-title? true
-                :account-settings-static? true
+                :account-settings-link? true
                 :avatar? true
                 :menu-values ["/member/11111111-1111-4111-8111-111111111111"
+                              "/account-settings"
                               "/logout"]
                 :logout-danger? false
                 :logout-icon? true
                 :account-menu-divider-count 0
                 :account-menu-item-count 3
-                :navigation-handler-count 2
+                :navigation-handler-count 3
                 :sheet-targets ["assignment-panel"
                                 "calendar-panel"
                                 "notification-panel"]
@@ -117,9 +118,10 @@
                 :large-account-menu? (str/includes? rendered "size=\"l\"")
                 :account-label? (str/includes? rendered "aria-label=\"Account settings\"")
                 :account-title? (str/includes? rendered "<header class=\"account-menu-header\"><h2 class=\"wa-heading-l\">My Account</h2></header>")
-                :account-settings-static? (and account-settings-item
-                                               (not (str/includes? account-settings-item "value="))
-                                               (not (str/includes? account-settings-item "onclick=")))
+                :account-settings-link? (and account-settings-item
+                                             (str/includes? account-settings-item
+                                                            "value=\"/account-settings\"")
+                                             (str/includes? account-settings-item "onclick="))
                 :avatar? (str/includes? rendered "class=\"sno-avatar\"")
                 :menu-values (mapv second (re-seq #"<wa-dropdown-item[^>]+value=\"([^\"]+)\"" rendered))
                 :logout-danger? (some-> logout-item (str/includes? "variant=\"danger\""))

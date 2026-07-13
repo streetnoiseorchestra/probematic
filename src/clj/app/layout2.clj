@@ -108,6 +108,9 @@
             :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
     [:link {:rel "shortcut icon" :href "/img/megaphone-icon.png"}]
     [:title (or title "SNOrga")]
+    [:script {:id "appearance-initializer" :blocking "render"}
+     (html/raw
+      "(() => { const root = document.documentElement; try { const key = 'streetnoise.appearance'; const stored = localStorage.getItem(key); const value = ['light', 'dark', 'system'].includes(stored) ? stored : 'system'; const dark = value === 'dark' || (value === 'system' && matchMedia('(prefers-color-scheme: dark)').matches); root.dataset.accountAppearance = value; root.classList.add(dark ? 'wa-dark' : 'wa-light'); } catch (_error) { const value = 'system'; root.dataset.accountAppearance = value; root.classList.add(matchMedia('(prefers-color-scheme: dark)').matches ? 'wa-dark' : 'wa-light'); } })();")]
     (stylesheet req "css/compiled" "main2.css")
     [:script {:type :importmap} (html/raw (j/write-value-as-string
                                            {:imports esm-import-map}))]
@@ -145,6 +148,7 @@
         document.querySelectorAll('.wa-cloak').forEach(el => el.classList.remove('wa-cloak'));
       });
       await allDefined();")]
+    (script req "account-settings.js")
     (script req "datastar@1.0.1.js" :type "module")
     (when (config/dev-mode? (-> req :system :env))
       (script req "datastar-inspector@1.1.4.js" :type "module"))]

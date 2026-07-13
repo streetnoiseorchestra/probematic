@@ -1,5 +1,6 @@
 (ns app.nexus
   (:require
+   [app.account.actions]
    [app.datastar :as datastar]
    [app.file-browser.actions]
    [app.gigs.actions]
@@ -265,7 +266,8 @@
                          :app.members.index/resend-invitation      resend-invitation-fx
                          :app.members.index/delete-invitation      delete-invitation-fx
                          :app.poll/send-poll-opened                poll.effects/send-poll-opened-fx}
-   :nexus/actions       (merge app.settings.actions/actions
+   :nexus/actions       (merge app.account.actions/actions
+                               app.settings.actions/actions
                                app.members.actions/actions
                                app.gigs.actions/actions
                                app.probeplan.actions/actions
