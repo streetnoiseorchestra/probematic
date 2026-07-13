@@ -5,11 +5,14 @@
    [app.stats.queries :as stats]
    [app.stats.state :as state]
    [app.ui2 :as ui2]
-   [app.ui2.card :as card]
-   [app.ui2.page-header :as page-header]
    [app.ui2.avatar :as avatar]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.card :as card]
    [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as url]
    [jsonista.core :as j]))
 
@@ -51,69 +54,69 @@
             {:class "wa-heading-m", :type "percent", :value ".475"}]]]
      [:div {:class "wa-heading-2xl stats-metric-value"} value]]))
 
-(defn- summary-card [tr stats]
+(defn- summary-card [stats]
   [card/Card {:class "stats-summary-card"}
    [:div {:class "wa-grid wa-gap-3xl" :style "--min-column-size: 24ch;"}
     (metric-cell {:id      "stats-gig-attendance-rate"
-                  :label   (tr [:stats/gig-attendance-rate])
+                  :label   [:i18n/tr :statistics/gig-attendance-rate]
                   :value   (fmt-percent (:attendance-rate-gigs stats))
-                  :tooltip (tr [:stats/gig-attendance-rate-tooltip])})
+                  :tooltip [:i18n/tr :statistics/gig-attendance-rate-tooltip]})
     (metric-cell {:id      "stats-probe-attendance-rate"
-                  :label   (tr [:stats/probe-attendance-rate])
+                  :label   [:i18n/tr :statistics/probe-attendance-rate]
                   :value   (fmt-percent (:attendance-rate-probes stats))
-                  :tooltip (tr [:stats/probe-attendance-rate-tooltip])})
+                  :tooltip [:i18n/tr :statistics/probe-attendance-rate-tooltip]})
     (metric-cell {:id      "stats-mean-attendance-gig"
-                  :label   (tr [:stats/mean-attendance-gig])
+                  :label   [:i18n/tr :statistics/mean-attendance-gig]
                   :value   (fmt-double (:mean-attendance-gig stats))
-                  :tooltip (tr [:stats/mean-attendance-gig-tooltip])})
+                  :tooltip [:i18n/tr :statistics/mean-attendance-gig-tooltip]})
     (metric-cell {:id      "stats-mean-attendance-probe"
-                  :label   (tr [:stats/mean-attendance-probe])
+                  :label   [:i18n/tr :statistics/mean-attendance-probe]
                   :value   (fmt-double (:mean-attendance-probe stats))
-                  :tooltip (tr [:stats/mean-attendance-probe-tooltip])})
+                  :tooltip [:i18n/tr :statistics/mean-attendance-probe-tooltip]})
     (metric-cell {:id      "stats-total-gigs"
-                  :label   (tr [:stats/total-gigs])
+                  :label   [:i18n/tr :statistics/total-gigs]
                   :value   (fmt-count (:gig-count stats))
-                  :tooltip (tr [:stats/total-gigs-tooltip])})
+                  :tooltip [:i18n/tr :statistics/total-gigs-tooltip]})
     (metric-cell {:id      "stats-total-probes"
-                  :label   (tr [:stats/total-probes])
+                  :label   [:i18n/tr :statistics/total-probes]
                   :value   (fmt-count (:probe-count stats))
-                  :tooltip (tr [:stats/total-probes-tooltip])})
+                  :tooltip [:i18n/tr :statistics/total-probes-tooltip]})
     (metric-cell {:id      "stats-total-plays"
-                  :label   (tr [:stats/total-plays])
+                  :label   [:i18n/tr :statistics/total-plays]
                   :value   (fmt-count (:total-plays stats))
-                  :tooltip (tr [:stats/total-plays-tooltip])})
+                  :tooltip [:i18n/tr :statistics/total-plays-tooltip]})
     (metric-cell {:id      "stats-active-members-count"
-                  :label   (tr [:stats/active-members-count])
+                  :label   [:i18n/tr :statistics/active-members-count]
                   :value   (fmt-count (:active-members-count stats))
-                  :tooltip (tr [:stats/active-members-count-tooltip])})
+                  :tooltip [:i18n/tr :statistics/active-members-count-tooltip]})
     (metric-cell {:id      "stats-most-active-gig-count"
-                  :label   (tr [:stats/most-active-gig-count])
+                  :label   [:i18n/tr :statistics/most-active-gig-count]
                   :value   (fmt-count (:most-active-gig-count stats))
-                  :tooltip (tr [:stats/most-active-gig-count-tooltip])})
+                  :tooltip [:i18n/tr :statistics/most-active-gig-count-tooltip]})
     (metric-cell {:id      "stats-least-active-gig-count"
-                  :label   (tr [:stats/least-active-gig-count])
+                  :label   [:i18n/tr :statistics/least-active-gig-count]
                   :value   (fmt-count (:least-active-gig-count stats))
-                  :tooltip (tr [:stats/least-active-gig-count-tooltip])})
+                  :tooltip [:i18n/tr :statistics/least-active-gig-count-tooltip]})
     (metric-cell {:id      "stats-most-active-probe-count"
-                  :label   (tr [:stats/most-active-probe-count])
+                  :label   [:i18n/tr :statistics/most-active-probe-count]
                   :value   (fmt-count (:most-active-probe-count stats))
-                  :tooltip (tr [:stats/most-active-probe-count-tooltip])})
+                  :tooltip [:i18n/tr :statistics/most-active-probe-count-tooltip]})
     (metric-cell {:id      "stats-least-active-probe-count"
-                  :label   (tr [:stats/least-active-probe-count])
+                  :label   [:i18n/tr :statistics/least-active-probe-count]
                   :value   (fmt-count (:least-active-probe-count stats))
-                  :tooltip (tr [:stats/least-active-probe-count-tooltip])})]])
+                  :tooltip [:i18n/tr :statistics/least-active-probe-count-tooltip]})]])
 
-(defn- timespan-controls [{:keys [tr] :as req}]
+(defn- timespan-controls [req]
   (into
    [:wa-button-group {:style "justify-content: end;"
-                      :label (tr [:stats/timespan-label])}]
+                      :label [:i18n/tr :statistics/timespan-label]}]
    (for [{:keys [id label-key]} state/timespan-options]
      [button/Button (cond-> {:href       (state/timespan-url req id)
                              :appearance "outlined"
                              :size       "s"}
                       (= id (state/selected-timespan-id req))
                       (assoc :variant "brand"))
-      (tr label-key)])))
+      [:i18n/tr label-key]])))
 
 (defn- histogram-values-by-bin [values]
   (into {} (map (juxt :x :y)) values))
@@ -186,12 +189,10 @@
                 :style           "display: block; block-size: 100%; inline-size: var(--sno-size-full);"}]]])
 
 (defn charts-section [tr {:keys [gig-histogram probe-histogram]}]
-  (let [x-axis-label (tr [:stats/attendance-rate])
-        y-axis-label (tr [:stats/num-members])
-        gig-title    (tr [:stats/gig-attendance])
-        probe-title  (tr [:stats/probe-attendance])
-        title        (tr [:gig/attendance])
-        description  (tr [:stats/methodology-histograms-body])
+  (let [x-axis-label (tr [:statistics/attendance-rate])
+        y-axis-label (tr [:statistics/num-members])
+        gig-title    (tr [:statistics/gig-attendance])
+        probe-title  (tr [:statistics/probe-attendance])
         signals      {:statsDashboard
                       {:attendanceHistogramChartJson
                        (j/write-value-as-string
@@ -203,27 +204,27 @@
                                                             :y-axis-label    y-axis-label}))}}]
     [:section {:class        "wa-stack wa-gap-m"
                :data-signals (d*/->signals signals)}
-     (histogram-card {:description description
+     (histogram-card {:description [:i18n/tr :statistics/methodology-histograms-body]
                       :signal-path "statsDashboard.attendanceHistogramChartJson"
-                      :title       title})]))
+                      :title       [:i18n/tr :statistics/attendance]})]))
 
-(defn- methodology [{:keys [tr]}]
+(defn- methodology []
   [:wa-details {:class      "stats-methodology"
-                :summary    (tr [:stats/methodology-title])
+                :summary    [:i18n/tr :statistics/methodology-title]
                 :appearance "outlined"}
    [:div {:class "wa-stack wa-gap-s stats-methodology-body"}
     [:section {:class "wa-stack wa-gap-2xs"}
-     [:h3 {:class "wa-heading-s"} (tr [:stats/methodology-rates-title])]
-     [:p (tr [:stats/methodology-rates-body])]]
+     [:h3 {:class "wa-heading-s"} [:i18n/tr :statistics/methodology-rates-title]]
+     [:p [:i18n/tr :statistics/methodology-rates-body]]]
     [:section {:class "wa-stack wa-gap-2xs"}
-     [:h3 {:class "wa-heading-s"} (tr [:stats/methodology-active-members-title])]
-     [:p (tr [:stats/methodology-active-members-body])]]
+     [:h3 {:class "wa-heading-s"} [:i18n/tr :statistics/methodology-active-members-title]]
+     [:p [:i18n/tr :statistics/methodology-active-members-body]]]
     [:section {:class "wa-stack wa-gap-2xs"}
-     [:h3 {:class "wa-heading-s"} (tr [:stats/methodology-histograms-title])]
-     [:p (tr [:stats/methodology-histograms-body])]]
+     [:h3 {:class "wa-heading-s"} [:i18n/tr :statistics/methodology-histograms-title]]
+     [:p [:i18n/tr :statistics/methodology-histograms-body]]]
     [:section {:class "wa-stack wa-gap-2xs"}
-     [:h3 {:class "wa-heading-s"} (tr [:stats/methodology-accuracy-title])]
-     [:p (tr [:stats/methodology-accuracy-body])]]]])
+     [:h3 {:class "wa-heading-s"} [:i18n/tr :statistics/methodology-accuracy-title]]
+     [:p [:i18n/tr :statistics/methodology-accuracy-body]]]]])
 
 (defn- sortable-header [req field label tooltip]
   (let [target-id (str "stats-sort-" (ui2/safe-dom-id field))
@@ -269,7 +270,7 @@
                   :shape "rounded"
                   :style "--size: 2rem; flex: none;"}])
 
-(defn- member-row [{:keys [tr] :as req} {:keys [member gigs-attended probes-attended last-seen gig-rate probe-rate gig-title]}]
+(defn- member-row [req {:keys [member gigs-attended probes-attended last-seen gig-rate probe-rate gig-title]}]
   [:tr
    [:td
     [:a {:href (url/link-member member)}
@@ -285,52 +286,70 @@
       (ui2/date-display req :short last-seen)
       html/emdash)]
    [:td {:class "stats-table-col--mobile"}
-    [:span {:class "stats-mobile-stat-label"} (tr [:stats/gigs-short])]
+    [:span {:class "stats-mobile-stat-label"} [:i18n/tr :statistics/gigs-short]]
     [:span (fmt-percent gig-rate) " (" (fmt-count gigs-attended) ")"]]
    [:td {:class "stats-table-col--mobile"}
-    [:span {:class "stats-mobile-stat-label"} (tr [:stats/probes-short])]
+    [:span {:class "stats-mobile-stat-label"} [:i18n/tr :statistics/probes-short]]
     [:span (fmt-percent probe-rate) " (" (fmt-count probes-attended) ")"]]])
 
-(defn- member-table [{:keys [tr] :as req} per-member-stats]
+(defn- member-table [req per-member-stats]
   (ui2/section-card
-   {:title    (tr [:stats/member-table-title])
-    :subtitle (tr [:stats/member-table-subtitle])}
+   {:title    [:i18n/tr :statistics/member-table-title]
+    :subtitle [:i18n/tr :statistics/member-table-subtitle]}
    (ui2/table-shell
     (if (seq per-member-stats)
       [:table {:class "stats-member-table"}
        [:thead
         [:tr
-         (sortable-header req :member/name (tr [:member/name]) nil)
-         (sortable-header req :gigs-attended (tr [:stats/gigs-attended]) (tr [:stats/gigs-attended-tooltip]))
-         (sortable-header req :gig-rate (tr [:stats/gigs-percent]) (tr [:stats/gigs-percent-tooltip]))
-         (sortable-header req :probes-attended (tr [:stats/probes-attended]) (tr [:stats/probes-attended-tooltip]))
-         (sortable-header req :probe-rate (tr [:stats/probes-percent]) (tr [:stats/probes-percent-tooltip]))
-         (sortable-header req :last-seen (tr [:stats/last-seen]) (tr [:stats/last-seen-tooltip]))
-         (mobile-stat-header "stats-mobile-gigs" (tr [:stats/gigs-short]) (tr [:stats/gigs-percent-tooltip]))
-         (mobile-stat-header "stats-mobile-probes" (tr [:stats/probes-short]) (tr [:stats/probes-percent-tooltip]))]]
+         (sortable-header req :member/name [:i18n/tr :statistics/member-name] nil)
+         (sortable-header req :gigs-attended [:i18n/tr :statistics/gigs-attended] [:i18n/tr :statistics/gigs-attended-tooltip])
+         (sortable-header req :gig-rate [:i18n/tr :statistics/gigs-percent] [:i18n/tr :statistics/gigs-percent-tooltip])
+         (sortable-header req :probes-attended [:i18n/tr :statistics/probes-attended] [:i18n/tr :statistics/probes-attended-tooltip])
+         (sortable-header req :probe-rate [:i18n/tr :statistics/probes-percent] [:i18n/tr :statistics/probes-percent-tooltip])
+         (sortable-header req :last-seen [:i18n/tr :statistics/last-seen] [:i18n/tr :statistics/last-seen-tooltip])
+         (mobile-stat-header "stats-mobile-gigs" [:i18n/tr :statistics/gigs-short] [:i18n/tr :statistics/gigs-percent-tooltip])
+         (mobile-stat-header "stats-mobile-probes" [:i18n/tr :statistics/probes-short] [:i18n/tr :statistics/probes-percent-tooltip])]]
        [:tbody
         (for [member-stat per-member-stats]
           (member-row req member-stat))]]
       (ui2/empty-state
-       (tr [:stats/member-table-empty-title])
-       (tr [:stats/member-table-empty-body]))))))
+       [:i18n/tr :statistics/member-table-empty-title]
+       [:i18n/tr :statistics/member-table-empty-body])))))
 
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [from to]} (state/selected-range req)
         stats            (stats/stats-for db from to (state/sort-spec req))]
-    (ui2/datastar-page
+    (ui2/datastar-page*
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
-     [:div {:class "wa-stack wa-gap-xl"}
-      [page-header/PageHeader
-       {:title    (tr [:stats/title])
-        :subtitle (tr [:stats/current-range]
-                      [(ui2/format-date req :medium from)
-                       (ui2/format-date req :medium to)])
-        :actions  [(timespan-controls req)]}]
-      (summary-card tr stats)
-      (charts-section tr stats)
-      (methodology req)
-      (member-table req (:per-member-stats stats))])))
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (url/link-dashboard)}
+           [:i18n/tr :home]]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :statistics/title]]]
+         ::page-toolbar/mobile-back
+         [button/Button {:appearance "plain"
+                         :href       (url/link-dashboard)}
+          [ico/Icon {::ico/library :phosphor
+                     ::ico/name    :arrow-left
+                     :slot         "start"}]
+          [:i18n/tr :home]]
+         :aria-label [:i18n/tr :statistics/toolbar-label]}]}
+      [:div {:class "wa-stack wa-gap-xl"}
+       [page-header/PageHeader
+        {::page-header/title    [:i18n/tr :statistics/title]
+         ::page-header/subtitle [:i18n/tr :statistics/current-range
+                                 {:from (ui2/format-date req :medium from)
+                                  :to   (ui2/format-date req :medium to)}]}]
+       (timespan-controls req)
+       (summary-card stats)
+       (charts-section tr stats)
+       (methodology)
+       (member-table req (:per-member-stats stats))]])))
 
 (d*/refresh-all!)

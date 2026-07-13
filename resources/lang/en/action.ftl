@@ -1,6 +1,7 @@
 ### Shared action labels
 
 add = Add
+back = Back
 cancel = Cancel
 create = Create
 delete = Delete

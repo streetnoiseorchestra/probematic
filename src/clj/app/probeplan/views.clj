@@ -4,8 +4,12 @@
    [app.probeplan.actions :as actions]
    [app.probeplan.queries :as queries]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]))
 
 (defn- intensive-position? [position]
@@ -80,16 +84,16 @@
                                   (editable-row-signal idx row))))
                 rows)}})
 
-(defn- header-label [tr position]
+(defn- header-label [position]
   (if (intensive-position? position)
-    (str (tr [:probeplan/header-intensive]) " " (inc position))
-    (str (tr [:probeplan/header-playthrough]) " " (playthrough-number position))))
+    [:i18n/tr :probeplan/header-intensive {:number (inc position)}]
+    [:i18n/tr :probeplan/header-playthrough {:number (playthrough-number position)}]))
 
-(defn- table-headers [tr song-count]
-  (concat [(tr [:probeplan/header-number])
-           (tr [:probeplan/header-date])
-           (tr [:probeplan/header-gigs])]
-          (map (partial header-label tr) (range song-count))))
+(defn- table-headers [song-count]
+  (concat [[:i18n/tr :probeplan/header-number]
+           [:i18n/tr :probeplan/header-date]
+           [:i18n/tr :probeplan/header-gigs]]
+          (map header-label (range song-count))))
 
 (defn- row-class [{:keys [fixed? last-fixed?]}]
   (ui2/cs "probeplan-row"
@@ -163,67 +167,79 @@
   (max 5
        (inc (reduce max -1 (mapcat (comp (partial map :probeplan/slot-position) :songs) rows)))))
 
-(defn- probe-table [{:keys [tr] :as req} all-songs editing? rows]
+(defn- probe-table [req all-songs editing? rows]
   (let [rows       (mapv #(update % :songs songs-by-position) rows)
         song-count (max-song-count rows)]
     [:div {:class "table-shell" :style "position: relative;"}
      [:table {:class "probeplan-table"}
       [:thead
        [:tr
-        (for [header (table-headers tr song-count)]
+        (for [header (table-headers song-count)]
           [:th {:scope "col"} header])]]
       [:tbody
        (for [[row-idx row] (map-indexed vector rows)]
          (probe-row req all-songs editing? song-count row-idx row))]]]))
 
-(defn how-it-works [{:keys [tr]}]
+(defn how-it-works []
   [:wa-details {:class      "probeplan-how-it-works"
-                :summary    (tr [:probeplan/how-it-works-title])
+                :summary    [:i18n/tr :probeplan/how-it-works-title]
                 :appearance "outlined"}
-   [:p (tr [:probeplan/how-it-works-intro])]
+   [:p [:i18n/tr :probeplan/how-it-works-intro]]
    [:ul
     (for [key [:probeplan/how-it-works-generate
                :probeplan/how-it-works-fixed
                :probeplan/how-it-works-human-edit
                :probeplan/how-it-works-future-update
                :probeplan/how-it-works-gigs-column]]
-      [:li (tr [key])])]])
+      [:li [:i18n/tr key]])]])
 
-(defn- edit-actions [{:keys [tr] :as req} editing?]
-  (if editing?
-    [[button/Button {:appearance  "outlined"
-                     :data-id     "probeplan-cancel"
-                     :data-action (d*/act req ::actions/cancel-edit)}
-      (tr [:action/cancel])]
-     [button/Button {:appearance  "filled"
-                     :variant     "brand"
-                     :data-id     "probeplan-save"
-                     :data-action (d*/act req ::actions/save-probeplans)}
-      (tr [:action/save])]]
-    [[button/Button {:appearance  "outlined"
-                     :variant     "brand"
-                     :data-id     "probeplan-edit"
-                     :data-action (d*/act req ::actions/open-edit)}
-      (tr [:action/edit])]]))
-
-(defn- page-content [{:keys [db page-state tr] :as req}]
+(defn page [{:keys [db page-state] :as req}]
   (let [rows      (mapv #(update % :songs songs-by-position) (queries/probeplan-plans db))
         all-songs (queries/active-songs db)
-        editing?  (true? (get-in page-state [:probeplan :editing]))]
-    [:div {:class        "wa-stack wa-gap-l"
-           :data-signals (d*/->signals (editable-signals rows))}
-     [page-header/PageHeader
-      {:title   (tr [:nav/probeplan])
-       :actions (edit-actions req editing?)}]
-     (how-it-works req)
-     (if (seq rows)
-       (probe-table req all-songs editing? rows)
-       (ui2/empty-state
-        (tr [:probeplan/empty-title])
-        (tr [:probeplan/empty-body])))]))
-
-(defn page [req]
-  (ui2/datastar-page
-   (page-content req)))
+        editing?  (true? (get-in page-state [:probeplan :editing]))
+        actions   (if editing?
+                    [[button/Button {:appearance  "outlined"
+                                     :data-id     "probeplan-cancel"
+                                     :data-action (d*/act req ::actions/cancel-edit)}
+                      [:i18n/tr :action/cancel]]
+                     [button/Button {:appearance  "filled"
+                                     :variant     "brand"
+                                     :data-id     "probeplan-save"
+                                     :data-action (d*/act req ::actions/save-probeplans)}
+                      [:i18n/tr :action/save]]]
+                    [[button/Button {:appearance  "outlined"
+                                     :variant     "brand"
+                                     :data-id     "probeplan-edit"
+                                     :data-action (d*/act req ::actions/open-edit)}
+                      [:i18n/tr :action/edit]]])]
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+           [:i18n/tr :home]]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :probeplan/title]]]
+         ::page-toolbar/mobile-back
+         [button/Button {:appearance "plain"
+                         :href       (urls/link-dashboard)}
+          [ico/Icon {::ico/library :phosphor
+                     ::ico/name    :arrow-left
+                     :slot         "start"}]
+          [:i18n/tr :home]]
+         ::page-toolbar/actions actions
+         :aria-label            [:i18n/tr :probeplan/toolbar-label]}]}
+      [:div {:class        "wa-stack wa-gap-l"
+             :data-signals (d*/->signals (editable-signals rows))}
+       [page-header/PageHeader {::page-header/title [:i18n/tr :probeplan/title]}]
+       (how-it-works)
+       (if (seq rows)
+         (probe-table req all-songs editing? rows)
+         (ui2/empty-state
+          [:i18n/tr :probeplan/empty-title]
+          [:i18n/tr :probeplan/empty-body]))]])))
 
 (d*/refresh-all!)

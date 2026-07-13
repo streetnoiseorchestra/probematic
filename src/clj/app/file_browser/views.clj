@@ -6,10 +6,13 @@
    [app.humanize :as humanize]
    [app.sardine :as sardine]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
-   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.button :as button]
    [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
+   [app.urls :as urls]
    [babashka.fs :as fs]
    [clojure.string :as str]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
@@ -96,13 +99,13 @@
       (when file?
         (humanize/filesize content-length))]]))
 
-(defn file-table [{:keys [tr] :as req} picker-id select-action-key files]
+(defn file-table [req picker-id select-action-key files]
   [:div {:class "table-shell"}
    [:table {:class "file-browser-table"}
     [:thead
      [:tr
-      [:th (tr [:file/name])]
-      [:th (tr [:file/size])]]]
+      [:th [:i18n/tr :files/name]]
+      [:th [:i18n/tr :files/size]]]]
     [:tbody
      (for [file files]
        (file-row req picker-id select-action-key file))]]])
@@ -142,12 +145,6 @@
    (set! $file-browser.picker-id ~(name picker-id))
    (@post ~(d*/act req ::actions/close-picker))))
 
-(defn- close-control [{:keys [tr] :as req} picker-id]
-  [button/Button {:appearance    "outlined"
-                  :class         "file-browser-back"
-                  :data-on:click (close-action req picker-id)}
-   (tr [:action/back])])
-
 (defn file-picker-panel
   "Renders an open Datastar-backed file picker panel.
 
@@ -165,7 +162,10 @@
          [:h3 {:class "file-browser-title"} title]
          (when subtitle
            [:p {:class "file-browser-subtitle"} subtitle])]
-        (close-control req picker-id)]
+        [button/Button {:appearance    "outlined"
+                        :class         "file-browser-back"
+                        :data-on:click (close-action req picker-id)}
+         [:i18n/tr :action/back]]]
        (file-breadcrumb req picker-id root-dir current-dir)
        (file-table req picker-id select-action files)])))
 
@@ -176,25 +176,44 @@
    (set! $file-browser.current-dir ~current-dir)
    (@post ~(d*/act req ::actions/open-picker))))
 
-(defn page [{:keys [page-state system tr] :as req}]
+(defn page [{:keys [page-state system] :as req}]
   (let [env         (:env system)
         root-dir    (config/nextcloud-path-sheet-music env)
         current-dir (or (config/nextcloud-path-current-songs env) root-dir)
         picker      (get-in page-state [:file-browser actions/default-picker-id])]
-    (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l"
-            :data-signals (d*/->signals {:file-browser {:picker-id     nil
-                                                        :target-dir    nil
-                                                        :selected-path nil}})}
-      [page-header/PageHeader
-       {:title   (tr [:file/choose-file])
-        :actions [[button/Button {:appearance    "filled"
-                                  :variant       "brand"
-                                  :data-on:click (open-demo-action req root-dir current-dir)}
-                   (tr [:file/choose-file])]]}]
-      (file-picker-panel req {:picker-id     actions/default-picker-id
-                              :state         picker
-                              :title         (tr [:file/choose-file])
-                              :select-action ::actions/select-file})])))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :standard
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+           [:i18n/tr :home]]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :files/choose-file]]]
+         ::page-toolbar/mobile-back
+         [button/Button {:appearance "plain"
+                         :href       (urls/link-dashboard)}
+          [ico/Icon {::ico/library :phosphor
+                     ::ico/name    :arrow-left
+                     :slot         "start"}]
+          [:i18n/tr :home]]
+         ::page-toolbar/actions
+         (when-not (:open? picker)
+           [[button/Button {:appearance    "filled"
+                            :variant       "brand"
+                            :data-on:click (open-demo-action req root-dir current-dir)}
+             [:i18n/tr :files/choose-file]]])
+         :aria-label [:i18n/tr :files/toolbar-label]}]}
+      [:div {:class        "wa-stack wa-gap-l"
+             :data-signals (d*/->signals {:file-browser {:picker-id     nil
+                                                         :target-dir    nil
+                                                         :selected-path nil}})}
+       [page-header/PageHeader {::page-header/title [:i18n/tr :files/choose-file]}]
+       (file-picker-panel req {:picker-id     actions/default-picker-id
+                               :state         picker
+                               :title         [:i18n/tr :files/choose-file]
+                               :select-action ::actions/select-file})]])))
 
 (d*/refresh-all!)

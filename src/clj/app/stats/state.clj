@@ -9,13 +9,13 @@
 
 (def timespan-options
   [{:id "last-three-months"
-    :label-key [:stats/last-three-months]
+    :label-key :statistics/last-three-months
     :period (t/new-period 3 :months)}
    {:id "last-six-months"
-    :label-key [:stats/last-six-months]
+    :label-key :statistics/last-six-months
     :period (t/new-period 6 :months)}
    {:id "last-one-year"
-    :label-key [:stats/last-year]
+    :label-key :statistics/last-year
     :period (t/new-period 12 :months)}])
 
 (def timespan-ids

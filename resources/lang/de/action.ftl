@@ -1,6 +1,7 @@
 ### Gemeinsam verwendete Aktionsbeschriftungen
 
 add = Hinzufügen
+back = Zurück
 cancel = Abbrechen
 create = Erstellen
 delete = Löschen

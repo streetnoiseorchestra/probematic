@@ -384,10 +384,6 @@
  :section-none "Kein Register",
  :Email "E-Mail",
  :section "Register",
- :file
- {:choose-file "Wähle eine Datei aus",
-  :name "Dateiname",
-  :size "Größe"},
  :choose-calendar-app "Wählen Sie Ihre Kalender-App",
  :dashboard
  {:welcome "Willkommen %1!",
@@ -601,7 +597,6 @@
   :mark-as "Markieren als",
   :next "Nächste",
   :previous "Vorherige",
-  :back "Zurück",
   :apply "Anwenden",
   :comment "Kommentar",
   :send "Senden",
@@ -782,85 +777,6 @@
   :rehearsal-leader2 "Probeleitung 2",
   :more-details-placeholder "wer? was? wo? wann? wieso den?",
   :create-setlist "Setliste erstellen"},
- :stats
- {:title "SNO Stats",
-  :current-range "Aktuell: %1 — %2",
-  :timespan-label "Statistik-Zeitraum",
-  :least-active-probe-count-tooltip
-  "Die Probe mit den wenigsten Teilnehmern hatte so viele Leute",
-  :probe-attendance-rate-tooltip
-  "Prozentsatz der aktiven Bandmitglieder, die im Zeitraum an den Proben teilnehmen.",
-  :last-six-months "Letzte 6 Monate",
-  :total-gigs "Alle Gigs",
-  :gigs-attended "Gigs besucht",
-  :gigs-percent-tootlip
-  "Der Prozentsatz der Veranstaltungen, die das Mitglied im Zeitraum besucht hat",
-  :gigs-percent-tooltip
-  "Der Prozentsatz der Veranstaltungen, die das Mitglied im Zeitraum besucht hat",
-  :gigs-short "Gigs",
-  :mean-attendance-probe "Durchschnittliche Anwesenheit Proben",
-  :total-gigs-tooltip
-  "Die Gesamtanzahl der Gigs, die in dem Zeitraum stattgefunden haben",
-  :total-plays "Gesamtspiele",
-  :active-members-count-tooltip
-  "Die Anzahl der Mitglieder, die im Zeitraum als \"aktiv\" in SNOrga markiert wurden",
-  :probe-attendance "Proben besucht",
-  :least-active-probe-count "Mindestens bei der Probe",
-  :total-probes-tooltip
-  "Die Gesamtanzahl der Proben, die in dem Zeitraum stattgefunden haben",
-  :last-three-months "Letzte 3 Monate",
-  :gig-attendance "Teilnahme Gigs",
-  :most-active-gig-count-tooltip
-  "Der Gig mit den meisten Mitgliedern hatte so viele Leute",
-  :total-plays-tooltip
-  "Die Gesamtzahl der geloggten Wiedergaben von Songs im Zeitraum. Hinweis: Das ist eine Untergrenze, denn wenn wir einen Song bei einem Auftritt zweimal spielen, zählt das nur als eine Wiedergabe.",
-  :mean-attendance-gig "Duchschnittliche Anwesenheit / Gigs",
-  :gig-attendance-rate-tooltip
-  "Prozentsatz der aktiven Bandmitglieder, die im Zeitraum an Auftritten teilnehmen.",
-  :gigs-percent "Gigs %",
-  :attendance-rate "Anwesenheitsrate (%)",
-  :last-seen "Zuletzt gesehen",
-  :most-active-probe-count-tooltip
-  "Die Probe mit den meisten Teilnehmern hatte so viele Leute",
-  :num-members "Anzahl Mitglieder",
-  :mean-attendance-gig-tooltip
-  "Durchschnittliche Anzahl von Mitgliedern, die Gigs besuchen.",
-  :probes-percent-tooltip
-  "Der Prozentsatz der Proben, an denen das Mitglied im Zeitraum teilgenommen hat",
-  :probes-short "Proben",
-  :mean-attendance-probe-tooltip
-  "Durchschnittliche Anzahl der Mitglieder bei Proben.",
-  :total-probes "Anzahl Proben",
-  :last-seen-tooltip
-  "Das Datum, an dem das Mitglied zuletzt bei einem Auftritt oder einer Probe erfasst wurde",
-  :most-active-probe-count "Meistens bei Probe",
-  :gig-attendance-rate "Teilnahmerate Gigs",
-  :least-active-gig-count-tooltip
-  "Das am schlechtesten besuchte Gig hatte so viele Leute",
-  :probe-attendance-rate "Teilnahmerate Proben",
-  :probes-attended "Proben besucht",
-  :least-active-gig-count "Wenigstens beim Gig",
-  :probes-attended-tooltip
-  "Die Anzahl der Proben, an denen das Mitglied im Zeitraum teilgenommen hat",
-  :active-members-count "Aktive Mitglieder",
-  :last-year "Letztes Jahr",
-  :most-active-gig-count "Meistens bei Gig",
-  :gigs-attended-tooltip
-  "Die Anzahl der Gigs, die das Mitglied in dem Zeitraum besucht hat",
-  :probes-percent "Proben (%)",
-  :methodology-title "Hinweise zur Methodik",
-  :methodology-rates-title "Gig- und Proben-Anwesenheitsraten",
-  :methodology-rates-body "Das Dashboard zeigt die Gig-Anwesenheitsrate und Proben-Anwesenheitsrate als Prozentsätze, berechnet aus besuchten Terminen im Verhältnis zu allen Terminen, die ein Mitglied hätte besuchen können.",
-  :methodology-active-members-title "Gig-Anwesenheitsrate und aktive Mitglieder",
-  :methodology-active-members-body "Die Anwesenheitsrate wird mit der Anzahl der Mitglieder berechnet, die zum Zeitpunkt des jeweiligen Gigs oder der jeweiligen Probe als aktiv markiert waren.",
-  :methodology-histograms-title "Anwesenheits-Histogramme",
-  :methodology-histograms-body "Die Histogramme zeigen Anwesenheitsraten in Prozent-Bins auf der x-Achse und die Anzahl der Mitglieder in jedem Bin auf der y-Achse.",
-  :methodology-accuracy-title "Hinweis zur Datengenauigkeit",
-  :methodology-accuracy-body "Die Genauigkeit dieser Anwesenheitsstatistiken hängt von vollständigen Eingaben der Mitglieder ab. Fehlende Rückmeldungen können die angezeigten Raten und Summen verzerren.",
-  :member-table-title "Anwesenheit nach Mitglied",
-  :member-table-subtitle "Anwesenheitszahlen und Raten für Mitglieder, die im gewählten Zeitraum mindestens einen Gig oder eine Probe besucht haben.",
-  :member-table-empty-title "Keine Anwesenheitsdaten",
-  :member-table-empty-body "Im gewählten Zeitraum wurde keine Anwesenheit erfasst."}
  :nav
  {:insurance "Versicherung",
   :polls "Umfragen",
@@ -879,26 +795,6 @@
   :stats "Stats",
   :profile "Profil",
   :band-settings "Bandeinstellungen"},
- :probeplan
- {:how-it-works-title "So funktioniert es",
-  :how-it-works-intro "Der Probenplan-Generator funktioniert so:",
-  :how-it-works-generate
-  "SNOrga erzeugt zukünftige Probenpläne aus Spielstatistiken wie Anzahl der Spiele und Tage seit dem letzten Spiel.",
-  :how-it-works-fixed
-  "Die nächsten vier Proben erhalten feste Probenpläne und werden nicht automatisch vom System geändert.",
-  :how-it-works-human-edit
-  "Du kannst die Pläne für diese nächsten vier Proben manuell bearbeiten.",
-  :how-it-works-future-update
-  "Probenpläne nach den nächsten vier Proben werden aus den aktuellen Statistiken neu erzeugt.",
-  :how-it-works-gigs-column
-  "Die Gigs-Spalte zeigt, wie viele Gigs nach dieser Probe und vor der nächsten stattfinden.",
-  :header-number "Nr",
-  :header-date "Datum",
-  :header-gigs "Gigs",
-  :header-intensive "Intensiv",
-  :header-playthrough "Durchspielen",
-  :empty-title "Keine Probenpläne gefunden",
-  :empty-body "Lege zukünftige Proben an, um einen Probenplan zu erzeugen."},
  :band-instrument "Band-Instrument",
  :none "Keiner",
  :song
