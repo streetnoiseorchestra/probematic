@@ -8,6 +8,7 @@ delete = Delete
 done = Done
 edit = Edit
 more-actions = More actions
+next = Next
 remove = Remove
 reorder = Reorder
 save = Save

@@ -12,6 +12,8 @@
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [clojure.string :as str]))
 
@@ -33,17 +35,6 @@
                    {})]
     {:filter      (or (:filter params) (get params "filter"))
      :coverage-id (or (:coverage-id params) (get params "coverage-id"))}))
-
-(defn- page-breadcrumb
-  [{:keys [tr]} policy]
-  [breadcrumb/Breadcrumb
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [breadcrumb/BreadcrumbItem (tr [:insurance.review/title])]])
 
 (defn- coverage-review-link
   [policy filter coverage]
@@ -304,22 +295,35 @@
   (let [review   (queries/policy-review db (policy-id req) (query-params req))
         policy   (:policy review)
         selected (:selected-coverage review)]
-    (ui2/datastar-page
-     [:div {:class "wa-stack wa-gap-xl"}
-      [page-header/PageHeader
-       {:breadcrumb (page-breadcrumb req policy)
-        :title      (tr [:insurance.review/title])
-        :subtitle   (tr [:insurance.review/subtitle] [(str/trim (:insurance.policy/name policy))])
-        :actions    [[button/BackButton {:href  (urls/link-policy policy)
-                                         :label [:i18n/tr :action/back]}]]}]
-      (filter-bar req review)
-      (workbench-summary req review)
-      (if selected
-        (list
-         [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 50ch;"}
-          (review-card req review)
-          (review-aside req review)]
-         (insurance-ui/history-section req selected))
-        (queue-card req review))])))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+           [:i18n/tr :insurance/title]]
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+           (:insurance.policy/name policy)]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/review]]]
+         ::page-toolbar/mobile-back
+         [button/BackButton {:href  (urls/link-policy policy)
+                             :label (:insurance.policy/name policy)}]
+         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+      [:div {:class "wa-stack wa-gap-xl"}
+       [page-header/PageHeader
+        {:title    (tr [:insurance.review/title])
+         :subtitle (tr [:insurance.review/subtitle] [(str/trim (:insurance.policy/name policy))])}]
+       (filter-bar req review)
+       (workbench-summary req review)
+       (if selected
+         (list
+          [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 50ch;"}
+           (review-card req review)
+           (review-aside req review)]
+          (insurance-ui/history-section req selected))
+         (queue-card req review))]])))
 
 (d*/refresh-all!)

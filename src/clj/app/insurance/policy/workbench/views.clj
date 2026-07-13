@@ -12,6 +12,8 @@
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [clojure.string :as str]))
 
@@ -110,17 +112,6 @@
   [req]
   (merge (query-params req)
          (active-filter-params req)))
-
-(defn- page-breadcrumb
-  [{:keys [tr]} policy]
-  [breadcrumb/Breadcrumb
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [breadcrumb/BreadcrumbItem (tr [:insurance.workbench/title])]])
 
 (defn- option
   [selected value label]
@@ -1767,16 +1758,31 @@
         workbench (assoc (queries/policy-workbench db (policy-id req) (workbench-params req))
                          :table table)
         policy    (:policy workbench)]
-    (ui2/datastar-page2 {:class "full-width"}
-                        [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
-                               :data-preserve-attr "data-signals"
-                               :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table (:view workbench)))}
-                         [page-header/PageHeader
-                          {:breadcrumb (page-breadcrumb req policy)
-                           :title      (tr [:insurance.workbench/title])
-                           :subtitle   (:insurance.policy/name policy)}]
-                         (workbench-toolbar req workbench)
-                         (bulk-action-bar req workbench)
-                         (rows-section req workbench)])))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+           [:i18n/tr :insurance/title]]
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+           (:insurance.policy/name policy)]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/workbench]]]
+         ::page-toolbar/mobile-back
+         [button/BackButton {:href  (urls/link-policy policy)
+                             :label (:insurance.policy/name policy)}]
+         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+      [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
+             :data-preserve-attr "data-signals"
+             :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table (:view workbench)))}
+       [page-header/PageHeader
+        {:title    (tr [:insurance.workbench/title])
+         :subtitle (:insurance.policy/name policy)}]
+       (workbench-toolbar req workbench)
+       (bulk-action-bar req workbench)
+       (rows-section req workbench)]])))
 
 (d*/refresh-all!)

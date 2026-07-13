@@ -9,32 +9,11 @@
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
-   [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [app.util :as util]
    [clojure.string :as str]))
-
-(defn- page-breadcrumb
-  [{:keys [tr]} policy]
-  [breadcrumb/Breadcrumb
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [breadcrumb/BreadcrumbItem (tr [:insurance.dashboard/policy-settings])]])
-
-(defn- page-header
-  [{:keys [tr] :as req} {:insurance.policy/keys [name] :as policy}]
-  [:div
-   [page-header/PageHeader
-    {:breadcrumb (page-breadcrumb req policy)
-     :title      (tr [:insurance.dashboard/policy-settings])
-     :subtitle   (tr [:insurance.policy-settings/subtitle] [name])
-     :actions    [[button/BackButton {:href  (urls/link-policy policy)
-                                      :label [:i18n/tr :action/back]}]]}]
-   [divider/Divider]])
 
 (defn- settings-card
   [{:keys [actions subtitle title]} & children]
@@ -792,17 +771,15 @@
        (ui2/empty-state (tr [:insurance.policy-settings/no-category-factors]) "")))]))
 
 (defn settings-page-content
-  [req {:keys [category-factor-rows coverage-type-rows editable? policy] :as settings}]
+  [{:keys [tr] :as req} {:keys [category-factor-rows coverage-type-rows editable? policy] :as settings}]
   [:div {:id           "insurance-policy-settings"
          :class        "wa-stack"
          :data-signals (d*/->signals (initial-signals req settings))}
-   (when editable?
-     (for [row coverage-type-rows]
-       (coverage-type-delete-dialog req row)))
-   (when editable?
-     (for [row category-factor-rows]
-       (category-factor-delete-dialog req row)))
-   (page-header req policy)
+   [page-header/PageHeader
+    {:title    (tr [:insurance.dashboard/policy-settings])
+     :subtitle (tr [:insurance.policy-settings/subtitle]
+                   [(:insurance.policy/name policy)])}]
+   [divider/Divider]
    (warnings-section req settings)
    [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 34ch;"}
     [:div {:class "wa-stack"}
@@ -814,7 +791,13 @@
    (coverage-type-create-dialog req settings)
    (coverage-type-edit-dialog req)
    (category-factor-create-dialog req settings)
-   (category-factor-edit-dialog req)])
+   (category-factor-edit-dialog req)
+   (when editable?
+     (for [row coverage-type-rows]
+       (coverage-type-delete-dialog req row)))
+   (when editable?
+     (for [row category-factor-rows]
+       (category-factor-delete-dialog req row)))])
 
 (defn page
   [{:keys [db] :as req}]
@@ -822,7 +805,23 @@
                   db
                   (util/ensure-uuid! (get-in req [:path-params :policy-id]))
                   {:current-member-id (get-in req [:session :session/member :member/member-id])})]
-    (ui2/datastar-page
-     (settings-page-content req settings))))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+           [:i18n/tr :insurance/title]]
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy (:policy settings))}
+           (get-in settings [:policy :insurance.policy/name])]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/policy-settings]]]
+         ::page-toolbar/mobile-back
+         [button/BackButton {:href  (urls/link-policy (:policy settings))
+                             :label (get-in settings [:policy :insurance.policy/name])}]
+         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+      (settings-page-content req settings)])))
 
 (d*/refresh-all!)

@@ -156,31 +156,6 @@
                                 :href  (:href (l/attrs settings-link))}
                 :ordinary-link (l/select-one 'a ordinary-view)}))))))
 
-(deftest policy-actions
-  (testing "The policy dashboard is showing a draft policy."
-    (let [menu            (sut/more-actions-menu {:tr tr} policy)
-          menu-items      (take 2 (l/select 'wa-dropdown-item menu))
-          settings-action (sut/policy-settings-action {:tr tr} policy)]
-      (testing "The More actions menu links to coverage creation and policy settings."
-        (is (= [{:label   "Add Instrument"
-                 :value   (str "/insurance-coverage-create/" policy-id)
-                 :onclick "window.location = this.value"}
-                {:label   "Policy Settings"
-                 :value   (str "/insurance-policy/" policy-id "/settings")
-                 :onclick "window.location = this.value"}]
-               (mapv (fn [item]
-                       (let [attrs (l/attrs item)]
-                         {:label   (l/text item)
-                          :value   (:value attrs)
-                          :onclick (:onclick attrs)}))
-                     menu-items))))
-      (testing "The policy details card links directly to policy settings."
-        (is (= {:slot       "header-actions"
-                :href       (str "/insurance-policy/" policy-id "/settings")
-                :aria-label "Policy Settings"}
-               (select-keys (l/attrs settings-action)
-                            [:slot :href :aria-label])))))))
-
 (deftest coverage-mix
   (testing "The policy contains two band instruments and one private instrument."
     (let [view   (sut/coverage-mix-section

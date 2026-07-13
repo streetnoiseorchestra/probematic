@@ -29,7 +29,7 @@
 (defn- action-summary [action]
   (merge {:label (node-label action)}
          (select-keys (l/attrs action)
-                      [:href :form :type :appearance :variant :data-dialog])))
+                      [:href :form :type :appearance :variant :data-dialog :disabled])))
 
 (defn- overflow-summary [item]
   (merge {:label (node-label item)}

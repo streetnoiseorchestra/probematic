@@ -8,6 +8,7 @@ delete = Löschen
 done = Fertig
 edit = Bearbeiten
 more-actions = Weitere Aktionen
+next = Weiter
 remove = Entfernen
 reorder = Neu anordnen
 save = Speichern

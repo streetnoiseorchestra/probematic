@@ -13,6 +13,8 @@
    [app.ui2.card :as card]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [jsonista.core :as j]))
 
@@ -43,76 +45,12 @@
                 :pill       true}
      (tr [status])]))
 
-(defn- page-breadcrumb
-  [{:keys [tr]} policy]
-  [breadcrumb/Breadcrumb
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]])
-
-(defn more-actions-menu
-  [{:keys [tr]} policy]
-  (let [button-id    "insurance-policy-dashboard-more-actions"
-        policy-id    (:insurance.policy/policy-id policy)
-        create-url   (urls/link-coverage-create policy-id)
-        settings-url (urls/link-policy-settings policy)]
-    [:div {:class "insurance-dashboard-secondary-actions"}
-     [:wa-dropdown {:placement "bottom-end"}
-      [button/Button {:id         button-id
-                      :slot       "trigger"
-                      :appearance "outlined"
-                      :aria-label (tr [:action/more-actions])}
-       [ico/Icon {::ico/library :snoico
-                  ::ico/name    :ellipsis}]]
-      [:wa-dropdown-item {:value   create-url
-                          :onclick "window.location = this.value"}
-       [ico/Icon {::ico/library :snoico
-                  ::ico/name    :circle-plus-solid
-                  :slot         "icon"}]
-       (tr [:instrument.coverage/create-button])]
-      [:wa-dropdown-item {:value   settings-url
-                          :onclick "window.location = this.value"}
-       [ico/Icon {::ico/library :snoico
-                  ::ico/name    :cog
-                  :slot         "icon"}]
-       (tr [:insurance.dashboard/policy-settings])]
-      [:wa-dropdown-item {:disabled true
-                          :value    "activity-log"}
-       [ico/Icon {::ico/library :snoico
-                  ::ico/name    :circle-dot-outline
-                  :slot         "icon"}]
-       (tr [:insurance.dashboard/activity-log])
-       [:span {:slot "details"}
-        (tr [:insurance.dashboard/opens-later])]]]
-     [:wa-tooltip {:for button-id :without-arrow true}
-      (tr [:action/more-actions])]]))
-
 (defn- page-header
-  [{:keys [tr] :as req} {:insurance.policy/keys [name status] :as policy}]
-  [:div
-   [page-header/PageHeader
-    {:breadcrumb (page-breadcrumb req policy)
-     :title      [:span {:class "wa-cluster"}
-                  name
-                  (policy-status-badge tr status)]
-     :actions    [[button/Button {:appearance "filled"
-                                  :variant    "brand"
-                                  :href       (urls/link-policy-review policy)}
-                   [ico/Icon {::ico/library :phosphor
-                              ::ico/name    :hand-pointing
-                              :slot         "start"}]
-                   (tr [:insurance.dashboard/continue-reviewing])]
-                  [button/Button {:appearance "outlined"
-                                  :variant    "brand"
-                                  :href       (urls/link-policy-workbench policy)}
-                   [ico/Icon {::ico/library :phosphor
-                              ::ico/name    :table
-                              :slot         "start"}]
-                   (tr [:insurance.dashboard/coverage-workbench])]
-                  (more-actions-menu req policy)]}]
-   [divider/Divider]])
+  [{:keys [tr]} {:insurance.policy/keys [name status]}]
+  [page-header/PageHeader
+   {:title [:span {:class "wa-cluster"}
+            name
+            (policy-status-badge tr status)]}])
 
 (defn metric-card
   [{:keys [id tooltip icon label value library]}]
@@ -554,15 +492,6 @@
              [[:div {:class "wa-caption-s wa-color-text-quiet"}
                (tr [:insurance.dashboard/no-recent-changes])]]))))
 
-(defn policy-settings-action
-  [{:keys [tr]} policy]
-  [button/Button {:slot        "header-actions"
-                  :appearance  "plain"
-                  :href        (urls/link-policy-settings policy)
-                  :aria-label  (tr [:insurance.dashboard/policy-settings])}
-   [ico/Icon {::ico/library :snoico
-              ::ico/name    :cog}]])
-
 (defn- policy-details-section
   [{:keys [tr] :as req} {:insurance.policy/keys [effective-at effective-until premium-factor status] :as policy}]
   [card/Card {:appearance "plain"
@@ -571,7 +500,6 @@
          :class "wa-heading-l"
          :style "margin: 0;"}
     (tr [:insurance.dashboard/policy-details])]
-   (policy-settings-action req policy)
    (into [:div {:class "wa-stack"}]
          (divided-rows
           [(detail-row (tr [:insurance/name]) (:insurance.policy/name policy))
@@ -587,19 +515,52 @@
                    (policy-id req)
                    {:current-member-id (get-in req [:session :session/member :member/member-id])})
         policy    (:policy dashboard)]
-    (ui2/datastar-page
+    (ui2/datastar-page*
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
-     [:div {:class "wa-stack"}
-      (page-header req policy)
-      (overview-section req dashboard)
-      [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 42ch;"}
-       [:div {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
-        (policy-details-section req policy)
-        (review-status-section req dashboard)
-        (health-checklist-section req dashboard)
-        (coverage-mix-section req dashboard)]
-       [:aside {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
-        (recent-changes-section req dashboard)]]])))
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+           [:i18n/tr :insurance/title]]
+          [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]]
+         ::page-toolbar/mobile-back
+         [button/BackButton {:href  (urls/link-insurance)
+                             :label [:i18n/tr :insurance/title]}]
+         ::page-toolbar/actions
+         [[button/Button {:appearance "filled"
+                          :variant    "brand"
+                          :href       (urls/link-policy-review policy)}
+           [ico/Icon {::ico/library :phosphor
+                      ::ico/name    :hand-pointing
+                      :slot         "start"}]
+           [:i18n/tr :insurance/review]]]
+         ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+         ::page-toolbar/overflow-items
+         [[:wa-dropdown-item {:value   (urls/link-policy-workbench policy)
+                              :onclick "window.location = this.value"}
+           [:i18n/tr :insurance/workbench]]
+          [:wa-dropdown-item {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
+                              :onclick "window.location = this.value"}
+           [:i18n/tr :insurance/add-coverage]]
+          [:wa-dropdown-item {:value   (urls/link-policy-settings policy)
+                              :onclick "window.location = this.value"}
+           [:i18n/tr :insurance/policy-settings]]]
+         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+      [:div {:class "wa-stack"}
+       (page-header req policy)
+       (overview-section req dashboard)
+       [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 42ch;"}
+        [:div {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
+         (policy-details-section req policy)
+         (review-status-section req dashboard)
+         (health-checklist-section req dashboard)
+         (coverage-mix-section req dashboard)]
+        [:aside {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
+         (recent-changes-section req dashboard)]]]])))
 
 (d*/refresh-all!)

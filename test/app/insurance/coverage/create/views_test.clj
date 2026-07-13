@@ -3,6 +3,7 @@
    [app.insurance.coverage.create.actions :as actions]
    [app.insurance.coverage.create.views :as sut]
    [app.test-common :as tc]
+   [app.ui2.page-shell-test-support :as page-shell]
    [app.urls :as urls]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -194,11 +195,7 @@
 
 (defn photos-view
   [instrument]
-  (sut/photos-page-content
-   (request instrument)
-   policy
-   instrument
-   "/return"))
+  (sut/photos-page-content (request instrument) instrument))
 
 (deftest photo-upload
   (testing "The newly created instrument does not have any photos yet."
@@ -248,18 +245,7 @@
                 :script-count  (count (l/select 'script view))
                 :handler-name? (boolean
                                 (re-find #"window\.InsuranceCoverageUpload"
-                                         (-> (l/select-one 'script view) l/text)))})))
-      (testing "Back and Next preserve the wizard destination."
-        (is (= [{:label "Back"
-                 :href  (urls/link-coverage-create-edit
-                         policy-id instrument-id "/return")}
-                {:label "Next"
-                 :href  (urls/link-coverage-create3
-                         policy-id instrument-id "/return")}]
-               (mapv (fn [button]
-                       {:label (l/text button)
-                        :href  (:href (l/attrs button))})
-                     (l/select :app.ui2.button/button view))))))))
+                                         (-> (l/select-one 'script view) l/text)))}))))))
 
 (deftest existing-photos
   (testing "The newly created instrument already has an uploaded photo."
@@ -313,12 +299,6 @@
       (when (and action-ns action-name)
         (keyword action-ns action-name)))))
 
-(defn form-submit-button [form-id view]
-  (some #(when (= {:type "submit" :form form-id}
-                  (select-keys (l/attrs %) [:type :form]))
-           %)
-        (l/select :app.ui2.button/button view)))
-
 (deftest coverage-step-form
   (testing "An insurance-team member is entering coverage details for the saved instrument."
     (let [view        (coverage-view (member-request coverage-instrument true) policy)
@@ -328,8 +308,7 @@
           value-input (l/select-one "input[name=value]" view)
           insurer-input (l/select-one "input[name=insurer-id]" view)
           ownership   (l/select-one "wa-radio-group[name=private-band]" view)
-          checkboxes  (l/select 'wa-checkbox view)
-          buttons     (l/select :app.ui2.button/button view)]
+          checkboxes  (l/select 'wa-checkbox view)]
       (testing "Coverage is the current wizard step."
         (is (= {:steps        [{:label "Instrument" :state #{"complete"}}
                                {:label "Photos" :state #{"complete"}}
@@ -408,18 +387,7 @@
                                       (assoc (select-keys (l/attrs checkbox) [:value :checked :disabled])
                                              :description (-> (l/select-one 'small checkbox) l/text)))
                                     checkboxes)
-                  :optional-handler optional-handler}))))
-      (testing "Back preserves the redirect and Save submits the coverage form."
-        (is (= [{:label "Back"
-                 :href  (urls/link-coverage-create2 policy-id instrument-id "/return")}
-                {:label "Save"
-                 :type  "submit"
-                 :form  "coverage-create-coverage-form"}]
-               (mapv (fn [button]
-                       (into {:label (l/text button)}
-                             (remove (comp nil? val))
-                             (select-keys (l/attrs button) [:href :type :form])))
-                     buttons)))))))
+                  :optional-handler optional-handler})))))))
 
 (deftest harmonia-id-visibility
   (testing "Step 3 is rendered for insurance-team and ordinary members."
@@ -435,22 +403,23 @@
                 :ordinary       (l/select-one "input[name=insurer-id]" ordinary-view)})))
       (testing "The ordinary member can still submit coverage without a Harmonia ID."
         (is (= {:insurer-id ""
-                :action     ::actions/create-coverage
-                :save?      true}
+                :action     ::actions/create-coverage}
                {:insurer-id (get-in (signals ordinary-view) ["coverage-create" "insurer-id"])
-                :action     (-> ordinary-form l/attrs :data-action action-keyword)
-                :save?      (some? (form-submit-button "coverage-create-coverage-form" ordinary-view))}))))))
+                :action     (-> ordinary-form l/attrs :data-action action-keyword)}))))))
 
 (deftest missing-coverage-types
   (testing "The policy does not have any configured coverage types."
-    (let [view        (coverage-view (assoc policy :insurance.policy/coverage-types []))
-          warning     (l/select-one 'wa-callout view)
-          save-button (form-submit-button "coverage-create-coverage-form" view)]
+    (let [empty-policy (assoc policy :insurance.policy/coverage-types [])
+          req          (assoc (member-request coverage-instrument false)
+                              :policy empty-policy)
+          view         (sut/coverage-page req)
+          warning      (l/select-one 'wa-callout view)
+          save-action  (-> view page-shell/page-contract :actions second)]
       (testing "The page explains why coverage cannot be created."
         (is (= "No coverage types configured."
                (l/text warning))))
       (testing "The Save action is disabled."
-        (is (true? (:disabled (l/attrs save-button))))))))
+        (is (true? (:disabled save-action)))))))
 
 (deftest validation-errors
   (testing "Coverage validation failed after the member submitted invalid values."

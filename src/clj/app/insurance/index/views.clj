@@ -7,10 +7,13 @@
    [app.insurance.index.queries :as queries]
    [app.insurance.ui :as insurance.ui]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]))
 
 (def policy-status-data
@@ -95,15 +98,8 @@
 
 (defn- policies-table [{:keys [tr] :as req} policies]
   (ui2/section-card
-   {:class   "wa-stack insurance-policies"
-    :title   (tr [:insurance/policies])
-    :actions [[button/Button {:appearance "outlined"
-                              :variant    "brand"
-                              :href       "/insurance-new/"}
-               [ico/Icon {::ico/library :snoico
-                          ::ico/name    :circle-plus-solid
-                          :slot         "start"}]
-               (tr [:insurance/insurance-policy])]]}
+   {:class "wa-stack insurance-policies"
+    :title (tr [:insurance/policies])}
    (ui2/table-shell
     (if (seq policies)
       [:table {:class "insurance-policy-table"}
@@ -258,12 +254,34 @@
 (defn page [{:keys [db tr] :as req}]
   (let [policies      (queries/policies db)
         active-policy (queries/active-policy db)]
-    (ui2/datastar-page
-     [:div {:class "insurance-index-page wa-stack wa-gap-xl"}
-      (for [policy policies]
-        (policy-remove-dialog req policy))
-      [page-header/PageHeader {:title (tr [:insurance/title])}]
-      (insurance-faq req active-policy)
-      (policies-table req policies)])))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width :wide
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/"}
+           [:i18n/tr :home]]
+          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/title]]]
+         ::page-toolbar/mobile-back
+         [button/BackButton {:href  "/"
+                             :label [:i18n/tr :home]}]
+         ::page-toolbar/actions
+         [[button/Button {:appearance "filled"
+                          :variant    "brand"
+                          :href       "/insurance-new/"}
+           [ico/Icon {::ico/library :snoico
+                      ::ico/name    :circle-plus-solid
+                      :slot         "start"}]
+           [:i18n/tr :insurance/new-policy]]]
+         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+      [:div {:class "insurance-index-page wa-stack wa-gap-xl"}
+       [page-header/PageHeader {:title (tr [:insurance/title])}]
+       (insurance-faq req active-policy)
+       (policies-table req policies)
+       (for [policy policies]
+         (policy-remove-dialog req policy))]])))
 
 (d*/refresh-all!)

@@ -11,6 +11,8 @@
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -204,18 +206,6 @@
                 :data-on:change       "window.InsuranceCoverageUpload && window.InsuranceCoverageUpload(evt.target)"}]]
       [:p {:id status-id :class "wa-caption-s wa-color-text-quiet"}]])))
 
-(defn- breadcrumb [{:keys [tr]} coverage policy instrument]
-  [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-coverage coverage)}
-    (:instrument/name instrument)]
-   [breadcrumb/BreadcrumbItem (tr [:action/edit])]])
-
 (defn- coverage->form [{:instrument.coverage/keys [coverage-id instrument item-count private? types value insurer-id]}
                        policy]
   (let [base-type-id      (some-> policy :insurance.policy/coverage-types first :insurance.coverage.type/type-id str)
@@ -293,30 +283,8 @@
    [:p (tr [:action/confirm-delete-instrument]
            [(get-in coverage [:instrument.coverage/instrument :instrument/name])])]))
 
-(defn- save-button [tr]
-  [button/Button {:appearance         "filled"
-                  :variant            "brand"
-                  :type               "submit"
-                  :form               "coverage-edit-form"
-                  :data-attr:disabled "!!$loading && $loading !== 'coverage-edit'"
-                  :data-attr:loading  "$loading === 'coverage-edit'"}
-   (tr [:action/save])])
-
 (defn- insurance-team-member? [{:keys [db] :as req}]
   (q/insurance-team-member? db (get-in req [:session :session/member])))
-
-(defn- form-actions [{:keys [tr] :as req} coverage]
-  (ui2/action-bar
-   {:class "insurance-coverage-edit-actions"}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-coverage coverage)}
-     (tr [:action/cancel])]
-    (when (insurance-team-member? req)
-      [button/Button {:appearance  "outlined"
-                      :variant     "danger"
-                      :data-dialog (str "open " (remove-dialog-id coverage))}
-       (tr [:action/delete])])
-    (save-button tr)]))
 
 (defn- edit-form [req coverage policy]
   (let [form-state (form-state req coverage policy)]
@@ -332,8 +300,7 @@
      (when-let [top-error (form/field-error form-state :_top)]
        [:wa-callout {:appearance "outlined"
                      :variant    "danger"}
-        top-error])
-     (form-actions req coverage)]))
+        top-error])]))
 
 (defn- upload-script []
   [:script
@@ -364,15 +331,50 @@
         policy      (:insurance.policy/_covered-instruments coverage)
         instrument  (:instrument.coverage/instrument coverage)]
     (if coverage
-      (ui2/datastar-page
-       [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-        (breadcrumb req coverage policy instrument)
-        [page-header/PageHeader {:class    "insurance-coverage-page-header"
-                                 :title    ((:tr req) [:instrument.coverage/edit-title])
-                                 :subtitle (:instrument/name instrument)}]
-        (edit-form req coverage policy)
-        (remove-dialog req coverage)
-        (upload-script)])
+      (let [coverage-url (urls/link-coverage coverage)]
+        (ui2/datastar-page*
+         [page-surface/PageSurface
+          {::page-surface/width :standard
+           ::page-surface/toolbar
+           [page-toolbar/PageToolbar
+            {::page-toolbar/breadcrumb
+             [breadcrumb/Breadcrumb
+              {}
+              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+               [:i18n/tr :insurance/title]]
+              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+               (:insurance.policy/name policy)]
+              [breadcrumb/BreadcrumbItem {::breadcrumb/href coverage-url}
+               (:instrument/name instrument)]
+              [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
+             ::page-toolbar/mobile-back
+             [button/BackButton {:href  coverage-url
+                                 :label (:instrument/name instrument)}]
+             ::page-toolbar/actions
+             [[button/Button {:appearance "plain"
+                              :href       coverage-url}
+               [:i18n/tr :action/cancel]]
+              [button/Button {:appearance         "filled"
+                              :variant            "brand"
+                              :type               "submit"
+                              :form               "coverage-edit-form"
+                              :data-attr:disabled "!!$loading && $loading !== 'coverage-edit'"
+                              :data-attr:loading  "$loading === 'coverage-edit'"}
+               [:i18n/tr :action/save]]]
+             ::page-toolbar/overflow-items
+             (when (insurance-team-member? req)
+               [[:wa-dropdown-item {:variant     "danger"
+                                    :data-dialog (str "open " (remove-dialog-id coverage))}
+                 [:i18n/tr :action/delete]]])
+             ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+             :aria-label                    [:i18n/tr :insurance/toolbar-label]}]}
+          [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
+           [page-header/PageHeader {:class    "insurance-coverage-page-header"
+                                    :title    (:instrument/name instrument)
+                                    :subtitle [:i18n/tr :insurance/edit-coverage]}]
+           (edit-form req coverage policy)]]
+         (remove-dialog req coverage)
+         (upload-script)))
       (throw (ex-info "Instrument coverage not found" {:app/error-type :app.error.type/not-found
                                                        :instrument.coverage/coverage-id coverage-id})))))
 

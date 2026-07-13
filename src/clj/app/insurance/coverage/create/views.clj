@@ -11,6 +11,8 @@
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.ui2.step-circles :as step-circles]
    [app.urls :as urls]
    [app.util.http :as http.util]
@@ -178,16 +180,6 @@
                       {:class "insurance-coverage-edit-textarea insurance-coverage-edit-wide"}
                       (tr [:instrument/description-hint]))])))
 
-(defn- breadcrumb [{:keys [tr]} policy]
-  [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [breadcrumb/BreadcrumbItem (tr [:instrument.coverage/create-title])]])
-
 (defn- create-steps [tr current-step]
   (step-circles/StepCircles {::step-circles/label        (tr [:instrument.coverage/create-steps])
                              ::step-circles/current-step current-step
@@ -228,24 +220,7 @@
               :slot         "icon"}]
    (tr [:instrument/separate-warning])])
 
-(defn- next-button [tr]
-  [button/Button {:appearance         "filled"
-                  :variant            "brand"
-                  :type               "submit"
-                  :form               "coverage-create-instrument-form"
-                  :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
-                  :data-attr:loading  "$loading === 'coverage-create'"}
-   (tr [:action/next])])
-
-(defn- form-actions [{:keys [tr]} policy]
-  (ui2/action-bar
-   {:class "insurance-coverage-edit-actions"}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-policy policy)}
-     (tr [:action/back])]
-    (next-button tr)]))
-
-(defn- instrument-form [req policy form-state]
+(defn- instrument-form [req form-state]
   [:form {:id             "coverage-create-instrument-form"
           :class          "wa-stack wa-gap-xl"
           :data-id        "coverage-create"
@@ -254,29 +229,28 @@
           :data-signals   (d*/->signals {:coverage-create (dissoc form-state :_error)})}
    (warning-callout req)
    (instrument-section req form-state)
-   (top-error-callout form-state)
-   (form-actions req policy)])
+   (top-error-callout form-state)])
 
 (defn instrument-page-content [req policy instrument redirect]
   (let [tr         (:tr req)
         policy-id  (:insurance.policy/policy-id policy)
         form-state (form-state req policy-id redirect instrument)]
     [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-     [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                              :breadcrumb (breadcrumb req policy)
-                              :title      (tr [:instrument.coverage/create-title])
-                              :subtitle   (tr [:instrument.coverage/create-subtitle]
-                                              [(:insurance.policy/name policy)])}]
+     [page-header/PageHeader {:class    "insurance-coverage-page-header"
+                              :title    (tr [:instrument.coverage/create-title])
+                              :subtitle (tr [:instrument.coverage/create-subtitle]
+                                            [(:insurance.policy/name policy)])}]
      (create-steps tr 1)
-     (instrument-form req policy form-state)]))
+     (instrument-form req form-state)]))
 
 (defn instrument-page [{:keys [db] :as req}]
   (let [policy-id     (http.util/path-param-uuid! req :policy-id)
         policy        (or (:policy req) (q/retrieve-policy db policy-id))
         instrument-id (http.util/query-param-uuid req :instrument-id)
         redirect      (query-param req :redirect)
-        instrument    (when instrument-id
-                        (q/retrieve-instrument db instrument-id))]
+        instrument    (or (:instrument req)
+                          (when instrument-id
+                            (q/retrieve-instrument db instrument-id)))]
     (cond
       (nil? policy)
       (throw (ex-info "Policy not found" {:app/error-type :app.error.type/not-found
@@ -287,8 +261,36 @@
                                               :instrument/instrument-id instrument-id}))
 
       :else
-      (ui2/datastar-page
-       (instrument-page-content req policy instrument redirect)))))
+      (ui2/datastar-page*
+       [page-surface/PageSurface
+        {::page-surface/width :standard
+         ::page-surface/toolbar
+         [page-toolbar/PageToolbar
+          {::page-toolbar/breadcrumb
+           [breadcrumb/Breadcrumb
+            {}
+            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+             [:i18n/tr :insurance/title]]
+            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+             (:insurance.policy/name policy)]
+            [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/add-coverage-title]]
+            [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/instrument-step]]]
+           ::page-toolbar/mobile-back
+           [button/BackButton {:href  (urls/link-policy policy)
+                               :label (:insurance.policy/name policy)}]
+           ::page-toolbar/actions
+           [[button/Button {:appearance "outlined"
+                            :href       (urls/link-policy policy)}
+             [:i18n/tr :action/cancel]]
+            [button/Button {:appearance         "filled"
+                            :variant            "brand"
+                            :type               "submit"
+                            :form               "coverage-create-instrument-form"
+                            :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
+                            :data-attr:loading  "$loading === 'coverage-create'"}
+             [:i18n/tr :action/next]]]
+           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+        (instrument-page-content req policy instrument redirect)]))))
 
 (defn- photo-image [instrument-name {:keys [thumbnail full]}]
   [:a {:href   full
@@ -304,17 +306,6 @@
       (into [:div {:class "insurance-photo-grid wa-grid wa-gap-s"}]
             (map #(photo-image (:instrument/name instrument) %) photo-uris))
       (ui2/empty-state (tr [:instrument/images]) (tr [:insurance/no-photos])))))
-
-(defn- photos-breadcrumb [{:keys [tr]} policy instrument]
-  [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [breadcrumb/BreadcrumbItem (:instrument/name instrument)]
-   [breadcrumb/BreadcrumbItem (tr [:instrument.coverage/create-step-photos])]])
 
 (defn- photo-upload-section [{:keys [tr] :as req} instrument]
   (let [instrument-id (:instrument/instrument-id instrument)
@@ -347,17 +338,6 @@
                 :data-on:change       "window.InsuranceCoverageUpload && window.InsuranceCoverageUpload(evt.target)"}]]
       [:p {:id status-id :class "wa-caption-s wa-color-text-quiet"}]])))
 
-(defn- photo-actions [{:keys [tr]} policy-id instrument-id redirect]
-  (ui2/action-bar
-   {:class "insurance-coverage-edit-actions"}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-coverage-create-edit policy-id instrument-id redirect)}
-     (tr [:action/back])]
-    [button/Button {:appearance "filled"
-                    :variant    "brand"
-                    :href       (urls/link-coverage-create3 policy-id instrument-id redirect)}
-     (tr [:action/next])]]))
-
 (defn- upload-script []
   [:script
    (html/raw
@@ -383,18 +363,13 @@
      };")])
 
 (defn photos-page-content
-  [req policy instrument redirect]
+  [req instrument]
   [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
    [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                            :breadcrumb (photos-breadcrumb req policy instrument)
                             :title      ((:tr req) [:instrument.coverage/create-title])
                             :subtitle   (:instrument/name instrument)}]
    (create-steps (:tr req) 2)
    (photo-upload-section req instrument)
-   (photo-actions req
-                  (:insurance.policy/policy-id policy)
-                  (:instrument/instrument-id instrument)
-                  redirect)
    (upload-script)])
 
 (defn photos-page [{:keys [db instrument] :as req}]
@@ -413,8 +388,35 @@
                                               :instrument/instrument-id instrument-id}))
 
       :else
-      (ui2/datastar-page
-       (photos-page-content req policy instrument redirect)))))
+      (let [previous-url (urls/link-coverage-create-edit policy-id instrument-id redirect)
+            next-url     (urls/link-coverage-create3 policy-id instrument-id redirect)]
+        (ui2/datastar-page*
+         [page-surface/PageSurface
+          {::page-surface/width :standard
+           ::page-surface/toolbar
+           [page-toolbar/PageToolbar
+            {::page-toolbar/breadcrumb
+             [breadcrumb/Breadcrumb
+              {}
+              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+               [:i18n/tr :insurance/title]]
+              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+               (:insurance.policy/name policy)]
+              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/add-coverage-title]]
+              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/photos-step]]]
+             ::page-toolbar/mobile-back
+             [button/BackButton {:href  previous-url
+                                 :label [:i18n/tr :insurance/instrument-step]}]
+             ::page-toolbar/actions
+             [[button/Button {:appearance "outlined"
+                              :href       previous-url}
+               [:i18n/tr :action/back]]
+              [button/Button {:appearance "filled"
+                              :variant    "brand"
+                              :href       next-url}
+               [:i18n/tr :action/next]]]
+             :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+          (photos-page-content req instrument)])))))
 
 (defn- coverage-validate-field-action [req field]
   (str "$coverage-create.validate-field = '"
@@ -443,17 +445,6 @@
                    :value (form/text-value value)}
                   (coverage-field-attrs req form-state field hint)
                   attrs)]))
-
-(defn- coverage-breadcrumb [{:keys [tr]} policy instrument]
-  [breadcrumb/Breadcrumb {:class "insurance-coverage-breadcrumb"}
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-    [ico/Icon {::ico/library :snoico
-               ::ico/name    :shield-check-outline}]
-    (tr [:nav/insurance])]
-   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-    (:insurance.policy/name policy)]
-   [breadcrumb/BreadcrumbItem (:instrument/name instrument)]
-   [breadcrumb/BreadcrumbItem (tr [:instrument.coverage/create-step-coverage])]])
 
 (defn- coverage->form [policy instrument redirect]
   (let [base-type-id (some-> policy
@@ -579,21 +570,6 @@
                             {} (tr [:instrument.coverage/insurer-id-hint])))
     (coverage-types-field req form-state (:insurance.policy/coverage-types policy))]))
 
-(defn- coverage-actions [{:keys [tr]} policy-id instrument-id redirect disabled?]
-  (ui2/action-bar
-   {:class "insurance-coverage-edit-actions"}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-coverage-create2 policy-id instrument-id redirect)}
-     (tr [:action/back])]
-    [button/Button (cond-> {:appearance "filled"
-                            :variant    "brand"
-                            :type       "submit"
-                            :form       "coverage-create-coverage-form"
-                            :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
-                            :data-attr:loading  "$loading === 'coverage-create'"}
-                     disabled? (assoc :disabled true))
-     (tr [:action/save])]]))
-
 (defn- no-coverage-types-callout [{:keys [tr]}]
   [:wa-callout {:appearance "outlined"
                 :variant    "warning"}
@@ -612,17 +588,11 @@
      (if disabled?
        (no-coverage-types-callout req)
        (coverage-section req policy form-state))
-     (top-error-callout form-state)
-     (coverage-actions req
-                       (:insurance.policy/policy-id policy)
-                       (:instrument/instrument-id instrument)
-                       redirect
-                       disabled?)]))
+     (top-error-callout form-state)]))
 
 (defn coverage-page-content [req policy instrument redirect]
   [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
    [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                            :breadcrumb (coverage-breadcrumb req policy instrument)
                             :title      ((:tr req) [:instrument.coverage/create-title])
                             :subtitle   ((:tr req) [:insurance/coverage-for]
                                                    [(:insurance.policy/name policy)])}]
@@ -646,7 +616,38 @@
                                               :instrument/instrument-id instrument-id}))
 
       :else
-      (ui2/datastar-page
-       (coverage-page-content req policy instrument redirect)))))
+      (let [previous-url (urls/link-coverage-create2 policy-id instrument-id redirect)
+            disabled?   (empty? (:insurance.policy/coverage-types policy))]
+        (ui2/datastar-page*
+         [page-surface/PageSurface
+          {::page-surface/width :standard
+           ::page-surface/toolbar
+           [page-toolbar/PageToolbar
+            {::page-toolbar/breadcrumb
+             [breadcrumb/Breadcrumb
+              {}
+              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+               [:i18n/tr :insurance/title]]
+              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+               (:insurance.policy/name policy)]
+              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/add-coverage-title]]
+              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/coverage-step]]]
+             ::page-toolbar/mobile-back
+             [button/BackButton {:href  previous-url
+                                 :label [:i18n/tr :insurance/photos-step]}]
+             ::page-toolbar/actions
+             [[button/Button {:appearance "outlined"
+                              :href       previous-url}
+               [:i18n/tr :action/back]]
+              [button/Button (cond-> {:appearance         "filled"
+                                      :variant            "brand"
+                                      :type               "submit"
+                                      :form               "coverage-create-coverage-form"
+                                      :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
+                                      :data-attr:loading  "$loading === 'coverage-create'"}
+                               disabled? (assoc :disabled true))
+               [:i18n/tr :action/save]]]
+             :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+          (coverage-page-content req policy instrument redirect)])))))
 
 (d*/refresh-all!)
