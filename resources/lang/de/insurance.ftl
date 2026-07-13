@@ -79,3 +79,68 @@ payment-notifications-sent =
         [one] Eine Zahlungsbenachrichtigung wurde gesendet.
        *[other] { $count } Zahlungsbenachrichtigungen wurden gesendet.
     }
+
+### Überprüfung des Versicherungsschutzes durch Mitglieder
+
+coverage-review = Versicherungsprüfung
+review-progress = Fortschritt der Versicherungsprüfung
+review-item-step = Gegenstand { $number }
+review-used-at-gig = Wurde dies im vergangenen Jahr bei einem Street-Noise-Gig verwendet?
+review-yes = Ja
+review-no = Nein
+review-keep-insured = Soll dieses Instrument weiter versichert bleiben?
+review-confirm-remove = Möchtest du den Versicherungsschutz wirklich entfernen?
+review-confirm-remove-band-hint = Die Band bezahlt diesen Versicherungsschutz derzeit, weil dies ein Bandinstrument ist.
+review-keep-coverage = Nein, Versicherungsschutz behalten
+review-remove-coverage = Ja, entfernen
+review-pay-to-keep = Möchtest du bezahlen, damit dieses Instrument versichert bleibt?
+review-pay-to-keep-hint = Da es im vergangenen Jahr bei keinem Gig verwendet wurde, kann die Band die Kosten nicht länger übernehmen.
+review-private-cost = Der weitere Versicherungsschutz kostet ungefähr { $cost } pro Jahr.
+review-stop-coverage = Nein, Versicherungsschutz beenden
+review-pay = Ja, ich bezahle
+review-confirm-private-cost = Der weitere Versicherungsschutz kostet ungefähr { $cost } pro Jahr. Ist das in Ordnung?
+review-data-correct = Sind alle hier angezeigten Angaben noch korrekt?
+review-data-correct-hint = Prüfe besonders den Versicherungswert und die Versicherungsarten.
+review-invalid-transition = Diese Antwort ist für die aktuelle Frage nicht gültig.
+review-not-available-title = Keine Versicherungsprüfung verfügbar
+review-not-available = Für dich ist bei dieser Police keine Versicherungsprüfung verfügbar.
+review-cannot-finish = Prüfe zuerst die verbleibenden Instrumente, bevor du diese Versicherungsprüfung abschließt.
+review-no-items-title = Keine Instrumente zu prüfen
+review-no-items-body = Du hast derzeit keine versicherten Instrumente in dieser Prüfung. Du kannst eines hinzufügen oder die Prüfung abschließen.
+review-finish = Ich bin fertig
+review-closed-title = Diese Versicherungsprüfung ist geschlossen
+review-closed-body = Antworten können nicht mehr geändert werden, weil das Versicherungsteam diese Prüfung geschlossen hat.
+review-contact-team = Kontaktiere das Versicherungsteam, falls noch etwas geändert werden muss.
+review-complete-title = Versicherungsprüfung abgeschlossen
+review-complete-body = Danke. Das Versicherungsteam hat deine Antworten erhalten.
+review-good-job = Gut gemacht
+review-completed-progress =
+    { $completed ->
+        [one] Du hast ein Instrument geprüft. { $remaining } sind noch übrig.
+       *[other] Du hast { $completed } Instrumente geprüft. { $remaining } sind noch übrig.
+    }
+review-keep-going = Weitermachen
+review-correct-data-title = Instrumentenangaben korrigieren
+review-correct-data-body = Aktualisiere alle Änderungen und speichere anschließend, um die Prüfung dieses Instruments abzuschließen.
+review-coverage-body = Prüfe den Versicherungswert und die Versicherungsarten.
+ownership = Zuordnung
+ownership-band = Bandinstrument
+ownership-private = Privatinstrument
+annual-cost = Geschätzte jährliche Kosten
+item-count = Anzahl der Gegenstände
+item-count-hint = Wie viele identische Produkte möchtest du versichern (z. B. eine Trompete oder vier Drumsticks)?
+value = Versicherungswert
+value-hint = Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben
+coverage-types = Versicherungsarten
+instrument-coverage = Versicherungsschutz
+insurer-id = Versicherungskennung
+insurer-id-hint = Gib, falls vorhanden, die vom Versicherer vergebene Kennung ein.
+photos = Fotos
+no-photos = Es wurden noch keine Fotos hochgeladen.
+photo-upload = Instrumentenfotos
+photo-upload-subtitle = Füge deutliche Fotos aus mehreren Perspektiven hinzu.
+upload-drop-label = Fotos zum Hochladen auswählen
+upload-help = PNG, JPG oder GIF bis 10 MB.
+upload-progress = Fotos werden hochgeladen…
+upload-complete = Upload abgeschlossen.
+upload-error = Upload fehlgeschlagen.

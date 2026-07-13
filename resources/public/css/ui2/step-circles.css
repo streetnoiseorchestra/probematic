@@ -4,14 +4,7 @@
   --sno-step-circles-step-size: 7rem;
 
   display: flex;
-  justify-content: center;
   overflow-x: auto;
-}
-
-@media (--sno-viewport-s) {
-  .sno-step-circles {
-    --sno-step-circles-step-size: 9rem;
-  }
 }
 
 @scope (.sno-step-circles) {
@@ -19,7 +12,9 @@
   ol {
     display: flex;
     align-items: start;
-    margin: 0;
+    justify-content: safe center;
+    inline-size: 100%;
+    margin: 0 auto;
     padding: 0;
     list-style: none;
   }
@@ -29,9 +24,11 @@
     position: relative;
     display: grid;
     justify-items: center;
+    flex: 1 0 var(--sno-step-circles-step-size);
     gap: var(--wa-space-2xs);
     inline-size: var(--sno-step-circles-step-size);
     min-inline-size: var(--sno-step-circles-step-size);
+    max-inline-size: 9rem;
   }
 
   /* line connector */

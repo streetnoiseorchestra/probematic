@@ -110,35 +110,39 @@
          boolean)))
 
 (defn validation-errors
-  [{:keys [tr] :as state} params]
-  (let [{:keys [coverage policy instrument-id policy-id] :as ctx} (coverage-context (:db state) params)
-        item-count (parse-positive-long (:item-count params))
-        value      (parse-positive-long (:value params))]
-    (merge
-     (when-not coverage
-       (top-error (tr [:error/not-found-title])))
-     (when (and coverage (not= policy-id (:insurance.policy/policy-id policy)))
-       (top-error (tr [:error/not-found-title])))
-     (when (and coverage (not= instrument-id (get-in coverage [:instrument.coverage/instrument :instrument/instrument-id])))
-       (top-error (tr [:error/not-found-title])))
-     (when (and policy (not (coverage.queries/policy-editable? policy)))
-       (top-error (tr [:insurance/error-edit-frozen-policy])))
-     (when (str/blank? (:owner-member-id params))
-       {:owner-member-id (required-error tr :owner-member-id)})
-     (when (str/blank? (:category-id params))
-       {:category-id (required-error tr :category-id)})
-     (when (str/blank? (:instrument-name params))
-       {:instrument-name (required-error tr :instrument-name)})
-     (when (str/blank? (:make params))
-       {:make (required-error tr :make)})
-     (when-not item-count
-       {:item-count (number-error tr :item-count)})
-     (when-not value
-       {:value (number-error tr :value)})
-     (when-not (#{"band" "private"} (:private-band params))
-       {:private-band (required-error tr :private-band)})
-     (when (and policy (invalid-coverage-types? ctx params))
-       {:coverage-types {:error (tr [:insurance/error-invalid-coverage-type])}}))))
+  ([state params]
+   (validation-errors state params {}))
+  ([{:keys [tr] :as state} params {:keys [allow-frozen-policy?]}]
+   (let [{:keys [coverage policy instrument-id policy-id] :as ctx} (coverage-context (:db state) params)
+         item-count (parse-positive-long (:item-count params))
+         value      (parse-positive-long (:value params))]
+     (merge
+      (when-not coverage
+        (top-error (tr [:error/not-found-title])))
+      (when (and coverage (not= policy-id (:insurance.policy/policy-id policy)))
+        (top-error (tr [:error/not-found-title])))
+      (when (and coverage (not= instrument-id (get-in coverage [:instrument.coverage/instrument :instrument/instrument-id])))
+        (top-error (tr [:error/not-found-title])))
+      (when (and policy
+                 (not allow-frozen-policy?)
+                 (not (coverage.queries/policy-editable? policy)))
+        (top-error (tr [:insurance/error-edit-frozen-policy])))
+      (when (str/blank? (:owner-member-id params))
+        {:owner-member-id (required-error tr :owner-member-id)})
+      (when (str/blank? (:category-id params))
+        {:category-id (required-error tr :category-id)})
+      (when (str/blank? (:instrument-name params))
+        {:instrument-name (required-error tr :instrument-name)})
+      (when (str/blank? (:make params))
+        {:make (required-error tr :make)})
+      (when-not item-count
+        {:item-count (number-error tr :item-count)})
+      (when-not value
+        {:value (number-error tr :value)})
+      (when-not (#{"band" "private"} (:private-band params))
+        {:private-band (required-error tr :private-band)})
+      (when (and policy (invalid-coverage-types? ctx params))
+        {:coverage-types {:error (tr [:insurance/error-invalid-coverage-type])}})))))
 
 (defn- private? [params]
   (= "private" (:private-band params)))

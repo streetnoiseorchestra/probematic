@@ -301,6 +301,18 @@
                                   (str notifications-path "insurance-notify-page"))))
       (is (some? (r/match-by-path router
                                   (str notifications-path "insurance-send-notifications")))))
+    (let [survey-path   (urls/link-insurance-survey-start policy-id)
+          slashless-path (subs survey-path 0 (dec (count survey-path)))]
+      (is (= :app.insurance.routes/survey
+             (page-name router survey-path)))
+      (is (= {:status   301
+              :location survey-path}
+             (slash-redirect-summary router slashless-path)))
+      (doseq [child ["survey-start-page"
+                     "survey-flow-progress"
+                     "survey-edit-instrument-handler"
+                     "survey-dismiss-response"]]
+        (is (some? (r/match-by-path router (str survey-path child))))))
     (is (= :app/insurance
            (app-route-name router (urls/link-policy-review policy-id))))
     (is (= :app.insurance.routes/policy-review

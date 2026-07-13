@@ -79,3 +79,68 @@ payment-notifications-sent =
         [one] One payment notification was sent.
        *[other] { $count } payment notifications were sent.
     }
+
+### Member coverage review
+
+coverage-review = Coverage review
+review-progress = Coverage review progress
+review-item-step = Item { $number }
+review-used-at-gig = Was this used at a Street Noise gig in the past year?
+review-yes = Yes
+review-no = No
+review-keep-insured = Do you want to keep this instrument insured?
+review-confirm-remove = Are you sure you want to remove its insurance coverage?
+review-confirm-remove-band-hint = The band currently pays for this coverage because this is a band instrument.
+review-keep-coverage = No, keep the coverage
+review-remove-coverage = Yes, remove it
+review-pay-to-keep = Do you want to pay to keep this instrument insured?
+review-pay-to-keep-hint = Since this was not used at a gig in the past year, the band can no longer pay for it.
+review-private-cost = Keeping it insured will cost approximately { $cost } per year.
+review-stop-coverage = No, stop the coverage
+review-pay = Yes, I’ll pay
+review-confirm-private-cost = Keeping this instrument insured will cost approximately { $cost } per year. Is that okay?
+review-data-correct = Is all the information shown here still correct?
+review-data-correct-hint = Check the insured value and coverage types in particular.
+review-invalid-transition = That answer is not valid for the current review question.
+review-not-available-title = No coverage review available
+review-not-available = There is no coverage review available for you on this policy.
+review-cannot-finish = Finish reviewing the remaining instruments before completing this coverage review.
+review-no-items-title = No instruments to review
+review-no-items-body = You do not currently have any insured instruments in this review. You can add one or finish the review.
+review-finish = I’m finished
+review-closed-title = This coverage review is closed
+review-closed-body = Answers can no longer be changed because the insurance team has closed this review.
+review-contact-team = Contact the insurance team if something still needs to change.
+review-complete-title = Coverage review complete
+review-complete-body = Thanks. The insurance team has received your responses.
+review-good-job = Good job
+review-completed-progress =
+    { $completed ->
+        [one] You reviewed one instrument. { $remaining } remain.
+       *[other] You reviewed { $completed } instruments. { $remaining } remain.
+    }
+review-keep-going = Keep going
+review-correct-data-title = Correct the instrument information
+review-correct-data-body = Update anything that has changed, then save to finish reviewing this instrument.
+review-coverage-body = Check the insured value and coverage types.
+ownership = Ownership
+ownership-band = Band instrument
+ownership-private = Private instrument
+annual-cost = Estimated annual cost
+item-count = Number of items
+item-count-hint = How many identical items are being insured (for example, one trumpet or four drumsticks)?
+value = Insured value
+value-hint = For multiple identical insured items, enter the value of one item.
+coverage-types = Coverage types
+instrument-coverage = Instrument coverage
+insurer-id = Insurer ID
+insurer-id-hint = Enter the identifier assigned by the insurer, if available.
+photos = Photos
+no-photos = No photos have been uploaded yet.
+photo-upload = Instrument photos
+photo-upload-subtitle = Add clear photos from several angles.
+upload-drop-label = Choose photos to upload
+upload-help = PNG, JPG, or GIF up to 10 MB.
+upload-progress = Uploading photos…
+upload-complete = Upload complete.
+upload-error = Upload failed.

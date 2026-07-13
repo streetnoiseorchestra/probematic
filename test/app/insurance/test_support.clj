@@ -36,6 +36,40 @@
   [conn opts]
   @(d/transact conn [(survey-tx opts)]))
 
+(defn seed-member-survey!
+  [conn {:keys [closed-at completed-report-count coverage-ids member-id
+                policy-id response-completed-at survey-name]}]
+  (let [survey-id   (random-uuid)
+        response-id (random-uuid)
+        report-ids  (mapv (fn [_] (random-uuid)) coverage-ids)
+        report-refs (mapv (fn [idx report-id coverage-id]
+                            (cond-> {:db/id                              (str "survey-report-" idx)
+                                     :insurance.survey.report/report-id report-id
+                                     :insurance.survey.report/coverage  [:instrument.coverage/coverage-id coverage-id]}
+                              (< idx (or completed-report-count 0))
+                              (assoc :insurance.survey.report/completed-at created-at)))
+                          (range)
+                          report-ids
+                          coverage-ids)
+        response    (cond-> {:db/id                                         "survey-response"
+                             :insurance.survey.response/response-id          response-id
+                             :insurance.survey.response/member               [:member/member-id member-id]
+                             :insurance.survey.response/coverage-reports     (mapv :db/id report-refs)}
+                      response-completed-at
+                      (assoc :insurance.survey.response/completed-at response-completed-at))
+        survey      (cond-> {:insurance.survey/survey-id   survey-id
+                             :insurance.survey/survey-name (or survey-name "Insurance survey")
+                             :insurance.survey/policy      [:insurance.policy/policy-id policy-id]
+                             :insurance.survey/created-at  created-at
+                             :insurance.survey/closes-at   closes-at
+                             :insurance.survey/responses   [(:db/id response)]}
+                      closed-at
+                      (assoc :insurance.survey/closed-at closed-at))]
+    @(d/transact conn (into report-refs [response survey]))
+    {:report-ids  report-ids
+     :response-id response-id
+     :survey-id   survey-id}))
+
 (defn seed-page-shell-fixture!
   [conn member-id]
   (let [policy-id        (random-uuid)

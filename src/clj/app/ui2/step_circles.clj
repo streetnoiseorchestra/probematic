@@ -40,8 +40,9 @@
 
 (defn StepCircles [{::keys [current-step label steps]}]
   (let [steps (vec steps)]
-    [:nav {:class "sno-step-circles"
-           :aria-label label}
+    [:nav {:class                   "sno-step-circles"
+           :aria-label              label
+           :data-init__delay.10ms    "el.querySelector('[aria-current=step]')?.scrollIntoView({block: 'nearest', inline: 'center'})"}
      (into
       [:ol {:role "list"}]
       (map-indexed (partial step-item current-step (count steps)) steps))]))

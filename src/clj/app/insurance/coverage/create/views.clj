@@ -1,10 +1,10 @@
 (ns app.insurance.coverage.create.views
   (:require
    [app.datastar :as d*]
-   [app.html :as html]
    [app.form :as form]
    [app.insurance.coverage.create.actions :as actions]
    [app.insurance.coverage.queries :as queries]
+   [app.insurance.coverage.upload :as upload]
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.ui2.page-header :as page-header]
@@ -292,85 +292,28 @@
            :aria-label [:i18n/tr :insurance/toolbar-label]}]}
         (instrument-page-content req policy instrument redirect)]))))
 
-(defn- photo-image [instrument-name {:keys [thumbnail full]}]
-  [:a {:href   full
-       :target "_blank"
-       :class  "insurance-photo-link"}
-   [:img {:src     thumbnail
-          :loading "lazy"
-          :alt     instrument-name}]])
-
-(defn- photo-grid [{:keys [tr] :as req} instrument]
-  (let [photo-uris (queries/image-uris req instrument)]
-    (if (seq photo-uris)
-      (into [:div {:class "insurance-photo-grid wa-grid wa-gap-s"}]
-            (map #(photo-image (:instrument/name instrument) %) photo-uris))
-      (ui2/empty-state (tr [:instrument/images]) (tr [:insurance/no-photos])))))
-
-(defn- photo-upload-section [{:keys [tr] :as req} instrument]
-  (let [instrument-id (:instrument/instrument-id instrument)
-        input-id      "coverage-create-photo-upload"
-        hint-id       "coverage-create-photo-upload-hint"
-        status-id     "coverage-create-photo-upload-status"]
-    (ui2/section-card
-     {:title    (tr [:instrument/photo-upload])
-      :subtitle (tr [:instrument/photo-upload-subtitle])
-      :divider? true}
-     [:div {:class "insurance-coverage-upload wa-stack wa-gap-m"}
-      (photo-grid req instrument)
-      [:label {:class "insurance-coverage-upload-zone" :for input-id}
-       [ico/Icon {::ico/library :snoico
-                  ::ico/name    :file-image-solid
-                  :aria-hidden  true}]
-       [:span (tr [:instrument.coverage/upload-drop-label])]
-       [:small {:id hint-id} (tr [:instrument.coverage/upload-help])]
-       [:input {:id                   input-id
-                :type                 "file"
-                :name                 "file"
-                :multiple             true
-                :accept               "image/*"
-                :aria-describedby     hint-id
-                :data-upload-endpoint (urls/link-instrument-image-upload instrument-id)
-                :data-status-id       status-id
-                :data-uploading-label (tr [:instrument.coverage/upload-progress])
-                :data-complete-label  (tr [:instrument.coverage/upload-complete])
-                :data-error-label     (tr [:instrument.coverage/upload-error])
-                :data-on:change       "window.InsuranceCoverageUpload && window.InsuranceCoverageUpload(evt.target)"}]]
-      [:p {:id status-id :class "wa-caption-s wa-color-text-quiet"}]])))
-
-(defn- upload-script []
-  [:script
-   (html/raw
-    "window.InsuranceCoverageUpload ||= async function(input) {
-       const status = input.dataset.statusId ? document.getElementById(input.dataset.statusId) : null;
-       const endpoint = input.dataset.uploadEndpoint;
-       const files = Array.from(input.files || []);
-       if (!endpoint || files.length === 0) return;
-       if (status) status.textContent = input.dataset.uploadingLabel || '';
-       try {
-         for (const file of files) {
-           const body = new FormData();
-           body.append('file', file);
-           const response = await fetch(endpoint, { method: 'POST', body });
-           if (!response.ok) throw new Error('upload failed');
-         }
-         if (status) status.textContent = input.dataset.completeLabel || '';
-         input.value = '';
-         window.location.reload();
-       } catch (error) {
-         if (status) status.textContent = input.dataset.errorLabel || '';
-       }
-     };")])
-
 (defn photos-page-content
   [req instrument]
-  [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-   [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                            :title      ((:tr req) [:instrument.coverage/create-title])
-                            :subtitle   (:instrument/name instrument)}]
-   (create-steps (:tr req) 2)
-   (photo-upload-section req instrument)
-   (upload-script)])
+  (let [tr (:tr req)]
+    [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
+     [page-header/PageHeader {:class      "insurance-coverage-page-header"
+                              :title      (tr [:instrument.coverage/create-title])
+                              :subtitle   (:instrument/name instrument)}]
+     (create-steps tr 2)
+     (upload/upload-section
+      req instrument
+      {:complete-label (tr [:instrument.coverage/upload-complete])
+       :drop-label     (tr [:instrument.coverage/upload-drop-label])
+       :empty-body     (tr [:insurance/no-photos])
+       :empty-title    (tr [:instrument/images])
+       :error-label    (tr [:instrument.coverage/upload-error])
+       :help-label     (tr [:instrument.coverage/upload-help])
+       :input-id       "coverage-create-photo-upload"
+       :progress-label (tr [:instrument.coverage/upload-progress])
+       :reload?        true
+       :subtitle       (tr [:instrument/photo-upload-subtitle])
+       :title          (tr [:instrument/photo-upload])})
+     (upload/upload-script)]))
 
 (defn photos-page [{:keys [db instrument] :as req}]
   (let [policy-id     (http.util/path-param-uuid! req :policy-id)

@@ -14,18 +14,33 @@
    [app.insurance.policy.settings.views :as policy.settings.views]
    [app.insurance.policy.workbench.views :as policy.workbench.views]
    [app.insurance.public.views :as public]
+   [app.insurance.survey.views :as survey.views]
    [app.insurance.views :as view]
-   [app.layout :as layout]
    [app.queries :as q]
    [app.routes.datastar :as ds]
-   [ctmx.core :as ctmx]
    [reitit.ring.malli :as reitit.ring.malli]))
 
 (defn insurance-survey []
-  (ctmx/make-routes
-   "/insurance-survey/{policy-id}/"
-   (fn [req]
-     (layout/app-shell req (view/survey-start-page req)))))
+  (into
+   (ds/page-routes {:page-name ::survey
+                    :path      "/insurance-survey/{policy-id}/"
+                    :page      #'survey.views/page})
+   [["survey-start-page"
+     {:name    ::survey-start-compat
+      :handler (fn [req]
+                 (view/survey-start-page req))}]
+    ["survey-flow-progress"
+     {:name    ::survey-flow-progress-compat
+      :handler (fn [req]
+                 (view/survey-flow-progress req))}]
+    ["survey-edit-instrument-handler"
+     {:name    ::survey-edit-compat
+      :handler (fn [req]
+                 (view/survey-edit-instrument-handler req))}]
+    ["survey-dismiss-response"
+     {:name    ::survey-dismiss-compat
+      :handler (fn [req]
+                 (view/survey-dismiss-response req))}]]))
 
 (def policy-interceptor {:name ::insurance-policy--interceptor
                          :enter (fn [ctx]

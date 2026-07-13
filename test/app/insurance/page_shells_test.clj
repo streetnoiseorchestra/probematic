@@ -11,6 +11,7 @@
    [app.insurance.policy.review.views :as review.views]
    [app.insurance.policy.settings.views :as settings.views]
    [app.insurance.policy.workbench.views :as workbench.views]
+   [app.insurance.survey.views :as survey.views]
    [app.insurance.test-support :as insurance-test]
    [app.queries :as q]
    [app.test-common :as tc]
@@ -198,6 +199,28 @@
                (assoc :path-params {:policy-id policy-id}
                       :policy policy)
                policy-notifications.views/page
+               page-shell/page-contract)))))
+
+(deftest coverage-review-uses-a-standard-context-only-surface
+  (let [{:keys [conn request policy-id coverage-id]} (fixture)
+        member-id (get-in request [:session :session/member :member/member-id])
+        _ (insurance-test/seed-member-survey!
+           conn
+           {:coverage-ids [coverage-id]
+            :member-id    member-id
+            :policy-id    policy-id})
+        policy-url (urls/link-policy policy-id)]
+    (is (= {:width       :standard
+            :breadcrumbs [:insurance/title "Insurance 2026"
+                          :insurance/coverage-review]
+            :mobile      {:label "Insurance 2026" :href policy-url}
+            :actions     []
+            :overflow    []}
+           (-> request
+               (assoc :db (d/db conn)
+                      :path-params {:policy-id policy-id}
+                      :policy (q/retrieve-policy (d/db conn) policy-id))
+               survey.views/page
                page-shell/page-contract)))))
 
 (deftest coverage-creation-uses-standard-step-surfaces
