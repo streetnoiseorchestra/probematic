@@ -60,12 +60,12 @@
 
 (defn- label [tr field]
   (case field
-    :title (tr [:poll/title])
-    :description (tr [:poll/description])
-    :closes-at (tr [:poll/closes-at])
-    :min-choice (tr [:poll/min-choice])
-    :max-choice (tr [:poll/max-choice])
-    :options (tr [:poll/options])
+    :title (tr [:polls/poll-title-label])
+    :description (tr [:polls/description-label])
+    :closes-at (tr [:polls/closes-at-label])
+    :min-choice (tr [:polls/min-choices-label])
+    :max-choice (tr [:polls/max-choices-label])
+    :options (tr [:polls/options])
     (name field)))
 
 (defn- required-error [tr field]
@@ -100,9 +100,9 @@
         (when (nil? max-choice)
           {:max-choice (required-error tr :max-choice)})
         (when (and min-choice max-choice (> min-choice max-choice))
-          {:max-choice {:error (tr [:error/poll-min-choice-greater-than-max])}})
+          {:max-choice {:error (tr [:polls/error-min-greater-than-max])}})
         (when (and max-choice (> max-choice (count options)))
-          {:options {:error (tr [:error/poll-too-few-options])}}))))))
+          {:options {:error (tr [:polls/error-too-few-options])}}))))))
 
 (defn validate-poll-field-action
   [{:keys [tr]} signals]
@@ -202,11 +202,11 @@
                         tr
                         (merge
                          (when-not existing-poll
-                           (top-error (tr [:error/poll-not-found])))
+                           (top-error (tr [:polls/error-not-found])))
                          (when (= :poll.status/closed status)
-                           (top-error (tr [:error/poll-edit-closed])))
+                           (top-error (tr [:polls/error-edit-closed])))
                          (when (open-immutable-change? existing-poll params)
-                           (top-error (tr [:error/poll-open-immutable])))
+                           (top-error (tr [:polls/error-open-immutable])))
                          (validation-errors {:tr tr} params)))]
     (if (seq errors)
       [support/clear-loading

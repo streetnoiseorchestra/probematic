@@ -90,8 +90,8 @@
     (build-batch-emails
      (mapv :member/email members)
      (tr [:email-subject/poll-created] [(:poll/title poll)])
-     (tmpl/generic-email-html sys (tmpl/poll-created-email-html-body tr poll) (tr [:poll/vote-now]) url)
-     (tmpl/generic-email-plain sys (tmpl/poll-created-email-plain-body tr poll) (tr [:poll/vote-now])  url)
+     (tmpl/generic-email-html sys (tmpl/poll-created-email-html-body tr poll) (tr [:polls/vote-now]) url)
+     (tmpl/generic-email-plain sys (tmpl/poll-created-email-plain-body tr poll) (tr [:polls/vote-now])  url)
      nil)))
 
 (defn build-new-user-invite [{:keys [tr] :as sys} {:member/keys [email]} invite-code]

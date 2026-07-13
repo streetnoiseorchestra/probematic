@@ -121,7 +121,7 @@
                                                         :poll/min-choice   2
                                                         :poll/max-choice   3}
                                                        ["A" "B" "C"])]
-      (is (= "You can only vote for between %1 and %2 options"
+      (is (= "You can only vote for between 2 and 3 options"
              (vote-top-error
               (actions/cast-vote-action
                (pts/action-state conn member-id)
@@ -136,7 +136,7 @@
                                                         :poll/min-choice   1
                                                         :poll/max-choice   2}
                                                        ["A" "B" "C"])]
-      (is (= "You can only vote for between %1 and %2 options"
+      (is (= "You can only vote for between 1 and 2 options"
              (vote-top-error
               (actions/cast-vote-action
                (pts/action-state conn member-id)

@@ -305,13 +305,6 @@
   :new-gig-added "Ein neuer Gig steht an!",
   :remind-meeting
   "Dies ist eine Erinnerung an ein bevorstehendes Treffen! Bitte antworten :)"},
- :polls
- {:index-title "Polls",
-  :create-title "Neue Umfrage",
-  :running "Offene Umfragen",
-  :past "Vergangene Umfragen",
-  :no-past "Es gibt keine früheren Umfragen",
-  :no-running "Es gibt keine offenen Umfragen"},
  :gig.type
  {:probe "Probe",
   :extra-probe "Extraprobe",
@@ -485,47 +478,19 @@
   :no "Nein"},
  :login "Anmelden",
  :poll
- {:description "Beschreibung der Umfrage",
-  :max-choice "Maximale Auswahl",
-  :open-hint
-  "Sie müssen die Umfrage öffnen, bevor die Leute abstimmen können. ACHTUNG! Nachdem Sie es geöffnet haben, können Sie es nicht mehr ändern.",
-  :select-num-choices "Wählen Sie zwischen den Optionen %1 und %2.",
-  :min-choice-hint
+ {:min-choice-hint
   "Die Mindestanzahl an Entscheidungen, die eine Person treffen kann.",
   :closes-at-hint
   "Ein Datum und eine Uhrzeit, wann die Umfrage keine Antworten mehr annimmt.",
   :autoremind-hint
   "Erinnern die Personen, die noch nicht geantwortet haben, alle paar Tage daran.",
-  :vote-now "Jetzt abstimmen!",
-  :min-choice "Min. Auswahl",
-  :total-voters "Wähler",
-  :add-option "Option hinzufügen",
-  :error-only-one "Sie können nur für eine Option stimmen",
-  :closes-at "Schließt automatisch um",
-  :choices "Auswahlmöglichkeiten",
   :days-left "Tage übrig",
-  :title "Titel der Umfrage",
-  :poll "Umfrage",
-  :error-between
-  "Sie können nur für Optionen zwischen %1 und %2 stimmen",
-  :error-not-open
-  "Sie können nicht für eine Umfrage stimmen, die nicht geöffnet ist",
-  :error-invalid-option
-  "Diese Option gehört nicht zu dieser Umfrage",
-  :poll-type "Umfragetyp",
-  :close-early "Früh schließen",
   :autoremind? "Automatische Erinnerung?",
   :description-hint
   "Erzählen Sie den Leuten, worum es in dieser Umfrage geht. Abschriften sind zulässig.",
-  :total-votes "Gesamte stimmen",
-  :options-read-only-hint
-  "Sobald eine Umfrage geöffnet wurde, können die Auswahlmöglichkeiten nicht mehr geändert werden.",
   :closed-on "Geschlossen am",
-  :closes "Schließt",
-  :options "Optionen",
   :max-choice-hint
-  "Die maximale Anzahl an Entscheidungen, die eine Person treffen kann.",
-  :results "Umfrageergebnisse"},
+  "Die maximale Anzahl an Entscheidungen, die eine Person treffen kann."},
  :no-transactions-yet "Noch keine Transaktionen",
  :insurance.policy.status
  {:active "Aktiv?", :sent "Gesendet", :draft "Entwurf"},
@@ -605,32 +570,21 @@
  :band-instrument-description
  "Ein Bandinstrument ist ein Instrument, das im vergangenen Jahr bei einem SNO-Auftritt gespielt wurde.",
  :poll.type
- {:multiple "Mehrfachauswahl",
-  :single "Einzelauswahl",
-  :multiple-hint "Menschen können mehrere Optionen wählen.",
-  :single-hint "Menschen können nur eine Option wählen."},
- :poll.status
- {:draft "Entwurf",
-  :open "Offen",
-  :closed "Geschlossen"}
+ {:multiple-hint "Menschen können mehrere Optionen wählen."},
  :sno-id "SNO ID",
  :band-owes-you
  "Die Band schuldet dir %1! Bitte kontaktiere den Kassier.",
  :updating "Aktualisierung…",
  :time-left "Verbleibende Zeit",
  :action
- {:confirm-open-poll "Ja, öffnen die Umfrage.",
-  :confirm-delete-instrument
+ {:confirm-delete-instrument
   "Bist du sicher, dass du das Instrument %1 löschen möchtest?",
   :duplicate "Duplikat",
   :im-finished "Ich bin fertig",
-  :confirm-close "Ja, schließen es.",
   :remove "Entfernen",
-  :vote "Abstimmung!",
   :done "Fertig",
   :continue "Fortsetzen",
   :keep-going "Mach weiter",
-  :change-vote "Abstimmung ändern",
   :confirm-delete-policy
   "Sind Sie sicher, dass Sie die Versicherungspolice %1 löschen möchten?",
   :create "Erstellen",
@@ -645,10 +599,6 @@
   :search "Suchen",
   :reset "Zurücksetzen",
   :filter "Filter",
-  :confirm-close-poll
-  "Sind Sie sicher, dass Sie die Umfrage „%1“ schließen möchten?",
-  :confirm-delete-poll
-  "Sind Sie sicher, dass Sie die Umfrage „%1“ löschen möchten?",
   :ignore "Ignorieren",
   :select-all "Wählen Alle",
   :quick-edit "Schnellbearbeitung",
@@ -669,8 +619,7 @@
   :confirm-delete-song
   "Sind Sie sicher, dass Sie das Lied %1 löschen möchten?",
   :view "Sehen",
-  :open-insurance-survey "Offene Versicherungsumfrage",
-  :open-poll "Umfrage öffnen"},
+  :open-insurance-survey "Offene Versicherungsumfrage"},
  :error
  {:go-home "Go Home",
   :item-load-failed
@@ -700,12 +649,7 @@
   :gig-edit-not-found "Probe oder Gig wurde nicht gefunden.",
   :notify "Click to notify Casey",
   :member-unique-username
-  "Ein Mitglied hat bereits diesen Benutzernamen",
-  :poll-min-choice-greater-than-max "Minimale Auswahl muss kleiner oder gleich der maximalen Auswahl sein.",
-  :poll-too-few-options "Die Umfrage braucht mindestens so viele Optionen wie die maximale Auswahl.",
-  :poll-edit-closed "Geschlossene Umfragen können nicht bearbeitet werden.",
-  :poll-open-immutable "Typ und Optionen einer offenen Umfrage können nicht geändert werden.",
-  :poll-not-found "Umfrage nicht gefunden."}
+  "Ein Mitglied hat bereits diesen Benutzernamen"}
  :reminders
  {:remind-me-in "Erinnere mich in",
   :reminded-all-at "Alle erinnert um:",

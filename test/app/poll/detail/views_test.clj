@@ -2,8 +2,71 @@
   (:require
    [app.poll.detail.views :as views]
    [app.poll.test-support :as pts]
+   [app.poll.view-test-support :as support]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]))
+
+(defn- page-contract [status]
+  (let [system             (support/new-system (str "poll-detail-" (name status)))
+        {:keys [poll-id]} (support/seed-poll! system status)
+        view               (-> system
+                               (support/request {:path-params {:poll/poll-id poll-id}})
+                               views/page)]
+    {:poll-id   poll-id
+     :structure (support/page-structure view)}))
+
+(deftest draft-poll-page-surface
+  (testing "A draft poll makes opening primary and keeps editing in overflow."
+    (let [{:keys [poll-id structure]} (page-contract :poll.status/draft)]
+      (is (= {:contract {:width       :standard
+                         :breadcrumbs [:polls/title "Existing Poll"]
+                         :mobile      {:label :polls/title :href "/polls"}
+                         :actions     [{:label       :polls/open-poll
+                                        :appearance  "filled"
+                                        :variant     "brand"
+                                        :data-dialog (str "open poll-open-" poll-id)}]
+                         :overflow    [{:label :action/edit
+                                        :value (str "/poll/" poll-id "/edit")}]}
+              :heading  "Existing Poll draft"
+              :subtitle "single"
+              :form-id  nil
+              :last-tag :wa-dialog
+              :last-id  (str "poll-close-" poll-id)}
+             structure)))))
+
+(deftest open-poll-page-surface
+  (testing "An open poll makes editing visible and moves early closure into overflow."
+    (let [{:keys [poll-id structure]} (page-contract :poll.status/open)]
+      (is (= {:contract {:width       :standard
+                         :breadcrumbs [:polls/title "Existing Poll"]
+                         :mobile      {:label :polls/title :href "/polls"}
+                         :actions     [{:label      :action/edit
+                                        :href       (str "/poll/" poll-id "/edit")
+                                        :appearance "filled"}]
+                         :overflow    [{:label       :polls/close-early
+                                        :data-dialog (str "open poll-close-" poll-id)
+                                        :variant     "danger"}]}
+              :heading  "Existing Poll open"
+              :subtitle "single"
+              :form-id  nil
+              :last-tag :wa-dialog
+              :last-id  (str "poll-close-" poll-id)}
+             structure)))))
+
+(deftest closed-poll-page-surface
+  (testing "A closed poll has context but no lifecycle actions."
+    (let [{:keys [poll-id structure]} (page-contract :poll.status/closed)]
+      (is (= {:contract {:width       :standard
+                         :breadcrumbs [:polls/title "Existing Poll"]
+                         :mobile      {:label :polls/title :href "/polls"}
+                         :actions     []
+                         :overflow    []}
+              :heading  "Existing Poll closed"
+              :subtitle "single"
+              :form-id  nil
+              :last-tag :wa-dialog
+              :last-id  (str "poll-close-" poll-id)}
+             structure)))))
 
 (deftest poll-results
   (testing "Three members cast two Yes votes and one No vote in a poll with an unselected Maybe option."

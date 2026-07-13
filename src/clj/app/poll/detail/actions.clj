@@ -29,10 +29,10 @@
         poll    (queries/retrieve-poll db poll-id)]
     (cond
       (nil? poll)
-      (invalid [:poll-detail] (tr [:error/poll-not-found]))
+      (invalid [:poll-detail] (tr [:polls/error-not-found]))
 
       (not= :poll.status/draft (:poll/poll-status poll))
-      (invalid [:poll-detail] (tr [:poll/open-hint]))
+      (invalid [:poll-detail] (tr [:polls/open-hint]))
 
       :else
       [[:db/transact
@@ -81,21 +81,23 @@
 (defn- vote-error [{:keys [tr]} poll selected-options]
   (cond
     (nil? poll)
-    (tr [:error/poll-not-found])
+    (tr [:polls/error-not-found])
 
     (not= :poll.status/open (:poll/poll-status poll))
-    (tr [:poll/error-not-open])
+    (tr [:polls/error-not-open])
 
     (not-every? (poll-option-ids poll) selected-options)
-    (tr [:poll/error-invalid-option])
+    (tr [:polls/error-invalid-option])
 
     (and (= :poll.type/single (:poll/poll-type poll))
          (not (vote-count-valid? poll (count selected-options))))
-    (tr [:poll/error-only-one])
+    (tr [:polls/error-only-one])
 
     (and (= :poll.type/multiple (:poll/poll-type poll))
          (not (vote-count-valid? poll (count selected-options))))
-    (tr [:poll/error-between] [(:poll/min-choice poll) (:poll/max-choice poll)])))
+    (tr [:polls/error-between]
+        {:min (:poll/min-choice poll)
+         :max (:poll/max-choice poll)})))
 
 (defn- vote-tx [member-id idx option-id]
   {:db/id                  (str "poll-vote-" idx)

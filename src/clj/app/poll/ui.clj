@@ -2,12 +2,62 @@
   (:require
    [app.datastar :as d*]
    [app.ui2 :as ui2]
+   [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.button :as button]
    [app.ui2.card :as card]
+   [app.ui2.icon :as ico]
+   [app.ui2.page-toolbar :as toolbar]
    [app.urls :as urls]
    [clojure.string :as str]
    [nextjournal.markdown :as md]
    [nextjournal.markdown.transform :as md.transform]
    [tick.core :as t]))
+
+(defn breadcrumb-link [href label]
+  [breadcrumb/BreadcrumbItem {::breadcrumb/href href}
+   label])
+
+(defn breadcrumb-current [label]
+  [breadcrumb/BreadcrumbItem label])
+
+(defn breadcrumb-trail [& items]
+  (into [breadcrumb/Breadcrumb {}] items))
+
+(defn- mobile-back [href label]
+  [button/Button {:appearance "plain"
+                  :href       href}
+   [ico/Icon {::ico/library :phosphor
+              ::ico/name    :arrow-left
+              :slot         "start"}]
+   label])
+
+(defn page-toolbar
+  [{:keys [actions aria-label breadcrumb mobile-href mobile-label
+           overflow-items overflow-label]}]
+  [toolbar/PageToolbar
+   (cond-> {::toolbar/breadcrumb  breadcrumb
+            ::toolbar/mobile-back (mobile-back mobile-href mobile-label)
+            :aria-label            aria-label}
+     (seq actions)
+     (assoc ::toolbar/actions actions)
+
+     (seq overflow-items)
+     (assoc ::toolbar/overflow-items overflow-items
+            ::toolbar/overflow-label overflow-label))])
+
+(defn poll-type-label-key [poll-type]
+  (case poll-type
+    :poll.type/single :polls/single-choice
+    :poll.type/multiple :polls/multiple-choice))
+
+(defn poll-type-label [tr poll-type]
+  (tr [(poll-type-label-key poll-type)]))
+
+(defn- status-label-key [status]
+  (case status
+    :poll.status/draft :polls/draft-status
+    :poll.status/open :polls/open-status
+    :poll.status/closed :polls/closed-status))
 
 (defn status-badge
   ([tr status]
@@ -19,7 +69,7 @@
                        (= :poll.status/draft status)  (assoc :variant "neutral")
                        (= :poll.status/open status)   (assoc :variant "success")
                        (= :poll.status/closed status) (assoc :variant "brand")))
-    (tr [status])]))
+    (tr [(status-label-key status)])]))
 
 (defn date-time-input-value [value]
   (when value
@@ -48,11 +98,11 @@
         :aria-hidden "true"
         :tabindex    "-1"}]
    (status-badge tr poll-status {:class "polls-row-status"})
-   (poll-index-stat (tr [:poll/total-voters])
+   (poll-index-stat (tr [:polls/total-voters])
                     (or (:poll/voter-count poll) 0))
-   (poll-index-stat (tr [:poll/total-votes])
+   (poll-index-stat (tr [:polls/total-votes])
                     (or (:poll/votes-count poll) 0))
-   (poll-index-stat (tr [:poll/closes])
+   (poll-index-stat (tr [:polls/closes])
                     (ui2/date-display req :short closes-at))])
 
 (defn poll-section [req {:keys [empty-message polls title]}]

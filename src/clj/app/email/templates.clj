@@ -459,10 +459,10 @@ Versicherungsteam StreetNoise Orchestra
 {% endfor %}"
 
      {:title title
-      :options-label (tr [:poll/options])
+      :options-label (tr [:polls/options])
       :description description
       :options (map :poll.option/value (:poll/options poll))
-      :closes-at-label (tr [:poll/closes-at])
+      :closes-at-label (tr [:polls/closes-at-label])
       :closes-at (format-date-time closes-at)})))
 
 (defn poll-created-email-html-body [tr poll]

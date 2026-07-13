@@ -8,21 +8,21 @@
   (case k
     :error/is-required (str (first args) " is required.")
     :error/form-has-errors "Please fix the errors in the form."
-    :error/poll-min-choice-greater-than-max "Min choices must be less than or equal to max choices."
-    :error/poll-too-few-options "The poll needs at least as many options as the max choice count."
-    :error/poll-edit-closed "Closed polls cannot be edited."
-    :error/poll-open-immutable "Open poll type and options cannot be changed."
-    :error/poll-not-found "Poll not found."
-    :poll/title "Poll Title"
-    :poll/description "Poll Description"
-    :poll/closes-at "Automatically Closes At"
-    :poll/min-choice "Min Choices"
-    :poll/max-choice "Max Choices"
-    :poll/options "Options"
-    :poll/error-only-one "You can only vote for one option"
-    :poll/error-between "You can only vote for between %1 and %2 options"
-    :poll/error-not-open "You cannot vote for a poll that is not open"
-    :poll/error-invalid-option "That option does not belong to this poll"
+    :polls/error-min-greater-than-max "Min choices must be less than or equal to max choices."
+    :polls/error-too-few-options "The poll needs at least as many options as the max choice count."
+    :polls/error-edit-closed "Closed polls cannot be edited."
+    :polls/error-open-immutable "Open poll type and options cannot be changed."
+    :polls/error-not-found "Poll not found."
+    :polls/poll-title-label "Poll Title"
+    :polls/description-label "Poll Description"
+    :polls/closes-at-label "Automatically Closes At"
+    :polls/min-choices-label "Min Choices"
+    :polls/max-choices-label "Max Choices"
+    :polls/options "Options"
+    :polls/error-only-one "You can only vote for one option"
+    :polls/error-not-open "You cannot vote for a poll that is not open"
+    :polls/error-invalid-option "That option does not belong to this poll"
+    :polls/error-between (str "You can only vote for between " (:min args) " and " (:max args) " options")
     (name k)))
 
 (def created-at #inst "2026-01-01T10:00:00.000-00:00")
