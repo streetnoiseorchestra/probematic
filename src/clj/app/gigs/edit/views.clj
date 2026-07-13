@@ -188,12 +188,15 @@
       :aria-label     [:i18n/tr :gigs/edit-toolbar-label]})))
 
 (defn- edit-header [{:keys [tr]} {:gig/keys [title gig-type status]}]
-  [page-header/PageHeader
-   {:title    [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
-               [:i18n/tr :action/edit]
-               (when status
-                 (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
-    :subtitle (str title " · " (tr [gig-type]))}])
+  (let [type-label (tr [gig-type])]
+    [page-header/PageHeader
+     {:title    [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
+                 title
+                 (when status
+                   (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))]
+      :subtitle (when-not (= (str/lower-case title)
+                             (str/lower-case type-label))
+                  type-label)}]))
 
 (defn- create-header []
   [page-header/PageHeader {:title [:i18n/tr :gigs/new-gig]}])

@@ -4,6 +4,7 @@
    [app.test-common :as tc]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
    [datomic.api :as d]
@@ -90,10 +91,13 @@
                           (l/select 'wa-dropdown-item overflow))})))
 
 (defn page-structure [view]
-  {:contract    (page-contract view)
-   :form-id     (some-> (l/select-one "form#gig-edit-form" view) l/attrs :id)
-   :last-tag    (when (vector? view)
-                  (some-> view l/last-child first))
-   :last-id     (when (vector? view)
-                  (some-> view l/last-child l/attrs :id))
-   :signal-root (some-> (l/select-one "div[data-signals]" view) l/attrs :class)})
+  (let [header-attrs (some-> (l/select-one page-header/PageHeader view) l/attrs)]
+    {:contract    (page-contract view)
+     :heading     (some-> (:title header-attrs) node-label)
+     :subtitle    (:subtitle header-attrs)
+     :form-id     (some-> (l/select-one "form#gig-edit-form" view) l/attrs :id)
+     :last-tag    (when (vector? view)
+                    (some-> view l/last-child first))
+     :last-id     (when (vector? view)
+                    (some-> view l/last-child l/attrs :id))
+     :signal-root (some-> (l/select-one "div[data-signals]" view) l/attrs :class)}))

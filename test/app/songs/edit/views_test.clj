@@ -84,7 +84,7 @@
                               :href       "/songs"
                               :appearance "plain"}
                              (save-action)]
-              :overflow    []}
+               :overflow    []}
               :heading  :repertoire/add-song
               :subtitle nil
               :form-id  "song-edit-form"
