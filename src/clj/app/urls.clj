@@ -118,7 +118,6 @@
    "?preview-type=" preview-type
    "&attachment-filename=" (url-encode attachment-filename)))
 
-(def link-policy-changes-confirm (partial link-helper "/insurance-changes-excel/" :insurance.policy/policy-id))
 (defn link-policy-table-member [policy-or-policy-id member-or-member-id]
   (link-policy policy-or-policy-id (str "/#coverages-" (entity-id :member/member-id member-or-member-id))))
 (defn link-poll [poll-or-poll-id]

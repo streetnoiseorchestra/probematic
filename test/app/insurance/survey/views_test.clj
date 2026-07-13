@@ -126,3 +126,44 @@
       (is (some #(when (= "instrument-name" (:name (l/attrs %))) %)
                 (l/select :input edit-form)))
       (is (nil? (l/select-one "wa-input" view))))))
+
+(deftest unavailable-survey-cost-remains-renderable
+  (let [{:keys [conn member-id policy-id request]} (fixture {})
+        policy         (q/retrieve-policy (d/db conn) policy-id)
+        category-factor-id
+        (-> policy
+            :insurance.policy/category-factors
+            first
+            :insurance.category.factor/category-factor-id)
+        _              @(d/transact
+                         conn
+                         [[:db/retract
+                           [:insurance.policy/policy-id policy-id]
+                           :insurance.policy/category-factors
+                           [:insurance.category.factor/category-factor-id
+                            category-factor-id]]])
+        db             (d/db conn)
+        data           (queries/survey-data db policy-id member-id)
+        report-id      (get-in data
+                               [:active-report
+                                :insurance.survey.report/report-id])
+        view           (sut/page
+                        (assoc request
+                               :db db
+                               :policy (q/retrieve-policy db policy-id)
+                               :page-state
+                               {actions/form-key
+                                {:current-flow-key :confirm-go-private
+                                 :decisions        [:confirm-not-band]
+                                 :mode             :question
+                                 :report-id        report-id}}))
+        translations   (l/select :i18n/tr view)
+        cost-node      (some #(when (= :insurance/review-confirm-private-cost
+                                       (l/first-child %))
+                                %)
+                             translations)]
+    (testing "missing category factors show an explicit fallback instead of crashing"
+      (is (some #(= :insurance/cost-unavailable (l/first-child %))
+                translations))
+      (is (= {:cost "—"}
+             (l/last-child cost-node))))))

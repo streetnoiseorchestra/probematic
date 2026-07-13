@@ -6,6 +6,7 @@
    [app.insurance.coverage.edit.views :as coverage.edit.views]
    [app.insurance.coverage.views :as coverage.views]
    [app.insurance.index.views :as index.views]
+   [app.insurance.policy.changes.api :as policy.changes.api]
    [app.insurance.policy.changes.views :as policy.changes.views]
    [app.insurance.policy.create.views :as policy.create.views]
    [app.insurance.policy.dashboard.views :as policy.dashboard.views]
@@ -14,9 +15,9 @@
    [app.insurance.policy.settings.views :as policy.settings.views]
    [app.insurance.policy.surveys.views :as policy.surveys.views]
    [app.insurance.policy.workbench.views :as policy.workbench.views]
-   [app.insurance.public.views :as public]
+   [app.insurance.public.api :as public.api]
+   [app.insurance.public.views :as public.views]
    [app.insurance.survey.views :as survey.views]
-   [app.insurance.views :as view]
    [app.queries :as q]
    [app.routes.datastar :as ds]
    [app.urls :as urls]
@@ -84,13 +85,6 @@
             :parameters {:multipart [:map [:file reitit.ring.malli/temp-file-part]]
                          :path [:map [:instrument-id :uuid]]}
             :handler (fn [req] (coverage-edit.api/image-upload-handler req))}}]
-   ["/instrument-image-button/"
-    {:post {:summary "Upload an image for an instrument from a single button"
-            :parameters {:multipart [:map
-                                     [:files [:vector {:decode/string (fn [v] (if (vector? v) v [v]))} reitit.ring.malli/temp-file-part]]
-                                     [:instrument-id :uuid]]}
-            :handler (fn [req] (view/instrument-image-upload-button-handler req))}}]
-
    ["" {:interceptors [policy-interceptor]}
     (insurance-survey)
     (ds/page-routes {:page-name ::coverage-create-instrument
@@ -139,13 +133,7 @@
                                  [:preview-type [:enum "new" "changes"]]
                                  [:attachment-filename :string]]}
             :handler (fn [req]
-                       (view/insurance-policy-changes-excel-download req))}}]
-
-    ["/insurance-changes-excel/{policy-id}/"
-     {:post {:summary "Get the changes excel file"
-             :parameters {}
-             :handler (fn [req]
-                        (view/insurance-policy-changes-file req))}}]]
+                       (policy.changes.api/download-excel req))}}]]
 
    ["" {:interceptors [policy-interceptor instrument-interceptor]}
     (ds/page-routes {:page-name ::coverage-create-photos
@@ -178,14 +166,14 @@
      {:get {:summary "The public page for an instrument"
             :parameters {:path [:map [:instrument-id :uuid]]}
             :handler (fn [req]
-                       (public/instrument-public-page req (-> req :parameters :path :instrument-id)))}}]
+                       (public.views/instrument-public-page req (-> req :parameters :path :instrument-id)))}}]
     ["/download-zip" {:get {:summary "Download all photos for an instrument"
                             :parameters {:path [:map [:instrument-id :uuid]]}
                             :handler (fn [req]
-                                       (public/instrument-public-page-download-all req (-> req :parameters :path :instrument-id)))}}]]
+                                       (public.views/instrument-public-page-download-all req (-> req :parameters :path :instrument-id)))}}]]
    ["/instrument-image/{instrument-id}/{image-id}"
     {:get {:summary "Get instrument images"
            :parameters {:path [:map [:instrument-id :uuid] [:image-id :string]]
                         :query [:map [:mode {:optional true} [:enum "full" "thumbnail"]]]}
            :handler (fn [req]
-                      (view/image-fetch-handler req))}}]])
+                      (public.api/image-response req))}}]])

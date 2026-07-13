@@ -15,7 +15,7 @@
    [app.test-common :as tc]
    [app.urls :as urls]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
    [reitit.core :as r]
    [reitit.http :as http]
    [reitit.ring :as ring]))
@@ -400,6 +400,27 @@
            (app-route-name router (str "/insurance-coverage-edit/" coverage-id "/"))))
     (is (= :app.insurance.routes/coverage-edit
            (page-name router (str "/insurance-coverage-edit/" coverage-id "/"))))))
+
+(deftest insurance-routes-preserve-current-binary-apis-only
+  (let [authenticated-router (http/router ["" (insurance.routes/routes)])
+        public-router        (http/router ["" (insurance.routes/unauthenticated-routes)])
+        policy-id            (random-uuid)
+        instrument-id        (random-uuid)
+        image-id             (random-uuid)]
+    (testing "the current Excel download and public image APIs remain reachable"
+      (is (some? (r/match-by-path
+                  authenticated-router
+                  (str "/insurance-changes-excel-download/" policy-id "/"))))
+      (is (some? (r/match-by-path
+                  public-router
+                  (str "/instrument-image/" instrument-id "/" image-id)))))
+    (testing "orphaned HTMX-era mutation routes are gone"
+      (is (nil? (r/match-by-path authenticated-router
+                                 "/instrument-image-button/")))
+      (is (nil? (r/match-by-path
+                 authenticated-router
+                 (str "/insurance-changes-excel/" policy-id "/")))))))
+
 (deftest dashboard-routes-expose-the-slashless-calendar-path
   (let [router (http/router ["" (dashboard.routes/routes)])]
     (is (= :app.dashboard.routes/index
