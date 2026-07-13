@@ -47,7 +47,7 @@
 @media (--sno-viewport-s) {
   .sno-page-toolbar {
     position: sticky;
-    inset-block-start: var(--app-shell-topbar-size);
+    inset-block-start: 0;
   }
 }
 
