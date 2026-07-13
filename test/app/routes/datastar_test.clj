@@ -313,6 +313,31 @@
                      "survey-edit-instrument-handler"
                      "survey-dismiss-response"]]
         (is (some? (r/match-by-path router (str survey-path child))))))
+    (doseq [[compat-path canonical-path]
+            [["/insurance-new/insurance-create-page" "/insurance-new/"]
+             [(str "/insurance-policy-changes/" policy-id
+                   "/insurance-policy-changes-review")
+              (urls/link-policy-changes policy-id)]
+             [(str "/insurance-policy-notify/" policy-id
+                   "/insurance-notify-page")
+              (urls/link-policy-send-notifications policy-id)]
+             [(str "/insurance-policy-notify/" policy-id
+                   "/insurance-send-notifications")
+              (urls/link-policy-send-notifications policy-id)]
+             [(str "/insurance-survey/" policy-id "/survey-start-page")
+              (urls/link-insurance-survey-start policy-id)]
+             [(str "/insurance-survey/" policy-id "/survey-flow-progress")
+              (urls/link-insurance-survey-start policy-id)]
+             [(str "/insurance-survey/" policy-id "/survey-edit-instrument-handler")
+              (urls/link-insurance-survey-start policy-id)]
+             [(str "/insurance-survey/" policy-id "/survey-dismiss-response")
+              (urls/link-insurance-survey-start policy-id)]]]
+      (let [response ((get-in (r/match-by-path router compat-path)
+                              [:data :handler])
+                      {:path-params {:policy-id policy-id}})]
+        (is (= {:status 303 :location canonical-path}
+               {:status   (:status response)
+                :location (get-in response [:headers "Location"])}))))
     (is (= :app/insurance
            (app-route-name router (urls/link-policy-review policy-id))))
     (is (= :app.insurance.routes/policy-review

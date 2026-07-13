@@ -70,11 +70,7 @@
        [:wa-tooltip {:for id :without-arrow true} tooltip])
      [:div
       {:class "wa-cluster wa-gap-xs"}
-      [:span {:class "wa-heading-xl"} value]
-      #_[:wa-badge
-         {:variant "success", :appearance "filled outlined", :pill ""}
-         [:wa-icon {:name "arrow-up", :label "Up"}]
-         "212"]]]]])
+      [:span {:class "wa-heading-xl"} value]]]]])
 
 (defn- metric-grid
   [{:keys [tr] :as _req} {:keys [totals]} currency]

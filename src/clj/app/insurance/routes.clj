@@ -18,29 +18,32 @@
    [app.insurance.views :as view]
    [app.queries :as q]
    [app.routes.datastar :as ds]
-   [reitit.ring.malli :as reitit.ring.malli]))
+   [app.urls :as urls]
+   [reitit.ring.malli :as reitit.ring.malli]
+   [ring.util.response :as response]))
 
 (defn insurance-survey []
-  (into
-   (ds/page-routes {:page-name ::survey
-                    :path      "/insurance-survey/{policy-id}/"
-                    :page      #'survey.views/page})
-   [["survey-start-page"
-     {:name    ::survey-start-compat
-      :handler (fn [req]
-                 (view/survey-start-page req))}]
-    ["survey-flow-progress"
-     {:name    ::survey-flow-progress-compat
-      :handler (fn [req]
-                 (view/survey-flow-progress req))}]
-    ["survey-edit-instrument-handler"
-     {:name    ::survey-edit-compat
-      :handler (fn [req]
-                 (view/survey-edit-instrument-handler req))}]
-    ["survey-dismiss-response"
-     {:name    ::survey-dismiss-compat
-      :handler (fn [req]
-                 (view/survey-dismiss-response req))}]]))
+  (let [canonical-page (fn [req]
+                         (response/redirect
+                          (urls/link-insurance-survey-start
+                           (get-in req [:path-params :policy-id]))
+                          303))]
+    (into
+     (ds/page-routes {:page-name ::survey
+                      :path      "/insurance-survey/{policy-id}/"
+                      :page      #'survey.views/page})
+     [["survey-start-page"
+       {:name    ::survey-start-compat
+        :handler canonical-page}]
+      ["survey-flow-progress"
+       {:name    ::survey-flow-progress-compat
+        :handler canonical-page}]
+      ["survey-edit-instrument-handler"
+       {:name    ::survey-edit-compat
+        :handler canonical-page}]
+      ["survey-dismiss-response"
+       {:name    ::survey-dismiss-compat
+        :handler canonical-page}]])))
 
 (def policy-interceptor {:name ::insurance-policy--interceptor
                          :enter (fn [ctx]
@@ -97,7 +100,9 @@
                      :page      #'policy.changes.views/page})
     ["/insurance-policy-changes/{policy-id}/insurance-policy-changes-review"
      (fn [req]
-       (view/insurance-policy-changes-review req))]
+       (response/redirect
+        (urls/link-policy-changes (get-in req [:path-params :policy-id]))
+        303))]
     (ds/page-routes {:page-name ::policy-review
                      :path      "/insurance-policy/{policy-id}/review"
                      :page      #'policy.review.views/page})
@@ -115,10 +120,14 @@
                      :page      #'policy.notifications.views/page})
     ["/insurance-policy-notify/{policy-id}/insurance-notify-page"
      (fn [req]
-       (view/insurance-notify-page req))]
+       (response/redirect
+        (urls/link-policy-send-notifications (get-in req [:path-params :policy-id]))
+        303))]
     ["/insurance-policy-notify/{policy-id}/insurance-send-notifications"
      (fn [req]
-       (view/insurance-send-notifications req))]
+       (response/redirect
+        (urls/link-policy-send-notifications (get-in req [:path-params :policy-id]))
+        303))]
 
     ["/insurance-changes-excel-download/{policy-id}/"
      {:get {:summary "Download the changes excel file"
@@ -155,8 +164,8 @@
                     :path      "/insurance-new/"
                     :page      #'policy.create.views/page})
    ["/insurance-new/insurance-create-page"
-    (fn [req]
-      (view/insurance-create-page req))]])
+    (fn [_req]
+      (response/redirect "/insurance-new/" 303))]])
 
 (defn unauthenticated-routes []
   [""
