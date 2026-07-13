@@ -2,6 +2,7 @@
   (:require
    [app.poll.index.views :as views]
    [app.poll.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]))
 
 (deftest polls-index-page-surface
@@ -20,4 +21,4 @@
               :form-id  nil
               :last-tag :app.ui2.page-surface/page-surface
               :last-id  nil}
-             (-> system support/request views/page support/page-structure))))))
+             (-> system support/request views/page page-shell/page-structure))))))

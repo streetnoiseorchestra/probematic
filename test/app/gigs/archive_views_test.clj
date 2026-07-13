@@ -2,6 +2,7 @@
   (:require
    [app.gigs.archive.views :as views]
    [app.gigs.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]))
 
 (deftest gigs-archive-page-surface
@@ -12,4 +13,4 @@
               :mobile      {:label :gigs/title :href "/gigs"}
               :actions     []
               :overflow    []}
-             (-> conn support/request views/page support/page-contract))))))
+             (-> conn support/request views/page page-shell/page-contract))))))

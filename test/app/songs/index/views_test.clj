@@ -2,6 +2,7 @@
   (:require
    [app.songs.index.views :as views]
    [app.songs.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]
    [reitit.core :as r]
@@ -43,7 +44,7 @@
                              :data-indicator     "songsIndexSyncing"
                              :data-attr:loading  "$songsIndexSyncing"
                              :data-attr:disabled "$songsIndexSyncing"}]}
-             (-> conn support/request views/page support/page-contract))))))
+             (-> conn support/request views/page page-shell/page-contract))))))
 
 (deftest last-played
   (testing "An active song was last played on 4 June 2026."

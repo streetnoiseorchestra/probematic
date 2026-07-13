@@ -2,6 +2,7 @@
   (:require
    [app.songs.edit.views :as views]
    [app.songs.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]
@@ -90,7 +91,7 @@
               :form-id  "song-edit-form"
               :last-tag :app.ui2.page-surface/page-surface
               :last-id  nil}
-             (-> conn support/request views/page support/page-structure))))))
+             (-> conn support/request views/page page-shell/page-structure))))))
 
 (deftest edit-song-page-surface
   (testing "Edit keeps Cancel and Save visible and moves Delete into overflow."
@@ -116,7 +117,7 @@
              (-> conn
                  (support/request {:path-params {:song-id (str song-id)}})
                  views/page
-                 support/page-structure))))))
+                 page-shell/page-structure))))))
 
 (deftest create-song
   (testing "A member is adding a new song."
@@ -126,7 +127,7 @@
           active (l/select-one "input[name=active?]" form)]
       (testing "The page identifies the song-creation flow."
         (is (= :repertoire/add-song
-               (support/translation-key (:title (l/attrs header))))))
+               (page-shell/translation-key (:title (l/attrs header))))))
       (testing "The form starts with an active blank song and submits the create action."
         (is (= {:action :app.songs.edit.actions/create-song
                 :title  {:value ""

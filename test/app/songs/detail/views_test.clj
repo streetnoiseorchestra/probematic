@@ -3,6 +3,7 @@
    [app.songs.detail.views :as views]
    [app.songs.view-test-support :as support]
    [app.test-common :as tc]
+   [app.ui2.page-shell-test-support :as page-shell]
    [app.urls :as urls]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
@@ -108,7 +109,7 @@
              (-> conn
                  (support/request {:path-params {:song-id (str song-id)}})
                  views/page
-                 support/page-contract))))))
+                 page-shell/page-contract))))))
 
 (deftest song-information
   (testing "An active song has complete background details and aggregate play counts."

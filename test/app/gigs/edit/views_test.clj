@@ -2,6 +2,7 @@
   (:require
    [app.gigs.edit.views :as views]
    [app.gigs.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]))
 
 (defn- save-action []
@@ -27,9 +28,8 @@
               :subtitle    nil
               :form-id     "gig-edit-form"
               :last-tag    :app.ui2.page-surface/page-surface
-              :last-id     nil
-              :signal-root nil}
-             (-> conn support/request views/page support/page-structure))))))
+              :last-id     nil}
+             (-> conn support/request views/page page-shell/page-structure))))))
 
 (deftest edit-gig-page-surface
   (testing "Edit keeps Cancel and Save visible and moves Delete into overflow."
@@ -52,12 +52,11 @@
               :subtitle "gig"
               :form-id  "gig-edit-form"
               :last-tag :wa-dialog
-              :last-id  (str "gig-remove-" gig-id)
-              :signal-root nil}
+              :last-id  (str "gig-remove-" gig-id)}
              (-> conn
                  (support/request {:path-params {:gig/gig-id gig-id}})
                  views/page
-                 support/page-structure))))))
+                 page-shell/page-structure))))))
 
 (deftest edit-gig-omits-redundant-type-subtitle
   (testing "The event type is not repeated beneath an identical gig title."
@@ -68,5 +67,5 @@
       (is (nil? (-> conn
                     (support/request {:path-params {:gig/gig-id gig-id}})
                     views/page
-                    support/page-structure
+                    page-shell/page-structure
                     :subtitle))))))

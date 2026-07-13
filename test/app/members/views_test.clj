@@ -59,8 +59,9 @@
                      (l/select breadcrumb/BreadcrumbItem breadcrumb))))
         (is (= {:href  "/"
                 :label :home}
-               {:href  (some-> (l/select-one button/Button mobile-back) l/attrs :href)
-                :label (some-> (l/select-one :i18n/tr mobile-back) l/first-child)}))
+               {:href  (some-> (l/select-one button/BackButton mobile-back) l/attrs :href)
+                :label (some-> (l/select-one button/BackButton mobile-back)
+                               l/attrs :label l/first-child)}))
         (is (= [{:href  "/members/invite"
                  :label :members/invite-member}]
                (mapv (fn [action]
@@ -85,12 +86,12 @@
                                (::page-toolbar/breadcrumb toolbar-attrs)))))
         (is (= {:href  "/members"
                 :label :members/title}
-               {:href  (some-> (l/select-one button/Button
+               {:href  (some-> (l/select-one button/BackButton
                                              (::page-toolbar/mobile-back toolbar-attrs))
                                l/attrs :href)
-                :label (some-> (l/select-one :i18n/tr
+                :label (some-> (l/select-one button/BackButton
                                              (::page-toolbar/mobile-back toolbar-attrs))
-                               l/first-child)}))
+                               l/attrs :label l/first-child)}))
         (is (= [{:form nil
                  :href "/members"
                  :label :action/cancel
@@ -132,12 +133,12 @@
                    l/text)))
         (is (= {:href  "/members"
                 :label :members/title}
-               {:href  (some-> (l/select-one button/Button
+               {:href  (some-> (l/select-one button/BackButton
                                              (::page-toolbar/mobile-back toolbar-attrs))
                                l/attrs :href)
-                :label (some-> (l/select-one :i18n/tr
+                :label (some-> (l/select-one button/BackButton
                                              (::page-toolbar/mobile-back toolbar-attrs))
-                               l/first-child)}))
+                               l/attrs :label l/first-child)}))
         (is (= [:action/edit]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select button/Button actions))))
@@ -197,12 +198,12 @@
                    l/text)))
         (is (= {:href  member-url
                 :label "Casey Jones"}
-               {:href  (some-> (l/select-one button/Button
+               {:href  (some-> (l/select-one button/BackButton
                                              (::page-toolbar/mobile-back toolbar-attrs))
                                l/attrs :href)
-                :label (some-> (l/select-one button/Button
+                :label (some-> (l/select-one button/BackButton
                                              (::page-toolbar/mobile-back toolbar-attrs))
-                               l/text)}))
+                               l/attrs :label)}))
         (is (= [{:form nil
                  :label :action/cancel
                  :type nil}

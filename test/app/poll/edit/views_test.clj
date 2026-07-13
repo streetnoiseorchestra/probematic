@@ -2,6 +2,7 @@
   (:require
    [app.poll.edit.views :as views]
    [app.poll.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]))
 
@@ -28,7 +29,7 @@
               :form-id  "poll-edit-form"
               :last-tag :app.ui2.page-surface/page-surface
               :last-id  nil}
-             (-> system support/request views/page support/page-structure))))))
+             (-> system support/request views/page page-shell/page-structure))))))
 
 (deftest edit-poll-page-surface
   (testing "The poll title identifies the editor while Delete remains secondary."
@@ -53,7 +54,7 @@
              (-> system
                  (support/request {:path-params {:poll/poll-id poll-id}})
                  views/page
-                 support/page-structure))))))
+                 page-shell/page-structure))))))
 
 (deftest choices-section-heading
   (testing "The choices section stays subordinate to the poll title."

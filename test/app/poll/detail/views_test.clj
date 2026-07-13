@@ -3,6 +3,7 @@
    [app.poll.detail.views :as views]
    [app.poll.test-support :as pts]
    [app.poll.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]))
 
@@ -13,7 +14,7 @@
                                (support/request {:path-params {:poll/poll-id poll-id}})
                                views/page)]
     {:poll-id   poll-id
-     :structure (support/page-structure view)}))
+     :structure (page-shell/page-structure view)}))
 
 (deftest draft-poll-page-surface
   (testing "A draft poll makes opening primary and keeps editing in overflow."

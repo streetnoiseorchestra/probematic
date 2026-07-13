@@ -2,6 +2,7 @@
   (:require
    [app.gigs.setlist.views :as views]
    [app.gigs.view-test-support :as support]
+   [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]))
 
 (deftest gig-setlist-page-surface
@@ -21,4 +22,4 @@
              (-> conn
                  (support/request {:path-params {:gig/gig-id gig-id}})
                  views/page
-                 support/page-contract))))))
+                 page-shell/page-contract))))))

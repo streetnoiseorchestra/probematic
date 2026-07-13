@@ -50,8 +50,11 @@
              {:width       (::page-surface/width surface-attrs)
               :breadcrumbs (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                                  (l/select breadcrumb/BreadcrumbItem breadcrumb))
-              :mobile      {:href  (-> (l/select-one button/Button mobile-back) l/attrs :href)
-                            :label (some-> (l/select-one :i18n/tr mobile-back) l/first-child)}
+              :mobile      {:href  (-> (l/select-one button/BackButton mobile-back) l/attrs :href)
+                            :label (some-> (l/select-one button/BackButton mobile-back)
+                                           l/attrs
+                                           :label
+                                           l/first-child)}
               :action      {:label (some-> (l/select-one :i18n/tr action) l/first-child)
                             :opens-picker? (str/includes? (:data-on:click (l/attrs action))
                                                           "ns=app.file-browser.actions&kw=open-picker")}
