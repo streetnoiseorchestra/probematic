@@ -1,6 +1,7 @@
 (ns app.songs.detail.views-test
   (:require
    [app.songs.detail.views :as views]
+   [app.songs.view-test-support :as support]
    [app.test-common :as tc]
    [app.urls :as urls]
    [clojure.test :refer [deftest is testing]]
@@ -18,7 +19,6 @@
    [:action/download]                  "Download"
    [:action/edit]                      "Edit"
    [:action/remove]                    "Remove"
-   [:nav/songs]                        "Repertoire"
    [:song/arrangement-credits]         "Arranged By"
    [:song/arrangement-notes]           "Arrangement Info"
    [:song/background-title]            "Background"
@@ -94,6 +94,22 @@
        (keep action-keyword)
        set))
 
+(deftest song-detail-page-surface
+  (testing "A song uses repertoire context and exposes editing as its primary action."
+    (let [{:keys [conn]} (support/new-system "song-detail-surface")]
+      (support/seed-song! conn song-id)
+      (is (= {:width       :wide
+              :breadcrumbs [:repertoire/title "Watermelon Man"]
+              :mobile      {:label :repertoire/title :href "/songs"}
+              :actions     [{:label      :action/edit
+                             :href       (str "/song/" song-id "/edit")
+                             :appearance "filled"}]
+              :overflow    []}
+             (-> conn
+                 (support/request {:path-params {:song-id (str song-id)}})
+                 views/page
+                 support/page-contract))))))
+
 (deftest song-information
   (testing "An active song has complete background details and aggregate play counts."
     (let [song       {:song/song-id             song-id
@@ -113,12 +129,8 @@
           background (views/background-section request song)
           stats      (views/play-stats-section request song)]
       (testing "The header identifies the active song and its place in the repertoire."
-        (is (= {:title      "Watermelon Man Active"
-                :breadcrumb ["Repertoire" "Watermelon Man"]}
-               {:title      (l/text (:title summary))
-                :breadcrumb (mapv l/text
-                                  (l/select :app.ui2.breadcrumb/breadcrumb-item
-                                            (:breadcrumb summary)))})))
+        (is (= "Watermelon Man Active"
+               (l/text (:title summary)))))
       (testing "The background section shows the song's credits, notes, and lyrics."
         (is (= {"# Solos"          "Alto"
                 "Composition By"   "Herbie Hancock"

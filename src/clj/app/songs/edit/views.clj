@@ -4,10 +4,11 @@
    [app.form :as form]
    [app.queries :as q]
    [app.songs.edit.actions :as actions]
+   [app.songs.ui :as songs.ui]
    [app.ui2 :as ui2]
    [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
-   [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.page-surface :as page-surface]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -85,64 +86,61 @@
                     :data-action (d*/act req ::actions/delete-song)}}
    [:p (tr [:action/confirm-delete-song] [title])]))
 
-(defn- save-button [tr]
+(defn- save-button []
   [button/Button {:appearance         "filled"
                   :variant            "brand"
                   :type               "submit"
                   :form               "song-edit-form"
                   :data-attr:disabled "!!$loading && $loading !== 'song-edit'"
                   :data-attr:loading  "$loading === 'song-edit'"}
-   (tr [:action/save])])
+   [:i18n/tr :action/save]])
 
-(defn- edit-form-actions [{:keys [tr]} song]
-  (ui2/action-bar
-   {}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-song song)}
-     (tr [:action/cancel])]
-    [button/Button {:appearance  "outlined"
-                    :variant     "danger"
-                    :data-dialog (str "open " (song-remove-dialog-id song))}
-     (tr [:action/delete])]
-    (save-button tr)]))
+(defn- cancel-button [href]
+  [button/Button {:appearance "plain"
+                  :href       href}
+   [:i18n/tr :action/cancel]])
 
-(defn- create-form-actions [{:keys [tr]}]
-  (ui2/action-bar
-   {}
-   [[button/Button {:appearance "outlined"
-                    :href       (urls/link-songs-home)}
-     (tr [:action/cancel])]
-    (save-button tr)]))
+(defn- delete-menu-item [song]
+  [:wa-dropdown-item {:variant     "danger"
+                      :data-dialog (str "open " (song-remove-dialog-id song))}
+   [:i18n/tr :action/delete]])
 
-(defn- page-header [{:keys [tr]} title subtitle & breadcrumb-items]
+(defn- create-toolbar []
+  (songs.ui/page-toolbar
+   {:breadcrumb   (songs.ui/breadcrumb-trail
+                   (songs.ui/breadcrumb-link (urls/link-songs-home)
+                                             [:i18n/tr :repertoire/title])
+                   (songs.ui/breadcrumb-current [:i18n/tr :repertoire/add-song]))
+    :mobile-href  (urls/link-songs-home)
+    :mobile-label [:i18n/tr :repertoire/title]
+    :actions      [(cancel-button (urls/link-songs-home))
+                   (save-button)]
+    :aria-label   [:i18n/tr :repertoire/edit-toolbar-label]}))
+
+(defn- edit-toolbar [song]
+  (let [song-url (urls/link-song song)]
+    (songs.ui/page-toolbar
+     {:breadcrumb     (songs.ui/breadcrumb-trail
+                       (songs.ui/breadcrumb-link (urls/link-songs-home)
+                                                 [:i18n/tr :repertoire/title])
+                       (songs.ui/breadcrumb-link song-url (:song/title song))
+                       (songs.ui/breadcrumb-current [:i18n/tr :action/edit]))
+      :mobile-href    song-url
+      :mobile-label   (:song/title song)
+      :actions        [(cancel-button song-url)
+                       (save-button)]
+      :overflow-items [(delete-menu-item song)]
+      :overflow-label [:i18n/tr :action/more-actions]
+      :aria-label     [:i18n/tr :repertoire/edit-toolbar-label]})))
+
+(defn- edit-header [{:keys [tr]} {:song/keys [active? title]}]
   [page-header/PageHeader
-   {:breadcrumb (into [breadcrumb/Breadcrumb
-                       {}
-                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
-                        (tr [:nav/songs])]]
-                      breadcrumb-items)
-    :title      title
-    :subtitle   subtitle}])
+   {:title [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-title"}
+            title
+            (ui2/active-badge tr active?)]}])
 
-(defn- edit-header [{:keys [tr]} {:song/keys [active? title] :as song}]
-  [page-header/PageHeader
-   {:breadcrumb [breadcrumb/Breadcrumb
-                 {}
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
-                  (tr [:nav/songs])]
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-song song)}
-                  title]
-                 [breadcrumb/BreadcrumbItem (tr [:action/edit])]]
-    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-title"}
-                 (tr [:action/edit])
-                 (ui2/active-badge tr active?)]
-    :subtitle   title}])
-
-(defn create-header [{:keys [tr] :as req}]
-  (page-header req
-               (tr [:song/create-title])
-               (tr [:song/create-subtitle])
-               [breadcrumb/BreadcrumbItem (tr [:song/create-title])]))
+(defn create-header [_req]
+  [page-header/PageHeader {:title [:i18n/tr :repertoire/add-song]}])
 
 (defn- song->form [{:song/keys [active? arrangement-credits arrangement-notes composition-credits lyrics origin solo-info song-id title]
                     :forum.topic/keys [topic-id]}]
@@ -234,8 +232,7 @@
                (when-let [top-error (form/field-error form-state :_top)]
                  [:wa-callout {:appearance "outlined"
                                :variant    "danger"}
-                  top-error])
-               (edit-form-actions req song))))
+                  top-error]))))
 
 (defn create-form [req]
   (let [form-state (create-form-state req)]
@@ -248,28 +245,33 @@
                (when-let [top-error (form/field-error form-state :_top)]
                  [:wa-callout {:appearance "outlined"
                                :variant    "danger"}
-                  top-error])
-               (create-form-actions req))))
+                  top-error]))))
 
 (defn- edit-page [{:keys [db] :as req}]
   (let [song-id (http.util/path-param-uuid! req :song-id)
         song    (q/retrieve-song db song-id)]
     (if song
-      (ui2/datastar-page
-       [:div {:class "wa-stack wa-gap-2xl"}
-        (edit-header req song)
-        (edit-form req song)
-        (song-remove-dialog req song)
-        (ui2/markdown-editor-scripts)])
+      (ui2/datastar-page*
+       (ui2/markdown-editor-scripts)
+       [page-surface/PageSurface
+        {::page-surface/width   :standard
+         ::page-surface/toolbar (edit-toolbar song)}
+        [:div {:class "wa-stack wa-gap-2xl"}
+         (edit-header req song)
+         (edit-form req song)]]
+       (song-remove-dialog req song))
       (throw (ex-info "Song not found" {:app/error-type :app.error.type/not-found
                                         :song/song-id   song-id})))))
 
 (defn- create-page [req]
-  (ui2/datastar-page
-   [:div {:class "wa-stack wa-gap-2xl"}
-    (create-header req)
-    (create-form req)]
-   (ui2/markdown-editor-scripts)))
+  (ui2/datastar-page*
+   (ui2/markdown-editor-scripts)
+   [page-surface/PageSurface
+    {::page-surface/width   :standard
+     ::page-surface/toolbar (create-toolbar)}
+    [:div {:class "wa-stack wa-gap-2xl"}
+     (create-header req)
+     (create-form req)]]))
 
 (defn page [req]
   (if (http.util/path-param req :song-id)

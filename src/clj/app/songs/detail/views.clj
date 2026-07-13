@@ -9,11 +9,12 @@
    [app.markdown :as markdown]
    [app.queries :as q]
    [app.songs.detail.actions :as actions]
+   [app.songs.ui :as songs.ui]
    [app.ui2 :as ui2]
    [app.ui2.page-header :as page-header]
    [app.ui2.button :as button]
-   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
+   [app.ui2.page-surface :as page-surface]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]
@@ -48,22 +49,24 @@
                  (markdown/render markdown-text)
                  {:class "songs-detail-wide"})))
 
-(defn song-summary [{:keys [tr]} {:song/keys [active? title] :as _song}]
+(defn song-summary [{:keys [tr]} {:song/keys [active? title]}]
   [page-header/PageHeader
-   {:breadcrumb [breadcrumb/Breadcrumb
-                 {}
-                 [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
-                  (tr [:nav/songs])]
-                 [breadcrumb/BreadcrumbItem title]]
-    :title      [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
-                 title
-                 (ui2/active-badge tr active?)]
-    :actions    [[button/Button {:appearance "outlined"
-                                 :href       (urls/link-songs-home)}
-                  (tr [:action/back])]
-                 [button/Button {:appearance "outlined"
-                                 :href       (urls/link-song-edit _song)}
-                  (tr [:action/edit])]]}])
+   {:title [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
+            title
+            (ui2/active-badge tr active?)]}])
+
+(defn- detail-toolbar [{:song/keys [title] :as song}]
+  (songs.ui/page-toolbar
+   {:breadcrumb   (songs.ui/breadcrumb-trail
+                   (songs.ui/breadcrumb-link (urls/link-songs-home)
+                                             [:i18n/tr :repertoire/title])
+                   (songs.ui/breadcrumb-current title))
+    :mobile-href  (urls/link-songs-home)
+    :mobile-label [:i18n/tr :repertoire/title]
+    :actions      [[button/Button {:appearance "filled"
+                                   :href       (urls/link-song-edit song)}
+                    [:i18n/tr :action/edit]]]
+    :aria-label   [:i18n/tr :repertoire/detail-toolbar-label]}))
 
 (defn background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
   (ui2/section-card
@@ -304,13 +307,16 @@ window.DiscourseEmbed = %s;
   (let [song-id (http.util/path-param-uuid! req :song-id)
         song    (q/retrieve-song db song-id)]
     (if song
-      (ui2/datastar-page
-       [:div {:class "wa-stack wa-gap-2xl"}
-        (song-summary req song)
-        (background-section req song)
-        (play-stats-section req song)
-        (sheet-music-section req song)
-        (discourse-comments-section req song)])
+      (ui2/datastar-page*
+       [page-surface/PageSurface
+        {::page-surface/width   :wide
+         ::page-surface/toolbar (detail-toolbar song)}
+        [:div {:class "wa-stack wa-gap-2xl"}
+         (song-summary req song)
+         (background-section req song)
+         (play-stats-section req song)
+         (sheet-music-section req song)
+         (discourse-comments-section req song)]])
       (throw (ex-info "Song not found" {:app/error-type :app.error.type/not-found
                                         :song/song-id   song-id})))))
 

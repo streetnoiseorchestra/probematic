@@ -60,6 +60,21 @@
     .mobile {
       display: block;
       min-inline-size: 0;
+      overflow: hidden;
+    }
+
+    .mobile > :is(a, button, wa-button) {
+      max-inline-size: 100%;
+    }
+
+    .mobile > :is(a, button) {
+      overflow: hidden;
+    }
+
+    .mobile > :is(a, button) > .trim-cap {
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }

@@ -1,6 +1,7 @@
 (ns app.songs.edit.views-test
   (:require
    [app.songs.edit.views :as views]
+   [app.songs.view-test-support :as support]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]
@@ -15,14 +16,11 @@
    [:action/edit]                "Edit"
    [:action/save]                "Save"
    [:nav/forum]                  "Forum"
-   [:nav/songs]                  "Repertoire"
    [:song/active]                "Active?"
    [:song/arrangement-credits]   "Arranged By"
    [:song/arrangement-notes]     "Arrangement Info"
    [:song/background-title]      "Background"
    [:song/composition-credits]   "Composition By"
-   [:song/create-subtitle]       ""
-   [:song/create-title]          "Add Song"
    [:song/lyrics]                "Lyrics"
    [:song/origin]                "Origin"
    [:song/solo-count]            "# Solos"
@@ -68,9 +66,57 @@
        (keep action-keyword)
        set))
 
-(defn button-labelled [label view]
-  (some #(when (= label (l/text %)) %)
-        (l/select :app.ui2.button/button view)))
+(defn- save-action []
+  {:label      :action/save
+   :form       "song-edit-form"
+   :type       "submit"
+   :appearance "filled"
+   :variant    "brand"})
+
+(deftest create-song-page-surface
+  (testing "Add Song uses a standard editor surface with visible Cancel and Save actions."
+    (let [{:keys [conn]} (support/new-system "song-create-surface")]
+      (is (= {:contract
+              {:width       :standard
+               :breadcrumbs [:repertoire/title :repertoire/add-song]
+               :mobile      {:label :repertoire/title :href "/songs"}
+               :actions     [{:label      :action/cancel
+                              :href       "/songs"
+                              :appearance "plain"}
+                             (save-action)]
+              :overflow    []}
+              :heading  :repertoire/add-song
+              :subtitle nil
+              :form-id  "song-edit-form"
+              :last-tag :app.ui2.page-surface/page-surface
+              :last-id  nil}
+             (-> conn support/request views/page support/page-structure))))))
+
+(deftest edit-song-page-surface
+  (testing "Edit keeps Cancel and Save visible and moves Delete into overflow."
+    (let [{:keys [conn]} (support/new-system "song-edit-surface")]
+      (support/seed-song! conn song-id)
+      (is (= {:contract
+              {:width       :standard
+               :breadcrumbs [:repertoire/title "Watermelon Man" :action/edit]
+               :mobile      {:label "Watermelon Man"
+                             :href  (str "/song/" song-id)}
+               :actions     [{:label      :action/cancel
+                              :href       (str "/song/" song-id)
+                              :appearance "plain"}
+                             (save-action)]
+               :overflow    [{:label       :action/delete
+                              :data-dialog (str "open song-remove-" song-id)
+                              :variant     "danger"}]}
+              :heading  "Watermelon Man Active"
+              :subtitle nil
+              :form-id  "song-edit-form"
+              :last-tag :wa-dialog
+              :last-id  (str "song-remove-" song-id)}
+             (-> conn
+                 (support/request {:path-params {:song-id (str song-id)}})
+                 views/page
+                 support/page-structure))))))
 
 (deftest create-song
   (testing "A member is adding a new song."
@@ -79,8 +125,8 @@
           title  (l/select-one "wa-input[name=title]" form)
           active (l/select-one "input[name=active?]" form)]
       (testing "The page identifies the song-creation flow."
-        (is (= "Add Song"
-               (:title (l/attrs header)))))
+        (is (= :repertoire/add-song
+               (support/translation-key (:title (l/attrs header))))))
       (testing "The form starts with an active blank song and submits the create action."
         (is (= {:action :app.songs.edit.actions/create-song
                 :title  {:value ""
@@ -100,8 +146,7 @@
           dialog        (views/song-remove-dialog request song)
           title         (l/select-one "wa-input[name=title]" form)
           song-id-input (l/select-one "input[name=song-id]" form)
-          credits       (l/select-one "textarea[name=composition-credits]" form)
-          delete-button (button-labelled "Delete" form)]
+          credits       (l/select-one "textarea[name=composition-credits]" form)]
       (testing "The form contains the current song values and submits the update action."
         (is (= {:action  :app.songs.edit.actions/update-song
                 :song-id (str song-id)
@@ -118,11 +163,7 @@
                (mapv #(get (l/attrs %) :data-image-upload-endpoint)
                      (l/select 'textarea.markdown-editor form)))))
       (testing "Delete opens a matching confirmation dialog that submits the delete action."
-        (is (= {:button-label "Delete"
-                :opens        (str "open " (:id (l/attrs dialog)))
-                :message      "Are you sure you want to delete the song Watermelon Man?"
-                :actions      #{:app.songs.edit.actions/delete-song}}
-               {:button-label (l/text delete-button)
-                :opens        (:data-dialog (l/attrs delete-button))
-                :message      (-> (l/select-one 'p dialog) l/text)
-                :actions      (action-keywords dialog)}))))))
+        (is (= {:message "Are you sure you want to delete the song Watermelon Man?"
+                :actions #{:app.songs.edit.actions/delete-song}}
+               {:message (-> (l/select-one 'p dialog) l/text)
+                :actions (action-keywords dialog)}))))))

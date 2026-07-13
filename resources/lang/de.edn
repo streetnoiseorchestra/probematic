@@ -981,7 +981,6 @@
   :filter-active "Aktive Lieder",
   :gig-count "Anzahl der Gigs",
   :title "Song Titel",
-  :create-title "Lied hinzufügen",
   :active "Aktiv?",
   :score "Punktzahl",
   :total-performances "Gesamtleistungen",
@@ -991,6 +990,4 @@
   :search-empty "Keine Lieder gefunden",
   :play-stats-title "Statistiken spielen",
   :sheet-music-title "Noten",
-  :background-title "Hintergrund",
-  :sync-songs "Lieder synchronisieren",
-  :list-title "Repertoire"}}
+  :background-title "Hintergrund"}}

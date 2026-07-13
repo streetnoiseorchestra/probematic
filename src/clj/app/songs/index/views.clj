@@ -3,9 +3,12 @@
    [app.datastar :as d*]
    [app.songs.index.actions :as actions]
    [app.songs.index.queries :as queries]
+   [app.songs.ui :as songs.ui]
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
    [app.urls :as urls]))
 
 (defn- song-stat [{:keys [icon label value]}]
@@ -83,35 +86,48 @@
    [:wa-option {:value "old"} (tr [:gig/probeplan-repertoire-old])]
    [:wa-option {:value "all"} (tr [:gig/probeplan-repertoire-all])]])
 
-(defn toolbar-actions [{:keys [tr] :as req}]
-  [[button/Button {:appearance         "plain"
-                   :data-indicator     "songsIndexSyncing"
-                   :data-attr:loading  "$songsIndexSyncing"
-                   :data-attr:disabled "$songsIndexSyncing"
-                   :data-on:click      (str "@post('" (d*/act req ::actions/force-sync-songs) "')")}
-    (tr [:song/sync-songs])]
-   [button/Button {:appearance "filled"
-                   :variant    "brand"
-                   :href       (urls/link-song-create)}
-    (tr [:song/create-title])]])
+(defn- sync-menu-item [req]
+  [:wa-dropdown-item
+   {:data-indicator     "songsIndexSyncing"
+    :data-attr:loading  "$songsIndexSyncing"
+    :data-attr:disabled "$songsIndexSyncing"
+    :data-on:click      (str "@post('" (d*/act req ::actions/force-sync-songs) "')")}
+   [:i18n/tr :repertoire/sync-songs]])
 
-(defn- toolbar [{:keys [tr] :as req} page-state total]
-  [:div {:class "songs-index-toolbar"}
-   (ui2/title-block {:title    (tr [:song/list-title])
-                     :subtitle (str (tr [:total]) ": " total)})
-   [:div {:class "songs-index-toolbar-controls"}
-    (search-control req page-state)
-    (repertoire-filter-control req page-state)
-    (ui2/action-bar {:class "songs-index-toolbar-actions"}
-                    (toolbar-actions req))]])
+(defn- page-toolbar [req]
+  (songs.ui/page-toolbar
+   {:breadcrumb     (songs.ui/breadcrumb-trail
+                     (songs.ui/breadcrumb-link (urls/link-dashboard)
+                                               [:i18n/tr :home])
+                     (songs.ui/breadcrumb-current [:i18n/tr :repertoire/title]))
+    :mobile-href    (urls/link-dashboard)
+    :mobile-label   [:i18n/tr :home]
+    :actions        [[button/Button {:appearance "filled"
+                                     :variant    "brand"
+                                     :href       (urls/link-song-create)}
+                      [:i18n/tr :repertoire/add-song]]]
+    :overflow-items [(sync-menu-item req)]
+    :overflow-label [:i18n/tr :action/more-actions]
+    :aria-label     [:i18n/tr :repertoire/index-toolbar-label]}))
+
+(defn- collection-controls [req page-state]
+  [:div {:class "songs-index-toolbar-controls"}
+   (search-control req page-state)
+   (repertoire-filter-control req page-state)])
 
 (defn page [{:keys [db page-state] :as req}]
   (let [page-state (queries/normalize-page-state (:songs-index page-state))
         songs      (queries/songs db page-state)]
-    (ui2/datastar-page
-     [:div {:class        "wa-stack wa-gap-l"
-            :data-signals (d*/->signals {:songs-index page-state})}
-      (toolbar req page-state (count songs))
-      (songs-list req songs)])))
+    (ui2/datastar-page*
+     [page-surface/PageSurface
+      {::page-surface/width   :wide
+       ::page-surface/toolbar (page-toolbar req)}
+      [:div {:class        "wa-stack wa-gap-l"
+             :data-signals (d*/->signals {:songs-index page-state})}
+       [page-header/PageHeader
+        {:title    [:i18n/tr :repertoire/title]
+         :subtitle [:i18n/tr :repertoire/song-count {:count (count songs)}]}]
+       (collection-controls req page-state)
+       (songs-list req songs)]])))
 
 (d*/refresh-all!)
