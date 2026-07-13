@@ -254,7 +254,7 @@
   ;; mean that this will at most take 30s (default max backoff).
   "@post(window.location.pathname + (window.location.search + '&u=').replace(/^&/,'?'), {retryMaxCount: Infinity, openWhenHidden: false, retry: 'error'})")
 
-(def tabid-js
+(def tab-id-js
   ;; Higher collision risk is acceptable here as it only needs to be
   ;; unique against a given users other tabs.
   "self.crypto.randomUUID().substring(0,8)")
@@ -264,9 +264,9 @@
 
 (defn- datastar-page-body [content]
   [:body {:data-on:datastar-fetch datastar-fetch-progress-js}
+   [:div {:data-signals:tab-id__case.kebab tab-id-js}]
    [:div {:data-init on-load-js
           :id        "long-lived-sse"}]
-   [:div {:data-signals:tabid tabid-js}]
    content])
 
 (defn shim-html

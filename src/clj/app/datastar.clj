@@ -152,7 +152,8 @@
 (defn render-handler [render-fn & {:keys [on-close on-open wrap-req] :or {wrap-req wrap-req} :as _opts}]
   (fn handler [req]
     (assert (::refresh-mult req))
-    (let [tab-id  (str (random-uuid))
+    (let [tab-id  (or (-> req :body-params :tab-id)
+                      (str (random-uuid)))
           ;; Dropping buffer is used here as we don't want a slow handler
           ;; blocking other handlers. Mult distributes each event to all
           ;; taps in parallel and synchronously, i.e. each tap must

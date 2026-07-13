@@ -1,5 +1,6 @@
 (ns app.nexus-test
   (:require
+   [app.datastar :as datastar]
    [app.ig]
    [app.nexus :as app-nexus]
    [app.system]
@@ -119,6 +120,26 @@
     (is (= member-id (:current-member-id state)))
     (is (= #{:admin} (:current-user-roles state)))
     (is (= env (:env state)))))
+
+(deftest browser-tab-id-signal-addresses-page-state
+  (let [{:keys [conn]} (tc/new-system "nexus-browser-tab-id")
+        tab-id         (str (random-uuid))
+        request        {:body-params {:tab-id tab-id}}]
+    (try
+      (swap! datastar/!page-state assoc tab-id {:existing :value})
+      (app-nexus/assoc-page-state-fx nil
+                                     {:request request}
+                                     [:team-create]
+                                     {:open true})
+      (is (= {:open true}
+             (get-in @datastar/!page-state [tab-id :team-create])))
+      (is (= :value
+             (get-in (app-nexus/system->state
+                      {:system  {:datomic {:conn conn}}
+                       :request request})
+                     [:page-state :existing])))
+      (finally
+        (swap! datastar/!page-state dissoc tab-id)))))
 
 (deftest db-transact-fx-dispatches-on-success-actions
   (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-success")
