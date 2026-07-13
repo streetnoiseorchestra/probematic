@@ -2,6 +2,8 @@
   (:require
    [app.dashboard.queries :as queries]
    [app.gigs.domain :as gig.domain]
+   [app.insurance.test-support :as insurance-test]
+   [app.poll.test-support :as poll-test]
    [app.queries :as q]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
@@ -137,3 +139,38 @@
             member (q/retrieve-member db member-id)]
         (is (= ["Insurance Team Work"]
                (policy-names (:insurance-todos (queries/dashboard-data db member)))))))))
+
+(deftest dashboard-data-includes-personal-surveys-and-unanswered-polls
+  (let [{:keys [conn member-id]} (tc/new-system "dashboard-personal-responses")
+        {:keys [coverage-id policy-id]}
+        (insurance-test/seed-page-shell-fixture! conn member-id)
+        {:keys [survey-id]}
+        (insurance-test/seed-member-survey!
+         conn
+         {:coverage-ids [coverage-id]
+          :member-id    member-id
+          :policy-id    policy-id
+          :survey-name  "Coverage check"})
+        answered   (poll-test/seed-poll!
+                    conn member-id
+                    {:poll/poll-status :poll.status/open
+                     :poll/title       "Answered poll"})
+        unanswered (poll-test/seed-poll!
+                    conn member-id
+                    {:poll/poll-status :poll.status/open
+                     :poll/title       "Unanswered poll"})]
+    (poll-test/seed-vote! conn
+                          (:poll-id answered)
+                          member-id
+                          (first (:option-ids answered)))
+    (let [db     (d/db conn)
+          member (q/retrieve-member db member-id)
+          data   (queries/dashboard-data db member)]
+      (is (= [{:policy-id  policy-id
+               :survey-id  survey-id
+               :name       "Coverage check"
+               :todo-count 1}]
+             (mapv #(select-keys % [:policy-id :survey-id :name :todo-count])
+                   (:insurance-surveys data))))
+      (is (= [(:poll-id unanswered)]
+             (mapv :poll/poll-id (:unanswered-polls data)))))))

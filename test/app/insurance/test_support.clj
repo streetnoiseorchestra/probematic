@@ -3,7 +3,7 @@
    [datomic.api :as d]))
 
 (def created-at #inst "2026-03-01T00:00:00.000-00:00")
-(def closes-at #inst "2026-04-01T00:00:00.000-00:00")
+(def closes-at #inst "2026-12-01T00:00:00.000-00:00")
 
 (defn policy-tx
   [policy-id]

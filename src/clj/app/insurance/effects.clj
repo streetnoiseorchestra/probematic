@@ -50,3 +50,22 @@
                                      {:status  :error
                                       :message failure-message}))))
   (d*/respond-signals request :merge {:loading false :targetid false}))
+
+(defn send-survey-notifications-fx
+  [_ {request :request}
+   {:keys [email-data failure-message members policy result-path sender-name success]}]
+  (try
+    (email/send-survey-notifications!
+     request
+     sender-name
+     policy
+     members
+     email-data)
+    (d*/state-transact! request #(assoc-in % result-path success))
+    (catch Exception error
+      (errors/report-error! error {:effect :app.insurance/send-survey-notifications})
+      (d*/state-transact! request
+                          #(assoc-in % result-path
+                                     {:status  :error
+                                      :message failure-message}))))
+  (d*/respond-signals request :merge {:loading false :targetid false}))

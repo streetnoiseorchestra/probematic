@@ -48,6 +48,67 @@ review = Review
 workbench = Table
 add-coverage = Add Instrument
 policy-settings = Policy Settings
+manage-surveys = Manage surveys
+pending-coverage-reviews = Coverage reviews
+# $count (Number) - Instruments left to review. $total (Number) - Total instruments. $policy (String) - Policy name. $date (String) - Localized closing date and time.
+survey-response-detail =
+    { $count ->
+        [0] Ready to finish
+        [one] One of { $total } instruments needs review
+       *[other] { $count } of { $total } instruments need review
+    } · { $policy } · closes { $date }
+survey-admin-title = Coverage surveys
+survey-admin-subtitle = Ask every member to review the instruments covered by this policy.
+start-survey = Start survey
+survey-details-title = Survey details
+survey-details-subtitle = Members can respond until the closing date or until the insurance team closes the survey.
+survey-name = Survey name
+survey-name-hint = Give this review a short, recognizable name.
+survey-closes-at = Closes at
+survey-closes-at-hint = The date and time after which members should no longer respond.
+survey-name-required = Enter a survey name.
+survey-closes-at-invalid = Enter a valid closing date and time.
+survey-closes-at-future = Choose a closing date in the future.
+survey-open = Open
+survey-no-open-title = No open coverage survey
+survey-no-open-body = Start a survey when members should check their currently insured instruments.
+survey-responses-title = Member responses
+survey-responses-subtitle = Track progress and correct a completion status when necessary.
+survey-reviewed = Reviewed
+survey-status = Status
+survey-complete = Complete
+survey-incomplete = Incomplete
+survey-progress = { $completed } of { $total }
+survey-mark-complete = Mark complete
+survey-mark-incomplete = Mark incomplete
+survey-no-responses = This survey has no member responses.
+survey-send-reminders = Send reminders
+survey-send-reminders-title = Send coverage survey reminders?
+survey-send-reminders-body = Every member who has not completed this survey will receive an email reminder.
+survey-reminders-confirm = Send reminders
+survey-reminders-sent =
+    { $count ->
+        [one] One reminder was sent.
+       *[other] { $count } reminders were sent.
+    }
+survey-reminders-empty = Everyone has already completed this survey.
+survey-reminders-failed = The survey reminders could not be sent. Check the outgoing email queue before trying again.
+survey-close = Close survey
+survey-close-title = Close this coverage survey?
+survey-close-body = Members will no longer be able to change their responses.
+survey-close-confirm = Close survey
+survey-created = The coverage survey was started.
+survey-updated = The survey details were saved.
+survey-closed = The coverage survey was closed.
+survey-closed-title = Closed surveys
+survey-closed-subtitle = Earlier surveys for this policy.
+survey-closed-on = Closed { $date }
+survey-error-not-found = This policy or survey could not be found.
+survey-error-not-allowed = Only members of the insurance team can manage coverage surveys.
+survey-error-open-exists = Close the current survey before starting another one.
+survey-error-closed = This survey is already closed.
+survey-error-expired = This survey has reached its closing date.
+survey-error-no-members = A survey cannot be started because there are no members to invite.
 add-coverage-title = Add Instrument Coverage
 instrument-step = Instrument
 photos-step = Photos
@@ -60,6 +121,7 @@ request-payments-title = Request insurance payments
 request-payments-subtitle = Select the members who should receive a payment request for privately insured instruments.
 send-payment-notifications = Send notifications
 send-payment-notifications-failed = The payment notifications could not be completed. Check the policy ledger and outgoing email before trying again.
+payment-error-not-allowed = Only members of the insurance team can send payment notifications.
 payment-members-title = Members to notify
 payment-members-subtitle = Members with calculable private-instrument costs are selected by default.
 member = Member

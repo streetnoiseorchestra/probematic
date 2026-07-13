@@ -11,6 +11,7 @@ more-actions = More actions
 next = Next
 remove = Remove
 reorder = Reorder
+respond = Respond
 save = Save
 select-all = Select all
 update = Update

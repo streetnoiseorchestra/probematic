@@ -71,6 +71,10 @@
       (result-effects {:status  :error
                        :message (tr [:error/not-found-title])})
 
+      (not (:authorized? data))
+      (result-effects {:status  :error
+                       :message (tr [:insurance/payment-error-not-allowed])})
+
       (empty? member-ids)
       (result-effects {:status  :error
                        :message (tr [:insurance/select-payment-members])})

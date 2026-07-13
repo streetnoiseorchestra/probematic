@@ -81,7 +81,7 @@
   (let [policy-id       (:insurance.policy/policy-id policy)
         current-member-id
         (get-in req [:session :session/member :member/member-id])
-        {:keys [members-data sender-name time-range]}
+        {:keys [authorized? members-data sender-name time-range]}
         (queries/notification-data db policy-id current-member-id)
         available-members-data (filterv :private-costs-available? members-data)
         available-member-ids   (mapv #(str (get-in % [:member :member/member-id]))
@@ -93,11 +93,17 @@
                                     vec)
         result                 (get-in req [:page-state actions/form-key :result])
         sent?                  (= :sent (:status result))
-        toolbar-actions        (if sent?
+        toolbar-actions        (cond
+                                 (not authorized?)
+                                 []
+
+                                 sent?
                                  [[button/Button {:appearance "filled"
                                                   :variant    "brand"
                                                   :href       (urls/link-policy policy)}
                                    [:i18n/tr :action/done]]]
+
+                                 :else
                                  [[button/Button {:appearance "outlined"
                                                   :href       (urls/link-policy policy)}
                                    [:i18n/tr :action/cancel]]
@@ -126,16 +132,25 @@
                              :label (:insurance.policy/name policy)}]
          ::page-toolbar/actions toolbar-actions
          :aria-label [:i18n/tr :insurance/toolbar-label]}]}
-      [:div {:class              "wa-stack wa-gap-xl"
-             :data-preserve-attr "data-signals"
-             :data-signals       (d*/->signals
-                                  {actions/signal-key
-                                   {:policyId  (str policy-id)
-                                    :memberIds available-member-ids}})}
+      [:div (cond-> {:class "wa-stack wa-gap-xl"}
+              authorized?
+              (assoc :data-preserve-attr "data-signals"
+                     :data-signals
+                     (d*/->signals
+                      {actions/signal-key
+                       {:policyId  (str policy-id)
+                        :memberIds available-member-ids}})))
        [page-header/PageHeader
         {:title    (tr [:insurance/request-payments-title])
          :subtitle (tr [:insurance/request-payments-subtitle])}]
-       (if sent?
+       (cond
+         (not authorized?)
+         [:wa-callout {:appearance "outlined"
+                       :variant    "warning"
+                       :role       "alert"}
+          (tr [:insurance/payment-error-not-allowed])]
+
+         sent?
          (ui2/section-card
           {:title (tr [:insurance/payment-notifications-sent-title])}
           [:wa-callout {:appearance "outlined"
@@ -144,6 +159,8 @@
                         :aria-live  "polite"}
            (tr [:insurance/payment-notifications-sent]
                {:count (:count-sent result)})])
+
+         :else
          [:form {:id             "insurance-payment-notifications-form"
                  :class          "wa-stack wa-gap-xl"
                  :data-id        "insurance-payment-notifications"

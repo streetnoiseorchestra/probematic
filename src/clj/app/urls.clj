@@ -73,6 +73,9 @@
 (defn link-policy-settings
   [policy-or-policy-id]
   (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/settings"))
+(defn link-policy-surveys
+  [policy-or-policy-id]
+  (link-helper "/insurance-policy/" :insurance.policy/policy-id policy-or-policy-id "/surveys"))
 (defn- query-value
   [value]
   (cond

@@ -7,6 +7,7 @@
    [app.insurance.policy.notifications.actions :as policy-notifications.actions]
    [app.insurance.policy.review.actions :as policy-review.actions]
    [app.insurance.policy.settings.actions :as policy-settings.actions]
+   [app.insurance.policy.surveys.actions :as policy-surveys.actions]
    [app.insurance.policy.workbench.actions :as policy-workbench.actions]
    [app.insurance.survey.actions :as survey.actions]
    [app.insurance.index.queries :as queries]
@@ -114,5 +115,6 @@
    policy-notifications.actions/actions
    policy-review.actions/actions
    policy-settings.actions/actions
+   policy-surveys.actions/actions
    policy-workbench.actions/actions
    survey.actions/actions))

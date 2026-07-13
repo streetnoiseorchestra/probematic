@@ -296,18 +296,23 @@
     :icons       [:arrow-bend-down-right
                   :arrow-square-out
                   :arrow-left
+                  :bell-ringing
                   :calendar
                   :car-profile
                   :caret-left
                   :caret-right
                   :check
+                  :clipboard-text
                   :download
                   :eye
                   :funnel
+                  :gear
                   :hash
                   :info
                   :magnifying-glass
+                  :paper-plane-right
                   :pencil-simple
+                  :plus-circle
                   :shield
                   :sliders-horizontal
                   :star

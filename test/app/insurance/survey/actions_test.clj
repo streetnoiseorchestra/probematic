@@ -64,6 +64,15 @@
         (is (some? (get-in effects [1 2 :error])))
         (is (not-any? #(= :db/transact (first %)) effects))))))
 
+(deftest member-survey-actions-reject-expired-surveys
+  (let [{:keys [policy-id state]} (fixture)
+        effects (actions/transition-action
+                 (assoc state :now #inst "2027-01-01T00:00:00.000-00:00")
+                 (signals policy-id {:answer "yes"}))]
+    (is (= support/clear-loading (first effects)))
+    (is (not-any? #(= :db/transact (first %)) effects))
+    (is (some? (get-in effects [1 2 :error])))))
+
 (deftest completing-a-report-applies-decisions-and-finishes-the-response
   (let [{:keys [conn member-id policy-id report-ids response-id state]} (fixture)
         report-id (first report-ids)

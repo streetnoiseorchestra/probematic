@@ -6,6 +6,9 @@ running = Open Polls
 past = Past Polls
 no-running = There are no open polls.
 no-past = There are no past polls.
+response-needed = Polls
+# $date (String) - Localized closing date and time.
+response-dashboard-detail = Response needed · closes { $date }
 
 index-toolbar-label = Poll directory controls
 detail-toolbar-label = Poll controls

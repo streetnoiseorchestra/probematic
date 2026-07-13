@@ -10,15 +10,20 @@
    [app.insurance.policy.notifications.views :as policy-notifications.views]
    [app.insurance.policy.review.views :as review.views]
    [app.insurance.policy.settings.views :as settings.views]
+   [app.insurance.policy.surveys.views :as surveys.views]
    [app.insurance.policy.workbench.views :as workbench.views]
    [app.insurance.survey.views :as survey.views]
    [app.insurance.test-support :as insurance-test]
    [app.queries :as q]
    [app.test-common :as tc]
+   [app.ui2.icon :as ico]
    [app.ui2.page-shell-test-support :as page-shell]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
+   [lookup.core :as l]
    [reitit.core :as r]))
 
 (def router
@@ -45,8 +50,8 @@
              :tr             tr
              ::r/router      router}})))
 
-(deftest directory-dashboard-and-coverage-use-shared-page-shells
-  (let [{:keys [conn request policy-id coverage-id]} (fixture)]
+(deftest directory-and-coverage-use-shared-page-shells
+  (let [{:keys [request policy-id coverage-id]} (fixture)]
     (testing "The Insurance directory owns collection context and policy creation."
       (is (= {:width       :wide
               :breadcrumbs [:home :insurance/title]
@@ -57,40 +62,6 @@
                              :variant "brand"}]
               :overflow    []}
              (-> request index.views/page page-shell/page-contract))))
-    (testing "A policy dashboard owns policy context and its lifecycle actions."
-      (is (= {:width       :wide
-              :breadcrumbs [:insurance/title "Insurance 2026"]
-              :mobile      {:label :insurance/title :href "/insurance"}
-              :actions     [{:label :insurance/review
-                             :href  (str "/insurance-policy/" policy-id "/review")
-                             :appearance "filled"
-                             :variant "brand"}]
-              :overflow    [{:label :insurance/workbench
-                             :value (str "/insurance-policy/" policy-id "/workbench")}
-                            {:label :insurance/add-coverage
-                             :value (str "/insurance-coverage-create/" policy-id)}
-                            {:label :insurance/policy-settings
-                             :value (str "/insurance-policy/" policy-id "/settings")}
-                            {:label :insurance/send-changes
-                             :value (str "/insurance-policy-changes/" policy-id "/")}]}
-             (-> request
-                 (assoc :path-params {:policy-id policy-id})
-                 dashboard.views/page
-                 page-shell/page-contract))))
-    (testing "An active policy exposes its payment-request workflow."
-      (let [active-db (:db-after
-                       @(d/transact conn [[:db/add
-                                           [:insurance.policy/policy-id policy-id]
-                                           :insurance.policy/status
-                                           :insurance.policy.status/active]]))]
-        (is (some #{{:label :insurance/request-payments-title
-                     :value (str "/insurance-policy-notify/" policy-id "/")}}
-                  (-> request
-                      (assoc :db active-db
-                             :path-params {:policy-id policy-id})
-                      dashboard.views/page
-                      page-shell/page-contract
-                      :overflow)))))
     (testing "Coverage detail keeps the policy and instrument in context."
       (is (= {:width       :wide
               :breadcrumbs [:insurance/title "Insurance 2026" "Test Trumpet"]
@@ -105,6 +76,147 @@
                  (assoc :path-params {:coverage-id coverage-id})
                  coverage.views/page
                  page-shell/page-contract))))))
+
+(deftest policy-dashboard-lifecycle-toolbar
+  (let [{:keys [conn request policy-id coverage-id]} (fixture)
+        policy-url       (str "/insurance-policy/" policy-id "/")
+        review-url       (str policy-url "review")
+        workbench-url    (str policy-url "workbench")
+        settings-url     (str policy-url "settings")
+        surveys-url      (str policy-url "surveys")
+        changes-url      (str "/insurance-policy-changes/" policy-id "/")
+        notifications-url (str "/insurance-policy-notify/" policy-id "/")
+        request-for      (fn [db]
+                           (assoc request
+                                  :db db
+                                  :path-params {:policy-id policy-id}))
+        todo-contract    (-> (:db request)
+                             request-for
+                             dashboard.views/page
+                             page-shell/page-contract)
+        ready-db         (:db-after
+                          @(d/transact conn [[:db/add
+                                              [:instrument.coverage/coverage-id coverage-id]
+                                              :instrument.coverage/status
+                                              :instrument.coverage.status/reviewed]]))
+        ready-contract   (-> ready-db
+                             request-for
+                             dashboard.views/page
+                             page-shell/page-contract)
+        active-db        (:db-after
+                          @(d/transact conn [[:db/add
+                                              [:insurance.policy/policy-id policy-id]
+                                              :insurance.policy/status
+                                              :insurance.policy.status/active]]))
+        active-contract  (-> active-db
+                             request-for
+                             dashboard.views/page
+                             page-shell/page-contract)]
+    (testing "The primary action follows the policy lifecycle and outstanding review work."
+      (is (= {:todo   [{:label      :insurance/review
+                        :href       review-url
+                        :appearance "filled"
+                        :variant    "brand"}]
+              :ready  [{:label      :insurance/send-changes
+                        :href       changes-url
+                        :appearance "filled"
+                        :variant    "brand"}]
+              :active [{:label      :insurance/request-payments-title
+                        :href       notifications-url
+                        :appearance "filled"
+                        :variant    "brand"}]}
+             {:todo   (:actions todo-contract)
+              :ready  (:actions ready-contract)
+              :active (:actions active-contract)})))
+    (testing "Secondary actions remain reachable without offering a live blocked destination."
+      (is (= {:todo [{:label :insurance/workbench
+                      :value workbench-url}
+                     {:label :insurance/add-coverage
+                      :value (str "/insurance-coverage-create/" policy-id)}
+                     {:label :insurance/policy-settings
+                      :value settings-url}
+                     {:label :insurance/manage-surveys
+                      :value surveys-url}
+                     {:label    :insurance/send-changes
+                      :disabled true}]
+              :ready [{:label :insurance/review
+                       :value review-url}
+                      {:label :insurance/workbench
+                       :value workbench-url}
+                      {:label :insurance/add-coverage
+                       :value (str "/insurance-coverage-create/" policy-id)}
+                      {:label :insurance/policy-settings
+                       :value settings-url}
+                      {:label :insurance/manage-surveys
+                       :value surveys-url}]
+              :active [{:label :insurance/review
+                        :value review-url}
+                       {:label :insurance/workbench
+                        :value workbench-url}
+                       {:label :insurance/add-coverage
+                        :value (str "/insurance-coverage-create/" policy-id)}
+                       {:label :insurance/policy-settings
+                        :value settings-url}
+                       {:label :insurance/manage-surveys
+                        :value surveys-url}]}
+             {:todo   (:overflow todo-contract)
+              :ready  (:overflow ready-contract)
+              :active (:overflow active-contract)})))))
+
+(deftest policy-dashboard-overflow-actions-have-icons
+  (let [{:keys [request policy-id]} (fixture)
+        view         (-> request
+                         (assoc :path-params {:policy-id policy-id})
+                         dashboard.views/page)
+        surface      (l/select-one page-surface/PageSurface view)
+        toolbar      (-> surface l/attrs ::page-surface/toolbar)
+        overflow     (-> toolbar l/attrs ::page-toolbar/overflow-items)
+        item-summary (mapv (fn [item]
+                             (let [icon (l/select-one ico/Icon item)]
+                               {:label (page-shell/translation-key item)
+                                :icon  (::ico/name (l/attrs icon))
+                                :slot  (:slot (l/attrs icon))}))
+                           (l/select 'wa-dropdown-item overflow))]
+    (is (= [{:label :insurance/workbench
+             :icon  :table
+             :slot  "icon"}
+            {:label :insurance/add-coverage
+             :icon  :plus-circle
+             :slot  "icon"}
+            {:label :insurance/policy-settings
+             :icon  :gear
+             :slot  "icon"}
+            {:label :insurance/manage-surveys
+             :icon  :clipboard-text
+             :slot  "icon"}
+            {:label :insurance/send-changes
+             :icon  :paper-plane-right
+             :slot  "icon"}]
+           item-summary))))
+
+(deftest policy-dashboard-does-not-offer-team-actions-to-other-members
+  (let [{:keys [conn request outsider-id policy-id]} (fixture)
+        active-db (:db-after
+                   @(d/transact conn [[:db/add
+                                       [:insurance.policy/policy-id policy-id]
+                                       :insurance.policy/status
+                                       :insurance.policy.status/active]]))
+        contract (-> request
+                     (assoc :db active-db
+                            :path-params {:policy-id policy-id}
+                            :session {:session/member
+                                      {:member/member-id outsider-id}})
+                     dashboard.views/page
+                     page-shell/page-contract)]
+    (is (= [{:label      :insurance/add-coverage
+             :href       (str "/insurance-coverage-create/" policy-id)
+             :appearance "filled"
+             :variant    "brand"}]
+           (:actions contract)))
+    (is (not-any? #{:insurance/manage-surveys
+                    :insurance/request-payments-title}
+                  (concat (map :label (:actions contract))
+                          (map :label (:overflow contract)))))))
 
 (deftest policy-workflows-use-wide-contextual-surfaces
   (let [{:keys [request policy-id]} (fixture)
@@ -199,6 +311,36 @@
                (assoc :path-params {:policy-id policy-id}
                       :policy policy)
                policy-notifications.views/page
+               page-shell/page-contract)))))
+
+(deftest payment-notifications-hide-private-data-from-other-members
+  (let [{:keys [request outsider-id policy-id]} (fixture)
+        policy (q/retrieve-policy (:db request) policy-id)
+        view (-> request
+                 (assoc :path-params {:policy-id policy-id}
+                        :policy policy
+                        :session {:session/member
+                                  {:member/member-id outsider-id}})
+                 policy-notifications.views/page)]
+    (is (empty? (:actions (page-shell/page-contract view))))
+    (is (nil? (l/select-one "#insurance-payment-notifications-form" view)))))
+
+(deftest policy-surveys-use-a-wide-policy-management-surface
+  (let [{:keys [request policy-id]} (fixture)
+        policy-url (urls/link-policy policy-id)]
+    (is (= {:width       :wide
+            :breadcrumbs [:insurance/title "Insurance 2026"
+                          :insurance/manage-surveys]
+            :mobile      {:label "Insurance 2026" :href policy-url}
+            :actions     [{:label      :insurance/start-survey
+                           :form       "insurance-survey-admin-form"
+                           :type       "submit"
+                           :appearance "filled"
+                           :variant    "brand"}]
+            :overflow    []}
+           (-> request
+               (assoc :path-params {:policy-id policy-id})
+               surveys.views/page
                page-shell/page-contract)))))
 
 (deftest coverage-review-uses-a-standard-context-only-surface

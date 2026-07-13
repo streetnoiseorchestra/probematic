@@ -127,6 +127,13 @@
     (d/find-all-by db :poll/poll-status :poll.status/open pattern)
     (load-polls))))
 
+(defn unanswered-open-polls
+  [db member]
+  (->> (find-open-polls db)
+       (remove #(member-has-voted? db (:poll/poll-id %) member))
+       (sort-by :poll/closes-at)
+       vec))
+
 (defn find-draft-polls
   ([db]
    (find-draft-polls db poll-pattern))

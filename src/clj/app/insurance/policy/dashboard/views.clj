@@ -52,6 +52,122 @@
             name
             (policy-status-badge tr status)]}])
 
+(defn- policy-toolbar
+  [{:keys [tr]} {:keys [insurance-team-member? policy status-counts]}]
+  (let [status          (:insurance.policy/status policy)
+        draft?          (= :insurance.policy.status/draft status)
+        active?         (= :insurance.policy.status/active status)
+        review-todos?   (pos? (get status-counts
+                                   :instrument.coverage.status/needs-review
+                                   0))
+        primary-action  (cond
+                          (not insurance-team-member?)                      :add-coverage
+                          (and insurance-team-member? draft? review-todos?) :review
+                          (and insurance-team-member? draft?)               :send-changes
+                          (and insurance-team-member? active?)               :request-payments
+                          :else                                             :add-coverage)
+        review-item     [:wa-dropdown-item
+                         {:value   (urls/link-policy-review policy)
+                          :onclick "window.location = this.value"}
+                         [ico/Icon {::ico/library :phosphor
+                                    ::ico/name    :hand-pointing
+                                    :slot         "icon"}]
+                         [:i18n/tr :insurance/review]]
+        overflow-items  (vec
+                         (concat
+                          (when (and insurance-team-member?
+                                     (not= :review primary-action))
+                            [review-item])
+                          (when insurance-team-member?
+                            [[:wa-dropdown-item
+                              {:value   (urls/link-policy-workbench policy)
+                               :onclick "window.location = this.value"}
+                              [ico/Icon {::ico/library :phosphor
+                                         ::ico/name    :table
+                                         :slot         "icon"}]
+                              [:i18n/tr :insurance/workbench]]])
+                          (when (not= :add-coverage primary-action)
+                            [[:wa-dropdown-item
+                              {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
+                               :onclick "window.location = this.value"}
+                              [ico/Icon {::ico/library :phosphor
+                                         ::ico/name    :plus-circle
+                                         :slot         "icon"}]
+                              [:i18n/tr :insurance/add-coverage]]])
+                          (when insurance-team-member?
+                            [[:wa-dropdown-item
+                              {:value   (urls/link-policy-settings policy)
+                               :onclick "window.location = this.value"}
+                              [ico/Icon {::ico/library :phosphor
+                                         ::ico/name    :gear
+                                         :slot         "icon"}]
+                              [:i18n/tr :insurance/policy-settings]]
+                             [:wa-dropdown-item
+                              {:value   (urls/link-policy-surveys policy)
+                               :onclick "window.location = this.value"}
+                              [ico/Icon {::ico/library :phosphor
+                                         ::ico/name    :clipboard-text
+                                         :slot         "icon"}]
+                              [:i18n/tr :insurance/manage-surveys]]])
+                          (when (and insurance-team-member? draft? review-todos?)
+                            [[:wa-dropdown-item
+                              {:disabled true
+                               :title    (tr [:insurance/send-changes-disabled-hint])}
+                              [ico/Icon {::ico/library :phosphor
+                                         ::ico/name    :paper-plane-right
+                                         :slot         "icon"}]
+                              [:i18n/tr :insurance/send-changes]]])))
+        primary-button  (case primary-action
+                          :add-coverage
+                          [button/Button {:appearance "filled"
+                                          :variant    "brand"
+                                          :href       (urls/link-coverage-create
+                                                       (:insurance.policy/policy-id policy))}
+                           [ico/Icon {::ico/library :phosphor
+                                      ::ico/name    :plus-circle
+                                      :slot         "start"}]
+                           [:i18n/tr :insurance/add-coverage]]
+
+                          :send-changes
+                          [button/Button {:appearance "filled"
+                                          :variant    "brand"
+                                          :href       (urls/link-policy-changes policy)}
+                           [ico/Icon {::ico/library :phosphor
+                                      ::ico/name    :paper-plane-right
+                                      :slot         "start"}]
+                           [:i18n/tr :insurance/send-changes]]
+
+                          :request-payments
+                          [button/Button {:appearance "filled"
+                                          :variant    "brand"
+                                          :href       (urls/link-policy-send-notifications policy)}
+                           [ico/Icon {::ico/library :phosphor
+                                      ::ico/name    :bell-ringing
+                                      :slot         "start"}]
+                           [:i18n/tr :insurance/request-payments-title]]
+
+                          [button/Button {:appearance "filled"
+                                          :variant    "brand"
+                                          :href       (urls/link-policy-review policy)}
+                           [ico/Icon {::ico/library :phosphor
+                                      ::ico/name    :hand-pointing
+                                      :slot         "start"}]
+                           [:i18n/tr :insurance/review]])]
+    [page-toolbar/PageToolbar
+     {::page-toolbar/breadcrumb
+      [breadcrumb/Breadcrumb
+       {}
+       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+        [:i18n/tr :insurance/title]]
+       [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]]
+      ::page-toolbar/mobile-back
+      [button/BackButton {:href  (urls/link-insurance)
+                          :label [:i18n/tr :insurance/title]}]
+      ::page-toolbar/actions        [primary-button]
+      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+      ::page-toolbar/overflow-items overflow-items
+      :aria-label                    [:i18n/tr :insurance/toolbar-label]}]))
+
 (defn metric-card
   [{:keys [id tooltip icon label value library]}]
   [card/Card {:style "flex: auto;"}
@@ -505,68 +621,18 @@
            (detail-row (tr [:insurance/premium-base-factor]) premium-factor)]))])
 
 (defn page
-  [{:keys [db tr] :as req}]
+  [{:keys [db] :as req}]
   (let [dashboard (queries/policy-dashboard
                    db
                    (policy-id req)
                    {:current-member-id (get-in req [:session :session/member :member/member-id])})
-        policy    (:policy dashboard)
-        status    (:insurance.policy/status policy)
-        send-changes? (and (:insurance-team-member? dashboard)
-                           (= :insurance.policy.status/draft status))
-        send-changes-disabled? (pos? (get-in dashboard [:status-counts
-                                                        :instrument.coverage.status/needs-review]
-                                             0))
-        overflow-items
-        (cond-> [[:wa-dropdown-item {:value   (urls/link-policy-workbench policy)
-                                     :onclick "window.location = this.value"}
-                  [:i18n/tr :insurance/workbench]]
-                 [:wa-dropdown-item {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
-                                     :onclick "window.location = this.value"}
-                  [:i18n/tr :insurance/add-coverage]]
-                 [:wa-dropdown-item {:value   (urls/link-policy-settings policy)
-                                     :onclick "window.location = this.value"}
-                  [:i18n/tr :insurance/policy-settings]]]
-          send-changes?
-          (conj [:wa-dropdown-item
-                 (cond-> {:value   (urls/link-policy-changes policy)
-                          :onclick "window.location = this.value"}
-                   send-changes-disabled?
-                   (assoc :disabled true
-                          :title    (tr [:insurance/send-changes-disabled-hint])))
-                 [:i18n/tr :insurance/send-changes]])
-
-          (= :insurance.policy.status/active status)
-          (conj [:wa-dropdown-item {:value   (urls/link-policy-send-notifications policy)
-                                    :onclick "window.location = this.value"}
-                 [:i18n/tr :insurance/request-payments-title]]))]
+        policy    (:policy dashboard)]
     (ui2/datastar-page*
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
      [page-surface/PageSurface
       {::page-surface/width :wide
-       ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-           [:i18n/tr :insurance/title]]
-          [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-insurance)
-                             :label [:i18n/tr :insurance/title]}]
-         ::page-toolbar/actions
-         [[button/Button {:appearance "filled"
-                          :variant    "brand"
-                          :href       (urls/link-policy-review policy)}
-           [ico/Icon {::ico/library :phosphor
-                      ::ico/name    :hand-pointing
-                      :slot         "start"}]
-           [:i18n/tr :insurance/review]]]
-         ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-         ::page-toolbar/overflow-items overflow-items
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       ::page-surface/toolbar (policy-toolbar req dashboard)}
       [:div {:class "wa-stack"}
        (page-header req policy)
        (overview-section req dashboard)

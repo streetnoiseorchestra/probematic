@@ -11,6 +11,7 @@ more-actions = Weitere Aktionen
 next = Weiter
 remove = Entfernen
 reorder = Neu anordnen
+respond = Antworten
 save = Speichern
 select-all = Alle auswählen
 update = Aktualisieren

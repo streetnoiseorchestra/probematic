@@ -43,12 +43,14 @@
               :private-count   1
               :cost-available? true
               :sender-name     "Ada"
+              :authorized?     true
               :time-range      "2026 - 2026"}
              {:member-id       (get-in data [:members-data 0 :member :member/member-id])
               :member-name     (get-in data [:members-data 0 :member :member/name])
               :private-count   (get-in data [:members-data 0 :count-private])
               :cost-available? (get-in data [:members-data 0 :private-costs-available?])
               :sender-name     (:sender-name data)
+              :authorized?     (:authorized? data)
               :time-range      (:time-range data)})))
 
     (testing "the action returns one ordered ledger-and-email effect"
@@ -73,6 +75,20 @@
         (is (seq (:tx-data payload)))
         (is (= [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
                (last (:tx-data payload)))))))
+
+  (testing "a non-insurance-team member cannot send payment notifications"
+    (let [{:keys [conn member-id outsider-id policy-id]} (fixture)
+          effects (actions/send-notifications-action
+                   {:current-member-id outsider-id
+                    :db                (d/db conn)
+                    :tr                tr}
+                   {:insurancePayments
+                    {:policyId  (str policy-id)
+                     :memberIds [(str member-id)]}})]
+      (is (= support/clear-loading (first effects)))
+      (is (= :error (get-in effects [1 2 :status])))
+      (is (not-any? #(= :app.insurance/send-payment-notifications (first %))
+                    effects))))
 
   (testing "a forged selection with an unavailable private cost is rejected"
     (let [{:keys [conn member-id policy-id]} (fixture)

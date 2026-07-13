@@ -34,7 +34,7 @@
 (defn- overflow-summary [item]
   (merge {:label (node-label item)}
          (select-keys (l/attrs item)
-                      [:value :data-dialog :variant
+                      [:value :data-dialog :variant :disabled
                        :data-indicator :data-attr:loading :data-attr:disabled])
          (when-let [action (action-keyword (:data-on:click (l/attrs item)))]
            {:action action})))

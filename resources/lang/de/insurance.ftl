@@ -48,6 +48,67 @@ review = Review
 workbench = Tabelle
 add-coverage = Instrument hinzufügen
 policy-settings = Policeneinstellungen
+manage-surveys = Umfragen verwalten
+pending-coverage-reviews = Versicherungsprüfungen
+# $count (Number) - Noch zu prüfende Instrumente. $total (Number) - Gesamtzahl der Instrumente. $policy (String) - Policenname. $date (String) - Lokalisiertes Enddatum mit Uhrzeit.
+survey-response-detail =
+    { $count ->
+        [0] Bereit zum Abschließen
+        [one] Eines von { $total } Instrumenten muss geprüft werden
+       *[other] { $count } von { $total } Instrumenten müssen geprüft werden
+    } · { $policy } · endet { $date }
+survey-admin-title = Versicherungsumfragen
+survey-admin-subtitle = Bitte alle Mitglieder, die Instrumente dieser Police zu überprüfen.
+start-survey = Umfrage starten
+survey-details-title = Umfragedetails
+survey-details-subtitle = Mitglieder können bis zum Enddatum oder bis zum Schließen durch das Versicherungsteam antworten.
+survey-name = Name der Umfrage
+survey-name-hint = Gib dieser Überprüfung einen kurzen, eindeutigen Namen.
+survey-closes-at = Endet am
+survey-closes-at-hint = Datum und Uhrzeit, nach denen Mitglieder nicht mehr antworten sollen.
+survey-name-required = Gib einen Namen für die Umfrage ein.
+survey-closes-at-invalid = Gib ein gültiges Enddatum mit Uhrzeit ein.
+survey-closes-at-future = Wähle ein Enddatum in der Zukunft.
+survey-open = Offen
+survey-no-open-title = Keine offene Versicherungsumfrage
+survey-no-open-body = Starte eine Umfrage, wenn die Mitglieder ihre aktuell versicherten Instrumente überprüfen sollen.
+survey-responses-title = Antworten der Mitglieder
+survey-responses-subtitle = Verfolge den Fortschritt und korrigiere den Abschlussstatus bei Bedarf.
+survey-reviewed = Überprüft
+survey-status = Status
+survey-complete = Abgeschlossen
+survey-incomplete = Offen
+survey-progress = { $completed } von { $total }
+survey-mark-complete = Als abgeschlossen markieren
+survey-mark-incomplete = Als offen markieren
+survey-no-responses = Diese Umfrage enthält keine Antworten von Mitgliedern.
+survey-send-reminders = Erinnerungen senden
+survey-send-reminders-title = Erinnerungen zur Versicherungsumfrage senden?
+survey-send-reminders-body = Alle Mitglieder, die diese Umfrage noch nicht abgeschlossen haben, erhalten eine Erinnerung per E-Mail.
+survey-reminders-confirm = Erinnerungen senden
+survey-reminders-sent =
+    { $count ->
+        [one] Eine Erinnerung wurde gesendet.
+       *[other] { $count } Erinnerungen wurden gesendet.
+    }
+survey-reminders-empty = Alle haben diese Umfrage bereits abgeschlossen.
+survey-reminders-failed = Die Erinnerungen konnten nicht gesendet werden. Prüfe die ausgehende E-Mail-Warteschlange, bevor du es erneut versuchst.
+survey-close = Umfrage schließen
+survey-close-title = Diese Versicherungsumfrage schließen?
+survey-close-body = Mitglieder können ihre Antworten danach nicht mehr ändern.
+survey-close-confirm = Umfrage schließen
+survey-created = Die Versicherungsumfrage wurde gestartet.
+survey-updated = Die Umfragedetails wurden gespeichert.
+survey-closed = Die Versicherungsumfrage wurde geschlossen.
+survey-closed-title = Geschlossene Umfragen
+survey-closed-subtitle = Frühere Umfragen für diese Police.
+survey-closed-on = Geschlossen am { $date }
+survey-error-not-found = Diese Police oder Umfrage wurde nicht gefunden.
+survey-error-not-allowed = Nur Mitglieder des Versicherungsteams können Versicherungsumfragen verwalten.
+survey-error-open-exists = Schließe die aktuelle Umfrage, bevor du eine neue startest.
+survey-error-closed = Diese Umfrage ist bereits geschlossen.
+survey-error-expired = Das Enddatum dieser Umfrage ist erreicht.
+survey-error-no-members = Die Umfrage kann nicht gestartet werden, weil keine Mitglieder eingeladen werden können.
 add-coverage-title = Instrumentenversicherung hinzufügen
 instrument-step = Instrument
 photos-step = Fotos
@@ -60,6 +121,7 @@ request-payments-title = Versicherungszahlungen anfordern
 request-payments-subtitle = Wähle die Mitglieder aus, die eine Zahlungsaufforderung für privat versicherte Instrumente erhalten sollen.
 send-payment-notifications = Benachrichtigungen senden
 send-payment-notifications-failed = Die Zahlungsbenachrichtigungen konnten nicht abgeschlossen werden. Prüfe das Policenkonto und die ausgehenden E-Mails, bevor du es erneut versuchst.
+payment-error-not-allowed = Nur Mitglieder des Versicherungsteams können Zahlungsbenachrichtigungen senden.
 payment-members-title = Zu benachrichtigende Mitglieder
 payment-members-subtitle = Mitglieder mit berechenbaren Kosten für private Instrumente sind standardmäßig ausgewählt.
 member = Mitglied

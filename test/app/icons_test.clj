@@ -31,6 +31,16 @@
 (deftest default-icon-registries-reference-existing-svg-resources
   (is (nil? (icons/validate-libraries! icons/icon-libraries))))
 
+(deftest default-phosphor-registry-includes-insurance-toolbar-icons
+  (let [manifest (icons/build-sprite-manifest icons/icon-libraries)]
+    (doseq [icon [:plus-circle
+                  :gear
+                  :clipboard-text
+                  :paper-plane-right
+                  :bell-ringing]]
+      (is (string? (icons/sprite-href manifest :phosphor icon))
+          (str "missing registered Phosphor icon " icon)))))
+
 (deftest registry-validation-rejects-duplicate-icon-names
   (is (thrown-with-msg?
        clojure.lang.ExceptionInfo

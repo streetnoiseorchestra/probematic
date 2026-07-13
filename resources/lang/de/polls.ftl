@@ -6,6 +6,9 @@ running = Offene Umfragen
 past = Vergangene Umfragen
 no-running = Es gibt keine offenen Umfragen.
 no-past = Es gibt keine vergangenen Umfragen.
+response-needed = Umfragen
+# $date (String) - Lokalisiertes Enddatum mit Uhrzeit.
+response-dashboard-detail = Antwort ausstehend · endet { $date }
 
 index-toolbar-label = Aktionen für Umfragen
 detail-toolbar-label = Umfrageaktionen

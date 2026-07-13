@@ -11,11 +11,11 @@
 (def form-key :insurance-survey)
 (def signal-key :insuranceSurvey)
 
-(defn- data-for [{:keys [current-member-id db]} signals]
+(defn- data-for [{:keys [current-member-id db now]} signals]
   (let [policy-id (some-> (get-in signals [signal-key :policyId])
                           form/optional-text
                           util/ensure-uuid!)]
-    (queries/survey-data db policy-id current-member-id)))
+    (queries/survey-data db policy-id current-member-id now)))
 
 (defn- report-id [report]
   (:insurance.survey.report/report-id report))
@@ -57,8 +57,9 @@
     (support/with-audit
       (concat extra-tx
               (mapcat #(domain/txs-for-decision active-report %) decisions)
-              (domain/txs-complete-survey-report active-report)
-              (domain/txs-maybe-survey-response-complete active-report response))
+              (domain/txs-complete-survey-report active-report (:now state))
+              (domain/txs-maybe-survey-response-complete
+               active-report response (:now state)))
       (:current-member-id state))))
 
 (defn transition-action

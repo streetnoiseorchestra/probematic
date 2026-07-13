@@ -1,6 +1,8 @@
 (ns app.dashboard.queries
   (:require
    [app.datomic :as d]
+   [app.insurance.survey.queries :as insurance-survey.queries]
+   [app.poll.queries :as poll.queries]
    [app.queries :as q]))
 
 (defn- attach-attendance [db member {:gig/keys [gig-id] :as gig}]
@@ -103,6 +105,9 @@
 (defn dashboard-data [db member]
   (assoc (gig-buckets db member)
          :ledger (q/retrieve-ledger db (:member/member-id member))
+         :insurance-surveys (insurance-survey.queries/pending-responses-for-member
+                             db member)
+         :unanswered-polls (poll.queries/unanswered-open-polls db member)
          :insurance-todos (if (q/insurance-team-member? db member)
                             (policies-with-todos db)
                             [])))

@@ -37,3 +37,27 @@
           poll                    (queries/retrieve-poll (d/db conn) (:poll-id seeded))]
       (is (= pts/default-closes-at
              (:poll/closes-at poll))))))
+
+(deftest unanswered-open-polls-test
+  (let [{:keys [conn member-id]} (tc/new-system "poll-unanswered-open")
+        answered                  (pts/seed-poll!
+                                   conn member-id
+                                   {:poll/poll-status :poll.status/open
+                                    :poll/title       "Already answered"})
+        unanswered                (pts/seed-poll!
+                                   conn member-id
+                                   {:poll/poll-status :poll.status/open
+                                    :poll/title       "Needs an answer"})
+        _draft                    (pts/seed-poll!
+                                   conn member-id
+                                   {:poll/poll-status :poll.status/draft
+                                    :poll/title       "Not open"})]
+    (pts/seed-vote! conn
+                    (:poll-id answered)
+                    member-id
+                    (first (:option-ids answered)))
+    (is (= [(:poll-id unanswered)]
+           (mapv :poll/poll-id
+                 (queries/unanswered-open-polls
+                  (d/db conn)
+                  {:member/member-id member-id}))))))

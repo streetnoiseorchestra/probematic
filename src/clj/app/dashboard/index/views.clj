@@ -107,11 +107,29 @@
                 (filter some? actions))
            children)))
 
-(defn- response-count [unanswered insurance-todos]
-  (+ (count unanswered) (count insurance-todos)))
+(defn- response-task-row [href title detail]
+  (dashboard-row
+   :div
+   {}
+   "wa-flank:end wa-gap-m"
+   [:div {:class "wa-stack wa-gap-3xs"
+          :style {:min-inline-size 0}}
+    [:a {:href href} [:strong title]]
+    [:span {:class "wa-caption-s"
+            :style {:color "var(--wa-color-text-quiet)"}}
+     detail]]
+   [button/Button {:appearance "plain"
+                   :href       href
+                   :size       "small"}
+    [:i18n/tr :action/respond]]))
 
-(defn- responses-card [{:keys [tr] :as req} unanswered insurance-todos]
-  (let [count (response-count unanswered insurance-todos)]
+(defn- responses-card
+  [{:keys [tr] :as req}
+   {:keys [insurance-surveys insurance-todos unanswered unanswered-polls]}]
+  (let [count (+ (count unanswered)
+                 (count insurance-surveys)
+                 (count unanswered-polls)
+                 (count insurance-todos))]
     (dashboard-card
      "responses"
      [:i18n/tr :my-responses]
@@ -128,7 +146,32 @@
         (when (seq insurance-todos)
           (insurance-todos-section
            (assoc req :tr tr)
-           insurance-todos)))
+           insurance-todos))
+        (dashboard-section
+         "dashboard-response-section"
+         "dashboard-response-list"
+         [:i18n/tr :insurance/pending-coverage-reviews]
+         (mapv (fn [{:keys [closes-at name policy-id policy-name todo-count total-count]}]
+                 (response-task-row
+                  (urls/link-insurance-survey-start policy-id)
+                  name
+                  [:i18n/tr :insurance/survey-response-detail
+                   {:count  todo-count
+                    :date   (ui2/format-date-time req :medium closes-at)
+                    :policy policy-name
+                    :total  total-count}]))
+               insurance-surveys))
+        (dashboard-section
+         "dashboard-response-section"
+         "dashboard-response-list"
+         [:i18n/tr :polls/response-needed]
+         (mapv (fn [{:poll/keys [closes-at poll-id title]}]
+                 (response-task-row
+                  (urls/link-poll poll-id)
+                  title
+                  [:i18n/tr :polls/response-dashboard-detail
+                   {:date (ui2/format-date-time req :medium closes-at)}]))
+               unanswered-polls)))
        [:p {:class "empty"}
         [:i18n/tr :responses-empty]]))))
 
@@ -252,7 +295,7 @@
    (into [:ol] (map activity-entry activity-fixtures))])
 
 (defn- home-content
-  [req member {:keys [insurance-todos ledger unanswered upcoming]}]
+  [req member {:keys [ledger upcoming] :as data}]
   [:div {:class        "dashboard-home wa-grid wa-gap-l"
          :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
    [:section {:class "personal wa-stack wa-gap-l wa-text-end"}
@@ -262,7 +305,7 @@
     (quick-actions)]
    [:section {:class "focus"}
     [:div {:class "wa-stack wa-gap-l"}
-     (responses-card req unanswered insurance-todos)
+     (responses-card req data)
      (when (and ledger (pos? (:ledger/balance ledger)))
        (ledger-widget req ledger))
      (upcoming-card req upcoming)]]

@@ -266,6 +266,12 @@
 (defn closes-at-inst [closes-at]
   (t/inst (t/in closes-at (t/zone "Europe/Vienna"))))
 
+(defn survey-open-at?
+  [now {:insurance.survey/keys [closed-at closes-at]}]
+  (and (nil? closed-at)
+       (some? closes-at)
+       (t/< (t/inst now) (closes-at-inst closes-at))))
+
 (defn survey->db
   ([survey]
    (survey->db SurveyEntity survey))
@@ -398,29 +404,49 @@
     :remove-coverage (txs-remove-coverage active-report)
     nil))
 
-(defn txs-complete-survey-report [report]
-  [[:db/add (report-ref report) :insurance.survey.report/completed-at (t/inst)]])
+(defn txs-complete-survey-report
+  ([report]
+   (txs-complete-survey-report report (t/inst)))
+  ([report completed-at]
+   [[:db/add (report-ref report)
+     :insurance.survey.report/completed-at
+     (t/inst completed-at)]]))
 
 (defn txs-uncomplete-survey-report [report]
   (when-let [old-value (:insurance.survey.report/completed-at report)]
     [[:db/retract (report-ref report) :insurance.survey.report/completed-at (t/inst old-value)]]))
 
-(defn txs-maybe-survey-response-complete [{:insurance.survey.report/keys [report-id]} {:insurance.survey.response/keys [coverage-reports] :as response}]
-  (assert response "Response must be non-nil")
-  (let [open-reports (filter (comp nil? :insurance.survey.report/completed-at) coverage-reports)
+(defn txs-maybe-survey-response-complete
+  ([report response]
+   (txs-maybe-survey-response-complete report response (t/inst)))
+  ([{:insurance.survey.report/keys [report-id]}
+    {:insurance.survey.response/keys [coverage-reports] :as response}
+    completed-at]
+   (assert response "Response must be non-nil")
+   (let [open-reports (filter (comp nil? :insurance.survey.report/completed-at)
+                              coverage-reports)
+         maybe-first-report-id
+         (:insurance.survey.report/report-id (first open-reports))]
+     (when (and (= 1 (count open-reports))
+                (= maybe-first-report-id report-id))
+       [[:db/add (response-ref response)
+         :insurance.survey.response/completed-at
+         (t/inst completed-at)]]))))
 
-        maybe-first-report-id    (:insurance.survey.report/report-id (first open-reports))]
-    ;; (tap> {:r response :report report})
-    (when (and (= 1 (count open-reports))
-               (= maybe-first-report-id report-id))
-      [[:db/add (response-ref response) :insurance.survey.response/completed-at (t/inst)]])))
-
-(defn txs-toggle-response-completion [{:insurance.survey.response/keys [completed-at coverage-reports] :as r}]
-  (if completed-at
-    (concat
-     [[:db/retract (response-ref r) :insurance.survey.response/completed-at (t/inst completed-at)]]
-     (mapcat txs-uncomplete-survey-report coverage-reports))
-    [[:db/add (response-ref r) :insurance.survey.response/completed-at (t/inst)]]))
+(defn txs-toggle-response-completion
+  ([response]
+   (txs-toggle-response-completion response (t/inst)))
+  ([{:insurance.survey.response/keys [completed-at coverage-reports] :as response}
+    toggled-at]
+   (if completed-at
+     (concat
+      [[:db/retract (response-ref response)
+        :insurance.survey.response/completed-at
+        (t/inst completed-at)]]
+      (mapcat txs-uncomplete-survey-report coverage-reports))
+     [[:db/add (response-ref response)
+       :insurance.survey.response/completed-at
+       (t/inst toggled-at)]])))
 
 (defn txs-confirm-and-activate-policy-coverages [{:instrument.coverage/keys [coverage-id change] :as coverage}]
   (if (= change :instrument.coverage.change/removed)

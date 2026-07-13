@@ -12,6 +12,7 @@
    [app.insurance.policy.notifications.views :as policy.notifications.views]
    [app.insurance.policy.review.views :as policy.review.views]
    [app.insurance.policy.settings.views :as policy.settings.views]
+   [app.insurance.policy.surveys.views :as policy.surveys.views]
    [app.insurance.policy.workbench.views :as policy.workbench.views]
    [app.insurance.public.views :as public]
    [app.insurance.survey.views :as survey.views]
@@ -112,6 +113,9 @@
     (ds/page-routes {:page-name ::policy-settings
                      :path      "/insurance-policy/{policy-id}/settings"
                      :page      #'policy.settings.views/page})
+    (ds/page-routes {:page-name ::policy-surveys
+                     :path      "/insurance-policy/{policy-id}/surveys"
+                     :page      #'policy.surveys.views/page})
     (ds/page-routes {:page-name ::policy-dashboard
                      :path      "/insurance-policy/{policy-id}"
                      :page      #'policy.dashboard.views/page})

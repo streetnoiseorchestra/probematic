@@ -1,32 +1,9 @@
 (ns app.insurance.policy.notifications.queries
   (:require
    [app.insurance.domain :as domain]
+   [app.insurance.queries :as insurance.queries]
    [app.queries :as q]
-   [app.util :as util]
    [tick.core :as t]))
-
-(defn coverages-grouped-by-owner
-  [policy]
-  (->> (:insurance.policy/covered-instruments policy)
-       (util/group-by-into-list
-        :coverages
-        #(get-in % [:instrument.coverage/instrument :instrument/owner]))
-       (mapv #(update % :coverages
-                      (fn [coverages]
-                        (sort-by (fn [coverage]
-                                   (get-in coverage
-                                           [:instrument.coverage/instrument
-                                            :instrument/name]))
-                                 coverages))))
-       (mapv #(update % :coverages
-                      (fn [coverages]
-                        (domain/enrich-coverages
-                         policy
-                         (:insurance.policy/coverage-types policy)
-                         coverages))))
-       (mapv (fn [{:keys [coverages] :as member}]
-               (assoc member :total (domain/sum-by coverages :instrument.coverage/cost))))
-       (sort-by :member/name)))
 
 (defn- member-payment-data
   [{:keys [coverages] :as member}]
@@ -63,13 +40,18 @@
   (let [{:insurance.policy/keys [effective-at effective-until] :as policy}
         (q/retrieve-policy db policy-id)
         current-member (when current-member-id
-                         (q/retrieve-member db current-member-id))]
+                         (q/retrieve-member db current-member-id))
+        authorized? (boolean (and current-member
+                                  (q/insurance-team-member? db current-member)))]
     {:policy      policy
      :time-range  (format "%s - %s" (t/year effective-at) (t/year effective-until))
      :sender-name (:member/name current-member)
-     :members-data (->> (coverages-grouped-by-owner policy)
-                        (keep member-payment-data)
-                        vec)}))
+     :authorized? authorized?
+     :members-data (if authorized?
+                     (->> (insurance.queries/coverages-grouped-by-owner policy)
+                          (keep member-payment-data)
+                          vec)
+                     [])}))
 
 (defn select-members
   [members-data member-ids]
