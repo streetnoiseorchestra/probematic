@@ -1,6 +1,7 @@
 ### Bandeinstellungen
 
 title = Bandeinstellungen
+toolbar-label = Navigation der Bandeinstellungen
 
 ## Teamverwaltung
 

@@ -1,6 +1,7 @@
 ### Band settings
 
 title = Band Settings
+toolbar-label = Band settings navigation
 
 ## Team management
 

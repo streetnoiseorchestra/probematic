@@ -5,9 +5,11 @@
    [app.queries :as q]
    [app.settings.sections.actions :as actions]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
-   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.button :as button]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (defn sections-reordering [{:keys [page-state] :as req} sections]
@@ -182,11 +184,6 @@
            :data-signals (d*/->signals {:section-create  (:section-create page-state)
                                         :section         (:section page-state)
                                         :section-reorder (:section-reorder page-state)})}
-     (section-create-form req)
-     (section-edit-form req)
-     (sections-reordering req sections)
-     (for [section sections]
-       (section-remove-dialog req section))
      (ui2/section-card
       {:title    [:i18n/tr :band-settings/section-manage-title]
        :subtitle [:i18n/tr :band-settings/section-manage-subtitle]
@@ -214,20 +211,34 @@
              (section-table-row req section))]]
          (ui2/empty-state
           [:i18n/tr :band-settings/section-empty-title]
-          [:i18n/tr :band-settings/section-empty-subtitle]))))]))
+          [:i18n/tr :band-settings/section-empty-subtitle]))))
+     (section-create-form req)
+     (section-edit-form req)
+     (sections-reordering req sections)
+     (for [section sections]
+       (section-remove-dialog req section))]))
 
 (defn page [req]
   (let [title [:i18n/tr :band-settings/section-title]]
     (ui2/datastar-page*
-     [:div {:class "wa-stack wa-gap-2xl"}
-      [page-header/PageHeader
-       {:breadcrumb [breadcrumb/Breadcrumb
-                     {}
-                     [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
-                      [:i18n/tr :band-settings/title]]
-                     [breadcrumb/BreadcrumbItem title]]
-        :title      title
-        :subtitle   [:i18n/tr :band-settings/section-page-subtitle]}]
-      (sections-panel req)])))
+     [page-surface/PageSurface
+      {::page-surface/width :standard
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
+           [:i18n/tr :band-settings/title]]
+          [breadcrumb/BreadcrumbItem title]]
+         ::page-toolbar/mobile-back
+         [button/BackButton {:href  "/band-settings"
+                             :label [:i18n/tr :band-settings/title]}]
+         :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
+      [:div {:class "wa-stack wa-gap-l"}
+       [page-header/PageHeader
+        {:title    title
+         :subtitle [:i18n/tr :band-settings/section-page-subtitle]}]
+       (sections-panel req)]])))
 
 (d*/refresh-all!)

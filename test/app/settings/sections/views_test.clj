@@ -3,8 +3,10 @@
    [app.settings.sections.views :as views]
    [app.settings.views-test-support :as support]
    [app.test-common :as tc]
-   [clojure.test :refer [deftest is]]
+   [app.ui2.page-shell-test-support :as page-shell]
+   [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
+   [lookup.core :as l]
    [reitit.core :as r]))
 
 (def populated-translation-keys
@@ -26,6 +28,7 @@
     :band-settings/section-reorder-instructions
     :band-settings/section-title
     :band-settings/title
+    :band-settings/toolbar-label
     :status-active
     :status-label})
 
@@ -38,7 +41,8 @@
     :band-settings/section-manage-title
     :band-settings/section-page-subtitle
     :band-settings/section-title
-    :band-settings/title})
+    :band-settings/title
+    :band-settings/toolbar-label})
 
 (defn page-view [populated?]
   (let [{:keys [conn]} (tc/new-system "settings-section-views")]
@@ -58,6 +62,22 @@
 
 (deftest sections-page-returns-translation-data-test
   (let [view (page-view true)]
+    (testing "Sections uses Band Settings as its desktop and mobile parent context."
+      (is (= {:width             :standard
+              :toolbar-label     :band-settings/toolbar-label
+              :breadcrumbs       [:band-settings/title
+                                  :band-settings/section-title]
+              :mobile            {:href "/band-settings"
+                                  :label :band-settings/title}
+              :actions           []
+              :overflow          []
+              :heading           :band-settings/section-title
+              :subtitle          :band-settings/section-page-subtitle
+              :header-breadcrumb nil}
+             (page-shell/page-contract view {:include-header? true}))))
+    (testing "Dialogs follow the visible section-management content."
+      (is (= [:section :wa-dialog :wa-dialog :wa-dialog :wa-dialog]
+             (mapv first (l/children (l/select-one "#sections-panel" view))))))
     (is (= {:root             :main
             :translation-keys populated-translation-keys}
            {:root             (first view)

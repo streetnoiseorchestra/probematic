@@ -3,8 +3,10 @@
    [app.settings.discounts.views :as views]
    [app.settings.views-test-support :as support]
    [app.test-common :as tc]
-   [clojure.test :refer [deftest is]]
+   [app.ui2.page-shell-test-support :as page-shell]
+   [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
+   [lookup.core :as l]
    [reitit.core :as r]))
 
 (def populated-translation-keys
@@ -23,6 +25,7 @@
     :band-settings/travel-discount-title
     :band-settings/travel-discount-type-add
     :band-settings/travel-discount-type-name
+    :band-settings/toolbar-label
     :status-active
     :status-label})
 
@@ -34,7 +37,8 @@
     :band-settings/travel-discount-manage-title
     :band-settings/travel-discount-page-subtitle
     :band-settings/travel-discount-title
-    :band-settings/travel-discount-type-add})
+    :band-settings/travel-discount-type-add
+    :band-settings/toolbar-label})
 
 (defn page-view [populated?]
   (let [{:keys [conn]} (tc/new-system "settings-discount-views")
@@ -54,6 +58,24 @@
 
 (deftest travel-discounts-page-returns-translation-data-test
   (let [view (page-view true)]
+    (testing "Travel Discounts uses Band Settings as its desktop and mobile parent context."
+      (is (= {:width             :standard
+              :toolbar-label     :band-settings/toolbar-label
+              :breadcrumbs       [:band-settings/title
+                                  :band-settings/travel-discount-title]
+              :mobile            {:href "/band-settings"
+                                  :label :band-settings/title}
+              :actions           []
+              :overflow          []
+              :heading           :band-settings/travel-discount-title
+              :subtitle          :band-settings/travel-discount-page-subtitle
+              :header-breadcrumb nil}
+             (page-shell/page-contract view {:include-header? true}))))
+    (testing "Dialogs follow the visible travel-discount content."
+      (is (= [:section :wa-dialog :wa-dialog :wa-dialog]
+             (mapv first
+                   (l/children
+                    (l/select-one "#travel-discount-types" view))))))
     (is (= {:root             :main
             :translation-keys populated-translation-keys}
            {:root             (first view)

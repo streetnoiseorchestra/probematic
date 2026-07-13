@@ -5,9 +5,11 @@
    [app.settings.domain :as domain]
    [app.settings.teams.actions :as actions]
    [app.ui2 :as ui2]
-   [app.ui2.page-header :as page-header]
-   [app.ui2.button :as button]
    [app.ui2.breadcrumb :as breadcrumb]
+   [app.ui2.button :as button]
+   [app.ui2.page-header :as page-header]
+   [app.ui2.page-surface :as page-surface]
+   [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
@@ -202,10 +204,6 @@
     [:div {:id           "teams-panel"
            :data-signals (d*/->signals {:team-create (:team-create page-state)
                                         :team        (:team page-state)})}
-     (team-create-form req)
-     (team-edit-form req)
-     (for [team teams]
-       (team-remove-dialog req team))
      (ui2/section-card
       {:title    [:i18n/tr :band-settings/team-manage-title]
        :subtitle [:i18n/tr :band-settings/team-manage-subtitle]
@@ -229,20 +227,33 @@
              (team-table-row req team))]]
          (ui2/empty-state
           [:i18n/tr :band-settings/team-empty-title]
-          [:i18n/tr :band-settings/team-empty-subtitle]))))]))
+          [:i18n/tr :band-settings/team-empty-subtitle]))))
+     (team-create-form req)
+     (team-edit-form req)
+     (for [team teams]
+       (team-remove-dialog req team))]))
 
 (defn page [req]
   (let [title [:i18n/tr :band-settings/team-title]]
     (ui2/datastar-page*
-     [:div {:class "wa-stack wa-gap-2xl"}
-      [page-header/PageHeader
-       {:breadcrumb [breadcrumb/Breadcrumb
-                     {}
-                     [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
-                      [:i18n/tr :band-settings/title]]
-                     [breadcrumb/BreadcrumbItem title]]
-        :title      title
-        :subtitle   [:i18n/tr :band-settings/team-page-subtitle]}]
-      (teams-panel req)])))
+     [page-surface/PageSurface
+      {::page-surface/width :standard
+       ::page-surface/toolbar
+       [page-toolbar/PageToolbar
+        {::page-toolbar/breadcrumb
+         [breadcrumb/Breadcrumb
+          {}
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
+           [:i18n/tr :band-settings/title]]
+          [breadcrumb/BreadcrumbItem title]]
+         ::page-toolbar/mobile-back
+         [button/BackButton {:href  "/band-settings"
+                             :label [:i18n/tr :band-settings/title]}]
+         :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
+      [:div {:class "wa-stack wa-gap-l"}
+       [page-header/PageHeader
+        {:title    title
+         :subtitle [:i18n/tr :band-settings/team-page-subtitle]}]
+       (teams-panel req)]])))
 
 (d*/refresh-all!)
