@@ -6,6 +6,7 @@
    [app.system]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is]]
+   [datomic.api :as d]
    [integrant.core :as ig]))
 
 (deftest nexus-integrant-component-builds-a-nexus-config
@@ -151,18 +152,56 @@
   (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-success")
         team-id        (random-uuid)
         dispatched_    (atom nil)
+        response       {:status 200 :headers {} :body "patched"}
         result         (app-nexus/db-transact-fx
                         {:dispatch (fn [actions dispatch-data]
-                                     (reset! dispatched_ [actions dispatch-data]))}
+                                     (reset! dispatched_ [actions dispatch-data])
+                                     {:results [{:res response}]})}
                         {:system {:datomic {:conn conn}}}
                         [[[{:team/team-id team-id
                             :team/name    "On Success Test"}]
                           {:on-success [[:test/on-success team-id]]}]])]
-    (is (some? (:db-after result)))
+    (is (= response result))
     (is (= [[:test/on-success team-id]]
            (first @dispatched_)))
-    (is (= result
-           (-> @dispatched_ second :tx-result)))))
+    (is (some? (-> @dispatched_ second :tx-result :db-after)))))
+
+(deftest db-transact-fx-dispatches-matching-on-error-actions
+  (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-error")
+        now             #inst "2026-03-20T12:00:00.000-00:00"
+        active-id       (random-uuid)
+        blocked-id      (random-uuid)
+        response        {:status 200 :headers {} :body "conflict patched"}
+        dispatched_     (atom nil)
+        _ @(d/transact
+            conn
+            [{:insurance.survey/survey-id active-id
+              :insurance.survey/created-at now
+              :insurance.survey/closes-at
+              #inst "2026-04-20T12:00:00.000-00:00"}])
+        tx-data [[:insurance.survey/activate
+                  now
+                  {:insurance.survey/survey-id blocked-id
+                   :insurance.survey/created-at now
+                   :insurance.survey/closes-at
+                   #inst "2026-04-20T12:00:00.000-00:00"}]]
+        opts {:on-error
+              {:insurance.survey.error/active-exists
+               [[:test/on-error blocked-id]]}}
+        result (app-nexus/db-transact-fx
+                {:dispatch
+                 (fn [actions dispatch-data]
+                   (reset! dispatched_ [actions dispatch-data])
+                   {:results [{:res response}]})}
+                {:system {:datomic {:conn conn}}}
+                [[tx-data opts]])]
+    (is (= response result))
+    (is (= [[:test/on-error blocked-id]]
+           (first @dispatched_)))
+    (is (= :insurance.survey.error/active-exists
+           (some-> @dispatched_ second :tx-error ex-data :app/error-code)))
+    (is (nil? (d/entid (d/db conn)
+                       [:insurance.survey/survey-id blocked-id])))))
 
 (deftest batch-transactions-replaces-generated-values
   (let [[tx] (app-nexus/batch-transactions

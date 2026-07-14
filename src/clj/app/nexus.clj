@@ -138,15 +138,37 @@
 (defn- on-success-actions [transact-actions]
   (mapcat (comp :on-success second) transact-actions))
 
+(defn response? [x]
+  (and (map? x) (contains? x :status)))
+
+(defn result-response [dispatch-result]
+  (some->> (:results dispatch-result)
+           (keep :res)
+           (filter response?)
+           last))
+
 (defn ^:nexus/batch db-transact-fx
   [{:keys [dispatch]} {:keys [system]} transact-actions]
-  (let [conn    (-> system :datomic :conn)
-        _       (assert conn "Nexus :db/transact requires a Datomic connection")
-        result  @(d/transact conn (batch-transactions transact-actions))
-        actions (vec (on-success-actions transact-actions))]
-    (when (seq actions)
-      (dispatch actions {:tx-result result}))
-    result))
+  (let [conn (-> system :datomic :conn)
+        _    (assert conn "Nexus :db/transact requires a Datomic connection")]
+    (try
+      (let [result          @(d/transact conn (batch-transactions transact-actions))
+            actions         (vec (on-success-actions transact-actions))
+            dispatch-result (when (seq actions)
+                              (dispatch actions {:tx-result result}))]
+        (or (result-response dispatch-result) result))
+      (catch Exception e
+        (let [causes     (take-while some? (iterate ex-cause e))
+              tx-error   (or (some #(when (:app/error-code (ex-data %)) %) causes)
+                             e)
+              error-code (:app/error-code (ex-data tx-error))
+              actions    (->> transact-actions
+                              (mapcat #(get-in (second %)
+                                               [:on-error error-code]))
+                              vec)]
+          (if (seq actions)
+            (result-response (dispatch actions {:tx-error tx-error}))
+            (throw e)))))))
 
 (defn merge-signals-fx [_ {req :request} merge-signals]
   (datastar/respond-signals req :merge merge-signals))
@@ -185,15 +207,6 @@
 
 (defn set-keycloak-account-enabled-fx [_ {req :request} member-id enabled?]
   (members.effects/set-keycloak-account-enabled! req member-id enabled?))
-
-(defn response? [x]
-  (and (map? x) (contains? x :status)))
-
-(defn result-response [dispatch-result]
-  (some->> (:results dispatch-result)
-           (keep :res)
-           (filter response?)
-           last))
 
 (defn dispatch-actions
   [nexus system {:keys [request response]} on-error]
