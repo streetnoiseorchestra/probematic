@@ -86,6 +86,30 @@
    :frequency (apply t/new-duration frequency)
    :start-at (time-from-now (apply t/new-duration initial-delay))))
 
+(defn make-one-shot-job
+  "Schedules `handler` once after `initial-delay`.
+
+  `initial-delay` is a two-item Tick duration argument such as
+  `[30 :seconds]`.
+  The completed schedule removes itself from the live schedule registry."
+  [handler initial-delay]
+  (let [schedule-id (nano-id)
+        start-at (time-from-now (apply t/new-duration initial-delay))
+        schedule
+        (chime/chime-at
+         [start-at]
+         (fn [time]
+           (try
+             (handler time)
+             (finally
+               (swap! schedules
+                      (fn [entries]
+                        (remove #(= schedule-id (:id %)) entries)))))))]
+    (swap! schedules conj {:id schedule-id
+                           :name nil
+                           :started-at start-at
+                           :closeable schedule})))
+
 (defn start-jobs [jobs-def jobs-config]
   (run!
    (fn [job-key]
