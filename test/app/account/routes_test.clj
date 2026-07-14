@@ -114,7 +114,14 @@
                  :avatar {:filename "avatar.png"
                           :content-type "image/png"
                           :size 2048
-                          :tempfile tempfile}}}}))))))
+                          :tempfile tempfile}}}})))
+      (testing "only the form's true string marks the avatar for removal"
+        (is (false?
+             (get-in
+              (handler
+               {:parameters
+                {:multipart {:avatar-removed? "on"}}})
+              [0 1 :account-profile :avatar-removed?])))))))
 
 (deftest account-url-helpers-match-the-public-routes
   (doseq [[qualified-symbol expected] expected-links]

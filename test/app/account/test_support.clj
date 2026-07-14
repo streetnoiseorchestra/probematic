@@ -1,12 +1,17 @@
 (ns app.account.test-support
   (:require
    [app.settings.views-test-support :as settings-support]
+   [app.test-common :as tc]
    [clojure.string :as str]
+   [datomic.api :as d]
    [lookup.core :as l]
    [reitit.core :as r]))
 
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
+
+(defonce ^:private default-member-system
+  (delay (tc/new-system "account-view-request")))
 
 (defn resolve-public [symbol]
   (try
@@ -24,11 +29,14 @@
   ([]
    (request {}))
   ([overrides]
-   (merge {:tr         settings-support/legacy-tr
-           :system     {:env {:name "Test Instance"}}
-           :page-state {}
-           ::r/router  router}
-          overrides)))
+   (let [{:keys [conn member-id]} @default-member-system]
+     (merge {:tr         settings-support/legacy-tr
+             :system     {:env {:name "Test Instance"}}
+             :db         (d/db conn)
+             :session    {:session/member {:member/member-id member-id}}
+             :page-state {}
+             ::r/router  router}
+            overrides))))
 
 (defn translation-keys [hiccup]
   (settings-support/translation-keys hiccup))

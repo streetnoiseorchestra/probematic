@@ -1,7 +1,7 @@
 (ns app.account.index.views
   (:require
    [app.account.actions :as actions]
-   [app.account.view-support :as support]
+   [app.account.ui :as support]
    [app.datastar :as d*]
    [app.ui2.card :as card]
    [app.ui2.icon :as ico]))

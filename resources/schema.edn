@@ -147,16 +147,26 @@
   :db/valueType   :db.type/string
   :db/cardinality :db.cardinality/one}
 
- {:db/ident :week-start/monday}
- {:db/ident :week-start/sunday}
- {:db/ident :clock-format/hour-12}
- {:db/ident :clock-format/hour-24}
- {:db/ident :notify.scope/everything}
- {:db/ident :notify.scope/gigs}
- {:db/ident :notify.unread-style/numbered}
- {:db/ident :notify.unread-style/unnumbered}
- {:db/ident :notify.schedule/right-away}
- {:db/ident :notify.schedule/daily-batch}
+ {:db/ident :week-start/monday
+  :db/doc   "Monday is the first day of the week"}
+ {:db/ident :week-start/sunday
+  :db/doc   "Sunday is the first day of the week"}
+ {:db/ident :clock-format/hour-12
+  :db/doc   "Use a 12-hour clock"}
+ {:db/ident :clock-format/hour-24
+  :db/doc   "Use a 24-hour clock"}
+ {:db/ident :notify.scope/everything
+  :db/doc   "Notify about all activity"}
+ {:db/ident :notify.scope/gigs
+  :db/doc   "Notify only about gig activity"}
+ {:db/ident :notify.unread-style/numbered
+  :db/doc   "Show the unread notification count"}
+ {:db/ident :notify.unread-style/unnumbered
+  :db/doc   "Show unread notifications without a count"}
+ {:db/ident :notify.schedule/right-away
+  :db/doc   "Deliver notifications as activity happens"}
+ {:db/ident :notify.schedule/daily-batch
+  :db/doc   "Deliver notifications in a daily batch"}
 
  {:db/ident       :member/discourse-id
   :db/doc         "The member's id in discourse"

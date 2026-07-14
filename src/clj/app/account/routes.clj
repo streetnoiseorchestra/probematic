@@ -7,12 +7,10 @@
    [app.account.notifications.views :as notifications.views]
    [app.account.preferences.views :as preferences.views]
    [app.account.profile.views :as profile.views]
+   [app.form :as form]
    [app.nexus :as nexus]
    [app.routes.datastar :as ds]
    [reitit.ring.malli :as reitit.ring.malli]))
-
-(defn- true-value? [value]
-  (contains? #{true "true" "on" "1" 1} value))
 
 (defn- avatar-upload [file-part]
   (when (and (map? file-part)
@@ -36,7 +34,7 @@
         :phone (:phone multipart)
         :current-status (:current-status multipart)
         :date-of-birth (:date-of-birth multipart)
-        :avatar-removed? (true-value? (:avatar-removed? multipart))}
+        :avatar-removed? (form/normalize-bool (:avatar-removed? multipart))}
        :avatar-upload (avatar-upload (:avatar multipart))}]]))
 
 (defn routes [system]

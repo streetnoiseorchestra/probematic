@@ -112,7 +112,24 @@
                                        :validate-field "date-of-birth")})
              second
              last
-             :error))))
+             :error)))
+  (testing "email typo checking only requires an at sign"
+    (is (nil? (-> (actions/validate-profile-field-action
+                   {}
+                   {:account-profile (assoc valid-profile
+                                            :email "ada@localhost"
+                                            :validate-field "email")})
+                  second
+                  last)))
+    (is (= [:i18n/tr :account-settings/error-email-invalid]
+           (-> (actions/validate-profile-field-action
+                {}
+                {:account-profile (assoc valid-profile
+                                         :email "ada.example.test"
+                                         :validate-field "email")})
+               second
+               last
+               :error)))))
 
 (deftest avatar-staging-validates-the-file-that-will-be-submitted
   (is (= [nexus-actions/clear-loading
@@ -203,6 +220,11 @@
              [{:filename "avatar.png"
                :mime-type "image/png"
                :size (inc max-avatar-size)
+               :tempfile (java.io.File. "/tmp/unused-avatar.png")}
+              :account-settings/error-avatar-size]
+             [{:filename "avatar.png"
+               :mime-type "image/png"
+               :size "200"
                :tempfile (java.io.File. "/tmp/unused-avatar.png")}
               :account-settings/error-avatar-size]]]
       (let [effects (actions/save-profile-action

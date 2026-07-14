@@ -15,92 +15,93 @@
 (def allowed-avatar-types
   #{"image/jpeg" "image/png" "image/webp"})
 
-(defn- tr-node
-  ([id]
-   [:i18n/tr id])
-  ([id data]
-   [:i18n/tr id data]))
-
-(defn- error [id]
-  {:error (tr-node id)})
-
-(defn- trimmed [value]
-  (some-> value str form/trim-value))
-
-(defn- valid-date? [value]
-  (or (str/blank? value)
-      (try
-        (LocalDate/parse value)
-        true
-        (catch DateTimeException _exception
-          false))))
-
-(defn- clean-phone [value]
-  (let [value (trimmed value)]
-    (cond
-      (str/blank? value) ""
-      (members.domain/phone-valid? value) (members.domain/clean-phone-number value)
-      :else value)))
-
 (defn- normalize-avatar [avatar]
   (when (map? avatar)
-    (cond-> {:filename  (or (trimmed (:filename avatar)) "")
-             :mime-type (or (trimmed (:mime-type avatar)) "")
+    (cond-> {:filename  (or (form/trim-value (:filename avatar)) "")
+             :mime-type (or (form/trim-value (:mime-type avatar)) "")
              :size      (:size avatar)}
       (:staged? avatar) (assoc :staged? true))))
 
 (defn- normalize-profile [profile]
-  {:name           (or (trimmed (:name profile)) "")
-   :nick           (or (trimmed (:nick profile)) "")
-   :email          (some-> (:email profile) trimmed members.domain/clean-email)
-   :username       (some-> (:username profile) trimmed members.domain/clean-username)
-   :phone          (clean-phone (:phone profile))
-   :current-status (or (trimmed (:current-status profile)) "")
-   :date-of-birth  (or (trimmed (:date-of-birth profile)) "")
-   :avatar-removed? (true? (:avatar-removed? profile))
-   :avatar         (normalize-avatar (:avatar profile))})
-
-(defn- email-valid? [email]
-  (boolean
-   (and (seq email)
-        (re-matches #"(?i)^[^@\s]+@[^@\s]+\.[^@\s]+$" email))))
+  (let [phone (form/trim-value (:phone profile))]
+    {:name           (or (form/trim-value (:name profile)) "")
+     :nick           (or (form/trim-value (:nick profile)) "")
+     :email          (some-> (:email profile)
+                             form/trim-value
+                             members.domain/clean-email)
+     :username       (some-> (:username profile)
+                             form/trim-value
+                             members.domain/clean-username)
+     :phone          (or (cond-> phone
+                           (and (seq phone)
+                                (members.domain/phone-valid? phone))
+                           members.domain/clean-phone-number)
+                         "")
+     :current-status (or (form/trim-value (:current-status profile)) "")
+     :date-of-birth  (or (form/trim-value (:date-of-birth profile)) "")
+     :avatar-removed? (true? (:avatar-removed? profile))
+     :avatar         (normalize-avatar (:avatar profile))}))
 
 (defn- profile-format-errors [{:keys [name email username phone date-of-birth]}]
-  (merge
-   (when (str/blank? name)
-     {:name (error :account-settings/error-name-required)})
-   (cond
-     (str/blank? email)
-     {:email (error :account-settings/error-email-required)}
+  (let [date-valid?
+        (or (str/blank? date-of-birth)
+            (try
+              (form/date-value date-of-birth)
+              true
+              (catch DateTimeException _exception
+                false)))]
+    (cond-> {}
+      (str/blank? name)
+      (assoc :name
+             {:error [:i18n/tr :account-settings/error-name-required]})
 
-     (not (email-valid? email))
-     {:email (error :account-settings/error-email-invalid)})
-   (cond
-     (str/blank? username)
-     {:username (error :account-settings/error-username-required)}
+      (str/blank? email)
+      (assoc :email
+             {:error [:i18n/tr :account-settings/error-email-required]})
 
-     (not (re-matches members.domain/username-regex username))
-     {:username (error :account-settings/error-username-invalid)})
-   (when (and (seq phone) (not (members.domain/phone-valid? phone)))
-     {:phone (error :account-settings/error-phone-invalid)})
-   (when-not (valid-date? date-of-birth)
-     {:date-of-birth (error :account-settings/error-date-invalid)})))
+      (and (seq email) (not (str/includes? email "@")))
+      (assoc :email
+             {:error [:i18n/tr :account-settings/error-email-invalid]})
+
+      (str/blank? username)
+      (assoc :username
+             {:error [:i18n/tr :account-settings/error-username-required]})
+
+      (and (seq username)
+           (not (re-matches members.domain/username-regex username)))
+      (assoc :username
+             {:error [:i18n/tr :account-settings/error-username-invalid]})
+
+      (and (seq phone) (not (members.domain/phone-valid? phone)))
+      (assoc :phone
+             {:error [:i18n/tr :account-settings/error-phone-invalid]})
+
+      (not date-valid?)
+      (assoc :date-of-birth
+             {:error [:i18n/tr :account-settings/error-date-invalid]}))))
 
 (defn- duplicate-profile-errors [db member-ref {:keys [nick email username phone]}]
-  (when db
-    (merge
-     (when (and (seq nick)
-                (support/lookup-taken-by-other? db [:member/nick nick] member-ref))
-       {:nick (error :account-settings/error-nick-taken)})
-     (when (and (seq email)
-                (support/lookup-taken-by-other? db [:member/email email] member-ref))
-       {:email (error :account-settings/error-email-taken)})
-     (when (and (seq username)
-                (support/lookup-taken-by-other? db [:member/username username] member-ref))
-       {:username (error :account-settings/error-username-taken)})
-     (when (and (seq phone)
-                (support/lookup-taken-by-other? db [:member/phone phone] member-ref))
-       {:phone (error :account-settings/error-phone-taken)}))))
+  (cond-> {}
+    (and db
+         (seq nick)
+         (support/lookup-taken-by-other? db [:member/nick nick] member-ref))
+    (assoc :nick {:error [:i18n/tr :account-settings/error-nick-taken]})
+
+    (and db
+         (seq email)
+         (support/lookup-taken-by-other? db [:member/email email] member-ref))
+    (assoc :email {:error [:i18n/tr :account-settings/error-email-taken]})
+
+    (and db
+         (seq username)
+         (support/lookup-taken-by-other? db [:member/username username] member-ref))
+    (assoc :username
+           {:error [:i18n/tr :account-settings/error-username-taken]})
+
+    (and db
+         (seq phone)
+         (support/lookup-taken-by-other? db [:member/phone phone] member-ref))
+    (assoc :phone {:error [:i18n/tr :account-settings/error-phone-taken]})))
 
 (defn- profile-errors [db member-id profile]
   (let [errors (merge (profile-format-errors profile)
@@ -109,7 +110,9 @@
                        [:member/member-id member-id]
                        profile))]
     (cond-> errors
-      (seq errors) (assoc :_top (error :account-settings/error-profile-invalid)))))
+      (seq errors)
+      (assoc :_top
+             {:error [:i18n/tr :account-settings/error-profile-invalid]}))))
 
 (defn validate-profile-field-action
   [{:keys [db current-member-id]} {:keys [account-profile]}]
@@ -121,30 +124,23 @@
                    [:account-profile :_error field]
                    (get errors field)]))))
 
-(defn- size-value [value]
-  (cond
-    (integer? value) value
-    (string? value)  (try
-                       (Long/parseLong value)
-                       (catch NumberFormatException _exception
-                         nil))
-    :else            nil))
-
 (defn- normalize-avatar-upload [avatar]
   (when (map? avatar)
-    {:filename (or (trimmed (:filename avatar)) "")
-     :mime-type (or (trimmed (:mime-type avatar)) "")
-     :size (size-value (:size avatar))
+    {:filename (or (form/trim-value (:filename avatar)) "")
+     :mime-type (or (form/trim-value (:mime-type avatar)) "")
+     :size (:size avatar)
      :tempfile (:tempfile avatar)}))
 
 (defn- avatar-error [{:keys [filename mime-type size]}]
-  (let [size (size-value size)]
-    (cond
-      (str/blank? filename) (error :account-settings/error-avatar-name)
-      (not (contains? allowed-avatar-types mime-type))
-      (error :account-settings/error-avatar-type)
-      (or (nil? size) (neg? size) (< max-avatar-size size))
-      (error :account-settings/error-avatar-size))))
+  (cond
+    (str/blank? filename)
+    {:error [:i18n/tr :account-settings/error-avatar-name]}
+
+    (not (contains? allowed-avatar-types mime-type))
+    {:error [:i18n/tr :account-settings/error-avatar-type]}
+
+    (or (not (integer? size)) (neg? size) (< max-avatar-size size))
+    {:error [:i18n/tr :account-settings/error-avatar-size]}))
 
 (defn stage-avatar-action [_state {:keys [account-profile]}]
   (let [avatar (normalize-avatar (:avatar account-profile))]
@@ -154,12 +150,12 @@
       [support/clear-loading
        [:app.datastar/assoc-state
         [:account-profile :avatar]
-        (assoc avatar :size (size-value (:size avatar)) :staged? true)]
+        (assoc avatar :staged? true)]
        [:app.datastar/assoc-state [:account-profile :avatar-removed?] false]
        [:app.datastar/assoc-state [:account-profile :_error :avatar] nil]
        [:app.datastar/assoc-state
         [:account-profile :_feedback]
-        (tr-node :account-settings/avatar-staged-feedback)]])))
+        [:i18n/tr :account-settings/avatar-staged-feedback]]])))
 
 (defn remove-avatar-action [_state _signals]
   [support/clear-loading
@@ -167,7 +163,7 @@
    [:app.datastar/assoc-state [:account-profile :avatar-removed?] true]
    [:app.datastar/assoc-state
     [:account-profile :_feedback]
-    (tr-node :account-settings/avatar-removed-feedback)]])
+    [:i18n/tr :account-settings/avatar-removed-feedback]]])
 
 (defn- keycloak-sync-required? [member]
   (boolean (:member/keycloak-id member)))
@@ -194,11 +190,12 @@
       (discard-upload
        (profile-error-effects
         profile
-        {:_top (error :account-settings/error-current-member-missing)})
+        {:_top
+         {:error [:i18n/tr :account-settings/error-current-member-missing]}})
        avatar-upload)
-      (let [errors (cond-> (profile-errors db current-member-id profile)
-                     (and avatar-upload (avatar-error avatar-upload))
-                     (assoc :avatar (avatar-error avatar-upload)))]
+      (let [avatar-error (when avatar-upload (avatar-error avatar-upload))
+            errors (cond-> (profile-errors db current-member-id profile)
+                     avatar-error (assoc :avatar avatar-error))]
         (if (seq errors)
           (discard-upload (profile-error-effects profile errors) avatar-upload)
           [[:app.account/save-profile
@@ -228,7 +225,7 @@
     (assoc transient-state
            :_error {}
            :_saved? true
-           :_feedback (tr-node feedback))]])
+           :_feedback [:i18n/tr feedback])]])
 
 (def week-start-ident
   {"monday" :week-start/monday
@@ -242,15 +239,22 @@
   [{:keys [current-member-id]} {:keys [account-preferences]}]
   (let [preferences (select-keys account-preferences
                                  [:time-zone :week-start :time-format])
-        errors      (merge
-                     (when-not (valid-zone? (:time-zone preferences))
-                       {:time-zone (error :account-settings/error-time-zone-invalid)})
-                     (when-not (contains? week-start-ident
-                                          (:week-start preferences))
-                       {:week-start (error :account-settings/error-week-start-invalid)})
-                     (when-not (contains? clock-format-ident
-                                          (:time-format preferences))
-                       {:time-format (error :account-settings/error-time-format-invalid)}))]
+        errors
+        (cond-> {}
+          (not (valid-zone? (:time-zone preferences)))
+          (assoc :time-zone
+                 {:error
+                  [:i18n/tr :account-settings/error-time-zone-invalid]})
+
+          (not (contains? week-start-ident (:week-start preferences)))
+          (assoc :week-start
+                 {:error
+                  [:i18n/tr :account-settings/error-week-start-invalid]})
+
+          (not (contains? clock-format-ident (:time-format preferences)))
+          (assoc :time-format
+                 {:error
+                  [:i18n/tr :account-settings/error-time-format-invalid]}))]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state
@@ -284,7 +288,6 @@
 (defn- local-time? [value]
   (boolean
    (and (string? value)
-        (re-matches #"(?:[01]\d|2[0-3]):[0-5]\d" value)
         (try
           (LocalTime/parse value)
           true
@@ -294,19 +297,34 @@
 (defn- notification-errors
   [{:keys [what unread-style batch-time delivery] :as notifications}]
   (let [delivery-time (:when notifications)]
-    (merge
-     (when-not (contains? notification-scope-ident what)
-       {:what (error :account-settings/error-notification-what-invalid)})
-     (when-not (contains? notification-unread-ident unread-style)
-       {:unread-style (error :account-settings/error-unread-style-invalid)})
-     (when-not (contains? notification-schedule-ident delivery-time)
-       {:when (error :account-settings/error-notification-when-invalid)})
-     (when (and (= "daily-batch" delivery-time)
-                (not (local-time? batch-time)))
-       {:batch-time (error :account-settings/error-batch-time-invalid)})
-     (when-not (contains? allowed-browser-permissions (:browser-permission delivery))
-       {:browser-permission
-        (error :account-settings/error-browser-permission-invalid)}))))
+    (cond-> {}
+      (not (contains? notification-scope-ident what))
+      (assoc :what
+             {:error
+              [:i18n/tr :account-settings/error-notification-what-invalid]})
+
+      (not (contains? notification-unread-ident unread-style))
+      (assoc :unread-style
+             {:error
+              [:i18n/tr :account-settings/error-unread-style-invalid]})
+
+      (not (contains? notification-schedule-ident delivery-time))
+      (assoc :when
+             {:error
+              [:i18n/tr :account-settings/error-notification-when-invalid]})
+
+      (and (= "daily-batch" delivery-time)
+           (not (local-time? batch-time)))
+      (assoc :batch-time
+             {:error
+              [:i18n/tr :account-settings/error-batch-time-invalid]})
+
+      (not (contains? allowed-browser-permissions
+                      (:browser-permission delivery)))
+      (assoc :browser-permission
+             {:error
+              [:i18n/tr
+               :account-settings/error-browser-permission-invalid]}))))
 
 (defn- notification-tx [member-id notifications]
   {:db/id [:member/member-id member-id]
@@ -358,13 +376,15 @@
       (not browser-capable?)
       (notification-error-effects
        account-notifications
-       {:browser (error :account-settings/error-browser-unsupported)})
+       {:browser
+        {:error [:i18n/tr :account-settings/error-browser-unsupported]}})
 
       (not (contains? allowed-browser-permissions browser-permission))
       (notification-error-effects
        account-notifications
        {:browser-permission
-        (error :account-settings/error-browser-permission-invalid)})
+        {:error
+         [:i18n/tr :account-settings/error-browser-permission-invalid]}})
 
       :else
       (persist-notifications
@@ -393,24 +413,35 @@
 (defn- normalize-break [break-state]
   (merge (select-keys break-state
                       [:active :start-choice :start-date :end-date])
-         {:start-date (or (trimmed (:start-date break-state)) "")
-          :end-date   (or (trimmed (:end-date break-state)) "")}))
+         {:start-date (or (form/trim-value (:start-date break-state)) "")
+          :end-date   (or (form/trim-value (:end-date break-state)) "")}))
 
 (defn- break-errors
   [{:keys [active start-choice end-date]} effective-start-date]
   (let [^LocalDate start (parse-date effective-start-date)
         ^LocalDate end   (parse-date end-date)]
-    (merge
-     (when-not (boolean? active)
-       {:active (error :account-settings/error-break-availability-invalid)})
-     (when-not (contains? #{"now" "date"} start-choice)
-       {:start-choice (error :account-settings/error-break-start-choice-invalid)})
-     (when (and (= "date" start-choice) (nil? start))
-       {:start-date (error :account-settings/error-date-invalid)})
-     (when (and (seq end-date) (nil? end))
-       {:end-date (error :account-settings/error-date-invalid)})
-     (when (and start end (.isBefore end start))
-       {:end-date (error :account-settings/error-break-date-order)}))))
+    (cond-> {}
+      (not (boolean? active))
+      (assoc :active
+             {:error
+              [:i18n/tr :account-settings/error-break-availability-invalid]})
+
+      (not (contains? #{"now" "date"} start-choice))
+      (assoc :start-choice
+             {:error
+              [:i18n/tr :account-settings/error-break-start-choice-invalid]})
+
+      (and (= "date" start-choice) (nil? start))
+      (assoc :start-date
+             {:error [:i18n/tr :account-settings/error-date-invalid]})
+
+      (and (seq end-date) (nil? end))
+      (assoc :end-date
+             {:error [:i18n/tr :account-settings/error-date-invalid]})
+
+      (and start end (.isBefore end start))
+      (assoc :end-date
+             {:error [:i18n/tr :account-settings/error-break-date-order]}))))
 
 (defn- member-timezone [db member-id]
   (or (:member/timezone (d/entity db [:member/member-id member-id]))
@@ -473,14 +504,16 @@
         [:account-app]
         {:platform platform
          :_feedback
-         (tr-node :account-settings/app-prototype-feedback
-                  {:platform platform})}]]
+         [:i18n/tr :account-settings/app-prototype-feedback
+          {:platform platform}]}]]
       [support/clear-loading
        [:app.datastar/assoc-state
         [:account-app]
         {:platform platform
          :_error {:platform
-                  (error :account-settings/error-app-platform-invalid)}}]])))
+                  {:error
+                   [:i18n/tr
+                    :account-settings/error-app-platform-invalid]}}}]])))
 
 (def actions
   {::validate-profile-field       #'validate-profile-field-action

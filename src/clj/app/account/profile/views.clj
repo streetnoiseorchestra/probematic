@@ -2,8 +2,9 @@
   (:require
    [app.account.actions :as actions]
    [app.account.queries :as queries]
-   [app.account.view-support :as support]
+   [app.account.ui :as support]
    [app.datastar :as d*]
+   [app.queries :as app.queries]
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.card :as card]
@@ -133,7 +134,7 @@
 (defn page [{:keys [db page-state] :as req}]
   (let [title             [:i18n/tr :account-settings/profile-title]
         current-member-id (support/current-member-id req)
-        member            (queries/current-member db current-member-id)
+        member            (app.queries/retrieve-member db current-member-id)
         state             (queries/profile-page-state db current-member-id page-state)]
     (support/standard-page
      {:title        title

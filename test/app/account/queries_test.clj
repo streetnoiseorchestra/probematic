@@ -1,6 +1,7 @@
 (ns app.account.queries-test
   (:require
    [app.account.queries :as queries]
+   [app.queries :as app.queries]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
@@ -46,7 +47,7 @@
      {:member/avatar {:image/image-id avatar-id
                       :image/width 1000
                       :image/height 849}})
-    (let [member (queries/current-member (d/db conn) member-id)]
+    (let [member (app.queries/retrieve-member (d/db conn) member-id)]
       (is (= {:member/member-id member-id
               :member/current-status "Rehearsing"
               :member/date-of-birth "1815-12-10"

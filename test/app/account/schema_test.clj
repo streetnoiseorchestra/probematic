@@ -25,16 +25,16 @@
    :member.break/end-date {:value-type :db.type/string}})
 
 (def expected-enums
-  #{:week-start/monday
-    :week-start/sunday
-    :clock-format/hour-12
-    :clock-format/hour-24
-    :notify.scope/everything
-    :notify.scope/gigs
-    :notify.unread-style/numbered
-    :notify.unread-style/unnumbered
-    :notify.schedule/right-away
-    :notify.schedule/daily-batch})
+  {:week-start/monday "Monday is the first day of the week"
+   :week-start/sunday "Sunday is the first day of the week"
+   :clock-format/hour-12 "Use a 12-hour clock"
+   :clock-format/hour-24 "Use a 24-hour clock"
+   :notify.scope/everything "Notify about all activity"
+   :notify.scope/gigs "Notify only about gig activity"
+   :notify.unread-style/numbered "Show the unread notification count"
+   :notify.unread-style/unnumbered "Show unread notifications without a count"
+   :notify.schedule/right-away "Deliver notifications as activity happens"
+   :notify.schedule/daily-batch "Deliver notifications in a daily batch"})
 
 (deftest account-schema-installs-cardinality-one-attributes
   (let [{:keys [conn]} (tc/new-system "account-schema")
@@ -56,12 +56,39 @@
 (deftest account-enumerations-are-ident-entities
   (let [{:keys [conn]} (tc/new-system "account-enums")
         db (d/db conn)]
-    (doseq [ident expected-enums]
-      (is (= {:db/ident ident}
-             (d/pull db [:db/ident] ident))))))
+    (doseq [[ident doc] expected-enums]
+      (is (= {:db/ident ident :db/doc doc}
+             (d/pull db [:db/ident :db/doc] ident))))))
 
-(deftest account-schema-upgrades-an-existing-unindexed-unique-attribute
+(deftest schema-index-upgrades-selects-only-existing-uniqueness-changes
   (let [uri (str "datomic:mem://account-schema-upgrade-" (random-uuid))]
+    (d/create-database uri)
+    (let [conn (d/connect uri)]
+      @(d/transact conn [{:db/ident :test/unindexed
+                          :db/valueType :db.type/string
+                          :db/cardinality :db.cardinality/one}
+                         {:db/ident :test/already-unique
+                          :db/valueType :db.type/string
+                          :db/cardinality :db.cardinality/one
+                          :db/unique :db.unique/value}
+                         {:db/ident :test/not-unique
+                          :db/valueType :db.type/string
+                          :db/cardinality :db.cardinality/one}])
+      (is (= [{:db/id :test/unindexed
+               :db/index true}]
+             (datomic.system/schema-index-upgrades
+              (d/db conn)
+              [{:db/ident :test/unindexed
+                :db/index true
+                :db/unique :db.unique/value}
+               {:db/ident :test/already-unique
+                :db/unique :db.unique/value}
+               {:db/ident :test/not-unique}
+               {:db/ident :test/new-unique
+                :db/unique :db.unique/value}]))))))
+
+(deftest transact-schema-upgrades-an-existing-unindexed-unique-attribute
+  (let [uri (str "datomic:mem://account-schema-transact-" (random-uuid))]
     (d/create-database uri)
     (let [conn (d/connect uri)]
       @(d/transact conn [{:db/ident :member/nick
@@ -69,14 +96,6 @@
                           :db/cardinality :db.cardinality/one}])
       @(d/transact conn [{:db/id "existing-member"
                           :member/nick "existing"}])
-
-      (is (= [{:db/id :member/nick
-               :db/index true}]
-             (datomic.system/schema-index-upgrades
-              (d/db conn)
-              [{:db/ident :member/nick
-                :db/index true
-                :db/unique :db.unique/value}])))
 
       @(datomic.system/transact-schema conn)
 

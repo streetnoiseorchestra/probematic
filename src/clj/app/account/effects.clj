@@ -12,32 +12,25 @@
    [babashka.fs :as bfs]
    [datomic.api :as d]))
 
-(defn- connection [system]
-  (or (get-in system [:datomic :conn])
-      (:datomic-conn system)))
-
-(defn- member-ref [member-id]
-  [:member/member-id member-id])
-
 (defn- optional-attribute-tx [entity attr value]
   [(if (some? value)
      [:db/add entity attr value]
      [:db/retract entity attr])])
 
 (defn- profile-tx [member-id profile]
-  (let [member (member-ref member-id)]
-    (into [{:db/id member
+  (let [member-ref [:member/member-id member-id]]
+    (into [{:db/id member-ref
             :member/name (:name profile)
             :member/email (:email profile)
             :member/username (:username profile)}]
           (concat
-           (optional-attribute-tx member :member/nick
+           (optional-attribute-tx member-ref :member/nick
                                   (not-empty (:nick profile)))
-           (optional-attribute-tx member :member/phone
+           (optional-attribute-tx member-ref :member/phone
                                   (not-empty (:phone profile)))
-           (optional-attribute-tx member :member/current-status
+           (optional-attribute-tx member-ref :member/current-status
                                   (not-empty (:current-status profile)))
-           (optional-attribute-tx member :member/date-of-birth
+           (optional-attribute-tx member-ref :member/date-of-birth
                                   (not-empty (:date-of-birth profile)))))))
 
 (defn- avatar-file-eids [db avatar-eid]
@@ -60,7 +53,7 @@
   [member-id expected-avatar-id expected-avatar-eid avatar-upload
    avatar-removed? stored-avatar obsolete-file-eids]
   (when (or avatar-upload avatar-removed?)
-    (let [member (member-ref member-id)
+    (let [member [:member/member-id member-id]
           old-avatar-ref (when expected-avatar-id
                            [:image/image-id expected-avatar-id])
           new-avatar (:image-tempid stored-avatar)
@@ -94,51 +87,52 @@
   | `:sync-keycloak?`     | Synchronize identity metadata after commit"
   [system {:keys [member-id profile avatar-upload expected-avatar-id
                   sync-keycloak?]}]
-  (let [conn (connection system)
-        tempfile (:tempfile avatar-upload)
-        avatar-removed? (:avatar-removed? profile)
-        effective-avatar-upload (when-not avatar-removed? avatar-upload)
-        db (when conn (d/db conn))
-        expected-avatar-eid
-        (when expected-avatar-id
-          (d/entid db [:image/image-id expected-avatar-id]))
-        obsolete-file-eids (avatar-file-eids db expected-avatar-eid)]
+  (let [conn (-> system :datomic :conn)]
     (assert conn "profile persistence requires a Datomic connection")
-    (when (and expected-avatar-id (nil? expected-avatar-eid))
-      (throw (ex-info "The observed avatar no longer exists"
-                      {:member-id member-id
-                       :expected-avatar-id expected-avatar-id})))
-    (try
-      (let [stored-avatar
-            (when effective-avatar-upload
-              (filestore.controller/store-avatar!
-               {:filestore (:filestore system)}
-               {:file-name (:filename effective-avatar-upload)
-                :file tempfile
-                :mime-type (:mime-type effective-avatar-upload)}))
-            tx-data
-            (vec
-             (concat
-              (profile-tx member-id profile)
-              (:tx-data stored-avatar)
-              (avatar-change-tx member-id
-                                expected-avatar-id
-                                expected-avatar-eid
-                                effective-avatar-upload
-                                avatar-removed?
-                                stored-avatar
-                                obsolete-file-eids)
-              [[:db/add "datomic.tx" :audit/user (member-ref member-id)]]))
-            tx-result @(d/transact conn tx-data)]
-        (when sync-keycloak?
-          (members.effects/update-keycloak-meta!
-           {:system system :datomic-conn conn}
-           member-id))
-        {:status :saved
-         :tx-result tx-result})
-      (finally
-        (when tempfile
-          (bfs/delete-if-exists tempfile))))))
+    (let [tempfile (:tempfile avatar-upload)
+          avatar-removed? (:avatar-removed? profile)
+          effective-avatar-upload (when-not avatar-removed? avatar-upload)
+          db (d/db conn)
+          expected-avatar-eid
+          (when expected-avatar-id
+            (d/entid db [:image/image-id expected-avatar-id]))
+          obsolete-file-eids (avatar-file-eids db expected-avatar-eid)]
+      (when (and expected-avatar-id (nil? expected-avatar-eid))
+        (throw (ex-info "The observed avatar no longer exists"
+                        {:member-id member-id
+                         :expected-avatar-id expected-avatar-id})))
+      (try
+        (let [stored-avatar
+              (when effective-avatar-upload
+                (filestore.controller/store-avatar!
+                 {:filestore (:filestore system)}
+                 {:file-name (:filename effective-avatar-upload)
+                  :file tempfile
+                  :mime-type (:mime-type effective-avatar-upload)}))
+              tx-data
+              (vec
+               (concat
+                (profile-tx member-id profile)
+                (:tx-data stored-avatar)
+                (avatar-change-tx member-id
+                                  expected-avatar-id
+                                  expected-avatar-eid
+                                  effective-avatar-upload
+                                  avatar-removed?
+                                  stored-avatar
+                                  obsolete-file-eids)
+                [[:db/add "datomic.tx" :audit/user
+                  [:member/member-id member-id]]]))
+              tx-result @(d/transact conn tx-data)]
+          (when sync-keycloak?
+            (members.effects/update-keycloak-meta!
+             {:system system :datomic-conn conn}
+             member-id))
+          {:status :saved
+           :tx-result tx-result})
+        (finally
+          (when tempfile
+            (bfs/delete-if-exists tempfile)))))))
 
 (defn discard-upload-fx
   "Deletes a rejected multipart upload tempfile, if present."

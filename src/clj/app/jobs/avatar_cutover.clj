@@ -13,16 +13,11 @@
 (def max-avatar-size (* 5 1024 1024))
 (def allowed-avatar-types #{"image/jpeg" "image/png" "image/webp"})
 
-(defn- connection [system]
-  (or (get-in system [:datomic :conn])
-      (:datomic-conn system)))
-
 (defn- content-type [headers]
-  (some-> (or (:content-type headers)
-              (get headers "content-type")
-              (get headers "Content-Type"))
+  (some-> (:content-type headers)
           (str/split #";" 2)
           first
+          str/trim
           str/lower-case))
 
 (defn- absolute-avatar-url [forum-url template]
@@ -84,7 +79,7 @@
        (sort-by (comp str first))))
 
 (defn- migrate-member! [system member-id template]
-  (let [conn (connection system)
+  (let [conn (-> system :datomic :conn)
         url (absolute-avatar-url (get-in system [:env :discourse :forum-url])
                                  template)
         upload (download-avatar! url)]
@@ -120,7 +115,7 @@
   | `:filestore`           | Managed file block store
   | `[:env :discourse]`    | Discourse `:forum-url` configuration"
   [system]
-  (let [conn (connection system)
+  (let [conn (-> system :datomic :conn)
         candidates (candidate-members (d/db conn))]
     (reduce
      (fn [result [member-id template]]

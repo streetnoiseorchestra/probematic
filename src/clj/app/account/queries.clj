@@ -37,12 +37,8 @@
    :_error {}
    :_saved? false})
 
-(defn current-member [db member-id]
-  (when (and db member-id)
-    (queries/retrieve-member db member-id)))
-
 (defn profile-page-state [db member-id page-state]
-  (let [member (current-member db member-id)]
+  (let [member (queries/retrieve-member db member-id)]
     (merge {:name            (or (:member/name member) "")
             :nick            (or (:member/nick member) "")
             :email           (or (:member/email member) "")
@@ -71,7 +67,7 @@
     nil))
 
 (defn preferences-page-state [db member-id page-state]
-  (let [member (current-member db member-id)
+  (let [member (queries/retrieve-member db member-id)
         timezone (:member/timezone member)
         persisted {:time-zone (or timezone (:time-zone default-preferences))
                    :week-start (or (enum-name member :member/week-start)
@@ -89,7 +85,7 @@
       (assoc :delivery (merge (:delivery persisted) (:delivery transient)))))
 
 (defn notification-page-state [db member-id page-state]
-  (let [member (current-member db member-id)
+  (let [member (queries/retrieve-member db member-id)
         persisted?
         (contains? member :member.notify/enabled?)
         persisted
@@ -164,7 +160,7 @@
   ([db member-id page-state]
    (break-page-state db member-id page-state (Date.)))
   ([db member-id page-state now]
-   (let [member (current-member db member-id)
+   (let [member (queries/retrieve-member db member-id)
          timezone (or (:member/timezone member) (:time-zone default-break))
          today (today now timezone)
          start-date (or (:member.break/start-date member) "")

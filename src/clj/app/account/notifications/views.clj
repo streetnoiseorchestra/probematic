@@ -2,7 +2,7 @@
   (:require
    [app.account.actions :as actions]
    [app.account.queries :as queries]
-   [app.account.view-support :as support]
+   [app.account.ui :as support]
    [app.datastar :as d*]
    [app.ui2.button :as button]
    [app.ui2.card :as card]

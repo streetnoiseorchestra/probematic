@@ -1,5 +1,6 @@
-(ns app.account.view-support
+(ns app.account.ui
   (:require
+   [app.auth :as auth]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -10,8 +11,7 @@
 (def account-root "/account-settings")
 
 (defn current-member-id [req]
-  (or (:current-member-id req)
-      (get-in req [:session :session/member :member/member-id])))
+  (:member/member-id (auth/get-current-member req)))
 
 (defn instance-name [req]
   (get-in req [:system :env :name]))
