@@ -218,12 +218,12 @@
       (is (str/includes? out "bb dev-slot claim SLOT WORKTREE"))
       (is (str/includes? out "--branch"))))
 
-  (testing "release help describes claim release"
+  (testing "release help describes slot reset"
     (let [{:keys [exit out err]} (shell {:out :string :err :string :continue true}
                                         "bb" "scripts/dev_slots.clj" "release" "--help")]
       (is (= 0 exit))
       (is (= "" err))
-      (is (str/includes? out "dev-slot release - Release a slot claim"))
+      (is (str/includes? out "dev-slot release - Stop, reset, and release a dev slot"))
       (is (str/includes? out "bb dev-slot release SLOT")))))
 
 (deftest artifact-help-test
@@ -419,7 +419,8 @@
                 :claim-file claim-file
                 :released? false}
                (slots/release-slot! {:main-root main-root
-                                     :slot agent-1})))
+                                     :slot agent-1
+                                     :stop-services? false})))
         (slots/claim-slot! {:main-root main-root
                             :slot agent-1
                             :worktree worktree
@@ -429,14 +430,16 @@
                 :claim-file claim-file
                 :released? true}
                (select-keys (slots/release-slot! {:main-root main-root
-                                                  :slot agent-1})
+                                                  :slot agent-1
+                                                  :stop-services? false})
                             [:slot :claim-file :released?])))
         (is (not (fs/exists? claim-file)))
         (is (= {:slot :agent-1
                 :claim-file claim-file
                 :released? false}
                (slots/release-slot! {:main-root main-root
-                                     :slot agent-1})))))))
+                                     :slot agent-1
+                                     :stop-services? false})))))))
 
 (def logback-template "<configuration/>\n")
 

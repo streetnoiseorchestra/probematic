@@ -262,20 +262,6 @@
         (write-text-file! claim-file (str (pr-str claim) "\n"))
         claim))))
 
-(defn release-slot!
-  [{:keys [main-root slot]}]
-  (let [main-root (-> main-root state-paths :main-root)
-        slot (slot-key slot)
-        {:keys [claim-file]} (slot-paths main-root slot)
-        released-claim (read-claim-file claim-file)
-        released? (boolean released-claim)]
-    (when released?
-      (fs/delete-if-exists claim-file))
-    (cond-> {:slot slot
-             :claim-file claim-file
-             :released? released?}
-      released? (assoc :released-claim released-claim))))
-
 (defn with-slot-lock!
   [{:keys [main-root slot]} f]
   (let [{:keys [lock-file]} (slot-paths main-root (slot-key slot))
@@ -718,8 +704,9 @@
     (runner (compose-command main-root slot ["up" "-d"]))))
 
 (defn down-slot!
-  [{:keys [main-root slot runner]}]
+  [{:keys [main-root slot runner compose-down?]}]
   (let [runner (or runner run-command!)
+        compose-down? (not= false compose-down?)
         steps (atom [])
         failures (atom [])
         run-step! (fn [step-name command]
@@ -732,7 +719,8 @@
                         (swap! failures conj step))
                       result))
         compose-down-command (compose-command main-root slot ["down" "--remove-orphans"])
-        _ (run-step! :compose-down compose-down-command)
+        _ (when compose-down?
+            (run-step! :compose-down compose-down-command))
         running-containers (container-ids (:out (run-step! :running-containers
                                                            (docker-ps-command slot "-q"))))
         _ (when (seq running-containers)
@@ -763,6 +751,89 @@
   (and (fs/sym-link? link)
        (= (str (fs/path target))
           (str (fs/read-link link)))))
+
+(defn- delete-path! [path]
+  (if (and (fs/directory? path)
+           (not (fs/sym-link? path)))
+    (fs/delete-tree path)
+    (fs/delete-if-exists path)))
+
+(defn- unlink-worktree-state! [paths claim]
+  (when-let [worktree (:worktree claim)]
+    (doseq [[link target] [[(path-str worktree "data.dev" "current-slot")
+                            (:slot-root paths)]
+                           [(path-str worktree "data.dev" "filestore")
+                            (:shared-filestore-dir paths)]]]
+      (when (symlink-target? link target)
+        (fs/delete-if-exists link)))))
+
+(defn- clear-slot-state! [{:keys [slot-root claim-file lock-file]}]
+  (when (fs/sym-link? slot-root)
+    (throw (ex-info "Refusing to reset a symlinked slot root"
+                    {:command "release"
+                     :slot-root slot-root})))
+  (let [preserved-paths #{claim-file lock-file}
+        stale-paths (when (fs/directory? slot-root)
+                      (remove #(contains? preserved-paths (str %))
+                              (fs/list-dir slot-root)))
+        failures (->> stale-paths
+                      (keep (fn [path]
+                              (try
+                                (delete-path! path)
+                                nil
+                                (catch Exception e
+                                  {:path (str path)
+                                   :error (ex-message e)}))))
+                      vec)]
+    (when (seq failures)
+      (throw (ex-info "Could not reset all slot state"
+                      {:command "release"
+                       :failures failures})))
+    (fs/delete-if-exists claim-file)))
+
+(defn- stop-slot-for-release!
+  [{:keys [main-root slot runner port-open? paths]}]
+  (let [port-open? (or port-open? host-port-open?)
+        down-result (down-slot! {:main-root main-root
+                                 :slot slot
+                                 :runner runner
+                                 :compose-down? (fs/regular-file?
+                                                 (:compose-env-file paths))})]
+    (when-not (:ok? down-result)
+      (throw (ex-info "Could not stop slot services before release"
+                      {:command "release"
+                       :slot (slot-key slot)
+                       :down-result down-result})))
+    (when-let [open-ports (seq (open-slot-ports slot port-open?))]
+      (throw (ex-info "Slot ports are still in use"
+                      {:command "release"
+                       :slot (slot-key slot)
+                       :open-ports (vec open-ports)})))
+    down-result))
+
+(defn release-slot!
+  [{:keys [main-root slot runner port-open? stop-services?]
+    :or {stop-services? true}}]
+  (let [main-root (-> main-root state-paths :main-root)
+        slot-map (if (map? slot)
+                   slot
+                   (find-slot (load-registry main-root) slot))
+        slot (slot-key slot-map)
+        paths (slot-paths main-root slot)
+        released-claim (read-claim-file (:claim-file paths))
+        released? (boolean released-claim)]
+    (when stop-services?
+      (stop-slot-for-release! {:main-root main-root
+                               :slot slot-map
+                               :runner runner
+                               :port-open? port-open?
+                               :paths paths}))
+    (unlink-worktree-state! paths released-claim)
+    (clear-slot-state! paths)
+    (cond-> {:slot slot
+             :claim-file (:claim-file paths)
+             :released? released?}
+      released? (assoc :released-claim released-claim))))
 
 (defn doctor-slot!
   [{:keys [main-root slot runner port-open?]}]
@@ -952,7 +1023,7 @@
      "  artifacts            Manage ignored artifact cache and worktree links"
      "  template             Manage reusable Datomic templates"
      "  hydrate SLOT         Replace a slot Datomic store from a template"
-     "  release SLOT         Release a slot claim"
+     "  release SLOT         Stop, reset, and release a dev slot"
      ""
      "Global Flags:"])
    "\n"
@@ -1012,11 +1083,12 @@
 
     "release"
     (str
-     "dev-slot release - Release a slot claim\n\n"
+     "dev-slot release - Stop, reset, and release a dev slot\n\n"
      "Usage:\n"
      "  bb dev-slot release SLOT [options]\n\n"
      "Options:\n"
      (cli/format-opts release-help-spec)
+     "\nRelease removes all per-slot state but preserves shared state and templates.\n"
      "\nExamples:\n"
      "  bb dev-slot release agent-1\n")
 
@@ -1249,7 +1321,7 @@
                  (fn []
                    (release-slot! {:main-root main-root
                                    :slot slot})))]
-    (println (if (:released? result) "released" "already released")
+    (println (if (:released? result) "released and reset" "reset")
              (name (:slot result)))))
 
 (defn- up-command [opts [slot-name]]
