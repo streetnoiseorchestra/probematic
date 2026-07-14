@@ -184,7 +184,10 @@
                                            ;; (tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
                                            ;; only send an event if the view has changed
                                            (when (and new-view (not= last-view-hash new-view-hash))
-                                             (d*/patch-elements! sse-gen new-view {d*/id new-view-hash}))
+                                             (d*/patch-elements! sse-gen new-view
+                                                                 (cond-> {d*/id new-view-hash}
+                                                                   last-view-hash
+                                                                   (assoc d*/use-view-transition true))))
                                            (recur req new-view-hash))
                                          ;; we want work cancelling to have higher priority
                                          :priority true))

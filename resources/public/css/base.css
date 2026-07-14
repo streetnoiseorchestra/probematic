@@ -8,6 +8,14 @@
   mix-blend-mode: normal;
 }
 
+::view-transition-group(root) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  opacity: 0;
+}
+
 html,
 body {
   min-height: var(--sno-size-full);
