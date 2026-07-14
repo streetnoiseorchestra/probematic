@@ -153,7 +153,8 @@ notifications-batch-evening = Abends um 20:00 Uhr
 error-notification-what-invalid = Wähle die gewünschten Aktualisierungen.
 error-unread-style-invalid = Wähle eine Ungelesen-Anzeige mit oder ohne Zahl.
 error-notification-when-invalid = Wähle sofortige Zustellung oder eine tägliche Zusammenfassung.
-error-batch-time-invalid = Wähle eine tägliche Zusammenfassung am Morgen, Nachmittag oder Abend.
+error-batch-time-invalid = Wähle eine gültige Uhrzeit für die tägliche Zusammenfassung.
+notifications-saved-feedback = Deine Benachrichtigungseinstellungen wurden gespeichert.
 
 break-title = Auszeit
 break-subtitle = Zeige anderen, wann du abwesend bist und wann du zurückkommst.

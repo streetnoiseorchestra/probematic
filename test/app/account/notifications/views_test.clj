@@ -18,7 +18,7 @@
         (is (= ["everything" "gigs"] (values-for "notification-what" view)))
         (is (= ["numbered" "unnumbered"] (values-for "unread-style" view)))
         (is (= ["right-away" "daily-batch"] (values-for "notification-when" view)))
-        (is (= ["morning" "afternoon" "evening"]
+        (is (= ["08:00" "13:00" "20:00"]
                (values-for "batch-time" view)))
         (is (some? (support/element-by-id "notification-status-summary" view)))
         (is (some? (support/element-by-id "notification-unread-numbered-preview" view)))
@@ -59,6 +59,20 @@
              (-> (support/element-by-id "enable-browser-notifications" view)
                  support/attrs
                  :data-on:click)))))))
+
+(deftest notification-page-renders-immediate-save-feedback-as-a-status
+  (let [page (support/public-fn 'app.account.notifications.views/page)]
+    (is (fn? page))
+    (when page
+      (let [message [:i18n/tr
+                     :account-settings/notifications-saved-feedback]
+            view (page
+                  (support/request
+                   {:page-state
+                    {:account-notifications {:_feedback message}}}))
+            statuses (filter #(= "status" (:role (support/attrs %)))
+                             (support/elements :p view))]
+        (is (= [message] (mapv #(nth % 2) statuses)))))))
 
 (deftest notification-status-uses-buttons-and-only-offers-browser-enablement-when-needed
   (let [page (support/public-fn 'app.account.notifications.views/page)]
@@ -125,6 +139,22 @@
                 :account-settings/notifications-summary-email-browser-mobile-gigs-daily]
                (nth (support/element-by-id "notification-status-description" view) 2)))))))
 
+(deftest notification-batch-times-server-render-their-initial-visibility
+  (let [page (support/public-fn 'app.account.notifications.views/page)]
+    (is (fn? page))
+    (when page
+      (let [right-away (page (support/request))
+            daily (page
+                   (support/request
+                    {:page-state
+                     {:account-notifications {:when "daily-batch"}}}))
+            attrs #(support/attrs
+                    (support/element-by-id "notification-batch-times" %))]
+        (is (true? (:hidden (attrs right-away))))
+        (is (not (true? (:hidden (attrs daily)))))
+        (is (string? (:data-attr:hidden (attrs right-away))))
+        (is (string? (:data-attr:hidden (attrs daily))))))))
+
 (deftest notification-page-uses-the-standard-account-shell
   (let [page (support/public-fn 'app.account.notifications.views/page)]
     (is (fn? page) "app.account.notifications.views/page should exist")
@@ -135,15 +165,14 @@
         (is (= {:width       :standard
                 :breadcrumbs [:account-settings/title
                               :account-settings/notifications-title]
-                :mobile      {:href "/account-settings"
-                              :label :account-settings/title}
+                :mobile      nil
                 :actions     []
                 :overflow    []
                 :heading     :account-settings/notifications-title}
                (select-keys contract
                             [:width :breadcrumbs :mobile :actions :overflow :heading])))
-        (is (= 1 (count (support/elements button/BackButton
-                                          (page (support/request))))))))))
+        (is (empty? (support/elements button/BackButton
+                                      (page (support/request)))))))))
 
 (deftest notification-copy-uses-the-configured-instance-name
   (let [page (support/public-fn 'app.account.notifications.views/page)]

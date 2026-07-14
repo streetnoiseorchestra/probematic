@@ -7,7 +7,7 @@
    [clojure.string :as str]
    [datomic.api :as d])
   (:import
-   [java.time DateTimeException Instant LocalDate ZoneId ZonedDateTime]
+   [java.time DateTimeException Instant LocalDate LocalTime ZoneId ZonedDateTime]
    [java.util Date]))
 
 (def max-avatar-size (* 5 1024 1024))
@@ -278,83 +278,114 @@
        {}
        :account-settings/preferences-saved-feedback))))
 
-(defn toggle-notifications-action [_state {:keys [account-notifications]}]
-  [support/clear-loading
-   [:app.datastar/merge-state
-    [:account-notifications]
-    {:enabled? (boolean (:enabled? account-notifications))
-     :_error   {}
-     :_saved?  true}]])
-
 (def allowed-browser-permissions
   #{"default" "denied" "granted"})
 
-(defn enable-browser-notifications-action
-  [_state {:keys [account-notifications]}]
-  (let [{:keys [browser-capable? browser-permission]}
-        (:delivery account-notifications)]
-    (cond
-      (not browser-capable?)
-      [support/clear-loading
-       [:app.datastar/merge-state
-        [:account-notifications]
-        {:delivery {:browser-capable? false
-                    :browser-permission (or browser-permission "default")
-                    :browser? false}
-         :_error {:browser (error :account-settings/error-browser-unsupported)}}]]
+(def notification-scope-ident
+  {"everything" :notify.scope/everything
+   "gigs" :notify.scope/gigs})
 
-      (not (contains? allowed-browser-permissions browser-permission))
-      [support/clear-loading
-       [:app.datastar/merge-state
-        [:account-notifications]
-        {:delivery {:browser-capable? true
-                    :browser-permission browser-permission
-                    :browser? false}
-         :_error {:browser-permission
-                  (error :account-settings/error-browser-permission-invalid)}}]]
+(def notification-unread-ident
+  {"numbered" :notify.unread-style/numbered
+   "unnumbered" :notify.unread-style/unnumbered})
 
-      :else
-      [support/clear-loading
-       [:app.datastar/merge-state
-        [:account-notifications]
-        {:delivery {:browser-capable? true
-                    :browser-permission browser-permission
-                    :browser? true}
-         :_error {}
-         :_saved? true}]])))
+(def notification-schedule-ident
+  {"right-away" :notify.schedule/right-away
+   "daily-batch" :notify.schedule/daily-batch})
+
+(defn- local-time? [value]
+  (boolean
+   (and (string? value)
+        (re-matches #"(?:[01]\d|2[0-3]):[0-5]\d" value)
+        (try
+          (LocalTime/parse value)
+          true
+          (catch DateTimeException _exception
+            false)))))
 
 (defn- notification-errors
   [{:keys [what unread-style batch-time delivery] :as notifications}]
   (let [delivery-time (:when notifications)]
     (merge
-     (when-not (contains? #{"everything" "gigs"} what)
+     (when-not (contains? notification-scope-ident what)
        {:what (error :account-settings/error-notification-what-invalid)})
-     (when-not (contains? #{"numbered" "unnumbered"} unread-style)
+     (when-not (contains? notification-unread-ident unread-style)
        {:unread-style (error :account-settings/error-unread-style-invalid)})
-     (when-not (contains? #{"right-away" "daily-batch"} delivery-time)
+     (when-not (contains? notification-schedule-ident delivery-time)
        {:when (error :account-settings/error-notification-when-invalid)})
      (when (and (= "daily-batch" delivery-time)
-                (not (contains? #{"morning" "afternoon" "evening"} batch-time)))
+                (not (local-time? batch-time)))
        {:batch-time (error :account-settings/error-batch-time-invalid)})
      (when-not (contains? allowed-browser-permissions (:browser-permission delivery))
        {:browser-permission
         (error :account-settings/error-browser-permission-invalid)}))))
 
-(defn update-notification-settings-action
-  [_state {:keys [account-notifications]}]
-  (let [notifications (select-keys account-notifications
+(defn- notification-tx [member-id notifications]
+  {:db/id [:member/member-id member-id]
+   :member.notify/enabled? (boolean (:enabled? notifications))
+   :member.notify/scope (notification-scope-ident (:what notifications))
+   :member.notify/attendance-reminders?
+   (boolean (get-in notifications [:reminders :attendance?]))
+   :member.notify/poll-reminders?
+   (boolean (get-in notifications [:reminders :polls?]))
+   :member.notify/email? (boolean (get-in notifications [:delivery :email?]))
+   :member.notify/browser? (boolean (get-in notifications [:delivery :browser?]))
+   :member.notify/unread-style
+   (notification-unread-ident (:unread-style notifications))
+   :member.notify/schedule
+   (notification-schedule-ident (:when notifications))
+   :member.notify/batch-time (:batch-time notifications)})
+
+(defn- notification-error-effects [notifications errors]
+  [support/clear-loading
+   [:app.datastar/assoc-state
+    [:account-notifications]
+    (assoc notifications :_error errors :_saved? false)]])
+
+(defn- persist-notifications [member-id notifications]
+  (let [notifications (select-keys notifications
                                    [:enabled? :what :reminders :delivery
                                     :unread-style :when :batch-time])
-        errors        (notification-errors notifications)]
+        errors (notification-errors notifications)]
     (if (seq errors)
-      [support/clear-loading
-       [:app.datastar/assoc-state
-        [:account-notifications]
-        (assoc notifications :_error errors :_saved? false)]]
-      [support/clear-loading
-       [:app.datastar/assoc-state
-        [:account-notifications]
-        (assoc notifications :_error {} :_saved? true)]])))
+      (notification-error-effects notifications errors)
+      (persisted-effects
+       member-id
+       [(notification-tx member-id notifications)]
+       [:account-notifications]
+       {:delivery
+        (select-keys (:delivery notifications)
+                     [:browser-capable? :browser-permission])}
+       :account-settings/notifications-saved-feedback))))
+
+(defn toggle-notifications-action
+  [{:keys [current-member-id]} {:keys [account-notifications]}]
+  (persist-notifications current-member-id account-notifications))
+
+(defn enable-browser-notifications-action
+  [{:keys [current-member-id]} {:keys [account-notifications]}]
+  (let [{:keys [browser-capable? browser-permission]}
+        (:delivery account-notifications)]
+    (cond
+      (not browser-capable?)
+      (notification-error-effects
+       account-notifications
+       {:browser (error :account-settings/error-browser-unsupported)})
+
+      (not (contains? allowed-browser-permissions browser-permission))
+      (notification-error-effects
+       account-notifications
+       {:browser-permission
+        (error :account-settings/error-browser-permission-invalid)})
+
+      :else
+      (persist-notifications
+       current-member-id
+       (assoc-in account-notifications [:delivery :browser?] true)))))
+
+(defn update-notification-settings-action
+  [{:keys [current-member-id]} {:keys [account-notifications]}]
+  (persist-notifications current-member-id account-notifications))
 
 (defn- ->instant ^Instant [value]
   (cond

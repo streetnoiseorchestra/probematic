@@ -210,43 +210,51 @@
    (unread-choices req state)])
 
 (defn- timing-card [req state]
-  [:section {:class "account-section wa-stack wa-gap-l"}
-   (radio-group req
-                :account-settings/notifications-when-title
-                "notification-when"
-                "account-notifications.when"
-                (:when state)
-                [["right-away"
-                  :account-settings/notifications-when-right-away
-                  :account-settings/notifications-when-right-away-description]
-                 ["daily-batch"
-                  :account-settings/notifications-when-daily
-                  :account-settings/notifications-when-daily-description]])
-   (into
-    [:fieldset {:id "notification-batch-times"
-                :class "wa-stack wa-gap-xs"
-                :data-show "$account-notifications.when === 'daily-batch'"}
-     [:legend {:class "wa-visually-hidden"}
-      [:i18n/tr :account-settings/notifications-when-daily]]]
-    (for [[value label] [["morning" :account-settings/notifications-batch-morning]
-                         ["afternoon" :account-settings/notifications-batch-afternoon]
-                         ["evening" :account-settings/notifications-batch-evening]]]
-      (support/radio-option
-       {:id (str "account-notifications-batch-" value)
-        :name "batch-time"
-        :value value
-        :signal "account-notifications.batch-time"
-        :checked? (= value (:batch-time state))
-        :label [:i18n/tr label]
-        :form form-id
-        :attrs (update-on-change req)})))])
+  (let [daily? (= "daily-batch" (:when state))
+        expression "$account-notifications.when === 'daily-batch'"]
+    [:section {:class "account-section wa-stack wa-gap-l"}
+     (radio-group req
+                  :account-settings/notifications-when-title
+                  "notification-when"
+                  "account-notifications.when"
+                  (:when state)
+                  [["right-away"
+                    :account-settings/notifications-when-right-away
+                    :account-settings/notifications-when-right-away-description]
+                   ["daily-batch"
+                    :account-settings/notifications-when-daily
+                    :account-settings/notifications-when-daily-description]])
+     (into
+      [:fieldset (cond-> {:id "notification-batch-times"
+                          :class "wa-stack wa-gap-xs"
+                          :data-show expression
+                          :data-attr:hidden (str "!(" expression ")")}
+                   (not daily?) (assoc :hidden true))
+       [:legend {:class "wa-visually-hidden"}
+        [:i18n/tr :account-settings/notifications-when-daily]]]
+      (for [[value label] [["08:00" :account-settings/notifications-batch-morning]
+                           ["13:00" :account-settings/notifications-batch-afternoon]
+                           ["20:00" :account-settings/notifications-batch-evening]]]
+        (support/radio-option
+         {:id (str "account-notifications-batch-" value)
+          :name "batch-time"
+          :value value
+          :signal "account-notifications.batch-time"
+          :checked? (= value (:batch-time state))
+          :label [:i18n/tr label]
+          :form form-id
+          :attrs (update-on-change req)})))]))
 
-(defn page [{:keys [page-state] :as req}]
+(defn page [{:keys [db page-state] :as req}]
   (let [title [:i18n/tr :account-settings/notifications-title]
-        state (queries/notification-page-state page-state)]
+        state (queries/notification-page-state
+               db
+               (support/current-member-id req)
+               page-state)]
     (support/standard-page
      {:title title
       :subtitle [:i18n/tr :account-settings/notifications-subtitle]
+      :mobile-back? false
       :actions []}
      [:form {:id form-id
              :class "wa-stack wa-gap-l"
@@ -255,6 +263,7 @@
       (status-card req state)
       (what-and-reminders req state)
       (delivery-card req state)
-      (timing-card req state)])))
+      (timing-card req state)
+      (support/feedback state)])))
 
 (d*/refresh-all!)

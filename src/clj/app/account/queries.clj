@@ -23,7 +23,7 @@
               :browser-permission "default"}
    :unread-style "numbered"
    :when "right-away"
-   :batch-time "morning"
+   :batch-time "08:00"
    :_error {}
    :_saved? false})
 
@@ -59,6 +59,11 @@
 (defn- enum-name [member attr]
   (some-> (get-in member [attr :db/ident]) name))
 
+(defn- attribute-or-default [member attr default]
+  (if (contains? member attr)
+    (get member attr)
+    default))
+
 (defn- clock-format-name [member]
   (case (get-in member [:member/clock-format :db/ident])
     :clock-format/hour-12 "12-hour"
@@ -78,8 +83,58 @@
                    :_saved? false}]
     (merge persisted (:account-preferences page-state))))
 
-(defn notification-page-state [page-state]
-  (merge default-notifications (:account-notifications page-state)))
+(defn- merge-notifications [persisted transient]
+  (-> (merge persisted transient)
+      (assoc :reminders (merge (:reminders persisted) (:reminders transient)))
+      (assoc :delivery (merge (:delivery persisted) (:delivery transient)))))
+
+(defn notification-page-state [db member-id page-state]
+  (let [member (current-member db member-id)
+        persisted?
+        (contains? member :member.notify/enabled?)
+        persisted
+        (if-not persisted?
+          default-notifications
+          {:enabled? (attribute-or-default
+                      member
+                      :member.notify/enabled?
+                      (:enabled? default-notifications))
+           :what (or (enum-name member :member.notify/scope)
+                     (:what default-notifications))
+           :reminders
+           {:attendance?
+            (attribute-or-default
+             member
+             :member.notify/attendance-reminders?
+             (get-in default-notifications [:reminders :attendance?]))
+            :polls?
+            (attribute-or-default
+             member
+             :member.notify/poll-reminders?
+             (get-in default-notifications [:reminders :polls?]))}
+           :delivery
+           {:email?
+            (attribute-or-default
+             member
+             :member.notify/email?
+             (get-in default-notifications [:delivery :email?]))
+            :browser?
+            (attribute-or-default
+             member
+             :member.notify/browser?
+             (get-in default-notifications [:delivery :browser?]))
+            :browser-capable? nil
+            :browser-permission "default"}
+           :unread-style
+           (or (enum-name member :member.notify/unread-style)
+               (:unread-style default-notifications))
+           :when (or (enum-name member :member.notify/schedule)
+                     (:when default-notifications))
+           :batch-time (or (:member.notify/batch-time member)
+                           (:batch-time default-notifications))
+           :_error {}
+           :_saved? false})]
+    (merge-notifications persisted (:account-notifications page-state))))
 
 (defn break-page-state [page-state]
   (merge default-break (:account-break page-state)))

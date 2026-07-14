@@ -153,7 +153,8 @@ notifications-batch-evening = In the evening at 20:00
 error-notification-what-invalid = Choose which updates you want.
 error-unread-style-invalid = Choose a numbered or unnumbered unread indicator.
 error-notification-when-invalid = Choose immediate delivery or a daily batch.
-error-batch-time-invalid = Choose a morning, afternoon, or evening daily batch.
+error-batch-time-invalid = Choose a valid time for the daily summary.
+notifications-saved-feedback = Your notification settings were saved.
 
 break-title = On a Break
 break-subtitle = Let people know when you’re away and when you’ll be back.

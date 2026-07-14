@@ -82,14 +82,14 @@
   {:enabled? true
    :what "everything"
    :reminders {:attendance? true
-               :polls? true}
+               :polls? false}
    :delivery {:email? true
               :browser? true
               :browser-capable? true
               :browser-permission "default"}
    :unread-style "numbered"
-   :when "right-away"
-   :batch-time "morning"})
+   :when "daily-batch"
+   :batch-time "13:00"})
 
 (def valid-break
   {:active true
@@ -334,79 +334,90 @@
                (get-in invalid-effects [1 2 :_error field :error])))
         (is (not-any? #(= :db/transact (first %)) invalid-effects))))))
 
-(deftest notification-toggle-and-browser-enable-apply-immediately
-  (when-let [toggle (action 'app.account.actions/toggle-notifications-action)]
-    (doseq [enabled? [false true]]
-      (is (= [nexus-actions/clear-loading
-              [:app.datastar/merge-state
-               [:account-notifications]
-               {:enabled? enabled? :_error {} :_saved? true}]]
-             (toggle {} {:account-notifications (assoc valid-notifications
-                                                       :enabled? enabled?)})))))
-  (when-let [enable-browser
-             (action 'app.account.actions/enable-browser-notifications-action)]
-    (is (= [nexus-actions/clear-loading
-            [:app.datastar/merge-state
-             [:account-notifications]
-             {:delivery {:browser-capable? true
-                         :browser-permission "default"
-                         :browser? true}
-              :_error {}
-              :_saved? true}]]
-           (enable-browser
-            {}
-            {:account-notifications
-             (assoc-in valid-notifications [:delivery :browser?] false)})))
-    (is (= [:i18n/tr :account-settings/error-browser-unsupported]
-           (-> (enable-browser
-                {}
-                {:account-notifications
-                 (-> valid-notifications
-                     (assoc-in [:delivery :browser-capable?] false)
-                     (assoc-in [:delivery :browser?] false))})
-               second
-               last
-               :_error
-               :browser
-               :error)))))
+(deftest notification-actions-persist-a-complete-policy
+  (let [{:keys [conn member-id] :as system} (tc/new-system "account-notifications")
+        state (action-state system)
+        effects (actions/update-notification-settings-action
+                 state
+                 {:account-notifications valid-notifications})]
+    (transact-effects! conn effects)
+    (let [db (d/db conn)]
+      (is (true? (entity-value db member-id :member.notify/enabled?)))
+      (is (= :notify.scope/everything
+             (enum-ident (entity-value db member-id :member.notify/scope))))
+      (is (true? (entity-value db member-id :member.notify/attendance-reminders?)))
+      (is (false? (entity-value db member-id :member.notify/poll-reminders?)))
+      (is (true? (entity-value db member-id :member.notify/email?)))
+      (is (true? (entity-value db member-id :member.notify/browser?)))
+      (is (= :notify.unread-style/numbered
+             (enum-ident (entity-value db member-id :member.notify/unread-style))))
+      (is (= :notify.schedule/daily-batch
+             (enum-ident (entity-value db member-id :member.notify/schedule))))
+      (is (= "13:00" (entity-value db member-id :member.notify/batch-time))))
+    (is (= #{:_error :_saved? :_feedback :delivery}
+           (set (keys (get-in effects [2 2])))))
+    (is (= {:browser-capable? true
+            :browser-permission "default"}
+           (get-in effects [2 2 :delivery])))
+    (testing "master toggle also writes every policy attribute"
+      (let [toggle-effects (actions/toggle-notifications-action
+                            (assoc state :db (d/db conn))
+                            {:account-notifications
+                             (assoc valid-notifications :enabled? false)})]
+        (transact-effects! conn toggle-effects)
+        (is (false? (entity-value (d/db conn)
+                                  member-id
+                                  :member.notify/enabled?)))
+        (is (= "13:00" (entity-value (d/db conn)
+                                     member-id
+                                     :member.notify/batch-time)))))
+    (testing "browser enable persists the submitted browser preference"
+      (let [browser-effects
+            (actions/enable-browser-notifications-action
+             (assoc state :db (d/db conn))
+             {:account-notifications
+              (assoc-in valid-notifications [:delivery :browser?] false)})]
+        (transact-effects! conn browser-effects)
+        (is (true? (entity-value (d/db conn)
+                                 member-id
+                                 :member.notify/browser?)))))))
 
-(deftest update-notification-settings-validates-and-applies-every-choice-immediately
-  (when-let [update-notifications
-             (action 'app.account.actions/update-notification-settings-action)]
-    (is (= [nexus-actions/clear-loading
-            [:app.datastar/assoc-state
-             [:account-notifications]
-             (assoc valid-notifications
-                    :_error {}
-                    :_saved? true)]]
-           (update-notifications
-            {}
-            {:account-notifications valid-notifications})))
+(deftest notification-batch-time-is-a-local-time-not-an-enum
+  (let [system (tc/new-system "account-notification-time")]
+    (doseq [time ["08:00" "13:00" "20:00" "07:35"]]
+      (is (some #(= :db/transact (first %))
+                (actions/update-notification-settings-action
+                 (action-state system)
+                 {:account-notifications (assoc valid-notifications
+                                                :batch-time time)}))))
+    (doseq [time ["morning" "24:00" "8am" ""]]
+      (let [effects (actions/update-notification-settings-action
+                     (action-state system)
+                     {:account-notifications (assoc valid-notifications
+                                                    :batch-time time)})]
+        (is (= [:i18n/tr :account-settings/error-batch-time-invalid]
+               (get-in effects [1 2 :_error :batch-time :error])))
+        (is (not-any? #(= :db/transact (first %)) effects))))))
+
+(deftest notification-validation-rejects-invalid-ref-values
+  (let [system (tc/new-system "account-notification-validation")]
     (doseq [[path value error-path error-key]
-            [[[:what] "some" [:what] :account-settings/error-notification-what-invalid]
-             [[:unread-style] "dots" [:unread-style] :account-settings/error-unread-style-invalid]
-             [[:when] "weekly" [:when] :account-settings/error-notification-when-invalid]
-             [[:batch-time] "midnight" [:batch-time] :account-settings/error-batch-time-invalid]
+            [[[:what] "some" [:what]
+              :account-settings/error-notification-what-invalid]
+             [[:unread-style] "dots" [:unread-style]
+              :account-settings/error-unread-style-invalid]
+             [[:when] "weekly" [:when]
+              :account-settings/error-notification-when-invalid]
              [[:delivery :browser-permission] "maybe" [:browser-permission]
               :account-settings/error-browser-permission-invalid]]]
-      (let [submitted (-> valid-notifications
-                          (assoc :when "daily-batch")
-                          (assoc-in path value))
-            effects   (update-notifications
-                       {}
-                       {:account-notifications submitted})]
+      (let [effects
+            (actions/update-notification-settings-action
+             (action-state system)
+             {:account-notifications (assoc-in valid-notifications path value)})]
         (is (= [:i18n/tr error-key]
-               (get-in effects (into [1 2 :_error] (conj error-path :error)))))))
-    (testing "right-away retains the inactive batch choice"
-      (is (= "evening"
-             (-> (update-notifications
-                  {}
-                  {:account-notifications (assoc valid-notifications
-                                                 :when "right-away"
-                                                 :batch-time "evening")})
-                 second
-                 last
-                 :batch-time))))))
+               (get-in effects (into [1 2 :_error]
+                                     (conj error-path :error)))))
+        (is (not-any? #(= :db/transact (first %)) effects))))))
 
 (deftest break-actions-update-every-change-and-derive-preview-status
   (when-let [update-break
