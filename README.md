@@ -6,53 +6,78 @@
 
 Probematic is a web tool that helps an anarchist band manage itself.
 
-
 It uses Clojure, Datastar, and Web Awesome.
 
 Canonical repo: https://github.com/Ramblurr/probematic
 
-### Pre-req
+## Development
 
-1. You need Clojure installed as `clj`.
-2. You probably want an editor that can connect to the development REPL.
+Run all commands from the project root where `bb.edn` lives.
 
-## Run in dev mode
+The project devshell provides Clojure, Babashka, formatting, linting, CSS, and documentation tooling.
 
+Docker is required for the development services.
+
+An editor that connects to nREPL is useful but optional.
+
+This project uses Scoped Commits for commit messages and pull request titles.
+
+Discover all tasks with:
+
+```bash
+bb tasks
 ```
-# start dev services
-docker compose -f docker-compose.dev.yml up -d
 
-# term 1, starts the nrepl
-bb repl-portal
+### Start the development server
 
-# term 2
+```bash
+# Start Docker-backed development services.
+bb dev-services
+
+# Start the application and nREPL.
+bb dev
+
+# Optionally rebuild CSS whenever a stylesheet changes.
 bb watch-css
-
-# in your editor, open user.clj
-# connect to the nrepl
-# (dev)
-# (go)
 ```
+
+### Common tasks
+
+```bash
+# Run tests.
+bb test
+
+# Get test help.
+bb test --help
+
+# List test IDs.
+bb test --print-test-ids
+
+# Focus one test or namespace.
+bb test --focus <TEST-ID>
+
+# Format code or check formatting.
+bb fmt
+bb fmt:check
+
+# Lint Clojure and Fluent files.
+bb lint
+bb lint:ftl
+
+# Run the full quality gate, including formatting.
+bb qa
+
+# Run the non-mutating CI checks.
+bb ci
+
+# Compile CSS after editing stylesheets.
+bb css
+```
+
 
 
 ## License
 
-This software is licensed under the GNU AGPL v3.0 or later.
+Copyright © 2022-2026 Casey Link <unnamedrambler@gmail.com>
 
-```
-probematic
-Copyright (C) 2022-2024 Casey Link
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-```
+Distributed under the [EUPL-1.2](https://spdx.org/licenses/EUPL-1.2.html).

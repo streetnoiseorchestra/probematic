@@ -38,28 +38,29 @@
 ** DONE members vcard download
 ** DONE dashboard gigs need attention/upcoming
 ** DONE dashboard add to calendar
-** TODO dashboard gig snoozing
-** TODO dashboard insurance survey banana
+** TODO dashboard gig snoozing (reminder)
+** DONE dashboard insurance survey banana
 ** DONE dashboard insurance todos for insurance team
 ** DONE dashboard payment required
 ** DONE repertoire index
 ** DONE repertoire detail
 ** DONE repertoire create/edit
 ** DONE file browser/picker
-** TODO repertoire detail add sheet music
-** TODO stats view
+** DONE repertoire detail add sheet music
+** DONE stats view
 ** DONE insurance - index
-** TODO insurance - create policy
-** TODO insurance - policy detail read-only, no survey
-** TODO insurance - edit policy data
-** TODO insurance - covered instruments actions
-** TODO insurance - covered instruments add wizard
-** TODO insurance - covered instruments edit
-** TODO insurance - policy survey admin
-** TODO insurance - member survey wizard
-** TODO insurance - send changes
-** TODO polls
-** TODO dashboard poll
+** DONE insurance - create policy
+** DONE insurance - policy detail read-only, no survey
+** DONE insurance - edit policy data
+** DONE insurance - covered instruments actions
+** DONE insurance - covered instruments add wizard
+** DONE insurance - covered instruments edit
+** DONE insurance - policy survey admin
+** DONE insurance - member survey wizard
+** DONE insurance - send changes
+** TODO insurance - payment reminders
+** DONE polls
+** DONE dashboard poll
 * 2026 cleanups and slimming down
 ** TODO move new member invitation storage from redis to datomic (we dont do renders on redis key changes)
 ** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
@@ -85,4 +86,5 @@
       - Keeps /act entirely JSON-based.
       - Requires temporary-upload persistence, expiration, authorization, and abandoned-upload cleanup.
 Then replace the /account-settings/profile/save and other upload locations with it
-** collapse app/<thing>/<subthing1,subthing2>/queries into just <thing>/queries.clj
+** DONE collapse app/<thing>/<subthing1,subthing2>/queries into just <thing>/queries.clj
+** DONE remove/cleanup unused icons from app.icons
