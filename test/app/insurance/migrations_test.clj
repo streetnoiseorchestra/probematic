@@ -27,11 +27,7 @@
 
 (defn apply-plan!
   [conn]
-  (let [{:keys [tx-data] :as result}
-        (migrations/plan-legacy-metadata (d/db conn))]
-    (when (seq tx-data)
-      @(d/transact conn tx-data))
-    result))
+  (migrations/migrate-legacy-metadata! conn))
 
 (defn coverage-metadata-by-name
   [db policy-id]
@@ -118,6 +114,30 @@
                {:fresh-plan (migrations/plan-legacy-metadata (d/db conn))
                 :coverage   (coverage-metadata-by-name (d/db conn) policy-id)
                 :exporter   (exporter-summary (d/db conn) policy-id)}))))))
+
+(deftest explicit-metadata-without-exporter-remains-unconfigured-test
+  (testing "an intentional no-exporter policy is not mistaken for legacy data"
+    (let [{:keys [conn]} (tc/new-system "insurance-migration-no-exporter")
+          policy-id      (random-uuid)
+          coverage-types
+          [{:type-id        (random-uuid)
+            :name           "Grundschutz"
+            :description    "Configured by an administrator"
+            :premium-factor 1.0M
+            :icon           :phosphor/star
+            :required?      false}]]
+      (test-support/seed-policy!
+       conn
+       policy-id
+       {:coverage-types coverage-types})
+      (is (= {:plan     {:tx-data                     []
+                         :migrated-coverage-type-count 0
+                         :configured-policy-count      0
+                         :incomplete-policies          []}
+              :exporter {:exporter-id nil
+                         :mappings    {}}}
+             {:plan     (migrations/migrate-legacy-metadata! conn)
+              :exporter (exporter-summary (d/db conn) policy-id)})))))
 
 (deftest known-legacy-policy-migration-test
   (testing "backfills known metadata and a complete v1 exporter configuration"
