@@ -30,35 +30,45 @@
           (μ/log ::db-created :msg "Datomic database created"))
         (d/connect db-uri))
 
-(defn transact-schema [conn]
+(defn schema-index-upgrades
+  "Returns index transactions required before altering unique attributes.
+
+  Datomic must finish indexing an existing attribute before uniqueness can be
+  added or changed. New attributes and attributes already using the desired
+  uniqueness require no preparatory transaction."
+  [db schema]
+  (->> schema
+       (keep (fn [{:db/keys [ident unique]}]
+               (when (and ident
+                          unique
+                          (d/entid db ident)
+                          (not= unique
+                                (get-in (d/pull db
+                                                '[{:db/unique [:db/ident]}]
+                                                ident)
+                                        [:db/unique :db/ident])))
+                 {:db/id ident
+                  :db/index true})))
+       vec))
+
+(defn transact-schema
+  "Installs schema metadata and the application schema.
+
+  Existing unique-attribute alterations are prepared and indexed first so the
+  same schema works for both fresh and long-lived databases. Returns the final
+  transaction future."
+  [conn]
   @(d/transact conn (-> (io/resource "schema-meta.edn") slurp edn/read-string))
-  (let [schema-data (edn/read-string
-                     {:readers *data-readers*}
-                     (slurp (io/resource "schema.edn")))
-        db           (d/db conn)
-        unique-alters
-        (keep (fn [{:db/keys [ident index unique]}]
-                (when (and ident index unique (d/entid db ident))
-                  (let [current (d/pull db [:db/index :db/unique] ident)]
-                    (when-not (:db/unique current)
-                      {:current current :ident ident}))))
-              schema-data)
-        needs-avet  (keep #(when-not (get-in % [:current :db/index])
-                             (:ident %))
-                          unique-alters)
-        indexed-db  (if (seq needs-avet)
-                      (:db-after
-                       @(d/transact
-                         conn
-                         (mapcat (fn [ident]
-                                   [[:db/add ident :db/index true]
-                                    [:db/add :db.part/db
-                                     :db.alter/attribute ident]])
-                                 needs-avet)))
-                      db)]
-    (when (seq unique-alters)
-      @(d/sync-schema conn (d/basis-t indexed-db)))
-    (d/transact conn schema-data)))
+  (let [schema (edn/read-string
+                {:readers *data-readers*}
+                (slurp (io/resource "schema.edn")))
+        index-upgrades (schema-index-upgrades (d/db conn) schema)]
+    (when (seq index-upgrades)
+      (μ/log ::schema-index-upgrade
+             :attributes (mapv :db/id index-upgrades))
+      (let [tx-report @(d/transact conn index-upgrades)]
+        @(d/sync-schema conn (d/basis-t (:db-after tx-report)))))
+    (d/transact conn schema)))
 
 (defn start-peer [{:keys [peer]}]
   (assert (:db-uri peer))
