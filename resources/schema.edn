@@ -61,6 +61,103 @@
   :db/valueType   :db.type/string
   :db/cardinality :db.cardinality/one}
 
+ {:db/ident       :member/current-status
+  :db/doc         "The member's current status message"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member/date-of-birth
+  :db/doc         "The member's date of birth as an ISO-8601 local date"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member/avatar
+  :db/doc         "The member's managed profile image"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one
+  :db/isComponent true}
+
+ {:db/ident       :member/timezone
+  :db/doc         "The member's IANA time zone identifier"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member/week-start
+  :db/doc         "The member's preferred first day of the week"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member/clock-format
+  :db/doc         "The member's preferred clock format"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/enabled?
+  :db/doc         "Whether notifications are enabled for the member"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/scope
+  :db/doc         "Which activity should notify the member"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/attendance-reminders?
+  :db/doc         "Whether the member receives attendance reminders"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/poll-reminders?
+  :db/doc         "Whether the member receives poll reminders"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/email?
+  :db/doc         "Whether notifications may be delivered by email"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/browser?
+  :db/doc         "Whether notifications may be delivered by the browser"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/unread-style
+  :db/doc         "How unread notification counts are displayed"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/schedule
+  :db/doc         "When notifications are delivered"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.notify/batch-time
+  :db/doc         "The member's local daily notification batch time as HH:mm"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.break/start-date
+  :db/doc         "The first break day as an ISO-8601 local date"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member.break/end-date
+  :db/doc         "The optional final break day as an ISO-8601 local date"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident :week-start/monday}
+ {:db/ident :week-start/sunday}
+ {:db/ident :clock-format/hour-12}
+ {:db/ident :clock-format/hour-24}
+ {:db/ident :notify.scope/everything}
+ {:db/ident :notify.scope/gigs}
+ {:db/ident :notify.unread-style/numbered}
+ {:db/ident :notify.unread-style/unnumbered}
+ {:db/ident :notify.schedule/right-away}
+ {:db/ident :notify.schedule/daily-batch}
+
  {:db/ident       :member/discourse-id
   :db/doc         "The member's id in discourse"
   :db/valueType   :db.type/string
