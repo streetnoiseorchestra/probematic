@@ -29,9 +29,8 @@
         metosin/muuntaja                               {:mvn/version "0.6.11"}
         org.babashka/sci                               {:mvn/version "0.12.51"}
         com.taoensso/nippy                             {:mvn/version "3.6.2"}
-        com.outskirtslabs/vips                         {:git/url "https://github.com/outskirtslabs/vips.git"
-                                                        :git/sha "bf367e2026fefe7661664890c94bf376c1f1731f"}
-        com.outskirtslabs/vips-native-linux-x86-64-gnu {:mvn/version "1.2.4-2"}
+        com.outskirtslabs/vips                         {:mvn/version "0.0.1"}
+        com.outskirtslabs/vips-native-linux-x86-64-gnu {:mvn/version "1.3.2-1"}
         com.googlecode.libphonenumber/libphonenumber   {:mvn/version "9.0.30"}
         ;; Documents + Files
         babashka/fs                                    {:mvn/version "0.5.33"}
