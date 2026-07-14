@@ -56,8 +56,27 @@
             :_saved?         false}
            (:account-profile page-state))))
 
-(defn preferences-page-state [page-state]
-  (merge default-preferences (:account-preferences page-state)))
+(defn- enum-name [member attr]
+  (some-> (get-in member [attr :db/ident]) name))
+
+(defn- clock-format-name [member]
+  (case (get-in member [:member/clock-format :db/ident])
+    :clock-format/hour-12 "12-hour"
+    :clock-format/hour-24 "24-hour"
+    nil))
+
+(defn preferences-page-state [db member-id page-state]
+  (let [member (current-member db member-id)
+        timezone (:member/timezone member)
+        persisted {:time-zone (or timezone (:time-zone default-preferences))
+                   :week-start (or (enum-name member :member/week-start)
+                                   (:week-start default-preferences))
+                   :time-format (or (clock-format-name member)
+                                    (:time-format default-preferences))
+                   :time-zone-persisted? (boolean timezone)
+                   :_error {}
+                   :_saved? false}]
+    (merge persisted (:account-preferences page-state))))
 
 (defn notification-page-state [page-state]
   (merge default-notifications (:account-notifications page-state)))

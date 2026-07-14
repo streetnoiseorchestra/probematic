@@ -100,8 +100,9 @@
      :account-settings/time-zone-label
      (time-zone-description req)
      (queries/time-zone-options)
-     {:data-init
-      "window.StreetnoiseAccountPreferences.syncTimeZone(el, $account-preferences)"})
+     (when-not (:time-zone-persisted? state)
+       {:data-init
+        "window.StreetnoiseAccountPreferences.syncTimeZone(el, $account-preferences)"}))
     (preference-select state
                        :week-start
                        "account-preferences-week-start"
@@ -120,9 +121,12 @@
                        time-format-options)
     (support/feedback state)]])
 
-(defn page [{:keys [page-state] :as req}]
+(defn page [{:keys [db page-state] :as req}]
   (let [title [:i18n/tr :account-settings/preferences-title]
-        state (queries/preferences-page-state page-state)]
+        state (queries/preferences-page-state
+               db
+               (support/current-member-id req)
+               page-state)]
     (support/standard-page
      {:title title
       :actions []}

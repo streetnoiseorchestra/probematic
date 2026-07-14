@@ -221,6 +221,18 @@
           (catch DateTimeException _exception
             false)))))
 
+(defn- persisted-effects [member-id tx-data path transient-state feedback]
+  [[:db/transact
+    (support/with-audit tx-data member-id)
+    {:transact-w-nils? true}]
+   support/clear-loading
+   [:app.datastar/assoc-state
+    path
+    (assoc transient-state
+           :_error {}
+           :_saved? true
+           :_feedback (tr-node feedback))]])
+
 (defn- save-prototype-effects [path value feedback]
   [support/clear-loading
    [:app.datastar/assoc-state
@@ -230,17 +242,25 @@
            :_saved? true
            :_feedback (tr-node feedback))]])
 
+(def week-start-ident
+  {"monday" :week-start/monday
+   "sunday" :week-start/sunday})
+
+(def clock-format-ident
+  {"12-hour" :clock-format/hour-12
+   "24-hour" :clock-format/hour-24})
+
 (defn save-date-time-preferences-action
-  [_state {:keys [account-preferences]}]
+  [{:keys [current-member-id]} {:keys [account-preferences]}]
   (let [preferences (select-keys account-preferences
                                  [:time-zone :week-start :time-format])
         errors      (merge
                      (when-not (valid-zone? (:time-zone preferences))
                        {:time-zone (error :account-settings/error-time-zone-invalid)})
-                     (when-not (contains? #{"monday" "sunday"}
+                     (when-not (contains? week-start-ident
                                           (:week-start preferences))
                        {:week-start (error :account-settings/error-week-start-invalid)})
-                     (when-not (contains? #{"12-hour" "24-hour"}
+                     (when-not (contains? clock-format-ident
                                           (:time-format preferences))
                        {:time-format (error :account-settings/error-time-format-invalid)}))]
     (if (seq errors)
@@ -248,9 +268,14 @@
        [:app.datastar/assoc-state
         [:account-preferences]
         (assoc preferences :_error errors :_saved? false)]]
-      (save-prototype-effects
+      (persisted-effects
+       current-member-id
+       [{:db/id [:member/member-id current-member-id]
+         :member/timezone (:time-zone preferences)
+         :member/week-start (week-start-ident (:week-start preferences))
+         :member/clock-format (clock-format-ident (:time-format preferences))}]
        [:account-preferences]
-       preferences
+       {}
        :account-settings/preferences-saved-feedback))))
 
 (defn toggle-notifications-action [_state {:keys [account-notifications]}]

@@ -1,6 +1,7 @@
 (ns app.account.actions-test
   (:require
    [app.account.test-support :as support]
+   [app.account.actions :as actions]
    [app.nexus :as app-nexus]
    [app.nexus.actions :as nexus-actions]
    [app.queries :as queries]
@@ -35,6 +36,18 @@
   {:db                (d/db conn)
    :current-member-id member-id
    :now               #inst "2026-07-13T12:00:00.000-00:00"})
+(defn transact-effects! [conn effects]
+  (let [transactions (for [[effect tx-data opts] effects
+                           :when (= :db/transact effect)]
+                       [tx-data opts])]
+    (when (seq transactions)
+      @(d/transact conn (app-nexus/batch-transactions transactions)))))
+
+(defn entity-value [db member-id attr]
+  (get (d/entity db [:member/member-id member-id]) attr))
+
+(defn enum-ident [value]
+  (if (keyword? value) value (:db/ident value)))
 
 (def valid-profile
   {:member-id      "00000000-0000-0000-0000-000000000099"
@@ -290,34 +303,36 @@
              (get-in effects [1 2 :_error :_top :error])))
       (is (not-any? #(= :db/transact (first %)) effects)))))
 
-(deftest save-date-time-preferences-validates-the-complete-prototype
-  (when-let [save-preferences
-             (action 'app.account.actions/save-date-time-preferences-action)]
-    (let [valid {:time-zone "Europe/Vienna"
-                 :week-start "sunday"
-                 :time-format "12-hour"}]
-      (is (= [nexus-actions/clear-loading
-              [:app.datastar/assoc-state
-               [:account-preferences]
-               (assoc valid
-                      :_error {}
-                      :_saved? true
-                      :_feedback [:i18n/tr :account-settings/preferences-saved-feedback])]]
-             (save-preferences {} {:account-preferences valid}))))
+(deftest save-date-time-preferences-persists-enum-refs
+  (let [{:keys [conn member-id] :as system} (tc/new-system "account-preferences")
+        submitted {:time-zone "Europe/Vienna"
+                   :week-start "sunday"
+                   :time-format "12-hour"}
+        effects (actions/save-date-time-preferences-action
+                 (action-state system)
+                 {:account-preferences submitted})]
+    (transact-effects! conn effects)
+    (let [db (d/db conn)]
+      (is (= "Europe/Vienna" (entity-value db member-id :member/timezone)))
+      (is (= :week-start/sunday
+             (enum-ident (entity-value db member-id :member/week-start))))
+      (is (= :clock-format/hour-12
+             (enum-ident (entity-value db member-id :member/clock-format)))))
+    (is (= [:i18n/tr :account-settings/preferences-saved-feedback]
+           (get-in effects [2 2 :_feedback])))
+    (is (= #{:_error :_saved? :_feedback}
+           (set (keys (get-in effects [2 2])))))
     (doseq [[field value error-key]
             [[:time-zone "Mars/Olympus" :account-settings/error-time-zone-invalid]
              [:week-start "friday" :account-settings/error-week-start-invalid]
              [:time-format "decimal" :account-settings/error-time-format-invalid]]]
-      (let [submitted {:time-zone "Europe/Berlin"
-                       :week-start "monday"
-                       :time-format "24-hour"}
-            effects   (save-preferences
-                       {}
-                       {:account-preferences (assoc submitted field value)})]
-        (is (= nexus-actions/clear-loading (first effects)))
+      (let [invalid-effects
+            (actions/save-date-time-preferences-action
+             (action-state system)
+             {:account-preferences (assoc submitted field value)})]
         (is (= [:i18n/tr error-key]
-               (get-in effects [1 2 :_error field :error])))
-        (is (false? (get-in effects [1 2 :_saved?])))))))
+               (get-in invalid-effects [1 2 :_error field :error])))
+        (is (not-any? #(= :db/transact (first %)) invalid-effects))))))
 
 (deftest notification-toggle-and-browser-enable-apply-immediately
   (when-let [toggle (action 'app.account.actions/toggle-notifications-action)]
