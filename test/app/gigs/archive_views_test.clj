@@ -14,3 +14,21 @@
               :actions     []
               :overflow    []}
              (-> conn support/request views/page page-shell/page-contract))))))
+
+(deftest gigs-archive-year-page-surface
+  (testing "An archive year uses responsive breadcrumb limits and links back to the archive."
+    (let [{:keys [conn]} (support/new-system "gigs-archive-year-surface")]
+      (is (= {:width                :wide
+              :breadcrumbs [:gigs/title :gigs/archive-title "2025"]
+              :mobile               {:label :gigs/title :href "/gigs"}
+              :actions              []
+              :overflow             []}
+             (-> conn
+                 (support/request {:path-params {:year "2025"}})
+                 views/page
+                 page-shell/page-contract)))
+      (is (= [2 3]
+             (-> conn
+                 (support/request {:path-params {:year "2025"}})
+                 views/page
+                 page-shell/breadcrumb-max-items))))))

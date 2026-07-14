@@ -19,7 +19,8 @@
   ([hiccup]
    (->str nil hiccup))
   ([translator hiccup]
-   (chassis/html (i18n/resolve-translations translator hiccup))))
+   (binding [i18n/*translator* translator]
+     (chassis/html (i18n/resolve-translations translator hiccup)))))
 
 (defn raw
   "Wraps value as an unescaped string that will be rendered directly to HTML.

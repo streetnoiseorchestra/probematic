@@ -1,10 +1,13 @@
 (ns app.ui2.breadcrumb
   (:require
+   [app.ui2.button :as button]
    [app.ui2.core :as uic]
    [app.ui2.icon :as ico]
    [clojure.string :as str]
    [dev.onionpancakes.chassis.compiler :as cc]
-   [dev.onionpancakes.chassis.core :as c]))
+   [dev.onionpancakes.chassis.core :as c])
+  (:import
+   [java.net URI URISyntaxException]))
 
 (def doc-breadcrumb
   {:examples ["[breadcrumb/Breadcrumb
@@ -25,7 +28,15 @@
     [::label {:optional true
               :default  "Breadcrumb"
               :doc      "The label to use for the breadcrumb control. This will not be shown on the screen, but it will be announced by screen readers and other assistive devices to provide more context for users."}
-     :string]]})
+     :string]
+    [::max-items {:optional true
+                  :doc      "Maximum number of visible breadcrumb positions, including the collapse trigger when present. A two-item vector configures [mobile desktop] limits."}
+     [:or pos-int? [:tuple pos-int? pos-int?]]]
+    [::items-before-collapse
+     {:optional true
+      :default  0
+      :doc      "Number of leading breadcrumb items to preserve before the collapse trigger."}
+     nat-int?]]})
 
 (def ^{:doc (uic/generate-docstring doc-breadcrumb)} Breadcrumb
   ::breadcrumb)
@@ -68,34 +79,151 @@
         (into [tag {:aria-current "page"}] (cons attrs children))))
     item))
 
+(defn- item-parts [item]
+  (let [[_ attrs & children] (uic/norm item)]
+    {:attrs    attrs
+     :children children}))
+
+(defn- internal-href? [href]
+  (and (string? href)
+       (not (str/blank? href))
+       (str/starts-with? href "/")
+       (not (str/starts-with? href "//"))
+       (try
+         (let [uri  (URI. href)
+               path (.getRawPath uri)]
+           (and (not (.isAbsolute uri))
+                (nil? (.getRawAuthority uri))
+                (some? path)
+                (str/starts-with? path "/")))
+         (catch URISyntaxException _
+           false))))
+
+(defn- collapse-dropdown [items]
+  (let [items (mapv (fn [item]
+                      (let [{:keys [attrs children]} (item-parts item)
+                            href (option attrs ::href :href nil)]
+                        (when-not (internal-href? href)
+                          (throw
+                           (ex-info
+                            "Collapsed breadcrumb items require an internal href"
+                            {:href href
+                             :item item})))
+                        (into [:wa-dropdown-item {:value href}] children)))
+                    items)]
+    (into
+     [:wa-dropdown
+      {:placement         "bottom-start"
+       :data-on:wa-select "window.location.href = evt.detail.item.value"}
+      [button/Button {:slot       "trigger"
+                      :appearance "plain"
+                      :size       "s"}
+       [ico/Icon {::ico/library :snoico
+                  ::ico/name    :ellipsis}]
+       [:span {:class "wa-visually-hidden"}
+        [:i18n/tr :action/show-hidden-breadcrumb-items {:count (count items)}]]]]
+     items)))
+
+(defn- visible-positions [items max-items items-before-collapse]
+  (if-not (and max-items (> (count items) max-items))
+    (mapv (fn [item] {:child item}) items)
+    (do
+      (when (< max-items 2)
+        (throw
+         (ex-info "Breadcrumb max-items must be at least 2 when collapsing"
+                  {:max-items max-items})))
+      (when (> items-before-collapse (- max-items 2))
+        (throw
+         (ex-info
+          "Breadcrumb items-before-collapse must not exceed max-items - 2"
+          {:items-before-collapse items-before-collapse
+           :max-items             max-items})))
+      (let [trailing-count (- max-items items-before-collapse 1)
+            trailing-start (- (count items) trailing-count)
+            leading        (subvec items 0 items-before-collapse)
+            collapsed      (subvec items items-before-collapse trailing-start)
+            trailing       (subvec items trailing-start)]
+        (into
+         (mapv (fn [item] {:child item}) leading)
+         (concat
+          [{:child     (collapse-dropdown collapsed)
+            :collapse? true}]
+          (map (fn [item] {:child item}) trailing)))))))
+
 (defmethod c/resolve-alias ::breadcrumb
   [_ attrs children]
   (uic/validate-opts! doc-breadcrumb attrs)
-  (let [separator (option attrs ::separator :separator default-separator)
-        label     (or (option attrs ::label :label nil)
-                      (:aria-label attrs)
-                      "Breadcrumb")
-        attrs     (dissoc attrs ::separator ::label :separator :label)
-        items     (vec (filter some? children))
-        items     (if (seq items)
-                    (update items (dec (count items)) mark-current-page)
-                    items)]
+  (let [max-items             (option attrs ::max-items :max-items nil)
+        responsive?          (vector? max-items)
+        valid-max-items?     (or (nil? max-items)
+                                 (pos-int? max-items)
+                                 (and responsive?
+                                      (= 2 (count max-items))
+                                      (every? pos-int? max-items)))
+        _                    (when-not valid-max-items?
+                               (throw
+                                (ex-info
+                                 "Breadcrumb max-items must be a positive integer or [mobile desktop] pair"
+                                 {:max-items max-items})))
+        max-items-variants   (if responsive?
+                               [[(first max-items)
+                                 "sno-breadcrumb-list-mobile"]
+                                [(second max-items)
+                                 "sno-breadcrumb-list-desktop"]]
+                               [[max-items nil]])
+        items-before-collapse (option attrs
+                                      ::items-before-collapse
+                                      :items-before-collapse
+                                      0)
+        _                    (when-not (nat-int? items-before-collapse)
+                               (throw
+                                (ex-info
+                                 "Breadcrumb items-before-collapse must be a non-negative integer"
+                                 {:items-before-collapse items-before-collapse})))
+        separator            (option attrs ::separator :separator default-separator)
+        label                (or (option attrs ::label :label nil)
+                                 (:aria-label attrs)
+                                 "Breadcrumb")
+        attrs                (dissoc attrs
+                                     ::separator
+                                     ::label
+                                     ::max-items
+                                     ::items-before-collapse
+                                     :separator
+                                     :label
+                                     :max-items
+                                     :items-before-collapse)
+        items                (vec (filter some? children))
+        items                (if (seq items)
+                               (update items (dec (count items)) mark-current-page)
+                               items)]
     (cc/compile
-     [:nav (uic/merge-attrs attrs
-                            :class "sno-breadcrumb"
-                            :aria-label label)
-      (into [:ol {:class "sno-breadcrumb-list" :role "list"}]
-            (map-indexed
-             (fn [idx child]
-               (let [contents (cond-> []
-                                (pos? idx) (conj (separator-node separator))
-                                true       (conj child))]
-                 [:li
-                  (into (if (pos? idx)
-                          [:div {:class "sno-breadcrumb-step"}]
-                          [:div])
-                        contents)]))
-             items))])))
+     (into
+      [:nav (uic/merge-attrs attrs
+                             :class "sno-breadcrumb"
+                             :aria-label label)]
+      (map
+       (fn [[variant-max-items variant-class]]
+         (let [positions (visible-positions items
+                                            variant-max-items
+                                            items-before-collapse)]
+           (into [:ol {:class (uic/cs "sno-breadcrumb-list" variant-class)
+                       :role  "list"}]
+                 (map-indexed
+                  (fn [idx {:keys [child collapse?]}]
+                    (let [contents (cond-> []
+                                     (pos? idx) (conj (separator-node separator))
+                                     true       (conj child))]
+                      (cond-> [:li]
+                        collapse? (conj {:class "collapse"})
+                        true
+                        (conj
+                         (into (if (pos? idx)
+                                 [:div {:class "sno-breadcrumb-step"}]
+                                 [:div])
+                               contents)))))
+                  positions))))
+       max-items-variants)))))
 
 (def doc-breadcrumb-item
   {:examples ["[breadcrumb/BreadcrumbItem {::breadcrumb/href \"/gigs\"} \"Gigs\"]"

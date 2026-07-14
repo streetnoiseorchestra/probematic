@@ -1,5 +1,6 @@
 (ns app.ui2.page-toolbar
   (:require
+   [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.core :as uic]
    [app.ui2.icon :as ico]
@@ -71,6 +72,33 @@
   (let [attrs          (or attrs {})
         _              (uic/validate-opts! doc-page-toolbar attrs)
         breadcrumb     (get attrs ::breadcrumb)
+        breadcrumb?    (= breadcrumb/Breadcrumb (first breadcrumb))
+        breadcrumb-attrs (when breadcrumb?
+                           (or (second (uic/norm breadcrumb)) {}))
+        breadcrumb-max-items (when breadcrumb?
+                               (cond
+                                 (contains? breadcrumb-attrs
+                                            ::breadcrumb/max-items)
+                                 (::breadcrumb/max-items breadcrumb-attrs)
+
+                                 (contains? breadcrumb-attrs :max-items)
+                                 (:max-items breadcrumb-attrs)))
+        responsive-breadcrumb? (vector? breadcrumb-max-items)
+        breadcrumb     (cond-> breadcrumb
+                         (and breadcrumb-attrs
+                              (not (or
+                                    (contains? breadcrumb-attrs
+                                               ::breadcrumb/max-items)
+                                    (contains? breadcrumb-attrs :max-items))))
+                         (uic/assoc-attr ::breadcrumb/max-items 3)
+
+                         (and breadcrumb-attrs
+                              (not (or
+                                    (contains? breadcrumb-attrs
+                                               ::breadcrumb/items-before-collapse)
+                                    (contains? breadcrumb-attrs
+                                               :items-before-collapse))))
+                         (uic/assoc-attr ::breadcrumb/items-before-collapse 0))
         mobile-back    (get attrs ::mobile-back)
         actions        (nodes (get attrs ::actions))
         overflow-items (get attrs ::overflow-items)
@@ -83,9 +111,12 @@
                                "PageToolbar requires an accessible :aria-label")]
     (cc/compile
      [:header attrs
-      [:div {:class "context"}
-       [:div {:class "desktop"} breadcrumb]
-       [:div {:class "mobile"} mobile-back]]
+      (into
+       [:div {:class "context"}]
+       (if responsive-breadcrumb?
+         [[:div {:class "responsive-breadcrumb"} breadcrumb]]
+         [[:div {:class "desktop"} breadcrumb]
+          [:div {:class "mobile"} mobile-back]]))
       (when (or (seq actions) overflow)
         (into [:menu {:class "actions"}]
               (concat (map (fn [action] [:li action]) actions)

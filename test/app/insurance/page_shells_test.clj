@@ -759,3 +759,54 @@
                  coverage-edit.views/page
                  page-shell/page-contract
                  :overflow))))))
+
+(deftest long-insurance-trails-use-responsive-item-limits
+  (let [{:keys [request policy-id coverage-id instrument-id]} (fixture)
+        policy       (q/retrieve-policy (:db request) policy-id)
+        policy-req   (assoc request :path-params {:policy-id policy-id})
+        coverage-req (assoc request :path-params {:coverage-id coverage-id})]
+    (is (= {:coverage-detail  [2 2]
+            :coverage-edit    [2 3]
+            :coverage-create  [2 3]
+            :coverage-photos  [2 3]
+            :coverage-final   [2 3]
+            :review           [2 2]
+            :workbench        [2 2]
+            :settings         [2 2]
+            :surveys          [2 2]
+            :notifications    [2 2]
+            :changes          [2 2]}
+           {:coverage-detail (page-shell/breadcrumb-max-items
+                              (coverage.views/page coverage-req))
+            :coverage-edit   (page-shell/breadcrumb-max-items
+                              (coverage-edit.views/page coverage-req))
+            :coverage-create (page-shell/breadcrumb-max-items
+                              (coverage-create.views/instrument-page
+                               (assoc policy-req
+                                      :query-params
+                                      {:instrument-id (str instrument-id)})))
+            :coverage-photos (page-shell/breadcrumb-max-items
+                              (coverage-create.views/photos-page
+                               (assoc request
+                                      :path-params
+                                      {:policy-id     policy-id
+                                       :instrument-id instrument-id})))
+            :coverage-final  (page-shell/breadcrumb-max-items
+                              (coverage-create.views/coverage-page
+                               (assoc request
+                                      :path-params
+                                      {:policy-id     policy-id
+                                       :instrument-id instrument-id})))
+            :review          (page-shell/breadcrumb-max-items
+                              (review.views/page policy-req))
+            :workbench       (page-shell/breadcrumb-max-items
+                              (workbench.views/page policy-req))
+            :settings        (page-shell/breadcrumb-max-items
+                              (settings.views/page policy-req))
+            :surveys         (page-shell/breadcrumb-max-items
+                              (surveys.views/page policy-req))
+            :notifications   (page-shell/breadcrumb-max-items
+                              (policy-notifications.views/page
+                               (assoc policy-req :policy policy)))
+            :changes         (page-shell/breadcrumb-max-items
+                              (policy-changes.views/page policy-req))}))))

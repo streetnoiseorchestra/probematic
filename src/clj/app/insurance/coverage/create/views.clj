@@ -268,12 +268,15 @@
          [page-toolbar/PageToolbar
           {::page-toolbar/breadcrumb
            [breadcrumb/Breadcrumb
-            {}
+            {::breadcrumb/max-items [2 3]}
             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
              [:i18n/tr :insurance/title]]
             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
              (:insurance.policy/name policy)]
-            [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/add-coverage-title]]
+            [breadcrumb/BreadcrumbItem
+             {::breadcrumb/href
+              (urls/link-coverage-create-edit policy-id instrument-id redirect)}
+             [:i18n/tr :insurance/add-coverage-title]]
             [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/instrument-step]]]
            ::page-toolbar/mobile-back
            [button/BackButton {:href  (urls/link-policy policy)
@@ -340,12 +343,15 @@
            [page-toolbar/PageToolbar
             {::page-toolbar/breadcrumb
              [breadcrumb/Breadcrumb
-              {}
+              {::breadcrumb/max-items [2 3]}
               [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
                [:i18n/tr :insurance/title]]
               [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
                (:insurance.policy/name policy)]
-              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/add-coverage-title]]
+              [breadcrumb/BreadcrumbItem
+               {::breadcrumb/href
+                (urls/link-coverage-create-edit policy-id instrument-id redirect)}
+               [:i18n/tr :insurance/add-coverage-title]]
               [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/photos-step]]]
              ::page-toolbar/mobile-back
              [button/BackButton {:href  previous-url
@@ -567,12 +573,15 @@
            [page-toolbar/PageToolbar
             {::page-toolbar/breadcrumb
              [breadcrumb/Breadcrumb
-              {}
+              {::breadcrumb/max-items [2 3]}
               [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
                [:i18n/tr :insurance/title]]
               [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
                (:insurance.policy/name policy)]
-              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/add-coverage-title]]
+              [breadcrumb/BreadcrumbItem
+               {::breadcrumb/href
+                (urls/link-coverage-create-edit policy-id instrument-id redirect)}
+               [:i18n/tr :insurance/add-coverage-title]]
               [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/coverage-step]]]
              ::page-toolbar/mobile-back
              [button/BackButton {:href  previous-url

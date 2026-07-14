@@ -119,7 +119,7 @@
     [page-toolbar/PageToolbar
      {::page-toolbar/breadcrumb
       [breadcrumb/Breadcrumb
-       {}
+       {::breadcrumb/max-items [2 3]}
        [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
         [:i18n/tr :repertoire/title]]
        [breadcrumb/BreadcrumbItem {::breadcrumb/href song-url}

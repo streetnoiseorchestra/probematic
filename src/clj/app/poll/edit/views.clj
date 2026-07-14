@@ -170,7 +170,7 @@
     [page-toolbar/PageToolbar
      {::page-toolbar/breadcrumb
       [breadcrumb/Breadcrumb
-       {}
+       {::breadcrumb/max-items [2 3]}
        [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
         [:i18n/tr :polls/title]]
        [breadcrumb/BreadcrumbItem {::breadcrumb/href poll-url}

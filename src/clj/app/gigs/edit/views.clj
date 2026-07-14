@@ -174,7 +174,7 @@
     [page-toolbar/PageToolbar
      {::page-toolbar/breadcrumb
       [breadcrumb/Breadcrumb
-       {}
+       {::breadcrumb/max-items [2 3]}
        [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
         [:i18n/tr :gigs/title]]
        (gigs.ui/gig-breadcrumb req gig)

@@ -56,7 +56,12 @@
              (-> conn
                  (support/request {:path-params {:gig/gig-id gig-id}})
                  views/page
-                 page-shell/page-structure))))))
+                 page-shell/page-structure)))
+      (is (= [2 3]
+             (-> conn
+                 (support/request {:path-params {:gig/gig-id gig-id}})
+                 views/page
+                 page-shell/breadcrumb-max-items))))))
 
 (deftest edit-gig-omits-redundant-type-subtitle
   (testing "The event type is not repeated beneath an identical gig title."

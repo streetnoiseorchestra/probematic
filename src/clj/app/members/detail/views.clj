@@ -784,7 +784,8 @@
        [page-toolbar/PageToolbar
         {::page-toolbar/breadcrumb
          [breadcrumb/Breadcrumb
-          {}
+          (cond-> {}
+            form-state (assoc ::breadcrumb/max-items [2 3]))
           [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
            [:i18n/tr :members/title]]
           [breadcrumb/BreadcrumbItem (cond-> {}

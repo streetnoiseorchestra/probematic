@@ -5,11 +5,16 @@
    [clojure.set :refer [intersection]]
    [clojure.string :as str]
    [clojure.walk :as walk]
+   [dev.onionpancakes.chassis.core :as chassis]
    [taoensso.encore :as enc])
   (:import
    [java.util Locale]))
 
 (def default-locale tempura/default-locale)
+
+(def ^:dynamic *translator*
+  "Provides the translator while Chassis resolves component-generated translation nodes."
+  nil)
 
 (defrecord LocaleTranslations [tempura fluent])
 
@@ -151,6 +156,10 @@
     (if (= 2 (count node))
       (translator resource-ids)
       (translator resource-ids (nth node 2)))))
+
+(defmethod chassis/resolve-alias :i18n/tr
+  [_tag _attrs children]
+  (resolve-translation-node *translator* (into [:i18n/tr] children)))
 
 (defn resolve-translations
   "Resolves every `:i18n/tr` data node in `value` with `translator`.

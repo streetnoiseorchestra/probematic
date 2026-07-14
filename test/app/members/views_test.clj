@@ -191,6 +191,11 @@
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem
                                (::page-toolbar/breadcrumb toolbar-attrs)))))
+        (is (= [2 3]
+               (some-> toolbar-attrs
+                       ::page-toolbar/breadcrumb
+                       l/attrs
+                       ::breadcrumb/max-items)))
         (is (= "Casey Jones"
                (-> (l/select breadcrumb/BreadcrumbItem
                              (::page-toolbar/breadcrumb toolbar-attrs))

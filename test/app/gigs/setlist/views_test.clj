@@ -22,4 +22,9 @@
              (-> conn
                  (support/request {:path-params {:gig/gig-id gig-id}})
                  views/page
-                 page-shell/page-contract))))))
+                 page-shell/page-contract)))
+      (is (= [2 3]
+             (-> conn
+                 (support/request {:path-params {:gig/gig-id gig-id}})
+                 views/page
+                 page-shell/breadcrumb-max-items))))))

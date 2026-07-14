@@ -1,15 +1,19 @@
 .sno-breadcrumb {
-  --sno-breadcrumbs-spacing: 0.3rem;
+  --sno-breadcrumbs-spacing: var(--wa-space-2xs);
+  --sno-breadcrumb-ancestor-flex-shrink: 100;
+  --sno-breadcrumb-current-max-inline-size: 60%;
 
   display: flex;
+  min-inline-size: 0;
+  inline-size: var(--sno-size-full);
   color: var(--wa-color-text-quiet);
   font-size: var(--wa-font-size-s);
-  line-height: 1.25rem;
+  line-height: var(--wa-line-height-normal);
 }
 
 @media (--sno-viewport-s) {
   .sno-breadcrumb {
-    --sno-breadcrumbs-spacing: 0.5rem;
+    --sno-breadcrumbs-spacing: var(--wa-space-xs);
   }
 }
 
@@ -18,9 +22,14 @@
     display: flex;
     align-items: center;
     min-inline-size: 0;
+    inline-size: var(--sno-size-full);
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  ol.sno-breadcrumb-list-desktop {
+    display: none;
   }
 
   li {
@@ -31,6 +40,28 @@
     padding: 0;
   }
 
+  li:not(.collapse) {
+    overflow: hidden;
+  }
+
+  li:not(.collapse):not(:last-child) {
+    flex: 0 var(--sno-breadcrumb-ancestor-flex-shrink) auto;
+  }
+
+  li:last-child {
+    flex: 0 1 auto;
+    max-inline-size: var(--sno-breadcrumb-current-max-inline-size);
+  }
+
+  li:only-child {
+    flex: 1 1 auto;
+    max-inline-size: var(--sno-size-full);
+  }
+
+  li.collapse {
+    flex: 0 0 auto;
+  }
+
   li + li {
     margin-inline-start: var(--sno-breadcrumbs-spacing);
   }
@@ -39,6 +70,7 @@
     display: flex;
     align-items: center;
     min-inline-size: 0;
+    max-inline-size: var(--sno-size-full);
   }
 
   a,
@@ -47,12 +79,15 @@
     align-items: center;
     gap: var(--wa-space-3xs);
     min-inline-size: 0;
+    max-inline-size: var(--sno-size-full);
+    overflow: hidden;
     line-height: inherit;
     text-box: trim-both cap alphabetic;
   }
 
   a > span,
   li > div > span:not(.separator) > span {
+    min-inline-size: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -70,5 +105,17 @@
   .separator + a,
   .separator + span {
     margin-inline-start: var(--sno-breadcrumbs-spacing);
+  }
+}
+
+@media (--sno-viewport-s) {
+  @scope (.sno-breadcrumb) {
+    ol.sno-breadcrumb-list-mobile {
+      display: none;
+    }
+
+    ol.sno-breadcrumb-list-desktop {
+      display: flex;
+    }
   }
 }

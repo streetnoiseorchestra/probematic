@@ -8,6 +8,13 @@ delete = Delete
 done = Done
 edit = Edit
 more-actions = More actions
+# Accessible label for the button that opens ancestors omitted from a breadcrumb trail.
+# $count (Number) - The number of hidden breadcrumb items in the menu.
+show-hidden-breadcrumb-items =
+    { $count ->
+        [one] Show one hidden breadcrumb item
+       *[other] Show { $count } hidden breadcrumb items
+    }
 next = Next
 remove = Remove
 reorder = Reorder

@@ -54,7 +54,12 @@
              (-> system
                  (support/request {:path-params {:poll/poll-id poll-id}})
                  views/page
-                 page-shell/page-structure))))))
+                 page-shell/page-structure)))
+      (is (= [2 3]
+             (-> system
+                 (support/request {:path-params {:poll/poll-id poll-id}})
+                 views/page
+                 page-shell/breadcrumb-max-items))))))
 
 (deftest choices-section-heading
   (testing "The choices section stays subordinate to the poll title."

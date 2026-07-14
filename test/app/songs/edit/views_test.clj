@@ -117,7 +117,12 @@
              (-> conn
                  (support/request {:path-params {:song-id (str song-id)}})
                  views/page
-                 page-shell/page-structure))))))
+                 page-shell/page-structure)))
+      (is (= [2 3]
+             (-> conn
+                 (support/request {:path-params {:song-id (str song-id)}})
+                 views/page
+                 page-shell/breadcrumb-max-items))))))
 
 (deftest create-song
   (testing "A member is adding a new song."

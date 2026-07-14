@@ -17,10 +17,14 @@
   [page-toolbar/PageToolbar
    {::page-toolbar/breadcrumb
     [breadcrumb/Breadcrumb
-     {}
+     (cond-> {}
+       include-year? (assoc ::breadcrumb/max-items [2 3]))
      [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
       [:i18n/tr :gigs/title]]
-     [breadcrumb/BreadcrumbItem [:i18n/tr :gigs/archive-title]]
+     [breadcrumb/BreadcrumbItem (cond-> {}
+                                  include-year? (assoc ::breadcrumb/href
+                                                       (urls/link-gig-archive)))
+      [:i18n/tr :gigs/archive-title]]
      (when include-year?
        [breadcrumb/BreadcrumbItem selected-year])]
     ::page-toolbar/mobile-back

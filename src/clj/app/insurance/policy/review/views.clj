@@ -301,7 +301,7 @@
        [page-toolbar/PageToolbar
         {::page-toolbar/breadcrumb
          [breadcrumb/Breadcrumb
-          {}
+          {::breadcrumb/max-items [2 2]}
           [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
            [:i18n/tr :insurance/title]]
           [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}

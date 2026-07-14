@@ -3,7 +3,8 @@
    [app.html :as html]
    [app.i18n :as i18n]
    [app.interceptors :as interceptors]
-   [clojure.test :refer [deftest is]]))
+   [clojure.test :refer [deftest is]]
+   [dev.onionpancakes.chassis.core :as c]))
 
 (defn translator [locale]
   (i18n/tr-with (i18n/read-langs) [locale]))
@@ -114,6 +115,10 @@
     (catch Throwable _exception
       ::missing-renderer)))
 
+(defmethod c/resolve-alias ::late-translation
+  [_ _attrs _children]
+  [:span [:i18n/tr :test/delete {:name "<Brass>"}]])
+
 (deftest translation-data-nodes-resolve-throughout-hiccup-test
   (is (= [:div {:title "Band & Settings"}
           [:h1 "Band & Settings"]
@@ -132,6 +137,12 @@
           node-translator
           [:p {:title [:i18n/tr :test/title]}
            [:i18n/tr :test/delete {:name "<Brass>"}]]))))
+
+(deftest alias-generated-translation-data-nodes-render-test
+  (is (= "<span>Delete &lt;Brass&gt;</span>"
+         (render-translation-nodes
+          node-translator
+          [::late-translation]))))
 
 (deftest translation-data-nodes-require-a-translator-test
   (is (thrown-with-msg? clojure.lang.ExceptionInfo

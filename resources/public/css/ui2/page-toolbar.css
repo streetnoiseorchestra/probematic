@@ -2,6 +2,7 @@
   position: relative;
   z-index: var(--sno-page-toolbar-z-index);
   display: grid;
+  grid-template-areas: "context actions";
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--wa-space-s);
   align-items: center;
@@ -14,24 +15,34 @@
 
 @scope (.sno-page-toolbar) {
   .context,
-  .desktop {
+  .context > .desktop,
+  .context > .responsive-breadcrumb {
     min-inline-size: 0;
   }
 
-  .desktop {
-    overflow: hidden;
+  .context {
+    grid-area: context;
   }
 
-  .mobile {
+  .context > .desktop,
+  .context > .responsive-breadcrumb {
+    inline-size: var(--sno-size-full);
+  }
+
+  .context > .mobile {
     display: none;
   }
 
   .actions {
+    grid-area: actions;
     display: flex;
     flex-wrap: wrap;
     gap: var(--wa-space-2xs);
     align-items: center;
     justify-content: end;
+    justify-self: end;
+    min-inline-size: 0;
+    max-inline-size: var(--sno-size-full);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -48,30 +59,33 @@
   .sno-page-toolbar {
     position: sticky;
     inset-block-start: 0;
+    grid-template-areas: "context safe-lane actions";
+    grid-template-columns:
+      minmax(0, 1fr) var(--sno-jump-menu-safe-inline-size) minmax(0, 1fr);
   }
 }
 
 @media (--sno-viewport-below-s) {
   @scope (.sno-page-toolbar) {
-    .desktop {
+    .context > .desktop {
       display: none;
     }
 
-    .mobile {
+    .context > .mobile {
       display: block;
       min-inline-size: 0;
       overflow: hidden;
     }
 
-    .mobile > :is(a, button, wa-button) {
+    .context > .mobile > :is(a, button, wa-button) {
       max-inline-size: 100%;
     }
 
-    .mobile > :is(a, button) {
+    .context > .mobile > :is(a, button) {
       overflow: hidden;
     }
 
-    .mobile > :is(a, button) > .trim-cap {
+    .context > .mobile > :is(a, button) > .trim-cap {
       min-inline-size: 0;
       overflow: hidden;
       text-overflow: ellipsis;

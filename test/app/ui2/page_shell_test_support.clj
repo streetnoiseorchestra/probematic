@@ -39,6 +39,18 @@
          (when-let [action (action-keyword (:data-on:click (l/attrs item)))]
            {:action action})))
 
+(defn breadcrumb-max-items
+  "Returns an explicit breadcrumb item limit from the PageToolbar in `view`."
+  [view]
+  (let [attrs (some-> (l/select-one page-surface/PageSurface view)
+                      l/attrs
+                      ::page-surface/toolbar
+                      l/attrs
+                      ::page-toolbar/breadcrumb
+                      l/attrs)]
+    (or (::breadcrumb/max-items attrs)
+        (:max-items attrs))))
+
 (defn page-contract
   "Returns the shared PageSurface and PageToolbar contract from `view`.
 
