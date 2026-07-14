@@ -177,7 +177,7 @@
   {"squint-cljs/" "/vendor/squint@0.11.189/"
    "wa/"          "/vendor/webawesome@3.10.0/"
    "sortable"     "/vendor/sortable@1.15.7-esm.js"
-   "confetti"     "vendor/canvas-confetti@1.9.3.js"})
+   "confetti"     "vendor/canvas-confetti@1.9.4.js"})
 
 (defn head [req {:keys [extra-head title]}]
   (into
