@@ -1187,11 +1187,11 @@
    (tr [:insurance.workbench/missing])])
 
 (defn- member-name-with-avatar
-  [{:keys [member-avatar-template member-id member-label]}]
+  [{:keys [member-avatar member-id member-label]}]
   [:div {:class "wa-flank wa-gap-xs wa-align-items-center"
          :style "--flank-size: 1.75rem;"}
-   [avatar/Avatar (cond-> {::avatar/name member-label
-                           ::avatar/avatar-template member-avatar-template
+   [avatar/Avatar (cond-> {::avatar/member member-avatar
+                           ::avatar/name member-label
                            :shape "rounded"
                            :style "--size: 1.75rem"
                            :loading "lazy"}

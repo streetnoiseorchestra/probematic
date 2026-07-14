@@ -28,18 +28,17 @@
         time-point          (t/inst (t/in (t/at (t/date gig-date) "00:00") (t/zone "Europe/Vienna")))
         db-as-of            (datomic/as-of db time-point)
         active-member-count (or (active-members-count db-as-of) 0)
-        attendances         (mapv first (d/q '[:find (pull ?attendance [{:attendance/member [:member/name
-                                                                                             :member/avatar-template
-                                                                                             :member/member-id
-                                                                                             :member/nick
-                                                                                             :member/email]}])
-                                               :in $ ?gig
+        attendance-pattern  [{:attendance/member
+                              (conj q/member-avatar-pattern :member/email)}]
+        attendances         (mapv first (d/q '[:find (pull ?attendance pattern)
+                                               :in $ ?gig pattern
                                                :where
                                                [?attendance :attendance/gig ?gig]
                                                [?attendance :attendance/plan ?plan]
                                                [(= ?plan :plan/definitely)]]
                                              db
-                                             [:gig/gig-id gig-id]))
+                                             [:gig/gig-id gig-id]
+                                             attendance-pattern))
         attended-count      (count attendances)]
     {:gig/gig-id     (:gig/gig-id gig)
      :gig/title      (:gig/title gig)

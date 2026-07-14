@@ -2,8 +2,10 @@
   (:require
    [app.html :as html]
    [app.icons :as icons]
+   [app.test-common :as tc]
    [clojure.string :as str]
-   [clojure.test :refer [deftest is use-fixtures]]))
+   [clojure.test :refer [deftest is use-fixtures]]
+   [datomic.api :as d]))
 
 (def member
   {:member/member-id #uuid "11111111-1111-4111-8111-111111111111"
@@ -66,16 +68,61 @@
     (catch Throwable _
       nil)))
 
-(defn footer-tray-html []
-  (when-let [footer-tray (some-> (resolve-footer-tray) deref)]
-    (html/->str
-     footer-tray-translator
-     (footer-tray
-      {:app.ui2.footer-tray/member member
-       :app.ui2.footer-tray/shortcuts shortcuts
-       :app.ui2.footer-tray/notification notification
-       :id "application-footer"
-       :class "custom-footer"}))))
+(defn footer-tray-html
+  ([] (footer-tray-html member))
+  ([member]
+   (when-let [footer-tray (some-> (resolve-footer-tray) deref)]
+     (html/->str
+      footer-tray-translator
+      (footer-tray
+       {:app.ui2.footer-tray/member member
+        :app.ui2.footer-tray/shortcuts shortcuts
+        :app.ui2.footer-tray/notification notification
+        :id "application-footer"
+        :class "custom-footer"})))))
+
+(deftest footer-tray-managed-avatar-uses-the-small-retina-renditions
+  (let [rendered (footer-tray-html
+                  (assoc member :member/avatar
+                         {:image/image-id
+                          #uuid "22222222-2222-4222-8222-222222222222"}))]
+    (is (str/includes?
+         rendered
+         (str "src=\"/member-avatar/11111111-1111-4111-8111-111111111111/40"
+              "?v=22222222-2222-4222-8222-222222222222\"")))
+    (is (str/includes?
+         rendered
+         (str "srcset=\"/member-avatar/11111111-1111-4111-8111-111111111111/40"
+              "?v=22222222-2222-4222-8222-222222222222 1x, "
+              "/member-avatar/11111111-1111-4111-8111-111111111111/80"
+              "?v=22222222-2222-4222-8222-222222222222 2x\"")))))
+
+(deftest application-shell-refreshes-the-footer-member-from-the-current-db
+  (let [{:keys [conn member-id]} (tc/new-system "footer-current-member")
+        image-id (random-uuid)
+        app-shell-body (some-> (requiring-resolve 'app.layout2/app-shell-body)
+                               deref)]
+    @(d/transact conn
+                 [{:db/id [:member/member-id member-id]
+                   :member/name "Current Ada"
+                   :member/nick "Ada"
+                   :member/avatar {:image/image-id image-id
+                                   :image/width 160
+                                   :image/height 160}}])
+    (let [rendered
+          (html/->str
+           footer-tray-translator
+           (app-shell-body
+            {:db (d/db conn)
+             :session
+             {:session/member {:member/member-id member-id
+                               :member/name "Stale Ada"
+                               :member/nick "Ada"}}
+             :tr footer-tray-translator}
+            [:main "Page content"]))]
+      (is (str/includes?
+           rendered
+           (str "/member-avatar/" member-id "/40?v=" image-id))))))
 
 (deftest footer-tray-renders-datastar-toggle-controls
   (let [footer-tray (resolve-footer-tray)]

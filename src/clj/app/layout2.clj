@@ -4,6 +4,7 @@
    [app.config :as config]
    [app.html :as html]
    [app.icons :as icon]
+   [app.queries :as queries]
    [app.secret-box :as secret-box]
    [app.ui2.button :as button]
    [app.ui2.footer-tray :as footer-tray]
@@ -206,7 +207,11 @@
 
 (defn app-shell-body
   [req body]
-  (let [member     (auth/get-current-member req)
+  (let [session-member (auth/get-current-member req)
+        member-id      (:member/member-id session-member)
+        member         (or (when (and (:db req) member-id)
+                             (queries/retrieve-member (:db req) member-id))
+                           session-member)
         home-page? (= :app.dashboard.routes/index
                       (-> req :reitit.core/match :data :name))
         body       (if (string? body) (html/raw body) body)]

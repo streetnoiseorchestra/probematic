@@ -1,5 +1,6 @@
 (ns app.account.routes
   (:require
+   [app.account.avatar :as avatar]
    [app.account.break.views :as break.views]
    [app.account.index.views :as index.views]
    [app.account.notifications.views :as notifications.views]
@@ -23,4 +24,9 @@
                     :page #'notifications.views/page})
    (ds/page-routes {:page-name ::on-a-break
                     :path "/account-settings/on-a-break"
-                    :page #'break.views/page})])
+                    :page #'break.views/page})
+   ["/member-avatar/{member-id}/{size}"
+    {:name ::member-avatar
+     :get
+     {:parameters {:path [:map [:member-id :uuid] [:size :int]]}
+      :handler avatar/member-avatar-handler}}]])

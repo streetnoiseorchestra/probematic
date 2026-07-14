@@ -11,6 +11,10 @@
    :member/nick "Ada"
    :member/avatar-template "/user_avatar/forum.streetnoise.at/ada/{size}/1.png"})
 
+(def managed-member
+  (assoc member :member/avatar
+         {:image/image-id #uuid "22222222-2222-4222-8222-222222222222"}))
+
 (defn avatar-html [attrs & children]
   (html/->str (into [avatar/Avatar attrs] children)))
 
@@ -22,6 +26,30 @@
     (is (not (str/includes? html "<wa-avatar")))
     (is (str/includes? html "<img class=\"image\" src=\"https://forum.streetnoise.at/user_avatar/forum.streetnoise.at/ada/80/1.png\" loading=\"eager\" role=\"img\" aria-label=\"Ada Lovelace\""))
     (is (not (str/includes? html "app.ui2.avatar/member")))))
+
+(deftest managed-member-avatar-precedes-the-legacy-template-and-renders-retina-sources
+  (let [html (avatar-html {::avatar/member managed-member
+                           ::avatar/image-size 40
+                           :shape "rounded"})]
+    (is (str/includes?
+         html
+         (str "src=\"/member-avatar/11111111-1111-4111-8111-111111111111/40"
+              "?v=22222222-2222-4222-8222-222222222222\"")))
+    (is (str/includes?
+         html
+         (str "srcset=\"/member-avatar/11111111-1111-4111-8111-111111111111/40"
+              "?v=22222222-2222-4222-8222-222222222222 1x, "
+              "/member-avatar/11111111-1111-4111-8111-111111111111/80"
+              "?v=22222222-2222-4222-8222-222222222222 2x\"")))
+    (is (not (str/includes? html "forum.streetnoise.at/user_avatar")))))
+
+(deftest profile-avatar-can-explicitly-disable-the-legacy-template
+  (let [html (avatar-html {::avatar/member member
+                           ::avatar/image-size 160
+                           ::avatar/allow-legacy? false
+                           ::avatar/link? false})]
+    (is (str/includes? html "class=\"initials\""))
+    (is (not (str/includes? html "forum.streetnoise.at")))))
 
 (deftest avatar-supports-all-web-awesome-attributes-and-the-size-property
   (let [html (avatar-html {:image    "/ada.png"

@@ -1,27 +1,12 @@
 (ns app.ui2.avatar
   (:require
+   [app.member-avatar :as member-avatar]
    [app.ui2.core :as uic]
    [app.ui2.icon :as ico]
    [app.urls :as urls]
    [clojure.string :as str]
    [dev.onionpancakes.chassis.compiler :as cc]
    [dev.onionpancakes.chassis.core :as c]))
-
-(def forum-avatar-origin
-  "https://forum.streetnoise.at")
-
-(defn avatar-template-src
-  ([template]
-   (avatar-template-src template 80))
-  ([template size]
-   (let [template (some-> template str str/trim)]
-     (when-not (str/blank? template)
-       (let [src (str/replace template "{size}" (str size))]
-         (if (re-find #"(?i)^https?://" src)
-           src
-           (str forum-avatar-origin
-                (when-not (str/starts-with? src "/") "/")
-                src)))))))
 
 (defn initials
   [value]
@@ -36,10 +21,6 @@
 (defn- member-id
   [member]
   (:member/member-id member))
-
-(defn- member-avatar-template
-  [member]
-  (:member/avatar-template member))
 
 (defn- member-name
   [member]
@@ -94,6 +75,10 @@
                              :default  80
                              :doc      "Size used when expanding an avatar template."}
                [:or :int :string]]
+              [::allow-legacy? {:optional true
+                                :default true
+                                :doc "When false, ignore a member's dormant Discourse avatar template."}
+               :boolean]
               [::initials {:optional true
                            :doc      "Initials to show as an image fallback. Overrides `:initials`."}
                :string]
@@ -129,7 +114,8 @@
   ::avatar)
 
 (def ^:private consumed-props
-  #{::member ::name ::avatar-template ::image ::image-size ::initials ::text ::link? ::href
+  #{::member ::name ::avatar-template ::image ::image-size ::allow-legacy?
+    ::initials ::text ::link? ::href
     ::wrapper-attrs ::text-attrs ::icon ::icon-library ::icon-attrs})
 
 (def ^:private content-props
@@ -142,12 +128,18 @@
 
 (defn- avatar-image
   [attrs]
-  (or (::image attrs)
-      (:image attrs)
-      (avatar-template-src
-       (or (::avatar-template attrs)
-           (some-> attrs ::member member-avatar-template))
-       (or (::image-size attrs) 80))))
+  (cond
+    (::image attrs) {:src (::image attrs)}
+    (:image attrs) {:src (:image attrs)}
+    (::member attrs)
+    (member-avatar/avatar-image
+     (::member attrs)
+     {:size (or (::image-size attrs) 80)
+      :allow-legacy? (not= false (::allow-legacy? attrs))})
+    :else
+    (member-avatar/avatar-image
+     {:member/avatar-template (::avatar-template attrs)}
+     {:size (or (::image-size attrs) 80)})))
 
 (defn- avatar-initials
   [attrs name]
@@ -158,9 +150,10 @@
 (defn- avatar-values
   [attrs]
   (let [name     (avatar-name attrs)
-        image    (not-empty (avatar-image attrs))
+        image    (avatar-image attrs)
         initials (not-empty (avatar-initials attrs name))]
-    {:image    image
+    {:image    (:src image)
+     :srcset   (:srcset image)
      :initials initials
      :label    (or (:label attrs) name initials)
      :loading  (if (contains? attrs :loading) (:loading attrs) "eager")}))
@@ -177,13 +170,14 @@
                    (::icon-attrs attrs))])
 
 (defn- avatar-content
-  [attrs children {:keys [image initials label loading]}]
+  [attrs children {:keys [image srcset initials label loading]}]
   (cond
     image
     [:img {:src        image
            :loading    loading
            :role       "img"
            :aria-label label
+           :srcset     srcset
            :class      "image"}]
 
     initials

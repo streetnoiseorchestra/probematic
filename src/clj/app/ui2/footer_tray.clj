@@ -80,7 +80,7 @@
                    :appearance "plain"
                    :aria-label (:account labels)}
     [avatar/Avatar {::avatar/member member
-                    ::avatar/image-size 200
+                    ::avatar/image-size 40
                     ::avatar/icon :user
                     ::avatar/link? false
                     :slot "start"}]

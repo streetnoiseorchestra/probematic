@@ -313,7 +313,7 @@
      :member-username     (:member/username member)
      :member-nick         (:member/nick member)
      :member-email        (:member/email member)
-     :member-avatar-template (:member/avatar-template member)
+     :member-avatar       member
      :member-label        (owner-label member)
      :instrument-id       (:instrument/instrument-id instrument)
      :instrument-name     (:instrument/name instrument)
@@ -464,7 +464,7 @@
                     sample     (first group-rows)]
                 {:member-id           (:member-id sample)
                  :member-label        (:member-label sample)
-                 :member-avatar-template (:member-avatar-template sample)
+                 :member-avatar       (:member-avatar sample)
                  :row-count           (count group-rows)
                  :total-insured-value (row-total group-rows :insured-value)
                  :total-cost          (row-total group-rows :cost)
