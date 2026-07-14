@@ -48,8 +48,8 @@
             :email           (or (:member/email member) "")
             :username        (or (:member/username member) "")
             :phone           (or (:member/phone member) "")
-            :current-status  ""
-            :date-of-birth   ""
+            :current-status  (or (:member/current-status member) "")
+            :date-of-birth   (or (:member/date-of-birth member) "")
             :avatar          nil
             :avatar-removed? false
             :_error          {}

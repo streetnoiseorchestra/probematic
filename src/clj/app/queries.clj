@@ -30,10 +30,17 @@
 (def image-pattern-with-renditions
   (conj image-pattern {:image/renditions image-pattern}))
 
+(def member-avatar-pattern
+  [:member/name
+   :member/nick
+   :member/member-id
+   :member/avatar-template
+   {:member/avatar image-pattern-with-renditions}])
+
 (def section-pattern [:section/name :section/default? :section/position :section/active?])
 
 (def attendance-pattern [{:attendance/section [:section/name]}
-                         {:attendance/member [:member/name :member/member-id :member/nick :member/email]}
+                         {:attendance/member (conj member-avatar-pattern :member/email)}
                          :attendance/plan
                          :attendance/gig+member
                          {:attendance/gig [:gig/gig-id]}
@@ -47,18 +54,47 @@
    :travel.discount/discount-id
    :travel.discount/expiry-date])
 
-(def member-pattern [:member/member-id :member/username :member/name :member/nick :member/active? :member/phone :member/email :member/keycloak-id :member/avatar-template
-                     {:member/section [:section/name]}])
+(def member-account-pattern
+  [:member/current-status
+   :member/date-of-birth
+   :member/timezone
+   :member.break/start-date
+   :member.break/end-date
+   :member.notify/enabled?
+   :member.notify/attendance-reminders?
+   :member.notify/poll-reminders?
+   :member.notify/email?
+   :member.notify/browser?
+   :member.notify/batch-time
+   {:member/avatar image-pattern-with-renditions}
+   {:member/week-start [:db/ident]}
+   {:member/clock-format [:db/ident]}
+   {:member.notify/scope [:db/ident]}
+   {:member.notify/unread-style [:db/ident]}
+   {:member.notify/schedule [:db/ident]}])
 
-(def member-detail-pattern [:member/member-id :member/name :member/nick :member/active? :member/phone :member/email
-                            :member/username :member/keycloak-id
-                            :member/discourse-id :member/avatar-template
-                            {:member/travel-discounts [{:travel.discount/discount-type [:travel.discount.type/discount-type-name :travel.discount.type/discount-type-id]}
-                                                       :travel.discount/discount-id
-                                                       :travel.discount/expiry-date]}
-                            {:member/section [:section/name]}
-                            {:instrument/_owner [:instrument/name :instrument/instrument-id
-                                                 {:instrument/category [:instrument.category/name]}]}])
+(def member-pattern
+  (into [:member/member-id :member/username :member/name :member/nick
+         :member/active? :member/phone :member/email :member/keycloak-id
+         :member/avatar-template
+         {:member/section [:section/name]}]
+        member-account-pattern))
+
+(def member-detail-pattern
+  (into [:member/member-id :member/name :member/nick :member/active?
+         :member/phone :member/email :member/username :member/keycloak-id
+         :member/discourse-id :member/avatar-template
+         {:member/travel-discounts
+          [{:travel.discount/discount-type
+            [:travel.discount.type/discount-type-name
+             :travel.discount.type/discount-type-id]}
+           :travel.discount/discount-id
+           :travel.discount/expiry-date]}
+         {:member/section [:section/name]}
+         {:instrument/_owner
+          [:instrument/name :instrument/instrument-id
+           {:instrument/category [:instrument.category/name]}]}]
+        member-account-pattern))
 
 (def song-pattern [:song/title :song/song-id :song/active? :song/solo-info
                    :song/last-played-on :song/total-plays :song/total-performances :song/total-rehearsals])
@@ -75,7 +111,7 @@
                          :gig/end-date  :gig/pay-deal :gig/call-time :gig/set-time
                          :gig/end-time :gig/description :gig/outfit :gig/setlist :gig/leader :gig/post-gig-plans
                          :forum.topic/topic-id :gig/more-details :gig/gig-type
-                         {:gig/comments [{:comment/author [:member/name :member/nick :member/member-id :member/avatar-template]}
+                         {:gig/comments [{:comment/author member-avatar-pattern}
                                          :comment/body :comment/comment-id :comment/created-at]}
                          {:gig/contact [:member/name :member/member-id :member/nick]}
                          {:gig/rehearsal-leader1 [:member/name :member/member-id :member/nick :member/email]}
@@ -179,7 +215,7 @@
                          :instrument/description
                          :instrument/serial-number
                          :instrument/build-year
-                         {:instrument/owner [:member/name :member/member-id :member/avatar-template :member/email]}
+                         {:instrument/owner (conj member-avatar-pattern :member/email)}
                          {:instrument/category [:instrument.category/category-id
                                                 :instrument.category/code
                                                 :instrument.category/name]}]}
