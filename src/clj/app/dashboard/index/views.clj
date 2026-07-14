@@ -60,15 +60,13 @@
 
 (defn- gig-section [req title gigs]
   (dashboard-section "dashboard-gig-section"
-                     "dashboard-gig-list"
+                     "dashboard-row-list"
                      title
                      (mapv #(gig-row req %) gigs)))
 
 (defn- insurance-todo-row [{:keys [tr]} {:insurance.policy/keys [name policy-id] :keys [total-needs-review total-changed total-new total-removed] :as policy}]
   (dashboard-row :div {}
                  "dashboard-insurance-todo-row"
-                 [:div {:class       "dashboard-insurance-todo-status-cell"
-                        :aria-hidden true}]
                  [:div {:class "dashboard-insurance-todo-name"}
                   [:a {:href (urls/link-policy policy)} name]]
                  [:div {:class "dashboard-insurance-todo-metrics"}
@@ -95,7 +93,7 @@
 
 (defn- insurance-todos-section [{:keys [tr] :as req} policies]
   (dashboard-section "dashboard-insurance-todo-section"
-                     "dashboard-insurance-todo-list"
+                     "dashboard-row-list"
                      (tr [:dashboard/insurance-todo])
                      (mapv #(insurance-todo-row req %) policies)))
 
@@ -186,7 +184,7 @@
         (when insurance-survey
           (dashboard-section
            "dashboard-response-section"
-           "dashboard-response-list"
+           nil
            [:i18n/tr :insurance/instrument-insurance]
            [(insurance-survey-task req member insurance-survey)]))
         (when (seq insurance-todos)
@@ -199,7 +197,7 @@
                        unanswered))
         (dashboard-section
          "dashboard-response-section"
-         "dashboard-response-list"
+         "dashboard-row-list"
          [:i18n/tr :polls/response-needed]
          (mapv (fn [{:poll/keys [closes-at poll-id title]}]
                  (response-task-row
@@ -217,7 +215,7 @@
    [:i18n/tr :gigs/upcoming-gigs-rehearsals]
    nil
    (if (seq upcoming)
-     (dashboard-list "dashboard-gig-list" (mapv #(gig-row req %) upcoming))
+     (dashboard-list "dashboard-row-list" (mapv #(gig-row req %) upcoming))
      [:p {:class "empty"}
       [:i18n/tr :gigs/upcoming-empty]])
    [button/Button {:slot       "footer-actions"

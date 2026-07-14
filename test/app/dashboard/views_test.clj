@@ -4,6 +4,7 @@
    [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.card :as card]
+   [app.ui2.icon :as ico]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
    [clojure.string :as str]
@@ -185,6 +186,79 @@
                        :else
                        :insurance-survey)))
                  (l/select :section responses))))))
+
+(deftest response-queues-share-one-list-presentation
+  (let [policy-id (random-uuid)
+        member-id (random-uuid)
+        poll-id   (random-uuid)
+        poll-closes-at (t/date-time "2026-08-13T20:00")
+        view      (home-content
+                   {:insurance-survey
+                    {:closes-at   (t/date-time "2026-08-10T20:00")
+                     :policy-id   policy-id
+                     :todo-count  2
+                     :total-count 3}
+                    :insurance-todos
+                    [{:insurance.policy/name "Insurance 2026"
+                      :insurance.policy/policy-id policy-id
+                      :total-needs-review 1
+                      :total-changed      1
+                      :total-new          20
+                      :total-removed      10}]
+                    :ledger           nil
+                    :unanswered
+                    [{:gig/gig-id    (random-uuid)
+                      :gig/title     "Summer concert"
+                      :gig/status    :gig.status/confirmed
+                      :gig/date      (t/date "2026-08-12")
+                      :gig/call-time (t/time "18:00")
+                      :attendance    {:attendance/member
+                                      {:member/member-id member-id}
+                                      :attendance/plan :plan/no-response}}]
+                    :unanswered-polls
+                    [{:poll/poll-id   poll-id
+                      :poll/title     "Dashboard verification poll"
+                      :poll/closes-at poll-closes-at}]
+                    :upcoming []})
+        responses (some #(when (str/includes? (:class (l/attrs %))
+                                              "responses")
+                           %)
+                        (l/select card/Card view))
+        [todo-row gig-row poll-row] (l/select ".dashboard-row" responses)
+        poll-detail (some #(when (and (vector? %)
+                                      (= :i18n/tr (first %))
+                                      (= :polls/response-dashboard-detail
+                                         (second %)))
+                             %)
+                          (tree-seq coll? seq poll-row))]
+    (is (= [#{"dashboard-list"}
+            #{"dashboard-list" "dashboard-row-list"}
+            #{"dashboard-list" "dashboard-row-list"}
+            #{"dashboard-list" "dashboard-row-list"}]
+           (mapv (comp :class l/attrs)
+                 (l/select ".dashboard-list" responses))))
+    (is (= [#{"dashboard-insurance-todo-row" "dashboard-row" "sno-no-visited"}
+            #{"dashboard-gig-row" "dashboard-row" "sno-no-visited"}
+            #{"dashboard-row" "sno-no-visited" "wa-flank:end" "wa-gap-m"}]
+           (mapv (comp :class l/attrs) [todo-row gig-row poll-row])))
+    (is (= "Insurance 2026"
+           (l/text (l/select-one ".dashboard-insurance-todo-name" todo-row))))
+    (is (nil? (l/select-one ".dashboard-insurance-todo-status-cell" todo-row)))
+    (is (= ["1" "1" "20" "10"]
+           (mapv l/text
+                 (l/select ".dashboard-insurance-todo-count" todo-row))))
+    (is (= 4 (count (l/select ico/Icon todo-row))))
+    (is (= "Summer concert"
+           (l/text (l/select-one ".dashboard-gig-title" gig-row))))
+    (is (= "Dashboard verification poll"
+           (l/text (l/select-one :strong poll-row))))
+    (is (= [:i18n/tr :polls/response-dashboard-detail
+            {:date (ui2/format-date-time request :medium poll-closes-at)}]
+           poll-detail))
+    (is (= #{(str "/poll/" poll-id)}
+           (set (keep (comp :href l/attrs)
+                      (concat (l/select :a poll-row)
+                              (l/select button/Button poll-row))))))))
 
 (deftest ledger-widget-renders-native-card-body
   (let [widget (#'views/ledger-widget

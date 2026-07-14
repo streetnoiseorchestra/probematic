@@ -192,26 +192,17 @@
   border-radius: var(--wa-border-radius-m);
 }
 
-.dashboard-gig-list {
+.dashboard-row-list {
   overflow: visible;
   background: transparent;
   border: 0;
   border-radius: 0;
 }
 
-.dashboard-gig-list .dashboard-row {
-  min-block-size: 0;
-  padding: var(--wa-space-2xs) 0;
-}
-
-.dashboard-gig-list .dashboard-gig-row {
-  gap: var(--wa-space-3xs) var(--wa-space-xs);
-}
-
 .dashboard-row {
   align-items: center;
-  min-block-size: 2.8rem;
-  padding: var(--wa-space-2xs) var(--wa-space-l);
+  min-block-size: 0;
+  padding: var(--wa-space-2xs) 0;
   border-block-end: var(--wa-border-width-s) var(--wa-border-style)
     var(--wa-color-surface-border);
 }
@@ -313,6 +304,7 @@
     auto
     minmax(12rem, 16rem)
     minmax(0, 1fr);
+  gap: var(--wa-space-3xs) var(--wa-space-xs);
 }
 
 .dashboard-gig-status-cell,
@@ -381,12 +373,8 @@
   justify-self: center;
 }
 
-.dashboard-insurance-todo-status-cell {
-  inline-size: var(--sno-gig-row-icon-size);
-}
-
 .dashboard-insurance-todo-name {
-  grid-column: 2 / 4;
+  grid-column: 1 / 4;
   min-inline-size: 0;
   font-weight: var(--wa-font-weight-semibold);
 }
@@ -458,22 +446,17 @@
 
 @container (max-width: 1050px) {
   .dashboard-insurance-todo-row {
-    grid-template-columns: auto minmax(10rem, 16rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--wa-space-2xs) var(--wa-space-s);
   }
 
-  .dashboard-insurance-todo-status-cell {
+  .dashboard-insurance-todo-name {
     grid-column: 1;
     grid-row: 1;
   }
 
-  .dashboard-insurance-todo-name {
-    grid-column: 2 / -1;
-    grid-row: 1;
-  }
-
   .dashboard-insurance-todo-metrics {
-    grid-column: 2 / -1;
+    grid-column: 1;
     grid-row: 2;
     justify-content: flex-start;
   }
@@ -517,13 +500,7 @@
 }
 
 @container (max-width: 720px) {
-  .dashboard-row {
-    min-block-size: 0;
-    padding: var(--wa-space-s) var(--wa-space-m);
-  }
-
-  .dashboard-gig-row,
-  .dashboard-insurance-todo-row {
+  .dashboard-gig-row {
     grid-template-columns: auto auto minmax(8rem, 10rem) minmax(0, 1fr);
     gap: var(--wa-space-2xs) var(--wa-space-xs);
   }
@@ -573,16 +550,4 @@
     grid-template-columns: 1fr;
   }
 
-  .dashboard-insurance-todo-status-cell {
-    display: none;
-  }
-
-  .dashboard-insurance-todo-name,
-  .dashboard-insurance-todo-metrics {
-    grid-column: 1 / -1;
-  }
-
-  .dashboard-insurance-todo-metrics {
-    justify-content: flex-start;
-  }
 }
