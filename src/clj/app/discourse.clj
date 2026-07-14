@@ -40,6 +40,16 @@
     (if (= 200 status)
       (j/read-value body j/keyword-keys-object-mapper)
       {:error r})))
+
+(defn discourse-member-tx
+  "Builds the member attributes still owned by Discourse synchronization.
+
+  Avatar templates are deliberately excluded after the managed-avatar cutover."
+  [{:keys [id username] :member/keys [member-id]}]
+  {:member/member-id member-id
+   :member/discourse-id (str id)
+   :member/nick username})
+
 (defn sync-avatars! [{:keys [env conn]}]
   (let [db (datomic/db conn)
         {:keys [api-key username forum-url]} (:discourse env)
@@ -53,10 +63,7 @@
                  (map first)
                  (map #(update % :member/email str/lower-case)))
         joined (set/join user-list members {:email :member/email})
-        txs (->> joined
-                 (map #(select-keys % [:member/member-id :avatar_template :id :username]))
-                 (map #(update % :id str))
-                 (map #(set/rename-keys % {:avatar_template :member/avatar-template :id :member/discourse-id :username :member/nick})))]
+        txs (map discourse-member-tx joined)]
     (d/transact conn {:tx-data txs})))
 (defn wrap-auth [req {:keys [discourse]}]
   (-> req

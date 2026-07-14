@@ -141,4 +141,5 @@
         :job/poll-housekeeping  {:job/frequency     [3 :minutes]
                                  :job/initial-delay [2 :minutes]}
         :job/reminders          {:job/frequency     [1 :hours]
-                                 :job/initial-delay [2 :minutes]}}}
+                                 :job/initial-delay [2 :minutes]}
+        :job/avatar-cutover     {:job/initial-delay [30 :seconds]}}}
