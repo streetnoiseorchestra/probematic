@@ -178,6 +178,16 @@
   --track-height: 1rem;
 }
 
+.poll-result-row wa-progress-bar::part(indicator) {
+  width: var(--poll-result-progress-value);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poll-result-row wa-progress-bar::part(indicator) {
+    transition: none;
+  }
+}
+
 .poll-edit-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));

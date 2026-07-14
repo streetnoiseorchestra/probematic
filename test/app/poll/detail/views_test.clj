@@ -98,19 +98,25 @@
         (is (= [{:label    "Yes"
                  :summary  "66.7% (2)"
                  :progress {:label "Yes 66.7% (2)"
+                            :style {"--indicator-color" "var(--wa-color-success-fill-loud)"
+                                    "--poll-result-progress-value" "66.7%"}
                             :value "66.7"}}
                 {:label    "No"
                  :summary  "33.3% (1)"
                  :progress {:label "No 33.3% (1)"
+                            :style {"--indicator-color" "var(--wa-color-warning-fill-loud)"
+                                    "--poll-result-progress-value" "33.3%"}
                             :value "33.3"}}
                 {:label    "Maybe"
                  :summary  "0% (0)"
                  :progress {:label "Maybe 0% (0)"
+                            :style {"--indicator-color" "var(--wa-color-purple-60)"
+                                    "--poll-result-progress-value" "0%"}
                             :value "0"}}]
                (mapv (fn [row]
                        {:label    (-> (l/select-one '.poll-result-label row) l/text)
                         :summary  (-> (l/select-one '.poll-result-value row) l/text)
                         :progress (select-keys
                                    (l/attrs (l/select-one 'wa-progress-bar row))
-                                   [:label :value])})
+                                   [:label :style :value])})
                      (l/select '[ol > li] view))))))))
