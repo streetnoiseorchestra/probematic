@@ -120,14 +120,18 @@
 
 (defn- status-card [req member state]
   [card/Card {:class "break-status-card wa-brand-purple" :appearance "plain"}
-   [:div {:class "break-summary wa-stack wa-gap-m wa-align-items-center wa-text-center"}
-    (avatar-preview member state)
-    (when-let [member-name (:member/name member)]
-      [:strong {:class "break-member-name wa-heading-xl"} member-name])
-    (availability-control req state)
-    (status-copy state)]
-   (schedule-fields req state)
-   (support/feedback state)
+   [:div {:id "account-break-card-content"
+          :class "wa-stack wa-gap-l"}
+    [:div {:class "break-summary wa-stack wa-gap-m wa-align-items-center wa-text-center"}
+     (avatar-preview member state)
+     (when-let [member-name (:member/name member)]
+       [:strong {:class "break-member-name wa-heading-xl"} member-name])
+     (availability-control req state)
+     (status-copy state)]
+    (schedule-fields req state)
+    (when (:_feedback state)
+      [:div {:id "account-break-feedback"}
+       (support/feedback state)])]
    [:div {:slot "footer-actions" :class "wa-cluster wa-gap-xs"}
     [button/Button (merge
                     {:id "account-break-end-early"

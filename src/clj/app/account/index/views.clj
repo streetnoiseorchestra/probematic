@@ -68,7 +68,8 @@
     (app-link
      req
      "pwa"
-     [:span {:class "pwa-link wa-flank wa-gap-xs wa-align-items-center"}
+     [:span {:class (str "pwa-link wa-flex-nowrap wa-text-nowrap "
+                         "wa-gap-xs wa-align-items-center")}
       [ico/Icon {::ico/library :phosphor ::ico/name :download-simple}]
       [:span [:i18n/tr :account-settings/app-pwa-title]]])
     (support/feedback app-state)]])

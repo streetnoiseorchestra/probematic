@@ -45,17 +45,19 @@
     :aria-label [:i18n/tr :account-settings/toolbar-label]}])
 
 (defn standard-page
-  [{:keys [title subtitle actions after]} & content]
+  [{:keys [title subtitle actions after show-header?]
+    :or {show-header? true}} & content]
   (account-main
    (into
     [page-surface/PageSurface
      {::page-surface/width :standard
       :class "account-detail-surface"
       ::page-surface/toolbar (account-toolbar title actions)}
-     (into [:div {:class "wa-stack wa-gap-xl"}
-            [page-header/PageHeader
-             {::page-header/title title
-              ::page-header/subtitle subtitle}]]
+     (into (cond-> [:div {:class "wa-stack wa-gap-xl"}]
+             show-header?
+             (conj [page-header/PageHeader
+                    {::page-header/title title
+                     ::page-header/subtitle subtitle}]))
            content)]
     after)))
 

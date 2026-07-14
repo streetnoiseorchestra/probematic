@@ -2,6 +2,7 @@
   (:require
    [app.account.test-support :as support]
    [app.test-common :as tc]
+   [app.ui2.card :as card]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-shell-test-support :as page-shell]
    [clojure.test :refer [deftest is testing]]
@@ -30,7 +31,7 @@
 (defn control [id view]
   (some-> (support/element-by-id id view) support/attrs))
 
-(deftest profile-page-uses-the-standard-account-shell-and-toolbar-save
+(deftest profile-page-uses-the-standard-account-shell-without-a-page-heading
   (let [page (support/public-fn 'app.account.profile.views/page)]
     (is (fn? page) "app.account.profile.views/page should exist")
     (when page
@@ -47,9 +48,11 @@
                                  :appearance "filled"
                                  :variant    "brand"}]
                 :overflow      []
-                :heading       :account-settings/profile-title}
+                :heading       nil
+                :subtitle      nil}
                (select-keys contract
-                            [:width :breadcrumbs :mobile :actions :overflow :heading])))
+                            [:width :breadcrumbs :mobile :actions :overflow
+                             :heading :subtitle])))
         (is (= "account-profile-form"
                (:id (support/attrs
                      (support/element-by-id "account-profile-form" view)))))
@@ -87,6 +90,25 @@
                  :app.account.actions/save-profile}
                (support/actions-in view)))))))
 
+(deftest profile-page-combines-all-profile-content-in-one-unheaded-card
+  (let [page (support/public-fn 'app.account.profile.views/page)]
+    (is (fn? page) "app.account.profile.views/page should exist")
+    (when page
+      (let [view          (page (profile-request))
+            cards         (l/select card/Card view)
+            profile-card  (first cards)
+            security-link (some #(when (= "https://id.streetnoise.at/realms/sno/account"
+                                          (:href (support/attrs %)))
+                                   %)
+                                (support/elements :a profile-card))]
+        (is (= 1 (count cards)))
+        (is (empty? (l/select "[slot=header]" profile-card)))
+        (is (some? (support/element-by-id
+                    "account-profile-avatar-preview"
+                    profile-card)))
+        (is (some? (support/element-by-id "account-profile-name" profile-card)))
+        (is (some? security-link))))))
+
 (deftest profile-page-preserves-browser-preview-and-ends-with-security-guidance
   (let [page (support/public-fn 'app.account.profile.views/page)]
     (is (fn? page) "app.account.profile.views/page should exist")
@@ -106,7 +128,7 @@
         (is (contains? (support/translation-keys view)
                        :account-settings/avatar-replace))
         (is (contains? (support/translation-keys view)
-                       :account-settings/login-security-title))))))
+                       :account-settings/login-security-description))))))
 
 (deftest profile-security-copy-uses-the-configured-instance-name
   (let [page (support/public-fn 'app.account.profile.views/page)]

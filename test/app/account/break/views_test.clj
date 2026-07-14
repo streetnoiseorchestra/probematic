@@ -123,6 +123,22 @@
                         (support/attrs
                          (support/element-by-id id scheduled))))))))))
 
+(deftest break-feedback-shares-a-spaced-stack-with-the-break-summary
+  (let [page (support/public-fn 'app.account.break.views/page)]
+    (is (fn? page) "app.account.break.views/page should exist")
+    (when page
+      (let [view (page
+                  (support/request
+                   {:page-state
+                    {:account-break
+                     {:_feedback
+                      [:i18n/tr :account-settings/break-ended-feedback]}}}))
+            content (support/element-by-id "account-break-card-content" view)
+            feedback (support/element-by-id "account-break-feedback" view)]
+        (is (contains? (support/class-tokens content) "wa-stack"))
+        (is (contains? (support/class-tokens content) "wa-gap-l"))
+        (is (some #{feedback} (tree-seq coll? seq content)))))))
+
 (deftest break-explanation-uses-the-configured-instance-name
   (let [page (support/public-fn 'app.account.break.views/page)]
     (is (fn? page) "app.account.break.views/page should exist")

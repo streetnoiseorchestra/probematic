@@ -217,3 +217,13 @@
                                        {:instance-name "Test Ensemble"})]
       (is (str/includes? translated "Test Ensemble")
           (str locale " does not interpolate the instance name in " message-id)))))
+
+(deftest account-home-screen-install-copy-uses-familiar-language
+  (is (= "Install on your home screen"
+         (fluent/translate (fluent/new-locale :en)
+                           :account-settings/app-pwa-title
+                           nil)))
+  (is (= "Auf dem Startbildschirm installieren"
+         (fluent/translate (fluent/new-locale :de)
+                           :account-settings/app-pwa-title
+                           nil))))

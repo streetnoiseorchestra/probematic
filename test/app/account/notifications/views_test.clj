@@ -48,7 +48,17 @@
         (is (= "account-notifications.delivery.browser-permission"
                (:data-browser-permission-signal
                 (support/attrs
-                 (support/element-by-id "enable-browser-notifications" view)))))))))
+                 (support/element-by-id "enable-browser-notifications" view)))))
+        (is (re-find
+             #"\$account-notifications\['enabled\?'\] = false"
+             (-> (support/element-by-id "turn-notifications-off" view)
+                 support/attrs
+                 :data-on:click)))
+        (is (re-find
+             #"\$account-notifications\.delivery\['browser-capable\?'\] ="
+             (-> (support/element-by-id "enable-browser-notifications" view)
+                 support/attrs
+                 :data-on:click)))))))
 
 (deftest notification-status-uses-buttons-and-only-offers-browser-enablement-when-needed
   (let [page (support/public-fn 'app.account.notifications.views/page)]
@@ -80,7 +90,12 @@
         (is (nil? (support/element-by-id "turn-notifications-off" disabled)))
         (is (nil? (support/element-by-id "enable-browser-notifications" disabled)))
         (is (= [:i18n/tr :account-settings/notifications-disabled-description]
-               (nth (support/element-by-id "notification-status-description" disabled) 2)))))))
+               (nth (support/element-by-id "notification-status-description" disabled) 2)))
+        (is (re-find
+             #"\$account-notifications\['enabled\?'\] = true"
+             (-> (support/element-by-id "turn-notifications-on" disabled)
+                 support/attrs
+                 :data-on:click)))))))
 
 (deftest notification-status-summary-adapts-to-every-delivery-combination-and-schedule
   (let [page (support/public-fn 'app.account.notifications.views/page)]
@@ -127,7 +142,7 @@
                 :heading     :account-settings/notifications-title}
                (select-keys contract
                             [:width :breadcrumbs :mobile :actions :overflow :heading])))
-        (is (= 2 (count (support/elements button/BackButton
+        (is (= 1 (count (support/elements button/BackButton
                                           (page (support/request))))))))))
 
 (deftest notification-copy-uses-the-configured-instance-name

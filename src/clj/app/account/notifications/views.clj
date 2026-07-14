@@ -50,11 +50,11 @@
              (str "notifications-summary-" channels "-" scope "-" schedule))))
 
 (defn- toggle-action [req enabled?]
-  (str "$account-notifications.enabled? = " (if enabled? "true" "false") "; "
+  (str "$account-notifications['enabled?'] = " (if enabled? "true" "false") "; "
        "@post('" (d*/act req ::actions/toggle-notifications) "')"))
 
 (defn- browser-action [req]
-  (str "$account-notifications.delivery.browser-capable? = ('Notification' in window); "
+  (str "$account-notifications.delivery['browser-capable?'] = ('Notification' in window); "
        "$account-notifications.delivery.browser-permission = "
        "(('Notification' in window) ? Notification.permission : 'default'); "
        "@post('" (d*/act req ::actions/enable-browser-notifications) "')"))
@@ -247,9 +247,7 @@
     (support/standard-page
      {:title title
       :subtitle [:i18n/tr :account-settings/notifications-subtitle]
-      :actions [[button/BackButton
-                 {:href support/account-root
-                  :label [:i18n/tr :action/back]}]]}
+      :actions []}
      [:form {:id form-id
              :class "wa-stack wa-gap-l"
              :data-id "account-notifications"

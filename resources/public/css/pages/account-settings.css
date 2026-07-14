@@ -178,8 +178,8 @@
   }
 
   /* Profile */
-  .account-profile-avatar > .body {
-    padding-block: var(--wa-space-xl);
+  .account-profile-card {
+    --spacing: var(--wa-space-xl);
   }
 
   .avatar-editor {
@@ -631,7 +631,6 @@
   }
 
   .break-fields {
-    margin-block-start: var(--wa-space-l);
     animation: account-break-fields-in var(--wa-transition-slow)
       var(--wa-transition-easing);
   }

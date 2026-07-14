@@ -62,6 +62,20 @@
         (is (= #{:app.account.actions/launch-app}
                (support/actions-in apps)))))))
 
+(deftest account-directory-home-screen-action-keeps-its-label-together
+  (let [page (support/public-fn 'app.account.index.views/page)]
+    (is (fn? page) "app.account.index.views/page should exist")
+    (when page
+      (let [view     (page (support/request))
+            apps     (support/element-by-id "account-settings-apps" view)
+            pwa-link (some #(when (contains? (support/class-tokens %)
+                                             "pwa-link")
+                              %)
+                           (support/elements :span apps))]
+        (is (some? pwa-link))
+        (is (contains? (support/class-tokens pwa-link) "wa-flex-nowrap"))
+        (is (contains? (support/class-tokens pwa-link) "wa-text-nowrap"))))))
+
 (deftest account-directory-visible-copy-is-fluent-data
   (let [page (support/public-fn 'app.account.index.views/page)]
     (is (fn? page) "app.account.index.views/page should exist")
