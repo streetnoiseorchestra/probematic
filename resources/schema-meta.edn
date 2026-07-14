@@ -1,0 +1,4 @@
+[{:db/ident       :app.schema/deprecated?
+  :db/doc         "Whether an application schema attribute is deprecated."
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}]

@@ -186,6 +186,7 @@
   :db/cardinality :db.cardinality/one}
 
  {:db/ident       :gig/comments
+  ;; Note: Comments are currently not used anywhere.. we use discourse still for gig/event comments
   :db/doc         "Comments added to the gig"
   :db/valueType   :db.type/ref
   :db/isComponent true
@@ -262,6 +263,7 @@
   }
 
 ;;;; Comments
+;; Note: Comments are currently not used anywhere.. we use discourse still for gig/event comments
 
  {:db/ident       :comment/comment-id
   :db/doc         "The id of the comment"
@@ -529,6 +531,7 @@
   :db/cardinality :db.cardinality/one}
 
  {:db/ident       :attendance/comment
+  ;; this is simple one line inline msg field, not thread comments
   :db/doc         "The member-added comment"
   :db/valueType   :db.type/string
   :db/cardinality :db.cardinality/one}
@@ -1055,6 +1058,43 @@
   :db/valueType   :db.type/ref
   :db/isComponent true
   :db/cardinality :db.cardinality/many}
+ {:db/ident :insurance.survey/activate
+  :db/doc "Guards transitions that make an insurance survey active."
+  :db/fn
+  #db/fn
+  {:lang "clojure"
+   :params [db now survey-tx]
+   :requires [[datomic.api :as d]]
+   :code
+   (let [survey-id (:insurance.survey/survey-id survey-tx)
+         closes-at (:insurance.survey/closes-at survey-tx)]
+     (if-not (and survey-id
+                  closes-at
+                  (pos? (compare closes-at now)))
+       (d/cancel
+        {:cognitect.anomalies/category :cognitect.anomalies/incorrect
+         :cognitect.anomalies/message "The survey must have a future closing time."
+         :app/error-code :insurance.survey.error/invalid-transition
+         :insurance.survey/error :insurance.survey.error/invalid-transition})
+       (let [conflicting-survey
+             (d/q
+              (quote [:find ?other-id .
+                      :in $ ?now ?survey-id
+                      :where
+                      [?other :insurance.survey/survey-id ?other-id]
+                      [(not= ?other-id ?survey-id)]
+                      [?other :insurance.survey/closes-at ?other-closes-at]
+                      [(< ?now ?other-closes-at)]
+                      [(missing? $ ?other :insurance.survey/closed-at)]])
+              db now survey-id)]
+         (if conflicting-survey
+           (d/cancel
+            {:cognitect.anomalies/category :cognitect.anomalies/conflict
+             :cognitect.anomalies/message "Another insurance survey is active."
+             :app/error-code :insurance.survey.error/active-exists
+             :insurance.survey/error :insurance.survey.error/active-exists
+             :insurance.survey/conflicting-survey conflicting-survey})
+           [survey-tx]))))}}
 ;;;; Insurance Survey - Response
  {:db/ident       :insurance.survey.response/response-id
   :db/doc         "The id of this survey response"

@@ -31,13 +31,40 @@
         (d/connect db-uri))
 
 (defn transact-schema [conn]
-  (d/transact conn (-> (io/resource "schema.edn") slurp edn/read-string)))
+  @(d/transact conn (-> (io/resource "schema-meta.edn") slurp edn/read-string))
+  (let [schema-data (edn/read-string
+                     {:readers *data-readers*}
+                     (slurp (io/resource "schema.edn")))
+        db           (d/db conn)
+        unique-alters
+        (keep (fn [{:db/keys [ident index unique]}]
+                (when (and ident index unique (d/entid db ident))
+                  (let [current (d/pull db [:db/index :db/unique] ident)]
+                    (when-not (:db/unique current)
+                      {:current current :ident ident}))))
+              schema-data)
+        needs-avet  (keep #(when-not (get-in % [:current :db/index])
+                             (:ident %))
+                          unique-alters)
+        indexed-db  (if (seq needs-avet)
+                      (:db-after
+                       @(d/transact
+                         conn
+                         (mapcat (fn [ident]
+                                   [[:db/add ident :db/index true]
+                                    [:db/add :db.part/db
+                                     :db.alter/attribute ident]])
+                                 needs-avet)))
+                      db)]
+    (when (seq unique-alters)
+      @(d/sync-schema conn (d/basis-t indexed-db)))
+    (d/transact conn schema-data)))
 
 (defn start-peer [{:keys [peer]}]
   (assert (:db-uri peer))
   (let [conn           (ensure-and-connect (:db-uri peer))
         #_#_migrations (gather-migrations (:migration-components peer))]
-    (transact-schema conn)
+    @(transact-schema conn)
     #_(when migrations
         (μ/log ::db-migrations :msg "Datomic installing schema migrations")
         (migrations/install-schema conn migrations))
