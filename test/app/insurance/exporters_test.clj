@@ -1,0 +1,193 @@
+(ns app.insurance.exporters-test
+  (:require
+   [app.insurance.exporters :as exporters]
+   [clojure.test :refer [deftest is testing]]))
+
+(def overnight-role
+  :overnight-vehicle)
+
+(def building-role
+  :unattended-building)
+
+(defn coverage-type
+  [type-id name]
+  {:insurance.coverage.type/type-id type-id
+   :insurance.coverage.type/name    name})
+
+(defn policy
+  [exporter-id coverage-types role->type-id]
+  (let [type-id->coverage-type
+        (into {}
+              (map (juxt :insurance.coverage.type/type-id identity))
+              coverage-types)]
+    {:insurance.policy/exporter-id exporter-id
+     :insurance.policy/coverage-types coverage-types
+     :insurance.policy/export-mappings
+     (mapv (fn [[role type-id]]
+             {:insurance.export.mapping/role role
+              :insurance.export.mapping/coverage-type
+              (get type-id->coverage-type type-id)})
+           role->type-id)}))
+
+(defn coverage
+  [coverage-types]
+  {:instrument.coverage/value      1500M
+   :instrument.coverage/insurer-id "H-42"
+   :instrument.coverage/item-count 2
+   :instrument.coverage/types      coverage-types
+   :instrument.coverage/instrument
+   {:instrument/name             "Renamed touring instrument"
+    :instrument/make             "Yamaha"
+    :instrument/model            "Xeno"
+    :instrument/serial-number    "SN-42"
+    :instrument/build-year       "2020"
+    :instrument/description      "Gold lacquer"
+    :instrument/category         {:instrument.category/name "Brass"}
+    :instrument/owner            {:member/name "Ada"}
+    :instrument/images-share-url "https://example.test/images/42"}})
+
+(defn configuration-summary
+  [policy]
+  (some-> (exporters/policy-configuration policy)
+          (select-keys [:exporter-id
+                        :status
+                        :missing-roles
+                        :role->coverage-type-id])))
+
+(defn export-error
+  [policy coverage]
+  (try
+    (exporters/coverage->row policy coverage)
+    nil
+    (catch clojure.lang.ExceptionInfo error
+      (select-keys (ex-data error)
+                   [:type :exporter-id :status :missing-roles]))))
+
+(deftest inventory-xls-v1-registry-test
+  (testing "the current provider format is an immutable versioned descriptor"
+    (is (= [{:exporter-id exporters/inventory-xls-v1
+             :label-key
+             :insurance.policy-settings/exporter-inventory-xls-v1
+             :template-resource "insurance-changes-template.xls"
+             :sheet-name        "Inventar"
+             :roles
+             [{:role      overnight-role
+               :label-key
+               :insurance.policy-settings/exporter-role-overnight-vehicle
+               :required? true}
+              {:role      building-role
+               :label-key
+               :insurance.policy-settings/exporter-role-unattended-building
+               :required? true}]}]
+           (mapv #(select-keys % [:exporter-id
+                                  :label-key
+                                  :template-resource
+                                  :sheet-name
+                                  :roles])
+                 (exporters/descriptors))))
+    (is (= (first (exporters/descriptors))
+           (exporters/descriptor exporters/inventory-xls-v1)))
+    (is (nil? (exporters/descriptor
+               :insurance.exporter/inventory-xls-v2)))))
+
+(deftest policy-exporter-configuration-test
+  (let [overnight-id (random-uuid)
+        building-id  (random-uuid)
+        types        [(coverage-type overnight-id "Renamed worldwide cover")
+                      (coverage-type building-id "Renamed storage cover")]]
+    (testing "v1 roles resolve through coverage-type references"
+      (is (= {:exporter-id exporters/inventory-xls-v1
+              :status      :complete
+              :missing-roles []
+              :role->coverage-type-id
+              {overnight-role overnight-id
+               building-role  building-id}}
+             (configuration-summary
+              (policy exporters/inventory-xls-v1
+                      types
+                      {overnight-role overnight-id
+                       building-role  building-id})))))
+
+    (testing "exporter selection and mappings remain independent per policy"
+      (let [first-policy  (policy exporters/inventory-xls-v1
+                                  types
+                                  {overnight-role overnight-id
+                                   building-role  building-id})
+            second-policy (policy exporters/inventory-xls-v1
+                                  types
+                                  {overnight-role building-id
+                                   building-role  overnight-id})
+            item          (coverage [(first types)])]
+        (is (= [["x" ""] ["" "x"]]
+               (mapv #(->> (exporters/coverage->row % item)
+                           (drop 9)
+                           (take 2)
+                           vec)
+                     [first-policy second-policy])))))
+
+    (testing "unconfigured, unknown, and incomplete policies are explicit"
+      (let [unconfigured (policy nil types {})
+            unknown      (policy :insurance.exporter/inventory-xls-v2
+                                 types
+                                 {})
+            incomplete   (policy exporters/inventory-xls-v1
+                                 types
+                                 {overnight-role overnight-id})]
+        (is (= [{:exporter-id nil
+                 :status      :not-configured
+                 :missing-roles []
+                 :role->coverage-type-id {}}
+                {:exporter-id :insurance.exporter/inventory-xls-v2
+                 :status      :unknown
+                 :missing-roles []
+                 :role->coverage-type-id {}}
+                {:exporter-id exporters/inventory-xls-v1
+                 :status      :incomplete
+                 :missing-roles [building-role]
+                 :role->coverage-type-id {overnight-role overnight-id}}]
+               (mapv configuration-summary
+                     [unconfigured unknown incomplete])))
+        (is (= [{:type        :insurance.exporter/configuration-error
+                 :exporter-id nil
+                 :status      :not-configured
+                 :missing-roles []}
+                {:type        :insurance.exporter/configuration-error
+                 :exporter-id :insurance.exporter/inventory-xls-v2
+                 :status      :unknown
+                 :missing-roles []}
+                {:type        :insurance.exporter/configuration-error
+                 :exporter-id exporters/inventory-xls-v1
+                 :status      :incomplete
+                 :missing-roles [building-role]}]
+               (mapv #(export-error % (coverage []))
+                     [unconfigured unknown incomplete])))))))
+
+(deftest inventory-xls-v1-row-generation-is-rename-safe-test
+  (let [overnight-id   (random-uuid)
+        building-id    (random-uuid)
+        overnight-type (coverage-type overnight-id "Nothing like the legacy label")
+        building-type  (coverage-type building-id "Another administrator rename")
+        policy         (policy exporters/inventory-xls-v1
+                               [overnight-type building-type]
+                               {overnight-role overnight-id
+                                building-role  building-id})]
+    (testing "semantic role columns depend on mapped references, not names"
+      (is (= [2
+              "Renamed touring instrument"
+              "Yamaha"
+              "Xeno"
+              "SN-42"
+              "2020"
+              "Brass; Gold lacquer"
+              1500M
+              3000M
+              "x"
+              ""
+              ""
+              ""
+              "Ada"
+              "H-42"
+              "https://example.test/images/42"]
+             (exporters/coverage->row
+              policy
+              (coverage [overnight-type])))))))

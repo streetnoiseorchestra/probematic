@@ -2,6 +2,7 @@
   (:require
    [app.insurance.actions :as insurance.actions]
    [app.insurance.policy.settings.actions :as actions]
+   [app.insurance.test-support :as test-support]
    [app.nexus.actions :as support]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
@@ -97,8 +98,65 @@
    {:coverageType (merge {:policyId      (str policy-id)
                           :name          "Extended"
                           :description   "Additional coverage"
-                          :premiumFactor "0.75"}
+                          :premiumFactor "0.75"
+                          :icon          "phosphor/shield"
+                          :required      false
+                          :addToBandInstruments false
+                          :confirmationCount ""}
                          overrides)}})
+
+(defn exporter-signals
+  [policy-id exporter-id mappings]
+  {:insurancePolicySettings
+   {:exporter {:policyId   (str policy-id)
+               :exporterId exporter-id
+               :mappings   mappings}}})
+
+(defn seed-impact-coverages!
+  [conn policy-id]
+  (let [type-id             (random-uuid)
+        band-missing-id     (random-uuid)
+        band-selected-id    (random-uuid)
+        private-missing-id  (random-uuid)]
+    @(d/transact
+      conn
+      [{:db/id                                  "impact-type"
+        :insurance.coverage.type/type-id        type-id
+        :insurance.coverage.type/name           "Existing optional"
+        :insurance.coverage.type/description    "Existing optional coverage"
+        :insurance.coverage.type/premium-factor 0.25M}
+       {:db/id                           "band-missing"
+        :instrument.coverage/coverage-id band-missing-id
+        :instrument.coverage/private?    false
+        :instrument.coverage/status      :instrument.coverage.status/reviewed
+        :instrument.coverage/change      :instrument.coverage.change/none}
+       {:db/id                           "band-selected"
+        :instrument.coverage/coverage-id band-selected-id
+        :instrument.coverage/private?    false
+        :instrument.coverage/types       ["impact-type"]
+        :instrument.coverage/status      :instrument.coverage.status/reviewed
+        :instrument.coverage/change      :instrument.coverage.change/none}
+       {:db/id                           "private-missing"
+        :instrument.coverage/coverage-id private-missing-id
+        :instrument.coverage/private?    true
+        :instrument.coverage/status      :instrument.coverage.status/reviewed
+        :instrument.coverage/change      :instrument.coverage.change/none}
+       [:db/add [:insurance.policy/policy-id policy-id]
+        :insurance.policy/coverage-types
+        "impact-type"]
+       [:db/add [:insurance.policy/policy-id policy-id]
+        :insurance.policy/covered-instruments
+        "band-missing"]
+       [:db/add [:insurance.policy/policy-id policy-id]
+        :insurance.policy/covered-instruments
+        "band-selected"]
+       [:db/add [:insurance.policy/policy-id policy-id]
+        :insurance.policy/covered-instruments
+        "private-missing"]])
+    {:type-id            type-id
+     :all-coverage-ids   #{band-missing-id band-selected-id private-missing-id}
+     :band-coverage-ids  #{band-missing-id band-selected-id}
+     :missing-type-ids   #{band-missing-id private-missing-id}}))
 
 (defn seed-category-factors!
   [conn policy-id]
@@ -182,6 +240,84 @@
   (some #(when (= :app.datastar/assoc-state (first %)) %)
         effects))
 
+(defn transaction-data
+  [effects]
+  (some #(when (transact-effect? %) (second %))
+        effects))
+
+(defn coverage-type-transaction-summary
+  [effects]
+  (let [tx-data        (transaction-data effects)
+        entity-tx      (some #(when (and (map? %)
+                                         (:insurance.coverage.type/type-id %))
+                                %)
+                             tx-data)
+        type-ref       (or (:db/id entity-tx)
+                           (some #(when (and (vector? %)
+                                             (= :insurance.coverage.type/icon
+                                                (nth % 2 nil)))
+                                    (second %))
+                                 tx-data))
+        attribute-value (fn [attribute]
+                          (or (get entity-tx attribute)
+                              (some #(when (and (vector? %)
+                                                (= :db/add (first %))
+                                                (= type-ref (second %))
+                                                (= attribute (nth % 2 nil)))
+                                       (nth % 3 nil))
+                                    tx-data)))]
+    {:transact?   (boolean tx-data)
+     :icon        (attribute-value :insurance.coverage.type/icon)
+     :required?   (attribute-value :insurance.coverage.type/required?)
+     :coverage-ids
+     (->> tx-data
+          (keep (fn [tx]
+                  (when (and (vector? tx)
+                             (= :db/add (first tx))
+                             (= :instrument.coverage/types (nth tx 2 nil))
+                             (= type-ref (nth tx 3 nil)))
+                    (second (second tx)))))
+          set)}))
+
+(defn coverage-type-confirmation-summary
+  [effects]
+  (let [[_ path value] (assoc-state-effect effects)]
+    {:transact?         (boolean (transaction-data effects))
+     :state-path        path
+     :impact-count      (:impact-count value)
+     :confirmation-count (:confirmation-count value)
+     :error-keys        (set (keys (:_error value)))
+     :top-error         (get-in value [:_error :_top :error])}))
+
+(defn exporter-failure-summary
+  [effects]
+  (let [[_ path value] (assoc-state-effect effects)]
+    {:transact?      (boolean (transaction-data effects))
+     :state-path     path
+     :error-keys     (set (keys (:_error value)))
+     :exporter-error (get-in value [:_error :exporter-id :error])
+     :mapping-error  (get-in value [:_error :mappings :error])
+     :top-error      (get-in value [:_error :_top :error])}))
+
+(defn exporter-transaction-summary
+  [effects]
+  (let [tx-data (transaction-data effects)]
+    {:transact?   (boolean tx-data)
+     :exporter-id (some #(when (and (vector? %)
+                                    (= :db/add (first %))
+                                    (= :insurance.policy/exporter-id
+                                       (nth % 2 nil)))
+                           (nth % 3 nil))
+                        tx-data)
+     :mappings    (->> tx-data
+                       (keep (fn [tx]
+                               (when (and (map? tx)
+                                          (:insurance.export.mapping/role tx))
+                                 [(:insurance.export.mapping/role tx)
+                                  (second
+                                   (:insurance.export.mapping/coverage-type tx))])))
+                       (into {}))}))
+
 (defn failure-summary
   [effects]
   (let [[_ path value] (assoc-state-effect effects)]
@@ -198,7 +334,8 @@
 
 (defn coverage-type-failure-summary
   [effects]
-  (let [[_ path value] (assoc-state-effect effects)]
+  (let [[_ path value] (assoc-state-effect effects)
+        value          (if (map? value) value {})]
     {:transact?      (boolean (some transact-effect? effects))
      :clear-loading? (boolean (some #{support/clear-loading} effects))
      :state-path     path
@@ -364,7 +501,8 @@
                          :type-id?       true
                          :type-tx        {:insurance.coverage.type/name           "Extended"
                                           :insurance.coverage.type/description    "Additional coverage"
-                                          :insurance.coverage.type/premium-factor 0.75M}
+                                          :insurance.coverage.type/premium-factor 0.75M
+                                          :insurance.coverage.type/icon           :phosphor/shield}
                          :policy-add     [:db/add policy-ref :insurance.policy/coverage-types]
                          :same-tempid?   true
                          :audit          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
@@ -376,7 +514,8 @@
                           (support/with-audit
                             [[:db/add unused-type-ref :insurance.coverage.type/name "Updated"]
                              [:db/add unused-type-ref :insurance.coverage.type/description "Updated coverage"]
-                             [:db/add unused-type-ref :insurance.coverage.type/premium-factor 0.5M]]
+                             [:db/add unused-type-ref :insurance.coverage.type/premium-factor 0.5M]
+                             [:db/add unused-type-ref :insurance.coverage.type/icon :phosphor/shield]]
                             member-id)
                           {}]
                          support/clear-loading
@@ -607,6 +746,335 @@
                             (state system)
                             {:targetid (str unused-type-id)})
                 :close-edit (actions/close-coverage-type-edit-action (state system) {})}))))))
+
+(deftest coverage-type-metadata-action-test
+  (testing "persists registered icons and explicit required state"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-coverage-type-metadata")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [unused-type-id]} (seed-coverage-types! conn policy-id)]
+        (is (= {:create {:transact?   true
+                         :icon        :phosphor/shield
+                         :required?   false
+                         :coverage-ids #{}}
+                :update {:transact?   true
+                         :icon        :phosphor/star
+                         :required?   false
+                         :coverage-ids #{}}}
+               {:create
+                (coverage-type-transaction-summary
+                 (actions/create-coverage-type-action
+                  (state system)
+                  (coverage-type-signals policy-id {})))
+                :update
+                (coverage-type-transaction-summary
+                 (actions/update-coverage-type-action
+                  (state system)
+                  (coverage-type-signals
+                   policy-id
+                   {:typeId (str unused-type-id)
+                    :icon   "phosphor/star"})))}))))))
+
+(deftest coverage-type-icon-validation-test
+  (testing "rejects icon values outside the registered sprite catalog"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-coverage-type-icon-validation")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (is (= {:transact?      false
+              :clear-loading? true
+              :state-path     [:insurance-policy-settings :coverage-type-create]
+              :submitted      {:policy-id      policy-id
+                               :name           "Extended"
+                               :description    "Additional coverage"
+                               :premium-factor "0.75"}
+              :error-keys     #{:icon :_top}
+              :top-error      [:error/form-has-errors]}
+             (coverage-type-failure-summary
+              (actions/create-coverage-type-action
+               (state system)
+               (coverage-type-signals
+                policy-id
+                {:icon "snoico/not-registered"}))))))))
+
+(deftest required-coverage-type-create-confirmation-test
+  (testing "requires the current exact count before adding a required type"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-required-create-confirmation")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [all-coverage-ids]} (seed-impact-coverages! conn policy-id)]
+        (is (= {:prompt {:transact?          false
+                         :state-path         [:insurance-policy-settings
+                                              :coverage-type-create]
+                         :impact-count       3
+                         :confirmation-count ""
+                         :error-keys         #{}
+                         :top-error          nil}
+                :confirmed {:transact?   true
+                            :icon        :phosphor/shield
+                            :required?   true
+                            :coverage-ids all-coverage-ids}
+                :stale {:transact?          false
+                        :state-path         [:insurance-policy-settings
+                                             :coverage-type-create]
+                        :impact-count       3
+                        :confirmation-count "2"
+                        :error-keys         #{:confirmation-count :_top}
+                        :top-error
+                        [:insurance.policy-settings/error-stale-impact-count]}}
+               {:prompt
+                (coverage-type-confirmation-summary
+                 (actions/create-coverage-type-action
+                  (state system)
+                  (coverage-type-signals policy-id {:required true})))
+                :confirmed
+                (coverage-type-transaction-summary
+                 (actions/create-coverage-type-action
+                  (state system)
+                  (coverage-type-signals
+                   policy-id
+                   {:required          true
+                    :confirmationCount "3"})))
+                :stale
+                (coverage-type-confirmation-summary
+                 (actions/create-coverage-type-action
+                  (state system)
+                  (coverage-type-signals
+                   policy-id
+                   {:required          true
+                    :confirmationCount "2"})))}))))))
+
+(deftest optional-coverage-type-band-backfill-confirmation-test
+  (testing "confirms and adds an optional type only to band instruments"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-optional-band-confirmation")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [band-coverage-ids]} (seed-impact-coverages! conn policy-id)]
+        (is (= {:prompt {:transact?          false
+                         :state-path         [:insurance-policy-settings
+                                              :coverage-type-create]
+                         :impact-count       2
+                         :confirmation-count ""
+                         :error-keys         #{}
+                         :top-error          nil}
+                :confirmed {:transact?   true
+                            :icon        :phosphor/shield
+                            :required?   false
+                            :coverage-ids band-coverage-ids}}
+               {:prompt
+                (coverage-type-confirmation-summary
+                 (actions/create-coverage-type-action
+                  (state system)
+                  (coverage-type-signals
+                   policy-id
+                   {:addToBandInstruments true})))
+                :confirmed
+                (coverage-type-transaction-summary
+                 (actions/create-coverage-type-action
+                  (state system)
+                  (coverage-type-signals
+                   policy-id
+                   {:addToBandInstruments true
+                    :confirmationCount    "2"})))}))))))
+
+(deftest optional-to-required-coverage-type-confirmation-test
+  (testing "recounts missing coverages before making an existing type required"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-required-update-confirmation")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [missing-type-ids type-id]}
+            (seed-impact-coverages! conn policy-id)]
+        (is (= {:prompt {:transact?          false
+                         :state-path         [:insurance-policy-settings
+                                              :coverage-type]
+                         :impact-count       2
+                         :confirmation-count ""
+                         :error-keys         #{}
+                         :top-error          nil}
+                :confirmed {:transact?   true
+                            :icon        :phosphor/shield
+                            :required?   true
+                            :coverage-ids missing-type-ids}}
+               {:prompt
+                (coverage-type-confirmation-summary
+                 (actions/update-coverage-type-action
+                  (state system)
+                  (coverage-type-signals
+                   policy-id
+                   {:typeId   (str type-id)
+                    :required true})))
+                :confirmed
+                (coverage-type-transaction-summary
+                 (actions/update-coverage-type-action
+                  (state system)
+                  (coverage-type-signals
+                   policy-id
+                   {:typeId           (str type-id)
+                    :required         true
+                    :confirmationCount "2"})))}))))))
+
+(deftest required-to-optional-coverage-type-test
+  (testing "keeps existing coverage links when a type becomes optional"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-required-to-optional")
+          policy-id  (random-uuid)
+          type-id    (random-uuid)
+          coverage-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (let [seed-result
+            (try
+              (test-support/seed-policy!
+               conn
+               policy-id
+               {:coverage-types
+                [{:type-id        type-id
+                  :name           "Required"
+                  :description    "Required coverage"
+                  :premium-factor 1.0M
+                  :icon           :phosphor/shield
+                  :required?      true}]})
+              :accepted
+              (catch Exception _
+                :rejected))]
+        (is (= :accepted seed-result))
+        (when (= :accepted seed-result)
+          @(d/transact
+            conn
+            [{:db/id                           "required-coverage"
+              :instrument.coverage/coverage-id coverage-id
+              :instrument.coverage/types
+              [[:insurance.coverage.type/type-id type-id]]
+              :instrument.coverage/private?    true
+              :instrument.coverage/status
+              :instrument.coverage.status/reviewed
+              :instrument.coverage/change
+              :instrument.coverage.change/none}
+             [:db/add [:insurance.policy/policy-id policy-id]
+              :insurance.policy/covered-instruments
+              "required-coverage"]])
+          (let [effects (actions/update-coverage-type-action
+                         (state system)
+                         (coverage-type-signals
+                          policy-id
+                          {:typeId   (str type-id)
+                           :required false}))
+                tx-data (transaction-data effects)]
+            (is (= {:metadata {:transact?   true
+                               :icon        :phosphor/shield
+                               :required?   false
+                               :coverage-ids #{}}
+                    :coverage-retractions []}
+                   {:metadata (coverage-type-transaction-summary effects)
+                    :coverage-retractions
+                    (filterv (fn [tx]
+                               (and (vector? tx)
+                                    (= :db/retract (first tx))
+                                    (= :instrument.coverage/types
+                                       (nth tx 2 nil))))
+                             tx-data)}))))))))
+
+(deftest save-exporter-action-test
+  (testing "saves a versioned exporter and policy-owned role mappings"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-save-exporter")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [unused-type-id used-type-id]}
+            (seed-coverage-types! conn policy-id)]
+        (is (= {:transact?   true
+                :exporter-id :insurance.exporter/inventory-xls-v1
+                :mappings    {:overnight-vehicle    used-type-id
+                              :unattended-building unused-type-id}}
+               (exporter-transaction-summary
+                (actions/save-exporter-action
+                 (state system)
+                 (exporter-signals
+                  policy-id
+                  "insurance.exporter/inventory-xls-v1"
+                  [{:role           "overnight-vehicle"
+                    :coverageTypeId (str used-type-id)}
+                   {:role           "unattended-building"
+                    :coverageTypeId (str unused-type-id)}])))))))))
+
+(deftest save-exporter-validation-test
+  (testing "validates exporter IDs, required roles, uniqueness, and policy ownership"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-exporter-validation")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [foreign-type-id unused-type-id used-type-id]}
+            (seed-coverage-types! conn policy-id)
+            summarize
+            (fn [exporter-id mappings]
+              (exporter-failure-summary
+               (actions/save-exporter-action
+                (state system)
+                (exporter-signals policy-id exporter-id mappings))))]
+        (is (= {:unknown
+                {:transact?      false
+                 :state-path     [:insurance-policy-settings :exporter]
+                 :error-keys     #{:exporter-id :_top}
+                 :exporter-error
+                 [:insurance.policy-settings/error-invalid-exporter]
+                 :mapping-error  nil
+                 :top-error      [:error/form-has-errors]}
+                :incomplete
+                {:transact?      false
+                 :state-path     [:insurance-policy-settings :exporter]
+                 :error-keys     #{:mappings :_top}
+                 :exporter-error nil
+                 :mapping-error
+                 [:insurance.policy-settings/error-incomplete-exporter-mapping]
+                 :top-error      [:error/form-has-errors]}
+                :foreign
+                {:transact?      false
+                 :state-path     [:insurance-policy-settings :exporter]
+                 :error-keys     #{:mappings :_top}
+                 :exporter-error nil
+                 :mapping-error
+                 [:insurance.policy-settings/error-invalid-exporter-mapping]
+                 :top-error      [:error/form-has-errors]}
+                :duplicate
+                {:transact?      false
+                 :state-path     [:insurance-policy-settings :exporter]
+                 :error-keys     #{:mappings :_top}
+                 :exporter-error nil
+                 :mapping-error
+                 [:insurance.policy-settings/error-duplicate-exporter-role]
+                 :top-error      [:error/form-has-errors]}}
+               {:unknown (summarize "insurance.exporter/unknown" [])
+                :incomplete
+                (summarize
+                 "insurance.exporter/inventory-xls-v1"
+                 [{:role           "overnight-vehicle"
+                   :coverageTypeId (str used-type-id)}])
+                :foreign
+                (summarize
+                 "insurance.exporter/inventory-xls-v1"
+                 [{:role           "overnight-vehicle"
+                   :coverageTypeId (str used-type-id)}
+                  {:role           "unattended-building"
+                   :coverageTypeId (str foreign-type-id)}])
+                :duplicate
+                (summarize
+                 "insurance.exporter/inventory-xls-v1"
+                 [{:role           "overnight-vehicle"
+                   :coverageTypeId (str used-type-id)}
+                  {:role           "overnight-vehicle"
+                   :coverageTypeId (str unused-type-id)}
+                  {:role           "unattended-building"
+                   :coverageTypeId (str unused-type-id)}])}))))))
 
 (deftest category-factor-create-update-delete-action-test
   (testing "creates, updates, and deletes policy category factors"
@@ -868,6 +1336,7 @@
                :app.insurance.policy.settings.actions/close-coverage-type-edit
                :app.insurance.policy.settings.actions/update-coverage-type
                :app.insurance.policy.settings.actions/delete-coverage-type
+               :app.insurance.policy.settings.actions/save-exporter
                :app.insurance.policy.settings.actions/open-category-factor-create
                :app.insurance.policy.settings.actions/close-category-factor-create
                :app.insurance.policy.settings.actions/create-category-factor

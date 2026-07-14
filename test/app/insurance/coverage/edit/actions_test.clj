@@ -154,6 +154,59 @@
 (defn tx-set [effects]
   (set (tx-data effects)))
 
+(defn coverage-type
+  [type-id name required?]
+  {:insurance.coverage.type/type-id   type-id
+   :insurance.coverage.type/name      name
+   :insurance.coverage.type/required? required?})
+
+(defn apply-coverage-type-transactions
+  [initial-type-ids transactions]
+  (reduce (fn [type-ids [operation _coverage-ref _attribute [_lookup type-id]]]
+            (case operation
+              :db/add (conj type-ids type-id)
+              :db/retract (disj type-ids type-id)
+              type-ids))
+          (set initial-type-ids)
+          (filter #(and (vector? %)
+                        (= :instrument.coverage/types (nth % 2 nil)))
+                  transactions)))
+
+(defn edited-private-coverage-type-ids
+  [policy-types initial-type-ids selected-type-ids]
+  (let [coverage-id (random-uuid)
+        owner-id    (random-uuid)
+        category-id (random-uuid)
+        coverage    {:instrument.coverage/coverage-id coverage-id
+                     :instrument.coverage/instrument
+                     {:instrument/owner
+                      {:member/member-id owner-id}
+                      :instrument/category
+                      {:instrument.category/category-id category-id}}
+                     :instrument.coverage/types
+                     (mapv (fn [type-id]
+                             {:insurance.coverage.type/type-id type-id})
+                           initial-type-ids)
+                     :instrument.coverage/private? true
+                     :instrument.coverage/value 100M
+                     :instrument.coverage/item-count 1
+                     :instrument.coverage/status
+                     :instrument.coverage.status/reviewed
+                     :instrument.coverage/change
+                     :instrument.coverage.change/none}
+        transactions
+        (actions/update-coverage-tx-data
+         {:coverage    coverage
+          :coverage-id coverage-id
+          :policy      {:insurance.policy/coverage-types policy-types}}
+         {:coverage-types  (mapv str selected-type-ids)
+          :owner-member-id (str owner-id)
+          :category-id     (str category-id)
+          :item-count      "1"
+          :value           "100"
+          :private-band    "private"})]
+    (apply-coverage-type-transactions initial-type-ids transactions)))
+
 (defn redirects [effects]
   (filterv #(= :app.datastar/redirect (first %)) effects))
 
@@ -260,18 +313,6 @@
                       :instrument.coverage/types
                       [:insurance.coverage.type/type-id (:extra-type-id fixture)]]))))
 
-  (testing "private instruments receive selected policy types and the first policy type"
-    (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {:coverage-type-tempids ["extra-type"]})
-          effects (actions/update-instrument-coverage-action
-                   (state-for system)
-                   (-> (signals-for fixture)
-                       (assoc-in [:coverage-edit :coverage-types] [(str (:extra-type-id fixture))])))]
-      (is (contains? (tx-set effects)
-                     [:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)]
-                      :instrument.coverage/types
-                      [:insurance.coverage.type/type-id (:base-type-id fixture)]]))))
-
   (testing "non-draft policies return a top-level form error and no transaction"
     (let [{:keys [conn] :as system} (new-system)
           fixture (seed-coverage! conn {:policy-status :insurance.policy.status/active})
@@ -309,6 +350,46 @@
                [:coverage-edit :_error :instrument-name]
                {:error "Instrument Name is required."}]]
              (actions/validate-coverage-field-action (state-for system) signals))))))
+
+(deftest edit-private-coverage-merges-explicit-required-types-test
+  (testing "private coverage supports zero, one, or multiple required types in any order"
+    (let [optional-a-id (random-uuid)
+          optional-b-id (random-uuid)
+          required-a-id (random-uuid)
+          required-b-id (random-uuid)
+          optional-a    (coverage-type optional-a-id "Optional A" false)
+          optional-b    (coverage-type optional-b-id "Optional B" false)
+          required-a    (coverage-type required-a-id "Required A" true)
+          required-b    (coverage-type required-b-id "Required B" true)
+          cases         [{:label    "zero required types"
+                          :orders   [[optional-a optional-b]
+                                     [optional-b optional-a]]
+                          :initial  [optional-a-id]
+                          :selected []
+                          :expected #{}}
+                         {:label    "one required type"
+                          :orders   [[optional-a required-a optional-b]
+                                     [optional-b optional-a required-a]
+                                     [required-a optional-b optional-a]]
+                          :initial  [optional-a-id]
+                          :selected [optional-b-id]
+                          :expected #{required-a-id optional-b-id}}
+                         {:label    "multiple required types"
+                          :orders   [[required-a optional-a required-b]
+                                     [optional-a required-b required-a]
+                                     [required-b required-a optional-a]]
+                          :initial  [optional-b-id]
+                          :selected [optional-a-id]
+                          :expected #{required-a-id required-b-id optional-a-id}}]]
+      (doseq [{:keys [label orders initial selected expected]} cases
+              policy-types orders]
+        (is (= expected
+               (edited-private-coverage-type-ids
+                policy-types
+                initial
+                selected))
+            (str label " with policy order "
+                 (mapv :insurance.coverage.type/name policy-types)))))))
 
 (deftest delete-instrument-coverage-action-test
   (testing "delete returns no transaction for a non-insurance-team member"

@@ -118,15 +118,25 @@
 (def row
   {:category-name       "Strings"
    :coverage-id         coverage-id
-   :coverage-type-names ["Grundschutz" "Nachzeit im Auto" "Proberaum" "Basic"]
-   :coverage-types      [{:insurance.coverage.type/name "Grundschutz"
+   :coverage-type-names ["Worldwide touring"
+                         "Locked rehearsal storage"
+                         "Instrument protection"
+                         "Legacy without icon"
+                         "Legacy invalid icon"]
+   :coverage-types      [{:insurance.coverage.type/name "Worldwide touring"
+                          :insurance.coverage.type/icon :phosphor/car-profile
                           :insurance.coverage.type/cost 1M}
-                         {:insurance.coverage.type/name "Nachzeit im Auto"
+                         {:insurance.coverage.type/name "Locked rehearsal storage"
+                          :insurance.coverage.type/icon :phosphor/warehouse
                           :insurance.coverage.type/cost 2M}
-                         {:insurance.coverage.type/name "Proberaum"
+                         {:insurance.coverage.type/name "Instrument protection"
+                          :insurance.coverage.type/icon :phosphor/shield
                           :insurance.coverage.type/cost 3M}
-                         {:insurance.coverage.type/name "Basic"
-                          :insurance.coverage.type/cost nil}]
+                         {:insurance.coverage.type/name "Legacy without icon"
+                          :insurance.coverage.type/cost nil}
+                         {:insurance.coverage.type/name "Legacy invalid icon"
+                          :insurance.coverage.type/icon :phosphor/not-registered
+                          :insurance.coverage.type/cost 4M}]
    :harmonia-id         "H-123"
    :instrument-name     "Violin"
    :member-id           member-id
@@ -500,14 +510,23 @@
                              (l/select "[data-workbench-status-icon]" status-view))
                 :tooltips (mapv l/text (l/select 'wa-tooltip status-view))})))
       (testing "Coverage types keep their labels and expose each known or unavailable cost."
-        (is (= {:icons    [{:kind "grundschutz" :label "Grundschutz" :tabindex 0}
-                           {:kind "nachzeit-im-auto" :label "Nachzeit im Auto" :tabindex 0}
-                           {:kind "proberaum" :label "Proberaum" :tabindex 0}]
-                :tooltips [{:label "Grundschutz" :trigger "click hover focus"}
-                           {:label "Nachzeit im Auto" :trigger "click hover focus"}
-                           {:label "Proberaum" :trigger "click hover focus"}]
-                :unknown  ["Basic"]
-                :costs    ["1,00 €" "2,00 €" "3,00 €" "&mdash;"]}
+        (is (= {:icons    [{:kind "phosphor/car-profile"
+                            :label "Worldwide touring"
+                            :tabindex 0}
+                           {:kind "phosphor/warehouse"
+                            :label "Locked rehearsal storage"
+                            :tabindex 0}
+                           {:kind "phosphor/shield"
+                            :label "Instrument protection"
+                            :tabindex 0}]
+                :tooltips [{:label "Worldwide touring"
+                            :trigger "click hover focus"}
+                           {:label "Locked rehearsal storage"
+                            :trigger "click hover focus"}
+                           {:label "Instrument protection"
+                            :trigger "click hover focus"}]
+                :unknown  ["Legacy without icon" "Legacy invalid icon"]
+                :costs    ["1,00 €" "2,00 €" "3,00 €" "&mdash;" "4,00 €"]}
                {:icons    (mapv (fn [icon]
                                   (let [attrs (l/attrs icon)]
                                     {:kind  (:data-insurance-coverage-type-icon attrs)

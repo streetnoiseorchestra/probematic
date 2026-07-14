@@ -5,20 +5,63 @@
 (def created-at #inst "2026-03-01T00:00:00.000-00:00")
 (def closes-at #inst "2026-12-01T00:00:00.000-00:00")
 
+(defn coverage-type-tx
+  [{:keys [description icon name premium-factor required? type-id]}]
+  (cond-> {:db/id                                  (str "coverage-type-" type-id)
+           :insurance.coverage.type/type-id        type-id
+           :insurance.coverage.type/name           name
+           :insurance.coverage.type/premium-factor premium-factor}
+    (some? description)
+    (assoc :insurance.coverage.type/description description)
+
+    (some? icon)
+    (assoc :insurance.coverage.type/icon icon)
+
+    (some? required?)
+    (assoc :insurance.coverage.type/required? required?)))
+
+(defn export-mapping-tx
+  [coverage-type-refs {:keys [coverage-type-id role]}]
+  {:insurance.export.mapping/role role
+   :insurance.export.mapping/coverage-type
+   (get coverage-type-refs
+        coverage-type-id
+        [:insurance.coverage.type/type-id coverage-type-id])})
+
 (defn policy-tx
-  [policy-id]
-  {:insurance.policy/policy-id       policy-id
-   :insurance.policy/name            "Insurance 2026"
-   :insurance.policy/status          :insurance.policy.status/draft
-   :insurance.policy/currency        :currency/EUR
-   :insurance.policy/effective-at    #inst "2026-01-01T00:00:00.000-00:00"
-   :insurance.policy/effective-until #inst "2026-12-31T00:00:00.000-00:00"
-   :insurance.policy/premium-factor  0.01M})
+  ([policy-id]
+   (policy-tx policy-id {}))
+  ([policy-id {:keys [coverage-types exporter-id export-mappings]}]
+   (let [coverage-type-txs  (mapv coverage-type-tx coverage-types)
+         coverage-type-refs (into {}
+                                  (map (juxt
+                                        :insurance.coverage.type/type-id
+                                        :db/id))
+                                  coverage-type-txs)]
+     (cond-> {:insurance.policy/policy-id       policy-id
+              :insurance.policy/name            "Insurance 2026"
+              :insurance.policy/status          :insurance.policy.status/draft
+              :insurance.policy/currency        :currency/EUR
+              :insurance.policy/effective-at    #inst "2026-01-01T00:00:00.000-00:00"
+              :insurance.policy/effective-until #inst "2026-12-31T00:00:00.000-00:00"
+              :insurance.policy/premium-factor  0.01M}
+       (seq coverage-type-txs)
+       (assoc :insurance.policy/coverage-types coverage-type-txs)
+
+       exporter-id
+       (assoc :insurance.policy/exporter-id exporter-id)
+
+       (seq export-mappings)
+       (assoc :insurance.policy/export-mappings
+              (mapv (partial export-mapping-tx coverage-type-refs)
+                    export-mappings))))))
 
 (defn seed-policy!
-  [conn policy-id]
-  @(d/transact conn [(policy-tx policy-id)])
-  policy-id)
+  ([conn policy-id]
+   (seed-policy! conn policy-id {}))
+  ([conn policy-id opts]
+   @(d/transact conn [(policy-tx policy-id opts)])
+   policy-id))
 
 (defn survey-tx
   [{:keys [member-id policy-id closed-at]}]

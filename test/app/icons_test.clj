@@ -31,6 +31,24 @@
 (deftest default-icon-registries-reference-existing-svg-resources
   (is (nil? (icons/validate-libraries! icons/icon-libraries))))
 
+(deftest registered-icon-catalog-test
+  (testing "contains every namespaced icon key in registry order"
+    (is (= (vec
+            (for [{:keys [id icons]} icons/icon-libraries
+                  icon icons]
+              (keyword (name id) (name icon))))
+           (icons/catalog)))))
+
+(deftest icon-display-name-test
+  (testing "hides the library and turns punctuation into title-cased spaces"
+    (is (= ["Warning Octagon"
+            "Circle Check Outline"
+            "Warning Octagon V2"]
+           (mapv icons/display-name
+                 [:phosphor/warning-octagon
+                  :snoico/circle-check-outline
+                  :fixture/warning_octagon.v2])))))
+
 (deftest default-phosphor-registry-includes-insurance-toolbar-icons
   (let [manifest (icons/build-sprite-manifest icons/icon-libraries)]
     (doseq [icon [:plus-circle

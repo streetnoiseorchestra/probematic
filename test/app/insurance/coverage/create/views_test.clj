@@ -90,6 +90,9 @@
 (def extra-coverage-type-id
   #uuid "00000000-0000-0000-0000-000000000def")
 
+(def third-coverage-type-id
+  #uuid "00000000-0000-0000-0000-000000000fed")
+
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
@@ -97,12 +100,14 @@
   {:insurance.policy/policy-id policy-id
    :insurance.policy/name      "Test Policy"
    :insurance.policy/coverage-types
-   [{:insurance.coverage.type/type-id     base-coverage-type-id
-     :insurance.coverage.type/name        "Base"
-     :insurance.coverage.type/description "Base coverage"}
-    {:insurance.coverage.type/type-id     extra-coverage-type-id
-     :insurance.coverage.type/name        "Extended"
-     :insurance.coverage.type/description "Extended coverage"}]})
+   [{:insurance.coverage.type/type-id   base-coverage-type-id
+     :insurance.coverage.type/name      "Base"
+     :insurance.coverage.type/description "Base coverage"
+     :insurance.coverage.type/required? true}
+    {:insurance.coverage.type/type-id   extra-coverage-type-id
+     :insurance.coverage.type/name      "Extended"
+     :insurance.coverage.type/description "Extended coverage"
+     :insurance.coverage.type/required? false}]})
 
 (defn request
   [instrument]
@@ -299,6 +304,20 @@
       (when (and action-ns action-name)
         (keyword action-ns action-name)))))
 
+(defn coverage-choice-state
+  [view]
+  (let [checkboxes (l/select 'wa-checkbox view)]
+    {:selected (set (get-in (signals view)
+                            ["coverage-create" "coverage-types"]))
+     :checked  (->> checkboxes
+                    (filter #(= true (:checked (l/attrs %))))
+                    (map (comp :value l/attrs))
+                    set)
+     :disabled (->> checkboxes
+                    (filter #(= true (:disabled (l/attrs %))))
+                    (map (comp :value l/attrs))
+                    set)}))
+
 (deftest coverage-step-form
   (testing "An insurance-team member is entering coverage details for the saved instrument."
     (let [view        (coverage-view (member-request coverage-instrument true) policy)
@@ -368,7 +387,7 @@
                (-> (l/select-one 'div.insurance-coverage-edit-choice-list view)
                    l/attrs
                    :data-show))))
-      (testing "The base type is enforced and each choice retains its explanatory text."
+      (testing "The required type is enforced and each choice retains its explanatory text."
         (let [optional-handler (:data-on:change (l/attrs (second checkboxes)))
               extra-id        (str extra-coverage-type-id)]
           (is (= {:checkboxes [{:value       (str base-coverage-type-id)
@@ -388,6 +407,46 @@
                                              :description (-> (l/select-one 'small checkbox) l/text)))
                                     checkboxes)
                   :optional-handler optional-handler})))))))
+
+(deftest required-coverage-type-controls
+  (testing "zero, one, or multiple explicit required types are selected in any policy order"
+    (let [optional-a {:insurance.coverage.type/type-id base-coverage-type-id
+                      :insurance.coverage.type/name "Optional A"
+                      :insurance.coverage.type/required? false}
+          optional-b {:insurance.coverage.type/type-id extra-coverage-type-id
+                      :insurance.coverage.type/name "Optional B"
+                      :insurance.coverage.type/required? false}
+          required-a (assoc optional-a
+                            :insurance.coverage.type/name "Required A"
+                            :insurance.coverage.type/required? true)
+          required-b {:insurance.coverage.type/type-id third-coverage-type-id
+                      :insurance.coverage.type/name "Required B"
+                      :insurance.coverage.type/required? true}
+          cases      [{:label    "zero required"
+                       :orders   [[optional-a optional-b]
+                                  [optional-b optional-a]]
+                       :expected #{}}
+                      {:label    "one required"
+                       :orders   [[optional-b required-a]
+                                  [required-a optional-b]]
+                       :expected #{(str base-coverage-type-id)}}
+                      {:label    "multiple required"
+                       :orders   [[required-a optional-b required-b]
+                                  [required-b required-a optional-b]
+                                  [optional-b required-b required-a]]
+                       :expected #{(str base-coverage-type-id)
+                                   (str third-coverage-type-id)}}]]
+      (doseq [{:keys [label orders expected]} cases
+              coverage-types orders]
+        (is (= {:selected expected
+                :checked  expected
+                :disabled expected}
+               (-> policy
+                   (assoc :insurance.policy/coverage-types coverage-types)
+                   coverage-view
+                   coverage-choice-state))
+            (str label " with policy order "
+                 (mapv :insurance.coverage.type/name coverage-types)))))))
 
 (deftest harmonia-id-visibility
   (testing "Step 3 is rendered for insurance-team and ordinary members."

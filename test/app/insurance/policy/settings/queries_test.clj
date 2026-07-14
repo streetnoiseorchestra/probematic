@@ -109,7 +109,7 @@
         :instrument.coverage/coverage-id (random-uuid)
         :instrument.coverage/instrument  "trumpet-instrument"
         :instrument.coverage/types       ["extended"]
-        :instrument.coverage/private?    false
+        :instrument.coverage/private?    true
         :instrument.coverage/value       3000M
         :instrument.coverage/item-count  1
         :instrument.coverage/status      :instrument.coverage.status/coverage-active
@@ -122,10 +122,39 @@
      :extended-id   extended-id
      :unused-id     unused-id}))
 
+(defn configure-exporter!
+  [conn policy-id mappings]
+  (try
+    @(d/transact
+      conn
+      [{:db/id                            [:insurance.policy/policy-id policy-id]
+        :insurance.policy/exporter-id     :insurance.exporter/inventory-xls-v1
+        :insurance.policy/export-mappings
+        (mapv (fn [[role coverage-type-id]]
+                {:insurance.export.mapping/role role
+                 :insurance.export.mapping/coverage-type
+                 [:insurance.coverage.type/type-id coverage-type-id]})
+              mappings)}])
+    :accepted
+    (catch Exception _
+      :rejected)))
+
 (defn coverage-type-summary
   [settings]
   (mapv #(select-keys % [:name :usage-count :current-cost])
         (:coverage-type-rows settings)))
+
+(defn coverage-impact-summary
+  [settings]
+  {:coverage-counts (:coverage-counts settings)
+   :coverage-type-rows
+   (mapv #(select-keys % [:name :missing-coverage-counts])
+         (:coverage-type-rows settings))})
+
+(defn exporter-summary
+  [settings]
+  {:exporter-options       (:exporter-options settings)
+   :exporter-configuration (:exporter-configuration settings)})
 
 (defn category-factor-summary
   [settings]
@@ -214,3 +243,84 @@
       (is (= :EUR
              (get-in (queries/policy-settings (d/db conn) policy-id)
                      [:policy-details :currency]))))))
+
+(deftest policy-settings-coverage-impact-read-model-test
+  (testing "counts private and band coverages affected by type backfills"
+    (let [{:keys [conn]} (tc/new-system "insurance-settings-query-impact")
+          policy-id      (random-uuid)]
+      (seed-settings-policy! conn policy-id {})
+      (is (= {:coverage-counts {:total 3
+                                :private 1
+                                :band 2}
+              :coverage-type-rows
+              [{:name "Basic"
+                :missing-coverage-counts {:total 1
+                                          :private 1
+                                          :band 0}}
+               {:name "Extended"
+                :missing-coverage-counts {:total 1
+                                          :private 0
+                                          :band 1}}
+               {:name "Unused"
+                :missing-coverage-counts {:total 3
+                                          :private 1
+                                          :band 2}}]}
+             (coverage-impact-summary
+              (queries/policy-settings (d/db conn) policy-id)))))))
+
+(deftest policy-settings-unconfigured-exporter-read-model-test
+  (testing "offers registered exporter versions when the policy has none"
+    (let [{:keys [conn]} (tc/new-system "insurance-settings-query-no-exporter")
+          policy-id      (random-uuid)]
+      (seed-settings-policy! conn policy-id {})
+      (is (= {:exporter-options
+              [{:exporter-id :insurance.exporter/inventory-xls-v1
+                :label-key
+                :insurance.policy-settings/exporter-inventory-xls-v1}]
+              :exporter-configuration
+              {:exporter-id nil
+               :status      :not-configured
+               :role-rows   []}}
+             (exporter-summary
+              (queries/policy-settings (d/db conn) policy-id)))))))
+
+(deftest policy-settings-configured-exporter-read-model-test
+  (testing "resolves exporter roles to policy coverage types without using names"
+    (let [{:keys [conn]} (tc/new-system "insurance-settings-query-exporter")
+          policy-id      (random-uuid)
+          {:keys [basic-type-id extended-id]}
+          (seed-settings-policy! conn policy-id {})
+          seed-status
+          (configure-exporter!
+           conn
+           policy-id
+           [[:overnight-vehicle extended-id]
+            [:unattended-building basic-type-id]])]
+      (is (= {:seed-status :accepted
+              :read-model
+              {:exporter-options
+               [{:exporter-id :insurance.exporter/inventory-xls-v1
+                 :label-key
+                 :insurance.policy-settings/exporter-inventory-xls-v1}]
+               :exporter-configuration
+               {:exporter-id :insurance.exporter/inventory-xls-v1
+                :status      :complete
+                :role-rows
+                [{:role             :overnight-vehicle
+                  :label-key
+                  :insurance.policy-settings/exporter-role-overnight-vehicle
+                  :required?        true
+                  :coverage-type-id extended-id
+                  :coverage-type-name "Extended"}
+                 {:role             :unattended-building
+                  :label-key
+                  :insurance.policy-settings/exporter-role-unattended-building
+                  :required?        true
+                  :coverage-type-id basic-type-id
+                  :coverage-type-name "Basic"}]}}}
+             {:seed-status seed-status
+              :read-model  (when (= :accepted seed-status)
+                             (exporter-summary
+                              (queries/policy-settings
+                               (d/db conn)
+                               policy-id)))})))))

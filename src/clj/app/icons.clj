@@ -140,6 +140,20 @@
                   :warehouse
                   :sign-out]}])
 
+(defn catalog
+  []
+  (vec
+   (for [{:keys [id icons]} icon-libraries
+         icon icons]
+     (keyword (name id) (name icon)))))
+
+(defn display-name
+  [icon]
+  (->> (str/split (name icon) #"[^\p{L}\p{N}]+")
+       (remove str/blank?)
+       (map str/capitalize)
+       (str/join " ")))
+
 (defonce sprite-manifest_ (atom nil))
 
 (defn- ->id [value]

@@ -4,6 +4,7 @@
    [app.datomic.shim :as datomic]
    [app.datastar :as d*]
    [app.insurance.domain :as domain]
+   [app.insurance.exporters :as exporters]
    [app.queries :as q]
    [app.urls :as urls]
    [app.util :as util]
@@ -516,6 +517,20 @@
   (set (map :insurance.coverage.type/type-id
             (:instrument.coverage/types coverage))))
 
+(defn- coverage-counts
+  [coverages]
+  (reduce (fn [counts coverage]
+            (-> counts
+                (update :total inc)
+                (update (if (:instrument.coverage/private? coverage)
+                          :private
+                          :band)
+                        inc)))
+          {:total 0
+           :private 0
+           :band 0}
+          coverages))
+
 (defn- category-factor-category-id
   [category-factor]
   (get-in category-factor [:insurance.category.factor/category
@@ -569,11 +584,16 @@
 
 (defn- coverage-type-row
   [safe-costs coverages coverage-type]
-  (let [type-id (:insurance.coverage.type/type-id coverage-type)]
+  (let [type-id           (:insurance.coverage.type/type-id coverage-type)
+        missing-coverages (remove #(contains? (coverage-type-ids %) type-id)
+                                  coverages)]
     {:type-id        type-id
      :name           (:insurance.coverage.type/name coverage-type)
      :description    (or (:insurance.coverage.type/description coverage-type) "")
      :premium-factor (:insurance.coverage.type/premium-factor coverage-type)
+     :icon            (:insurance.coverage.type/icon coverage-type)
+     :required?       (boolean (:insurance.coverage.type/required? coverage-type))
+     :missing-coverage-counts (coverage-counts missing-coverages)
      :usage-count    (count (filter #(contains? (coverage-type-ids %) type-id) coverages))
      :current-cost   (reduce +
                              0M
@@ -669,6 +689,29 @@
    :currency        (or (:insurance.policy/currency policy) :EUR)
    :status          (:insurance.policy/status policy)})
 
+(defn- exporter-options
+  []
+  (mapv #(select-keys % [:exporter-id :label-key])
+        (exporters/descriptors)))
+
+(defn- exporter-configuration
+  [policy]
+  (let [{:keys [descriptor exporter-id role->coverage-type status]}
+        (exporters/policy-configuration policy)]
+    {:exporter-id exporter-id
+     :status      status
+     :role-rows
+     (mapv (fn [{:keys [role] :as role-descriptor}]
+             (let [coverage-type (get role->coverage-type role)]
+               (cond-> (select-keys role-descriptor
+                                    [:role :label-key :required?])
+                 coverage-type
+                 (assoc :coverage-type-id
+                        (:insurance.coverage.type/type-id coverage-type)
+                        :coverage-type-name
+                        (:insurance.coverage.type/name coverage-type)))))
+           (:roles descriptor))}))
+
 (defn policy-settings
   ([db policy-id]
    (policy-settings db policy-id {}))
@@ -689,9 +732,12 @@
       :insurance-team-member? team-member?
       :supported-currencies   supported-currencies
       :coverage-type-rows     (coverage-type-rows policy safe-costs coverages)
+      :coverage-counts        (coverage-counts coverages)
       :category-factor-rows   (category-factor-rows policy safe-costs coverages)
       :available-categories   available-categories
       :unused-categories      (unused-category-rows available-categories category-factors)
+      :exporter-options       (exporter-options)
+      :exporter-configuration (exporter-configuration policy)
       :current-totals         (current-totals safe-costs coverages)
       :warnings               (warnings safe-costs)})))
 
@@ -1086,9 +1132,8 @@
      :coverage-type-names (mapv :insurance.coverage.type/name coverage-types)
      :coverage-types      (mapv #(select-keys
                                   %
-                                  [:insurance.coverage.type/type-id
-                                   :insurance.coverage.type/name
-                                   :insurance.coverage.type/cost])
+                                  (conj q/coverage-type-pattern
+                                        :insurance.coverage.type/cost))
                                 coverage-types)}))
 
 (defn- workbench-row-sort-key

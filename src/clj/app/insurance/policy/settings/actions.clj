@@ -1,6 +1,7 @@
 (ns app.insurance.policy.settings.actions
   (:require
    [app.form :as form]
+   [app.icons :as icons]
    [app.insurance.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
@@ -63,6 +64,12 @@
     (when (contains? (set queries/supported-currencies) currency)
       currency)))
 
+(defn- icon-value
+  [value]
+  (if (keyword? value)
+    value
+    (some-> value form/optional-text keyword)))
+
 (defn- policy-form
   [signals]
   (let [raw (raw-policy-form signals)]
@@ -80,7 +87,8 @@
     (cond-> {:policy-id      (uuid-value (:policyId raw))
              :name           (or (form/trim-value (:name raw)) "")
              :description    (or (form/trim-value (:description raw)) "")
-             :premium-factor (or (form/trim-value (:premiumFactor raw)) "")}
+             :premium-factor (or (form/trim-value (:premiumFactor raw)) "")
+             :icon           (icon-value (:icon raw))}
       type-id (assoc :type-id type-id))))
 
 (defn- category-factor-form
@@ -211,7 +219,7 @@
              (:insurance.policy/coverage-types policy))))))
 
 (defn- coverage-type-field-validation-errors
-  [tr policy {:keys [name premium-factor] :as coverage-type-form}]
+  [tr policy {:keys [icon name premium-factor] :as coverage-type-form}]
   (let [premium-factor-value (decimal-value premium-factor)]
     (cond-> {}
       (str/blank? name)
@@ -219,6 +227,9 @@
 
       (not (non-negative-decimal? premium-factor-value))
       (assoc :premium-factor (error tr [:insurance.policy-settings/error-invalid-premium-factor]))
+
+      (not (contains? (set (icons/catalog)) icon))
+      (assoc :icon (error tr [:insurance.policy-settings/error-invalid-coverage-type-icon]))
 
       (and (not (str/blank? name))
            (duplicate-coverage-type-name? policy coverage-type-form))
@@ -376,14 +387,19 @@
        support/clear-loading
        [:app.datastar/assoc-state [form-key :policy] false]])))
 
+(defn save-exporter-action
+  [_state _signals]
+  [])
+
 (defn- create-coverage-type-tx-data
-  [{:keys [policy-id name description premium-factor]}]
+  [{:keys [policy-id name description premium-factor icon]}]
   (let [tempid "coverage-type-create"]
     [{:db/id                                  tempid
       :insurance.coverage.type/type-id        (sq/generate-squuid)
       :insurance.coverage.type/name           name
       :insurance.coverage.type/description    description
-      :insurance.coverage.type/premium-factor (decimal-value premium-factor)}
+      :insurance.coverage.type/premium-factor (decimal-value premium-factor)
+      :insurance.coverage.type/icon           icon}
      [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/coverage-types tempid]]))
 
 (defn create-coverage-type-action
@@ -400,11 +416,12 @@
        clear-coverage-type-create])))
 
 (defn- update-coverage-type-tx-data
-  [{:keys [type-id name description premium-factor]}]
+  [{:keys [type-id name description premium-factor icon]}]
   (let [type-ref [:insurance.coverage.type/type-id type-id]]
     [[:db/add type-ref :insurance.coverage.type/name name]
      [:db/add type-ref :insurance.coverage.type/description description]
-     [:db/add type-ref :insurance.coverage.type/premium-factor (decimal-value premium-factor)]]))
+     [:db/add type-ref :insurance.coverage.type/premium-factor (decimal-value premium-factor)]
+     [:db/add type-ref :insurance.coverage.type/icon icon]]))
 
 (defn update-coverage-type-action
   [{:keys [current-member-id] :as state} signals]

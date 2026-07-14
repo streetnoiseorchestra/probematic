@@ -29,6 +29,47 @@
   ([path _vars]
    (tr path)))
 
+(def optional-a-id
+  #uuid "00000000-0000-0000-0000-000000000201")
+
+(def optional-b-id
+  #uuid "00000000-0000-0000-0000-000000000202")
+
+(def required-b-id
+  #uuid "00000000-0000-0000-0000-000000000203")
+
+(def optional-a
+  {:insurance.coverage.type/type-id   optional-a-id
+   :insurance.coverage.type/name      "Optional A"
+   :insurance.coverage.type/required? false})
+
+(def optional-b
+  {:insurance.coverage.type/type-id   optional-b-id
+   :insurance.coverage.type/name      "Optional B"
+   :insurance.coverage.type/required? false})
+
+(def required-a
+  (assoc optional-a
+         :insurance.coverage.type/name "Required A"
+         :insurance.coverage.type/required? true))
+
+(def required-b
+  {:insurance.coverage.type/type-id   required-b-id
+   :insurance.coverage.type/name      "Required B"
+   :insurance.coverage.type/required? true})
+
+(defn coverage-choice-state
+  [view]
+  (let [checkboxes (l/select "input[type=checkbox]" view)]
+    {:checked  (->> checkboxes
+                    (filter #(= true (:checked (l/attrs %))))
+                    (map (comp :value l/attrs))
+                    set)
+     :disabled (->> checkboxes
+                    (filter #(= true (:disabled (l/attrs %))))
+                    (map (comp :value l/attrs))
+                    set)}))
+
 (defn fixture [survey-opts]
   (let [report-count             (get survey-opts :report-count 1)
         survey-opts              (dissoc survey-opts :report-count)
@@ -52,6 +93,50 @@
                       :system         {:env {:app-base-url "https://example.test"}}
                       :tr             tr
                       ::r/router      router}})))
+
+(defn configure-coverage-icons!
+  [conn type-id->icon]
+  (if (d/entid (d/db conn) :insurance.coverage.type/icon)
+    (do
+      @(d/transact
+        conn
+        (mapv (fn [[type-id icon]]
+                [:db/add
+                 [:insurance.coverage.type/type-id type-id]
+                 :insurance.coverage.type/icon
+                 icon])
+              type-id->icon))
+      :accepted)
+    :missing))
+
+(deftest required-coverage-type-controls
+  (testing "zero, one, or multiple explicit required types are enforced in any policy order"
+    (let [coverage {:instrument.coverage/private? true}
+          cases    [{:label    "zero required"
+                     :orders   [[optional-a optional-b]
+                                [optional-b optional-a]]
+                     :expected #{}}
+                    {:label    "one required"
+                     :orders   [[optional-b required-a]
+                                [required-a optional-b]]
+                     :expected #{(str optional-a-id)}}
+                    {:label    "multiple required"
+                     :orders   [[required-a optional-b required-b]
+                                [required-b required-a optional-b]
+                                [optional-b required-b required-a]]
+                     :expected #{(str optional-a-id)
+                                 (str required-b-id)}}]]
+      (doseq [{:keys [label orders expected]} cases
+              coverage-types orders]
+        (is (= {:checked expected
+                :disabled expected}
+               (-> (#'sut/coverage-types-field
+                    {:coverage-types []}
+                    coverage
+                    {:insurance.policy/coverage-types coverage-types})
+                   coverage-choice-state))
+            (str label " with policy order "
+                 (mapv :insurance.coverage.type/name coverage-types)))))))
 
 (deftest survey-page-renders-each-preserved-state
   (testing "an incomplete response opens with progress and a card for every remaining item"
@@ -149,207 +234,234 @@
       (is (= "Test Trumpet" (:alt (l/attrs image))))
       (is (str/includes? (:src (l/attrs image)) (str image-id)))))
 
-  (testing "the compact card uses coverage icons and keeps its description in the scrolling facts"
+  (testing "the compact card uses stored coverage icons and keeps its description in the scrolling facts"
     (let [{:keys [conn coverage-id coverage-type-id instrument-id policy-id request]}
           (fixture {})
           description "A long instrument description that belongs with the other card facts."
+          storage-type-id (random-uuid)
+          missing-type-id (random-uuid)
+          invalid-type-id (random-uuid)
           _ @(d/transact
               conn
               [[:db/add [:insurance.coverage.type/type-id coverage-type-id]
-                :insurance.coverage.type/name "Grundschutz"]
-               {:db/id                                  "night-car-coverage"
-                :insurance.coverage.type/type-id        (random-uuid)
-                :insurance.coverage.type/name           "Nachzeit im Auto"
+                :insurance.coverage.type/name "Worldwide touring"]
+               {:db/id                                  "storage-coverage"
+                :insurance.coverage.type/type-id        storage-type-id
+                :insurance.coverage.type/name           "Locked rehearsal storage"
                 :insurance.coverage.type/premium-factor 1.0M}
-               {:db/id                                  "rehearsal-room-coverage"
-                :insurance.coverage.type/type-id        (random-uuid)
-                :insurance.coverage.type/name           "Proberaum"
+               {:db/id                                  "missing-icon-coverage"
+                :insurance.coverage.type/type-id        missing-type-id
+                :insurance.coverage.type/name           "Legacy without icon"
+                :insurance.coverage.type/premium-factor 1.0M}
+               {:db/id                                  "invalid-icon-coverage"
+                :insurance.coverage.type/type-id        invalid-type-id
+                :insurance.coverage.type/name           "Legacy invalid icon"
                 :insurance.coverage.type/premium-factor 1.0M}
                [:db/add [:instrument.coverage/coverage-id coverage-id]
-                :instrument.coverage/types "night-car-coverage"]
+                :instrument.coverage/types "storage-coverage"]
                [:db/add [:instrument.coverage/coverage-id coverage-id]
-                :instrument.coverage/types "rehearsal-room-coverage"]
+                :instrument.coverage/types "missing-icon-coverage"]
+               [:db/add [:instrument.coverage/coverage-id coverage-id]
+                :instrument.coverage/types "invalid-icon-coverage"]
                [:db/add [:insurance.policy/policy-id policy-id]
-                :insurance.policy/coverage-types "night-car-coverage"]
+                :insurance.policy/coverage-types "storage-coverage"]
                [:db/add [:insurance.policy/policy-id policy-id]
-                :insurance.policy/coverage-types "rehearsal-room-coverage"]
+                :insurance.policy/coverage-types "missing-icon-coverage"]
+               [:db/add [:insurance.policy/policy-id policy-id]
+                :insurance.policy/coverage-types "invalid-icon-coverage"]
                [:db/add [:instrument/instrument-id instrument-id]
                 :instrument/description description]])
-          db            (d/db conn)
-          request       (assoc request
-                               :db db
-                               :policy (q/retrieve-policy db policy-id))
-          view          (sut/page request)
-          heading       (->> view
-                             (l/select-one "#insurance-survey-instrument")
-                             (l/select-one :h2))
-          facts         (l/select-one ".insurance-survey-card-facts" view)
-          fact-items    (l/children facts)
-          coverage-item (some #(when (= :insurance/coverage-types
-                                        (-> % l/first-child
-                                            page-shell/translation-key))
-                                 %)
-                              fact-items)
-          description-item (last fact-items)
-          icons         (l/select "[data-insurance-coverage-type-icon]"
-                                  coverage-item)]
-      (is (= {:coverage-icons
-              #{{:kind "grundschutz" :label "Grundschutz"}
-                {:kind "nachzeit-im-auto" :label "Nachzeit im Auto"}
-                {:kind "proberaum" :label "Proberaum"}}
-              :coverage-tooltips
-              #{"Grundschutz" "Nachzeit im Auto" "Proberaum"}
-              :heading-trimmed? true
-              :facts-trimmed?   true
-              :description
-              {:class #{"wa-span-grid"}
-               :label :instrument/description
-               :text  description}}
-             {:coverage-icons
-              (set (map (fn [icon]
-                          (let [attrs (l/attrs icon)]
-                            {:kind  (:data-insurance-coverage-type-icon attrs)
-                             :label (:aria-label attrs)}))
-                        icons))
-              :coverage-tooltips
-              (set (map l/text (l/select 'wa-tooltip coverage-item)))
-              :heading-trimmed?
-              (contains? (:class (l/attrs heading)) "trim-none")
-              :facts-trimmed?
-              (every? #(contains? (:class (l/attrs %)) "trim-none")
-                      (concat (l/select :dt facts) (l/select :dd facts)))
-              :description
-              {:class (:class (l/attrs description-item))
-               :label (-> description-item l/first-child
-                          page-shell/translation-key)
-               :text  (-> description-item l/children second l/text)}}))))
+          icon-status
+          (configure-coverage-icons!
+           conn
+           {coverage-type-id :phosphor/car-profile
+            storage-type-id  :phosphor/warehouse
+            invalid-type-id  :phosphor/not-registered})]
+      (is (= :accepted icon-status))
+      (when (= :accepted icon-status)
+        (let [db            (d/db conn)
+              request       (assoc request
+                                   :db db
+                                   :policy (q/retrieve-policy db policy-id))
+              view          (sut/page request)
+              heading       (->> view
+                                 (l/select-one "#insurance-survey-instrument")
+                                 (l/select-one :h2))
+              facts         (l/select-one ".insurance-survey-card-facts" view)
+              fact-items    (l/children facts)
+              coverage-item (some #(when (= :insurance/coverage-types
+                                            (-> % l/first-child
+                                                page-shell/translation-key))
+                                     %)
+                                  fact-items)
+              description-item (last fact-items)
+              icons         (l/select "[data-insurance-coverage-type-icon]"
+                                      coverage-item)]
+          (is (= {:coverage-icons
+                  #{{:kind "phosphor/car-profile"
+                     :label "Worldwide touring"}
+                    {:kind "phosphor/warehouse"
+                     :label "Locked rehearsal storage"}}
+                  :coverage-tooltips
+                  #{"Worldwide touring" "Locked rehearsal storage"}
+                  :legacy-labels
+                  #{"Legacy without icon" "Legacy invalid icon"}
+                  :heading-trimmed? true
+                  :facts-trimmed?   true
+                  :description
+                  {:class #{"wa-span-grid"}
+                   :label :instrument/description
+                   :text  description}}
+                 {:coverage-icons
+                  (set (map (fn [icon]
+                              (let [attrs (l/attrs icon)]
+                                {:kind  (:data-insurance-coverage-type-icon attrs)
+                                 :label (:aria-label attrs)}))
+                            icons))
+                  :coverage-tooltips
+                  (set (map l/text (l/select 'wa-tooltip coverage-item)))
+                  :legacy-labels
+                  (set (map l/text
+                            (l/select
+                             "[data-insurance-coverage-type-label]"
+                             coverage-item)))
+                  :heading-trimmed?
+                  (contains? (:class (l/attrs heading)) "trim-none")
+                  :facts-trimmed?
+                  (every? #(contains? (:class (l/attrs %)) "trim-none")
+                          (concat (l/select :dt facts) (l/select :dd facts)))
+                  :description
+                  {:class (:class (l/attrs description-item))
+                   :label (-> description-item l/first-child
+                              page-shell/translation-key)
+                   :text  (-> description-item l/children second l/text)}})))))
 
-  (testing "the transition kind is exposed to CSS without changing the active card"
-    (let [{:keys [member-id policy-id request]} (fixture {})
-          report-id (:insurance.survey.report/report-id
-                     (:active-report
-                      (queries/survey-data (:db request) policy-id member-id)))
-          workflow (->> (assoc request :page-state
-                               {actions/form-key
-                                {:answered-count   1
-                                 :current-flow-key :keep-insured
-                                 :decisions        [:confirm-band]
-                                 :mode             :question
-                                 :report-id        report-id
-                                 :transition-kind  :question}})
-                        sut/page
-                        (l/select-one ".insurance-survey-workflow"))]
-      (is (= "question" (:data-transition-kind (l/attrs workflow))))
-      (is (= {:style {"--insurance-survey-progress-value" "50.0%"}
-              :value 50.0}
-             (select-keys
-              (l/attrs
-               (l/select-one "wa-progress-bar#insurance-survey-progress"
-                             workflow))
-              [:style :value])))))
+    (testing "the transition kind is exposed to CSS without changing the active card"
+      (let [{:keys [member-id policy-id request]} (fixture {})
+            report-id (:insurance.survey.report/report-id
+                       (:active-report
+                        (queries/survey-data (:db request) policy-id member-id)))
+            workflow (->> (assoc request :page-state
+                                 {actions/form-key
+                                  {:answered-count   1
+                                   :current-flow-key :keep-insured
+                                   :decisions        [:confirm-band]
+                                   :mode             :question
+                                   :report-id        report-id
+                                   :transition-kind  :question}})
+                          sut/page
+                          (l/select-one ".insurance-survey-workflow"))]
+        (is (= "question" (:data-transition-kind (l/attrs workflow))))
+        (is (= {:style {"--insurance-survey-progress-value" "50.0%"}
+                :value 50.0}
+               (select-keys
+                (l/attrs
+                 (l/select-one "wa-progress-bar#insurance-survey-progress"
+                               workflow))
+                [:style :value])))))
 
-  (testing "the development animation lab remains disabled"
-    (let [{:keys [request]} (fixture {:report-count 3})
-          production-view (sut/page request)
-          development-view (sut/page (assoc request :dev? true))]
-      (is (some #(some-> %
-                         l/attrs
-                         :src
-                         (str/starts-with?
-                          "/js/insurance-survey-motion.js?v="))
-                (l/select :script production-view)))
-      (is (= {:production-lab nil
-              :development-lab nil
-              :development-script nil}
-             {:production-lab (l/select-one "#insurance-survey-animation-lab"
-                                            production-view)
-              :development-lab (l/select-one "#insurance-survey-animation-lab"
-                                             development-view)
-              :development-script
-              (some #(when (some-> %
-                                   l/attrs
-                                   :src
-                                   (str/starts-with?
-                                    "/js/insurance-survey-animation-lab.js?v="))
-                       %)
-                    (l/select :script development-view))}))))
+    (testing "the development animation lab remains disabled"
+      (let [{:keys [request]} (fixture {:report-count 3})
+            production-view (sut/page request)
+            development-view (sut/page (assoc request :dev? true))]
+        (is (some #(some-> %
+                           l/attrs
+                           :src
+                           (str/starts-with?
+                            "/js/insurance-survey-motion.js?v="))
+                  (l/select :script production-view)))
+        (is (= {:production-lab nil
+                :development-lab nil
+                :development-script nil}
+               {:production-lab (l/select-one "#insurance-survey-animation-lab"
+                                              production-view)
+                :development-lab (l/select-one "#insurance-survey-animation-lab"
+                                               development-view)
+                :development-script
+                (some #(when (some-> %
+                                     l/attrs
+                                     :src
+                                     (str/starts-with?
+                                      "/js/insurance-survey-animation-lab.js?v="))
+                         %)
+                      (l/select :script development-view))}))))
 
-  (testing "a response with no reports offers add coverage and dismissal"
-    (let [{:keys [request]} (fixture {:coverage-ids []})
-          view (->> request sut/page (l/select-one page-surface/PageSurface))
-          empty-state (some #(when (= "insurance-survey-empty" (:id (l/attrs %))) %)
-                            (l/select :div view))]
-      (is (= :insurance/review-no-items-title
-             (-> (l/select-one :strong empty-state)
-                 page-shell/translation-key)))
-      (is (some? (l/select-one "[data-action]" view)))))
+    (testing "a response with no reports offers add coverage and dismissal"
+      (let [{:keys [request]} (fixture {:coverage-ids []})
+            view (->> request sut/page (l/select-one page-surface/PageSurface))
+            empty-state (some #(when (= "insurance-survey-empty" (:id (l/attrs %))) %)
+                              (l/select :div view))]
+        (is (= :insurance/review-no-items-title
+               (-> (l/select-one :strong empty-state)
+                   page-shell/translation-key)))
+        (is (some? (l/select-one "[data-action]" view)))))
 
-  (testing "a closed survey explains that the review can no longer be changed"
-    (let [{:keys [request]} (fixture {:closed-at #inst "2026-03-15T00:00:00.000-00:00"})
-          surface (l/select-one page-surface/PageSurface (sut/page request))
-          closed (some #(when (= "insurance-survey-closed" (:id (l/attrs %))) %)
-                       (l/select :div surface))]
-      (is (= :insurance/review-closed-title
-             (-> (l/select-one :strong closed)
-                 page-shell/translation-key)))))
+    (testing "a closed survey explains that the review can no longer be changed"
+      (let [{:keys [request]} (fixture {:closed-at #inst "2026-03-15T00:00:00.000-00:00"})
+            surface (l/select-one page-surface/PageSurface (sut/page request))
+            closed (some #(when (= "insurance-survey-closed" (:id (l/attrs %))) %)
+                         (l/select :div surface))]
+        (is (= :insurance/review-closed-title
+               (-> (l/select-one :strong closed)
+                   page-shell/translation-key)))))
 
-  (testing "a completed response renders the staged celebration and final actions"
-    (let [{:keys [request]} (fixture {:response-completed-at
-                                      #inst "2026-03-15T00:00:00.000-00:00"})
-          surface (l/select-one page-surface/PageSurface (sut/page request))
-          complete (some #(when (= "insurance-survey-complete" (:id (l/attrs %))) %)
-                         (l/select :div surface))
-          stages (l/select "[data-celebration-stage]" complete)
-          celebrate (some #(when (= "insurance-survey-celebrate" (:id (l/attrs %))) %)
-                          (l/select button/Button complete))]
-      (is (= :insurance/review-complete-title
-             (-> (l/select-one :h1 complete)
-                 page-shell/translation-key)))
-      (is (= :insurance/review-celebrate
-             (page-shell/translation-key celebrate)))
-      (is (= ["1" "2" "3"]
-             (mapv #(-> % l/attrs :data-celebration-stage) stages)))
-      (is (every? true? (map #(-> % l/attrs :hidden) stages)))
-      (is (= 2 (count (l/select button/Button (last stages)))))))
+    (testing "a completed response renders the staged celebration and final actions"
+      (let [{:keys [request]} (fixture {:response-completed-at
+                                        #inst "2026-03-15T00:00:00.000-00:00"})
+            surface (l/select-one page-surface/PageSurface (sut/page request))
+            complete (some #(when (= "insurance-survey-complete" (:id (l/attrs %))) %)
+                           (l/select :div surface))
+            stages (l/select "[data-celebration-stage]" complete)
+            celebrate (some #(when (= "insurance-survey-celebrate" (:id (l/attrs %))) %)
+                            (l/select button/Button complete))]
+        (is (= :insurance/review-complete-title
+               (-> (l/select-one :h1 complete)
+                   page-shell/translation-key)))
+        (is (= :insurance/review-celebrate
+               (page-shell/translation-key celebrate)))
+        (is (= ["1" "2" "3"]
+               (mapv #(-> % l/attrs :data-celebration-stage) stages)))
+        (is (every? true? (map #(-> % l/attrs :hidden) stages)))
+        (is (= 2 (count (l/select button/Button (last stages)))))))
 
-  (testing "a milestone briefly overlays the next card without interrupting the workflow"
-    (let [{:keys [member-id policy-id request]} (fixture {})
-          report-id (:insurance.survey.report/report-id
-                     (:active-report
-                      (queries/survey-data (:db request) policy-id member-id)))
-          view (->> (assoc request :page-state
-                           {actions/form-key {:current-flow-key :used
-                                              :decisions        []
-                                              :milestone?       true
-                                              :mode             :question
-                                              :report-id        report-id
-                                              :transition-kind  :item}})
-                    sut/page
-                    (l/select-one page-surface/PageSurface))
-          milestone (l/select-one "#insurance-survey-milestone" view)]
-      (is (= [:insurance/review-good-job :insurance/review-milestone]
-             (mapv l/first-child (l/select :i18n/tr milestone))))
-      (is (some? (l/select-one "#insurance-survey-card-deck" view)))
-      (is (nil? (l/select-one "#insurance-survey-continue" view)))))
+    (testing "a milestone briefly overlays the next card without interrupting the workflow"
+      (let [{:keys [member-id policy-id request]} (fixture {})
+            report-id (:insurance.survey.report/report-id
+                       (:active-report
+                        (queries/survey-data (:db request) policy-id member-id)))
+            view (->> (assoc request :page-state
+                             {actions/form-key {:current-flow-key :used
+                                                :decisions        []
+                                                :milestone?       true
+                                                :mode             :question
+                                                :report-id        report-id
+                                                :transition-kind  :item}})
+                      sut/page
+                      (l/select-one page-surface/PageSurface))
+            milestone (l/select-one "#insurance-survey-milestone" view)]
+        (is (= [:insurance/review-good-job :insurance/review-milestone]
+               (mapv l/first-child (l/select :i18n/tr milestone))))
+        (is (some? (l/select-one "#insurance-survey-card-deck" view)))
+        (is (nil? (l/select-one "#insurance-survey-continue" view)))))
 
-  (testing "the data correction step renders a native edit form"
-    (let [{:keys [member-id policy-id request]} (fixture {})
-          report-id (:insurance.survey.report/report-id
-                     (:active-report
-                      (queries/survey-data (:db request) policy-id member-id)))
-          view (->> (assoc request :page-state
-                           {actions/form-key {:current-flow-key :data-edit
-                                              :decisions        []
-                                              :mode             :edit
-                                              :report-id        report-id}})
-                    sut/page
-                    (l/select-one page-surface/PageSurface))
-          edit-form (some #(when (= "insurance-survey-edit-form" (:id (l/attrs %))) %)
-                          (l/select :form view))]
-      (is (some? edit-form))
-      (is (some #(when (= "instrument-name" (:name (l/attrs %))) %)
-                (l/select :input edit-form)))
-      (is (nil? (l/select-one "wa-input" view))))))
+    (testing "the data correction step renders a native edit form"
+      (let [{:keys [member-id policy-id request]} (fixture {})
+            report-id (:insurance.survey.report/report-id
+                       (:active-report
+                        (queries/survey-data (:db request) policy-id member-id)))
+            view (->> (assoc request :page-state
+                             {actions/form-key {:current-flow-key :data-edit
+                                                :decisions        []
+                                                :mode             :edit
+                                                :report-id        report-id}})
+                      sut/page
+                      (l/select-one page-surface/PageSurface))
+            edit-form (some #(when (= "insurance-survey-edit-form" (:id (l/attrs %))) %)
+                            (l/select :form view))]
+        (is (some? edit-form))
+        (is (some #(when (= "instrument-name" (:name (l/attrs %))) %)
+                  (l/select :input edit-form)))
+        (is (nil? (l/select-one "wa-input" view)))))))
 
 (deftest unavailable-survey-cost-remains-renderable
   (let [{:keys [conn member-id policy-id request]} (fixture {})

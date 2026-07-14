@@ -40,6 +40,75 @@
 (defn signals [policy-id values]
   {:insuranceSurvey (merge {:policyId (str policy-id)} values)})
 
+(defn configure-required-coverage-types!
+  [conn {:keys [coverage-id coverage-type-id policy-id]} required-count]
+  (let [required-a-id (random-uuid)
+        required-b-id (random-uuid)
+        all-type-ids  [coverage-type-id required-a-id required-b-id]
+        required-ids  (set (take required-count [required-a-id required-b-id]))]
+    @(d/transact
+      conn
+      [{:db/id                                  "survey-required-a"
+        :insurance.coverage.type/type-id        required-a-id
+        :insurance.coverage.type/name           "Required A"
+        :insurance.coverage.type/premium-factor 1.0M}
+       {:db/id                                  "survey-required-b"
+        :insurance.coverage.type/type-id        required-b-id
+        :insurance.coverage.type/name           "Required B"
+        :insurance.coverage.type/premium-factor 1.0M}
+       [:db/add [:insurance.policy/policy-id policy-id]
+        :insurance.policy/coverage-types "survey-required-a"]
+       [:db/add [:insurance.policy/policy-id policy-id]
+        :insurance.policy/coverage-types "survey-required-b"]
+       [:db/add [:instrument.coverage/coverage-id coverage-id]
+        :instrument.coverage/private? true]])
+    (if (d/entid (d/db conn) :insurance.coverage.type/required?)
+      (do
+        @(d/transact
+          conn
+          (mapv (fn [type-id]
+                  [:db/add
+                   [:insurance.coverage.type/type-id type-id]
+                   :insurance.coverage.type/required?
+                   (contains? required-ids type-id)])
+                all-type-ids))
+        {:schema-status :accepted
+         :required-ids  required-ids})
+      {:schema-status :missing
+       :required-ids  required-ids})))
+
+(defn apply-coverage-type-transactions
+  [initial-type-ids transactions]
+  (reduce (fn [type-ids [operation _coverage-ref _attribute [_lookup type-id]]]
+            (case operation
+              :db/add (conj type-ids type-id)
+              :db/retract (disj type-ids type-id)
+              type-ids))
+          (set initial-type-ids)
+          (filter #(and (vector? %)
+                        (= :instrument.coverage/types (nth % 2 nil)))
+                  transactions)))
+
+(defn survey-edit-signals
+  [policy-id coverage selected-type-ids]
+  (let [instrument  (:instrument.coverage/instrument coverage)
+        category-id (get-in instrument
+                            [:instrument/category
+                             :instrument.category/category-id])]
+    (signals
+     policy-id
+     {:edit {:buildYear      "1988"
+             :categoryId     (str category-id)
+             :coverageTypes  (mapv str selected-type-ids)
+             :description    "Recently serviced"
+             :insurerId      "H-999"
+             :instrumentName "Updated Trumpet"
+             :itemCount      "1"
+             :make           "Yamaha"
+             :model          "Xeno"
+             :serialNumber   "ABC"
+             :value          "150"}})))
+
 (deftest transition-action-validates-and-advances-the-server-owned-flow
   (let [{:keys [policy-id report-ids state]} (fixture)
         report-id (first report-ids)]
@@ -140,6 +209,55 @@
         effects (actions/dismiss-action state (signals policy-id {}))]
     (is (not-any? #(= :db/transact (first %)) effects))
     (is (some? (get-in effects [1 2 :error])))))
+
+(deftest survey-edit-merges-explicit-required-coverage-types
+  (testing "survey edits preserve zero, one, or multiple required types"
+    (doseq [required-count [0 1 2]]
+      (testing (str required-count " required coverage types")
+        (let [{:keys [conn member-id policy-id report-ids state] :as fixture}
+              (fixture)
+              {:keys [schema-status required-ids]}
+              (configure-required-coverage-types!
+               conn
+               fixture
+               required-count)]
+          (is (= :accepted schema-status))
+          (when (= :accepted schema-status)
+            @(d/transact conn [[:db/add
+                                [:insurance.policy/policy-id policy-id]
+                                :insurance.policy/status
+                                :insurance.policy.status/active]])
+            (let [state     (assoc state :db (d/db conn))
+                  report-id (first report-ids)
+                  data      (queries/survey-data
+                             (:db state)
+                             policy-id
+                             member-id)
+                  coverage  (:insurance.survey.report/coverage
+                             (:active-report data))
+                  initial-type-ids
+                  (mapv :insurance.coverage.type/type-id
+                        (:instrument.coverage/types coverage))
+                  state     (assoc state :page-state
+                                   {actions/form-key
+                                    {:current-flow-key :data-edit
+                                     :decisions        [:confirm-band]
+                                     :mode             :edit
+                                     :report-id        report-id}})
+                  effects   (actions/save-edit-action
+                             state
+                             (survey-edit-signals
+                              policy-id
+                              coverage
+                              []))
+                  transactions (second (first effects))]
+              (is (= {:transact?     true
+                      :coverage-types required-ids}
+                     {:transact?     (= :db/transact (ffirst effects))
+                      :coverage-types
+                      (apply-coverage-type-transactions
+                       initial-type-ids
+                       transactions)})))))))))
 
 (deftest survey-edit-reuses-coverage-validation-and-completes-the-report
   (let [{:keys [conn coverage-id member-id policy-id report-ids state]} (fixture)

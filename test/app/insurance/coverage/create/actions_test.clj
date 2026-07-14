@@ -296,8 +296,8 @@
 (defn coverage-tx [effects]
   (first (filter :instrument.coverage/coverage-id (tx-data effects))))
 
-(defn coverage-type-ids [effects]
-  (->> (tx-data effects)
+(defn added-coverage-type-ids [transactions]
+  (->> transactions
        (keep (fn [tx]
                (when (and (vector? tx)
                           (= :db/add (first tx))
@@ -305,6 +305,32 @@
                           (= :instrument.coverage/types (nth tx 2 nil)))
                  (second (nth tx 3 nil)))))
        set))
+
+(defn coverage-type-ids [effects]
+  (added-coverage-type-ids (tx-data effects)))
+
+(defn coverage-type
+  [type-id name required?]
+  {:insurance.coverage.type/type-id   type-id
+   :insurance.coverage.type/name      name
+   :insurance.coverage.type/required? required?})
+
+(defn private-coverage-type-ids
+  [policy-types selected-type-ids]
+  (let [instrument-id (random-uuid)
+        policy-id     (random-uuid)]
+    (-> (actions/create-coverage-tx-data
+         {:insurance-team-member? false
+          :instrument-id          instrument-id
+          :policy-id              policy-id
+          :policy                 {:insurance.policy/policy-id policy-id
+                                   :insurance.policy/coverage-types policy-types}}
+         {:coverage-types (mapv str selected-type-ids)
+          :item-count     "1"
+          :private-band   "private"
+          :value          "100"}
+         (random-uuid))
+        added-coverage-type-ids)))
 
 (defn form-errors [effects]
   (get-in (first (filter #(= :app.datastar/assoc-state (first %)) effects))
@@ -375,28 +401,39 @@
                 :insurer-id? (contains? (coverage-tx submitted-effects)
                                         :instrument.coverage/insurer-id)}))))))
 
-(deftest create-coverage-action-creates-private-coverage-with-base-and-selected-types-test
-  (testing "private coverage enforces the base type and deduplicates selected policy types"
-    (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-step3! conn {})
-          signals (-> (coverage-signals fixture)
-                      (assoc-in [:coverage-create :redirect] "")
-                      (assoc-in [:coverage-create :private-band] "private")
-                      (assoc-in [:coverage-create :coverage-types]
-                                [(str (:extra-type-id fixture))
-                                 (str (:extra-type-id fixture))])
-                      (assoc-in [:coverage-create :insurer-id] ""))
-          effects  (actions/create-coverage-action (state-for system) signals)
-          coverage (coverage-tx effects)]
-      (is (= {:private?       true
-              :coverage-types #{(:base-type-id fixture) (:extra-type-id fixture)}
-              :insurer-id?    false
-              :redirects      [[:app.datastar/redirect
-                                (urls/link-policy (:policy-id fixture))]]}
-             {:private?       (:instrument.coverage/private? coverage)
-              :coverage-types (coverage-type-ids effects)
-              :insurer-id?    (contains? coverage :instrument.coverage/insurer-id)
-              :redirects      (redirects effects)})))))
+(deftest create-private-coverage-merges-explicit-required-types-test
+  (testing "private coverage supports zero, one, or multiple required types in any order"
+    (let [optional-a-id (random-uuid)
+          optional-b-id (random-uuid)
+          required-a-id (random-uuid)
+          required-b-id (random-uuid)
+          optional-a    (coverage-type optional-a-id "Optional A" false)
+          optional-b    (coverage-type optional-b-id "Optional B" false)
+          required-a    (coverage-type required-a-id "Required A" true)
+          required-b    (coverage-type required-b-id "Required B" true)
+          cases         [{:label    "zero required types"
+                          :orders   [[optional-a optional-b]
+                                     [optional-b optional-a]]
+                          :selected []
+                          :expected #{}}
+                         {:label    "one required type"
+                          :orders   [[optional-a required-a optional-b]
+                                     [optional-b optional-a required-a]
+                                     [required-a optional-b optional-a]]
+                          :selected [optional-b-id]
+                          :expected #{required-a-id optional-b-id}}
+                         {:label    "multiple required types"
+                          :orders   [[required-a optional-a required-b]
+                                     [optional-a required-b required-a]
+                                     [required-b required-a optional-a]]
+                          :selected [optional-a-id]
+                          :expected #{required-a-id required-b-id optional-a-id}}]]
+      (doseq [{:keys [label orders selected expected]} cases
+              policy-types orders]
+        (is (= expected
+               (private-coverage-type-ids policy-types selected))
+            (str label " with policy order "
+                 (mapv :insurance.coverage.type/name policy-types)))))))
 
 (deftest create-coverage-action-rejects-invalid-coverage-type-test
   (testing "private coverage rejects type ids outside the current policy"

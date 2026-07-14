@@ -42,12 +42,12 @@
         :instrument.category/code        "woodwind-workbench"}
        {:db/id                                  "basic"
         :insurance.coverage.type/type-id        basic-type-id
-        :insurance.coverage.type/name           "Basic"
+        :insurance.coverage.type/name           "Worldwide touring"
         :insurance.coverage.type/description    ""
         :insurance.coverage.type/premium-factor 1.0M}
        {:db/id                                  "extra"
         :insurance.coverage.type/type-id        extra-type-id
-        :insurance.coverage.type/name           "Extra"
+        :insurance.coverage.type/name           "Locked rehearsal storage"
         :insurance.coverage.type/description    ""
         :insurance.coverage.type/premium-factor 0.5M}
        {:db/id                    "alto-instrument"
@@ -158,6 +158,19 @@
      :drum-id       drum-id
      :euphonium-id  euphonium-id}))
 
+(defn configure-workbench-icons!
+  [conn basic-type-id extra-type-id]
+  (if (d/entid (d/db conn) :insurance.coverage.type/icon)
+    (do
+      @(d/transact
+        conn
+        [[:db/add [:insurance.coverage.type/type-id basic-type-id]
+          :insurance.coverage.type/icon :phosphor/car-profile]
+         [:db/add [:insurance.coverage.type/type-id extra-type-id]
+          :insurance.coverage.type/icon :phosphor/warehouse]])
+      :accepted)
+    :missing))
+
 (defn workbench
   [conn policy-id params]
   (queries/policy-workbench (d/db conn) policy-id params))
@@ -179,10 +192,15 @@
   (testing "defaults to all coverages as a flat list with stable sorting and summaries"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-default")
           policy-id      (random-uuid)
-          result         (do
-                           (seed-workbench-policy! conn policy-id)
-                           (workbench conn policy-id {}))]
-      (is (= {:view                     :all
+          {:keys [basic-type-id extra-type-id]}
+          (seed-workbench-policy! conn policy-id)
+          icon-status (configure-workbench-icons!
+                       conn
+                       basic-type-id
+                       extra-type-id)
+          result      (workbench conn policy-id {})]
+      (is (= {:icon-status              :accepted
+              :view                     :all
               :filters                  {:member-q nil
                                          :category-ids #{}
                                          :coverage-type-ids #{}
@@ -196,8 +214,10 @@
               :editable?                true
               :available-category-names ["Brass" "Woodwind"]
               :row-names                ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
-              :first-row-coverage-types [{:insurance.coverage.type/name "Basic"
-                                          :insurance.coverage.type/cost 0.1M}]
+              :first-row-coverage-types
+              [{:insurance.coverage.type/name "Worldwide touring"
+                :insurance.coverage.type/icon :phosphor/car-profile
+                :insurance.coverage.type/cost 0.1M}]
               :groups                   []
               :summary-counts           {:all 5
                                          :todo 2
@@ -213,13 +233,15 @@
                                          :missing-insurer-id-count 2
                                          :private-count 2
                                          :band-count 3}}
-             {:view                     (:view result)
+             {:icon-status              icon-status
+              :view                     (:view result)
               :filters                  (:filters result)
               :editable?                (:editable? result)
               :available-category-names (category-names result)
               :row-names                (row-names result)
               :first-row-coverage-types
               (mapv #(select-keys % [:insurance.coverage.type/name
+                                     :insurance.coverage.type/icon
                                      :insurance.coverage.type/cost])
                     (:coverage-types (first (:rows result))))
               :groups                   (group-summary result)

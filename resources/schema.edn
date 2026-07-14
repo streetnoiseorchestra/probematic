@@ -748,6 +748,16 @@
   :db/valueType   :db.type/bigdec
   :db/cardinality :db.cardinality/one}
 
+ {:db/ident       :insurance.coverage.type/icon
+  :db/doc         "The registered application icon for this coverage type"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :insurance.coverage.type/required?
+  :db/doc         "Whether this coverage type is required for every applicable instrument"
+  :db/valueType   :db.type/boolean
+  :db/cardinality :db.cardinality/one}
+
 ;;;;  Insurance - Instrument Coverage
 
  {:db/ident       :instrument.coverage/coverage-id
@@ -839,6 +849,27 @@
   :db/valueType   :db.type/ref
   :db/isComponent true
   :db/cardinality :db.cardinality/many}
+
+ {:db/ident       :insurance.policy/exporter-id
+  :db/doc         "The versioned exporter identifier selected for this policy"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :insurance.policy/export-mappings
+  :db/doc         "The policy-owned mappings from exporter roles to coverage types"
+  :db/valueType   :db.type/ref
+  :db/isComponent true
+  :db/cardinality :db.cardinality/many}
+
+ {:db/ident       :insurance.export.mapping/role
+  :db/doc         "The semantic role defined by the selected exporter version"
+  :db/valueType   :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :insurance.export.mapping/coverage-type
+  :db/doc         "The policy coverage type assigned to this exporter role"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
 
  {:db/ident       :insurance.policy/premium-factor
   :db/doc         "The factor used to determine the premium price per instrument"

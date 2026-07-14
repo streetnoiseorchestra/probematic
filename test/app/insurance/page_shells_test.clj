@@ -23,6 +23,7 @@
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
    [app.urls :as urls]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [lookup.core :as l]
@@ -78,6 +79,64 @@
                  (assoc :path-params {:coverage-id coverage-id})
                  coverage.views/page
                  page-shell/page-contract))))))
+
+(deftest insurance-directory-faq-uses-active-policy-coverage-data
+  (let [{:keys [conn coverage-type-id policy-id request]} (fixture)
+        optional-type-id (random-uuid)
+        _                @(d/transact
+                           conn
+                           [[:db/add
+                             [:insurance.coverage.type/type-id coverage-type-id]
+                             :insurance.coverage.type/name
+                             "Worldwide touring"]
+                            [:db/add
+                             [:insurance.coverage.type/type-id coverage-type-id]
+                             :insurance.coverage.type/description
+                             "Coverage while travelling with the instrument."]
+                            {:db/id                                  "optional-coverage-type"
+                             :insurance.coverage.type/type-id        optional-type-id
+                             :insurance.coverage.type/name           "Locked rehearsal storage"
+                             :insurance.coverage.type/description    "Coverage while stored in a locked rehearsal room."
+                             :insurance.coverage.type/premium-factor 0.25M}
+                            [:db/add
+                             [:insurance.policy/policy-id policy-id]
+                             :insurance.policy/coverage-types
+                             "optional-coverage-type"]])
+        request          (assoc request :db (d/db conn))
+        coverage-faq     (l/select-one "#faq5" (index.views/page request))
+        coverage-copy    ["Worldwide touring"
+                          "Coverage while travelling with the instrument."
+                          "Locked rehearsal storage"
+                          "Coverage while stored in a locked rehearsal room."]
+        required-schema? (boolean
+                          (d/entid
+                           (:db request)
+                           :insurance.coverage.type/required?))]
+    (testing "coverage names and descriptions come from the active policy"
+      (is (= coverage-copy
+             (filterv #(str/includes? (l/text coverage-faq) %)
+                      coverage-copy))))
+    (testing "each policy type is identified as required or optional"
+      (is (= :available (if required-schema? :available :missing)))
+      (when required-schema?
+        @(d/transact
+          conn
+          [[:db/add
+            [:insurance.coverage.type/type-id coverage-type-id]
+            :insurance.coverage.type/required?
+            true]
+           [:db/add
+            [:insurance.coverage.type/type-id optional-type-id]
+            :insurance.coverage.type/required?
+            false]])
+        (let [faq-text (-> request
+                           (assoc :db (d/db conn))
+                           index.views/page
+                           (l/select-one "#faq5")
+                           l/text)
+              labels   ["coverage-required" "coverage-optional"]]
+          (is (= labels
+                 (filterv #(str/includes? faq-text %) labels))))))))
 
 (deftest policy-dashboard-lifecycle-toolbar
   (let [{:keys [conn request policy-id coverage-id]} (fixture)

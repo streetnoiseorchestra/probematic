@@ -3,7 +3,9 @@
    [app.insurance.actions :as actions]
    [app.insurance.test-support :as insurance-support]
    [app.nexus.actions :as support]
+   [app.queries :as q]
    [app.test-common :as tc]
+   [clojure.set :as set]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
 
@@ -100,3 +102,174 @@
     (is (= [(:db/id type-tx)] (:insurance.policy/coverage-types policy-tx)))
     (is (= [(:db/id category-tx)] (:insurance.policy/category-factors policy-tx)))
     (is (= [(:db/id coverage-tx)] (:insurance.policy/covered-instruments policy-tx)))))
+
+(deftest duplicate-policy-tx-data-clones-insurance-metadata-test
+  (let [new-policy-id (random-uuid)
+        overnight-id  (random-uuid)
+        building-id   (random-uuid)
+        overnight-type
+        {:insurance.coverage.type/type-id        overnight-id
+         :insurance.coverage.type/name           "Worldwide touring renamed"
+         :insurance.coverage.type/description    "Tour coverage"
+         :insurance.coverage.type/premium-factor 0.2M
+         :insurance.coverage.type/icon           :phosphor/car-profile
+         :insurance.coverage.type/required?      true}
+        building-type
+        {:insurance.coverage.type/type-id        building-id
+         :insurance.coverage.type/name           "Locked storage renamed"
+         :insurance.coverage.type/description    "Storage coverage"
+         :insurance.coverage.type/premium-factor 0.3M
+         :insurance.coverage.type/icon           :phosphor/warehouse
+         :insurance.coverage.type/required?      false}
+        old-policy
+        {:insurance.policy/name            "2026"
+         :insurance.policy/currency        :currency/EUR
+         :insurance.policy/premium-factor  0.01M
+         :insurance.policy/coverage-types  [overnight-type building-type]
+         :insurance.policy/exporter-id     :insurance.exporter/inventory-xls-v1
+         :insurance.policy/export-mappings
+         [{:insurance.export.mapping/role :overnight-vehicle
+           :insurance.export.mapping/coverage-type overnight-type}
+          {:insurance.export.mapping/role :unattended-building
+           :insurance.export.mapping/coverage-type building-type}]}
+        tx-data      (actions/duplicate-policy-tx-data
+                      "Duplicate"
+                      new-policy-id
+                      old-policy)
+        type-txs     (filterv :insurance.coverage.type/type-id tx-data)
+        type-name->tempid
+        (into {}
+              (map (juxt :insurance.coverage.type/name :db/id))
+              type-txs)
+        mapping-txs  (filterv :insurance.export.mapping/role tx-data)
+        policy-tx    (some #(when (= new-policy-id
+                                     (:insurance.policy/policy-id %))
+                              %)
+                           tx-data)]
+    (testing "coverage metadata and policy-owned mappings point to cloned types"
+      (is (= {:coverage-types
+              #{{:name      "Worldwide touring renamed"
+                 :icon      :phosphor/car-profile
+                 :required? true}
+                {:name      "Locked storage renamed"
+                 :icon      :phosphor/warehouse
+                 :required? false}}
+              :exporter-id :insurance.exporter/inventory-xls-v1
+              :mapping-targets
+              {:overnight-vehicle
+               (get type-name->tempid "Worldwide touring renamed")
+               :unattended-building
+               (get type-name->tempid "Locked storage renamed")}
+              :policy-mapping-refs (set (map :db/id mapping-txs))}
+             {:coverage-types
+              (set (map (fn [tx]
+                          {:name      (:insurance.coverage.type/name tx)
+                           :icon      (:insurance.coverage.type/icon tx)
+                           :required? (:insurance.coverage.type/required? tx)})
+                        type-txs))
+              :exporter-id (:insurance.policy/exporter-id policy-tx)
+              :mapping-targets
+              (into {}
+                    (map (juxt :insurance.export.mapping/role
+                               :insurance.export.mapping/coverage-type))
+                    mapping-txs)
+              :policy-mapping-refs
+              (set (:insurance.policy/export-mappings policy-tx))})))))
+
+(def insurance-metadata-attributes
+  [:insurance.coverage.type/icon
+   :insurance.coverage.type/required?
+   :insurance.policy/exporter-id
+   :insurance.policy/export-mappings
+   :insurance.export.mapping/role
+   :insurance.export.mapping/coverage-type])
+
+(deftest duplicate-policy-action-persists-cloned-insurance-metadata-test
+  (let [{:keys [conn member-id]} (tc/new-system
+                                  "insurance-duplicate-metadata-action")
+        db            (d/db conn)
+        schema-status (if (every? #(d/entid db %)
+                                  insurance-metadata-attributes)
+                        :available
+                        :missing)]
+    (is (= :available schema-status))
+    (when (= :available schema-status)
+      (let [policy-id    (random-uuid)
+            overnight-id (random-uuid)
+            building-id  (random-uuid)
+            coverage-types
+            [{:type-id        overnight-id
+              :name           "Worldwide touring renamed"
+              :description    "Tour coverage"
+              :premium-factor 0.2M
+              :icon           :phosphor/car-profile
+              :required?      true}
+             {:type-id        building-id
+              :name           "Locked storage renamed"
+              :description    "Storage coverage"
+              :premium-factor 0.3M
+              :icon           :phosphor/warehouse
+              :required?      false}]
+            _ (insurance-support/seed-policy!
+               conn
+               policy-id
+               {:coverage-types coverage-types
+                :exporter-id    :insurance.exporter/inventory-xls-v1
+                :export-mappings
+                [{:role             :overnight-vehicle
+                  :coverage-type-id overnight-id}
+                 {:role             :unattended-building
+                  :coverage-type-id building-id}]})
+            effects (actions/duplicate-policy-action
+                     {:current-member-id member-id
+                      :db                (d/db conn)
+                      :tr                (constantly "Duplicate")}
+                     {:targetid (str policy-id)})
+            tx-data (second (first effects))
+            new-policy-id (some :insurance.policy/policy-id tx-data)]
+        @(d/transact conn tx-data)
+        (let [cloned-policy (q/retrieve-policy (d/db conn) new-policy-id)
+              cloned-types  (:insurance.policy/coverage-types cloned-policy)
+              cloned-type-ids
+              (set (map :insurance.coverage.type/type-id cloned-types))]
+          (is (= {:source-type-ids #{overnight-id building-id}
+                  :cloned-type-ids-disjoint? true
+                  :cloned-metadata
+                  #{{:name      "Worldwide touring renamed"
+                     :icon      :phosphor/car-profile
+                     :required? true}
+                    {:name      "Locked storage renamed"
+                     :icon      :phosphor/warehouse
+                     :required? false}}
+                  :exporter-id :insurance.exporter/inventory-xls-v1
+                  :mappings
+                  #{[:overnight-vehicle true]
+                    [:unattended-building true]}}
+                 {:source-type-ids #{overnight-id building-id}
+                  :cloned-type-ids-disjoint?
+                  (empty? (set/intersection
+                           #{overnight-id building-id}
+                           cloned-type-ids))
+                  :cloned-metadata
+                  (set (map (fn [coverage-type]
+                              {:name (:insurance.coverage.type/name
+                                      coverage-type)
+                               :icon (:insurance.coverage.type/icon
+                                      coverage-type)
+                               :required?
+                               (:insurance.coverage.type/required?
+                                coverage-type)})
+                            cloned-types))
+                  :exporter-id
+                  (:insurance.policy/exporter-id cloned-policy)
+                  :mappings
+                  (set (map (fn [mapping]
+                              [(:insurance.export.mapping/role mapping)
+                               (contains?
+                                cloned-type-ids
+                                (get-in
+                                 mapping
+                                 [:insurance.export.mapping/coverage-type
+                                  :insurance.coverage.type/type-id]))])
+                            (:insurance.policy/export-mappings
+                             cloned-policy)))})))))))

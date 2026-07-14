@@ -130,6 +130,14 @@
                    :played/play-id
                    :played/emphasis])
 
+(def coverage-type-pattern
+  [:insurance.coverage.type/type-id
+   :insurance.coverage.type/name
+   :insurance.coverage.type/description
+   :insurance.coverage.type/premium-factor
+   :insurance.coverage.type/icon
+   :insurance.coverage.type/required?])
+
 (def instrument-coverage-detail-pattern
   [:instrument.coverage/coverage-id
    :instrument.coverage/private?
@@ -147,7 +155,7 @@
      :insurance.policy/effective-until
      :insurance.policy/premium-factor
      {:insurance.policy/coverage-types
-      [:insurance.coverage.type/name :insurance.coverage.type/description :insurance.coverage.type/premium-factor :insurance.coverage.type/type-id]}
+      coverage-type-pattern}
      {:insurance.policy/category-factors
       [{:insurance.category.factor/category
         [:instrument.category/name
@@ -169,10 +177,7 @@
                             :instrument.category/code
                             :instrument.category/name]}]}
    {:instrument.coverage/types
-    [:insurance.coverage.type/name
-     :insurance.coverage.type/description
-     :insurance.coverage.type/type-id
-     :insurance.coverage.type/premium-factor]}])
+    coverage-type-pattern}])
 
 (def policy-lite-pattern [:insurance.policy/policy-id
                           :insurance.policy/currency
@@ -182,7 +187,7 @@
                           :insurance.policy/effective-until
                           :insurance.policy/premium-factor
                           {:insurance.policy/coverage-types
-                           [:insurance.coverage.type/description :insurance.coverage.type/name :insurance.coverage.type/premium-factor :insurance.coverage.type/type-id]}
+                           coverage-type-pattern}
                           {:insurance.policy/category-factors
                            [{:insurance.category.factor/category
                              [:instrument.category/name
@@ -220,12 +225,14 @@
                                                 :instrument.category/code
                                                 :instrument.category/name]}]}
                        {:instrument.coverage/types
-                        [:insurance.coverage.type/name
-                         :insurance.coverage.type/description
-                         :insurance.coverage.type/type-id
-                         :insurance.coverage.type/premium-factor]}]}
+                        coverage-type-pattern}]}
                      {:insurance.policy/coverage-types
-                      [:insurance.coverage.type/description :insurance.coverage.type/name :insurance.coverage.type/premium-factor :insurance.coverage.type/type-id]}
+                      coverage-type-pattern}
+                     :insurance.policy/exporter-id
+                     {:insurance.policy/export-mappings
+                      [:insurance.export.mapping/role
+                       {:insurance.export.mapping/coverage-type
+                        coverage-type-pattern}]}
                      {:insurance.policy/category-factors
                       [{:insurance.category.factor/category
                         [:instrument.category/name
