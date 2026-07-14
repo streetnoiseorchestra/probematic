@@ -102,6 +102,15 @@ bb dev
 
 Each slot's browser-facing services use `<slot>.probematic.localhost` so they remain distinct trustworthy local origins.
 
+## Firefox profile
+
+Use `<worktree>/data.dev/firefox` for each slot.
+
+Never reuse or symlink the main checkout's profile.
+
+Create it before Etaoin; clear locks only in that worktree's profile.
+
+
 The app URL for `agent-1` is `http://agent-1.probematic.localhost:6171`.
 
 The matching OAuth callback URL is `http://agent-1.probematic.localhost:6171/oauth2/callback`.
