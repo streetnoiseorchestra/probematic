@@ -1,6 +1,6 @@
 ---
 name: dev-slots
-description: Use the project parallel dev slot workflow for host-based agents in Git worktrees with isolated Datomic, Redis, smtp4dev, HTTP, and nREPL runtime state. Use when starting, stopping, checking, reattaching, hydrating, or repairing an agent worktree tied to `bb dev-slot`.
+description: Use the project parallel dev slot workflow for host-based agents in Git worktrees with isolated Datomic, Redis, smtp4dev, HTTP, and nREPL runtime state, plus one canonical main-checkout `prompts/` directory. Use when working in, starting, stopping, checking, reattaching, hydrating, or repairing an agent worktree tied to `bb dev-slot`.
 ---
 
 # Parallel dev slots
@@ -36,6 +36,27 @@ Worktrees for this project should live under `.worktrees/`.
 
 The operator or the agent starting the lane creates the worktree before slot initialization.
 
+
+## Canonical prompts directory
+
+The main checkout's `prompts/` directory is the single canonical prompts directory for every slot and worktree.
+
+Resolve it from any linked worktree before using prompt documents.
+
+```bash
+MAIN_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+PROMPTS_ROOT="$MAIN_ROOT/prompts"
+```
+
+Read, create, edit, move, and delete prompt documents only under `$PROMPTS_ROOT`.
+
+Never use a slot worktree's `prompts/` directory, even when that directory exists.
+
+Never run prompt-document commands against a relative `prompts/...` path from inside a slot worktree.
+
+Do not copy or synchronize prompt documents into slot worktrees.
+
+When a task changes both code and prompt documents, edit the code in the slot worktree and the prompt documents under `$PROMPTS_ROOT`.
 
 ## Common workflow
 
