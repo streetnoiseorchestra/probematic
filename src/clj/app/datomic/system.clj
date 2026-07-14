@@ -18,31 +18,6 @@
 (def MigrateableComponentsMap
   [:map-of :keyword MigrateableComponent])
 
-(def ^:private remove-member-avatar-function
-  (d/function
-   {:lang "clojure"
-    :params '[db member expected-avatar]
-    :requires '[[datomic.api :as d]]
-    :code
-    '(let [member-eid (d/entid db member)
-           current-avatar
-           (ffirst
-            (d/q '[:find ?avatar
-                   :in $ ?member
-                   :where [?member :member/avatar ?avatar]]
-                 db
-                 member-eid))]
-       (if (= current-avatar expected-avatar)
-         (cond-> []
-           current-avatar
-           (conj [:db/retract member-eid :member/avatar current-avatar]
-                 [:db/retractEntity current-avatar]))
-         (throw
-          (ex-info "The member avatar changed before it could be removed"
-                   {:member member
-                    :expected-avatar expected-avatar
-                    :current-avatar current-avatar}))))}))
-
 (>defn- gather-migrations
         "Gathers migrations from the provided components"
         [migration-components]
@@ -93,11 +68,7 @@
              :attributes (mapv :db/id index-upgrades))
       (let [tx-report @(d/transact conn index-upgrades)]
         @(d/sync-schema conn (d/basis-t (:db-after tx-report)))))
-    (d/transact
-     conn
-     (conj schema
-           {:db/ident :app.account/remove-member-avatar
-            :db/fn remove-member-avatar-function}))))
+    (d/transact conn schema)))
 
 (defn start-peer [{:keys [peer]}]
   (assert (:db-uri peer))

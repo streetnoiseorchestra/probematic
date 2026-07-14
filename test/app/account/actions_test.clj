@@ -186,7 +186,6 @@
              {:member-id member-id
               :profile normalized-profile
               :avatar-upload nil
-              :expected-avatar-id nil
               :sync-keycloak? true}]]
            (actions/save-profile-action
             (action-state system)

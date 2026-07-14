@@ -6,7 +6,7 @@
    [app.queries :as queries]
    [app.test-common :as tc]
    [babashka.fs :as bfs]
-   [clojure.test :refer [deftest is testing]]
+   [clojure.test :refer [deftest is]]
    [datomic.api :as d]))
 
 (def jpeg-path "resources/public/img/tuba-robot-boat-1000.jpg")
@@ -91,7 +91,6 @@
                                     :mime-type "image/jpeg"
                                     :size (bfs/size tempfile)
                                     :tempfile (bfs/file tempfile)}
-                    :expected-avatar-id nil
                     :sync-keycloak? false})
                   member (queries/retrieve-member (d/db conn) member-id)]
               (is (= :saved (:status result)))
@@ -138,7 +137,6 @@
                                     :current-status ""
                                     :date-of-birth "")
                     :avatar-upload nil
-                    :expected-avatar-id old-avatar-id
                     :sync-keycloak? false})
                   member (queries/retrieve-member (d/db conn) member-id)]
               (is (= :saved (:status result)))
@@ -162,7 +160,6 @@
                            {:member-id member-id
                             :profile profile
                             :avatar-upload (avatar-upload "old-avatar")
-                            :expected-avatar-id nil
                             :sync-keycloak? false})
             (let [old-metadata (avatar-metadata-ids (d/db conn) member-id)]
               (is (= 5 (count (:image-ids old-metadata))))
@@ -171,7 +168,6 @@
                              {:member-id member-id
                               :profile profile
                               :avatar-upload (avatar-upload "new-avatar")
-                              :expected-avatar-id (:avatar-id old-metadata)
                               :sync-keycloak? false})
               (let [db (d/db conn)
                     new-metadata (avatar-metadata-ids db member-id)]
@@ -184,7 +180,6 @@
                                {:member-id member-id
                                 :profile (assoc profile :avatar-removed? true)
                                 :avatar-upload nil
-                                :expected-avatar-id (:avatar-id new-metadata)
                                 :sync-keycloak? false})
                 (let [db (d/db conn)]
                   (is (nil? (:member/avatar
@@ -204,7 +199,6 @@
                            {:member-id member-id
                             :profile profile
                             :avatar-upload (avatar-upload "existing-avatar")
-                            :expected-avatar-id nil
                             :sync-keycloak? false})
             (let [old-metadata (avatar-metadata-ids (d/db conn) member-id)
                   submitted-upload (avatar-upload "discarded-avatar")
@@ -213,7 +207,6 @@
                              {:member-id member-id
                               :profile (assoc profile :avatar-removed? true)
                               :avatar-upload submitted-upload
-                              :expected-avatar-id (:avatar-id old-metadata)
                               :sync-keycloak? false})
               (let [db (d/db conn)]
                 (is (nil? (:member/avatar
@@ -225,44 +218,41 @@
                           db)))
                 (is (not (bfs/exists? tempfile)))))))))))
 
-(deftest stale-profile-upload-cannot-replace-a-newer-avatar
+(deftest profile-effect-avatar-upload-replaces-the-current-avatar
   (let [save-profile! (support/public-fn 'app.account.effects/save-profile!)]
     (is (fn? save-profile!) "app.account.effects/save-profile! should exist")
     (when save-profile!
       (with-temp-filestore
         (fn [store]
-          (let [{:keys [conn member-id]} (tc/new-system "profile-effect-cas")
-                observed-id (random-uuid)
-                newer-id (random-uuid)
+          (let [{:keys [conn member-id]} (tc/new-system "profile-effect-last-write")
+                current-id (random-uuid)
                 tempfile (bfs/create-temp-file
-                          {:prefix "probematic.stale-profile-upload."
+                          {:prefix "probematic.last-profile-upload."
                            :suffix ".jpg"})]
             (seed-member! conn member-id
-                          {:member/avatar {:image/image-id observed-id
+                          {:member/avatar {:image/image-id current-id
                                            :image/width 160
                                            :image/height 160}})
-            @(d/transact conn
-                         [{:db/id [:member/member-id member-id]
-                           :member/avatar {:image/image-id newer-id
-                                           :image/width 160
-                                           :image/height 160}}])
             (bfs/copy jpeg-path tempfile {:replace-existing true})
-            (testing "Datomic compare-and-swap preserves the newer avatar"
-              (is (thrown? Exception
-                           (save-profile!
-                            {:datomic {:conn conn}
-                             :filestore store}
-                            {:member-id member-id
-                             :profile profile
-                             :avatar-upload {:filename "stale.jpg"
-                                             :mime-type "image/jpeg"
-                                             :size (bfs/size tempfile)
-                                             :tempfile (bfs/file tempfile)}
-                             :expected-avatar-id observed-id
-                             :sync-keycloak? false})))
-              (is (= newer-id
-                     (get-in (queries/retrieve-member (d/db conn) member-id)
-                             [:member/avatar :image/image-id])))
+            (let [result
+                  (save-profile!
+                   {:datomic {:conn conn}
+                    :filestore store}
+                   {:member-id member-id
+                    :profile profile
+                    :avatar-upload {:filename "last-write.jpg"
+                                    :mime-type "image/jpeg"
+                                    :size (bfs/size tempfile)
+                                    :tempfile (bfs/file tempfile)}
+                    :sync-keycloak? false})
+                  db (d/db conn)
+                  saved-id
+                  (get-in (queries/retrieve-member db member-id)
+                          [:member/avatar :image/image-id])]
+              (is (= :saved (:status result)))
+              (is (uuid? saved-id))
+              (is (not= current-id saved-id))
+              (is (nil? (d/entid db [:image/image-id current-id])))
               (is (not (bfs/exists? tempfile))))))))))
 
 (deftest action-and-effect-contract-carries-the-real-multipart-file

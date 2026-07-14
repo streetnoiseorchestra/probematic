@@ -50,22 +50,22 @@
   (mapv #(vector :db/retractEntity %) file-eids))
 
 (defn- avatar-change-tx
-  [member-id expected-avatar-id expected-avatar-eid avatar-upload
+  [member-id current-avatar-eid avatar-upload
    avatar-removed? stored-avatar obsolete-file-eids]
   (when (or avatar-upload avatar-removed?)
     (let [member [:member/member-id member-id]
-          old-avatar-ref (when expected-avatar-id
-                           [:image/image-id expected-avatar-id])
           new-avatar (:image-tempid stored-avatar)
           file-retractions (retract-file-tx obsolete-file-eids)]
       (if avatar-upload
-        (cond-> (into [[:db.fn/cas member :member/avatar
-                        expected-avatar-eid new-avatar]]
+        (cond-> (into [[:db/add member :member/avatar new-avatar]]
                       file-retractions)
-          expected-avatar-id (conj [:db/retractEntity old-avatar-ref]))
-        (into [[:app.account/remove-member-avatar member expected-avatar-eid]
-               [:db/retract member :member/avatar-template]]
-              file-retractions)))))
+          current-avatar-eid
+          (conj [:db/retractEntity current-avatar-eid]))
+        (cond-> (into [[:db/retract member :member/avatar]
+                       [:db/retract member :member/avatar-template]]
+                      file-retractions)
+          current-avatar-eid
+          (conj [:db/retractEntity current-avatar-eid]))))))
 
 (defn save-profile!
   "Persists one validated profile and optional avatar upload atomically.
@@ -73,7 +73,7 @@
   The upload's stripped original and four fixed renditions are stored before a
   single Datomic transaction attaches their metadata to the authenticated
   member.
-  A compare-and-swap protects a newer avatar selected in another browser tab.
+  Avatar changes use last-write-wins semantics.
   The temporary multipart file is deleted on success and failure.
 
   Options:
@@ -83,24 +83,19 @@
   | `:member-id`          | Authenticated member UUID
   | `:profile`            | Validated normalized profile map
   | `:avatar-upload`      | Optional multipart file metadata and tempfile
-  | `:expected-avatar-id` | Avatar UUID observed during action validation
   | `:sync-keycloak?`     | Synchronize identity metadata after commit"
-  [system {:keys [member-id profile avatar-upload expected-avatar-id
-                  sync-keycloak?]}]
+  [system {:keys [member-id profile avatar-upload sync-keycloak?]}]
   (let [conn (-> system :datomic :conn)]
     (assert conn "profile persistence requires a Datomic connection")
     (let [tempfile (:tempfile avatar-upload)
           avatar-removed? (:avatar-removed? profile)
           effective-avatar-upload (when-not avatar-removed? avatar-upload)
           db (d/db conn)
-          expected-avatar-eid
-          (when expected-avatar-id
-            (d/entid db [:image/image-id expected-avatar-id]))
-          obsolete-file-eids (avatar-file-eids db expected-avatar-eid)]
-      (when (and expected-avatar-id (nil? expected-avatar-eid))
-        (throw (ex-info "The observed avatar no longer exists"
-                        {:member-id member-id
-                         :expected-avatar-id expected-avatar-id})))
+          current-avatar-eid
+          (some-> (d/entity db [:member/member-id member-id])
+                  :member/avatar
+                  :db/id)
+          obsolete-file-eids (avatar-file-eids db current-avatar-eid)]
       (try
         (let [stored-avatar
               (when effective-avatar-upload
@@ -115,8 +110,7 @@
                 (profile-tx member-id profile)
                 (:tx-data stored-avatar)
                 (avatar-change-tx member-id
-                                  expected-avatar-id
-                                  expected-avatar-eid
+                                  current-avatar-eid
                                   effective-avatar-upload
                                   avatar-removed?
                                   stored-avatar

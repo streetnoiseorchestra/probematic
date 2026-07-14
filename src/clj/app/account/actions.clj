@@ -202,8 +202,6 @@
             {:member-id current-member-id
              :profile profile
              :avatar-upload avatar-upload
-             :expected-avatar-id
-             (some-> (:member/avatar member) :image/image-id)
              :sync-keycloak? (keycloak-sync-required? member)}]])))))
 
 (defn- valid-zone? [value]
