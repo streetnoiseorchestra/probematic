@@ -168,7 +168,6 @@
     :account-settings/break-start-now
     :account-settings/break-start-date
     :account-settings/break-end-date
-    :account-settings/break-save
     :account-settings/break-end-early
     :account-settings/break-end-dialog-title
     :account-settings/break-end-dialog-description

@@ -7,7 +7,7 @@
    [clojure.string :as str]
    [datomic.api :as d])
   (:import
-   [java.time DateTimeException Instant LocalDate LocalTime ZoneId ZonedDateTime]
+   [java.time DateTimeException Instant LocalDate LocalTime ZoneId]
    [java.util Date]))
 
 (def max-avatar-size (* 5 1024 1024))
@@ -233,15 +233,6 @@
            :_saved? true
            :_feedback (tr-node feedback))]])
 
-(defn- save-prototype-effects [path value feedback]
-  [support/clear-loading
-   [:app.datastar/assoc-state
-    path
-    (assoc value
-           :_error {}
-           :_saved? true
-           :_feedback (tr-node feedback))]])
-
 (def week-start-ident
   {"monday" :week-start/monday
    "sunday" :week-start/sunday})
@@ -391,7 +382,9 @@
   (cond
     (instance? Instant value) value
     (instance? Date value)    (.toInstant ^Date value)
-    :else                     (Instant/now)))
+    :else
+    (throw (ex-info "Account break actions require an injected :now instant"
+                    {:now value}))))
 
 (defn- parse-date ^LocalDate [value]
   (when (seq value)
@@ -402,20 +395,19 @@
 
 (defn- normalize-break [break-state]
   (merge (select-keys break-state
-                      [:active :start-choice :start-date :end-date :time-zone])
+                      [:active :start-choice :start-date :end-date])
          {:start-date (or (trimmed (:start-date break-state)) "")
           :end-date   (or (trimmed (:end-date break-state)) "")}))
 
-(defn- break-errors [{:keys [active start-choice start-date end-date time-zone]}]
-  (let [^LocalDate start (parse-date start-date)
+(defn- break-errors
+  [{:keys [active start-choice end-date]} effective-start-date]
+  (let [^LocalDate start (parse-date effective-start-date)
         ^LocalDate end   (parse-date end-date)]
     (merge
      (when-not (boolean? active)
        {:active (error :account-settings/error-break-availability-invalid)})
      (when-not (contains? #{"now" "date"} start-choice)
        {:start-choice (error :account-settings/error-break-start-choice-invalid)})
-     (when-not (valid-zone? time-zone)
-       {:time-zone (error :account-settings/error-time-zone-invalid)})
      (when (and (= "date" start-choice) (nil? start))
        {:start-date (error :account-settings/error-date-invalid)})
      (when (and (seq end-date) (nil? end))
@@ -423,44 +415,58 @@
      (when (and start end (.isBefore end start))
        {:end-date (error :account-settings/error-break-date-order)}))))
 
-(defn- break-status [now {:keys [active start-choice start-date end-date time-zone]}]
-  (if-not active
-    "available"
-    (let [^ZoneId zone       (ZoneId/of time-zone)
-          ^Instant instant   (->instant now)
-          ^ZonedDateTime zoned (.atZone instant zone)
-          ^LocalDate today   (.toLocalDate zoned)
-          ^LocalDate start   (when (= "date" start-choice) (parse-date start-date))
-          ^LocalDate end     (parse-date end-date)]
-      (cond
-        (and end (.isBefore end today)) "ended"
-        (and start (.isAfter start today)) "scheduled"
-        :else "away"))))
+(defn- member-timezone [db member-id]
+  (or (:member/timezone (d/entity db [:member/member-id member-id]))
+      "Europe/Berlin"))
 
-(defn update-break-settings-action [{:keys [now]} {:keys [account-break]}]
-  (let [break-state (normalize-break account-break)
-        errors      (break-errors break-state)]
+(defn- effective-break-start-date
+  [{:keys [now]} timezone {:keys [active start-choice start-date]}]
+  (when active
+    (if (= "now" start-choice)
+      (-> (->instant now)
+          (.atZone (ZoneId/of timezone))
+          .toLocalDate
+          str)
+      start-date)))
+
+(defn- break-success-effects [state break-state feedback]
+  (let [{:keys [db current-member-id]} state
+        timezone (member-timezone db current-member-id)
+        start-date (effective-break-start-date state timezone break-state)
+        end-date (when (:active break-state)
+                   (not-empty (:end-date break-state)))]
+    (persisted-effects
+     current-member-id
+     [{:db/id [:member/member-id current-member-id]
+       :member.break/start-date start-date
+       :member.break/end-date end-date}]
+     [:account-break]
+     {}
+     feedback)))
+
+(defn update-break-settings-action [state {:keys [account-break]}]
+  (let [{:keys [db current-member-id]} state
+        break-state (normalize-break account-break)
+        timezone    (member-timezone db current-member-id)
+        errors      (break-errors
+                     break-state
+                     (effective-break-start-date state timezone break-state))]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state
         [:account-break]
         (assoc break-state :_error errors :_saved? false)]]
-      [support/clear-loading
-       [:app.datastar/assoc-state
-        [:account-break]
-        (assoc break-state
-               :status (break-status now break-state)
-               :_error {}
-               :_saved? true)]])))
+      (break-success-effects
+       state
+       break-state
+       :account-settings/break-saved-feedback))))
 
-(defn end-break-action [_state {:keys [account-break]}]
-  (let [time-zone (if (valid-zone? (:time-zone account-break))
-                    (:time-zone account-break)
-                    "Europe/Berlin")]
-    (save-prototype-effects
-     [:account-break]
-     (assoc account.queries/default-break :time-zone time-zone)
-     :account-settings/break-ended-feedback)))
+(defn end-break-action [state _signals]
+  (break-success-effects
+   state
+   (select-keys account.queries/default-break
+                [:active :start-choice :start-date :end-date])
+   :account-settings/break-ended-feedback))
 
 (defn launch-app-action [_state {:keys [account-app]}]
   (let [platform (:platform account-app)]

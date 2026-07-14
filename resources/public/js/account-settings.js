@@ -98,11 +98,4 @@
       }
     },
   };
-
-  window.StreetnoiseAccountBreak = {
-    syncTimeZone(breakState) {
-      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (zone) breakState["time-zone"] = zone;
-    },
-  };
 })();

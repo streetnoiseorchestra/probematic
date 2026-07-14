@@ -2,7 +2,7 @@
   (:require
    [app.queries :as queries])
   (:import
-   [java.time Instant ZoneId]
+   [java.time Instant LocalDate ZoneId]
    [java.util Date]))
 
 (def default-preferences
@@ -136,14 +136,51 @@
            :_saved? false})]
     (merge-notifications persisted (:account-notifications page-state))))
 
-(defn break-page-state [page-state]
-  (merge default-break (:account-break page-state)))
-
 (defn- ->instant ^Instant [value]
   (cond
     (instance? Instant value) value
     (instance? Date value)    (.toInstant ^Date value)
     :else                     (Instant/now)))
+
+(defn- today ^LocalDate [now timezone]
+  (-> (->instant now)
+      (.atZone (ZoneId/of timezone))
+      .toLocalDate))
+
+(defn- parse-date ^LocalDate [value]
+  (when (seq value)
+    (LocalDate/parse value)))
+
+(defn- break-status [today start-date end-date]
+  (let [start (parse-date start-date)
+        end (parse-date end-date)]
+    (cond
+      (nil? start) "available"
+      (and end (.isBefore end today)) "ended"
+      (.isAfter start today) "scheduled"
+      :else "away")))
+
+(defn break-page-state
+  ([db member-id page-state]
+   (break-page-state db member-id page-state (Date.)))
+  ([db member-id page-state now]
+   (let [member (current-member db member-id)
+         timezone (or (:member/timezone member) (:time-zone default-break))
+         today (today now timezone)
+         start-date (or (:member.break/start-date member) "")
+         end-date (or (:member.break/end-date member) "")
+         persisted {:active (boolean (seq start-date))
+                    :start-choice (if (or (empty? start-date)
+                                          (= start-date (str today)))
+                                    "now"
+                                    "date")
+                    :start-date start-date
+                    :end-date end-date
+                    :time-zone timezone
+                    :status (break-status today start-date end-date)
+                    :_error {}
+                    :_saved? false}]
+     (merge persisted (:account-break page-state)))))
 
 (defn time-zone-options
   ([]

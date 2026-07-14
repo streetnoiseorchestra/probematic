@@ -79,7 +79,7 @@
       :form form-id
       :attrs (update-on-change req)})
     (support/radio-option
-     {:id "account-break-start-future"
+     {:id "account-break-start-date-choice"
       :name "break-start-choice"
       :value "date"
       :signal "account-break.start-choice"
@@ -200,7 +200,7 @@
 (defn page [{:keys [db page-state] :as req}]
   (let [title             [:i18n/tr :account-settings/break-title]
         current-member-id (support/current-member-id req)
-        state             (queries/break-page-state page-state)
+        state             (queries/break-page-state db current-member-id page-state)
         member            (queries/current-member db current-member-id)]
     (support/standard-page
      {:title title
@@ -210,7 +210,6 @@
      [:form {:id form-id
              :data-id "account-break"
              :data-signals (d*/->signals {:account-break state})
-             :data-init "window.StreetnoiseAccountBreak.syncTimeZone($account-break)"
              :data-on:submit "evt.preventDefault();"}
       (status-card req member state)]
      (explanation req))))

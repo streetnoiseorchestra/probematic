@@ -94,9 +94,8 @@
 (def valid-break
   {:active true
    :start-choice "date"
-   :start-date "2026-07-15"
-   :end-date "2026-07-20"
-   :time-zone "Europe/Berlin"})
+   :start-date "2026-07-01"
+   :end-date "2026-07-20"})
 
 (deftest account-action-map-owns-every-public-action-keyword
   (let [actions (support/public-value 'app.account.actions/actions)]
@@ -419,66 +418,109 @@
                                      (conj error-path :error)))))
         (is (not-any? #(= :db/transact (first %)) effects))))))
 
-(deftest break-actions-update-every-change-and-derive-preview-status
-  (when-let [update-break
-             (action 'app.account.actions/update-break-settings-action)]
-    (is (= [nexus-actions/clear-loading
-            [:app.datastar/assoc-state
-             [:account-break]
-             (assoc valid-break
-                    :status "scheduled"
-                    :_error {}
-                    :_saved? true)]]
-           (update-break
-            {:now #inst "2026-07-13T12:00:00.000-00:00"}
-            {:account-break valid-break})))
-    (is (= "away"
-           (-> (update-break
-                {:now #inst "2026-07-13T12:00:00.000-00:00"}
-                {:account-break (assoc valid-break
-                                       :start-choice "now"
-                                       :start-date "")})
-               second last :status)))
+(deftest break-actions-persist-start-and-end-on-the-member
+  (let [{:keys [conn member-id] :as system} (tc/new-system "account-break")]
+    (seed-member! conn member-id {:member/timezone "Europe/Berlin"})
+    (let [effects (actions/update-break-settings-action
+                   (action-state system)
+                   {:account-break valid-break})]
+      (transact-effects! conn effects)
+      (is (= "2026-07-01"
+             (entity-value (d/db conn) member-id :member.break/start-date)))
+      (is (= "2026-07-20"
+             (entity-value (d/db conn) member-id :member.break/end-date)))
+      (is (= [:i18n/tr :account-settings/break-saved-feedback]
+             (get-in effects [2 2 :_feedback]))))
+    (testing "right now uses today in the persisted member time zone"
+      (let [effects (actions/update-break-settings-action
+                     (assoc (action-state system) :db (d/db conn))
+                     {:account-break {:active true
+                                      :start-choice "now"
+                                      :start-date ""
+                                      :end-date ""}})]
+        (transact-effects! conn effects)
+        (is (= "2026-07-14"
+               (entity-value (d/db conn)
+                             member-id
+                             :member.break/start-date)))))
+    (testing "turning availability on accepts a start date in the past"
+      (let [effects (actions/update-break-settings-action
+                     (assoc (action-state system) :db (d/db conn))
+                     {:account-break (assoc valid-break
+                                            :start-date "2020-01-02"
+                                            :end-date "")})]
+        (is (some #(= :db/transact (first %)) effects))))
+    (testing "turning the break off retracts both attributes"
+      (let [effects (actions/update-break-settings-action
+                     (assoc (action-state system) :db (d/db conn))
+                     {:account-break {:active false
+                                      :start-choice "now"
+                                      :start-date ""
+                                      :end-date ""}})]
+        (transact-effects! conn effects)
+        (is (nil? (entity-value (d/db conn)
+                                member-id
+                                :member.break/start-date)))
+        (is (nil? (entity-value (d/db conn)
+                                member-id
+                                :member.break/end-date)))))))
+
+(deftest successful-break-actions-do-not-pin-durable-values-in-page-state
+  (let [{:keys [conn member-id] :as system}
+        (tc/new-system "account-break-transient-state")]
+    (seed-member! conn member-id {:member/timezone "Europe/Berlin"})
+    (let [effects (actions/update-break-settings-action
+                   (action-state system)
+                   {:account-break valid-break})]
+      (is (= #{:_error :_saved? :_feedback}
+             (set (keys (get-in effects [2 2]))))))))
+
+(deftest break-actions-require-the-injected-clock
+  (let [{:keys [conn member-id] :as system}
+        (tc/new-system "account-break-clock")]
+    (seed-member! conn member-id {:member/timezone "Europe/Berlin"})
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (actions/update-break-settings-action
+                  (dissoc (action-state system) :now)
+                  {:account-break
+                   {:active true
+                    :start-choice "now"
+                    :start-date ""
+                    :end-date ""}})))))
+
+(deftest break-validation-and-end-early-never-use-a-break-time-zone-signal
+  (let [{:keys [conn member-id] :as system} (tc/new-system "account-break-validation")]
+    (seed-member! conn member-id {:member/timezone "Pacific/Auckland"
+                                  :member.break/start-date "2026-07-01"
+                                  :member.break/end-date "2026-07-20"})
     (doseq [[submitted field error-key]
             [[(assoc valid-break :active "yes")
               :active :account-settings/error-break-availability-invalid]
-             [(assoc valid-break :time-zone "Mars/Olympus")
-              :time-zone :account-settings/error-time-zone-invalid]
              [(assoc valid-break :start-date "2026-02-30")
               :start-date :account-settings/error-date-invalid]
-             [(assoc valid-break :end-date "2026-07-14")
+             [(assoc valid-break :end-date "2026-06-30")
+              :end-date :account-settings/error-break-date-order]
+             [(assoc valid-break
+                     :start-choice "now"
+                     :start-date ""
+                     :end-date "2026-07-13")
               :end-date :account-settings/error-break-date-order]]]
-      (let [effects (update-break
-                     {:now #inst "2026-07-13T12:00:00.000-00:00"}
+      (let [effects (actions/update-break-settings-action
+                     (action-state system)
                      {:account-break submitted})]
         (is (= [:i18n/tr error-key]
                (get-in effects [1 2 :_error field :error])))
-        (is (false? (get-in effects [1 2 :_saved?])))))
-    (is (= "available"
-           (-> (update-break
-                {:now #inst "2026-07-13T12:00:00.000-00:00"}
-                {:account-break {:active false
-                                 :start-choice "now"
-                                 :start-date ""
-                                 :end-date ""
-                                 :time-zone "Europe/Berlin"}})
-               second last :status))))
-  (when-let [end-break (action 'app.account.actions/end-break-action)]
-    (is (= [nexus-actions/clear-loading
-            [:app.datastar/assoc-state
-             [:account-break]
-             {:active false
-              :start-choice "now"
-              :start-date ""
-              :end-date ""
-              :time-zone "Europe/Berlin"
-              :status "available"
-              :_error {}
-              :_saved? true
-              :_feedback [:i18n/tr :account-settings/break-ended-feedback]}]]
-           (end-break
-            {}
-            {:account-break valid-break})))))
+        (is (not-any? #(= :db/transact (first %)) effects))))
+    (let [effects (actions/end-break-action (action-state system) {})]
+      (transact-effects! conn effects)
+      (is (nil? (entity-value (d/db conn)
+                              member-id
+                              :member.break/start-date)))
+      (is (nil? (entity-value (d/db conn)
+                              member-id
+                              :member.break/end-date)))
+      (is (= [:i18n/tr :account-settings/break-ended-feedback]
+             (get-in effects [2 2 :_feedback]))))))
 
 (deftest launch-app-records-prototype-feedback-without-navigation-or-persistence
   (when-let [launch-app (action 'app.account.actions/launch-app-action)]

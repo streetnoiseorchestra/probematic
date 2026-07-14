@@ -47,6 +47,9 @@
         (is (nil? (-> (support/element-by-id "account-break-form" view)
                       support/attrs
                       :data-action)))
+        (is (nil? (-> (support/element-by-id "account-break-form" view)
+                      support/attrs
+                      :data-init)))
         (is (contains? (support/translation-keys view)
                        :account-settings/break-pause-overlay))
         (is (contains? (support/translation-keys view)
