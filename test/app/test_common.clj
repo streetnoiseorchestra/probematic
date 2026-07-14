@@ -10,7 +10,7 @@
     (d/create-database uri)
     (let [conn      (d/connect uri)
           member-id (random-uuid)]
-      @(datomic.system/transact-schema conn)
+      (datomic.system/prepare-database! conn)
       @(d/transact conn [{:member/member-id member-id}])
       {:conn conn
        :member-id member-id})))

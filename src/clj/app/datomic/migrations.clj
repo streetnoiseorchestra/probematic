@@ -1,100 +1,151 @@
 (ns app.datomic.migrations
-  (:require [com.fulcrologic.guardrails.malli.core :refer [>defn]]
-            [datomic.api :as d]
-            [dev.gethop.stork :as stork]))
+  (:require
+   [datomic.api :as d]))
 
-(def DatomicDbUriSchema [:re {:error/message "should be a datomic db-uri string "} #"datomic:.*"])
-(def DatomicConnectionSchema [:fn #(instance? datomic.Connection %)])
+(def ^:private member-attributes
+  [:member/nick :member/email :member/username])
 
-(def MigrationDataSchema
-  [:map
-   [:id :keyword]
-   [:tx-data [:vector :any]]])
+(def ^:private uniqueness-modes
+  #{:db.unique/identity :db.unique/value})
 
-(def MigrationFnSchema
-  [:map
-   [:id :keyword]
-   [:tx-data-fn [:fn fn?]]])
+(def ^:private prepare-member-uniqueness-id
+  (keyword "app.migration" "001-prepare-member-uniqueness"))
 
-(def MigrationInputSchema
-  [:sequential {:min 0}
-   [:or :string
-    MigrationFnSchema
-    MigrationDataSchema]])
+(def ^:private normalize-active-surveys-id
+  (keyword "app.migration" "002-normalize-active-insurance-surveys"))
 
-(>defn install-schema
-       "Installs schema migrations into a Datomic database. This function is designed
-   to be called at system startup to ensure all necessary schema is in place.
+(def pre-schema-migrations
+  "Ordered migrations applied before the canonical application schema."
+  [{:id prepare-member-uniqueness-id
+    :tx-data-fn
+    'app.datomic.migrations/member-uniqueness-tx-data}])
 
-   The function handles both direct migration data and migration files (as resources).
-   Each migration is guaranteed to be executed exactly once, making it safe to call
-   this function multiple times on system restart.
+(def post-schema-migrations
+  "Ordered migrations applied after the canonical application schema."
+  [{:id normalize-active-surveys-id
+    :tx-data-fn
+    'app.datomic.migrations/normalize-active-insurance-surveys-tx-data}])
 
-   Examples:
-   ```clojure
-   ;; Install schema from a direct map
-   (install-schema conn
-                  [{:id :person-schema
-                    :tx-data [{:db/ident :person/id
-                               :db/valueType :db.type/uuid
-                               :db/cardinality :db.cardinality/one}]}])
+(defn- schema-attribute [db attribute]
+  (when (d/entid db attribute)
+    (let [schema (d/pull db
+                         '[:db/index
+                           {:db/cardinality [:db/ident]}
+                           {:db/unique [:db/ident]}]
+                         attribute)]
+      {:attribute attribute
+       :cardinality (get-in schema [:db/cardinality :db/ident])
+       :unique (get-in schema [:db/unique :db/ident])
+       :indexed? (true? (:db/index schema))})))
 
-   ;; Install schema from resource files
-   (install-schema conn
-                  [\"schemas/person.edn\"
-                   \"schemas/order.edn\"])
+(defn- duplicate-groups [db attribute]
+  (->> (d/q '[:find ?entity ?value
+              :in $ ?attribute
+              :where
+              [?entity ?attribute ?value]]
+            db attribute)
+       (group-by second)
+       vals
+       (filterv #(< 1 (count %)))))
 
-   ;; Mix of direct data and file paths
-   (install-schema conn
-                  [{:id :base-schema, :tx-data [...]}
-                   \"schemas/extended.edn\"])
-   ```
+(defn- validate-member-attribute! [db {:keys [attribute cardinality]}]
+  (when-not (= :db.cardinality/one cardinality)
+    (throw
+     (ex-info
+      "Member uniqueness attribute has unexpected cardinality"
+      {:type ::schema-mismatch
+       :attribute attribute
+       :expected-cardinality :db.cardinality/one
+       :actual-cardinality cardinality})))
+  (let [duplicates (duplicate-groups db attribute)]
+    (when (seq duplicates)
+      (throw
+       (ex-info
+        "Member uniqueness attribute contains duplicate values"
+        {:type ::duplicate-values
+         :attribute attribute
+         :duplicate-group-count (count duplicates)
+         :conflicting-entity-ids (->> duplicates
+                                      (mapcat #(map first %))
+                                      sort
+                                      vec)})))))
 
-   Args:
-     - conn: A Datomic connection
-     - migrations: A collection of migrations, where each item can be either:
-       - A string path to a migration EDN file (resource path)
-       - A map with :id and :tx-data keys for direct schema definition
-       - A map with :id and :tx-data-fn keys where :tx-data-fn is a function that returns tx-data"
-       [conn migrations]
-       [DatomicConnectionSchema MigrationInputSchema => :any]
-       (run!
-        (fn [m]
-          (if-let [migration (if (string? m)
-                               (stork/read-resource m) m)]
-            (stork/ensure-installed conn migration)
-            (throw (ex-info "A non-existent migration was encountered, aborting schema installation."
-                            {:migration m}))))
-        migrations))
-
-(defn show-schema
-  "Returns all custom schema entities (attributes, enums, etc.) installed in the database,
-   filtering out system namespaces.
-
-   This function is useful for debugging and verifying that schema has been properly
-   installed.
-
-   Example:
-   ```clojure
-   ;; Show all custom schema in the database
-   (show-schema conn)
-   ;; => [[:person/id] [:person/name] [:order/id] ...]
-   ```
-
-   Args:
-     - conn: A Datomic connection
-
-   Returns:
-     A collection of tuples, each containing a single keyword representing a schema entity."
+(defn member-uniqueness-tx-data
+  "Returns transactions that prepare existing member attributes for uniqueness changes."
   [conn]
-  (let [system-ns #{"db" "db.type" "db.install" "db.part"
-                    "db.lang" "fressian" "db.unique" "db.excise"
-                    "db.cardinality" "db.fn" "db.sys" "db.bootstrap"
-                    "db.alter"}]
-    (d/q '[:find ?ident
-           :in $ ?system-ns
-           :where
-           [?e :db/ident ?ident]
-           [(namespace ?ident) ?ns]
-           [((comp not contains?) ?system-ns ?ns)]]
-         (d/db conn) system-ns)))
+  (let [db         (d/db conn)
+        attributes (into []
+                         (keep #(schema-attribute db %))
+                         member-attributes)]
+    (run! #(validate-member-attribute! db %) attributes)
+    (->> attributes
+         (keep (fn [{:keys [attribute indexed? unique]}]
+                 (when-not (or indexed?
+                               (contains? uniqueness-modes unique))
+                   {:db/id attribute
+                    :db/index true})))
+         vec)))
+
+(defn- created-at-order [left right]
+  (let [left-created-at  (:insurance.survey/created-at left)
+        right-created-at (:insurance.survey/created-at right)]
+    (cond
+      (and left-created-at right-created-at)
+      (compare right-created-at left-created-at)
+
+      left-created-at
+      -1
+
+      right-created-at
+      1
+
+      :else
+      0)))
+
+(defn- survey-id-order [left right]
+  (let [left-id  (:insurance.survey/survey-id left)
+        right-id (:insurance.survey/survey-id right)]
+    (cond
+      (and left-id right-id)
+      (compare (str left-id) (str right-id))
+
+      left-id
+      -1
+
+      right-id
+      1
+
+      :else
+      0)))
+
+(defn- active-survey-order [left right]
+  (let [created-order (created-at-order left right)]
+    (if (zero? created-order)
+      (let [id-order (survey-id-order left right)]
+        (if (zero? id-order)
+          (compare (:db/id left) (:db/id right))
+          id-order))
+      created-order)))
+
+(defn normalize-active-insurance-surveys-tx-data
+  "Returns transactions that retain only the newest active insurance survey."
+  [conn]
+  (let [db     (d/db conn)
+        now    (java.util.Date.)
+        active (->> (d/q '[:find [?survey ...]
+                           :in $ ?now
+                           :where
+                           [?survey :insurance.survey/closes-at ?closes-at]
+                           [(< ?now ?closes-at)]
+                           [(missing? $ ?survey
+                                      :insurance.survey/closed-at)]]
+                         db now)
+                    (map #(d/pull db
+                                  [:db/id
+                                   :insurance.survey/survey-id
+                                   :insurance.survey/created-at]
+                                  %))
+                    (sort active-survey-order))]
+    (mapv (fn [{:db/keys [id]}]
+            [:db/add id :insurance.survey/closed-at now])
+          (rest active))))

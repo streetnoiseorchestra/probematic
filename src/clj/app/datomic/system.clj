@@ -1,86 +1,115 @@
 (ns app.datomic.system
   (:require
-
+   [app.datomic.migrations :as migrations]
    [app.datomic.shim :as shim]
-   [datomic.local :as dl]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [com.brunobonacci.mulog :as μ]
    [com.fulcrologic.guardrails.malli.core :refer [>defn-]]
-   [datomic.client.api :as dc]
    [datomic.api :as d]
-   [app.datomic.migrations :as migrations]))
+   [datomic.client.api :as dc]
+   [datomic.local :as dl]
+   [dev.gethop.stork :as stork]))
 
-(def MigrateableComponent
-  [:map
-   [:migrations migrations/MigrationInputSchema]])
+(def ^:private DatomicDbUriSchema
+  [:re {:error/message "should be a Datomic database URI"} #"datomic:.*"])
 
-(def MigrateableComponentsMap
-  [:map-of :keyword MigrateableComponent])
+(def ^:private DatomicConnectionSchema
+  [:fn #(instance? datomic.Connection %)])
 
-(>defn- gather-migrations
-        "Gathers migrations from the provided components"
-        [migration-components]
-        [MigrateableComponentsMap => migrations/MigrationInputSchema]
-        (mapcat :migrations (vals migration-components)))
+(def ^:private schema-sync-timeout-ms
+  (* 5 60 1000))
 
 (>defn- ensure-and-connect [db-uri]
-        [migrations/DatomicDbUriSchema => migrations/DatomicConnectionSchema]
+        [DatomicDbUriSchema => DatomicConnectionSchema]
         (when (d/create-database db-uri)
           (μ/log ::db-created :msg "Datomic database created"))
         (d/connect db-uri))
 
-(defn schema-index-upgrades
-  "Returns index transactions required before altering unique attributes.
+(defn- resource-data [resource-name]
+  (edn/read-string
+   {:readers *data-readers*}
+   (slurp (io/resource resource-name))))
 
-  Datomic must finish indexing an existing attribute before uniqueness can be
-  added or changed. New attributes and attributes already using the desired
-  uniqueness require no preparatory transaction."
-  [db schema]
-  (->> schema
-       (keep (fn [{:db/keys [ident unique]}]
-               (when (and ident
-                          unique
-                          (d/entid db ident)
-                          (not= unique
-                                (get-in (d/pull db
-                                                '[{:db/unique [:db/ident]}]
-                                                ident)
-                                        [:db/unique :db/ident])))
-                 {:db/id ident
-                  :db/index true})))
-       vec))
+(defn- sync-schema! [conn phase]
+  (let [basis-t (d/basis-t (d/db conn))
+        result  (deref (d/sync-schema conn basis-t)
+                       schema-sync-timeout-ms
+                       ::timed-out)]
+    (when (= ::timed-out result)
+      (throw
+       (ex-info
+        "Timed out waiting for Datomic schema synchronization"
+        {:phase phase
+         :timeout-ms schema-sync-timeout-ms})))
+    result))
 
-(defn transact-schema
-  "Installs schema metadata and the application schema.
+(defn- install-migrations! [conn migrations]
+  (doseq [{:keys [id] :as migration} migrations]
+    (let [migration (assoc migration
+                           :stork.setting/sync-schema-timeout
+                           schema-sync-timeout-ms)
+          result    (stork/ensure-installed conn migration)
+          status    (if (or (nil? result)
+                            (= ::stork/already-installed result))
+                      :skipped
+                      :applied)]
+      (μ/log ::migration-complete
+             :migration-id id
+             :status status))))
 
-  Existing unique-attribute alterations are prepared and indexed first so the
-  same schema works for both fresh and long-lived databases. Returns the final
-  transaction future."
+(defn prepare-database!
+  "Prepares `conn` for the authoritative Peer runtime.
+
+  This function blocks until the metadata schema, pre-schema migrations,
+  canonical schema, and post-schema migrations complete. It returns the final
+  database value and propagates failures to the caller."
   [conn]
-  @(d/transact conn (-> (io/resource "schema-meta.edn") slurp edn/read-string))
-  (let [schema (edn/read-string
-                {:readers *data-readers*}
-                (slurp (io/resource "schema.edn")))
-        index-upgrades (schema-index-upgrades (d/db conn) schema)]
-    (when (seq index-upgrades)
-      (μ/log ::schema-index-upgrade
-             :attributes (mapv :db/id index-upgrades))
-      (let [tx-report @(d/transact conn index-upgrades)]
-        @(d/sync-schema conn (d/basis-t (:db-after tx-report)))))
-    (d/transact conn schema)))
+  (μ/log ::metadata-schema-start
+         :msg "Datomic installing application schema metadata")
+  @(d/transact conn (resource-data "schema-meta.edn"))
+  (μ/log ::metadata-schema-complete
+         :msg "Datomic application schema metadata installed")
+
+  (μ/log ::pre-schema-start
+         :msg "Datomic starting pre-schema migrations")
+  (install-migrations! conn migrations/pre-schema-migrations)
+  (sync-schema! conn :pre-schema)
+  (μ/log ::pre-schema-complete
+         :msg "Datomic pre-schema migrations completed")
+
+  (μ/log ::canonical-schema-start
+         :msg "Datomic installing canonical application schema")
+  @(d/transact conn (resource-data "schema.edn"))
+  (sync-schema! conn :canonical-schema)
+  (μ/log ::canonical-schema-complete
+         :msg "Datomic canonical application schema installed")
+
+  (μ/log ::post-schema-start
+         :msg "Datomic starting post-schema migrations")
+  (install-migrations! conn migrations/post-schema-migrations)
+  (μ/log ::post-schema-complete
+         :msg "Datomic post-schema migrations completed")
+
+  (let [db (d/db conn)]
+    (μ/log ::database-prepared
+           :msg "Datomic database preparation completed"
+           :basis-t (d/basis-t db))
+    db))
 
 (defn start-peer [{:keys [peer]}]
   (assert (:db-uri peer))
-  (let [conn           (ensure-and-connect (:db-uri peer))
-        #_#_migrations (gather-migrations (:migration-components peer))]
-    @(transact-schema conn)
-    #_(when migrations
-        (μ/log ::db-migrations :msg "Datomic installing schema migrations")
-        (migrations/install-schema conn migrations))
-    (μ/log ::db-connected :msg "Datomic database started successfully")
-
-    (assoc peer :conn conn)))
+  (let [conn (ensure-and-connect (:db-uri peer))]
+    (try
+      (prepare-database! conn)
+      (μ/log ::db-connected :msg "Datomic database started successfully")
+      (assoc peer :conn conn)
+      (catch Throwable throwable
+        (try
+          (d/release conn)
+          (catch Throwable release-error
+            (.addSuppressed throwable release-error)))
+        (throw throwable)))))
 
 (defn stop-peer [config]
   (d/release (:conn config)))
@@ -91,7 +120,6 @@
         c       (dc/client (select-keys client [:server-type :system :storage-dir]))
         _       (dc/create-database c db-name)
         conn    (dc/connect c db-name)]
-    #_(datomic.migrations/migrate! (:env client) conn migrations/migration-fns)
     (assoc client :conn conn)))
 
 (defn stop-client [{:keys [client]}]

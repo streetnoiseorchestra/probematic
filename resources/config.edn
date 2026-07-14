@@ -115,8 +115,7 @@
                                                                                             :test #envf ["%s/datomic.test.data" PWD]
                                                                                             :demo #envf ["%s/datomic.demo.data" PWD]}]}
                                                        :peer   {:db-uri     #or [#env DATOMIC_URI
-                                                                                 #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]
-                                                                :migrations {}}}
+                                                                                 #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]}}
                            :app.ig/i18n-langs         {}
                            :app.ig/mailgun            {:env #ig/ref :app.ig/env}
                            :app.ig/redis              {:env #ig/ref :app.ig/env}

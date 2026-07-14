@@ -1,6 +1,5 @@
 (ns app.account.schema-test
   (:require
-   [app.datomic.system :as datomic.system]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is]]
    [datomic.api :as d]))
@@ -59,50 +58,3 @@
     (doseq [[ident doc] expected-enums]
       (is (= {:db/ident ident :db/doc doc}
              (d/pull db [:db/ident :db/doc] ident))))))
-
-(deftest schema-index-upgrades-selects-only-existing-uniqueness-changes
-  (let [uri (str "datomic:mem://account-schema-upgrade-" (random-uuid))]
-    (d/create-database uri)
-    (let [conn (d/connect uri)]
-      @(d/transact conn [{:db/ident :test/unindexed
-                          :db/valueType :db.type/string
-                          :db/cardinality :db.cardinality/one}
-                         {:db/ident :test/already-unique
-                          :db/valueType :db.type/string
-                          :db/cardinality :db.cardinality/one
-                          :db/unique :db.unique/value}
-                         {:db/ident :test/not-unique
-                          :db/valueType :db.type/string
-                          :db/cardinality :db.cardinality/one}])
-      (is (= [{:db/id :test/unindexed
-               :db/index true}]
-             (datomic.system/schema-index-upgrades
-              (d/db conn)
-              [{:db/ident :test/unindexed
-                :db/index true
-                :db/unique :db.unique/value}
-               {:db/ident :test/already-unique
-                :db/unique :db.unique/value}
-               {:db/ident :test/not-unique}
-               {:db/ident :test/new-unique
-                :db/unique :db.unique/value}]))))))
-
-(deftest transact-schema-upgrades-an-existing-unindexed-unique-attribute
-  (let [uri (str "datomic:mem://account-schema-transact-" (random-uuid))]
-    (d/create-database uri)
-    (let [conn (d/connect uri)]
-      @(d/transact conn [{:db/ident :member/nick
-                          :db/valueType :db.type/string
-                          :db/cardinality :db.cardinality/one}])
-      @(d/transact conn [{:db/id "existing-member"
-                          :member/nick "existing"}])
-
-      @(datomic.system/transact-schema conn)
-
-      (let [db (d/db conn)]
-        (is (= true (:db/index (d/pull db [:db/index] :member/nick))))
-        (is (= :db.unique/value
-               (get-in (d/pull db [{:db/unique [:db/ident]}] :member/nick)
-                       [:db/unique :db/ident])))
-        (is (= :member/timezone
-               (:db/ident (d/pull db [:db/ident] :member/timezone))))))))
