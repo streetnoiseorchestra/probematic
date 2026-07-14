@@ -7,17 +7,13 @@ description: Use the project parallel dev slot workflow for host-based agents in
 
 Parallel dev slots let host-based agents work in separate Git worktrees while using fixed isolated runtime services under the main checkout's `.dev-state/`.
 
-
 Treat `docs/dev-slots.md` as the canonical operator reference.
 
-
 This skill is only the agent playbook.
-
 
 ## First steps
 
 Read `docs/dev-slots.md` before changing slot state.
-
 
 Run command help instead of relying on copied flag lists.
 
@@ -27,15 +23,11 @@ bb dev-slot init --help
 bb dev-slot hydrate --help
 ```
 
-
 If you need to create, remove, or inspect Git worktrees, also load the `using-git-worktrees` skill.
-
 
 Worktrees for this project should live under `.worktrees/`.
 
-
 The operator or the agent starting the lane creates the worktree before slot initialization.
-
 
 ## Canonical prompts directory
 
@@ -66,13 +58,11 @@ Create the worktree when needed.
 git worktree add -b feature/agent-1 .worktrees/probematic-agent-1 HEAD
 ```
 
-
 Initialize the slot for that worktree.
 
 ```bash
 bb dev-slot init agent-1 .worktrees/probematic-agent-1 --branch feature/agent-1
 ```
-
 
 Link ignored artifacts after the worktree exists.
 
@@ -80,13 +70,11 @@ Link ignored artifacts after the worktree exists.
 bb dev-slot artifacts link agent-1
 ```
 
-
 Hydrate Datomic only when you intentionally want to replace the slot database.
 
 ```bash
 bb dev-slot hydrate agent-1 --template dev-latest
 ```
-
 
 Start and check isolated infrastructure.
 
@@ -94,7 +82,6 @@ Start and check isolated infrastructure.
 bb dev-slot up agent-1
 bb dev-slot doctor agent-1
 ```
-
 
 Enter the worktree and source the generated environment before starting the host app or REPL.
 
@@ -105,7 +92,6 @@ cd .worktrees/probematic-agent-1
 bb dev
 ```
 
-
 ## Status and cleanup
 
 Use `doctor` for support-grade checks.
@@ -114,16 +100,13 @@ Use `doctor` for support-grade checks.
 bb dev-slot doctor agent-1
 ```
 
-
 Use `ps` for Compose service state.
 
 ```bash
 bb dev-slot ps agent-1
 ```
 
-
 Stop the host app or REPL before slot cleanup.
-
 
 Then stop and remove slot infrastructure.
 
@@ -132,21 +115,17 @@ bb dev-slot down agent-1
 bb dev-slot down agent-1
 ```
 
-
 Release the slot only when the worktree is no longer assigned to that slot.
 
 ```bash
 bb dev-slot release agent-1
 ```
 
-
 A released worktree can be attached again by rerunning `init` for the intended slot and worktree.
-
 
 ## Repair hints
 
 If generated files or safe symlinks are stale, rerun `init`.
-
 
 If ignored artifacts are missing or stale, refresh the cache from a complete checkout and relink.
 
@@ -154,7 +133,6 @@ If ignored artifacts are missing or stale, refresh the cache from a complete che
 bb dev-slot artifacts import --source-root .
 bb dev-slot artifacts link agent-1
 ```
-
 
 If the claim points at the wrong worktree, inspect the claim, make sure no agent is using it, then release and initialize the intended binding.
 
@@ -164,19 +142,14 @@ bb dev-slot release agent-1
 bb dev-slot init agent-1 .worktrees/probematic-agent-1 --branch feature/agent-1
 ```
 
-
 Use `--force` only after understanding the current claim or path conflict.
-
 
 ## Guardrails
 
 Do not stage `.dev-state/`, generated slot files, ignored artifacts, or symlinked ignored resources unless the human explicitly asks.
 
-
 Do not hydrate a slot database while a host app or REPL for that slot is running.
 
-
 Do not delete the shared main-root `data.dev/filestore` during cleanup.
-
 
 Do not intentionally run two slots against one worktree at the same time.

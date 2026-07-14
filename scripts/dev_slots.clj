@@ -1158,11 +1158,43 @@
 
     (usage)))
 
+(defn- active-worktree-branch [{:keys [worktree branch]}]
+  (let [{:keys [exit out]} (run-command!
+                            ["git" "-C" worktree "branch" "--show-current"])]
+    (cond
+      (not (zero? exit)) branch
+      (str/blank? out) "detached"
+      :else (str/trim out))))
+
+(defn- slot-list-row [main-root slot]
+  (let [claim-file (:claim-file (slot-paths main-root (:slot slot)))]
+    (if-let [claim (read-claim-file claim-file)]
+      (let [worktree (str (fs/relativize main-root (:worktree claim)))]
+        [(name (:slot slot))
+         "claimed"
+         (if (str/blank? worktree) "." worktree)
+         (active-worktree-branch claim)])
+      [(name (:slot slot)) "unclaimed" "-" "-"])))
+
+(defn- print-slot-list [rows]
+  (let [rows (into [["SLOT" "STATUS" "WORKTREE" "BRANCH"]] rows)
+        widths (apply mapv
+                      (fn [& cells]
+                        (apply max (map count cells)))
+                      rows)]
+    (doseq [row rows]
+      (println
+       (str/trimr
+        (str/join "  "
+                  (map (fn [cell width]
+                         (format (str "%-" width "s") cell))
+                       row
+                       widths)))))))
+
 (defn- list-command [opts]
-  (let [main-root (effective-main-root opts)
+  (let [main-root (-> opts effective-main-root state-paths :main-root)
         registry (load-registry main-root)]
-    (doseq [slot registry]
-      (println (name (:slot slot))))))
+    (print-slot-list (map #(slot-list-row main-root %) registry))))
 
 (defn- env-command [opts [slot-name]]
   (when-not slot-name
