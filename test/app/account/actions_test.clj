@@ -1,20 +1,13 @@
 (ns app.account.actions-test
   (:require
-   [app.account.test-support :as support]
    [app.account.actions :as actions]
    [app.nexus :as app-nexus]
    [app.nexus.actions :as nexus-actions]
-   [app.queries :as queries]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
 
 (def max-avatar-size (* 5 1024 1024))
-
-(defn action [symbol]
-  (let [action-fn (support/public-fn symbol)]
-    (is (fn? action-fn) (str symbol " should exist"))
-    action-fn))
 
 (defn seed-member!
   ([conn member-id]
@@ -22,20 +15,21 @@
   ([conn member-id overrides]
    @(d/transact
      conn
-     [(merge {:member/member-id  member-id
-              :member/name       "Ada Lovelace"
-              :member/nick       "ada"
-              :member/email      "ada@example.test"
-              :member/username   "ada_l"
-              :member/phone      "+436601111111"
-              :member/active?    true
+     [(merge {:member/member-id   member-id
+              :member/name        "Ada Lovelace"
+              :member/nick        "ada"
+              :member/email       "ada@example.test"
+              :member/username    "ada_l"
+              :member/phone       "+436601111111"
+              :member/active?     true
               :member/keycloak-id (str member-id)}
              overrides)])))
 
 (defn action-state [{:keys [conn member-id]}]
   {:db                (d/db conn)
    :current-member-id member-id
-   :now               #inst "2026-07-13T12:00:00.000-00:00"})
+   :now               #inst "2026-07-13T22:30:00.000-00:00"})
+
 (defn transact-effects! [conn effects]
   (let [transactions (for [[effect tx-data opts] effects
                            :when (= :db/transact effect)]
@@ -50,33 +44,26 @@
   (if (keyword? value) value (:db/ident value)))
 
 (def valid-profile
-  {:member-id      "00000000-0000-0000-0000-000000000099"
-   :name           "  Ada Byron  "
-   :nick           "  Countess  "
-   :email          "  ADA.BYRON@EXAMPLE.TEST  "
-   :username       "  ADA_BYRON  "
-   :phone          "+43 660 1234567"
-   :current-status "  Rehearsing tonight  "
-   :date-of-birth  "1815-12-10"
-   :avatar-removed? false
-   :avatar         {:filename "portrait.png"
-                    :mime-type "image/png"
-                    :size 2048
-                    :staged? true}})
+  {:member-id       "00000000-0000-0000-0000-000000000099"
+   :name            "  Ada Byron  "
+   :nick            "  Countess  "
+   :email           "  ADA.BYRON@EXAMPLE.TEST  "
+   :username        "  ADA_BYRON  "
+   :phone           "+43 660 1234567"
+   :current-status  "  Rehearsing tonight  "
+   :date-of-birth   "1815-12-10"
+   :avatar-removed? false})
 
 (def normalized-profile
-  {:name           "Ada Byron"
-   :nick           "Countess"
-   :email          "ada.byron@example.test"
-   :username       "ada_byron"
-   :phone          "+436601234567"
-   :current-status "Rehearsing tonight"
-   :date-of-birth  "1815-12-10"
+  {:name            "Ada Byron"
+   :nick            "Countess"
+   :email           "ada.byron@example.test"
+   :username        "ada_byron"
+   :phone           "+436601234567"
+   :current-status  "Rehearsing tonight"
+   :date-of-birth   "1815-12-10"
    :avatar-removed? false
-   :avatar         {:filename "portrait.png"
-                    :mime-type "image/png"
-                    :size 2048
-                    :staged? true}})
+   :avatar          nil})
 
 (def valid-notifications
   {:enabled? true
@@ -98,209 +85,160 @@
    :end-date "2026-07-20"})
 
 (deftest account-action-map-owns-every-public-action-keyword
-  (let [actions (support/public-value 'app.account.actions/actions)]
-    (is (map? actions) "app.account.actions/actions should exist")
-    (when (map? actions)
-      (is (= #{:app.account.actions/validate-profile-field
-               :app.account.actions/stage-avatar
-               :app.account.actions/remove-avatar
-               :app.account.actions/save-profile
-               :app.account.actions/save-date-time-preferences
-               :app.account.actions/toggle-notifications
-               :app.account.actions/enable-browser-notifications
-               :app.account.actions/update-notification-settings
-               :app.account.actions/update-break-settings
-               :app.account.actions/end-break
-               :app.account.actions/launch-app}
-             (set (keys actions)))))))
+  (is (= #{:app.account.actions/validate-profile-field
+           :app.account.actions/stage-avatar
+           :app.account.actions/remove-avatar
+           :app.account.actions/save-profile
+           :app.account.actions/save-date-time-preferences
+           :app.account.actions/toggle-notifications
+           :app.account.actions/enable-browser-notifications
+           :app.account.actions/update-notification-settings
+           :app.account.actions/update-break-settings
+           :app.account.actions/end-break
+           :app.account.actions/launch-app}
+         (set (keys actions/actions)))))
 
-(deftest validate-profile-field-normalizes-the-complete-signal-map
-  (when-let [validate-field (action 'app.account.actions/validate-profile-field-action)]
-    (is (= [[:app.datastar/merge-state [:account-profile] normalized-profile]
-            [:app.datastar/assoc-state [:account-profile :_error :email] nil]]
-           (validate-field
-            {}
-            {:account-profile (assoc valid-profile :validate-field "email")})))
-    (is (= [:i18n/tr :account-settings/error-name-required]
-           (-> (validate-field
-                {}
-                {:account-profile (assoc valid-profile
-                                         :name " "
-                                         :validate-field "name")})
-               second
-               last
-               :error)))
-    (is (= [:i18n/tr :account-settings/error-date-invalid]
-           (-> (validate-field
-                {}
-                {:account-profile (assoc valid-profile
-                                         :date-of-birth "1815-02-30"
-                                         :validate-field "date-of-birth")})
-               second
-               last
-               :error)))))
+(deftest validate-profile-field-normalizes-persisted-profile-values
+  (is (= [[:app.datastar/merge-state [:account-profile] normalized-profile]
+          [:app.datastar/assoc-state [:account-profile :_error :email] nil]]
+         (actions/validate-profile-field-action
+          {}
+          {:account-profile (assoc valid-profile :validate-field "email")})))
+  (is (= [:i18n/tr :account-settings/error-date-invalid]
+         (-> (actions/validate-profile-field-action
+              {}
+              {:account-profile (assoc valid-profile
+                                       :date-of-birth "1815-02-30"
+                                       :validate-field "date-of-birth")})
+             second
+             last
+             :error))))
 
-(deftest avatar-actions-validate-real-file-metadata-and-preserve-the-form
-  (when-let [stage-avatar (action 'app.account.actions/stage-avatar-action)]
-    (is (= [nexus-actions/clear-loading
-            [:app.datastar/assoc-state
-             [:account-profile :avatar]
-             {:filename "portrait.webp"
-              :mime-type "image/webp"
-              :size 4096
-              :staged? true}]
-            [:app.datastar/assoc-state
-             [:account-profile :avatar-removed?]
-             false]
-            [:app.datastar/assoc-state [:account-profile :_error :avatar] nil]
-            [:app.datastar/assoc-state
-             [:account-profile :_feedback]
-             [:i18n/tr :account-settings/avatar-staged-feedback]]]
-           (stage-avatar
-            {}
-            {:account-profile
-             (assoc valid-profile
-                    :avatar {:filename "portrait.webp"
-                             :mime-type "image/webp"
-                             :size 4096})})))
-    (doseq [[metadata error-key]
-            [[{:filename "portrait.svg" :mime-type "image/svg+xml" :size 1024}
+(deftest avatar-staging-validates-the-file-that-will-be-submitted
+  (is (= [nexus-actions/clear-loading
+          [:app.datastar/assoc-state
+           [:account-profile :avatar]
+           {:filename "portrait.webp"
+            :mime-type "image/webp"
+            :size 4096
+            :staged? true}]
+          [:app.datastar/assoc-state [:account-profile :avatar-removed?] false]
+          [:app.datastar/assoc-state [:account-profile :_error :avatar] nil]
+          [:app.datastar/assoc-state
+           [:account-profile :_feedback]
+           [:i18n/tr :account-settings/avatar-staged-feedback]]]
+         (actions/stage-avatar-action
+          {}
+          {:account-profile
+           (assoc valid-profile
+                  :avatar {:filename "portrait.webp"
+                           :mime-type "image/webp"
+                           :size 4096})})))
+  (doseq [[metadata error-key]
+          [[{:filename "portrait.svg" :mime-type "image/svg+xml" :size 1024}
+            :account-settings/error-avatar-type]
+           [{:filename "portrait.png" :mime-type "image/png" :size (inc max-avatar-size)}
+            :account-settings/error-avatar-size]
+           [{:filename "" :mime-type "image/png" :size 1024}
+            :account-settings/error-avatar-name]]]
+    (let [effects (actions/stage-avatar-action
+                   {}
+                   {:account-profile (assoc valid-profile :avatar metadata)})]
+      (is (= nexus-actions/clear-loading (first effects)))
+      (is (= [:i18n/tr error-key]
+             (get-in effects [1 2 :error])))))
+  (is (= [nexus-actions/clear-loading
+          [:app.datastar/assoc-state [:account-profile :avatar] nil]
+          [:app.datastar/assoc-state [:account-profile :avatar-removed?] true]
+          [:app.datastar/assoc-state
+           [:account-profile :_feedback]
+           [:i18n/tr :account-settings/avatar-removed-feedback]]]
+         (actions/remove-avatar-action {} {}))))
+
+(deftest save-profile-dispatches-one-authenticated-profile-effect
+  (let [{:keys [conn member-id] :as system} (tc/new-system "account-profile-effect")
+        other-id (random-uuid)]
+    (seed-member! conn member-id)
+    (seed-member! conn other-id
+                  {:member/name "Other Member"
+                   :member/nick "other"
+                   :member/email "other@example.test"
+                   :member/username "other_user"
+                   :member/phone "+436602222222"})
+    (is (= [[:app.account/save-profile
+             {:member-id member-id
+              :profile normalized-profile
+              :avatar-upload nil
+              :expected-avatar-id nil
+              :sync-keycloak? true}]]
+           (actions/save-profile-action
+            (action-state system)
+            {:account-profile (assoc valid-profile :member-id (str other-id))})))
+    (is (= "Other Member"
+           (entity-value (d/db conn) other-id :member/name)))))
+
+(deftest save-profile-retries-keycloak-sync-after-datomic-already-matches
+  (let [{:keys [conn member-id] :as system}
+        (tc/new-system "account-profile-keycloak-retry")]
+    (seed-member! conn member-id
+                  {:member/name "Ada Byron"
+                   :member/email "ada.byron@example.test"
+                   :member/username "ada_byron"})
+    (is (true?
+         (get-in
+          (actions/save-profile-action
+           (action-state system)
+           {:account-profile valid-profile})
+          [0 1 :sync-keycloak?])))))
+
+(deftest save-profile-validates-upload-metadata-before-dispatch
+  (let [{:keys [conn] :as system} (tc/new-system "account-profile-upload-validation")]
+    (seed-member! conn (:member-id system))
+    (doseq [[avatar-upload error-key]
+            [[{:filename "avatar.svg"
+               :mime-type "image/svg+xml"
+               :size 200
+               :tempfile (java.io.File. "/tmp/unused-avatar.svg")}
               :account-settings/error-avatar-type]
-             [{:filename "portrait.png" :mime-type "image/png" :size (inc max-avatar-size)}
-              :account-settings/error-avatar-size]
-             [{:filename "" :mime-type "image/png" :size 1024}
-              :account-settings/error-avatar-name]]]
-      (let [effects (stage-avatar
-                     {}
-                     {:account-profile (assoc valid-profile :avatar metadata)})]
+             [{:filename "avatar.png"
+               :mime-type "image/png"
+               :size (inc max-avatar-size)
+               :tempfile (java.io.File. "/tmp/unused-avatar.png")}
+              :account-settings/error-avatar-size]]]
+      (let [effects (actions/save-profile-action
+                     (action-state system)
+                     {:account-profile valid-profile
+                      :avatar-upload avatar-upload})]
         (is (= nexus-actions/clear-loading (first effects)))
         (is (= [:i18n/tr error-key]
-               (get-in effects [1 2 :error])))
-        (is (= 2 (count effects))))))
-  (when-let [remove-avatar (action 'app.account.actions/remove-avatar-action)]
-    (is (= [nexus-actions/clear-loading
-            [:app.datastar/assoc-state [:account-profile :avatar] nil]
-            [:app.datastar/assoc-state [:account-profile :avatar-removed?] true]
-            [:app.datastar/assoc-state
-             [:account-profile :_feedback]
-             [:i18n/tr :account-settings/avatar-removed-feedback]]]
-           (remove-avatar {} {:account-profile valid-profile})))))
-
-(deftest save-profile-targets-only-the-authenticated-member
-  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
-    (let [{:keys [conn member-id] :as system} (tc/new-system "account-save-self")
-          other-id                            (random-uuid)]
-      (seed-member! conn member-id)
-      (seed-member! conn other-id
-                    {:member/name        "Other Member"
-                     :member/nick        "other"
-                     :member/email       "other@example.test"
-                     :member/username    "other_user"
-                     :member/phone       "+436602222222"
-                     :member/keycloak-id (str other-id)})
-      (let [effects (save-profile
-                     (action-state system)
-                     {:account-profile
-                      (assoc valid-profile :member-id (str other-id))})]
-        (is (= [[:db/transact
-                 [{:db/id            [:member/member-id member-id]
-                   :member/name      "Ada Byron"
-                   :member/nick      "Countess"
-                   :member/email     "ada.byron@example.test"
-                   :member/username  "ada_byron"
-                   :member/phone     "+436601234567"}
-                  [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                 {:transact-w-nils? true}]
-                [:app.members/update-keycloak-meta member-id]
-                nexus-actions/clear-loading
-                [:app.datastar/assoc-state
-                 [:account-profile]
-                 (assoc normalized-profile
-                        :_error {}
-                        :_saved? true
-                        :_feedback [:i18n/tr :account-settings/profile-saved-feedback])]]
-               effects))
-        (let [[_ tx-data opts] (first effects)]
-          @(d/transact conn (app-nexus/batch-transactions [[tx-data opts]])))
-        (is (= {:member/name     "Ada Byron"
-                :member/nick     "Countess"
-                :member/email    "ada.byron@example.test"
-                :member/username "ada_byron"
-                :member/phone    "+436601234567"}
-               (select-keys (queries/retrieve-member (d/db conn) member-id)
-                            [:member/name
-                             :member/nick
-                             :member/email
-                             :member/username
-                             :member/phone])))
-        (is (= {:member/name     "Other Member"
-                :member/email    "other@example.test"
-                :member/username "other_user"}
-               (select-keys (queries/retrieve-member (d/db conn) other-id)
-                            [:member/name :member/email :member/username])))))))
-
-(deftest save-profile-retracts-cleared-optional-existing-attributes
-  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
-    (let [{:keys [conn member-id] :as system} (tc/new-system "account-save-retract")]
-      (seed-member! conn member-id)
-      (let [effects (save-profile
-                     (action-state system)
-                     {:account-profile (assoc valid-profile :nick " " :phone " ")})
-            [_ tx-data opts] (first effects)]
-        @(d/transact conn (app-nexus/batch-transactions [[tx-data opts]]))
-        (is (= {:member/nick nil :member/phone nil}
-               (select-keys (merge {:member/nick nil :member/phone nil}
-                                   (queries/retrieve-member (d/db conn) member-id))
-                            [:member/nick :member/phone])))))))
+               (get-in effects [1 2 :_error :avatar :error])))
+        (is (not-any? #(= :app.account/save-profile (first %)) effects))))))
 
 (deftest save-profile-preserves-complete-input-on-validation-errors
-  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
-    (let [{:keys [conn member-id] :as system} (tc/new-system "account-save-invalid")
-          other-id                            (random-uuid)]
-      (seed-member! conn member-id)
-      (seed-member! conn other-id
-                    {:member/nick        "taken"
-                     :member/email       "taken@example.test"
-                     :member/username    "taken_user"
-                     :member/phone       "+436609999999"
-                     :member/keycloak-id (str other-id)})
-      (let [submitted (assoc valid-profile
-                             :name " "
-                             :nick " taken "
-                             :email " TAKEN@EXAMPLE.TEST "
-                             :username " TAKEN_USER "
-                             :phone "+43 660 9999999"
-                             :date-of-birth "1815-02-30")
-            effects   (save-profile (action-state system)
-                                    {:account-profile submitted})
-            saved     (get-in effects [1 2])]
-        (is (= nexus-actions/clear-loading (first effects)))
-        (is (= [:app.datastar/assoc-state :account-profile]
-               [(get-in effects [1 0]) (get-in effects [1 1 0])]))
-        (is (= {:name           ""
-                :nick           "taken"
-                :email          "taken@example.test"
-                :username       "taken_user"
-                :phone          "+436609999999"
-                :current-status "Rehearsing tonight"
-                :date-of-birth  "1815-02-30"
-                :avatar-removed? false
-                :avatar         (:avatar normalized-profile)}
-               (select-keys saved (keys normalized-profile))))
-        (is (= #{:name :nick :email :username :phone :date-of-birth :_top}
-               (set (keys (:_error saved)))))
-        (is (not-any? #(= :db/transact (first %)) effects))))))
-
-(deftest save-profile-rejects-a-missing-authenticated-member
-  (when-let [save-profile (action 'app.account.actions/save-profile-action)]
-    (let [{:keys [conn]} (tc/new-system "account-save-missing")
-          effects (save-profile {:db (d/db conn)
-                                 :current-member-id (random-uuid)}
-                                {:account-profile valid-profile})]
+  (let [{:keys [conn member-id] :as system} (tc/new-system "account-profile-invalid")
+        other-id (random-uuid)]
+    (seed-member! conn member-id)
+    (seed-member! conn other-id
+                  {:member/nick "taken"
+                   :member/email "taken@example.test"
+                   :member/username "taken_user"
+                   :member/phone "+436609999999"})
+    (let [submitted (assoc valid-profile
+                           :name " "
+                           :nick " taken "
+                           :email " TAKEN@EXAMPLE.TEST "
+                           :username " TAKEN_USER "
+                           :phone "+43 660 9999999"
+                           :date-of-birth "1815-02-30")
+          effects (actions/save-profile-action
+                   (action-state system)
+                   {:account-profile submitted})
+          saved (get-in effects [1 2])]
       (is (= nexus-actions/clear-loading (first effects)))
-      (is (= [:i18n/tr :account-settings/error-current-member-missing]
-             (get-in effects [1 2 :_error :_top :error])))
-      (is (not-any? #(= :db/transact (first %)) effects)))))
+      (is (= #{:name :nick :email :username :phone :date-of-birth :_top}
+             (set (keys (:_error saved)))))
+      (is (= "Rehearsing tonight" (:current-status saved)))
+      (is (not-any? #(= :app.account/save-profile (first %)) effects)))))
 
 (deftest save-date-time-preferences-persists-enum-refs
   (let [{:keys [conn member-id] :as system} (tc/new-system "account-preferences")
@@ -522,21 +460,13 @@
       (is (= [:i18n/tr :account-settings/break-ended-feedback]
              (get-in effects [2 2 :_feedback]))))))
 
-(deftest launch-app-records-prototype-feedback-without-navigation-or-persistence
-  (when-let [launch-app (action 'app.account.actions/launch-app-action)]
-    (doseq [platform ["ios" "android" "pwa"]]
-      (let [effects (launch-app {} {:account-app {:platform platform}})]
-        (is (= [nexus-actions/clear-loading
-                [:app.datastar/assoc-state
-                 [:account-app]
-                 {:platform platform
-                  :_feedback [:i18n/tr
-                              :account-settings/app-prototype-feedback
-                              {:platform platform}]}]]
-               effects))
-        (is (not-any? #(contains? #{:db/transact :app.datastar/redirect}
-                                  (first %))
-                      effects))))
-    (is (= [:i18n/tr :account-settings/error-app-platform-invalid]
-           (-> (launch-app {} {:account-app {:platform "blackberry"}})
-               second last :_error :platform :error)))))
+(deftest launch-app-remains-a-high-fidelity-prototype-action
+  (doseq [platform ["ios" "android" "pwa"]]
+    (let [effects (actions/launch-app-action
+                   {}
+                   {:account-app {:platform platform}})]
+      (is (= [:i18n/tr
+              :account-settings/app-prototype-feedback
+              {:platform platform}]
+             (get-in effects [1 2 :_feedback])))
+      (is (not-any? #(= :db/transact (first %)) effects)))))

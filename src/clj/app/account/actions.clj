@@ -130,6 +130,13 @@
                          nil))
     :else            nil))
 
+(defn- normalize-avatar-upload [avatar]
+  (when (map? avatar)
+    {:filename (or (trimmed (:filename avatar)) "")
+     :mime-type (or (trimmed (:mime-type avatar)) "")
+     :size (size-value (:size avatar))
+     :tempfile (:tempfile avatar)}))
+
 (defn- avatar-error [{:keys [filename mime-type size]}]
   (let [size (size-value size)]
     (cond
@@ -162,20 +169,8 @@
     [:account-profile :_feedback]
     (tr-node :account-settings/avatar-removed-feedback)]])
 
-(defn- member-tx [member-id profile]
-  {:db/id           [:member/member-id member-id]
-   :member/name     (:name profile)
-   :member/nick     (not-empty (:nick profile))
-   :member/email    (:email profile)
-   :member/username (:username profile)
-   :member/phone    (not-empty (:phone profile))})
-
-(defn- keycloak-sync-needed? [member profile]
-  (and (:member/keycloak-id member)
-       (not= (select-keys member [:member/name :member/email :member/username])
-             {:member/name     (:name profile)
-              :member/email    (:email profile)
-              :member/username (:username profile)})))
+(defn- keycloak-sync-required? [member]
+  (boolean (:member/keycloak-id member)))
 
 (defn- profile-error-effects [profile errors]
   [support/clear-loading
@@ -183,34 +178,36 @@
     [:account-profile]
     (assoc profile :_error errors :_saved? false)]])
 
-(defn save-profile-action
-  [{:keys [db current-member-id]} {:keys [account-profile]}]
-  (let [profile (normalize-profile account-profile)
-        member  (when (and db current-member-id)
-                  (d/entity db [:member/member-id current-member-id]))]
-    (if-not (:db/id member)
-      (profile-error-effects
-       profile
-       {:_top (error :account-settings/error-current-member-missing)})
-      (let [errors (profile-errors db current-member-id profile)]
-        (if (seq errors)
-          (profile-error-effects profile errors)
-          (cond-> [[:db/transact
-                    (support/with-audit [(member-tx current-member-id profile)]
-                      current-member-id)
-                    {:transact-w-nils? true}]]
-            (keycloak-sync-needed? member profile)
-            (conj [:app.members/update-keycloak-meta current-member-id])
+(defn- discard-upload [effects avatar-upload]
+  (cond-> effects
+    (:tempfile avatar-upload)
+    (conj [:app.account/discard-upload (:tempfile avatar-upload)])))
 
-            true
-            (conj support/clear-loading
-                  [:app.datastar/assoc-state
-                   [:account-profile]
-                   (assoc profile
-                          :_error {}
-                          :_saved? true
-                          :_feedback
-                          (tr-node :account-settings/profile-saved-feedback))])))))))
+(defn save-profile-action
+  [{:keys [db current-member-id]}
+   {:keys [account-profile avatar-upload]}]
+  (let [profile       (normalize-profile account-profile)
+        avatar-upload (normalize-avatar-upload avatar-upload)
+        member        (when (and db current-member-id)
+                        (d/entity db [:member/member-id current-member-id]))]
+    (if-not (:db/id member)
+      (discard-upload
+       (profile-error-effects
+        profile
+        {:_top (error :account-settings/error-current-member-missing)})
+       avatar-upload)
+      (let [errors (cond-> (profile-errors db current-member-id profile)
+                     (and avatar-upload (avatar-error avatar-upload))
+                     (assoc :avatar (avatar-error avatar-upload)))]
+        (if (seq errors)
+          (discard-upload (profile-error-effects profile errors) avatar-upload)
+          [[:app.account/save-profile
+            {:member-id current-member-id
+             :profile profile
+             :avatar-upload avatar-upload
+             :expected-avatar-id
+             (some-> (:member/avatar member) :image/image-id)
+             :sync-keycloak? (keycloak-sync-required? member)}]])))))
 
 (defn- valid-zone? [value]
   (boolean
