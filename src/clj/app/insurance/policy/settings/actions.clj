@@ -527,7 +527,8 @@
        :type-id        type-id
        :name           (:insurance.coverage.type/name coverage-type)
        :description    (or (:insurance.coverage.type/description coverage-type) "")
-       :premium-factor (:insurance.coverage.type/premium-factor coverage-type)}]]))
+       :premium-factor (:insurance.coverage.type/premium-factor coverage-type)
+       :icon           (:insurance.coverage.type/icon coverage-type)}]]))
 
 (defn close-coverage-type-edit-action
   [_state _signals]

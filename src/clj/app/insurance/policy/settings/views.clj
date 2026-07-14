@@ -1,10 +1,12 @@
 (ns app.insurance.policy.settings.views
   (:require
    [app.datastar :as d*]
+   [app.icons :as icons]
    [app.insurance.policy.settings.actions :as actions]
    [app.insurance.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.card :as card]
+   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -74,13 +76,15 @@
         details   (merge {:policy-id      policy-id
                           :name           ""
                           :description    ""
-                          :premium-factor ""}
+                          :premium-factor ""
+                          :icon           ""}
                          (dissoc submitted :_error))]
     {:open           (:open details)
      :policy-id      (:policy-id details)
      :name           (:name details)
      :description    (:description details)
      :premium-factor (:premium-factor details)
+     :icon           (:icon details)
      :_error         (:_error submitted)}))
 
 (defn- coverage-type-edit-state
@@ -91,6 +95,7 @@
      :name           (:name submitted)
      :description    (:description submitted)
      :premium-factor (:premium-factor submitted)
+     :icon           (:icon submitted)
      :_error         (:_error submitted)}))
 
 (defn- active-coverage-type-state
@@ -101,12 +106,19 @@
       create-state
       edit-state)))
 
+(defn- icon-value
+  [icon]
+  (if (keyword? icon)
+    (subs (str icon) 1)
+    (signal-string icon)))
+
 (defn- coverage-type-signal
-  [{:keys [description name policy-id premium-factor type-id]}]
+  [{:keys [description icon name policy-id premium-factor type-id]}]
   (cond-> {:policyId      (signal-string policy-id)
            :name          (signal-string name)
            :description   (signal-string description)
-           :premiumFactor (signal-string premium-factor)}
+           :premiumFactor (signal-string premium-factor)
+           :icon          (icon-value icon)}
     type-id (assoc :typeId (signal-string type-id))))
 
 (defn- category-factor-create-state
@@ -394,8 +406,35 @@
        (d*/act req action)
        "')"))
 
+(defn- coverage-type-icon-option
+  [selected-icon icon]
+  (let [value (icon-value icon)]
+    [:wa-option
+     (cond-> {:value value}
+       (= value (icon-value selected-icon)) (assoc :selected true))
+     [ico/Icon {::ico/library (keyword (namespace icon))
+                ::ico/name    (keyword (clojure.core/name icon))
+                :slot         "start"}]
+     (icons/display-name icon)]))
+
+(defn- coverage-type-icon-field
+  [tr icon error id-prefix]
+  (into
+   [:wa-combobox
+    (cond-> {:id         (str id-prefix "-icon")
+             :label      (tr [:insurance.policy-settings/coverage-type-icon])
+             :hint       (tr [:insurance.policy-settings/coverage-type-icon-hint])
+             :value      (icon-value icon)
+             :required   true
+             :appearance "outlined"
+             :data-bind  "insurancePolicySettings.coverageType.icon"}
+      error (assoc :hint error
+                   :data-invalid "true"))]
+   (map (partial coverage-type-icon-option icon))
+   (icons/catalog)))
+
 (defn- coverage-type-fields
-  [{:keys [tr]} {:keys [_error description name premium-factor]} id-prefix]
+  [{:keys [tr]} {:keys [_error description icon name premium-factor]} id-prefix]
   [:div {:class "wa-stack wa-gap-m"}
    (top-error-callout (:_top _error))
    (text-input {:id    (str id-prefix "-name")
@@ -408,6 +447,7 @@
                     :value description
                     :bind  "insurancePolicySettings.coverageType.description"
                     :error (field-error _error :description)})
+   (coverage-type-icon-field tr icon (field-error _error :icon) id-prefix)
    (text-input {:id    (str id-prefix "-premium-factor")
                 :label (tr [:insurance/premium-factor])
                 :type  "number"

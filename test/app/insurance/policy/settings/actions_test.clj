@@ -54,7 +54,8 @@
         :insurance.coverage.type/type-id        unused-type-id
         :insurance.coverage.type/name           "Unused"
         :insurance.coverage.type/description    "Unused coverage"
-        :insurance.coverage.type/premium-factor 0.25M}
+        :insurance.coverage.type/premium-factor 0.25M
+        :insurance.coverage.type/icon           :phosphor/shield}
        {:db/id                                  "foreign-type"
         :insurance.coverage.type/type-id        foreign-type-id
         :insurance.coverage.type/name           "Foreign"
@@ -733,7 +734,8 @@
                               :type-id        unused-type-id
                               :name           "Unused"
                               :description    "Unused coverage"
-                              :premium-factor 0.25M}]]
+                              :premium-factor 0.25M
+                              :icon           :phosphor/shield}]]
                 :close-edit [support/clear-loading
                              [:app.datastar/assoc-state
                               [:insurance-policy-settings :coverage-type]
