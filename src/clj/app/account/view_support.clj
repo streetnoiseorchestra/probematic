@@ -30,7 +30,7 @@
                   :form       form-id}
    label])
 
-(defn account-toolbar [title actions]
+(defn account-toolbar [title actions mobile-back?]
   [page-toolbar/PageToolbar
    {::page-toolbar/breadcrumb
     [breadcrumb/Breadcrumb
@@ -39,20 +39,22 @@
       [:i18n/tr :account-settings/title]]
      [breadcrumb/BreadcrumbItem title]]
     ::page-toolbar/mobile-back
-    [button/BackButton {:href  account-root
-                        :label [:i18n/tr :account-settings/title]}]
+    (when mobile-back?
+      [button/BackButton {:href  account-root
+                          :label [:i18n/tr :account-settings/title]}])
     ::page-toolbar/actions actions
     :aria-label [:i18n/tr :account-settings/toolbar-label]}])
 
 (defn standard-page
-  [{:keys [title subtitle actions after show-header?]
-    :or {show-header? true}} & content]
+  [{:keys [title subtitle actions after show-header? mobile-back?]
+    :or {show-header? true
+         mobile-back? true}} & content]
   (account-main
    (into
     [page-surface/PageSurface
      {::page-surface/width :standard
       :class "account-detail-surface"
-      ::page-surface/toolbar (account-toolbar title actions)}
+      ::page-surface/toolbar (account-toolbar title actions mobile-back?)}
      (into (cond-> [:div {:class "wa-stack wa-gap-xl"}]
              show-header?
              (conj [page-header/PageHeader
