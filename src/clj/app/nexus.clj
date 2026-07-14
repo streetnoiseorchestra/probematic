@@ -122,8 +122,7 @@
   (get-in request [:session :session/roles] #{}))
 
 (defn- request-page-state [request]
-  (when-let [tab-id (or (-> request :body-params :tab-id)
-                        (get-in request [:parameters :body :tab-id]))]
+  (when-let [tab-id (datastar/request-tab-id request)]
     (get @datastar/!page-state tab-id {})))
 
 (defn system->state

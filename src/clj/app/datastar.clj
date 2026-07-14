@@ -69,8 +69,17 @@
 
 (def !page-state (atom {}))
 
-(defn state-transact! [req f]
-  (if-let [tab-id (-> req :body-params :tab-id)]
+(defn request-tab-id
+  "Returns the browser tab signal from JSON or multipart request parameters."
+  [req]
+  (or (-> req :body-params :tab-id)
+      (get-in req [:parameters :body :tab-id])
+      (get-in req [:parameters :multipart :tab-id])))
+
+(defn state-transact!
+  "Updates the transient page state addressed by the request's tab signal."
+  [req f]
+  (if-let [tab-id (request-tab-id req)]
     (swap! !page-state update tab-id (fn [state]
                                        (-> state
                                            (f)

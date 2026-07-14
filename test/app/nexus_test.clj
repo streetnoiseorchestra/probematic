@@ -160,6 +160,26 @@
       (finally
         (swap! datastar/!page-state dissoc tab-id)))))
 
+(deftest multipart-tab-id-signal-addresses-page-state
+  (let [{:keys [conn]} (tc/new-system "nexus-multipart-tab-id")
+        tab-id         (str (random-uuid))
+        request        {:parameters {:multipart {:tab-id tab-id}}}]
+    (try
+      (swap! datastar/!page-state assoc tab-id {:existing :value})
+      (app-nexus/assoc-page-state-fx nil
+                                     {:request request}
+                                     [:account-profile :_saved?]
+                                     true)
+      (is (true?
+           (get-in @datastar/!page-state
+                   [tab-id :account-profile :_saved?])))
+      (is (= :value
+             (get-in (app-nexus/system->state
+                      {:system {:datomic {:conn conn}}
+                       :request request})
+                     [:page-state :existing])))
+      (finally
+        (swap! datastar/!page-state dissoc tab-id)))))
 (deftest db-transact-fx-dispatches-on-success-actions
   (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-success")
         team-id        (random-uuid)
