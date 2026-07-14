@@ -601,13 +601,14 @@
                                         (set! $loading evt.target.dataset.id)
                                         (set! $targetid evt.target.dataset.id)
                                         (@post ("`${evt.target.dataset.action}`"))))
-           :data-on:mousedown (->expr (when (and evt.target.dataset.action
-                                                 (= evt.button 0)
-                                                 (not (evt.target.matches "form")))
-                                        (evt.target.setAttribute "loading" "")
-                                        (set! $loading evt.target.dataset.id)
-                                        (set! $targetid evt.target.dataset.id)
-                                        (@post ("`${evt.target.dataset.action}`"))))
+           :data-on:mousedown (->expr (let [action-target (evt.target.closest "[data-action]")]
+                                        (when (and action-target
+                                                   (= evt.button 0)
+                                                   (not (action-target.matches "form")))
+                                          (action-target.setAttribute "loading" "")
+                                          (set! $loading action-target.dataset.id)
+                                          (set! $targetid action-target.dataset.id)
+                                          (@post action-target.dataset.action))))
            :data-on:keydown   (->expr (when (and evt.target.dataset.action (= evt.key "Enter"))
                                         (evt.target.setAttribute "loading" "")
                                         (set! $loading evt.target.dataset.id)
