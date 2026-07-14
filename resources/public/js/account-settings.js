@@ -80,12 +80,24 @@
     },
     remove(profile) {
       const preview = avatarPreview();
+      const input = document.getElementById("account-profile-avatar");
       if (preview) {
         revokeAvatarUrl(preview);
         preview.removeAttribute("src");
         preview.classList.remove("staged");
       }
+      if (input) input.value = "";
       profile.avatar = null;
+    },
+    saved() {
+      const preview = avatarPreview();
+      if (preview) {
+        revokeAvatarUrl(preview);
+        preview.removeAttribute("src");
+        preview.classList.remove("staged");
+      }
+      const input = document.getElementById("account-profile-avatar");
+      if (input) input.value = "";
     },
   };
 

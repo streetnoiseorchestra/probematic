@@ -34,7 +34,6 @@ app-prototype-feedback =
 error-app-platform-invalid = Choose a supported app platform.
 
 profile-title = Profile, login, security
-profile-subtitle = Keep the details people use to recognize and contact you up to date.
 avatar-label = Profile photo
 avatar-choose = Choose a photo
 avatar-replace = Change your avatar…

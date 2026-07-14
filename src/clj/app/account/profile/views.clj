@@ -7,7 +7,8 @@
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.card :as card]
-   [app.ui2.icon :as ico]))
+   [app.ui2.icon :as ico]
+   [clojure.string :as str]))
 
 (def form-id "account-profile-form")
 
@@ -19,8 +20,7 @@
        "')"))
 
 (defn- validation-attrs [req field]
-  {:data-on:blur (validate-field-action req field)
-   :data-on:input__debounce.500ms (validate-field-action req field)})
+  {:data-on:blur (validate-field-action req field)})
 
 (defn- profile-field [req state field id label attrs & [description]]
   (support/field
@@ -35,23 +35,22 @@
 (defn- avatar-section [req member state]
   (let [staged?         (true? (get-in state [:avatar :staged?]))
         removed?        (true? (:avatar-removed? state))
-        current-avatar? (boolean (seq (:member/avatar-template member)))
+        current-avatar? (boolean (get-in member [:member/avatar :image/image-id]))
         real-avatar?    (and current-avatar? (not removed?))
         avatar-present? (or staged? real-avatar?)
         preview-member  (cond-> member
-                          (not real-avatar?) (dissoc :member/avatar-template))]
+                          true (dissoc :member/avatar-template)
+                          (not real-avatar?) (dissoc :member/avatar))]
     [:div {:class "avatar-editor wa-stack wa-gap-m wa-align-items-center"}
      [:div {:class "avatar-frame"}
       [avatar/Avatar {::avatar/member preview-member
                       ::avatar/link? false
+                      ::avatar/allow-legacy? false
                       ::avatar/icon :user
                       ::avatar/image-size 160
                       :class "profile-avatar"}]
       [:img {:id                 "account-profile-avatar-preview"
              :class              (str "avatar-preview" (when staged? " staged"))
-             :src                (when staged?
-                                   (avatar/avatar-template-src
-                                    (:member/avatar-template member)))
              :alt                [:i18n/tr :account-settings/avatar-label]
              :data-preserve-attr "src class"}]]
      (when-not avatar-present?
@@ -76,6 +75,7 @@
       [:input {:id             "account-profile-avatar"
                :class          "wa-visually-hidden"
                :type           "file"
+               :name           "avatar"
                :accept         "image/png,image/jpeg,image/webp"
                :data-on:change (str "if (window.StreetnoiseAccountAvatar.stage(evt, $account-profile)) "
                                     "@post('" (d*/act req ::actions/stage-avatar) "')")}]
@@ -88,6 +88,10 @@
          [:i18n/tr :account-settings/avatar-remove]])]
      (when-let [error (support/field-error state :avatar)]
        [:p {:class "wa-caption-s wa-color-text-danger" :role "alert"} error])
+     [:input {:id "account-profile-avatar-removed"
+              :type "hidden"
+              :name "avatar-removed?"
+              :data-bind "account-profile.avatar-removed?"}]
      (support/feedback state)]))
 
 (defn- profile-fields [req state]
@@ -110,12 +114,18 @@
                    :account-settings/date-of-birth-label
                    {:type "date" :autocomplete "bday"})]])
 
+(defn- security-account-url [req]
+  (let [{:keys [auth-server-url realm]}
+        (get-in req [:system :env :keycloak])]
+    (str (str/replace auth-server-url #"/+$" "")
+         "/realms/" realm "/account")))
+
 (defn- security-section [req]
   [:div {:class "account-profile-fields wa-stack wa-gap-s"}
    [:p (support/instance-tr
         req
         :account-settings/login-security-description)]
-   [:a {:href "https://id.streetnoise.at/realms/sno/account"
+   [:a {:href (security-account-url req)
         :target "_blank"
         :rel "noopener"}
     (support/instance-tr req :account-settings/login-security-link)]])
@@ -131,10 +141,18 @@
       :actions      [(support/save-action form-id [:i18n/tr :action/save])]}
      [:form {:id             form-id
              :class          "wa-stack wa-gap-l"
+             :method         "post"
+             :action         "/account-settings/profile/save"
+             :enctype        "multipart/form-data"
              :data-id        "account-profile"
-             :data-action    (d*/act req ::actions/save-profile)
              :data-signals   (d*/->signals {:account-profile state})
-             :data-on:submit "evt.preventDefault();"}
+             :data-on:submit
+             (str "evt.preventDefault(); "
+                  "document.getElementById('account-profile-tab-id').value = $tab-id; "
+                  "@post('/account-settings/profile/save', {contentType: 'form'})")}
+      [:input {:id "account-profile-tab-id"
+               :type "hidden"
+               :name "tab-id"}]
       (when-let [top-error (support/field-error state :_top)]
         [:wa-callout {:appearance "outlined" :variant "danger"} top-error])
       [card/Card {:class "account-profile-card" :appearance "outlined"}

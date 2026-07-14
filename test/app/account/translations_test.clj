@@ -29,7 +29,6 @@
     :account-settings/app-prototype-feedback
     :account-settings/error-app-platform-invalid
     :account-settings/profile-title
-    :account-settings/profile-subtitle
     :account-settings/avatar-label
     :account-settings/avatar-choose
     :account-settings/avatar-replace

@@ -51,7 +51,7 @@
                        (interceptors/webdav-interceptor system)]}
 
     (datastar-routes/act-route system)
-    (account/routes)
+    (account/routes system)
     (dashboard/routes)
     (everything/routes)
     (settings/routes)

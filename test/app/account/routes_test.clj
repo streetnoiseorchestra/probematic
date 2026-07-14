@@ -30,6 +30,11 @@
    'app.urls/link-account-notifications "/account-settings/notifications"
    'app.urls/link-account-break         "/account-settings/on-a-break"})
 
+(def test-system
+  {:nexus {:nexus/actions {}}
+   :datomic {:conn ::conn}
+   :filestore ::filestore})
+
 (defn authenticated-branch [route-tree]
   (some
    (fn [node]
@@ -44,7 +49,7 @@
   (let [routes-fn (support/public-fn 'app.account.routes/routes)]
     (is (fn? routes-fn) "app.account.routes/routes should exist")
     (when routes-fn
-      (let [route-tree (routes-fn)
+      (let [route-tree (routes-fn test-system)
             router     (http/router ["" route-tree])]
         (is (= :app/account-settings
                (get-in route-tree [1 :app.route/name])))
@@ -57,6 +62,59 @@
                      expected-routes)))
         (is (every? #(nil? (r/match-by-path router (str (:path %) "/")))
                     expected-routes))))))
+
+(deftest account-routes-include-multipart-save-and-owned-avatar-delivery
+  (let [routes-fn (support/public-fn 'app.account.routes/routes)]
+    (is (fn? routes-fn))
+    (when routes-fn
+      (let [router (http/router ["" (routes-fn test-system)])]
+        (is (= :app.account.routes/save-profile
+               (get-in (r/match-by-path
+                        router
+                        "/account-settings/profile/save")
+                       [:data :name])))
+        (is (= :app.account.routes/member-avatar
+               (get-in (r/match-by-path
+                        router
+                        "/member-avatar/11111111-1111-4111-8111-111111111111/160")
+                       [:data :name])))))))
+
+(deftest multipart-profile-route-adapts-form-data-to-the-qualified-action
+  (let [handler (support/public-fn
+                 'app.account.routes/profile-save-handler)
+        tempfile (java.io.File. "/tmp/account-route-avatar.png")]
+    (is (fn? handler) "app.account.routes/profile-save-handler should exist")
+    (when handler
+      (is (= [[:app.account.actions/save-profile
+               {:account-profile
+                {:name "Ada Byron"
+                 :nick "Countess"
+                 :email "ada@example.test"
+                 :username "ada_byron"
+                 :phone "+436601234567"
+                 :current-status "Rehearsing"
+                 :date-of-birth "1815-12-10"
+                 :avatar-removed? true}
+                :avatar-upload
+                {:filename "avatar.png"
+                 :mime-type "image/png"
+                 :size 2048
+                 :tempfile tempfile}}]]
+             (handler
+              {:parameters
+               {:multipart
+                {:name "Ada Byron"
+                 :nick "Countess"
+                 :email "ada@example.test"
+                 :username "ada_byron"
+                 :phone "+436601234567"
+                 :current-status "Rehearsing"
+                 :date-of-birth "1815-12-10"
+                 :avatar-removed? "true"
+                 :avatar {:filename "avatar.png"
+                          :content-type "image/png"
+                          :size 2048
+                          :tempfile tempfile}}}}))))))
 
 (deftest account-url-helpers-match-the-public-routes
   (doseq [[qualified-symbol expected] expected-links]
