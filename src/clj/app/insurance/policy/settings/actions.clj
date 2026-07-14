@@ -2,6 +2,7 @@
   (:require
    [app.form :as form]
    [app.icons :as icons]
+   [app.insurance.exporters :as exporters]
    [app.insurance.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
@@ -34,6 +35,11 @@
 (defn- raw-coverage-type-form
   [signals]
   (or (get-in signals [:insurancePolicySettings :coverageType])
+      {}))
+
+(defn- raw-exporter-form
+  [signals]
+  (or (get-in signals [:insurancePolicySettings :exporter])
       {}))
 
 (defn- raw-category-factor-form
@@ -70,6 +76,19 @@
     value
     (some-> value form/optional-text keyword)))
 
+(defn- keyword-value
+  [value]
+  (if (keyword? value)
+    value
+    (some-> value form/optional-text (str/replace #"^:" "") keyword)))
+
+(defn- optional-uuid-value
+  [value]
+  (try
+    (uuid-value value)
+    (catch Exception _
+      nil)))
+
 (defn- policy-form
   [signals]
   (let [raw (raw-policy-form signals)]
@@ -88,8 +107,25 @@
              :name           (or (form/trim-value (:name raw)) "")
              :description    (or (form/trim-value (:description raw)) "")
              :premium-factor (or (form/trim-value (:premiumFactor raw)) "")
-             :icon           (icon-value (:icon raw))}
+             :icon           (icon-value (:icon raw))
+             :required?      (form/normalize-bool (:required raw))
+             :add-to-band-instruments?
+             (form/normalize-bool (:addToBandInstruments raw))
+             :confirmation-count
+             (or (form/trim-value (:confirmationCount raw)) "")}
       type-id (assoc :type-id type-id))))
+
+(defn- exporter-form
+  [signals]
+  (let [raw (raw-exporter-form signals)]
+    {:policy-id  (optional-uuid-value (:policyId raw))
+     :exporter-id (keyword-value (:exporterId raw))
+     :mappings
+     (mapv (fn [mapping]
+             {:role             (keyword-value (:role mapping))
+              :coverage-type-id (optional-uuid-value
+                                 (:coverageTypeId mapping))})
+           (or (:mappings raw) []))}))
 
 (defn- category-factor-form
   [signals]
@@ -229,7 +265,7 @@
       (assoc :premium-factor (error tr [:insurance.policy-settings/error-invalid-premium-factor]))
 
       (not (contains? (set (icons/catalog)) icon))
-      (assoc :icon (error tr [:insurance.policy-settings/error-invalid-coverage-type-icon]))
+      (assoc :icon (error tr [:insurance/error-invalid-coverage-type-icon]))
 
       (and (not (str/blank? name))
            (duplicate-coverage-type-name? policy coverage-type-form))
@@ -355,6 +391,27 @@
       [form-key state-key]
       (assoc form-state :_error errors)]]))
 
+(defn- confirmation-count-value
+  [value]
+  (when-let [value (form/optional-text value)]
+    (try
+      (Long/parseLong value)
+      (catch NumberFormatException _
+        nil))))
+
+(defn- coverage-type-confirmation-effects
+  [tr state-key form impact-count]
+  (let [confirmation-count (:confirmation-count form)
+        stale?             (not (str/blank? confirmation-count))
+        stale-error        (error tr [:insurance/error-stale-impact-count])]
+    (coverage-type-failure-effects
+     state-key
+     (assoc form :impact-count impact-count)
+     (if stale?
+       {:confirmation-count stale-error
+        :_top              stale-error}
+       {}))))
+
 (defn- category-factor-failure-effects
   [state-key form errors]
   (let [form-state (cond-> form
@@ -387,54 +444,227 @@
        support/clear-loading
        [:app.datastar/assoc-state [form-key :policy] false]])))
 
+(defn- duplicate-values?
+  [values]
+  (boolean (some #(< 1 %) (vals (frequencies values)))))
+
+(defn- exporter-field-validation-errors
+  [tr policy {:keys [exporter-id mappings]}]
+  (when exporter-id
+    (let [descriptor      (exporters/descriptor exporter-id)
+          supported-roles (set (map :role (:roles descriptor)))
+          policy-type-ids (policy-coverage-type-ids policy)
+          mapping-roles   (keep :role mappings)
+          valid-mappings  (filter #(and (contains? supported-roles (:role %))
+                                        (contains? policy-type-ids
+                                                   (:coverage-type-id %)))
+                                  mappings)
+          mapped-roles    (set (map :role valid-mappings))
+          required-roles  (into #{}
+                                (comp (filter :required?)
+                                      (map :role))
+                                (:roles descriptor))]
+      (cond
+        (nil? descriptor)
+        {:exporter-id (error tr [:insurance/error-invalid-exporter])}
+
+        (duplicate-values? mapping-roles)
+        {:mappings (error tr [:insurance/error-duplicate-exporter-role])}
+
+        (not= (count mappings) (count valid-mappings))
+        {:mappings (error tr [:insurance/error-invalid-exporter-mapping])}
+
+        (not (every? mapped-roles required-roles))
+        {:mappings (error tr [:insurance/error-incomplete-exporter-mapping])}))))
+
+(defn- exporter-validation-errors
+  [{:keys [db tr] :as state} {:keys [policy-id] :as form}]
+  (let [policy            (when (uuid? policy-id)
+                            (retrieve-policy db policy-id))
+        context-error-key (if (uuid? policy-id)
+                            (mutation-context-error-key state policy)
+                            [:insurance.policy-settings/error-policy-not-found])]
+    (if context-error-key
+      {:_top (error tr context-error-key)}
+      (let [field-errors (exporter-field-validation-errors tr policy form)]
+        (cond-> field-errors
+          (seq field-errors)
+          (assoc :_top (error tr [:error/form-has-errors])))))))
+
+(defn- exporter-failure-effects
+  [form errors]
+  [support/clear-loading
+   [:app.datastar/assoc-state
+    [form-key :exporter]
+    (assoc form :_error errors)]])
+
+(defn- export-mapping-tx
+  [idx {:keys [coverage-type-id role]}]
+  {:db/id                                  (str "export_mapping_" idx)
+   :insurance.export.mapping/role          role
+   :insurance.export.mapping/coverage-type
+   [:insurance.coverage.type/type-id coverage-type-id]})
+
+(defn- save-exporter-tx-data
+  [policy {:keys [exporter-id mappings policy-id]}]
+  (let [policy-ref       [:insurance.policy/policy-id policy-id]
+        old-exporter-id  (:insurance.policy/exporter-id policy)
+        old-mapping-eids (keep :db/id
+                               (:insurance.policy/export-mappings policy))
+        mapping-txs      (if exporter-id
+                           (mapv export-mapping-tx (range) mappings)
+                           [])]
+    (vec
+     (concat
+      (map (fn [mapping-eid]
+             [:db/retractEntity mapping-eid])
+           old-mapping-eids)
+      (cond
+        exporter-id
+        [[:db/add policy-ref :insurance.policy/exporter-id exporter-id]]
+
+        old-exporter-id
+        [[:db/retract policy-ref :insurance.policy/exporter-id old-exporter-id]]
+
+        :else
+        [])
+      mapping-txs
+      (map (fn [{:keys [db/id]}]
+             [:db/add policy-ref :insurance.policy/export-mappings id])
+           mapping-txs)))))
+
 (defn save-exporter-action
-  [_state _signals]
-  [])
+  [{:keys [current-member-id db] :as state} signals]
+  (let [form   (exporter-form signals)
+        errors (exporter-validation-errors state form)]
+    (if (seq errors)
+      (exporter-failure-effects form errors)
+      (let [policy (retrieve-policy db (:policy-id form))]
+        [[:db/transact
+          (support/with-audit (save-exporter-tx-data policy form)
+            current-member-id)
+          {}]
+         support/clear-loading
+         [:app.datastar/assoc-state [form-key :exporter] false]]))))
+
+(defn- coverage-type-assignment-tx-data
+  [coverage-ids type-ref]
+  (mapv (fn [coverage-id]
+          [:db/add
+           [:instrument.coverage/coverage-id coverage-id]
+           :instrument.coverage/types
+           type-ref])
+        coverage-ids))
 
 (defn- create-coverage-type-tx-data
-  [{:keys [policy-id name description premium-factor icon]}]
+  [{:keys [policy-id name description premium-factor icon required?]}
+   coverage-ids]
   (let [tempid "coverage-type-create"]
-    [{:db/id                                  tempid
-      :insurance.coverage.type/type-id        (sq/generate-squuid)
-      :insurance.coverage.type/name           name
-      :insurance.coverage.type/description    description
-      :insurance.coverage.type/premium-factor (decimal-value premium-factor)
-      :insurance.coverage.type/icon           icon}
-     [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/coverage-types tempid]]))
+    (into [{:db/id                                  tempid
+            :insurance.coverage.type/type-id        (sq/generate-squuid)
+            :insurance.coverage.type/name           name
+            :insurance.coverage.type/description    description
+            :insurance.coverage.type/premium-factor (decimal-value premium-factor)
+            :insurance.coverage.type/icon           icon
+            :insurance.coverage.type/required?      required?}
+           [:db/add
+            [:insurance.policy/policy-id policy-id]
+            :insurance.policy/coverage-types
+            tempid]]
+          (coverage-type-assignment-tx-data coverage-ids tempid))))
+
+(defn- policy-coverage-type
+  [policy type-id]
+  (some #(when (= type-id (coverage-type-id %)) %)
+        (:insurance.policy/coverage-types policy)))
+
+(defn- coverage-type-impact-ids
+  [policy {:keys [add-to-band-instruments? required? type-id]} mode]
+  (cond
+    (and (= :create mode) required?)
+    (queries/coverage-type-impact-coverage-ids
+     policy
+     {:scope :all})
+
+    (and (= :create mode) add-to-band-instruments?)
+    (queries/coverage-type-impact-coverage-ids
+     policy
+     {:scope :band})
+
+    (and (= :update mode)
+         required?
+         (not (:insurance.coverage.type/required?
+               (policy-coverage-type policy type-id))))
+    (queries/coverage-type-impact-coverage-ids
+     policy
+     {:scope   :all
+      :type-id type-id})
+
+    :else
+    []))
+
+(defn- confirmed-impact?
+  [{:keys [confirmation-count]} impact-count]
+  (= impact-count (confirmation-count-value confirmation-count)))
 
 (defn create-coverage-type-action
-  [{:keys [current-member-id] :as state} signals]
+  [{:keys [current-member-id db tr] :as state} signals]
   (let [form   (coverage-type-form signals)
         errors (coverage-type-validation-errors state form :create)]
     (if (seq errors)
       (coverage-type-failure-effects :coverage-type-create form errors)
-      [[:db/transact
-        (support/with-audit (create-coverage-type-tx-data form)
-          current-member-id)
-        {}]
-       support/clear-loading
-       clear-coverage-type-create])))
+      (let [policy       (retrieve-policy db (:policy-id form))
+            coverage-ids (coverage-type-impact-ids policy form :create)
+            impact-count (count coverage-ids)]
+        (if (and (pos? impact-count)
+                 (not (confirmed-impact? form impact-count)))
+          (coverage-type-confirmation-effects
+           tr
+           :coverage-type-create
+           form
+           impact-count)
+          [[:db/transact
+            (support/with-audit
+              (create-coverage-type-tx-data form coverage-ids)
+              current-member-id)
+            {}]
+           support/clear-loading
+           clear-coverage-type-create])))))
 
 (defn- update-coverage-type-tx-data
-  [{:keys [type-id name description premium-factor icon]}]
+  [{:keys [type-id name description premium-factor icon required?]}
+   coverage-ids]
   (let [type-ref [:insurance.coverage.type/type-id type-id]]
-    [[:db/add type-ref :insurance.coverage.type/name name]
-     [:db/add type-ref :insurance.coverage.type/description description]
-     [:db/add type-ref :insurance.coverage.type/premium-factor (decimal-value premium-factor)]
-     [:db/add type-ref :insurance.coverage.type/icon icon]]))
+    (into [[:db/add type-ref :insurance.coverage.type/name name]
+           [:db/add type-ref :insurance.coverage.type/description description]
+           [:db/add type-ref :insurance.coverage.type/premium-factor (decimal-value premium-factor)]
+           [:db/add type-ref :insurance.coverage.type/icon icon]
+           [:db/add type-ref :insurance.coverage.type/required? required?]]
+          (coverage-type-assignment-tx-data coverage-ids type-ref))))
 
 (defn update-coverage-type-action
-  [{:keys [current-member-id] :as state} signals]
+  [{:keys [current-member-id db tr] :as state} signals]
   (let [form   (coverage-type-form signals)
         errors (coverage-type-validation-errors state form :update)]
     (if (seq errors)
       (coverage-type-failure-effects :coverage-type form errors)
-      [[:db/transact
-        (support/with-audit (update-coverage-type-tx-data form)
-          current-member-id)
-        {}]
-       support/clear-loading
-       clear-coverage-type])))
+      (let [policy       (retrieve-policy db (:policy-id form))
+            coverage-ids (coverage-type-impact-ids policy form :update)
+            impact-count (count coverage-ids)]
+        (if (and (pos? impact-count)
+                 (not (confirmed-impact? form impact-count)))
+          (coverage-type-confirmation-effects
+           tr
+           :coverage-type
+           form
+           impact-count)
+          [[:db/transact
+            (support/with-audit
+              (update-coverage-type-tx-data form coverage-ids)
+              current-member-id)
+            {}]
+           support/clear-loading
+           clear-coverage-type])))))
 
 (defn- policy-id-for-coverage-type
   [db type-id]
@@ -505,7 +735,10 @@
      :policy-id      (uuid-value targetid)
      :name           ""
      :description    ""
-     :premium-factor ""}]])
+     :premium-factor ""
+     :required?      false
+     :add-to-band-instruments? false
+     :confirmation-count ""}]])
 
 (defn close-coverage-type-create-action
   [_state _signals]
@@ -528,7 +761,9 @@
        :name           (:insurance.coverage.type/name coverage-type)
        :description    (or (:insurance.coverage.type/description coverage-type) "")
        :premium-factor (:insurance.coverage.type/premium-factor coverage-type)
-       :icon           (:insurance.coverage.type/icon coverage-type)}]]))
+       :icon           (:insurance.coverage.type/icon coverage-type)
+       :required?      (boolean (:insurance.coverage.type/required? coverage-type))
+       :confirmation-count ""}]]))
 
 (defn close-coverage-type-edit-action
   [_state _signals]
@@ -681,6 +916,7 @@
 
 (def actions
   {::save-policy-details           #'save-policy-details-action
+   ::save-exporter                 #'save-exporter-action
    ::open-coverage-type-create     #'open-coverage-type-create-action
    ::close-coverage-type-create    #'close-coverage-type-create-action
    ::create-coverage-type          #'create-coverage-type-action

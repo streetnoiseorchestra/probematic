@@ -517,6 +517,20 @@
   (set (map :insurance.coverage.type/type-id
             (:instrument.coverage/types coverage))))
 
+(defn coverage-type-impact-coverage-ids
+  [policy {:keys [scope type-id]}]
+  (let [coverages        (:insurance.policy/covered-instruments policy)
+        scoped-coverages (case scope
+                           :all coverages
+                           :band (remove :instrument.coverage/private? coverages)
+                           (throw (ex-info "Unknown coverage impact scope"
+                                           {:scope scope})))]
+    (->> scoped-coverages
+         (remove #(and type-id
+                       (contains? (coverage-type-ids %) type-id)))
+         (sort-by (comp str :instrument.coverage/coverage-id))
+         (mapv :instrument.coverage/coverage-id))))
+
 (defn- coverage-counts
   [coverages]
   (reduce (fn [counts coverage]
@@ -691,7 +705,11 @@
 
 (defn- exporter-options
   []
-  (mapv #(select-keys % [:exporter-id :label-key])
+  (mapv (fn [{:keys [roles] :as descriptor}]
+          (assoc (select-keys descriptor [:exporter-id :label-key])
+                 :role-rows
+                 (mapv #(select-keys % [:role :label-key :required?])
+                       roles)))
         (exporters/descriptors)))
 
 (defn- exporter-configuration

@@ -94,12 +94,13 @@
                           (remove nil?)
                           util/remove-dummy-uuid
                           vec)
-        base-type-id (-> policy :insurance.policy/coverage-types first :insurance.coverage.type/type-id)]
+        required-ids (->> (:insurance.policy/coverage-types policy)
+                          (filter :insurance.coverage.type/required?)
+                          (map :insurance.coverage.type/type-id))]
     (if (= "private" private-band)
-      (cond->> selected-ids
-        base-type-id (cons base-type-id)
-        true distinct
-        true vec)
+      (->> (concat required-ids selected-ids)
+           distinct
+           vec)
       (mapv :insurance.coverage.type/type-id (:insurance.policy/coverage-types policy)))))
 
 (defn- invalid-coverage-types? [{:keys [policy]} {:keys [coverage-types]}]

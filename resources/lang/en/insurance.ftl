@@ -141,6 +141,51 @@ photos-step = Photos
 coverage-step = Coverage
 edit-coverage = Edit Instrument Coverage
 
+### Coverage type settings
+
+coverage-type-icon = Icon
+coverage-type-icon-hint = Choose the icon shown for this coverage type.
+error-invalid-coverage-type-icon = Choose an icon from the list.
+coverage-type-required = Required
+coverage-type-required-hint = This coverage type will be added to every insured instrument.
+coverage-type-add-to-band-instruments = Add to existing band instruments
+coverage-type-add-to-band-instruments-hint = This optional coverage type will be added to every currently insured band instrument.
+# $count (Number) - Current number of instruments that will gain the coverage type.
+coverage-type-impact-confirmation =
+    { $count ->
+        [one] This will add the coverage type to { $count } instrument.
+       *[other] This will add the coverage type to { $count } instruments.
+    }
+# $count (Number) - Exact number the administrator must enter to confirm the bulk change.
+coverage-type-confirmation-count = Type { $count } to confirm
+coverage-type-confirmation-count-hint = Enter the current number of affected instruments.
+error-stale-impact-count = The number of affected instruments changed. Review the new count and enter it to confirm.
+
+### Public coverage information
+
+faq-coverage-types-question = What coverage types are available?
+coverage-required = Required
+coverage-optional = Optional
+faq-coverage-types-empty = The active policy does not define any coverage types.
+faq-coverage-types-summary = Required coverage types apply to every insured instrument. Optional coverage types can be selected per instrument.
+
+### Policy exporter settings
+
+exporter = Exporter
+exporter-subtitle = Choose the spreadsheet format for this policy and map its required roles to coverage types.
+exporter-none = No exporter
+exporter-inventory-xls-v1 = Inventory spreadsheet (version 1)
+exporter-role-overnight-vehicle = Overnight in a vehicle
+exporter-role-unattended-building = Unattended in a locked building
+exporter-role-unmapped = Choose a coverage type
+error-invalid-exporter = Choose a registered exporter.
+error-incomplete-exporter-mapping = Map every required exporter role.
+error-invalid-exporter-mapping = Choose coverage types from this policy for the exporter roles.
+error-duplicate-exporter-role = Each exporter role may be mapped only once.
+exporter-not-configured-guidance = Choose and configure an exporter in the policy settings before previewing or sending spreadsheets.
+exporter-unknown-guidance = The policy uses an exporter version this application does not recognize. Choose a supported version in the policy settings.
+exporter-incomplete-guidance = Map every required exporter role in the policy settings before previewing or sending spreadsheets.
+
 ### Payment notifications
 
 request-payments-title = Request insurance payments

@@ -134,14 +134,16 @@
          "$coverage-edit.coverage-types = $coverage-edit.coverage-types.filter((id) => id !== '" type-id "'); "
          "}")))
 
-(defn- coverage-type-checkbox [selected-type-ids base? {:insurance.coverage.type/keys [type-id name description]}]
+(defn- coverage-type-checkbox
+  [selected-type-ids
+   {:insurance.coverage.type/keys [type-id name description required?]}]
   (let [type-id-str (str type-id)
-        checked?    (or base? (contains? selected-type-ids type-id-str))]
+        checked?    (or required? (contains? selected-type-ids type-id-str))]
     [:wa-checkbox (cond-> {:value             type-id-str
                            :data-attr:checked (str "$coverage-edit.coverage-types.includes('" type-id-str "')")}
                     checked? (assoc :checked true)
-                    base?    (assoc :disabled true)
-                    (not base?) (assoc :data-on:change (coverage-type-change-action type-id)))
+                    required? (assoc :disabled true)
+                    (not required?) (assoc :data-on:change (coverage-type-change-action type-id)))
      [:span {:class "wa-stack wa-gap-3xs"}
       [:span name]
       (when-not (str/blank? (str description))
@@ -157,17 +159,21 @@
         [:span {:class "wa-caption-s text-danger"} error])]
      (into
       [:div {:class "wa-stack wa-gap-xs"}]
-      (map-indexed (fn [idx coverage-type]
-                     (coverage-type-checkbox selected-type-ids (zero? idx) coverage-type))
-                   coverage-types))]))
+      (map (partial coverage-type-checkbox selected-type-ids)
+           coverage-types))]))
+
+(defn- required-coverage-type-ids [policy]
+  (->> (:insurance.policy/coverage-types policy)
+       (filter :insurance.coverage.type/required?)
+       (mapv (comp str :insurance.coverage.type/type-id))))
 
 (defn- coverage->form [{:instrument.coverage/keys [coverage-id instrument item-count private? types value insurer-id]}
                        policy]
-  (let [base-type-id      (some-> policy :insurance.policy/coverage-types first :insurance.coverage.type/type-id str)
-        coverage-type-ids (cond->> (mapv (comp str :insurance.coverage.type/type-id) types)
-                            base-type-id (cons base-type-id)
-                            true distinct
-                            true vec)]
+  (let [coverage-type-ids (->> (concat (required-coverage-type-ids policy)
+                                       (map (comp str :insurance.coverage.type/type-id)
+                                            types))
+                               distinct
+                               vec)]
     {:policy-id       (str (:insurance.policy/policy-id policy))
      :coverage-id     (str coverage-id)
      :instrument-id   (str (:instrument/instrument-id instrument))

@@ -141,6 +141,51 @@ photos-step = Fotos
 coverage-step = Versicherungsschutz
 edit-coverage = Instrumentenversicherung bearbeiten
 
+### Einstellungen für Versicherungsarten
+
+coverage-type-icon = Symbol
+coverage-type-icon-hint = Wähle das Symbol, das für diese Versicherungsart angezeigt wird.
+error-invalid-coverage-type-icon = Wähle ein Symbol aus der Liste.
+coverage-type-required = Erforderlich
+coverage-type-required-hint = Diese Versicherungsart wird allen versicherten Instrumenten hinzugefügt.
+coverage-type-add-to-band-instruments = Zu bestehenden Bandinstrumenten hinzufügen
+coverage-type-add-to-band-instruments-hint = Diese optionale Versicherungsart wird allen aktuell versicherten Bandinstrumenten hinzugefügt.
+# $count (Number) - Aktuelle Anzahl der Instrumente, denen die Versicherungsart hinzugefügt wird.
+coverage-type-impact-confirmation =
+    { $count ->
+        [one] Diese Versicherungsart wird { $count } Instrument hinzugefügt.
+       *[other] Diese Versicherungsart wird { $count } Instrumenten hinzugefügt.
+    }
+# $count (Number) - Exakte Anzahl, die zur Bestätigung der Massenänderung eingegeben werden muss.
+coverage-type-confirmation-count = Zur Bestätigung { $count } eingeben
+coverage-type-confirmation-count-hint = Gib die aktuelle Anzahl der betroffenen Instrumente ein.
+error-stale-impact-count = Die Anzahl der betroffenen Instrumente hat sich geändert. Prüfe die neue Anzahl und gib sie zur Bestätigung ein.
+
+### Öffentliche Informationen zu Versicherungsarten
+
+faq-coverage-types-question = Welche Versicherungsarten gibt es?
+coverage-required = Erforderlich
+coverage-optional = Optional
+faq-coverage-types-empty = Die aktive Police enthält keine Versicherungsarten.
+faq-coverage-types-summary = Erforderliche Versicherungsarten gelten für jedes versicherte Instrument. Optionale Versicherungsarten können pro Instrument ausgewählt werden.
+
+### Einstellungen für das Exportformat der Police
+
+exporter = Exportformat
+exporter-subtitle = Wähle das Tabellenformat für diese Police und ordne seine erforderlichen Rollen den Versicherungsarten zu.
+exporter-none = Kein Exportformat
+exporter-inventory-xls-v1 = Inventartabelle (Version 1)
+exporter-role-overnight-vehicle = Über Nacht im Fahrzeug
+exporter-role-unattended-building = Unbeaufsichtigt in einem verschlossenen Gebäude
+exporter-role-unmapped = Versicherungsart wählen
+error-invalid-exporter = Wähle ein registriertes Exportformat.
+error-incomplete-exporter-mapping = Ordne jede erforderliche Exportrolle zu.
+error-invalid-exporter-mapping = Wähle für die Exportrollen Versicherungsarten dieser Police.
+error-duplicate-exporter-role = Jede Exportrolle darf nur einmal zugeordnet werden.
+exporter-not-configured-guidance = Wähle und konfiguriere in den Policeneinstellungen ein Exportformat, bevor du Tabellen ansiehst oder sendest.
+exporter-unknown-guidance = Die Police verwendet eine unbekannte Exportversion. Wähle in den Policeneinstellungen eine unterstützte Version.
+exporter-incomplete-guidance = Ordne in den Policeneinstellungen alle erforderlichen Exportrollen zu, bevor du Tabellen ansiehst oder sendest.
+
 ### Zahlungsbenachrichtigungen
 
 request-payments-title = Versicherungszahlungen anfordern

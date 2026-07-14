@@ -61,6 +61,12 @@
     (str value)
     ""))
 
+(defn- keyword-signal
+  [value]
+  (if (keyword? value)
+    (subs (str value) 1)
+    (signal-string value)))
+
 (defn- policy-signal
   [{:keys [currency effective-at effective-until name policy-id premium-factor]}]
   {:policyId       (signal-string policy-id)
@@ -77,7 +83,10 @@
                           :name           ""
                           :description    ""
                           :premium-factor ""
-                          :icon           ""}
+                          :icon           ""
+                          :required?      false
+                          :add-to-band-instruments? false
+                          :confirmation-count ""}
                          (dissoc submitted :_error))]
     {:open           (:open details)
      :policy-id      (:policy-id details)
@@ -85,6 +94,11 @@
      :description    (:description details)
      :premium-factor (:premium-factor details)
      :icon           (:icon details)
+     :required?      (boolean (:required? details))
+     :add-to-band-instruments?
+     (boolean (:add-to-band-instruments? details))
+     :impact-count   (:impact-count details)
+     :confirmation-count (:confirmation-count details)
      :_error         (:_error submitted)}))
 
 (defn- coverage-type-edit-state
@@ -96,6 +110,9 @@
      :description    (:description submitted)
      :premium-factor (:premium-factor submitted)
      :icon           (:icon submitted)
+     :required?      (boolean (:required? submitted))
+     :impact-count   (:impact-count submitted)
+     :confirmation-count (:confirmation-count submitted)
      :_error         (:_error submitted)}))
 
 (defn- active-coverage-type-state
@@ -108,17 +125,19 @@
 
 (defn- icon-value
   [icon]
-  (if (keyword? icon)
-    (subs (str icon) 1)
-    (signal-string icon)))
+  (keyword-signal icon))
 
 (defn- coverage-type-signal
-  [{:keys [description icon name policy-id premium-factor type-id]}]
+  [{:keys [add-to-band-instruments? confirmation-count description icon name
+           policy-id premium-factor required? type-id]}]
   (cond-> {:policyId      (signal-string policy-id)
            :name          (signal-string name)
            :description   (signal-string description)
            :premiumFactor (signal-string premium-factor)
-           :icon          (icon-value icon)}
+           :icon          (icon-value icon)
+           :required      (boolean required?)
+           :addToBandInstruments (boolean add-to-band-instruments?)
+           :confirmationCount (signal-string confirmation-count)}
     type-id (assoc :typeId (signal-string type-id))))
 
 (defn- category-factor-create-state
@@ -159,12 +178,36 @@
            :factor     (signal-string factor)}
     category-factor-id (assoc :categoryFactorId (signal-string category-factor-id))))
 
+(defn- exporter-form-state
+  [req {{:keys [policy-id]} :policy-details
+        {:keys [exporter-id role-rows]} :exporter-configuration}]
+  (let [submitted (page-state-map req :exporter)
+        details   (merge {:policy-id  policy-id
+                          :exporter-id exporter-id
+                          :mappings    (mapv #(select-keys %
+                                                           [:role
+                                                            :coverage-type-id])
+                                             role-rows)}
+                         (dissoc submitted :_error))]
+    (assoc details :_error (:_error submitted))))
+
+(defn- exporter-signal
+  [{:keys [exporter-id mappings policy-id]}]
+  {:policyId  (signal-string policy-id)
+   :exporterId (keyword-signal exporter-id)
+   :mappings
+   (mapv (fn [{:keys [coverage-type-id role]}]
+           {:role           (keyword-signal role)
+            :coverageTypeId (signal-string coverage-type-id)})
+         mappings)})
+
 (defn- initial-signals
   [req settings]
   {:insurancePolicySettings
    {:policy         (policy-signal (policy-form-state req settings))
     :coverageType   (coverage-type-signal (active-coverage-type-state req settings))
-    :categoryFactor (category-factor-signal (active-category-factor-state req settings))}})
+    :categoryFactor (category-factor-signal (active-category-factor-state req settings))
+    :exporter       (exporter-signal (exporter-form-state req settings))}})
 
 (defn- field-error
   [errors field]
@@ -176,11 +219,14 @@
     (str id "-error")))
 
 (defn- native-field
-  [{:keys [error id label]} input]
+  [{:keys [error hint id label]} input]
   [:label {:class "wa-stack wa-gap-2xs"
            :for   id}
    [:span {:class "wa-caption-s wa-font-weight-bold"} label]
    input
+   (when hint
+     [:small {:class "wa-color-text-quiet"}
+      hint])
    (when error
      [:small {:id    (described-by-id id error)
               :class "wa-color-danger-fill-loud"}
@@ -189,12 +235,12 @@
 (defn- text-input
   [{:keys [bind disabled? error id label type value] :or {type "text"} :as attrs}]
   (native-field
-   {:error error :id id :label label}
+   {:error error :hint (:hint attrs) :id id :label label}
    [:input (cond-> (merge {:id        id
                            :type      type
                            :value     (or value "")
                            :data-bind bind}
-                          (select-keys attrs [:min :step]))
+                          (select-keys attrs [:min :required :step]))
              disabled? (assoc :disabled true)
              error     (assoc :aria-invalid "true"
                               :aria-describedby (described-by-id id error)))]))
@@ -356,6 +402,163 @@
                        :data-attr:loading  "$loading === 'insurance-policy-settings-policy'"}
         (tr [:action/save])]]])))
 
+(defn- exporter-id-value
+  [exporter-id]
+  (keyword-signal exporter-id))
+
+(defn- exporter-version-option
+  [tr selected-exporter-id {:keys [exporter-id label-key]}]
+  (let [value (exporter-id-value exporter-id)]
+    [:option (cond-> {:value value}
+               (= exporter-id selected-exporter-id) (assoc :selected true))
+     (tr [label-key])]))
+
+(defn- exporter-version-change
+  [exporter-options]
+  (let [mappings-by-exporter
+        (into (array-map)
+              (map (fn [{:keys [exporter-id role-rows]}]
+                     [(exporter-id-value exporter-id)
+                      (mapv (fn [{:keys [role]}]
+                              {:role           (keyword-signal role)
+                               :coverageTypeId ""})
+                            role-rows)]))
+              exporter-options)]
+    (str "$insurancePolicySettings.exporter.mappings = "
+         (d*/->signals mappings-by-exporter)
+         "[evt.target.value] || []")))
+
+(defn- exporter-version-select
+  [{:keys [tr]} {:keys [exporter-options]}
+   {:keys [_error exporter-id]} disabled?]
+  (let [known-exporter-ids (set (map :exporter-id exporter-options))]
+    (native-field
+     {:error (field-error _error :exporter-id)
+      :id    "insurance-policy-settings-exporter-id"
+      :label (tr [:insurance/exporter])}
+     (into
+      [:select
+       (cond-> {:id             "insurance-policy-settings-exporter-id"
+                :data-bind      "insurancePolicySettings.exporter.exporterId"
+                :data-on:change (exporter-version-change exporter-options)}
+         disabled? (assoc :disabled true)
+         (field-error _error :exporter-id)
+         (assoc :aria-invalid "true"
+                :aria-describedby
+                (described-by-id
+                 "insurance-policy-settings-exporter-id"
+                 (field-error _error :exporter-id))))
+       [:option (cond-> {:value ""}
+                  (nil? exporter-id) (assoc :selected true))
+        (tr [:insurance/exporter-none])]
+       (when (and exporter-id
+                  (not (contains? known-exporter-ids exporter-id)))
+         [:option {:value    (exporter-id-value exporter-id)
+                   :selected true}
+          (exporter-id-value exporter-id)])]
+      (map (partial exporter-version-option tr exporter-id))
+      exporter-options))))
+
+(defn- exporter-coverage-type-option
+  [selected-type-id {:keys [name type-id]}]
+  (let [value (signal-string type-id)]
+    [:option (cond-> {:value value}
+               (= value (signal-string selected-type-id))
+               (assoc :selected true))
+     name]))
+
+(defn- exporter-role-select
+  [{:keys [tr]} coverage-type-rows exporter-id idx
+   {:keys [label-key required? role]} selected-type-id disabled?]
+  (let [id (str "insurance-policy-settings-exporter-"
+                (name exporter-id)
+                "-"
+                (name role))]
+    (native-field
+     {:id    id
+      :label (tr [label-key])}
+     (into
+      [:select (cond-> {:id                 id
+                        :data-exporter-role (name role)
+                        :data-bind
+                        (str "insurancePolicySettings.exporter.mappings."
+                             idx
+                             ".coverageTypeId")
+                        :aria-required      (boolean required?)}
+                 disabled? (assoc :disabled true))
+       [:option (cond-> {:value ""}
+                  (str/blank? (signal-string selected-type-id))
+                  (assoc :selected true))
+        (tr [:insurance/exporter-role-unmapped])]]
+      (map (partial exporter-coverage-type-option selected-type-id))
+      coverage-type-rows))))
+
+(defn- exporter-role-fields
+  [req coverage-type-rows selected-exporter-id mappings disabled?
+   {:keys [exporter-id role-rows]}]
+  (let [selected-by-role (into {} (map (juxt :role :coverage-type-id)) mappings)
+        exporter-value  (exporter-id-value exporter-id)]
+    (into
+     [:div {:class            "wa-stack wa-gap-m"
+            :data-exporter-id exporter-value
+            :data-show
+            (str "$insurancePolicySettings.exporter.exporterId === '"
+                 exporter-value
+                 "'")}]
+     (map-indexed
+      (fn [idx {:keys [role] :as role-row}]
+        (exporter-role-select
+         req
+         coverage-type-rows
+         exporter-id
+         idx
+         role-row
+         (when (= selected-exporter-id exporter-id)
+           (get selected-by-role role))
+         disabled?))
+      role-rows))))
+
+(defn- exporter-section
+  [{:keys [tr] :as req}
+   {:keys [coverage-type-rows editable? exporter-options] :as settings}]
+  (let [{:keys [_error exporter-id mappings policy-id] :as form}
+        (exporter-form-state req settings)
+        disabled? (not editable?)]
+    (settings-card
+     {:title    (tr [:insurance/exporter])
+      :subtitle (tr [:insurance/exporter-subtitle])}
+     [:form (cond-> {:id             "insurance-policy-settings-exporter-form"
+                     :class          "wa-stack wa-gap-m"
+                     :data-id        "insurance-policy-settings-exporter"
+                     :data-on:submit "evt.preventDefault();"}
+              editable? (assoc :data-action
+                               (d*/act req ::actions/save-exporter)))
+      [:input {:type      "hidden"
+               :value     policy-id
+               :data-bind "insurancePolicySettings.exporter.policyId"}]
+      (top-error-callout (:_top _error))
+      (exporter-version-select req settings form disabled?)
+      (for [option exporter-options]
+        (exporter-role-fields
+         req
+         coverage-type-rows
+         exporter-id
+         mappings
+         disabled?
+         option))
+      (when-let [mapping-error (field-error _error :mappings)]
+        [:small {:class "wa-color-danger-fill-loud"}
+         mapping-error])
+      [button/Button {:appearance         "filled"
+                      :variant            "brand"
+                      :type               "submit"
+                      :disabled           disabled?
+                      :data-attr:disabled
+                      "!!$loading && $loading !== 'insurance-policy-settings-exporter'"
+                      :data-attr:loading
+                      "$loading === 'insurance-policy-settings-exporter'"}
+       (tr [:action/save])]])))
+
 (defn- metric-item
   [label value]
   [:div {:class "wa-stack wa-gap-2xs"}
@@ -422,8 +625,8 @@
   (into
    [:wa-combobox
     (cond-> {:id         (str id-prefix "-icon")
-             :label      (tr [:insurance.policy-settings/coverage-type-icon])
-             :hint       (tr [:insurance.policy-settings/coverage-type-icon-hint])
+             :label      (tr [:insurance/coverage-type-icon])
+             :hint       (tr [:insurance/coverage-type-icon-hint])
              :value      (icon-value icon)
              :required   true
              :appearance "outlined"
@@ -433,8 +636,30 @@
    (map (partial coverage-type-icon-option icon))
    (icons/catalog)))
 
+(defn- coverage-type-impact-confirmation
+  [{:keys [tr]} {:keys [_error confirmation-count impact-count]} id-prefix]
+  (when (and (number? impact-count) (pos? impact-count))
+    [:div {:class "wa-stack wa-gap-xs"}
+     [:span
+      (tr [:insurance/coverage-type-impact-confirmation]
+          {:count impact-count})]
+     (text-input
+      {:id       (str id-prefix "-confirmation-count")
+       :label    (tr [:insurance/coverage-type-confirmation-count]
+                     {:count impact-count})
+       :hint     (tr [:insurance/coverage-type-confirmation-count-hint])
+       :type     "number"
+       :value    confirmation-count
+       :bind     "insurancePolicySettings.coverageType.confirmationCount"
+       :min      "0"
+       :required true
+       :error    (field-error _error :confirmation-count)})]))
+
 (defn- coverage-type-fields
-  [{:keys [tr]} {:keys [_error description icon name premium-factor]} id-prefix]
+  [{:keys [tr] :as req}
+   {:keys [_error add-to-band-instruments? description icon name premium-factor
+           required?] :as form}
+   {:keys [create? id-prefix]}]
   [:div {:class "wa-stack wa-gap-m"}
    (top-error-callout (:_top _error))
    (text-input {:id    (str id-prefix "-name")
@@ -448,6 +673,23 @@
                     :bind  "insurancePolicySettings.coverageType.description"
                     :error (field-error _error :description)})
    (coverage-type-icon-field tr icon (field-error _error :icon) id-prefix)
+   [:wa-checkbox
+    (cond-> {:id                (str id-prefix "-required")
+             :hint              (tr [:insurance/coverage-type-required-hint])
+             :data-attr:checked "$insurancePolicySettings.coverageType.required"
+             :data-on:change    "$insurancePolicySettings.coverageType.required = evt.target.checked"}
+      required? (assoc :checked true))
+    (tr [:insurance/coverage-type-required])]
+   (when create?
+     [:wa-checkbox
+      (cond-> {:id                (str id-prefix "-add-to-band-instruments")
+               :hint              (tr [:insurance/coverage-type-add-to-band-instruments-hint])
+               :data-show         "!$insurancePolicySettings.coverageType.required"
+               :data-attr:checked "$insurancePolicySettings.coverageType.addToBandInstruments"
+               :data-on:change    "$insurancePolicySettings.coverageType.addToBandInstruments = evt.target.checked"}
+        add-to-band-instruments? (assoc :checked true))
+      (tr [:insurance/coverage-type-add-to-band-instruments])])
+   (coverage-type-impact-confirmation req form id-prefix)
    (text-input {:id    (str id-prefix "-premium-factor")
                 :label (tr [:insurance/premium-factor])
                 :type  "number"
@@ -473,7 +715,8 @@
         [:input {:type      "hidden"
                  :value     policy-id
                  :data-bind "insurancePolicySettings.coverageType.policyId"}]
-        (coverage-type-fields req form "coverage-type-create")]
+        (coverage-type-fields req form {:create?   true
+                                        :id-prefix "coverage-type-create"})]
        [button/Button {:slot        "footer"
                        :appearance  "outlined"
                        :data-dialog "close"}
@@ -506,7 +749,7 @@
         [:input {:type      "hidden"
                  :value     type-id
                  :data-bind "insurancePolicySettings.coverageType.typeId"}]
-        (coverage-type-fields req form "coverage-type-edit")]
+        (coverage-type-fields req form {:id-prefix "coverage-type-edit"})]
        [button/Button {:slot        "footer"
                        :appearance  "outlined"
                        :data-dialog "close"}
@@ -825,7 +1068,8 @@
     [:div {:class "wa-stack"}
      (policy-details-section req settings)
      (coverage-types-section req settings)
-     (category-factors-section req settings)]
+     (category-factors-section req settings)
+     (exporter-section req settings)]
     [:aside {:class "wa-stack"}
      (current-totals-section req settings)]]
    (coverage-type-create-dialog req settings)

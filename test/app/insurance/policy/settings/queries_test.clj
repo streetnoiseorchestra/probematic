@@ -276,7 +276,14 @@
       (is (= {:exporter-options
               [{:exporter-id :insurance.exporter/inventory-xls-v1
                 :label-key
-                :insurance.policy-settings/exporter-inventory-xls-v1}]
+                :insurance/exporter-inventory-xls-v1
+                :role-rows
+                [{:role      :overnight-vehicle
+                  :label-key :insurance/exporter-role-overnight-vehicle
+                  :required? true}
+                 {:role      :unattended-building
+                  :label-key :insurance/exporter-role-unattended-building
+                  :required? true}]}]
               :exporter-configuration
               {:exporter-id nil
                :status      :not-configured
@@ -301,20 +308,27 @@
               {:exporter-options
                [{:exporter-id :insurance.exporter/inventory-xls-v1
                  :label-key
-                 :insurance.policy-settings/exporter-inventory-xls-v1}]
+                 :insurance/exporter-inventory-xls-v1
+                 :role-rows
+                 [{:role      :overnight-vehicle
+                   :label-key :insurance/exporter-role-overnight-vehicle
+                   :required? true}
+                  {:role      :unattended-building
+                   :label-key :insurance/exporter-role-unattended-building
+                   :required? true}]}]
                :exporter-configuration
                {:exporter-id :insurance.exporter/inventory-xls-v1
                 :status      :complete
                 :role-rows
                 [{:role             :overnight-vehicle
                   :label-key
-                  :insurance.policy-settings/exporter-role-overnight-vehicle
+                  :insurance/exporter-role-overnight-vehicle
                   :required?        true
                   :coverage-type-id extended-id
                   :coverage-type-name "Extended"}
                  {:role             :unattended-building
                   :label-key
-                  :insurance.policy-settings/exporter-role-unattended-building
+                  :insurance/exporter-role-unattended-building
                   :required?        true
                   :coverage-type-id basic-type-id
                   :coverage-type-name "Basic"}]}}}

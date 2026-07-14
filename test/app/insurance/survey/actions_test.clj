@@ -241,7 +241,7 @@
                   state     (assoc state :page-state
                                    {actions/form-key
                                     {:current-flow-key :data-edit
-                                     :decisions        [:confirm-band]
+                                     :decisions        [:confirm-not-band]
                                      :mode             :edit
                                      :report-id        report-id}})
                   effects   (actions/save-edit-action

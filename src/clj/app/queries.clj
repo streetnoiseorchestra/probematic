@@ -230,7 +230,8 @@
                       coverage-type-pattern}
                      :insurance.policy/exporter-id
                      {:insurance.policy/export-mappings
-                      [:insurance.export.mapping/role
+                      [:db/id
+                       :insurance.export.mapping/role
                        {:insurance.export.mapping/coverage-type
                         coverage-type-pattern}]}
                      {:insurance.policy/category-factors

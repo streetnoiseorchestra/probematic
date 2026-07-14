@@ -199,6 +199,11 @@
   (mapv :insurance.coverage.type/type-id
         (:insurance.policy/coverage-types policy)))
 
+(defn- required-policy-coverage-type-ids [policy]
+  (->> (:insurance.policy/coverage-types policy)
+       (filter :insurance.coverage.type/required?)
+       (mapv :insurance.coverage.type/type-id)))
+
 (def ^:private invalid-coverage-type-id ::invalid-coverage-type-id)
 
 (defn- submitted-coverage-type-ids [coverage-types]
@@ -252,8 +257,8 @@
 (defn- selected-coverage-type-ids [policy params]
   (let [policy-type-ids (policy-coverage-type-ids policy)]
     (if (= "private" (:private-band params))
-      (->> (submitted-coverage-type-ids (:coverage-types params))
-           (cons (first policy-type-ids))
+      (->> (concat (required-policy-coverage-type-ids policy)
+                   (submitted-coverage-type-ids (:coverage-types params)))
            distinct
            vec)
       policy-type-ids)))

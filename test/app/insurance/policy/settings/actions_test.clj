@@ -259,14 +259,17 @@
                                                 (nth % 2 nil)))
                                     (second %))
                                  tx-data))
-        attribute-value (fn [attribute]
-                          (or (get entity-tx attribute)
-                              (some #(when (and (vector? %)
-                                                (= :db/add (first %))
-                                                (= type-ref (second %))
-                                                (= attribute (nth % 2 nil)))
-                                       (nth % 3 nil))
-                                    tx-data)))]
+        attribute-value
+        (fn [attribute]
+          (first
+           (or (when (contains? entity-tx attribute)
+                 [(get entity-tx attribute)])
+               (some #(when (and (vector? %)
+                                 (= :db/add (first %))
+                                 (= type-ref (second %))
+                                 (= attribute (nth % 2 nil)))
+                        [(nth % 3 nil)])
+                     tx-data))))]
     {:transact?   (boolean tx-data)
      :icon        (attribute-value :insurance.coverage.type/icon)
      :required?   (attribute-value :insurance.coverage.type/required?)
@@ -503,7 +506,8 @@
                          :type-tx        {:insurance.coverage.type/name           "Extended"
                                           :insurance.coverage.type/description    "Additional coverage"
                                           :insurance.coverage.type/premium-factor 0.75M
-                                          :insurance.coverage.type/icon           :phosphor/shield}
+                                          :insurance.coverage.type/icon           :phosphor/shield
+                                          :insurance.coverage.type/required?      false}
                          :policy-add     [:db/add policy-ref :insurance.policy/coverage-types]
                          :same-tempid?   true
                          :audit          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
@@ -516,7 +520,8 @@
                             [[:db/add unused-type-ref :insurance.coverage.type/name "Updated"]
                              [:db/add unused-type-ref :insurance.coverage.type/description "Updated coverage"]
                              [:db/add unused-type-ref :insurance.coverage.type/premium-factor 0.5M]
-                             [:db/add unused-type-ref :insurance.coverage.type/icon :phosphor/shield]]
+                             [:db/add unused-type-ref :insurance.coverage.type/icon :phosphor/shield]
+                             [:db/add unused-type-ref :insurance.coverage.type/required? false]]
                             member-id)
                           {}]
                          support/clear-loading
@@ -722,7 +727,10 @@
                                 :policy-id      policy-id
                                 :name           ""
                                 :description    ""
-                                :premium-factor ""}]]
+                                :premium-factor ""
+                                :required?      false
+                                :add-to-band-instruments? false
+                                :confirmation-count ""}]]
                 :close-create [support/clear-loading
                                [:app.datastar/assoc-state
                                 [:insurance-policy-settings :coverage-type-create]
@@ -735,7 +743,9 @@
                               :name           "Unused"
                               :description    "Unused coverage"
                               :premium-factor 0.25M
-                              :icon           :phosphor/shield}]]
+                              :icon           :phosphor/shield
+                              :required?      false
+                              :confirmation-count ""}]]
                 :close-edit [support/clear-loading
                              [:app.datastar/assoc-state
                               [:insurance-policy-settings :coverage-type]
@@ -828,7 +838,7 @@
                         :confirmation-count "2"
                         :error-keys         #{:confirmation-count :_top}
                         :top-error
-                        [:insurance.policy-settings/error-stale-impact-count]}}
+                        [:insurance/error-stale-impact-count]}}
                {:prompt
                 (coverage-type-confirmation-summary
                  (actions/create-coverage-type-action
@@ -850,6 +860,47 @@
                    policy-id
                    {:required          true
                     :confirmationCount "2"})))}))))))
+
+(deftest changed-coverage-impact-rejects-stale-confirmation-test
+  (testing "recalculates the impact after confirmation was first shown"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-changed-impact-confirmation")
+          policy-id     (random-uuid)
+          new-coverage-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (seed-impact-coverages! conn policy-id)
+      (is (= 3
+             (:impact-count
+              (coverage-type-confirmation-summary
+               (actions/create-coverage-type-action
+                (state system)
+                (coverage-type-signals policy-id {:required true}))))))
+      @(d/transact
+        conn
+        [{:db/id                           "new-impact-coverage"
+          :instrument.coverage/coverage-id new-coverage-id
+          :instrument.coverage/private?    true
+          :instrument.coverage/status      :instrument.coverage.status/reviewed
+          :instrument.coverage/change      :instrument.coverage.change/none}
+         [:db/add
+          [:insurance.policy/policy-id policy-id]
+          :insurance.policy/covered-instruments
+          "new-impact-coverage"]])
+      (is (= {:transact?          false
+              :state-path         [:insurance-policy-settings
+                                   :coverage-type-create]
+              :impact-count       4
+              :confirmation-count "3"
+              :error-keys         #{:confirmation-count :_top}
+              :top-error          [:insurance/error-stale-impact-count]}
+             (coverage-type-confirmation-summary
+              (actions/create-coverage-type-action
+               (state system)
+               (coverage-type-signals
+                policy-id
+                {:required          true
+                 :confirmationCount "3"}))))))))
 
 (deftest optional-coverage-type-band-backfill-confirmation-test
   (testing "confirms and adds an optional type only to band instruments"
@@ -1008,6 +1059,59 @@
                    {:role           "unattended-building"
                     :coverageTypeId (str unused-type-id)}])))))))))
 
+(deftest save-no-exporter-clears-policy-configuration-test
+  (testing "selecting no exporter removes its identifier and component mappings"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-clear-exporter")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [used-type-id]} (seed-coverage-types! conn policy-id)]
+        @(d/transact
+          conn
+          [{:db/id "existing-export-mapping"
+            :insurance.export.mapping/role :overnight-vehicle
+            :insurance.export.mapping/coverage-type
+            [:insurance.coverage.type/type-id used-type-id]}
+           [:db/add
+            [:insurance.policy/policy-id policy-id]
+            :insurance.policy/exporter-id
+            :insurance.exporter/inventory-xls-v1]
+           [:db/add
+            [:insurance.policy/policy-id policy-id]
+            :insurance.policy/export-mappings
+            "existing-export-mapping"]])
+        (let [mapping-eid (d/q '[:find ?mapping .
+                                 :in $ ?policy-id
+                                 :where
+                                 [?policy :insurance.policy/policy-id ?policy-id]
+                                 [?policy :insurance.policy/export-mappings ?mapping]]
+                               (d/db conn)
+                               policy-id)
+              effects     (actions/save-exporter-action
+                           (state system)
+                           (exporter-signals policy-id "" []))
+              tx-data     (transaction-data effects)]
+          (is (= {:retract-exporter? true
+                  :retract-mapping?  true
+                  :new-mappings      []
+                  :clear-state
+                  [:app.datastar/assoc-state
+                   [:insurance-policy-settings :exporter]
+                   false]}
+                 {:retract-exporter?
+                  (contains?
+                   (set tx-data)
+                   [:db/retract
+                    [:insurance.policy/policy-id policy-id]
+                    :insurance.policy/exporter-id
+                    :insurance.exporter/inventory-xls-v1])
+                  :retract-mapping?
+                  (contains? (set tx-data) [:db/retractEntity mapping-eid])
+                  :new-mappings
+                  (filterv :insurance.export.mapping/role tx-data)
+                  :clear-state (last effects)})))))))
+
 (deftest save-exporter-validation-test
   (testing "validates exporter IDs, required roles, uniqueness, and policy ownership"
     (let [{:keys [conn member-id] :as system}
@@ -1028,7 +1132,7 @@
                  :state-path     [:insurance-policy-settings :exporter]
                  :error-keys     #{:exporter-id :_top}
                  :exporter-error
-                 [:insurance.policy-settings/error-invalid-exporter]
+                 [:insurance/error-invalid-exporter]
                  :mapping-error  nil
                  :top-error      [:error/form-has-errors]}
                 :incomplete
@@ -1037,7 +1141,7 @@
                  :error-keys     #{:mappings :_top}
                  :exporter-error nil
                  :mapping-error
-                 [:insurance.policy-settings/error-incomplete-exporter-mapping]
+                 [:insurance/error-incomplete-exporter-mapping]
                  :top-error      [:error/form-has-errors]}
                 :foreign
                 {:transact?      false
@@ -1045,7 +1149,7 @@
                  :error-keys     #{:mappings :_top}
                  :exporter-error nil
                  :mapping-error
-                 [:insurance.policy-settings/error-invalid-exporter-mapping]
+                 [:insurance/error-invalid-exporter-mapping]
                  :top-error      [:error/form-has-errors]}
                 :duplicate
                 {:transact?      false
@@ -1053,7 +1157,7 @@
                  :error-keys     #{:mappings :_top}
                  :exporter-error nil
                  :mapping-error
-                 [:insurance.policy-settings/error-duplicate-exporter-role]
+                 [:insurance/error-duplicate-exporter-role]
                  :top-error      [:error/form-has-errors]}}
                {:unknown (summarize "insurance.exporter/unknown" [])
                 :incomplete

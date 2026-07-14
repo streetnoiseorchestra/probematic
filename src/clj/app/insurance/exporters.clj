@@ -9,17 +9,17 @@
 (def ^:private registry
   {inventory-xls-v1
    {:exporter-id      inventory-xls-v1
-    :label-key        :insurance.policy-settings/exporter-inventory-xls-v1
+    :label-key        :insurance/exporter-inventory-xls-v1
     :template-resource "insurance-changes-template.xls"
     :sheet-name       "Inventar"
     :roles
     [{:role      :overnight-vehicle
       :label-key
-      :insurance.policy-settings/exporter-role-overnight-vehicle
+      :insurance/exporter-role-overnight-vehicle
       :required? true}
      {:role      :unattended-building
       :label-key
-      :insurance.policy-settings/exporter-role-unattended-building
+      :insurance/exporter-role-unattended-building
       :required? true}]}})
 
 (defn descriptors

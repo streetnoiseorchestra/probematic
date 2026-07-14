@@ -18,13 +18,15 @@
    [tick.core :as t]))
 
 (defn- coverage-type-tx
-  [idx {:insurance.coverage.type/keys [name description premium-factor]}]
+  [idx {:insurance.coverage.type/keys [name description icon premium-factor required?]}]
   (util/remove-nils
    {:db/id                                  (str "coverage_type_" idx)
     :insurance.coverage.type/name          name
     :insurance.coverage.type/type-id       (sq/generate-squuid)
     :insurance.coverage.type/description   description
-    :insurance.coverage.type/premium-factor premium-factor}))
+    :insurance.coverage.type/premium-factor premium-factor
+    :insurance.coverage.type/icon          icon
+    :insurance.coverage.type/required?     required?}))
 
 (defn- category-factor-tx
   [idx {:insurance.category.factor/keys [category factor]}]
@@ -47,8 +49,20 @@
     :instrument.coverage/change      change
     :instrument.coverage/value       value}))
 
+(defn- export-mapping-tx
+  [idx coverage-type-old->new
+   {:insurance.export.mapping/keys [coverage-type role]}]
+  {:db/id                                  (str "export_mapping_" idx)
+   :insurance.export.mapping/role          role
+   :insurance.export.mapping/coverage-type
+   (get coverage-type-old->new
+        (:insurance.coverage.type/type-id coverage-type))})
+
 (defn duplicate-policy-tx-data
-  [duplicate-label new-policy-id {:insurance.policy/keys [name effective-at effective-until premium-factor category-factors coverage-types covered-instruments currency]}]
+  [duplicate-label new-policy-id
+   {:insurance.policy/keys [category-factors coverage-types covered-instruments
+                            currency effective-at effective-until export-mappings
+                            exporter-id name premium-factor]}]
   (let [category-factor-txs      (mapv category-factor-tx (range) category-factors)
         category-factor-tempids  (mapv :db/id category-factor-txs)
         coverage-type-txs        (mapv coverage-type-tx (range) coverage-types)
@@ -59,12 +73,21 @@
                                          (coverage-tx idx coverage-type-old->new coverage))
                                        (range)
                                        covered-instruments)
-        covered-instrument-ids   (mapv :db/id covered-instrument-txs)]
+        covered-instrument-ids   (mapv :db/id covered-instrument-txs)
+        export-mapping-txs       (mapv (fn [idx mapping]
+                                         (export-mapping-tx
+                                          idx
+                                          coverage-type-old->new
+                                          mapping))
+                                       (range)
+                                       export-mappings)
+        export-mapping-tempids   (mapv :db/id export-mapping-txs)]
     (vec
      (concat
       category-factor-txs
       coverage-type-txs
       covered-instrument-txs
+      export-mapping-txs
       [(util/remove-nils
         {:insurance.policy/policy-id           new-policy-id
          :insurance.policy/name                (str duplicate-label " " name)
@@ -73,6 +96,8 @@
          :insurance.policy/currency            currency
          :insurance.policy/status              :insurance.policy.status/draft
          :insurance.policy/premium-factor      premium-factor
+         :insurance.policy/exporter-id         exporter-id
+         :insurance.policy/export-mappings     export-mapping-tempids
          :insurance.policy/coverage-types      coverage-type-tempids
          :insurance.policy/category-factors    category-factor-tempids
          :insurance.policy/covered-instruments covered-instrument-ids})]))))

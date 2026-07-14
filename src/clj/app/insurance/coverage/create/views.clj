@@ -389,21 +389,22 @@
                   (coverage-field-attrs req form-state field hint)
                   attrs)]))
 
+(defn- required-coverage-type-ids [coverage-types]
+  (->> coverage-types
+       (filter :insurance.coverage.type/required?)
+       (mapv (comp str :insurance.coverage.type/type-id))))
+
 (defn- coverage->form [policy instrument redirect]
-  (let [base-type-id (some-> policy
-                             :insurance.policy/coverage-types
-                             first
-                             :insurance.coverage.type/type-id
-                             str)]
-    {:policy-id      (str (:insurance.policy/policy-id policy))
-     :instrument-id  (str (:instrument/instrument-id instrument))
-     :redirect       (form/text-value redirect)
-     :item-count     "1"
-     :value          ""
-     :private-band   "band"
-     :coverage-types (cond-> [] base-type-id (conj base-type-id))
-     :insurer-id     ""
-     :_error         {}}))
+  {:policy-id      (str (:insurance.policy/policy-id policy))
+   :instrument-id  (str (:instrument/instrument-id instrument))
+   :redirect       (form/text-value redirect)
+   :item-count     "1"
+   :value          ""
+   :private-band   "band"
+   :coverage-types (required-coverage-type-ids
+                    (:insurance.policy/coverage-types policy))
+   :insurer-id     ""
+   :_error         {}})
 
 (defn- coverage-form-state [{:keys [page-state]} policy instrument redirect]
   (merge (coverage->form policy instrument redirect)
@@ -418,14 +419,15 @@
          "}")))
 
 (defn- coverage-type-checkbox
-  [selected-type-ids base? {:insurance.coverage.type/keys [type-id name description]}]
+  [selected-type-ids
+   {:insurance.coverage.type/keys [type-id name description required?]}]
   (let [type-id-str (str type-id)
-        checked?    (or base? (contains? selected-type-ids type-id-str))]
+        checked?    (or required? (contains? selected-type-ids type-id-str))]
     [:wa-checkbox (cond-> {:value             type-id-str
                            :data-attr:checked (str "$coverage-create.coverage-types.includes('" type-id-str "')")}
                     checked? (assoc :checked true)
-                    base? (assoc :disabled true)
-                    (not base?) (assoc :data-on:change (coverage-type-change-action type-id)))
+                    required? (assoc :disabled true)
+                    (not required?) (assoc :data-on:change (coverage-type-change-action type-id)))
      [:span {:class "wa-stack wa-gap-3xs"}
       [:span name]
       (when-not (str/blank? (str description))
@@ -443,11 +445,8 @@
         [:span {:class "wa-caption-s text-danger"} error])]
      (into
       [:div {:class "wa-stack wa-gap-xs"}]
-      (map-indexed (fn [idx coverage-type]
-                     (coverage-type-checkbox selected-type-ids
-                                             (zero? idx)
-                                             coverage-type))
-                   coverage-types))]))
+      (map (partial coverage-type-checkbox selected-type-ids)
+           coverage-types))]))
 
 (defn- private-band-field [{:keys [tr] :as req} form-state]
   (let [error     (field-error form-state :private-band)

@@ -1,5 +1,6 @@
 (ns app.insurance.policy.settings.views-test
   (:require
+   [app.i18n.fluent :as fluent]
    [app.icons :as icons]
    [app.insurance.policy.settings.views :as sut]
    [app.test-common :as tu]
@@ -21,18 +22,25 @@
    [:insurance.policy-settings/category-factor-create-disabled-tooltip] "Every instrument category already has a category factor."
    [:insurance.policy-settings/current-totals] "Current totals"
    [:insurance.policy-settings/error-not-allowed] "You are not allowed to change policy settings."
-   [:insurance.policy-settings/exporter] "Exporter"
-   [:insurance.policy-settings/impact-confirmation] "This will add the coverage type to %1 instruments."
+   [:insurance/exporter] "Exporter"
+   [:insurance/coverage-type-impact-confirmation] "This will add the coverage type to %count instruments."
+   [:insurance/coverage-type-confirmation-count] "Type %count to confirm"
+   [:insurance/coverage-type-confirmation-count-hint] "Enter the current number of affected instruments."
    [:insurance.policy-settings/read-only-title] "Settings are read-only"})
 
 (defn tr
   ([path]
    (get translations path (name (last path))))
   ([path args]
-   (reduce (fn [s [idx arg]]
-             (str/replace s (str "%" (inc idx)) (str arg)))
-           (tr path)
-           (map-indexed vector args))))
+   (if (map? args)
+     (reduce-kv (fn [s key arg]
+                  (str/replace s (str "%" (name key)) (str arg)))
+                (tr path)
+                args)
+     (reduce (fn [s [idx arg]]
+               (str/replace s (str "%" (inc idx)) (str arg)))
+             (tr path)
+             (map-indexed vector args)))))
 
 (def policy-id
   #uuid "00000000-0000-0000-0000-000000000123")
@@ -87,19 +95,26 @@
    :exporter-options       [{:exporter-id
                              :insurance.exporter/inventory-xls-v1
                              :label-key
-                             :insurance.policy-settings/exporter-inventory-xls-v1}]
+                             :insurance/exporter-inventory-xls-v1
+                             :role-rows
+                             [{:role      :overnight-vehicle
+                               :label-key :insurance/exporter-role-overnight-vehicle
+                               :required? true}
+                              {:role      :unattended-building
+                               :label-key :insurance/exporter-role-unattended-building
+                               :required? true}]}]
    :exporter-configuration
    {:exporter-id :insurance.exporter/inventory-xls-v1
     :status      :complete
     :role-rows   [{:role             :overnight-vehicle
                    :label-key
-                   :insurance.policy-settings/exporter-role-overnight-vehicle
+                   :insurance/exporter-role-overnight-vehicle
                    :required?        true
                    :coverage-type-id coverage-type-id
                    :coverage-type-name "Basic"}
                   {:role             :unattended-building
                    :label-key
-                   :insurance.policy-settings/exporter-role-unattended-building
+                   :insurance/exporter-role-unattended-building
                    :required?        true
                    :coverage-type-id coverage-type-id
                    :coverage-type-name "Basic"}]}
@@ -144,6 +159,116 @@
                   (map #(str (name id) "/" (name %)) icons)))
         icons/icon-libraries))
 
+(deftest coverage-type-metadata-translations
+  (testing "Coverage metadata controls have complete English and German copy."
+    (let [locale-states {:en (fluent/new-locale :en)
+                         :de (fluent/new-locale :de)}
+          messages
+          [:insurance/coverage-type-icon
+           :insurance/coverage-type-icon-hint
+           :insurance/error-invalid-coverage-type-icon
+           :insurance/coverage-type-required
+           :insurance/coverage-type-required-hint
+           :insurance/coverage-type-add-to-band-instruments
+           :insurance/coverage-type-add-to-band-instruments-hint
+           :insurance/coverage-type-impact-confirmation
+           :insurance/coverage-type-confirmation-count
+           :insurance/coverage-type-confirmation-count-hint
+           :insurance/error-stale-impact-count]
+          translated
+          (fn [locale]
+            (mapv #(fluent/translate (locale-states locale) % {:count 3})
+                  messages))]
+      (is (= {:en ["Icon"
+                   "Choose the icon shown for this coverage type."
+                   "Choose an icon from the list."
+                   "Required"
+                   "This coverage type will be added to every insured instrument."
+                   "Add to existing band instruments"
+                   "This optional coverage type will be added to every currently insured band instrument."
+                   "This will add the coverage type to 3 instruments."
+                   "Type 3 to confirm"
+                   "Enter the current number of affected instruments."
+                   "The number of affected instruments changed. Review the new count and enter it to confirm."]
+              :de ["Symbol"
+                   "Wähle das Symbol, das für diese Versicherungsart angezeigt wird."
+                   "Wähle ein Symbol aus der Liste."
+                   "Erforderlich"
+                   "Diese Versicherungsart wird allen versicherten Instrumenten hinzugefügt."
+                   "Zu bestehenden Bandinstrumenten hinzufügen"
+                   "Diese optionale Versicherungsart wird allen aktuell versicherten Bandinstrumenten hinzugefügt."
+                   "Diese Versicherungsart wird 3 Instrumenten hinzugefügt."
+                   "Zur Bestätigung 3 eingeben"
+                   "Gib die aktuelle Anzahl der betroffenen Instrumente ein."
+                   "Die Anzahl der betroffenen Instrumente hat sich geändert. Prüfe die neue Anzahl und gib sie zur Bestätigung ein."]}
+             {:en (translated :en)
+              :de (translated :de)})))))
+
+(deftest coverage-type-impact-confirmation-singular-translation
+  (testing "The impact confirmation keeps the exact singular count visible."
+    (is (= {:en "This will add the coverage type to 1 instrument."
+            :de "Diese Versicherungsart wird 1 Instrument hinzugefügt."}
+           {:en (fluent/translate
+                 (fluent/new-locale :en)
+                 :insurance/coverage-type-impact-confirmation
+                 {:count 1})
+            :de (fluent/translate
+                 (fluent/new-locale :de)
+                 :insurance/coverage-type-impact-confirmation
+                 {:count 1})}))))
+
+(deftest exporter-settings-translations
+  (testing "Exporter settings have complete English and German copy."
+    (let [messages
+          [:insurance/exporter
+           :insurance/exporter-subtitle
+           :insurance/exporter-none
+           :insurance/exporter-inventory-xls-v1
+           :insurance/exporter-role-overnight-vehicle
+           :insurance/exporter-role-unattended-building
+           :insurance/exporter-role-unmapped
+           :insurance/error-invalid-exporter
+           :insurance/error-incomplete-exporter-mapping
+           :insurance/error-invalid-exporter-mapping
+           :insurance/error-duplicate-exporter-role
+           :insurance/exporter-not-configured-guidance
+           :insurance/exporter-unknown-guidance
+           :insurance/exporter-incomplete-guidance]
+          translated
+          (fn [locale]
+            (mapv #(fluent/translate (fluent/new-locale locale) % {})
+                  messages))]
+      (is (= {:en ["Exporter"
+                   "Choose the spreadsheet format for this policy and map its required roles to coverage types."
+                   "No exporter"
+                   "Inventory spreadsheet (version 1)"
+                   "Overnight in a vehicle"
+                   "Unattended in a locked building"
+                   "Choose a coverage type"
+                   "Choose a registered exporter."
+                   "Map every required exporter role."
+                   "Choose coverage types from this policy for the exporter roles."
+                   "Each exporter role may be mapped only once."
+                   "Choose and configure an exporter in the policy settings before previewing or sending spreadsheets."
+                   "The policy uses an exporter version this application does not recognize. Choose a supported version in the policy settings."
+                   "Map every required exporter role in the policy settings before previewing or sending spreadsheets."]
+              :de ["Exportformat"
+                   "Wähle das Tabellenformat für diese Police und ordne seine erforderlichen Rollen den Versicherungsarten zu."
+                   "Kein Exportformat"
+                   "Inventartabelle (Version 1)"
+                   "Über Nacht im Fahrzeug"
+                   "Unbeaufsichtigt in einem verschlossenen Gebäude"
+                   "Versicherungsart wählen"
+                   "Wähle ein registriertes Exportformat."
+                   "Ordne jede erforderliche Exportrolle zu."
+                   "Wähle für die Exportrollen Versicherungsarten dieser Police."
+                   "Jede Exportrolle darf nur einmal zugeordnet werden."
+                   "Wähle und konfiguriere in den Policeneinstellungen ein Exportformat, bevor du Tabellen ansiehst oder sendest."
+                   "Die Police verwendet eine unbekannte Exportversion. Wähle in den Policeneinstellungen eine unterstützte Version."
+                   "Ordne in den Policeneinstellungen alle erforderlichen Exportrollen zu, bevor du Tabellen ansiehst oder sendest."]}
+             {:en (translated :en)
+              :de (translated :de)})))))
+
 (deftest editable-policy
   (testing "An insurance-team member is viewing an editable draft policy."
     (let [view (settings-view editable-draft-settings)]
@@ -172,7 +297,12 @@
                 :premium-input (select-keys
                                 (select-attrs "#insurance-policy-settings-premium-factor" view)
                                 [:type :value :min :step])
-                :currency      (mapv l/text (l/select "option[selected]" view))})))
+                :currency      (mapv l/text
+                                     (l/select
+                                      "option[selected]"
+                                      (l/select-one
+                                       "#insurance-policy-settings-currency"
+                                       view)))})))
       (testing "Coverage types and category factors can be created, edited, and removed."
         (is (= #{:save-policy-details
                  :open-coverage-type-create
@@ -499,6 +629,35 @@
                              (l/select "option[selected]" select))})
                     role-selects)
               :action (action-keywords exporter-form)})))))
+
+(deftest unconfigured-exporter-settings-fields
+  (testing "Choosing a version prepares that version's role mappings."
+    (let [settings (assoc editable-draft-settings
+                          :exporter-configuration
+                          {:exporter-id nil
+                           :status      :not-configured
+                           :role-rows   []})
+          view     (settings-view settings)
+          version  (l/select-one "#insurance-policy-settings-exporter-id" view)
+          role-set (some #(when (= "insurance.exporter/inventory-xls-v1"
+                                   (:data-exporter-id (l/attrs %)))
+                            %)
+                         (l/select 'div view))
+          on-change (:data-on:change (l/attrs version))]
+      (is (= {:selected [""]
+              :show
+              "$insurancePolicySettings.exporter.exporterId === 'insurance.exporter/inventory-xls-v1'"
+              :prepares-version? true
+              :prepares-roles?   true}
+             {:selected (mapv (comp :value l/attrs)
+                              (l/select "option[selected]" version))
+              :show (:data-show (l/attrs role-set))
+              :prepares-version?
+              (str/includes? on-change
+                             "insurance.exporter/inventory-xls-v1")
+              :prepares-roles?
+              (and (str/includes? on-change "overnight-vehicle")
+                   (str/includes? on-change "unattended-building"))})))))
 
 (deftest complete-category-factors
   (testing "Every available instrument category already has a category factor."
