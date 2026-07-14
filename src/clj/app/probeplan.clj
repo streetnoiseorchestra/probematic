@@ -49,17 +49,20 @@
  :db/valueType :db.type/ref
  :db/cardinality :db.cardinality/many}
 
-(defn gen-plan-for-gig [db gig]
-  (let [tx-data [{:probeplan/gig (d/ref gig)
-                  :probeplan/format :classic
-                  :probeplan.classic/intensive1 nil
-                  :probeplan.classic/intensive2 nil
-                  :probeplan.classic/others []}]]))
+(defn gen-plan-for-gig [_db gig]
+  (let [_tx-data [{:probeplan/gig (d/ref gig)
+                   :probeplan/format :classic
+                   :probeplan.classic/intensive1 nil
+                   :probeplan.classic/intensive2 nil
+                   :probeplan.classic/others []}]]))
 
 (def classic-num-intensive 2)
 (def classic-num-durchspielen 5)
 
-(defn gen-classic-from-last [song-cycle {:probeplan.classic/keys [intensive1 intensive2 others]}])
+(defn gen-classic-from-last
+  [_song-cycle {_intensive1 :probeplan.classic/intensive1
+                _intensive2 :probeplan.classic/intensive2
+                _others :probeplan.classic/others}])
 (defn gen-classic-fresh [song-cycle]
   (let [num-to-take (+ classic-num-durchspielen classic-num-durchspielen)
         songs (take num-to-take song-cycle)

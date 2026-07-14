@@ -1,7 +1,7 @@
 (ns app.schema-helpers-test
   (:require
-   [app.schema-helpers :refer :all]
-   [clojure.test :refer :all]
+   [app.schema-helpers :refer [DurationSchema EmailAddress InstSchema InstantSchema NonBlankString interval?]]
+   [clojure.test :refer [deftest is]]
    [malli.core :as m]
    [malli.transform :as mt]
    [tick.core :as t]))

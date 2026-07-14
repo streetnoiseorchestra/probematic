@@ -16,7 +16,7 @@
 (defn disable-feat! [f]
   (swap! features disj f))
 
-(defn list-features-handler [req]
+(defn list-features-handler [_req]
   {:status 200
    :body
    (merge

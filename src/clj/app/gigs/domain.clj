@@ -135,7 +135,7 @@
   (t/>= date (t/date)))
 
 (defn in-past?
-  [{:gig/keys [date] :as gig}]
+  [{:gig/keys [date] :as _gig}]
   (t/< date (t/date)))
 
 (defn cancelled?

@@ -60,7 +60,7 @@
         (.setCellStyle cell total-style)))))
 
 (defn add-blank-rows! [sheet count style]
-  (dotimes [i count]
+  (dotimes [_i count]
     (let [row (excel/add-row! sheet (repeat 15 ""))]
       (excel/set-row-style! row style))))
 
@@ -76,7 +76,7 @@
       (let [row (excel/add-row! sheet item)]
         (set-item-styles! row normal-style stuckpreis-style total-style)))))
 
-(defn- generate-excel [fname output-fname {changed-items  :instrument.coverage.change/changed  removed-items  :instrument.coverage.change/removed new-items :instrument.coverage.change/new :as cs}]
+(defn- generate-excel [fname output-fname {changed-items  :instrument.coverage.change/changed  removed-items  :instrument.coverage.change/removed new-items :instrument.coverage.change/new :as _cs}]
   (let [wb               (excel/load-workbook-from-resource fname)
         sheet            (excel/select-sheet SHEET-NAME wb)
         total-style      (get-cell-style-at sheet 4 TOTAL-COL)
@@ -102,7 +102,7 @@
       (add-instruments! (format "Entfernung: (Ab %s)" date-today) removed-items))
     (excel/save-workbook! output-fname wb)))
 
-(defn generate-excel-changeset! [changeset-scope {:insurance.policy/keys [covered-instruments] :as policy} output]
+(defn generate-excel-changeset! [changeset-scope {:insurance.policy/keys [covered-instruments] :as _policy} output]
   (let [gather-changeset (fn [scope]
                            (into [] (filter #(= scope (:instrument.coverage/change %)) covered-instruments)))
         changesets (into {} (map (fn [k] [k (map coverage->row (gather-changeset k))]) changeset-scope))]

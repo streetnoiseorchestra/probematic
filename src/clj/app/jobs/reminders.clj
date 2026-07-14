@@ -9,7 +9,10 @@
    [tick.core :as t]))
 
 (defn- process-gig-reminder
-  [db {:reminder/keys [reminder-id reminder-status remind-at member gig] :as reminder}]
+  [db {:reminder/keys [reminder-id member gig]
+       _reminder-status :reminder/reminder-status
+       _remind-at :reminder/remind-at
+       :as _reminder}]
   ;; (tap> reminder)
   (if (or  (domain/cancelled? gig)
            (domain/in-past? gig))
@@ -30,7 +33,7 @@
                {:reminder-id (:reminder-id processed-reminder)
                 :member (:member processed-reminder)})))
 
-(defn process-reminders [db reminders as-of]
+(defn process-reminders [db reminders _as-of]
   ;; (tap> {:reminders reminders :as-of as-of})
   (->> reminders
        (remove #(nil? (:reminder/gig %)))

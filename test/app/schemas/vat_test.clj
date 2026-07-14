@@ -1,6 +1,6 @@
 (ns app.schemas.vat-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is]]
    [app.schemas.vat :as sut]))
 
 (deftest vat-number-cleaner

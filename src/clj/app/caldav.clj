@@ -37,7 +37,7 @@
                           :gig.status/cancelled :ical.event.status/cancelled)}))
 
 (defn create-gig-event!
-  [{:keys [env db i18n-langs ^NextcloudConnector calendar] :as sys} gig-id]
+  [{:keys [env db i18n-langs ^NextcloudConnector calendar] :as _sys} gig-id]
   (assert calendar)
   (assert i18n-langs)
   (let [tr (i18n/tr-with i18n-langs [:de])
@@ -47,7 +47,7 @@
     (-> calendar (.createEvent (Event/fromClojure event)))))
 
 (defn update-gig-event!
-  [{:keys [env db i18n-langs ^NextcloudConnector calendar] :as sys} gig-id]
+  [{:keys [env db i18n-langs ^NextcloudConnector calendar] :as _sys} gig-id]
   (assert calendar)
   (assert i18n-langs)
   (let [tr (i18n/tr-with i18n-langs [:de])
@@ -63,7 +63,12 @@
         (-> calendar (.createEvent (Event/fromClojure event)))))))
 
 (defn delete-gig-event!
-  [{:keys [env db i18n-langs ^NextcloudConnector calendar] :as sys} gig-id]
+  [{_env :env
+    _db :db
+    _i18n-langs :i18n-langs
+    :keys [^NextcloudConnector calendar]
+    :as _sys}
+   gig-id]
   (assert calendar)
   (-> calendar (.deleteEvent (str gig-id))))
 

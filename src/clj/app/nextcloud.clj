@@ -39,7 +39,7 @@
     (if-let [json-body (some-> response :body (j/read-value j/keyword-keys-object-mapper))]
       (assoc response :body json-body)
       response)
-    (catch Exception e
+    (catch Exception _e
       response)))
 
 (defn parse-body-xml
@@ -48,7 +48,7 @@
     (if-let [xml-body (some-> response :body  (java.io.StringReader.) (xml/parse))]
       (assoc response :body xml-body)
       response)
-    (catch Exception e
+    (catch Exception _e
       response)))
 
 (defn get-user [config user-id]
@@ -59,7 +59,7 @@
 
 (defn list-users [config]
   (let [resp @(request-v1 {:method  :get
-                           :url     (str "/users")
+                           :url     "/users"
                            :headers {"accept" "application/json"}} config)]
     (->  resp parse-body :body :ocs :data)))
 

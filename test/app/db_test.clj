@@ -1,2 +1,1 @@
-(ns app.db-test
-  (:require [clojure.test :refer :all]))
+(ns app.db-test)

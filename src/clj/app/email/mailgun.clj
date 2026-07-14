@@ -65,7 +65,7 @@
 
 (defn- make-request!
   "Handles the HTTP POST and response for email sending."
-  [{:keys [mailgun] :as sys} req]
+  [{:keys [mailgun] :as _sys} req]
   (if-not (:demo-mode? mailgun)
     (let [resp @(client/request req)]
       (if (= 200 (:status resp))

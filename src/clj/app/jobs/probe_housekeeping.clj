@@ -67,7 +67,7 @@
       (datomic/transact conn {:tx-data [[:db/add (d/ref next-probe) :gig/rehearsal-leader1 (d/ref last-leader2)]]}))))
 
 (defn- probe-housekeeping-job
-  [{:keys [datomic] :as system} _]
+  [{:keys [datomic] :as _system} _]
   (try
     (let [conn (:conn datomic)
           probes (q/next-probes (datomic/db conn) q/gig-detail-pattern)

@@ -13,7 +13,7 @@
   (when instance
     (hk-server/server-stop! instance {:timeout 1000})))
 
-(defmethod ig/init-key ::http-kit [_ {:keys [handler env options] :as system}]
+(defmethod ig/init-key ::http-kit [_ {:keys [handler env options] :as _system}]
   (let [start-msg (format "Starting %s on %s:%d" (str (:name env "app")) (:ip options) (:port options))
         instance  (start-hk handler options)]
     (μ/log ::init-http :msg start-msg)

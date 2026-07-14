@@ -16,7 +16,7 @@
 
 (defn diff-doc [stage name previous current]
   [:group
-   [:span "--- " (str stage) " " (if name (color/document printer :name (str name " "))) "---" :break :break]
+   [:span "--- " (str stage) " " (if name (color/document printer :name (str name " ")) nil) "---" :break :break]
    [:nest (printer/format-doc (if (empty-context? previous) current (ddiff/diff previous current)) printer)]
    :break])
 
@@ -54,7 +54,8 @@
     (cond-> {:name ::diff}
       (and enter (stages :enter)) (assoc :enter (handle name :enter))
       (and leave (stages :leave)) (assoc :leave (handle name :leave))
-      (and error (stages :error)) (assoc :error (handle name :error)))))
+      (and error (stages :error)) (assoc :error (handle name :error)))
+    nil))
 
 (defn print-context-diffs
   "A interceptor chain transformer that adds a context diff printer between all interceptors"

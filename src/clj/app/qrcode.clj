@@ -38,7 +38,7 @@
 
 (serialize-iban "AT1234")
 
-(defn sepa-payment-code [{:keys [bic name iban amount purpose-code structured-reference unstructured-reference information] :as args}]
+(defn sepa-payment-code [{:keys [bic name iban amount purpose-code structured-reference unstructured-reference information] :as _args}]
   (assert bic "BIC is required")
   (assert name "Name is required")
   (assert iban "IBAN is required")
