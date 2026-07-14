@@ -9,6 +9,7 @@
    [app.insurance.survey.actions :as actions]
    [app.insurance.survey.flow :as flow]
    [app.insurance.survey.queries :as queries]
+   [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
@@ -173,8 +174,30 @@
          (when-not (str/blank? (str description))
            [:small {:class "wa-color-text-quiet"} description])]])]))
 
+(defn- coverage-type-icons
+  [coverage-id coverage-types]
+  (when-let [tokens (->> coverage-types
+                         (map-indexed
+                          (fn [index coverage-type]
+                            (insurance-ui/coverage-type-token
+                             "insurance-survey-coverage-type"
+                             coverage-id
+                             index
+                             (:insurance.coverage.type/name coverage-type))))
+                         (mapcat identity)
+                         seq)]
+    (into [:span {:class "insurance-survey-card-coverage-types wa-cluster wa-gap-2xs"}]
+          tokens)))
+
+(defn- card-detail-item
+  [label value attrs]
+  (into (cond-> [:div]
+          attrs (conj attrs))
+        [[:dt {:class "trim-none"} label]
+         [:dd {:class "trim-none"} (ui2/muted value)]]))
+
 (defn- instrument-card [req coverage decisions current?]
-  (let [{:instrument.coverage/keys [cost instrument item-count private? types value]}
+  (let [{:instrument.coverage/keys [cost coverage-id instrument item-count private? types value]}
         coverage
         private? (cond
                    (some #{:confirm-not-band} decisions) true
@@ -194,9 +217,13 @@
                   [[:i18n/tr :insurance/item-count] (or item-count 1)]
                   (when (seq types)
                     [[:i18n/tr :insurance/coverage-types]
-                     (str/join ", " (map :insurance.coverage.type/name types))])
+                     (coverage-type-icons coverage-id types)])
                   [[:i18n/tr :instrument/serial-number] (:instrument/serial-number instrument)]
-                  [[:i18n/tr :instrument/build-year] (:instrument/build-year instrument)]]]
+                  [[:i18n/tr :instrument/build-year] (:instrument/build-year instrument)]
+                  (when-not (str/blank? (:instrument/description instrument))
+                    [[:i18n/tr :instrument/description]
+                     (:instrument/description instrument)
+                     {:class "wa-span-grid"}])]]
     [card/Card (cond-> {:class      "insurance-survey-instrument-card"
                         :appearance "outlined"
                         :style      {"--insurance-survey-category-tint"
@@ -217,20 +244,17 @@
         [:figcaption category-name])]
      [:div {:slot  "header"
             :class "insurance-survey-card-heading wa-stack wa-gap-3xs"}
-      [:h2 {:class "wa-heading-m"} (:instrument/name instrument)]
+      [:h2 {:class "wa-heading-m trim-none"} (:instrument/name instrument)]
       [:span {:class "wa-caption-s wa-color-text-quiet"}
        [:i18n/tr (if private?
                    :insurance/ownership-private
                    :insurance/ownership-band)]]]
-     (when-not (str/blank? (:instrument/description instrument))
-       [:p {:class "insurance-survey-card-description"}
-        (:instrument/description instrument)])
      (into [:dl {:class      "insurance-survey-card-facts"
                  :tabindex   0
                  :aria-label [:i18n/tr :insurance/review-card-details]}]
-           (for [[label value] (keep identity details)
+           (for [[label value attrs] (keep identity details)
                  :when (some? value)]
-             (ui2/detail-item label value)))]))
+             (card-detail-item label value attrs)))]))
 
 (defn- milestone [data]
   [:aside {:id        "insurance-survey-milestone"

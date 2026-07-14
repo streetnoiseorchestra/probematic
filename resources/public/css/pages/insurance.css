@@ -628,8 +628,7 @@ html:has(.insurance-survey-workflow) {
     flex: 0 0 auto;
   }
 
-  .insurance-survey-card-heading h2,
-  .insurance-survey-card-description {
+  .insurance-survey-card-heading h2 {
     margin: 0;
   }
 
@@ -646,16 +645,6 @@ html:has(.insurance-survey-workflow) {
     flex-direction: column;
     gap: var(--wa-space-xs);
     min-block-size: 0;
-  }
-
-  .insurance-survey-card-description {
-    display: -webkit-box;
-    overflow: hidden;
-    color: var(--wa-color-text-quiet);
-    font-size: var(--wa-font-size-s);
-    line-height: var(--wa-line-height-condensed);
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
   }
 
   .insurance-survey-card-facts {

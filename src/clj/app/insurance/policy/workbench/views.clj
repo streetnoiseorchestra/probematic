@@ -1358,52 +1358,16 @@
                           (tr [change-status])
                           (insurance-ui/change-status-icon change-status))]))
 
-;; TODO Stop matching coverage type icons by user-defined database labels.
-;; Add database-backed icon metadata or stable icon keys to coverage types instead.
-(def ^:private coverage-type-icon-data
-  {"Grundschutz"      {:icon :shield
-                       :key  :grundschutz}
-   "Nachzeit im Auto" {:icon :car-profile
-                       :key  :nachzeit-im-auto}
-   "Proberaum"        {:icon :warehouse
-                       :key  :proberaum}})
-
-(defn- coverage-type-label
-  [coverage-type-name]
-  (let [label (some-> coverage-type-name str str/trim)]
-    (when-not (str/blank? label)
-      label)))
-
-(defn- coverage-type-icon-id
-  [coverage-id index]
-  (str "insurance-workbench-coverage-type-"
-       (ui2/safe-dom-id coverage-id)
-       "-"
-       index))
-
-(defn- coverage-type-token
-  [coverage-id index coverage-type-name]
-  (when-let [label (coverage-type-label coverage-type-name)]
-    (if-let [{:keys [icon key]} (get coverage-type-icon-data label)]
-      (let [icon-id (coverage-type-icon-id coverage-id index)]
-        [[:span {:id                                icon-id
-                 :data-workbench-coverage-type-icon (name key)
-                 :role                              "img"
-                 :aria-label                        label}
-          [ico/Icon {::ico/library :phosphor
-                     ::ico/name    icon}]]
-         [:wa-tooltip {:for           icon-id
-                       :placement     "top"
-                       :without-arrow true}
-          label]])
-      [[:span {:data-workbench-coverage-type-label true} label]])))
-
 (defn- coverage-type-with-cost
   [currency coverage-id index {:insurance.coverage.type/keys [name cost]}]
-  (when-let [label (coverage-type-label name)]
+  (when-let [token (insurance-ui/coverage-type-token
+                    "insurance-workbench-coverage-type"
+                    coverage-id
+                    index
+                    name)]
     (into [:span {:class "wa-cluster wa-gap-2xs"}]
           (concat
-           (coverage-type-token coverage-id index label)
+           token
            [[:span {:class                             "wa-caption-s"
                     :data-workbench-coverage-type-cost true}
              (ui2/money cost currency)]]))))

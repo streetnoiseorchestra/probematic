@@ -17,6 +17,9 @@
    [lookup.core :as l]
    [reitit.core :as r]))
 
+;; TODO: Make pure view setup convenient and migrate presentation tests to plain
+;; data. Use Datomic fixtures only when a test exercises database-backed behavior.
+
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
@@ -145,6 +148,81 @@
                        (l/select-one :img))]
       (is (= "Test Trumpet" (:alt (l/attrs image))))
       (is (str/includes? (:src (l/attrs image)) (str image-id)))))
+
+  (testing "the compact card uses coverage icons and keeps its description in the scrolling facts"
+    (let [{:keys [conn coverage-id coverage-type-id instrument-id policy-id request]}
+          (fixture {})
+          description "A long instrument description that belongs with the other card facts."
+          _ @(d/transact
+              conn
+              [[:db/add [:insurance.coverage.type/type-id coverage-type-id]
+                :insurance.coverage.type/name "Grundschutz"]
+               {:db/id                                  "night-car-coverage"
+                :insurance.coverage.type/type-id        (random-uuid)
+                :insurance.coverage.type/name           "Nachzeit im Auto"
+                :insurance.coverage.type/premium-factor 1.0M}
+               {:db/id                                  "rehearsal-room-coverage"
+                :insurance.coverage.type/type-id        (random-uuid)
+                :insurance.coverage.type/name           "Proberaum"
+                :insurance.coverage.type/premium-factor 1.0M}
+               [:db/add [:instrument.coverage/coverage-id coverage-id]
+                :instrument.coverage/types "night-car-coverage"]
+               [:db/add [:instrument.coverage/coverage-id coverage-id]
+                :instrument.coverage/types "rehearsal-room-coverage"]
+               [:db/add [:insurance.policy/policy-id policy-id]
+                :insurance.policy/coverage-types "night-car-coverage"]
+               [:db/add [:insurance.policy/policy-id policy-id]
+                :insurance.policy/coverage-types "rehearsal-room-coverage"]
+               [:db/add [:instrument/instrument-id instrument-id]
+                :instrument/description description]])
+          db            (d/db conn)
+          request       (assoc request
+                               :db db
+                               :policy (q/retrieve-policy db policy-id))
+          view          (sut/page request)
+          heading       (->> view
+                             (l/select-one "#insurance-survey-instrument")
+                             (l/select-one :h2))
+          facts         (l/select-one ".insurance-survey-card-facts" view)
+          fact-items    (l/children facts)
+          coverage-item (some #(when (= :insurance/coverage-types
+                                        (-> % l/first-child
+                                            page-shell/translation-key))
+                                 %)
+                              fact-items)
+          description-item (last fact-items)
+          icons         (l/select "[data-insurance-coverage-type-icon]"
+                                  coverage-item)]
+      (is (= {:coverage-icons
+              #{{:kind "grundschutz" :label "Grundschutz"}
+                {:kind "nachzeit-im-auto" :label "Nachzeit im Auto"}
+                {:kind "proberaum" :label "Proberaum"}}
+              :coverage-tooltips
+              #{"Grundschutz" "Nachzeit im Auto" "Proberaum"}
+              :heading-trimmed? true
+              :facts-trimmed?   true
+              :description
+              {:class #{"wa-span-grid"}
+               :label :instrument/description
+               :text  description}}
+             {:coverage-icons
+              (set (map (fn [icon]
+                          (let [attrs (l/attrs icon)]
+                            {:kind  (:data-insurance-coverage-type-icon attrs)
+                             :label (:aria-label attrs)}))
+                        icons))
+              :coverage-tooltips
+              (set (map l/text (l/select 'wa-tooltip coverage-item)))
+              :heading-trimmed?
+              (contains? (:class (l/attrs heading)) "trim-none")
+              :facts-trimmed?
+              (every? #(contains? (:class (l/attrs %)) "trim-none")
+                      (concat (l/select :dt facts) (l/select :dd facts)))
+              :description
+              {:class (:class (l/attrs description-item))
+               :label (-> description-item l/first-child
+                          page-shell/translation-key)
+               :text  (-> description-item l/children second l/text)}}))))
 
   (testing "the transition kind is exposed to CSS without changing the active card"
     (let [{:keys [member-id policy-id request]} (fixture {})

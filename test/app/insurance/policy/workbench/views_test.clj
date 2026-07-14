@@ -500,21 +500,27 @@
                              (l/select "[data-workbench-status-icon]" status-view))
                 :tooltips (mapv l/text (l/select 'wa-tooltip status-view))})))
       (testing "Coverage types keep their labels and expose each known or unavailable cost."
-        (is (= {:icons    [{:kind "grundschutz" :label "Grundschutz"}
-                           {:kind "nachzeit-im-auto" :label "Nachzeit im Auto"}
-                           {:kind "proberaum" :label "Proberaum"}]
-                :tooltips ["Grundschutz" "Nachzeit im Auto" "Proberaum"]
+        (is (= {:icons    [{:kind "grundschutz" :label "Grundschutz" :tabindex 0}
+                           {:kind "nachzeit-im-auto" :label "Nachzeit im Auto" :tabindex 0}
+                           {:kind "proberaum" :label "Proberaum" :tabindex 0}]
+                :tooltips [{:label "Grundschutz" :trigger "click hover focus"}
+                           {:label "Nachzeit im Auto" :trigger "click hover focus"}
+                           {:label "Proberaum" :trigger "click hover focus"}]
                 :unknown  ["Basic"]
                 :costs    ["1,00 €" "2,00 €" "3,00 €" "&mdash;"]}
                {:icons    (mapv (fn [icon]
                                   (let [attrs (l/attrs icon)]
-                                    {:kind  (:data-workbench-coverage-type-icon attrs)
-                                     :label (:aria-label attrs)}))
-                                (l/select "[data-workbench-coverage-type-icon]"
+                                    {:kind  (:data-insurance-coverage-type-icon attrs)
+                                     :label (:aria-label attrs)
+                                     :tabindex (:tabindex attrs)}))
+                                (l/select "[data-insurance-coverage-type-icon]"
                                           coverage-view))
-                :tooltips (mapv l/text (l/select 'wa-tooltip coverage-view))
+                :tooltips (mapv (fn [tooltip]
+                                  {:label   (l/text tooltip)
+                                   :trigger (:trigger (l/attrs tooltip))})
+                                (l/select 'wa-tooltip coverage-view))
                 :unknown  (mapv l/text
-                                (l/select "[data-workbench-coverage-type-label]"
+                                (l/select "[data-insurance-coverage-type-label]"
                                           coverage-view))
                 :costs    (mapv l/text
                                 (l/select "[data-workbench-coverage-type-cost]"
