@@ -525,7 +525,10 @@
 
 (deftest policy-changes-use-a-standard-confirmation-surface
   (let [{:keys [request policy-id]} (fixture)
-        policy-url (urls/link-policy policy-id)]
+        policy-url (urls/link-policy policy-id)
+        view       (-> request
+                       (assoc :path-params {:policy-id policy-id})
+                       policy-changes.views/page)]
     (is (= {:width       :standard
             :breadcrumbs [:insurance/title "Insurance 2026" :insurance/send-changes]
             :mobile      {:label "Insurance 2026" :href policy-url}
@@ -535,13 +538,56 @@
                           {:label :insurance/confirm-and-send
                            :data-dialog "open insurance-policy-send-changes-dialog"
                            :appearance "filled"
-                           :variant "brand"}]
+                           :variant "brand"
+                           :disabled true}]
             :overflow    [{:label :insurance/confirm-skip-send
                            :data-dialog "open insurance-policy-confirm-changes-dialog"}]}
-           (-> request
-               (assoc :path-params {:policy-id policy-id})
-               policy-changes.views/page
-               page-shell/page-contract)))))
+           (page-shell/page-contract view)))
+    (testing "an unconfigured exporter disables spreadsheet actions with guidance"
+      (let [guidance (l/select-one "#insurance-policy-exporter-guidance" view)
+            previews (l/select :app.ui2.button/button
+                               (l/select-one "#insurance-policy-attachments" view))
+            send-dialog (l/select-one "#insurance-policy-send-changes-dialog" view)]
+        (is (= {:guidance :insurance/exporter-not-configured-guidance
+                :previews [true true]
+                :send     true}
+               {:guidance (page-shell/translation-key guidance)
+                :previews (mapv (comp :disabled l/attrs) previews)
+                :send     (-> (l/select :app.ui2.button/button send-dialog)
+                              last
+                              l/attrs
+                              :disabled)}))))))
+
+(deftest configured-policy-changes-enable-spreadsheet-actions
+  (let [{:keys [conn coverage-type-id policy-id request]} (fixture)]
+    @(d/transact
+      conn
+      [{:db/id [:insurance.policy/policy-id policy-id]
+        :insurance.policy/exporter-id :insurance.exporter/inventory-xls-v1
+        :insurance.policy/export-mappings
+        [{:insurance.export.mapping/role :overnight-vehicle
+          :insurance.export.mapping/coverage-type
+          [:insurance.coverage.type/type-id coverage-type-id]}
+         {:insurance.export.mapping/role :unattended-building
+          :insurance.export.mapping/coverage-type
+          [:insurance.coverage.type/type-id coverage-type-id]}]}])
+    (let [view (-> request
+                   (assoc :db (d/db conn)
+                          :path-params {:policy-id policy-id})
+                   policy-changes.views/page)
+          send-action (second (:actions (page-shell/page-contract view)))
+          previews (l/select :app.ui2.button/button
+                             (l/select-one "#insurance-policy-attachments" view))]
+      (is (= {:send-disabled? false
+              :guidance?      false
+              :preview-disabled [nil nil]}
+             {:send-disabled? (true? (:disabled send-action))
+              :guidance?      (boolean
+                               (l/select-one
+                                "#insurance-policy-exporter-guidance"
+                                view))
+              :preview-disabled (mapv (comp :disabled l/attrs)
+                                      previews)})))))
 
 (deftest payment-notifications-use-a-wide-policy-surface
   (let [{:keys [request policy-id]} (fixture)

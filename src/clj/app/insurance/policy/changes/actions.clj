@@ -2,6 +2,7 @@
   (:require
    [app.form :as form]
    [app.insurance.domain :as domain]
+   [app.insurance.exporters :as exporters]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.urls :as urls]
@@ -47,9 +48,17 @@
                                                        [(tr [label])])})))
                                 {}
                                 required-fields)
+        exporter-error  (some->> policy
+                                 exporters/configuration-guidance-key
+                                 vector
+                                 tr
+                                 (hash-map :error))
         errors          (cond-> errors
                           (nil? policy)
-                          (assoc :_top {:error (tr [:error/not-found-title])}))]
+                          (assoc :_top {:error (tr [:error/not-found-title])})
+
+                          exporter-error
+                          (assoc :_top exporter-error))]
     (cond-> errors
       (and (seq errors) (nil? (:_top errors)))
       (assoc :_top {:error (tr [:error/form-has-errors])}))))
@@ -106,14 +115,19 @@
         filename     (case preview-type
                        "new" (:attachment-filename-new params)
                        "changes" (:attachment-filename-changes params)
-                       nil)]
-    (if (and context (contains? #{"new" "changes"} preview-type) (not (str/blank? filename)))
-      [[:app.datastar/redirect
-        (urls/link-policy-changes-download-excel
-         (:policy-id context)
-         preview-type
-         filename)]]
-      (failure-effects params {:_top {:error (tr [:error/form-has-errors])}}))))
+                       nil)
+        guidance-key (some-> context
+                             :policy
+                             exporters/configuration-guidance-key)]
+    (if guidance-key
+      (failure-effects params {:_top {:error (tr [guidance-key])}})
+      (if (and context (contains? #{"new" "changes"} preview-type) (not (str/blank? filename)))
+        [[:app.datastar/redirect
+          (urls/link-policy-changes-download-excel
+           (:policy-id context)
+           preview-type
+           filename)]]
+        (failure-effects params {:_top {:error (tr [:error/form-has-errors])}})))))
 
 (def actions
   {::confirm-changes    #'confirm-changes-action

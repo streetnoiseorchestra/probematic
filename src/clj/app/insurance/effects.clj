@@ -3,7 +3,7 @@
    [app.datastar :as d*]
    [app.email :as email]
    [app.errors :as errors]
-   [app.insurance.excel :as excel]
+   [app.insurance.exporters :as exporters]
    [app.queries :as q]
    [datomic.api :as d]))
 
@@ -21,14 +21,14 @@
   (let [db     (or (:db request) (some-> system :datomic :conn d/db))
         policy (q/retrieve-policy db policy-id)
         smtp   (-> system :env :smtp-sno)]
-    (excel/send-email! policy
-                       smtp
-                       (:from smtp)
-                       recipient
-                       subject
-                       body
-                       attachment-filename-new
-                       attachment-filename-changes)
+    (exporters/send-email! policy
+                           smtp
+                           (:from smtp)
+                           recipient
+                           subject
+                           body
+                           attachment-filename-new
+                           attachment-filename-changes)
     (ordered-dispatch! dispatch on-success)
     (d*/redirect request redirect)))
 

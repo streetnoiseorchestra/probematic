@@ -11,11 +11,14 @@
 (def START-ROW 10) ;; 0 indexed
 (def STUCKPREIS-COL 7)
 (def TOTAL-COL 8)
-(def SHEET-NAME "Inventar")
 
-(defn coverage->row [{:instrument.coverage/keys [value insurer-id item-count types] :as coverage}]
-  (let [nachzeit? (some #(= "Nachzeit im Auto" (:insurance.coverage.type/name %)) types)
-        proberaum? (some #(= "Proberaum" (:insurance.coverage.type/name %)) types)
+(defn coverage->row
+  [role->coverage-type-id
+   {:instrument.coverage/keys [value insurer-id item-count types] :as coverage}]
+  (let [coverage-type-ids (set (map :insurance.coverage.type/type-id types))
+        role-selected?    (fn [role]
+                            (contains? coverage-type-ids
+                                       (get role->coverage-type-id role)))
         item-count (or item-count 1)
         {:instrument/keys [category description serial-number build-year name model make owner images-share-url]} (:instrument.coverage/instrument coverage)]
     [item-count
@@ -27,8 +30,8 @@
      (str (:instrument.category/name category) "; " description)
      value
      (* item-count value)
-     (if nachzeit? "x" "")
-     (if proberaum? "x" "")
+     (if (role-selected? :overnight-vehicle) "x" "")
+     (if (role-selected? :unattended-building) "x" "")
      ""                                 ; klavier transport
      ""                                 ; wert zuwachs
      (:member/name owner)
@@ -76,9 +79,9 @@
       (let [row (excel/add-row! sheet item)]
         (set-item-styles! row normal-style stuckpreis-style total-style)))))
 
-(defn- generate-excel [fname output-fname {changed-items  :instrument.coverage.change/changed  removed-items  :instrument.coverage.change/removed new-items :instrument.coverage.change/new :as _cs}]
+(defn- generate-excel [fname sheet-name output-fname {changed-items  :instrument.coverage.change/changed  removed-items  :instrument.coverage.change/removed new-items :instrument.coverage.change/new :as _cs}]
   (let [wb               (excel/load-workbook-from-resource fname)
-        sheet            (excel/select-sheet SHEET-NAME wb)
+        sheet            (excel/select-sheet sheet-name wb)
         total-style      (get-cell-style-at sheet 4 TOTAL-COL)
         stuckpreis-style (doto (get-cell-style-at sheet START-ROW STUCKPREIS-COL)
                            (.setLocked false))
@@ -102,20 +105,37 @@
       (add-instruments! (format "Entfernung: (Ab %s)" date-today) removed-items))
     (excel/save-workbook! output-fname wb)))
 
-(defn generate-excel-changeset! [changeset-scope {:insurance.policy/keys [covered-instruments] :as _policy} output]
+(defn generate-excel-changeset!
+  [{:keys [row-generator sheet-name template-resource]}
+   role->coverage-type-id
+   changeset-scope
+   {:insurance.policy/keys [covered-instruments]}
+   output]
   (let [gather-changeset (fn [scope]
                            (into [] (filter #(= scope (:instrument.coverage/change %)) covered-instruments)))
-        changesets (into {} (map (fn [k] [k (map coverage->row (gather-changeset k))]) changeset-scope))]
+        changesets (into {}
+                         (map (fn [scope]
+                                [scope
+                                 (map (partial row-generator role->coverage-type-id)
+                                      (gather-changeset scope))]))
+                         changeset-scope)]
 
-    (generate-excel  "insurance-changes-template.xls" output changesets))
+    (generate-excel template-resource sheet-name output changesets))
   output)
 
-(defn send-email! [policy smtp-params from to subject body attachment-filename-new attachment-filename-changes]
+(defn send-email!
+  [generate-changeset! policy smtp-params from to subject body
+   attachment-filename-new attachment-filename-changes]
   (with-open [conn (tarayo/connect smtp-params)]
     (let [new-items-output-stream (ByteArrayOutputStream.)
           changed-items-output-stream (ByteArrayOutputStream.)]
-      (generate-excel-changeset! #{:instrument.coverage.change/new} policy new-items-output-stream)
-      (generate-excel-changeset! #{:instrument.coverage.change/changed :instrument.coverage.change/removed} policy changed-items-output-stream)
+      (generate-changeset! #{:instrument.coverage.change/new}
+                           policy
+                           new-items-output-stream)
+      (generate-changeset! #{:instrument.coverage.change/changed
+                             :instrument.coverage.change/removed}
+                           policy
+                           changed-items-output-stream)
       (tarayo/send! conn {:from    from
                           :to      to
                           :subject subject

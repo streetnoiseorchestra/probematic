@@ -1,7 +1,9 @@
 (ns app.insurance.exporters-test
   (:require
    [app.insurance.exporters :as exporters]
-   [clojure.test :refer [deftest is testing]]))
+   [clojure.test :refer [deftest is testing]])
+  (:import
+   [java.io ByteArrayOutputStream]))
 
 (def overnight-role
   :overnight-vehicle)
@@ -67,17 +69,17 @@
   (testing "the current provider format is an immutable versioned descriptor"
     (is (= [{:exporter-id exporters/inventory-xls-v1
              :label-key
-             :insurance.policy-settings/exporter-inventory-xls-v1
+             :insurance/exporter-inventory-xls-v1
              :template-resource "insurance-changes-template.xls"
              :sheet-name        "Inventar"
              :roles
              [{:role      overnight-role
                :label-key
-               :insurance.policy-settings/exporter-role-overnight-vehicle
+               :insurance/exporter-role-overnight-vehicle
                :required? true}
               {:role      building-role
                :label-key
-               :insurance.policy-settings/exporter-role-unattended-building
+               :insurance/exporter-role-unattended-building
                :required? true}]}]
            (mapv #(select-keys % [:exporter-id
                                   :label-key
@@ -87,6 +89,7 @@
                  (exporters/descriptors))))
     (is (= (first (exporters/descriptors))
            (exporters/descriptor exporters/inventory-xls-v1)))
+    (is (fn? (:generator (exporters/descriptor exporters/inventory-xls-v1))))
     (is (nil? (exporters/descriptor
                :insurance.exporter/inventory-xls-v2)))))
 
@@ -191,3 +194,24 @@
              (exporters/coverage->row
               policy
               (coverage [overnight-type])))))))
+
+(deftest inventory-xls-v1-workbook-generation-test
+  (let [overnight-id (random-uuid)
+        building-id  (random-uuid)
+        types        [(coverage-type overnight-id "Renamed worldwide cover")
+                      (coverage-type building-id "Renamed storage cover")]
+        policy       (assoc (policy exporters/inventory-xls-v1
+                                    types
+                                    {overnight-role overnight-id
+                                     building-role  building-id})
+                            :insurance.policy/covered-instruments [])
+        output       (ByteArrayOutputStream.)]
+    (testing "the registered generator preserves the v1 Excel file format"
+      (is (identical? output
+                      (exporters/generate-changeset!
+                       #{:instrument.coverage.change/new}
+                       policy
+                       output)))
+      (is (= [0xD0 0xCF 0x11 0xE0]
+             (mapv #(bit-and 0xff %)
+                   (take 4 (.toByteArray output))))))))

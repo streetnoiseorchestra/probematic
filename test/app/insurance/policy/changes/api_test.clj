@@ -8,8 +8,19 @@
 
 (deftest excel-download-response-test
   (let [{:keys [conn]} (tc/new-system "insurance-policy-changes-excel")
-        policy-id      (random-uuid)]
-    (insurance-test/seed-policy! conn policy-id)
+        policy-id      (random-uuid)
+        overnight-id   (random-uuid)
+        building-id    (random-uuid)]
+    (insurance-test/seed-policy!
+     conn
+     policy-id
+     {:coverage-types
+      [{:type-id overnight-id :name "Worldwide" :premium-factor 0.2M}
+       {:type-id building-id :name "Locked storage" :premium-factor 0.3M}]
+      :exporter-id :insurance.exporter/inventory-xls-v1
+      :export-mappings
+      [{:role :overnight-vehicle :coverage-type-id overnight-id}
+       {:role :unattended-building :coverage-type-id building-id}]})
     (testing "a requested changeset is returned as an Excel attachment"
       (let [response (sut/download-excel
                       {:db (d/db conn)
@@ -28,3 +39,17 @@
                 :content-type        (get-in response [:headers "Content-Type"])
                 :content-length      (get-in response [:headers "Content-Length"])
                 :ole-signature       (mapv #(bit-and 0xff %) (take 4 bytes))}))))))
+
+(deftest unconfigured-excel-download-response-test
+  (let [{:keys [conn]} (tc/new-system "insurance-policy-changes-excel-unconfigured")
+        policy-id      (random-uuid)]
+    (insurance-test/seed-policy! conn policy-id)
+    (testing "a direct download request cannot bypass exporter configuration"
+      (is (= 409
+             (:status
+              (sut/download-excel
+               {:db (d/db conn)
+                :parameters
+                {:path  {:policy-id policy-id}
+                 :query {:attachment-filename "new instruments.xls"
+                         :preview-type        "new"}}})))))))

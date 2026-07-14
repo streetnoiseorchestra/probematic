@@ -3,6 +3,7 @@
    [app.config :as config]
    [app.datastar :as d*]
    [app.form :as form]
+   [app.insurance.exporters :as exporters]
    [app.insurance.policy.changes.actions :as actions]
    [app.queries :as q]
    [app.ui2 :as ui2]
@@ -36,7 +37,7 @@
         error])]))
 
 (defn- attachment
-  [req form-state {:keys [field-name title type]}]
+  [req form-state export-enabled? {:keys [field-name title type]}]
   [:div {:class "wa-flank wa-align-items-center"
          :style "--flank-size: 3rem;"}
    [ico/Icon {::ico/library :snoico
@@ -46,17 +47,18 @@
     [:h3 {:class "wa-heading-s" :style "margin: 0;"} title]
     (field form-state field-name (get-in form-state [:labels :attachment-filename])
            {:type "text" :required true})
-    [button/Button {:appearance    "outlined"
-                    :type          "button"
-                    :data-on:click (str "$insurance-policy-changes.preview-type = '"
-                                        type
-                                        "'; @post('"
-                                        (d*/act req ::actions/preview-attachment)
-                                        "')")}
+    [button/Button (cond-> {:appearance    "outlined"
+                            :type          "button"
+                            :data-on:click (str "$insurance-policy-changes.preview-type = '"
+                                                type
+                                                "'; @post('"
+                                                (d*/act req ::actions/preview-attachment)
+                                                "')")}
+                     (not export-enabled?) (assoc :disabled true))
      [:i18n/tr :insurance/preview]]]])
 
 (defn- confirm-dialog
-  [{:keys [tr] :as req} id title body action label]
+  [{:keys [tr] :as req} id title body action label disabled?]
   [:wa-dialog {:id    id
                :label title}
    [:p body]
@@ -64,14 +66,15 @@
                    :appearance  "outlined"
                    :data-dialog "close"}
     (tr [:action/cancel])]
-   [button/Button {:slot               "footer"
-                   :appearance         "filled"
-                   :variant            "brand"
-                   :data-dialog        "close"
-                   :data-id            id
-                   :data-action        (d*/act req action)
-                   :data-attr:disabled (str "!!$loading && $loading !== '" id "'")
-                   :data-attr:loading  (str "$loading === '" id "'")}
+   [button/Button (cond-> {:slot               "footer"
+                           :appearance         "filled"
+                           :variant            "brand"
+                           :data-dialog        "close"
+                           :data-id            id
+                           :data-action        (d*/act req action)
+                           :data-attr:disabled (str "!!$loading && $loading !== '" id "'")
+                           :data-attr:loading  (str "$loading === '" id "'")}
+                    disabled? (assoc :disabled true))
     label]])
 
 (defn page
@@ -96,7 +99,10 @@
                       :preview-type                ""
                       :labels                      {:attachment-filename (tr [:insurance/attachment-filename])}}
         form-state   (merge defaults (get-in req [:page-state actions/form-key]))
-        top-error    (form/field-error form-state :_top)]
+        top-error    (form/field-error form-state :_top)
+        export-enabled? (exporters/configured? policy)
+        exporter-guidance-key
+        (exporters/configuration-guidance-key policy)]
     (ui2/datastar-page*
      [page-surface/PageSurface
       {::page-surface/width :standard
@@ -117,9 +123,10 @@
          [[button/Button {:appearance "outlined"
                           :href       (urls/link-policy policy)}
            [:i18n/tr :action/cancel]]
-          [button/Button {:appearance  "filled"
-                          :variant     "brand"
-                          :data-dialog "open insurance-policy-send-changes-dialog"}
+          [button/Button (cond-> {:appearance  "filled"
+                                  :variant     "brand"
+                                  :data-dialog "open insurance-policy-send-changes-dialog"}
+                           (not export-enabled?) (assoc :disabled true))
            [:i18n/tr :insurance/confirm-and-send]]]
          ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
          ::page-toolbar/overflow-items
@@ -136,6 +143,11 @@
          [:wa-callout {:appearance "outlined"
                        :variant    "danger"}
           top-error])
+       (when exporter-guidance-key
+         [:wa-callout {:id         "insurance-policy-exporter-guidance"
+                       :appearance "outlined"
+                       :variant    "warning"}
+          [:i18n/tr exporter-guidance-key]])
        (ui2/section-card
         {:title (tr [:insurance/message-details])}
         [:div {:class "wa-stack wa-gap-m"}
@@ -153,12 +165,13 @@
        (ui2/section-card
         {:title    (tr [:insurance/attachments])
          :subtitle (tr [:insurance/attachments-subtitle])}
-        [:div {:class "wa-stack wa-gap-l"}
-         (attachment req form-state
+        [:div {:id    "insurance-policy-attachments"
+               :class "wa-stack wa-gap-l"}
+         (attachment req form-state export-enabled?
                      {:field-name :attachment-filename-new
                       :type  "new"
                       :title (tr [:insurance/new-instruments])})
-         (attachment req form-state
+         (attachment req form-state export-enabled?
                      {:field-name :attachment-filename-changes
                       :type  "changes"
                       :title (tr [:insurance/changed-and-removed-instruments])})])
@@ -167,12 +180,14 @@
                        (tr [:insurance/confirm-send-title])
                        (tr [:insurance/confirm-send-body])
                        ::actions/send-and-confirm
-                       (tr [:insurance/confirm-and-send]))
+                       (tr [:insurance/confirm-and-send])
+                       (not export-enabled?))
        (confirm-dialog req
                        "insurance-policy-confirm-changes-dialog"
                        (tr [:insurance/confirm-without-sending-title])
                        (tr [:insurance/confirm-without-sending-body])
                        ::actions/confirm-changes
-                       (tr [:insurance/confirm-skip-send]))]])))
+                       (tr [:insurance/confirm-skip-send])
+                       false)]])))
 
 (d*/refresh-all!)

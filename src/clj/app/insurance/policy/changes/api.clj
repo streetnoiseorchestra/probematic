@@ -1,6 +1,6 @@
 (ns app.insurance.policy.changes.api
   (:require
-   [app.insurance.excel :as excel]
+   [app.insurance.exporters :as exporters]
    [app.queries :as queries]
    [app.util :as util])
   (:import
@@ -19,16 +19,20 @@
                               "changes"
                               #{:instrument.coverage.change/changed
                                 :instrument.coverage.change/removed})
-        output-stream       (ByteArrayOutputStream.)
-        _                   (excel/generate-excel-changeset!
-                             changeset-scope
-                             policy
-                             output-stream)
-        file-bytes          (.toByteArray output-stream)]
-    {:status  200
-     :headers {"Content-Disposition" (util/content-disposition-filename
-                                      attachment-filename
-                                      false)
-               "Content-Type"        "application/vnd.ms-excel"
-               "Content-Length"      (str (count file-bytes))}
-     :body    (ByteArrayInputStream. file-bytes)}))
+        output-stream       (ByteArrayOutputStream.)]
+    (if-not (exporters/configured? policy)
+      {:status  409
+       :headers {"Content-Type" "text/plain; charset=utf-8"}
+       :body    "Policy exporter configuration is incomplete."}
+      (let [_          (exporters/generate-changeset!
+                        changeset-scope
+                        policy
+                        output-stream)
+            file-bytes (.toByteArray output-stream)]
+        {:status  200
+         :headers {"Content-Disposition" (util/content-disposition-filename
+                                          attachment-filename
+                                          false)
+                   "Content-Type"        "application/vnd.ms-excel"
+                   "Content-Length"      (str (count file-bytes))}
+         :body    (ByteArrayInputStream. file-bytes)}))))

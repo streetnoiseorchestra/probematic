@@ -1,4 +1,6 @@
-(ns app.insurance.exporters)
+(ns app.insurance.exporters
+  (:require
+   [app.insurance.excel :as excel]))
 
 (def inventory-xls-v1
   :insurance.exporter/inventory-xls-v1)
@@ -12,6 +14,8 @@
     :label-key        :insurance/exporter-inventory-xls-v1
     :template-resource "insurance-changes-template.xls"
     :sheet-name       "Inventar"
+    :generator        excel/generate-excel-changeset!
+    :row-generator    excel/coverage->row
     :roles
     [{:role      :overnight-vehicle
       :label-key
@@ -76,6 +80,59 @@
                                   :insurance.coverage.type/type-id)
          :role->coverage-type    role->type}))))
 
+(defn configuration-guidance-key
+  [policy]
+  (case (:status (policy-configuration policy))
+    :not-configured :insurance/exporter-not-configured-guidance
+    :unknown        :insurance/exporter-unknown-guidance
+    :incomplete     :insurance/exporter-incomplete-guidance
+    nil))
+
+(defn configured?
+  [policy]
+  (= :complete (:status (policy-configuration policy))))
+
+(defn- configured-exporter
+  [policy]
+  (let [{:keys [exporter-id missing-roles status]
+         :as configuration}
+        (policy-configuration policy)]
+    (if (= :complete status)
+      configuration
+      (throw
+       (ex-info "Insurance policy exporter is not completely configured"
+                {:type          :insurance.exporter/configuration-error
+                 :exporter-id   exporter-id
+                 :status        status
+                 :missing-roles missing-roles})))))
+
 (defn coverage->row
-  [_policy _coverage]
-  nil)
+  [policy coverage]
+  (let [{:keys [descriptor role->coverage-type-id]}
+        (configured-exporter policy)]
+    ((:row-generator descriptor) role->coverage-type-id coverage)))
+
+(defn generate-changeset!
+  [changeset-scope policy output]
+  (let [{:keys [descriptor role->coverage-type-id]}
+        (configured-exporter policy)]
+    ((:generator descriptor)
+     descriptor
+     role->coverage-type-id
+     changeset-scope
+     policy
+     output)))
+
+(defn send-email!
+  [policy smtp-params from to subject body attachment-filename-new
+   attachment-filename-changes]
+  (excel/send-email!
+   generate-changeset!
+   policy
+   smtp-params
+   from
+   to
+   subject
+   body
+   attachment-filename-new
+   attachment-filename-changes))
