@@ -77,3 +77,11 @@
 ** View transitions to animated in gig attendance/gig details in dashboard and gig detail page
 ** Ledger bookkeping view for finanz team members
 ** User page presence avatars
+** Two-step upload with an opaque token
+
+     Upload the file first, receive a temporary authorized token, then send that token through the
+     normal JSON /act request.
+      - Excellent for Dropzone, progress reporting, retries, and multiple files.
+      - Keeps /act entirely JSON-based.
+      - Requires temporary-upload persistence, expiration, authorization, and abandoned-upload cleanup.
+Then replace the /account-settings/profile/save and other upload locations with it
