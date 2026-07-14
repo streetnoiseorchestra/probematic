@@ -52,13 +52,23 @@
                          :uncategorized)]
     (nth category-tints (mod (hash category-key) (count category-tints)))))
 
+(defn- required-coverage-type-ids [policy]
+  (->> (:insurance.policy/coverage-types policy)
+       (filter :insurance.coverage.type/required?)
+       (mapv (comp str :insurance.coverage.type/type-id))))
+
 (defn- coverage->edit
-  [{:instrument.coverage/keys [instrument item-count types value insurer-id]}]
+  [{:instrument.coverage/keys [instrument item-count types value insurer-id]}
+   policy]
   {:build-year      (form/text-value (:instrument/build-year instrument))
    :category-id     (form/text-value
                      (some-> instrument :instrument/category
                              :instrument.category/category-id str))
-   :coverage-types  (mapv (comp str :insurance.coverage.type/type-id) types)
+   :coverage-types  (->> (concat (required-coverage-type-ids policy)
+                                 (map (comp str :insurance.coverage.type/type-id)
+                                      types))
+                         distinct
+                         vec)
    :description     (form/text-value (:instrument/description instrument))
    :insurer-id      (form/text-value insurer-id)
    :instrument-name (form/text-value (:instrument/name instrument))
@@ -151,19 +161,19 @@
      [:legend [:i18n/tr :insurance/coverage-types]]
      (when error
        [:small {:class "text-danger"} error])
-     (for [[idx {:insurance.coverage.type/keys [type-id name description]}]
-           (map-indexed vector (:insurance.policy/coverage-types policy))
+     (for [{:insurance.coverage.type/keys [type-id name description required?]}
+           (:insurance.policy/coverage-types policy)
            :let [type-id (str type-id)
                  checked? (or (not private?)
-                              (zero? idx)
+                              required?
                               (contains? selected type-id))]]
        [:label {:class "wa-flank wa-gap-xs"}
         [:input (cond-> {:type              "checkbox"
                          :value             type-id
                          :checked           checked?
                          :data-attr:checked (str "$insuranceSurvey.edit.coverageTypes.includes('" type-id "')")}
-                  (or (not private?) (zero? idx)) (assoc :disabled true)
-                  (and private? (pos? idx))
+                  (or (not private?) required?) (assoc :disabled true)
+                  (and private? (not required?))
                   (assoc :data-on:change
                          (str "if (evt.target.checked) { "
                               "$insuranceSurvey.edit.coverageTypes = Array.from(new Set([...$insuranceSurvey.edit.coverageTypes, '" type-id "'])); "
@@ -182,7 +192,7 @@
                              "insurance-survey-coverage-type"
                              coverage-id
                              index
-                             (:insurance.coverage.type/name coverage-type))))
+                             coverage-type)))
                          (mapcat identity)
                          seq)]
     (into [:span {:class "insurance-survey-card-coverage-types wa-cluster wa-gap-2xs"}]
@@ -498,7 +508,8 @@
 (defn- edit-content [req data page-state]
   (let [coverage   (:insurance.survey.report/coverage (:active-report data))
         instrument (:instrument.coverage/instrument coverage)
-        form-state (merge (coverage->edit coverage) (:edit page-state))]
+        form-state (merge (coverage->edit coverage (:policy data))
+                          (:edit page-state))]
     [:form {:id             "insurance-survey-edit-form"
             :class          "wa-stack wa-gap-xl"
             :data-id        "insurance-survey-edit"
@@ -590,7 +601,7 @@
         transition-kind   (name (or (:transition-kind page-state) :none))
         edit              (merge (some-> data :active-report
                                          :insurance.survey.report/coverage
-                                         coverage->edit)
+                                         (coverage->edit (:policy data)))
                                  (:edit page-state))]
     (ui2/datastar-page*
      [page-surface/PageSurface

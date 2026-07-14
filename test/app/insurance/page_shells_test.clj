@@ -129,11 +129,10 @@
             [:insurance.coverage.type/type-id optional-type-id]
             :insurance.coverage.type/required?
             false]])
-        (let [faq-text (-> request
+        (let [view     (-> request
                            (assoc :db (d/db conn))
-                           index.views/page
-                           (l/select-one "#faq5")
-                           l/text)
+                           index.views/page)
+              faq-text (l/text (l/select-one "#faq5" view))
               labels   ["coverage-required" "coverage-optional"]]
           (is (= labels
                  (filterv #(str/includes? faq-text %) labels))))))))

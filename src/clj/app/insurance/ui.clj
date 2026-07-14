@@ -1,5 +1,6 @@
 (ns app.insurance.ui
   (:require
+   [app.icons :as icons]
    [app.insurance.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.avatar :as avatar]
@@ -150,44 +151,35 @@
                :class        (ui2/cs "insurance-coverage-icon" class)
                :aria-hidden  true}]))
 
-;; TODO Stop matching coverage type icons by user-defined database labels.
-;; Add database-backed icon metadata or stable icon keys to coverage types instead.
-(def ^:private coverage-type-icon-data
-  {"Grundschutz"      {:icon :shield
-                       :key  :grundschutz}
-   "Nachzeit im Auto" {:icon :car-profile
-                       :key  :nachzeit-im-auto}
-   "Proberaum"        {:icon :warehouse
-                       :key  :proberaum}})
-
 (defn- coverage-type-label
-  [coverage-type-name]
-  (let [label (some-> coverage-type-name str str/trim)]
+  [coverage-type]
+  (let [label (some-> coverage-type :insurance.coverage.type/name str str/trim)]
     (when-not (str/blank? label)
       label)))
 
 (defn coverage-type-token
-  [id-prefix coverage-id index coverage-type-name]
-  (when-let [label (coverage-type-label coverage-type-name)]
-    (if-let [{:keys [icon key]} (get coverage-type-icon-data label)]
-      (let [icon-id (str id-prefix
-                         "-"
-                         (ui2/safe-dom-id coverage-id)
-                         "-"
-                         index)]
-        [[:span {:id                                icon-id
-                 :data-insurance-coverage-type-icon (name key)
-                 :role                              "img"
-                 :aria-label                        label
-                 :tabindex                          0}
-          [ico/Icon {::ico/library :phosphor
-                     ::ico/name    icon}]]
-         [:wa-tooltip {:for           icon-id
-                       :placement     "top"
-                       :trigger       "click hover focus"
-                       :without-arrow true}
-          label]])
-      [[:span {:data-insurance-coverage-type-label true} label]])))
+  [id-prefix coverage-id index coverage-type]
+  (when-let [label (coverage-type-label coverage-type)]
+    (let [icon (:insurance.coverage.type/icon coverage-type)]
+      (if (contains? (set (icons/catalog)) icon)
+        (let [icon-id (str id-prefix
+                           "-"
+                           (ui2/safe-dom-id coverage-id)
+                           "-"
+                           index)]
+          [[:span {:id                                icon-id
+                   :data-insurance-coverage-type-icon (str (namespace icon) "/" (name icon))
+                   :role                              "img"
+                   :aria-label                        label
+                   :tabindex                          0}
+            [ico/Icon {::ico/library (keyword (namespace icon))
+                       ::ico/name    (keyword (name icon))}]]
+           [:wa-tooltip {:for           icon-id
+                         :placement     "top"
+                         :trigger       "click hover focus"
+                         :without-arrow true}
+            label]])
+        [[:span {:data-insurance-coverage-type-label true} label]]))))
 
 (defn- status-badge*
   [tr data status]

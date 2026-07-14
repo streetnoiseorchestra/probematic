@@ -1359,12 +1359,12 @@
                           (insurance-ui/change-status-icon change-status))]))
 
 (defn- coverage-type-with-cost
-  [currency coverage-id index {:insurance.coverage.type/keys [name cost]}]
+  [currency coverage-id index {:insurance.coverage.type/keys [cost] :as coverage-type}]
   (when-let [token (insurance-ui/coverage-type-token
                     "insurance-workbench-coverage-type"
                     coverage-id
                     index
-                    name)]
+                    coverage-type)]
     (into [:span {:class "wa-cluster wa-gap-2xs"}]
           (concat
            token

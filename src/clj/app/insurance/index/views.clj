@@ -14,7 +14,8 @@
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
-   [app.urls :as urls]))
+   [app.urls :as urls]
+   [clojure.string :as str]))
 
 (def policy-status-data
   {:insurance.policy.status/active {:icon "circle-check-outline" :class "insurance-policy-status-icon--active"}
@@ -133,7 +134,36 @@
     [:a {:href href} text]
     [:span text]))
 
-(defn- faq-items [{:keys [db system] :as req} active-policy]
+(defn- coverage-type-faq-row
+  [tr {:insurance.coverage.type/keys [description name required? type-id]}]
+  [:div {:class                 "wa-stack wa-gap-2xs"
+         :data-coverage-type-id (str type-id)}
+   [:div {:class "wa-cluster wa-gap-xs"}
+    [:strong name]
+    [:wa-badge {:appearance "outlined"
+                :variant    (if required? "brand" "neutral")
+                :pill       true}
+     (tr [(if required?
+            :insurance/coverage-required
+            :insurance/coverage-optional)])]]
+   (when-not (str/blank? description)
+     (faq-p description))])
+
+(defn- coverage-types-faq
+  [tr active-policy]
+  (let [coverage-types
+        (sort-by (juxt (comp not :insurance.coverage.type/required?)
+                       (comp str/lower-case
+                             :insurance.coverage.type/name))
+                 (:insurance.policy/coverage-types active-policy))]
+    [:div {:class "wa-stack wa-gap-m"}
+     (if (seq coverage-types)
+       (for [coverage-type coverage-types]
+         (coverage-type-faq-row tr coverage-type))
+       (faq-p (tr [:insurance/faq-coverage-types-empty])))
+     (faq-p (tr [:insurance/faq-coverage-types-summary]))]))
+
+(defn- faq-items [{:keys [db system tr] :as req} active-policy]
   (let [member            (auth/get-current-member req)
         form-link         (some-> active-policy :insurance.policy/policy-id urls/link-coverage-create)
         coverages         (queries/member-coverages db member active-policy)
@@ -183,12 +213,8 @@
       :question "Was ist der Unterschied zwischen einem Band-Instrument und einem privaten Instrument?"
       :answer   (faq-p "Ein Band-Instrument ist ein Instrument/Gegenstand, der im letzten Jahr bei einem Auftritt von SNO gespielt oder verwendet wurde. SNO übernimmt die Kosten für Band-Instrumente. Alle anderen Instrumente/Gegenstände gelten als privat, und das Mitglied, dem sie gehören, ist für die Zahlung der Versicherungsprämie verantwortlich.")}
      {:id       "faq5"
-      :question "Welche verschiedenen Arten von Versicherungsdeckungen gibt es?"
-      :answer   [:div {:class "wa-stack wa-gap-xs"}
-                 (faq-p [:span [:strong "Grundschutz"] " - Die Grundschutzversicherung bietet umfassenden Schutz für Ihr Musikinstrument gegen Diebstahl, Beschädigung und Verlust. (Keine Deckung über Nacht in unbewachten Autos oder Gebäuden). Diese Deckung ist obligatorisch und immer enthalten."])
-                 (faq-p [:span [:strong "Nachzeit im Auto"] " - Diese Zusatzversicherung deckt den Artikel über Nacht (22 - 06 Uhr) in einem unbewachten Auto ab. Kostet zusätzlich +25%."])
-                 (faq-p [:span [:strong "Proberaum"] " - Diese Zusatzversicherung deckt den Gegenstand über Nacht (22 - 06 Uhr) in einem unbewachten Gebäude ab. Kostet zusätzlich +20%."])
-                 (faq-p "Für Band-Instrumente sind alle drei Deckungsarten (Grundschutz, Nachzeit im Auto, Proberaum) enthalten und werden von der Band bezahlt. Für private Instrumente kannst du die zusätzlichen Deckungsarten wählen, die du möchtest (Grundschutz ist immer enthalten).")]}
+      :question (tr [:insurance/faq-coverage-types-question])
+      :answer   (coverage-types-faq tr active-policy)}
      {:id       "faq6"
       :question "Welche Arten von Gegenständen kann ich versichern?"
       :answer   (faq-p "Obwohl wir die versicherten Gegenstände üblicherweise als \"Instrumente\" bezeichnen, kannst du jeden Artikel im Zusammenhang mit SNO-Auftritten versichern: Instrumente, Gigbags, Mundstücke, Mikrofone und andere elektrische Geräte usw.")}
