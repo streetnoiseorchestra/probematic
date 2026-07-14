@@ -1,7 +1,7 @@
 (ns app.insurance.coverage.edit.actions
   (:require
    [app.form :as form]
-   [app.insurance.coverage.queries :as coverage.queries]
+   [app.insurance.queries :as queries]
    [app.insurance.domain :as domain]
    [app.nexus.actions :as support]
    [app.queries :as q]
@@ -125,7 +125,7 @@
         (top-error (tr [:error/not-found-title])))
       (when (and policy
                  (not allow-frozen-policy?)
-                 (not (coverage.queries/policy-editable? policy)))
+                 (not (queries/policy-editable? policy)))
         (top-error (tr [:insurance/error-edit-frozen-policy])))
       (when (str/blank? (:owner-member-id params))
         {:owner-member-id (required-error tr :owner-member-id)})

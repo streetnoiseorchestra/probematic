@@ -1,7 +1,7 @@
 (ns app.dashboard.queries
   (:require
    [app.datomic :as d]
-   [app.insurance.survey.queries :as insurance-survey.queries]
+   [app.insurance.queries :as insurance.queries]
    [app.poll.queries :as poll.queries]
    [app.queries :as q]))
 
@@ -106,7 +106,7 @@
   (assoc (gig-buckets db member)
          :ledger (q/retrieve-ledger db (:member/member-id member))
          :insurance-survey (first
-                            (insurance-survey.queries/pending-responses-for-member
+                            (insurance.queries/pending-responses-for-member
                              db member))
          :unanswered-polls (poll.queries/unanswered-open-polls db member)
          :insurance-todos (if (q/insurance-team-member? db member)

@@ -1,6 +1,6 @@
 (ns app.insurance.policy.notifications.actions
   (:require
-   [app.insurance.policy.notifications.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.ledger.domain :as ledger.domain]
    [app.nexus.actions :as support]
    [app.queries :as q]

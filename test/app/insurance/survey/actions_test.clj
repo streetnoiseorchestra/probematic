@@ -1,7 +1,7 @@
 (ns app.insurance.survey.actions-test
   (:require
    [app.insurance.survey.actions :as actions]
-   [app.insurance.survey.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.insurance.test-support :as insurance-test]
    [app.nexus.actions :as support]
    [app.queries :as q]

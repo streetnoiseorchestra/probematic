@@ -1,7 +1,7 @@
 (ns app.insurance.coverage.upload
   (:require
    [app.html :as html]
-   [app.insurance.coverage.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.icon :as ico]
    [app.urls :as urls]))

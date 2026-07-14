@@ -2,7 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.insurance.policy.settings.actions :as actions]
-   [app.insurance.policy.settings.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.card :as card]
    [app.ui2.page-header :as page-header]

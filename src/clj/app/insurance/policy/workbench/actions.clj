@@ -1,8 +1,7 @@
 (ns app.insurance.policy.workbench.actions
   (:require
-   [app.insurance.coverage.queries :as coverage.queries]
    [app.insurance.domain :as domain]
-   [app.insurance.policy.workbench.queries :as workbench.queries]
+   [app.insurance.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.util :as util]
@@ -253,7 +252,7 @@
 (defn- table-view
   [value]
   (let [view (domain/simple-keyword value)]
-    (if (contains? (set workbench.queries/supported-views) view)
+    (if (contains? (set queries/supported-views) view)
       view
       :all)))
 
@@ -295,7 +294,7 @@
       (not (insurance-team-member? db current-member-id))
       (error-effects tr [:insurance.workbench/error-not-allowed])
 
-      (not (coverage.queries/policy-editable? policy))
+      (not (queries/policy-editable? policy))
       (error-effects tr [:insurance.workbench/error-frozen-policy])
 
       (some nil? coverages)

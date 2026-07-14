@@ -1,4 +1,4 @@
-(ns app.songs.index.queries
+(ns app.songs.queries
   (:require
    [app.queries :as q]
    [app.songs.index.actions :as actions]

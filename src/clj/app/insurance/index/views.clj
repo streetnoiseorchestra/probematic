@@ -4,7 +4,7 @@
    [app.config :as config]
    [app.datastar :as d*]
    [app.insurance.actions :as actions]
-   [app.insurance.index.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.insurance.ui :as insurance.ui]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]

@@ -3,7 +3,7 @@
    [app.datastar :as d*]
    [app.html :as html]
    [app.insurance.domain :as domain]
-   [app.insurance.policy.dashboard.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
    [app.ui2.page-header :as page-header]

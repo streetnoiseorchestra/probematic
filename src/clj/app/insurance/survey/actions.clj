@@ -4,7 +4,7 @@
    [app.insurance.coverage.edit.actions :as coverage-edit.actions]
    [app.insurance.domain :as domain]
    [app.insurance.survey.flow :as flow]
-   [app.insurance.survey.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.nexus.actions :as support]
    [app.util :as util]))
 

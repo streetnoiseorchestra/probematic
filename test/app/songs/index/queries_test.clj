@@ -1,6 +1,6 @@
 (ns app.songs.index.queries-test
   (:require
-   [app.songs.index.queries :as queries]
+   [app.songs.queries :as queries]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))

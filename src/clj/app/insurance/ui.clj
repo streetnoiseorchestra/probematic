@@ -1,6 +1,6 @@
 (ns app.insurance.ui
   (:require
-   [app.insurance.coverage.queries :as coverage.queries]
+   [app.insurance.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.avatar :as avatar]
    [app.ui2.card :as card]
@@ -261,7 +261,7 @@
 
 (defn photo-gallery
   [{:keys [tr] :as req} instrument]
-  (let [photo-uris (coverage.queries/image-uris req instrument)]
+  (let [photo-uris (queries/image-uris req instrument)]
     [:section {:class "wa-stack"}
      [:h3 {:class "wa-heading-m"} (tr [:instrument/images])]
      (if (seq photo-uris)
@@ -466,7 +466,7 @@
 
 (defn image-value
   [{:keys [tr] :as req} coverage image]
-  (if-let [{:keys [thumbnail full]} (coverage.queries/image-uri req (:instrument.coverage/instrument coverage) image)]
+  (if-let [{:keys [thumbnail full]} (queries/image-uri req (:instrument.coverage/instrument coverage) image)]
     [:a {:href full :target "_blank" :class "insurance-history-image-link"}
      [:img {:class "insurance-history-image"
             :src   thumbnail
@@ -563,7 +563,7 @@
 
 (defn history-section
   [req coverage]
-  (let [history (coverage.queries/coverage-history (:db req) coverage)]
+  (let [history (queries/coverage-history (:db req) coverage)]
     (ui2/section-card
      {:class    "wa-stack insurance-coverage-section insurance-history"
       :divider? true

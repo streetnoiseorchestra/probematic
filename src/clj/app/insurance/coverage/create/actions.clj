@@ -1,7 +1,7 @@
 (ns app.insurance.coverage.create.actions
   (:require
    [app.form :as form]
-   [app.insurance.coverage.queries :as coverage.queries]
+   [app.insurance.queries :as queries]
    [app.insurance.domain :as domain]
    [app.nexus.actions :as support]
    [app.queries :as q]
@@ -96,7 +96,7 @@
     (merge
      (when-not policy
        (top-error (tr [:error/not-found-title])))
-     (when (and policy (not (coverage.queries/policy-editable? policy)))
+     (when (and policy (not (queries/policy-editable? policy)))
        (top-error (tr [:insurance/error-edit-frozen-policy])))
      (when (and instrument-id (nil? instrument))
        (top-error (tr [:error/not-found-title])))
@@ -227,7 +227,7 @@
        (nil? policy)
        (top-error (tr [:error/not-found-title]))
 
-       (not (coverage.queries/policy-editable? policy))
+       (not (queries/policy-editable? policy))
        (top-error (tr [:insurance/error-edit-frozen-policy]))
 
        (nil? instrument)

@@ -2,7 +2,7 @@
   (:require
    [app.form :as form]
    [app.insurance.domain :as domain]
-   [app.insurance.policy.surveys.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.util :as util]

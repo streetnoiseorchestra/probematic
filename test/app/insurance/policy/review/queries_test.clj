@@ -1,6 +1,6 @@
 (ns app.insurance.policy.review.queries-test
   (:require
-   [app.insurance.policy.review.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))

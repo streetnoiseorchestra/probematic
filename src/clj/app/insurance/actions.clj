@@ -10,7 +10,6 @@
    [app.insurance.policy.surveys.actions :as policy-surveys.actions]
    [app.insurance.policy.workbench.actions :as policy-workbench.actions]
    [app.insurance.survey.actions :as survey.actions]
-   [app.insurance.index.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.urls :as urls]
@@ -95,7 +94,7 @@
 (defn duplicate-policy-action
   [{:keys [current-member-id db tr]} signals]
   (let [policy-id       (target-policy-id signals)
-        policy          (queries/retrieve-policy db policy-id)
+        policy          (q/retrieve-policy db policy-id)
         new-policy-id   (sq/generate-squuid)
         duplicate-label (tr [:action/duplicate])
         duplicate-txes  (support/with-audit (duplicate-policy-tx-data duplicate-label new-policy-id policy)

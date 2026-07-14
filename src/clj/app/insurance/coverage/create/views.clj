@@ -3,7 +3,7 @@
    [app.datastar :as d*]
    [app.form :as form]
    [app.insurance.coverage.create.actions :as actions]
-   [app.insurance.coverage.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.insurance.coverage.upload :as upload]
    [app.queries :as q]
    [app.ui2 :as ui2]

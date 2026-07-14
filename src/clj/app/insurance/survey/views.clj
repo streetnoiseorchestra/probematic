@@ -4,11 +4,10 @@
    [app.datastar :as d*]
    [app.form :as form]
    [app.html :as html]
-   [app.insurance.coverage.queries :as coverage.queries]
    [app.insurance.coverage.upload :as upload]
    [app.insurance.survey.actions :as actions]
    [app.insurance.survey.flow :as flow]
-   [app.insurance.survey.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
@@ -136,7 +135,7 @@
                 :aria-invalid     (when error "true")}
        [:option {:value ""} "—"]]
       (for [{:instrument.category/keys [category-id name]}
-            (coverage.queries/instrument-categories db)]
+            (queries/instrument-categories db)]
         [:option {:value    (str category-id)
                   :selected (= current (str category-id))}
          name]))
@@ -205,7 +204,7 @@
                    :else private?)
         category-name (get-in instrument
                               [:instrument/category :instrument.category/name])
-        photo         (first (coverage.queries/image-uris req instrument))
+        photo         (first (queries/image-uris req instrument))
         details  [[[:i18n/tr :instrument/make] (:instrument/make instrument)]
                   [[:i18n/tr :instrument/model] (:instrument/model instrument)]
                   (when private?

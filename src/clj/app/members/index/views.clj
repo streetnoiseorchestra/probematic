@@ -2,7 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.members.index.actions :as actions]
-   [app.members.index.queries :as queries]
+   [app.members.queries :as queries]
    [app.members.ui :as members.ui]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
@@ -178,7 +178,7 @@
 (defn page [{:keys [db page-state] :as req}]
   (let [page-state       (queries/normalize-page-state (:members-index page-state))
         members          (queries/members db page-state)
-        open-invitations (queries/open-invitations req)]
+        open-invitations (queries/members-with-open-invites req)]
     (ui2/datastar-page*
      [page-surface/PageSurface
       {::page-surface/width :wide

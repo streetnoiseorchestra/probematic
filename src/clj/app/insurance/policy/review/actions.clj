@@ -1,7 +1,7 @@
 (ns app.insurance.policy.review.actions
   (:require
    [clojure.string :as str]
-   [app.insurance.coverage.queries :as coverage.queries]
+   [app.insurance.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.util :as util]))
@@ -49,7 +49,7 @@
       (not (insurance-team-member? db current-member-id))
       (error-effects tr [:insurance.review/error-not-allowed])
 
-      (not (coverage.queries/policy-editable? policy))
+      (not (queries/policy-editable? policy))
       (error-effects tr [:insurance.review/error-frozen-policy])
 
       :else

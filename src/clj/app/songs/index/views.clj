@@ -2,7 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.songs.index.actions :as actions]
-   [app.songs.index.queries :as queries]
+   [app.songs.queries :as queries]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]

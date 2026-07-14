@@ -1,9 +1,8 @@
 (ns app.insurance.policy.review.views
   (:require
    [app.datastar :as d*]
-   [app.insurance.coverage.queries :as coverage.queries]
    [app.insurance.policy.review.actions :as actions]
-   [app.insurance.policy.review.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.queries :as q]
    [app.ui2 :as ui2]
@@ -143,7 +142,7 @@
 
 (defn- policy-editable?
   [policy]
-  (coverage.queries/policy-editable? policy))
+  (queries/policy-editable? policy))
 
 (defn- primary-review-action
   [req {:keys [filter policy selected-coverage]}]

@@ -1,7 +1,7 @@
 (ns app.insurance.policy.notifications.actions-test
   (:require
    [app.insurance.policy.notifications.actions :as actions]
-   [app.insurance.policy.notifications.queries :as queries]
+   [app.insurance.queries :as queries]
    [app.insurance.test-support :as insurance-test]
    [app.nexus.actions :as support]
    [app.test-common :as tc]

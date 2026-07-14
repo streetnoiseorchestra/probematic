@@ -1,8 +1,7 @@
 (ns app.insurance.policy.settings.actions
   (:require
    [app.form :as form]
-   [app.insurance.coverage.queries :as coverage.queries]
-   [app.insurance.policy.settings.queries :as settings.queries]
+   [app.insurance.queries :as queries]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.util :as util]
@@ -61,7 +60,7 @@
 (defn- currency-value
   [value]
   (when-let [currency (some-> value form/optional-text keyword)]
-    (when (contains? (set settings.queries/supported-currencies) currency)
+    (when (contains? (set queries/supported-currencies) currency)
       currency)))
 
 (defn- policy-form
@@ -133,7 +132,7 @@
     (not (insurance-team-member? db current-member-id))
     [:insurance.policy-settings/error-not-allowed]
 
-    (not (coverage.queries/policy-editable? policy))
+    (not (queries/policy-editable? policy))
     [:insurance.policy-settings/error-frozen-policy]))
 
 (defn- field-validation-errors
@@ -176,7 +175,7 @@
                             (not (insurance-team-member? db current-member-id))
                             [:insurance.policy-settings/error-not-allowed]
 
-                            (not (coverage.queries/policy-editable? policy))
+                            (not (queries/policy-editable? policy))
                             [:insurance.policy-settings/error-frozen-policy])]
     (if context-error-key
       {:_top (error tr context-error-key)}
