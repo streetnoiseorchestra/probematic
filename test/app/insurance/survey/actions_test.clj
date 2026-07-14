@@ -17,14 +17,14 @@
 
 (defn fixture
   ([]
-   (fixture true))
-  ([with-report?]
+   (fixture 1))
+  ([report-count]
    (let [{:keys [conn member-id]} (tc/new-system "insurance-survey-actions")
          {:keys [coverage-id policy-id] :as ids}
          (insurance-test/seed-page-shell-fixture! conn member-id)
          survey-ids (insurance-test/seed-member-survey!
                      conn
-                     {:coverage-ids (cond-> [] with-report? (conj coverage-id))
+                     {:coverage-ids (vec (repeat report-count coverage-id))
                       :member-id    member-id
                       :policy-id    policy-id})]
      (merge ids
@@ -47,10 +47,12 @@
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [actions/form-key]
-               {:current-flow-key :keep-insured
+               {:answered-count   1
+                :current-flow-key :keep-insured
                 :decisions        [:confirm-band]
                 :mode             :question
-                :report-id        report-id}]]
+                :report-id        report-id
+                :transition-kind  :question}]]
              (actions/transition-action
               state
               (signals policy-id {:answer "yes"})))))
@@ -88,6 +90,7 @@
         [_ tx-data] (first effects)]
     (is (= :db/transact (ffirst effects)))
     (is (= support/clear-loading (second effects)))
+    (is (= :item (get-in effects [2 2 :transition-kind])))
     @(d/transact conn tx-data)
     (let [db       (d/db conn)
           report   (q/retrieve-survey-report db report-id)
@@ -100,8 +103,32 @@
                    [:member/member-id member-id]]}
                 tx-data)))))
 
+(deftest completing-an-item-keeps-the-next-card-visible-with-a-milestone
+  (let [{:keys [member-id policy-id state]} (fixture 2)
+        data      (queries/survey-data (:db state) policy-id member-id)
+        report-id (:insurance.survey.report/report-id (:active-report data))
+        next-report-id (:insurance.survey.report/report-id
+                        (second (:todo-reports data)))
+        state     (assoc state :page-state
+                         {actions/form-key
+                          {:current-flow-key :data-check
+                           :decisions        [:confirm-band]
+                           :mode             :question
+                           :report-id        report-id}})
+        effects   (actions/transition-action
+                   state
+                   (signals policy-id {:answer "yes"}))]
+    (is (= {:answered-count   0
+            :current-flow-key :used
+            :decisions        []
+            :milestone?       true
+            :mode             :question
+            :report-id        next-report-id
+            :transition-kind  :item}
+           (get-in effects [2 2])))))
+
 (deftest dismissal-only-finishes-a-response-without-open-reports
-  (let [{:keys [conn policy-id response-id state]} (fixture false)
+  (let [{:keys [conn policy-id response-id state]} (fixture 0)
         effects (actions/dismiss-action state (signals policy-id {}))
         [_ tx-data] (first effects)]
     (is (= :db/transact (ffirst effects)))
@@ -109,7 +136,7 @@
     (is (some? (:insurance.survey.response/completed-at
                 (q/retrieve-survey-response (d/db conn) response-id)))))
 
-  (let [{:keys [policy-id state]} (fixture true)
+  (let [{:keys [policy-id state]} (fixture 1)
         effects (actions/dismiss-action state (signals policy-id {}))]
     (is (not-any? #(= :db/transact (first %)) effects))
     (is (some? (get-in effects [1 2 :error])))))
@@ -159,6 +186,7 @@
                      (signals policy-id {:edit edit}))
             [_ tx-data] (first effects)]
         (is (= :db/transact (ffirst effects)))
+        (is (= :item (get-in effects [2 2 :transition-kind])))
         @(d/transact conn tx-data)
         (let [db       (d/db conn)
               coverage (q/retrieve-coverage db coverage-id)]

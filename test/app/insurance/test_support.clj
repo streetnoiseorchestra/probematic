@@ -21,14 +21,13 @@
   policy-id)
 
 (defn survey-tx
-  [{:keys [member-id policy-id closed-at survey-name]}]
+  [{:keys [member-id policy-id closed-at]}]
   (cond->
-   {:insurance.survey/survey-id     (random-uuid)
-    :insurance.survey/survey-name   (or survey-name "Insurance survey")
-    :insurance.survey/created-at    created-at
-    :insurance.survey/closes-at     closes-at
-    :insurance.survey/responses     [{:insurance.survey.response/response-id (random-uuid)
-                                      :insurance.survey.response/member      [:member/member-id member-id]}]}
+   {:insurance.survey/survey-id (random-uuid)
+    :insurance.survey/created-at created-at
+    :insurance.survey/closes-at closes-at
+    :insurance.survey/responses [{:insurance.survey.response/response-id (random-uuid)
+                                  :insurance.survey.response/member      [:member/member-id member-id]}]}
     policy-id (assoc :insurance.survey/policy [:insurance.policy/policy-id policy-id])
     closed-at (assoc :insurance.survey/closed-at closed-at)))
 
@@ -38,7 +37,7 @@
 
 (defn seed-member-survey!
   [conn {:keys [closed-at completed-report-count coverage-ids member-id
-                policy-id response-completed-at survey-name]}]
+                policy-id response-completed-at survey-closes-at]}]
   (let [survey-id   (random-uuid)
         response-id (random-uuid)
         report-ids  (mapv (fn [_] (random-uuid)) coverage-ids)
@@ -57,12 +56,11 @@
                              :insurance.survey.response/coverage-reports     (mapv :db/id report-refs)}
                       response-completed-at
                       (assoc :insurance.survey.response/completed-at response-completed-at))
-        survey      (cond-> {:insurance.survey/survey-id   survey-id
-                             :insurance.survey/survey-name (or survey-name "Insurance survey")
-                             :insurance.survey/policy      [:insurance.policy/policy-id policy-id]
-                             :insurance.survey/created-at  created-at
-                             :insurance.survey/closes-at   closes-at
-                             :insurance.survey/responses   [(:db/id response)]}
+        survey      (cond-> {:insurance.survey/survey-id  survey-id
+                             :insurance.survey/policy     [:insurance.policy/policy-id policy-id]
+                             :insurance.survey/created-at created-at
+                             :insurance.survey/closes-at  (or survey-closes-at closes-at)
+                             :insurance.survey/responses  [(:db/id response)]}
                       closed-at
                       (assoc :insurance.survey/closed-at closed-at))]
     @(d/transact conn (into report-refs [response survey]))

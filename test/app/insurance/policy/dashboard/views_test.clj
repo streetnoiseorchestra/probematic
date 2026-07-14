@@ -1,6 +1,8 @@
 (ns app.insurance.policy.dashboard.views-test
   (:require
    [app.insurance.policy.dashboard.views :as sut]
+   [app.ui2.button :as button]
+   [app.ui2.icon :as ico]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [jsonista.core :as j]
@@ -85,45 +87,161 @@
 
 (deftest dashboard-uses-card-chassis
   (testing "Every policy dashboard card uses the native Card chassis alias."
-    (let [metric  (sut/metric-card {:icon :bank :label "Value" :value "€100"})
+    (let [full-policy (merge policy
+                             {:insurance.policy/name            "Orchestra"
+                              :insurance.policy/status          :insurance.policy.status/draft
+                              :insurance.policy/premium-factor  1M
+                              :insurance.policy/effective-at    nil
+                              :insurance.policy/effective-until nil})
+          metric  (sut/metric-card {:icon :bank :label "Value" :value "€100"})
           summary (sut/dashboard-card {:title "Summary"} [:p "Body"])
           details (#'sut/policy-details-section
                    {:tr tr}
-                   (merge policy
-                          {:insurance.policy/name            "Orchestra"
-                           :insurance.policy/status          :insurance.policy.status/draft
-                           :insurance.policy/premium-factor  1M
-                           :insurance.policy/effective-at    nil
-                           :insurance.policy/effective-until nil}))]
+                   (assoc full-policy
+                          :insurance-team-member? true
+                          :policy full-policy))]
       (is (= [:app.ui2.card/card
               :app.ui2.card/card
               :app.ui2.card/card]
              (mapv first [metric summary details]))))))
 
-(deftest review-actions
-  (testing "A draft policy has outstanding review and health-check work."
-    (let [review-view (sut/review-status-section
+(deftest dashboard-card-actions-remain-visible-when-unavailable
+  (testing "Card actions preserve their position and become native disabled buttons when unavailable."
+    (let [full-policy (merge policy
+                             {:insurance.policy/name            "Orchestra"
+                              :insurance.policy/status          :insurance.policy.status/draft
+                              :insurance.policy/premium-factor  1M
+                              :insurance.policy/effective-at    nil
+                              :insurance.policy/effective-until nil})
+          policy-details (#'sut/policy-details-section
+                          {:tr tr}
+                          (assoc full-policy
+                                 :insurance-team-member? false
+                                 :policy full-policy))
+          member-responses (sut/survey-progress-section
+                            {:tr tr}
+                            {:insurance-team-member? false
+                             :policy policy
+                             :survey-progress {:completed-count 1
+                                               :waiting-count   2
+                                               :total-count     3}})
+          review-complete (sut/review-status-section
+                           {:tr tr}
+                           {:insurance-team-member? true
+                            :policy policy
+                            :totals {:total-instruments 3}
+                            :status-counts {:instrument.coverage.status/covered 3}})
+          health-complete (sut/health-checklist-section
+                           {:tr tr}
+                           {:insurance-team-member? true
+                            :policy policy
+                            :totals {:missing-photo-count            0
+                                     :missing-insurer-id-count       0
+                                     :missing-category-factor-count  0}})
+          action-summary (fn [view]
+                           (let [action (l/select-one button/Button view)
+                                 attrs  (l/attrs action)]
+                             {:href       (:href attrs)
+                              :disabled   (:disabled attrs)
+                              :slot       (:slot attrs)
+                              :appearance (:appearance attrs)
+                              :variant    (:variant attrs)
+                              :title      (:title attrs)
+                              :aria-label (:aria-label attrs)
+                              :icon       (-> (l/select-one ico/Icon action)
+                                              l/attrs
+                                              ::ico/name)}))]
+      (is (= {:policy-details
+              {:href       nil
+               :disabled   true
+               :slot       "header-actions"
+               :appearance "plain"
+               :variant    "brand"
+               :title      "policy-settings"
+               :aria-label "policy-settings"
+               :icon       :gear}
+              :member-responses
+              {:href       nil
+               :disabled   true
+               :slot       "header-actions"
+               :appearance "plain"
+               :variant    "brand"
+               :title      "manage-surveys"
+               :aria-label "manage-surveys"
+               :icon       :clipboard-text}
+              :review-status
+              {:href       nil
+               :disabled   true
+               :slot       "header-actions"
+               :appearance "plain"
+               :variant    "brand"
+               :title      "Review"
+               :aria-label "Review"
+               :icon       :hand-pointing}
+              :health-checklist
+              {:href       nil
+               :disabled   true
+               :slot       "header-actions"
+               :appearance "plain"
+               :variant    "brand"
+               :title      "Review"
+               :aria-label "Review"
+               :icon       :hand-pointing}}
+             {:policy-details    (action-summary policy-details)
+              :member-responses  (action-summary member-responses)
+              :review-status     (action-summary review-complete)
+              :health-checklist  (action-summary health-complete)})))))
+
+(deftest dashboard-card-actions-link-only-to-meaningful-destinations
+  (testing "Insurance-team members receive links only while the card action has work to perform."
+    (let [full-policy (merge policy
+                             {:insurance.policy/name            "Orchestra"
+                              :insurance.policy/status          :insurance.policy.status/draft
+                              :insurance.policy/premium-factor  1M
+                              :insurance.policy/effective-at    nil
+                              :insurance.policy/effective-until nil})
+          policy-details (#'sut/policy-details-section
+                          {:tr tr}
+                          (assoc full-policy
+                                 :insurance-team-member? true
+                                 :policy full-policy))
+          member-responses (sut/survey-progress-section
+                            {:tr tr}
+                            {:insurance-team-member? true
+                             :policy policy
+                             :survey-progress {:completed-count 1
+                                               :waiting-count   2
+                                               :total-count     3}})
+          review-open (sut/review-status-section
                        {:tr tr}
-                       {:policy        policy
-                        :totals        {:total-instruments 3}
+                       {:insurance-team-member? true
+                        :policy policy
+                        :totals {:total-instruments 3}
                         :status-counts {:instrument.coverage.status/covered      2
                                         :instrument.coverage.status/needs-review 1}})
-          health-view (sut/health-checklist-section
+          health-open (sut/health-checklist-section
                        {:tr tr}
-                       {:policy policy
-                        :totals {:missing-photo-count      1
-                                 :missing-insurer-id-count 0}})]
-      (testing "Both cards offer an accessible link to the review queue."
-        (is (= [{:slot       "header-actions"
-                 :href       (str "/insurance-policy/" policy-id "/review")
-                 :aria-label "Review"}
-                {:slot       "header-actions"
-                 :href       (str "/insurance-policy/" policy-id "/review")
-                 :aria-label "Review"}]
-               (mapv #(select-keys
-                       (select-attrs :app.ui2.button/button %)
-                       [:slot :href :aria-label])
-                     [review-view health-view])))))))
+                       {:insurance-team-member? true
+                        :policy policy
+                        :totals {:missing-photo-count            1
+                                 :missing-insurer-id-count       0
+                                 :missing-category-factor-count  0}})
+          action-summary (fn [view]
+                           (let [attrs (select-attrs button/Button view)]
+                             {:href     (:href attrs)
+                              :disabled (:disabled attrs)}))]
+      (is (= {:policy-details   {:href     (str "/insurance-policy/" policy-id "/settings")
+                                 :disabled nil}
+              :member-responses {:href     (str "/insurance-policy/" policy-id "/surveys")
+                                 :disabled nil}
+              :review-status    {:href     (str "/insurance-policy/" policy-id "/review")
+                                 :disabled nil}
+              :health-checklist {:href     (str "/insurance-policy/" policy-id "/review")
+                                 :disabled nil}}
+             {:policy-details   (action-summary policy-details)
+              :member-responses (action-summary member-responses)
+              :review-status    (action-summary review-open)
+              :health-checklist (action-summary health-open)})))))
 
 (deftest missing-category-factor-health-check
   (testing "The policy is missing a category factor used by one or more coverages."

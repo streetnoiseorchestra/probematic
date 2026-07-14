@@ -24,8 +24,7 @@
                                             :policy-id open-policy-id})
       (insurance-support/seed-survey! conn {:member-id  member-id
                                             :policy-id  closed-policy-id
-                                            :closed-at  #inst "2026-03-15T00:00:00.000-00:00"
-                                            :survey-name "Closed survey"})
+                                            :closed-at  #inst "2026-03-15T00:00:00.000-00:00"})
       (let [db (d/db conn)]
         (is (true? (q/policy-has-open-surveys? db open-policy-id)))
         (is (false? (q/policy-has-open-surveys? db closed-policy-id)))

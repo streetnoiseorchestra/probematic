@@ -21,10 +21,12 @@
   (:insurance.survey.report/report-id report))
 
 (defn- initial-state [{:keys [active-report]}]
-  {:current-flow-key flow/start-key
+  {:answered-count   0
+   :current-flow-key flow/start-key
    :decisions        []
    :mode             :question
-   :report-id        (report-id active-report)})
+   :report-id        (report-id active-report)
+   :transition-kind  :none})
 
 (defn page-state [{:keys [page-state]} data]
   (let [stored (get page-state form-key)
@@ -45,12 +47,15 @@
   (let [next-report       (second todo-reports)
         next-index        (inc current-index)
         remaining         (dec total-todo)
-        encouragement?    (and next-report
-                               (queries/show-encouragement? next-index remaining))]
-    {:current-flow-key flow/start-key
+        milestone?        (and next-report
+                               (queries/show-milestone? next-index remaining))]
+    {:answered-count   0
+     :current-flow-key flow/start-key
      :decisions        []
-     :mode             (if encouragement? :encouragement :question)
-     :report-id        (report-id next-report)}))
+     :milestone?       (boolean milestone?)
+     :mode             :question
+     :report-id        (report-id next-report)
+     :transition-kind  :item}))
 
 (defn- complete-report-tx [state data decisions extra-tx]
   (let [{:keys [active-report response]} data]
@@ -77,6 +82,7 @@
 
       :else
       (let [next-step (:next transition)
+            answered-count (inc (or (:answered-count page-state) 0))
             decisions (->> (concat (:decisions page-state)
                                    (:decisions transition))
                            distinct
@@ -91,23 +97,20 @@
           [support/clear-loading
            (state-effect (-> page-state
                              (assoc :current-flow-key :data-edit
+                                    :answered-count answered-count
                                     :decisions decisions
-                                    :mode :edit)
-                             (dissoc :error)))]
+                                    :mode :edit
+                                    :transition-kind :question)
+                             (dissoc :error :milestone?)))]
 
           [support/clear-loading
            (state-effect (-> page-state
                              (assoc :current-flow-key next-step
+                                    :answered-count answered-count
                                     :decisions decisions
-                                    :mode :question)
-                             (dissoc :error)))])))))
-
-(defn continue-action [state signals]
-  (let [data (data-for state signals)]
-    (if (= :active (:status data))
-      [support/clear-loading
-       (state-effect (initial-state data))]
-      (error-effects state data :insurance/review-not-available))))
+                                    :mode :question
+                                    :transition-kind :question)
+                             (dissoc :error :milestone?)))])))))
 
 (defn dismiss-action [state signals]
   (let [{:keys [response status total-todo] :as data} (data-for state signals)]
@@ -185,7 +188,6 @@
              (state-effect (next-page-state data))]))))))
 
 (def actions
-  {::continue-review #'continue-action
-   ::dismiss-review  #'dismiss-action
+  {::dismiss-review  #'dismiss-action
    ::save-edit       #'save-edit-action
    ::transition      #'transition-action})

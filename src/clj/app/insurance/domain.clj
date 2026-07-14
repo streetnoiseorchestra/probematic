@@ -237,7 +237,6 @@
 (def SurveyEntity
   [:map {:name :app.entity/insurance.survey}
    [:insurance.survey/survey-id :uuid]
-   [:insurance.survey/survey-name ::s/non-blank-string]
    [:insurance.survey/policy ::s/datomic-ref]
    [:insurance.survey/created-at ::s/inst]
    [:insurance.survey/closes-at ::s/inst]
@@ -285,23 +284,14 @@
                                      :human (s/explain-human schema survey)})))
      (s/encode-datomic schema survey))))
 
-(defn txs-update-survey [survey-id name closes-at]
-  (assert survey-id "Survey ID must be non-nil")
-  (assert name "Name must be non-nil")
-  (assert closes-at "Closes at must be non-nil")
-  [[:db/add [:insurance.survey/survey-id survey-id] :insurance.survey/survey-name name]
-   [:db/add [:insurance.survey/survey-id survey-id] :insurance.survey/closes-at (closes-at-inst closes-at)]])
-
-(defn tx-new-survey [tempid name policy-id closes-at response-tempids]
+(defn tx-new-survey [tempid policy-id closes-at response-tempids]
   (assert tempid "Tempid must be non-nil")
-  (assert name "Name must be non-nil")
   (assert policy-id "Policy ID must be non-nil")
   (assert closes-at "Closes at must be non-nil")
   (assert (seq response-tempids) "Response tempids must be non-empty")
   (survey->db
    {:db/id tempid
     :insurance.survey/survey-id (sq/generate-squuid)
-    :insurance.survey/survey-name name
     :insurance.survey/policy [:insurance.policy/policy-id policy-id]
     :insurance.survey/created-at (t/inst)
     :insurance.survey/closes-at closes-at

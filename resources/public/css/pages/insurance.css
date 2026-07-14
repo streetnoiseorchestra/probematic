@@ -134,6 +134,36 @@
   display: none;
 }
 
+.insurance-dashboard-survey-progress {
+  --progress-value: 0%;
+
+  position: relative;
+  overflow: hidden;
+  block-size: var(--wa-space-l);
+  border-radius: var(--wa-border-radius-s);
+  background-color: var(--wa-color-neutral-fill-normal);
+}
+
+@scope (.insurance-dashboard-survey-progress) {
+  span {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--progress-value);
+    background-color: var(--wa-color-success-fill-loud);
+  }
+
+  wa-format-number {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--wa-color-text-normal);
+    font-weight: var(--wa-font-weight-bold);
+    pointer-events: none;
+  }
+}
+
 @media (--sno-viewport-s) {
   .insurance-dashboard-secondary-actions {
     display: block;
@@ -361,6 +391,706 @@
   margin-inline: auto;
   padding: var(--wa-space-l);
 }
+
+.insurance-survey-save-status {
+  --insurance-survey-save-fade-delay: 10s;
+  --insurance-survey-save-fade-duration: 1s;
+}
+
+@scope (.insurance-survey-save-status) {
+  .saving {
+    color: var(--wa-color-warning-on-quiet);
+  }
+
+  .saved {
+    color: var(--wa-color-success-on-quiet);
+    animation: insurance-survey-save-status-fade
+      var(--insurance-survey-save-fade-duration)
+      var(--wa-transition-easing)
+      var(--insurance-survey-save-fade-delay)
+      forwards;
+  }
+}
+
+@keyframes insurance-survey-save-status-fade {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@scope (.insurance-survey-responses) {
+  .action {
+    inline-size: 1%;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 30rem) {
+  @scope (.insurance-survey-responses) {
+    .action .label {
+      display: none;
+    }
+  }
+}
+
+.insurance-survey-workflow {
+  --insurance-survey-milestone-duration: 2400ms;
+
+  min-inline-size: 0;
+}
+
+html:has(.insurance-survey-workflow) {
+  --insurance-survey-card-duration: 1000ms;
+  --insurance-survey-deck-forward-delay: 0ms;
+  --insurance-survey-deck-forward-duration: 500ms;
+}
+
+@scope (.insurance-survey-workflow) {
+  .insurance-survey-stage {
+    inline-size: 100%;
+    min-inline-size: 0;
+    margin-inline: auto;
+  }
+
+  .insurance-survey-question {
+    padding-inline: var(--wa-space-xs);
+    text-align: center;
+    view-transition-name: insurance-survey-question;
+  }
+
+  .insurance-survey-question h2,
+  .insurance-survey-question p {
+    margin: 0;
+  }
+
+  .insurance-survey-question .wa-cluster {
+    justify-content: center;
+  }
+
+}
+
+.insurance-survey-progress {
+  --indicator-color: var(--wa-color-success-fill-loud);
+  --track-color: var(--wa-color-neutral-fill-normal);
+  --track-height: var(--wa-space-s);
+
+  inline-size: min(100%, calc(var(--wa-space-5xl) * 6));
+  margin-inline: auto;
+}
+
+.insurance-survey-progress::part(indicator) {
+  width: var(--insurance-survey-progress-value);
+  background-image: linear-gradient(
+    90deg,
+    var(--wa-color-success-fill-normal),
+    var(--wa-color-success-fill-loud)
+  );
+  transition: width calc(3 * var(--wa-transition-slow))
+    cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.insurance-survey-card-deck {
+  position: relative;
+  isolation: isolate;
+  inline-size: min(100%, 21rem);
+  min-inline-size: 0;
+  padding-block-start: var(--wa-space-2xl);
+  margin-inline: auto;
+  perspective: 60rem;
+}
+
+@scope (.insurance-survey-card-deck) {
+  :scope:not(:has(.insurance-survey-card-layer)) {
+    padding-block-start: 0;
+  }
+
+  .insurance-survey-card-layer {
+    position: absolute;
+    z-index: var(--deck-layer);
+    inset-block: var(--wa-space-2xl) 0;
+    inset-inline: 0;
+    pointer-events: none;
+    transform: translateY(var(--deck-block-offset)) scale(var(--deck-scale));
+    transform-origin: center top;
+    view-transition-class: insurance-survey-deck-layer;
+  }
+
+  .insurance-survey-card-current {
+    position: relative;
+    z-index: 101;
+    view-transition-name: insurance-survey-card;
+  }
+}
+
+.insurance-survey-instrument-card {
+  --spacing: var(--wa-space-s);
+
+  box-sizing: border-box;
+  inline-size: 100%;
+  aspect-ratio: 5 / 7;
+  overflow: hidden;
+  background: linear-gradient(
+    155deg,
+    color-mix(
+        in oklab,
+        var(--insurance-survey-category-tint) 14%,
+        var(--wa-color-surface-default)
+      ),
+    var(--wa-color-surface-default) 68%
+  );
+}
+
+@scope (.insurance-survey-instrument-card) {
+  :scope > .media {
+    flex: 0 0 55%;
+    min-block-size: 0;
+  }
+
+  .insurance-survey-card-media {
+    position: relative;
+    block-size: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(
+      145deg,
+      color-mix(
+          in oklab,
+          var(--insurance-survey-category-tint) 70%,
+          var(--wa-color-surface-raised)
+        ),
+      color-mix(
+        in oklab,
+        var(--insurance-survey-category-tint) 30%,
+        var(--wa-color-surface-default)
+      )
+    );
+  }
+
+  .insurance-survey-card-media > img,
+  .insurance-survey-card-image-fallback {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .insurance-survey-card-media > img {
+    object-fit: cover;
+  }
+
+  .insurance-survey-card-image-fallback {
+    display: grid;
+    place-items: center;
+  }
+
+  .insurance-survey-card-image-fallback[hidden] {
+    display: none;
+  }
+
+  .insurance-survey-card-image-fallback .sno-icon {
+    inline-size: var(--wa-space-5xl);
+    block-size: var(--wa-space-5xl);
+    color: color-mix(
+      in oklab,
+      var(--insurance-survey-category-tint) 45%,
+      var(--wa-color-text-normal)
+    );
+    opacity: 0.72;
+  }
+
+  .insurance-survey-card-media figcaption {
+    position: absolute;
+    inset-block-end: var(--wa-space-xs);
+    inset-inline-start: var(--wa-space-xs);
+    max-inline-size: calc(100% - var(--wa-space-m));
+    padding: var(--wa-space-3xs) var(--wa-space-xs);
+    overflow: hidden;
+    color: var(--wa-color-text-normal);
+    font-size: var(--wa-font-size-xs);
+    line-height: var(--wa-line-height-condensed);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: color-mix(
+      in oklab,
+      var(--wa-color-surface-raised) 84%,
+      transparent
+    );
+    border: var(--wa-border-width-s) var(--wa-border-style)
+      color-mix(in oklab, var(--wa-color-surface-border) 76%, transparent);
+    border-radius: var(--wa-border-radius-pill);
+    box-shadow: var(--wa-shadow-s);
+    backdrop-filter: blur(0.35rem);
+  }
+
+  :scope > .header {
+    flex: 0 0 auto;
+  }
+
+  .insurance-survey-card-heading h2,
+  .insurance-survey-card-description {
+    margin: 0;
+  }
+
+  .insurance-survey-card-heading h2 {
+    overflow: hidden;
+    line-height: var(--wa-line-height-condensed);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :scope > .body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: var(--wa-space-xs);
+    min-block-size: 0;
+  }
+
+  .insurance-survey-card-description {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--wa-color-text-quiet);
+    font-size: var(--wa-font-size-s);
+    line-height: var(--wa-line-height-condensed);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .insurance-survey-card-facts {
+    display: grid;
+    flex: 1 1 auto;
+    gap: var(--wa-space-xs) var(--wa-space-s);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    min-block-size: 0;
+    margin: 0;
+    overflow: auto;
+    scrollbar-width: thin;
+  }
+
+  .insurance-survey-card-facts > div {
+    display: grid;
+    gap: var(--wa-space-3xs);
+    min-inline-size: 0;
+  }
+
+  .insurance-survey-card-facts dt {
+    color: var(--wa-color-text-quiet);
+    font-size: var(--wa-font-size-xs);
+    line-height: var(--wa-line-height-condensed);
+  }
+
+  .insurance-survey-card-facts dd {
+    min-inline-size: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--wa-font-size-s);
+    line-height: var(--wa-line-height-condensed);
+  }
+}
+
+@media (--sno-viewport-below-s) {
+  .insurance-survey-instrument-card > .media {
+    flex-basis: 50%;
+  }
+}
+
+.insurance-survey-animation-lab {
+  align-items: center;
+  inline-size: min(100%, 42rem);
+  margin-inline: auto;
+  padding: var(--wa-space-s);
+  background: var(--wa-color-surface-lowered);
+  border: var(--wa-border-width-s) dashed var(--wa-color-surface-border);
+  border-radius: var(--wa-panel-border-radius);
+}
+
+@scope (.insurance-survey-animation-lab) {
+  :scope > .wa-cluster {
+    justify-content: center;
+  }
+}
+
+.insurance-survey-debug-milestone {
+  animation-delay: 0s !important;
+}
+
+.insurance-survey-milestone {
+  position: absolute;
+  z-index: 200;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  flex-wrap: nowrap;
+  min-inline-size: max-content;
+  max-inline-size: calc(100% - var(--wa-space-2xl));
+  padding: var(--wa-space-xs) var(--wa-space-m);
+  pointer-events: none;
+  color: var(--wa-color-text-normal);
+  background: color-mix(
+    in oklab,
+    var(--wa-color-brand-fill-quiet) 32%,
+    var(--wa-color-surface-raised)
+  );
+  border: var(--wa-border-width-s) var(--wa-border-style)
+    var(--wa-color-brand-border-quiet);
+  border-radius: var(--wa-border-radius-pill);
+  box-shadow: var(--wa-shadow-l);
+  transform: translate(-50%, -50%);
+  animation: insurance-survey-milestone
+    var(--insurance-survey-milestone-duration)
+    var(--wa-transition-easing) both;
+}
+
+@scope (.insurance-survey-milestone) {
+  .sno-icon {
+    flex: 0 0 auto;
+    inline-size: var(--wa-space-l);
+    block-size: var(--wa-space-l);
+    color: var(--wa-color-brand-fill-loud);
+  }
+
+  strong,
+  span {
+    line-height: var(--wa-line-height-condensed);
+  }
+}
+
+.insurance-survey-completion {
+  min-block-size: calc(var(--wa-space-5xl) * 5);
+  align-items: center;
+  justify-content: center;
+  padding-block: var(--wa-space-xl);
+  text-align: center;
+}
+
+@scope (.insurance-survey-completion) {
+  .intro {
+    align-items: center;
+    max-inline-size: calc(var(--wa-space-5xl) * 5);
+  }
+
+  .intro > .sno-icon {
+    inline-size: var(--wa-space-5xl);
+    block-size: var(--wa-space-5xl);
+    color: var(--wa-color-success-fill-loud);
+  }
+
+  h1,
+  p {
+    margin: 0;
+  }
+
+  .stage {
+    max-inline-size: calc(var(--wa-space-5xl) * 5);
+  }
+
+  .stage[hidden] {
+    display: none;
+  }
+
+  .stage.revealed {
+    animation: insurance-survey-celebration-reveal var(--wa-transition-slow)
+      var(--wa-transition-easing) both;
+  }
+
+  .final {
+    align-items: center;
+  }
+
+  .thanks,
+  .final > .wa-cluster {
+    justify-content: center;
+  }
+
+  .thanks {
+    font-size: var(--wa-font-size-l);
+  }
+
+  .thanks-icon {
+    color: var(--wa-color-brand-fill-loud);
+  }
+}
+
+@keyframes insurance-survey-question-out {
+  to {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--wa-space-m)));
+  }
+}
+
+@keyframes insurance-survey-question-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--wa-space-m));
+  }
+}
+
+@keyframes insurance-survey-question-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--wa-space-m));
+  }
+}
+
+@keyframes insurance-survey-card-swipe {
+  0% {
+    opacity: 1;
+    transform: perspective(50rem) translate3d(0, 0, 0) rotateX(0)
+      rotateY(0) rotateZ(0) scale(1);
+  }
+
+  14% {
+    opacity: 1;
+    transform: perspective(50rem) translate3d(4%, -1%, 1rem) rotateX(-2deg)
+      rotateY(5deg) rotateZ(2deg) scale(1.015);
+  }
+
+  38% {
+    opacity: 1;
+    transform: perspective(50rem) translate3d(-12%, -3%, 2rem) rotateX(3deg)
+      rotateY(-8deg) rotateZ(-5deg) scale(1);
+  }
+
+  68% {
+    opacity: 1;
+    transform: perspective(50rem) translate3d(-70%, -10%, 4rem)
+      rotateX(8deg) rotateY(-20deg) rotateZ(-16deg) scale(0.96);
+  }
+
+  88% {
+    opacity: 1;
+    transform: perspective(50rem) translate3d(-135%, -18%, 5rem)
+      rotateX(12deg) rotateY(-30deg) rotateZ(-27deg) scale(0.9);
+  }
+
+  100% {
+    opacity: 0;
+    transform: perspective(50rem) translate3d(-190%, -24%, 5rem)
+      rotateX(14deg) rotateY(-36deg) rotateZ(-34deg) scale(0.86);
+  }
+}
+
+@keyframes insurance-survey-deck-forward {
+  to {
+    transform: translateY(var(--deck-next-block-offset))
+      scale(var(--deck-next-scale));
+  }
+}
+
+@keyframes insurance-survey-debug-question {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  42% {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--wa-space-m)));
+  }
+
+  43% {
+    opacity: 0;
+    transform: translateX(var(--wa-space-m));
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes insurance-survey-debug-item-question {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  15%,
+  66% {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--wa-space-m)));
+  }
+
+  67% {
+    opacity: 0;
+    transform: translateY(var(--wa-space-m));
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes insurance-survey-celebration-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--wa-space-s));
+  }
+}
+
+@keyframes insurance-survey-milestone {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + var(--wa-space-l))) scale(0.72)
+      rotate(-4deg);
+  }
+
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08) rotate(1deg);
+  }
+
+  19% {
+    transform: translate(-50%, -50%) scale(0.97) rotate(0);
+  }
+
+  26%,
+  74% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0);
+  }
+
+  100% {
+    visibility: hidden;
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - var(--wa-space-l))) scale(0.94);
+  }
+}
+
+@keyframes insurance-survey-milestone-fade {
+  0%,
+  75% {
+    opacity: 1;
+  }
+
+  100% {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+::view-transition-group(insurance-survey-question),
+::view-transition-group(insurance-survey-card),
+::view-transition-old(insurance-survey-question),
+::view-transition-new(insurance-survey-question),
+::view-transition-old(insurance-survey-card),
+::view-transition-new(insurance-survey-card) {
+  animation: none;
+}
+
+html:has(.insurance-survey-workflow)::view-transition-old(insurance-survey-card) {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .insurance-survey-card-current:is(
+      .is-debug-throwing,
+      .is-survey-throwing
+    ) {
+    transform-origin: 15% 110%;
+    backface-visibility: hidden;
+    animation: insurance-survey-card-swipe
+      var(--insurance-survey-card-duration)
+      cubic-bezier(0.3, 0.05, 0.7, 1) both;
+  }
+
+  .insurance-survey-card-layer:is(
+      .is-debug-advancing,
+      .is-survey-advancing
+    ) {
+    animation: insurance-survey-deck-forward
+      var(--insurance-survey-deck-forward-duration)
+      var(--wa-transition-easing)
+      var(--insurance-survey-debug-deck-forward-delay, 0ms)
+      both;
+  }
+
+  .insurance-survey-card-current.is-debug-dismissed {
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .insurance-survey-question.is-submitting-item {
+    animation: insurance-survey-question-out var(--wa-transition-normal)
+      var(--wa-transition-easing) both;
+  }
+
+  .insurance-survey-question.is-debug-transitioning {
+    animation: insurance-survey-debug-question 650ms var(--wa-transition-easing)
+      both;
+  }
+
+  .insurance-survey-question.is-debug-item-transitioning {
+    animation: insurance-survey-debug-item-question 1500ms
+      var(--wa-transition-easing) both;
+  }
+
+  html:has(.insurance-survey-workflow[data-transition-kind='question'])::view-transition-old(insurance-survey-question) {
+    animation: insurance-survey-question-out var(--wa-transition-slow)
+      var(--wa-transition-easing) both;
+  }
+
+  html:has(.insurance-survey-workflow[data-transition-kind='question'])::view-transition-new(insurance-survey-question) {
+    animation: insurance-survey-question-in var(--wa-transition-slow)
+      var(--wa-transition-easing) both;
+  }
+
+  html:has(.insurance-survey-workflow[data-transition-kind='item'])::view-transition-old(insurance-survey-question) {
+    animation: insurance-survey-question-out var(--wa-transition-normal)
+      var(--wa-transition-easing) both;
+  }
+
+  html:has(.insurance-survey-workflow[data-transition-kind='item'])::view-transition-new(insurance-survey-question) {
+    animation: insurance-survey-question-rise
+      var(--insurance-survey-deck-forward-duration)
+      var(--wa-transition-easing) var(--insurance-survey-deck-forward-delay)
+      both;
+  }
+
+  html:has(.insurance-survey-workflow[data-transition-kind='item'])::view-transition-old(insurance-survey-card) {
+    opacity: 0;
+    animation: none;
+  }
+
+  html:has(.insurance-survey-workflow[data-transition-kind='item'])::view-transition-group(.insurance-survey-deck-layer),
+  html:has(.insurance-survey-workflow[data-transition-kind='item'])::view-transition-old(.insurance-survey-deck-layer),
+  html:has(.insurance-survey-workflow[data-transition-kind='item'])::view-transition-new(.insurance-survey-deck-layer) {
+    animation: none;
+  }
+
+  html:has(.insurance-survey-workflow[data-transition-kind='item'])::view-transition-old(.insurance-survey-deck-layer) {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insurance-survey-progress::part(indicator) {
+    transition: none;
+  }
+
+  html:has(.insurance-survey-workflow)::view-transition-group(.insurance-survey-deck-layer),
+  ::view-transition-group(insurance-survey-question),
+  ::view-transition-group(insurance-survey-card),
+  ::view-transition-old(insurance-survey-question),
+  ::view-transition-new(insurance-survey-question),
+  ::view-transition-old(insurance-survey-card),
+  ::view-transition-new(insurance-survey-card) {
+    animation-duration: 0s;
+    animation-delay: 0s;
+  }
+
+  .insurance-survey-completion .stage.revealed {
+    animation: none;
+  }
+
+  .insurance-survey-milestone {
+    animation: insurance-survey-milestone-fade 2s linear both;
+  }
+}
+
 .insurance-coverage-edit-form-grid {
   display: grid;
   gap: var(--wa-space-m);

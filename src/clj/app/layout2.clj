@@ -172,6 +172,13 @@
   [:link (merge {:rel  "stylesheet"
                  :href (asset-url req (str dir "/" path))}
                 (apply hash-map extra))])
+
+(def esm-import-map
+  {"squint-cljs/" "/vendor/squint@0.11.189/"
+   "wa/"          "/vendor/webawesome@3.10.0/"
+   "sortable"     "/vendor/sortable@1.15.7-esm.js"
+   "confetti"     "vendor/canvas-confetti@1.9.3.js"})
+
 (defn head [req {:keys [extra-head title]}]
   (into
    [:head
@@ -182,9 +189,7 @@
     [:title (or title "SNOrga")]
     (stylesheet req "css/compiled" "main2.css")
     [:script {:type :importmap} (html/raw (j/write-value-as-string
-                                           {:imports {"squint-cljs/" "/vendor/squint@0.11.189/"
-                                                      "wa/"          "/vendor/webawesome@3.10.0/"
-                                                      "sortable"     "/vendor/sortable@1.15.7-esm.js"}}))]
+                                           {:imports esm-import-map}))]
     (public-script req "vendor/bprogress@1.3.4/index.global.js")
     [:script {:type "module" :blocking "render"}
      (html/raw

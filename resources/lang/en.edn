@@ -651,7 +651,6 @@
                             :close-survey              "Close Survey"
                             :closes-at                 "Closes At"
                             :closes-at-hint            "The date and time when the insurance survey will stop accepting responses."
-                            :survey-name               "Survey Name"
                             :confirm-close-title       "Close Survey?"
                             :confirm-close             "This will close the survey for all members."
                             :completed-count           "%1 of %2 completed"

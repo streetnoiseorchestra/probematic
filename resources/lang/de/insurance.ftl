@@ -49,36 +49,59 @@ workbench = Tabelle
 add-coverage = Instrument hinzufügen
 policy-settings = Policeneinstellungen
 manage-surveys = Umfragen verwalten
-pending-coverage-reviews = Versicherungsprüfungen
-# $count (Number) - Noch zu prüfende Instrumente. $total (Number) - Gesamtzahl der Instrumente. $policy (String) - Policenname. $date (String) - Lokalisiertes Enddatum mit Uhrzeit.
-survey-response-detail =
+instrument-insurance = Instrumentenversicherung
+# $count (Number) - Noch zu prüfende Instrumente. $total (Number) - Gesamtzahl der Instrumente.
+review-dashboard-progress =
     { $count ->
         [0] Bereit zum Abschließen
-        [one] Eines von { $total } Instrumenten muss geprüft werden
-       *[other] { $count } von { $total } Instrumenten müssen geprüft werden
-    } · { $policy } · endet { $date }
+        [one] 1 von { $total } Instrumenten wartet auf dich
+       *[other] { $count } von { $total } Instrumenten warten auf dich
+    }
+# Steht unmittelbar vor einer relativen Zeitangabe wie „in 4 Tagen“.
+review-dashboard-due = Fällig
+# $name (String) - Anzeigename des Mitglieds.
+review-dashboard-greeting = { $name }, es ist Zeit, deine versicherten Instrumente zu überprüfen.
+# $minutes (Number) - Geschätzte Dauer der Prüfung in ganzen Minuten.
+review-dashboard-estimate = Etwa { $minutes } Min.
+review-dashboard-start = Prüfung starten
 survey-admin-title = Versicherungsumfragen
 survey-admin-subtitle = Bitte alle Mitglieder, die Instrumente dieser Police zu überprüfen.
 start-survey = Umfrage starten
 survey-details-title = Umfragedetails
 survey-details-subtitle = Mitglieder können bis zum Enddatum oder bis zum Schließen durch das Versicherungsteam antworten.
-survey-name = Name der Umfrage
-survey-name-hint = Gib dieser Überprüfung einen kurzen, eindeutigen Namen.
 survey-closes-at = Endet am
 survey-closes-at-hint = Datum und Uhrzeit, nach denen Mitglieder nicht mehr antworten sollen.
-survey-name-required = Gib einen Namen für die Umfrage ein.
 survey-closes-at-invalid = Gib ein gültiges Enddatum mit Uhrzeit ein.
 survey-closes-at-future = Wähle ein Enddatum in der Zukunft.
+survey-closes-at-saving = Wird gespeichert…
+survey-closes-at-saved = Gespeichert
+survey-closes-at-save-failed = Speichern fehlgeschlagen
 survey-open = Offen
 survey-no-open-title = Keine offene Versicherungsumfrage
 survey-no-open-body = Starte eine Umfrage, wenn die Mitglieder ihre aktuell versicherten Instrumente überprüfen sollen.
 survey-responses-title = Antworten der Mitglieder
 survey-responses-subtitle = Verfolge den Fortschritt und korrigiere den Abschlussstatus bei Bedarf.
+survey-responses-table-caption = Antworten der Mitglieder auf diese Versicherungsumfrage
+survey-response-actions = Aktionen für die Antwort
+# Zugängliche Beschriftung für den segmentierten Antwortfilter.
+survey-filter-label = Antworten der Mitglieder filtern
+# $count (Number) - Alle Antworten der Mitglieder.
+survey-filter-all = Alle ({ $count })
+# $count (Number) - Noch nicht als abgeschlossen markierte Antworten.
+survey-filter-incomplete = Offen ({ $count })
+# $count (Number) - Als abgeschlossen markierte Antworten.
+survey-filter-completed = Abgeschlossen ({ $count })
+survey-filter-empty-all = Noch keine Antworten von Mitgliedern.
+survey-filter-empty-incomplete = Alle haben diese Umfrage abgeschlossen.
+survey-filter-empty-completed = Noch keine abgeschlossenen Antworten.
 survey-reviewed = Überprüft
 survey-status = Status
 survey-complete = Abgeschlossen
 survey-incomplete = Offen
 survey-progress = { $completed } von { $total }
+# Zusammenfassung der Antworten in einer offenen Versicherungsumfrage.
+# $completed (Number) - Abgeschlossene Antworten. $total (Number) - Alle Antworten.
+survey-progress-summary = { $completed } von { $total } Antworten abgeschlossen.
 survey-mark-complete = Als abgeschlossen markieren
 survey-mark-incomplete = Als offen markieren
 survey-no-responses = Diese Umfrage enthält keine Antworten von Mitgliedern.
@@ -97,12 +120,15 @@ survey-close = Umfrage schließen
 survey-close-title = Diese Versicherungsumfrage schließen?
 survey-close-body = Mitglieder können ihre Antworten danach nicht mehr ändern.
 survey-close-confirm = Umfrage schließen
-survey-created = Die Versicherungsumfrage wurde gestartet.
-survey-updated = Die Umfragedetails wurden gespeichert.
+survey-created = Die Versicherungsumfrage wurde gestartet. Es wurden keine Erinnerungen gesendet. Klicke auf „Erinnerungen senden“, um die Mitglieder zu benachrichtigen.
 survey-closed = Die Versicherungsumfrage wurde geschlossen.
+survey-more-actions = Weitere Umfrageaktionen
 survey-closed-title = Geschlossene Umfragen
 survey-closed-subtitle = Frühere Umfragen für diese Police.
-survey-closed-on = Geschlossen am { $date }
+# $created (String) - Lokalisierter Beginn. $ended (String) - Lokalisierter Zeitpunkt des manuellen Schließens.
+survey-history-closed = Begonnen am { $created } · Geschlossen am { $ended }
+# $created (String) - Lokalisierter Beginn. $ended (String) - Lokalisierter Ablaufzeitpunkt.
+survey-history-expired = Begonnen am { $created } · Abgelaufen am { $ended }
 survey-error-not-found = Diese Police oder Umfrage wurde nicht gefunden.
 survey-error-not-allowed = Nur Mitglieder des Versicherungsteams können Versicherungsumfragen verwalten.
 survey-error-open-exists = Schließe die aktuelle Umfrage, bevor du eine neue startest.
@@ -142,10 +168,11 @@ payment-notifications-sent =
        *[other] { $count } Zahlungsbenachrichtigungen wurden gesendet.
     }
 
-### Überprüfung des Versicherungsschutzes durch Mitglieder
+### Instrumentenprüfung durch Mitglieder
 
+review-title = Instrumentenprüfung
 coverage-review = Versicherungsprüfung
-review-progress = Fortschritt der Versicherungsprüfung
+review-progress = Fortschritt der Instrumentenprüfung
 review-item-step = Gegenstand { $number }
 review-used-at-gig = Wurde dies im vergangenen Jahr bei einem Street-Noise-Gig verwendet?
 review-yes = Ja
@@ -164,24 +191,35 @@ review-confirm-private-cost = Der weitere Versicherungsschutz kostet ungefähr {
 review-data-correct = Sind alle hier angezeigten Angaben noch korrekt?
 review-data-correct-hint = Prüfe besonders den Versicherungswert und die Versicherungsarten.
 review-invalid-transition = Diese Antwort ist für die aktuelle Frage nicht gültig.
-review-not-available-title = Keine Versicherungsprüfung verfügbar
-review-not-available = Für dich ist bei dieser Police keine Versicherungsprüfung verfügbar.
-review-cannot-finish = Prüfe zuerst die verbleibenden Instrumente, bevor du diese Versicherungsprüfung abschließt.
+review-not-available-title = Keine Instrumentenprüfung verfügbar
+review-not-available = Für dich ist derzeit keine Instrumentenprüfung verfügbar.
+review-cannot-finish = Prüfe zuerst die verbleibenden Instrumente.
 review-no-items-title = Keine Instrumente zu prüfen
-review-no-items-body = Du hast derzeit keine versicherten Instrumente in dieser Prüfung. Du kannst eines hinzufügen oder die Prüfung abschließen.
+review-no-items-body = Du hast derzeit keine versicherten Instrumente in dieser Prüfung. Du kannst eines hinzufügen oder abschließen.
 review-finish = Ich bin fertig
-review-closed-title = Diese Versicherungsprüfung ist geschlossen
+review-closed-title = Diese Instrumentenprüfung ist geschlossen
 review-closed-body = Antworten können nicht mehr geändert werden, weil das Versicherungsteam diese Prüfung geschlossen hat.
 review-contact-team = Kontaktiere das Versicherungsteam, falls noch etwas geändert werden muss.
-review-complete-title = Versicherungsprüfung abgeschlossen
+review-complete-title = Alles erledigt!
 review-complete-body = Danke. Das Versicherungsteam hat deine Antworten erhalten.
+review-celebrate = Feiern!
+review-celebrate-again = Warum nicht gleich noch einmal feiern?
+review-celebrate-feels-good = Fühlt sich gut an, oder? Noch einmal.
+review-celebrate-thanks = Das Versicherungsteam bedankt sich bei dir.
 review-good-job = Gut gemacht
-review-completed-progress =
-    { $completed ->
-        [one] Du hast ein Instrument geprüft. { $remaining } sind noch übrig.
-       *[other] Du hast { $completed } Instrumente geprüft. { $remaining } sind noch übrig.
+review-milestone =
+    { $remaining ->
+        [one] Nur noch ein Instrument.
+       *[other] Nur noch { $remaining } Instrumente.
     }
-review-keep-going = Weitermachen
+review-animation-lab = Animationslabor (nur Entwicklung)
+review-animation-sequence = Vollständiger Ablauf
+review-animation-throw = Karte wegwerfen
+review-animation-advance = Stapel nachrücken
+review-animation-question = Frage
+review-animation-encouragement = Ermutigung
+review-animation-reset = Zurücksetzen
+review-card-details = Instrumentendetails
 review-correct-data-title = Instrumentenangaben korrigieren
 review-correct-data-body = Aktualisiere alle Änderungen und speichere anschließend, um die Prüfung dieses Instruments abzuschließen.
 review-coverage-body = Prüfe den Versicherungswert und die Versicherungsarten.

@@ -149,8 +149,7 @@
          conn
          {:coverage-ids [coverage-id]
           :member-id    member-id
-          :policy-id    policy-id
-          :survey-name  "Coverage check"})
+          :policy-id    policy-id})
         answered   (poll-test/seed-poll!
                     conn member-id
                     {:poll/poll-status :poll.status/open
@@ -166,11 +165,37 @@
     (let [db     (d/db conn)
           member (q/retrieve-member db member-id)
           data   (queries/dashboard-data db member)]
-      (is (= [{:policy-id  policy-id
-               :survey-id  survey-id
-               :name       "Coverage check"
-               :todo-count 1}]
-             (mapv #(select-keys % [:policy-id :survey-id :name :todo-count])
-                   (:insurance-surveys data))))
+      (is (= {:policy-id  policy-id
+              :survey-id  survey-id
+              :todo-count 1}
+             (select-keys (:insurance-survey data)
+                          [:policy-id :survey-id :todo-count])))
       (is (= [(:poll-id unanswered)]
              (mapv :poll/poll-id (:unanswered-polls data)))))))
+
+(deftest dashboard-data-selects-only-the-next-coverage-review
+  (let [{:keys [conn member-id]} (tc/new-system "dashboard-next-coverage-review")
+        {:keys [coverage-id policy-id]}
+        (insurance-test/seed-page-shell-fixture! conn member-id)
+        sooner-policy-id          (insurance-test/seed-policy! conn (random-uuid))
+        later                     (insurance-test/seed-member-survey!
+                                   conn
+                                   {:coverage-ids    [coverage-id]
+                                    :member-id       member-id
+                                    :policy-id       policy-id
+                                    :survey-closes-at #inst "2026-11-01T00:00:00.000-00:00"})
+        sooner                    (insurance-test/seed-member-survey!
+                                   conn
+                                   {:coverage-ids    [coverage-id]
+                                    :member-id       member-id
+                                    :policy-id       sooner-policy-id
+                                    :survey-closes-at #inst "2026-10-01T00:00:00.000-00:00"})
+        db                        (d/db conn)
+        member                    (q/retrieve-member db member-id)
+        data                      (queries/dashboard-data db member)]
+    (is (= {:policy-id sooner-policy-id
+            :survey-id (:survey-id sooner)}
+           (select-keys (:insurance-survey data)
+                        [:policy-id :survey-id])))
+    (is (not= (:survey-id later)
+              (get-in data [:insurance-survey :survey-id])))))

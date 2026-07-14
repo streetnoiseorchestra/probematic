@@ -8,8 +8,10 @@
    [app.test-common :as tc]
    [app.ui2.button :as button]
    [app.ui2.card :as card]
+   [app.ui2.page-header :as page-header]
    [app.ui2.page-shell-test-support :as page-shell]
    [app.ui2.page-surface :as page-surface]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [lookup.core :as l]
@@ -25,12 +27,14 @@
    (tr path)))
 
 (defn fixture [survey-opts]
-  (let [{:keys [conn member-id]} (tc/new-system "insurance-survey-views")
+  (let [report-count             (get survey-opts :report-count 1)
+        survey-opts              (dissoc survey-opts :report-count)
+        {:keys [conn member-id]} (tc/new-system "insurance-survey-views")
         {:keys [coverage-id policy-id] :as ids}
         (insurance-test/seed-page-shell-fixture! conn member-id)
         survey-ids (insurance-test/seed-member-survey!
                     conn
-                    (merge {:coverage-ids [coverage-id]
+                    (merge {:coverage-ids (vec (repeat report-count coverage-id))
                             :member-id    member-id
                             :policy-id    policy-id}
                            survey-opts))]
@@ -47,17 +51,150 @@
                       ::r/router      router}})))
 
 (deftest survey-page-renders-each-preserved-state
-  (testing "an incomplete response starts with the first question and instrument"
-    (let [{:keys [request]} (fixture {})
-          surface (l/select-one page-surface/PageSurface (sut/page request))
-          question (some #(when (= "insurance-survey-question" (:id (l/attrs %))) %)
-                         (l/select card/Card surface))
-          instrument (some #(when (= "insurance-survey-instrument" (:id (l/attrs %))) %)
-                           (l/select card/Card surface))]
+  (testing "an incomplete response opens with progress and a card for every remaining item"
+    (let [{:keys [request]} (fixture {:report-count 4})
+          view       (sut/page request)
+          surface    (l/select-one page-surface/PageSurface view)
+          workflow   (l/select-one ".insurance-survey-workflow" surface)
+          stage      (l/select-one ".insurance-survey-stage" surface)
+          progress   (l/select-one "wa-progress-bar#insurance-survey-progress"
+                                   workflow)
+          question   (l/select-one "#insurance-survey-question" stage)
+          question-form (l/select-one :form question)
+          deck       (l/select-one ".insurance-survey-card-deck" stage)
+          layers     (l/select ".insurance-survey-card-layer" deck)
+          instrument (l/select-one "#insurance-survey-instrument" deck)
+          media      (l/select-one ".insurance-survey-card-media" instrument)
+          facts      (l/select-one ".insurance-survey-card-facts" instrument)
+          layer-transition-names
+          (mapv #(get-in (l/attrs %) [:style "view-transition-name"]) layers)]
+      (is (= {:width       :compact
+              :breadcrumbs [:home :insurance/review-title]
+              :mobile      {:label :home
+                            :href  "/"}
+              :actions     []
+              :overflow    []}
+             (page-shell/page-contract view)))
+      (is (nil? (l/select-one page-header/PageHeader surface)))
+      (is (= "none" (:data-transition-kind (l/attrs workflow))))
+      (is (= {:data-next-value 25.0
+              :id              "insurance-survey-progress"
+              :label           [:i18n/tr :insurance/review-progress]
+              :style           {"--insurance-survey-progress-value" "6.25%"}
+              :value           6.25}
+             (select-keys (l/attrs progress)
+                          [:data-next-value :id :label :style :value])))
+      (is (empty? (l/children progress)))
+      (is (nil? (l/select-one ".sno-step-circles" workflow)))
       (is (= :insurance/review-used-at-gig
              (-> (l/select-one :h2 question) page-shell/translation-key)))
+      (is (str/includes? (:data-on:submit (l/attrs question-form))
+                         "InsuranceSurveyMotion.submit"))
       (is (= "Test Trumpet"
-             (-> (l/select-one :h2 instrument) l/text)))))
+             (-> (l/select-one :h2 instrument) l/text)))
+      (is (= "media" (:slot (l/attrs media))))
+      (is (some? (l/select-one ".insurance-survey-card-image-fallback" media)))
+      (is (= [:instrument/make :insurance/value :insurance/item-count
+              :insurance/coverage-types]
+             (mapv (comp page-shell/translation-key l/first-child)
+                   (l/children facts))))
+      (is (nil? (l/select-one card/Card question)))
+      (is (= {"--deck-count" 3}
+             (:style (l/attrs deck))))
+      (is (= 3 (count layers)))
+      (is (every? true? (map #(-> % l/attrs :aria-hidden) layers)))
+      (is (every? true? (map #(-> % l/attrs :inert) layers)))
+      (is (= 4 (count (l/select card/Card deck))))
+      (is (every? #(some? (l/select-one card/Card %)) layers))
+      (is (= 3 (count (distinct layer-transition-names))))
+      (is (every? #(str/starts-with? % "insurance-survey-layer-")
+                  layer-transition-names))
+      (is (some? (get-in (l/attrs instrument)
+                         [:style "--insurance-survey-category-tint"])))
+      (is (every? #(some? (get-in (l/attrs %)
+                                  [:style "--insurance-survey-category-tint"]))
+                  layers))
+      (is (= ["insurance-survey-card-deck" "insurance-survey-question"]
+             (->> (l/children stage)
+                  (keep (comp :id l/attrs))
+                  vec)))))
+
+  (testing "completed instruments fill one continuous progress bar"
+    (let [{:keys [request]} (fixture {:completed-report-count 2
+                                      :report-count           4})
+          progress (->> (sut/page request)
+                        (l/select-one
+                         "wa-progress-bar#insurance-survey-progress"))]
+      (is (= {:data-next-value 75.0
+              :style           {"--insurance-survey-progress-value" "56.25%"}
+              :value           56.25}
+             (select-keys (l/attrs progress)
+                          [:data-next-value :style :value])))))
+
+  (testing "the compact card uses the instrument's first uploaded photo"
+    (let [{:keys [conn instrument-id request]} (fixture {})
+          image-id (random-uuid)
+          _ @(d/transact conn
+                         [{:db/id "image"
+                           :image/image-id image-id}
+                          [:db/add [:instrument/instrument-id instrument-id]
+                           :instrument/images "image"]])
+          request (assoc request :db (d/db conn))
+          image   (->> (sut/page request)
+                       (l/select-one ".insurance-survey-card-media")
+                       (l/select-one :img))]
+      (is (= "Test Trumpet" (:alt (l/attrs image))))
+      (is (str/includes? (:src (l/attrs image)) (str image-id)))))
+
+  (testing "the transition kind is exposed to CSS without changing the active card"
+    (let [{:keys [member-id policy-id request]} (fixture {})
+          report-id (:insurance.survey.report/report-id
+                     (:active-report
+                      (queries/survey-data (:db request) policy-id member-id)))
+          workflow (->> (assoc request :page-state
+                               {actions/form-key
+                                {:answered-count   1
+                                 :current-flow-key :keep-insured
+                                 :decisions        [:confirm-band]
+                                 :mode             :question
+                                 :report-id        report-id
+                                 :transition-kind  :question}})
+                        sut/page
+                        (l/select-one ".insurance-survey-workflow"))]
+      (is (= "question" (:data-transition-kind (l/attrs workflow))))
+      (is (= {:style {"--insurance-survey-progress-value" "50.0%"}
+              :value 50.0}
+             (select-keys
+              (l/attrs
+               (l/select-one "wa-progress-bar#insurance-survey-progress"
+                             workflow))
+              [:style :value])))))
+
+  (testing "the development animation lab remains disabled"
+    (let [{:keys [request]} (fixture {:report-count 3})
+          production-view (sut/page request)
+          development-view (sut/page (assoc request :dev? true))]
+      (is (some #(some-> %
+                         l/attrs
+                         :src
+                         (str/starts-with?
+                          "/js/insurance-survey-motion.js?v="))
+                (l/select :script production-view)))
+      (is (= {:production-lab nil
+              :development-lab nil
+              :development-script nil}
+             {:production-lab (l/select-one "#insurance-survey-animation-lab"
+                                            production-view)
+              :development-lab (l/select-one "#insurance-survey-animation-lab"
+                                             development-view)
+              :development-script
+              (some #(when (some-> %
+                                   l/attrs
+                                   :src
+                                   (str/starts-with?
+                                    "/js/insurance-survey-animation-lab.js?v="))
+                       %)
+                    (l/select :script development-view))}))))
 
   (testing "a response with no reports offers add coverage and dismissal"
     (let [{:keys [request]} (fixture {:coverage-ids []})
@@ -78,35 +215,44 @@
              (-> (l/select-one :strong closed)
                  page-shell/translation-key)))))
 
-  (testing "a completed response renders the completion state"
+  (testing "a completed response renders the staged celebration and final actions"
     (let [{:keys [request]} (fixture {:response-completed-at
                                       #inst "2026-03-15T00:00:00.000-00:00"})
           surface (l/select-one page-surface/PageSurface (sut/page request))
           complete (some #(when (= "insurance-survey-complete" (:id (l/attrs %))) %)
-                         (l/select :div surface))]
+                         (l/select :div surface))
+          stages (l/select "[data-celebration-stage]" complete)
+          celebrate (some #(when (= "insurance-survey-celebrate" (:id (l/attrs %))) %)
+                          (l/select button/Button complete))]
       (is (= :insurance/review-complete-title
-             (-> (l/select-one :strong complete)
-                 page-shell/translation-key)))))
+             (-> (l/select-one :h1 complete)
+                 page-shell/translation-key)))
+      (is (= :insurance/review-celebrate
+             (page-shell/translation-key celebrate)))
+      (is (= ["1" "2" "3"]
+             (mapv #(-> % l/attrs :data-celebration-stage) stages)))
+      (is (every? true? (map #(-> % l/attrs :hidden) stages)))
+      (is (= 2 (count (l/select button/Button (last stages)))))))
 
-  (testing "the server-owned encouragement state offers a continue action"
+  (testing "a milestone briefly overlays the next card without interrupting the workflow"
     (let [{:keys [member-id policy-id request]} (fixture {})
           report-id (:insurance.survey.report/report-id
                      (:active-report
                       (queries/survey-data (:db request) policy-id member-id)))
           view (->> (assoc request :page-state
-                           {actions/form-key {:mode      :encouragement
-                                              :report-id report-id}})
+                           {actions/form-key {:current-flow-key :used
+                                              :decisions        []
+                                              :milestone?       true
+                                              :mode             :question
+                                              :report-id        report-id
+                                              :transition-kind  :item}})
                     sut/page
                     (l/select-one page-surface/PageSurface))
-          encouragement (some #(when (= "insurance-survey-encouragement"
-                                        (:id (l/attrs %))) %)
-                              (l/select :div view))
-          continue (some #(when (= "insurance-survey-continue" (:id (l/attrs %))) %)
-                         (l/select button/Button view))]
-      (is (= :insurance/review-good-job
-             (-> (l/select-one :strong encouragement)
-                 page-shell/translation-key)))
-      (is (some? continue))))
+          milestone (l/select-one "#insurance-survey-milestone" view)]
+      (is (= [:insurance/review-good-job :insurance/review-milestone]
+             (mapv l/first-child (l/select :i18n/tr milestone))))
+      (is (some? (l/select-one "#insurance-survey-card-deck" view)))
+      (is (nil? (l/select-one "#insurance-survey-continue" view)))))
 
   (testing "the data correction step renders a native edit form"
     (let [{:keys [member-id policy-id request]} (fixture {})

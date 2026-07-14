@@ -53,9 +53,10 @@
             (policy-status-badge tr status)]}])
 
 (defn- policy-toolbar
-  [{:keys [tr]} {:keys [insurance-team-member? policy status-counts]}]
+  [{:keys [tr]} {:keys [insurance-team-member? policy status-counts survey-progress]}]
   (let [status          (:insurance.policy/status policy)
         draft?          (= :insurance.policy.status/draft status)
+        sent?           (= :insurance.policy.status/sent status)
         active?         (= :insurance.policy.status/active status)
         review-todos?   (pos? (get status-counts
                                    :instrument.coverage.status/needs-review
@@ -64,28 +65,60 @@
                           (not insurance-team-member?)                      :add-coverage
                           (and insurance-team-member? draft? review-todos?) :review
                           (and insurance-team-member? draft?)               :send-changes
+                          (and insurance-team-member? sent?)                :workbench
                           (and insurance-team-member? active?)               :request-payments
                           :else                                             :add-coverage)
+        survey-management? (and insurance-team-member? survey-progress)
+        action-configs  {:add-coverage    {:href  (urls/link-coverage-create
+                                                   (:insurance.policy/policy-id policy))
+                                           :icon  :plus-circle
+                                           :label [:i18n/tr :insurance/add-coverage]}
+                         :review          {:href  (urls/link-policy-review policy)
+                                           :icon  :hand-pointing
+                                           :label [:i18n/tr :insurance/review]}
+                         :send-changes     {:href  (urls/link-policy-changes policy)
+                                            :icon  :paper-plane-right
+                                            :label [:i18n/tr :insurance/send-changes]}
+                         :workbench        {:href  (urls/link-policy-workbench policy)
+                                            :icon  :table
+                                            :label [:i18n/tr :insurance/workbench]}
+                         :request-payments {:href  (urls/link-policy-send-notifications policy)
+                                            :icon  :bell-ringing
+                                            :label [:i18n/tr :insurance/request-payments-title]}}
+        primary-config  (get action-configs primary-action)
+        review-config   (:review action-configs)
+        workbench-config (:workbench action-configs)
         review-item     [:wa-dropdown-item
-                         {:value   (urls/link-policy-review policy)
+                         {:value   (:href review-config)
                           :onclick "window.location = this.value"}
                          [ico/Icon {::ico/library :phosphor
-                                    ::ico/name    :hand-pointing
+                                    ::ico/name    (:icon review-config)
                                     :slot         "icon"}]
-                         [:i18n/tr :insurance/review]]
+                         (:label review-config)]
+        primary-overflow-item
+        [:wa-dropdown-item
+         {:value   (:href primary-config)
+          :onclick "window.location = this.value"}
+         [ico/Icon {::ico/library :phosphor
+                    ::ico/name    (:icon primary-config)
+                    :slot         "icon"}]
+         (:label primary-config)]
         overflow-items  (vec
                          (concat
+                          (when survey-management?
+                            [primary-overflow-item])
                           (when (and insurance-team-member?
                                      (not= :review primary-action))
                             [review-item])
-                          (when insurance-team-member?
+                          (when (and insurance-team-member?
+                                     (not= :workbench primary-action))
                             [[:wa-dropdown-item
-                              {:value   (urls/link-policy-workbench policy)
+                              {:value   (:href workbench-config)
                                :onclick "window.location = this.value"}
                               [ico/Icon {::ico/library :phosphor
-                                         ::ico/name    :table
+                                         ::ico/name    (:icon workbench-config)
                                          :slot         "icon"}]
-                              [:i18n/tr :insurance/workbench]]])
+                              (:label workbench-config)]])
                           (when (not= :add-coverage primary-action)
                             [[:wa-dropdown-item
                               {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
@@ -101,8 +134,10 @@
                               [ico/Icon {::ico/library :phosphor
                                          ::ico/name    :gear
                                          :slot         "icon"}]
-                              [:i18n/tr :insurance/policy-settings]]
-                             [:wa-dropdown-item
+                              [:i18n/tr :insurance/policy-settings]]])
+                          (when (and insurance-team-member?
+                                     (nil? survey-progress))
+                            [[:wa-dropdown-item
                               {:value   (urls/link-policy-surveys policy)
                                :onclick "window.location = this.value"}
                               [ico/Icon {::ico/library :phosphor
@@ -117,42 +152,22 @@
                                          ::ico/name    :paper-plane-right
                                          :slot         "icon"}]
                               [:i18n/tr :insurance/send-changes]]])))
-        primary-button  (case primary-action
-                          :add-coverage
-                          [button/Button {:appearance "filled"
-                                          :variant    "brand"
-                                          :href       (urls/link-coverage-create
-                                                       (:insurance.policy/policy-id policy))}
-                           [ico/Icon {::ico/library :phosphor
-                                      ::ico/name    :plus-circle
-                                      :slot         "start"}]
-                           [:i18n/tr :insurance/add-coverage]]
-
-                          :send-changes
-                          [button/Button {:appearance "filled"
-                                          :variant    "brand"
-                                          :href       (urls/link-policy-changes policy)}
-                           [ico/Icon {::ico/library :phosphor
-                                      ::ico/name    :paper-plane-right
-                                      :slot         "start"}]
-                           [:i18n/tr :insurance/send-changes]]
-
-                          :request-payments
-                          [button/Button {:appearance "filled"
-                                          :variant    "brand"
-                                          :href       (urls/link-policy-send-notifications policy)}
-                           [ico/Icon {::ico/library :phosphor
-                                      ::ico/name    :bell-ringing
-                                      :slot         "start"}]
-                           [:i18n/tr :insurance/request-payments-title]]
-
-                          [button/Button {:appearance "filled"
-                                          :variant    "brand"
-                                          :href       (urls/link-policy-review policy)}
-                           [ico/Icon {::ico/library :phosphor
-                                      ::ico/name    :hand-pointing
-                                      :slot         "start"}]
-                           [:i18n/tr :insurance/review]])]
+        primary-button  [button/Button {:appearance "filled"
+                                        :variant    "brand"
+                                        :href       (:href primary-config)}
+                         [ico/Icon {::ico/library :phosphor
+                                    ::ico/name    (:icon primary-config)
+                                    :slot         "start"}]
+                         (:label primary-config)]
+        manage-surveys-button
+        (when (and insurance-team-member? survey-progress)
+          [button/Button {:appearance "outlined"
+                          :variant    "brand"
+                          :href       (urls/link-policy-surveys policy)}
+           [ico/Icon {::ico/library :phosphor
+                      ::ico/name    :clipboard-text
+                      :slot         "start"}]
+           [:i18n/tr :insurance/manage-surveys]])]
     [page-toolbar/PageToolbar
      {::page-toolbar/breadcrumb
       [breadcrumb/Breadcrumb
@@ -163,7 +178,7 @@
       ::page-toolbar/mobile-back
       [button/BackButton {:href  (urls/link-insurance)
                           :label [:i18n/tr :insurance/title]}]
-      ::page-toolbar/actions        [primary-button]
+      ::page-toolbar/actions        [(or manage-surveys-button primary-button)]
       ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
       ::page-toolbar/overflow-items overflow-items
       :aria-label                    [:i18n/tr :insurance/toolbar-label]}]))
@@ -275,17 +290,25 @@
       header-actions (conj header-actions)
       true (conj (into [:div {:class "wa-stack"}] children)))))
 
+(defn- policy-card-action
+  [{:keys [enabled? href icon label]}]
+  [button/Button (cond-> {:slot       "header-actions"
+                          :appearance "plain"
+                          :variant    "brand"
+                          :title      label
+                          :aria-label label}
+                   enabled?       (assoc :href href)
+                   (not enabled?) (assoc :disabled true))
+   [ico/Icon {::ico/library :phosphor
+              ::ico/name    icon}]])
+
 (defn- policy-review-action
-  [{:keys [tr]} policy]
+  [{:keys [tr]} policy enabled?]
   (let [label (tr [:insurance.dashboard/continue-reviewing])]
-    [button/Button {:slot       "header-actions"
-                    :appearance "plain"
-                    :variant    "brand"
-                    :href       (urls/link-policy-review policy)
-                    :title      label
-                    :aria-label label}
-     [ico/Icon {::ico/library :phosphor
-                ::ico/name    :hand-pointing}]]))
+    (policy-card-action {:enabled? enabled?
+                         :href     (urls/link-policy-review policy)
+                         :icon     :hand-pointing
+                         :label    label})))
 
 (defn- divided-rows
   [rows]
@@ -348,7 +371,7 @@
                  (get status-counts status 0)))
 
 (defn review-status-section
-  [{:keys [tr] :as req} {:keys [policy status-counts totals]}]
+  [{:keys [tr] :as req} {:keys [insurance-team-member? policy status-counts totals]}]
   (let [total         (:total-instruments totals)
         needs-review  (get status-counts :instrument.coverage.status/needs-review 0)
         handled       (- total needs-review)
@@ -356,13 +379,63 @@
         handled-label (tr [:insurance.dashboard/review-complete] [handled total])]
     (apply dashboard-card
            {:title          (tr [:insurance.dashboard/review-status])
-            :header-actions (policy-review-action req policy)}
+            :header-actions (policy-review-action req
+                                                  policy
+                                                  (and insurance-team-member?
+                                                       (pos? needs-review)))}
            (concat
             [(review-status-bar status-counts total handled-ratio handled-label)]
             (divided-rows
              (map #(review-status-legend-item tr status-counts %) domain/instrument-coverage-review-progress-statuses))
             [[:div {:class "wa-caption-s wa-text-end"}
               handled-label]]))))
+
+(defn survey-progress-section
+  [{:keys [tr]} {:keys [insurance-team-member? policy survey-progress]}]
+  (when survey-progress
+    (let [{:keys [completed-count total-count waiting-count]} survey-progress
+          completion-ratio (if (pos? total-count)
+                             (/ (double completed-count) total-count)
+                             0.0)
+          progress-label   [:i18n/tr
+                            :insurance/survey-progress-summary
+                            {:completed completed-count
+                             :total     total-count}]]
+      (apply dashboard-card
+             {:class          "insurance-dashboard-survey-progress-card"
+              :title          [:i18n/tr :insurance/survey-responses-title]
+              :header-actions (policy-card-action
+                               {:enabled? insurance-team-member?
+                                :href     (urls/link-policy-surveys policy)
+                                :icon     :clipboard-text
+                                :label    (tr [:insurance/manage-surveys])})}
+             (concat
+              [[:div {:class         "insurance-dashboard-survey-progress"
+                      :style         {"--progress-value" (width-style completed-count total-count)}
+                      :role          "progressbar"
+                      :aria-valuemin 0
+                      :aria-valuemax 100
+                      :aria-valuenow (long (Math/round (double (* completion-ratio 100))))
+                      :aria-label    progress-label}
+                [:span {:aria-hidden "true"}]
+                [:wa-format-number
+                 {:class                   "insurance-dashboard-survey-progress-value"
+                  :aria-hidden             "true"
+                  :type                    "percent"
+                  :value                   completion-ratio
+                  :minimum-fraction-digits 0
+                  :maximum-fraction-digits 0}]]]
+              (divided-rows
+               [(dashboard-row
+                 (legend-marker "var(--wa-color-success-fill-loud)")
+                 [:i18n/tr :insurance/survey-complete]
+                 completed-count)
+                (dashboard-row
+                 (legend-marker "var(--wa-color-neutral-fill-loud)")
+                 [:i18n/tr :insurance/survey-incomplete]
+                 waiting-count)])
+              [[:div {:class "wa-caption-s wa-text-end"}
+                progress-label]])))))
 
 (def health-checks
   [{:label-key [:insurance.dashboard/missing-photos]
@@ -409,7 +482,10 @@
     (apply dashboard-card
            {:title          (tr [:insurance.dashboard/health-checklist])
             :subtitle       (tr [:insurance.dashboard/health-checklist-subtitle])
-            :header-actions (policy-review-action req policy)}
+            :header-actions (policy-review-action req
+                                                  policy
+                                                  (and insurance-team-member?
+                                                       (< passed total)))}
            (concat
             (divided-rows
              (map #(health-check-row tr totals policy insurance-team-member? %) health-checks))
@@ -605,20 +681,21 @@
                (tr [:insurance.dashboard/no-recent-changes])]]))))
 
 (defn- policy-details-section
-  [{:keys [tr] :as req} {:insurance.policy/keys [effective-at effective-until premium-factor status] :as policy}]
-  [card/Card {:appearance "plain"
-              :style      "background: var(--wa-color-surface-default); block-size: 100%;"}
-   [:h2 {:slot  "header"
-         :class "wa-heading-l"
-         :style "margin: 0;"}
-    (tr [:insurance.dashboard/policy-details])]
-   (into [:div {:class "wa-stack"}]
-         (divided-rows
-          [(detail-row (tr [:insurance/name]) (:insurance.policy/name policy))
-           (detail-row (tr [:insurance.dashboard/policy-status]) (policy-status-badge tr status))
-           (detail-row (tr [:insurance/effective-at]) (ui2/date-display req :medium effective-at))
-           (detail-row (tr [:insurance/effective-until]) (ui2/date-display req :medium effective-until))
-           (detail-row (tr [:insurance/premium-base-factor]) premium-factor)]))])
+  [{:keys [tr] :as req} {:keys [insurance-team-member? policy]}]
+  (let [{:insurance.policy/keys [effective-at effective-until premium-factor status]} policy]
+    (apply dashboard-card
+           {:title          (tr [:insurance.dashboard/policy-details])
+            :header-actions (policy-card-action
+                             {:enabled? insurance-team-member?
+                              :href     (urls/link-policy-settings policy)
+                              :icon     :gear
+                              :label    (tr [:insurance/policy-settings])})}
+           (divided-rows
+            [(detail-row (tr [:insurance/name]) (:insurance.policy/name policy))
+             (detail-row (tr [:insurance.dashboard/policy-status]) (policy-status-badge tr status))
+             (detail-row (tr [:insurance/effective-at]) (ui2/date-display req :medium effective-at))
+             (detail-row (tr [:insurance/effective-until]) (ui2/date-display req :medium effective-until))
+             (detail-row (tr [:insurance/premium-base-factor]) premium-factor)]))))
 
 (defn page
   [{:keys [db] :as req}]
@@ -638,7 +715,8 @@
        (overview-section req dashboard)
        [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 42ch;"}
         [:div {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
-         (policy-details-section req policy)
+         (policy-details-section req dashboard)
+         (survey-progress-section req dashboard)
          (review-status-section req dashboard)
          (health-checklist-section req dashboard)
          (coverage-mix-section req dashboard)]

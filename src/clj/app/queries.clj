@@ -907,7 +907,6 @@
 (def insurance-survey-response-pattern-backwards
   (conj insurance-survey-response-pattern
         {:insurance.survey/_responses [:insurance.survey/survey-id
-                                       :insurance.survey/survey-name
                                        {:insurance.survey/policy policy-lite-pattern}
                                        :insurance.survey/created-at
                                        :insurance.survey/closes-at
@@ -920,7 +919,6 @@
 
 (def insurance-survey-pattern
   [:insurance.survey/survey-id
-   :insurance.survey/survey-name
    {:insurance.survey/policy policy-lite-pattern}
    :insurance.survey/created-at
    :insurance.survey/closes-at

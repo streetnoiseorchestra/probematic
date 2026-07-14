@@ -123,11 +123,55 @@
                    :size       "small"}
     [:i18n/tr :action/respond]]))
 
+(defn- insurance-survey-task
+  [req member {:keys [closes-at policy-id todo-count total-count]}]
+  (let [href              (urls/link-insurance-survey-start policy-id)
+        estimated-minutes (long (Math/ceil (* todo-count 0.75)))]
+    [:div {:class "dashboard-insurance-survey wa-flank wa-gap-l"}
+     [:picture {:class "mascot wa-frame:square wa-gap-0"}
+      [:source {:media  "(prefers-reduced-motion: reduce)"
+                :srcset "/img/peanut_butter_jelly_time_still.gif"}]
+      [:img {:src    "/img/peanut_butter_jelly_time.gif"
+             :alt    ""
+             :width  50
+             :height 50}]]
+     [:div {:class "copy wa-stack wa-gap-s"}
+      [:div {:class "wa-stack wa-gap-2xs"}
+       [:h3 {:class "title"}
+        [:i18n/tr :insurance/review-dashboard-greeting
+         {:name (member-nick member)}]]
+       [:div {:class "meta wa-cluster wa-gap-xs"}
+        [:span
+         [:i18n/tr :insurance/review-dashboard-progress
+          {:count  todo-count
+           :total  total-count}]]
+        [:span
+         [:i18n/tr :insurance/review-dashboard-due]
+         " "
+         [:wa-relative-time
+          {:date    (insurance.ui/instant-value closes-at)
+           :format  "long"
+           :numeric "auto"
+           :sync    true
+           :title   (ui2/format-date-time req :medium closes-at)}]]
+        (when (pos? todo-count)
+          [:span
+           [:i18n/tr :insurance/review-dashboard-estimate
+            {:minutes estimated-minutes}]])]]
+      [button/Button {:appearance "filled"
+                      :variant    "brand"
+                      :href       href}
+       [:i18n/tr :insurance/review-dashboard-start]
+       [ico/Icon {::ico/library :phosphor
+                  ::ico/name    :caret-right
+                  :slot         "end"}]]]]))
+
 (defn- responses-card
   [{:keys [tr] :as req}
-   {:keys [insurance-surveys insurance-todos unanswered unanswered-polls]}]
+   member
+   {:keys [insurance-survey insurance-todos unanswered unanswered-polls]}]
   (let [count (+ (count unanswered)
-                 (count insurance-surveys)
+                 (if insurance-survey 1 0)
                  (count unanswered-polls)
                  (count insurance-todos))]
     (dashboard-card
@@ -139,28 +183,20 @@
        count]]
      (if (pos? count)
        (list
-        (when (seq unanswered)
-          (gig-section req
-                       [:i18n/tr :gigs/attendance-needed]
-                       unanswered))
+        (when insurance-survey
+          (dashboard-section
+           "dashboard-response-section"
+           "dashboard-response-list"
+           [:i18n/tr :insurance/instrument-insurance]
+           [(insurance-survey-task req member insurance-survey)]))
         (when (seq insurance-todos)
           (insurance-todos-section
            (assoc req :tr tr)
            insurance-todos))
-        (dashboard-section
-         "dashboard-response-section"
-         "dashboard-response-list"
-         [:i18n/tr :insurance/pending-coverage-reviews]
-         (mapv (fn [{:keys [closes-at name policy-id policy-name todo-count total-count]}]
-                 (response-task-row
-                  (urls/link-insurance-survey-start policy-id)
-                  name
-                  [:i18n/tr :insurance/survey-response-detail
-                   {:count  todo-count
-                    :date   (ui2/format-date-time req :medium closes-at)
-                    :policy policy-name
-                    :total  total-count}]))
-               insurance-surveys))
+        (when (seq unanswered)
+          (gig-section req
+                       [:i18n/tr :gigs/attendance-needed]
+                       unanswered))
         (dashboard-section
          "dashboard-response-section"
          "dashboard-response-list"
@@ -305,7 +341,7 @@
     (quick-actions)]
    [:section {:class "focus"}
     [:div {:class "wa-stack wa-gap-l"}
-     (responses-card req data)
+     (responses-card req member data)
      (when (and ledger (pos? (:ledger/balance ledger)))
        (ledger-widget req ledger))
      (upcoming-card req upcoming)]]

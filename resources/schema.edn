@@ -1030,7 +1030,8 @@
   :db/unique      :db.unique/identity
   :db/cardinality :db.cardinality/one}
  {:db/ident       :insurance.survey/survey-name
-  :db/doc         "The name of the survey"
+  :db/doc         "DEPRECATED. Former display name for an insurance survey. Retained for existing data; do not read or write."
+  :app.schema/deprecated? true
   :db/valueType   :db.type/string
   :db/cardinality :db.cardinality/one}
  {:db/ident       :insurance.survey/policy

@@ -1,21 +1,21 @@
 (ns app.insurance.survey.views
   (:require
+   [app.config :as config]
    [app.datastar :as d*]
    [app.form :as form]
+   [app.html :as html]
    [app.insurance.coverage.queries :as coverage.queries]
    [app.insurance.coverage.upload :as upload]
    [app.insurance.survey.actions :as actions]
    [app.insurance.survey.flow :as flow]
    [app.insurance.survey.queries :as queries]
-   [app.queries :as q]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.card :as card]
-   [app.ui2.page-header :as page-header]
+   [app.ui2.icon :as ico]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
-   [app.ui2.step-circles :as step-circles]
    [app.urls :as urls]
    [app.util.http :as http.util]
    [clojure.string :as str]))
@@ -32,6 +32,25 @@
    :model           "model"
    :serial-number   "serialNumber"
    :value           "value"})
+
+(def ^:private category-tints
+  ["var(--wa-color-blue-50)"
+   "var(--wa-color-cyan-50)"
+   "var(--wa-color-green-50)"
+   "var(--wa-color-indigo-50)"
+   "var(--wa-color-orange-50)"
+   "var(--wa-color-pink-50)"
+   "var(--wa-color-purple-50)"
+   "var(--wa-color-yellow-50)"])
+
+(defn- coverage-category-tint [coverage]
+  (let [category (get-in coverage [:instrument.coverage/instrument
+                                   :instrument/category])
+        category-key (or (:instrument.category/category-id category)
+                         (:instrument.category/code category)
+                         (:instrument.category/name category)
+                         :uncategorized)]
+    (nth category-tints (mod (hash category-key) (count category-tints)))))
 
 (defn- coverage->edit
   [{:instrument.coverage/keys [instrument item-count types value insurer-id]}]
@@ -154,19 +173,18 @@
          (when-not (str/blank? (str description))
            [:small {:class "wa-color-text-quiet"} description])]])]))
 
-(defn- instrument-card [coverage decisions]
+(defn- instrument-card [req coverage decisions current?]
   (let [{:instrument.coverage/keys [cost instrument item-count private? types value]}
         coverage
         private? (cond
                    (some #{:confirm-not-band} decisions) true
                    (some #{:confirm-band} decisions) false
                    :else private?)
-        details  [[[:i18n/tr :instrument/category]
-                   (get-in instrument [:instrument/category :instrument.category/name])]
-                  [[:i18n/tr :insurance/ownership]
-                   [:i18n/tr (if private?
-                               :insurance/ownership-private
-                               :insurance/ownership-band)]]
+        category-name (get-in instrument
+                              [:instrument/category :instrument.category/name])
+        photo         (first (coverage.queries/image-uris req instrument))
+        details  [[[:i18n/tr :instrument/make] (:instrument/make instrument)]
+                  [[:i18n/tr :instrument/model] (:instrument/model instrument)]
                   (when private?
                     [[:i18n/tr :insurance/annual-cost]
                      (if cost
@@ -174,22 +192,134 @@
                        [:i18n/tr :insurance/cost-unavailable])])
                   [[:i18n/tr :insurance/value] (ui2/money value :EUR)]
                   [[:i18n/tr :insurance/item-count] (or item-count 1)]
-                  [[:i18n/tr :insurance/coverage-types]
-                   (str/join ", " (map :insurance.coverage.type/name types))]
-                  [[:i18n/tr :instrument/make] (:instrument/make instrument)]
-                  [[:i18n/tr :instrument/model] (:instrument/model instrument)]
+                  (when (seq types)
+                    [[:i18n/tr :insurance/coverage-types]
+                     (str/join ", " (map :insurance.coverage.type/name types))])
                   [[:i18n/tr :instrument/serial-number] (:instrument/serial-number instrument)]
                   [[:i18n/tr :instrument/build-year] (:instrument/build-year instrument)]]]
-    [card/Card {:id         "insurance-survey-instrument"
-                :appearance "outlined"}
-     [:h2 {:slot "header" :class "wa-heading-l"}
-      (:instrument/name instrument)]
+    [card/Card (cond-> {:class      "insurance-survey-instrument-card"
+                        :appearance "outlined"
+                        :style      {"--insurance-survey-category-tint"
+                                     (coverage-category-tint coverage)}}
+                 current? (assoc :id "insurance-survey-instrument"))
+     [:figure {:slot  "media"
+               :class "insurance-survey-card-media"}
+      (when photo
+        [:img {:src     (:thumbnail photo)
+               :alt     (:instrument/name instrument)
+               :loading (if current? "eager" "lazy")
+               :decoding "async"
+               :onerror  "this.hidden = true; this.nextElementSibling.hidden = false;"}])
+      [:div (cond-> {:class "insurance-survey-card-image-fallback"}
+              photo (assoc :hidden true))
+       [ico/Icon {::ico/name :music-note-outline}]]
+      (when-not (str/blank? category-name)
+        [:figcaption category-name])]
+     [:div {:slot  "header"
+            :class "insurance-survey-card-heading wa-stack wa-gap-3xs"}
+      [:h2 {:class "wa-heading-m"} (:instrument/name instrument)]
+      [:span {:class "wa-caption-s wa-color-text-quiet"}
+       [:i18n/tr (if private?
+                   :insurance/ownership-private
+                   :insurance/ownership-band)]]]
      (when-not (str/blank? (:instrument/description instrument))
-       [:p (:instrument/description instrument)])
-     (into [:dl {:class "particulars"}]
+       [:p {:class "insurance-survey-card-description"}
+        (:instrument/description instrument)])
+     (into [:dl {:class      "insurance-survey-card-facts"
+                 :tabindex   0
+                 :aria-label [:i18n/tr :insurance/review-card-details]}]
            (for [[label value] (keep identity details)
                  :when (some? value)]
              (ui2/detail-item label value)))]))
+
+(defn- milestone [data]
+  [:aside {:id        "insurance-survey-milestone"
+           :class     "insurance-survey-milestone wa-cluster wa-gap-xs"
+           :role      "status"
+           :aria-live "polite"}
+   [ico/Icon {::ico/library :phosphor
+              ::ico/name    :star}]
+   [:span {:class "wa-stack wa-gap-3xs"}
+    [:strong [:i18n/tr :insurance/review-good-job]]
+    [:span [:i18n/tr :insurance/review-milestone
+            {:remaining (:total-todo data)}]]]])
+
+#_(defn- animation-lab [data]
+    [:aside {:id                                  "insurance-survey-animation-lab"
+             :class                               "insurance-survey-animation-lab wa-stack wa-gap-xs"
+             :data-insurance-survey-animation-lab true}
+     [:strong {:class "wa-caption-s wa-color-text-quiet"}
+      [:i18n/tr :insurance/review-animation-lab]]
+     [:div {:class "wa-cluster wa-gap-xs"}
+      [button/Button {:appearance                "filled"
+                      :size                      "small"
+                      :type                      "button"
+                      :data-animation-lab-action "sequence"}
+       [:i18n/tr :insurance/review-animation-sequence]]
+      [button/Button {:appearance                "outlined"
+                      :size                      "small"
+                      :type                      "button"
+                      :data-animation-lab-action "throw"}
+       [:i18n/tr :insurance/review-animation-throw]]
+      [button/Button {:appearance                "outlined"
+                      :size                      "small"
+                      :type                      "button"
+                      :data-animation-lab-action "advance"}
+       [:i18n/tr :insurance/review-animation-advance]]
+      [button/Button {:appearance                "outlined"
+                      :size                      "small"
+                      :type                      "button"
+                      :data-animation-lab-action "question"}
+       [:i18n/tr :insurance/review-animation-question]]
+      [button/Button {:appearance                "outlined"
+                      :size                      "small"
+                      :type                      "button"
+                      :data-animation-lab-action "encouragement"}
+       [:i18n/tr :insurance/review-animation-encouragement]]
+      [button/Button {:appearance                "plain"
+                      :size                      "small"
+                      :type                      "button"
+                      :data-animation-lab-action "reset"}
+       [:i18n/tr :insurance/review-animation-reset]]]
+     [:template {:data-animation-lab-milestone true}
+      (milestone data)]])
+
+(defn- instrument-deck [req data page-state]
+  (let [additional-reports (rest (:todo-reports data))
+        deck-count         (count additional-reports)]
+    (into
+     [:div {:id    "insurance-survey-card-deck"
+            :class "insurance-survey-card-deck"
+            :style {"--deck-count" deck-count}}]
+     (concat
+      (for [[idx report] (map-indexed vector additional-reports)
+            :let [depth         (inc idx)
+                  visual-depth (min depth 6)
+                  next-depth   (dec visual-depth)
+                  coverage     (:insurance.survey.report/coverage report)
+                  report-id    (:insurance.survey.report/report-id report)]]
+        [:div {:class       "insurance-survey-card-layer"
+               :aria-hidden true
+               :inert       true
+               :style       {"--deck-block-offset" (str (* visual-depth -0.4) "rem")
+                             "--deck-next-block-offset" (str (* next-depth -0.4) "rem")
+                             "--deck-layer" (- 100 depth)
+                             "--deck-next-scale" (- 1.0 (* next-depth 0.03))
+                             "--deck-scale" (- 1.0 (* visual-depth 0.03))
+                             "--insurance-survey-category-tint"
+                             (coverage-category-tint coverage)
+                             "view-transition-name"
+                             (str "insurance-survey-layer-" report-id)}}
+         (instrument-card req coverage [] false)])
+      (cond->
+       [[:div {:id    "insurance-survey-card-current"
+               :class "insurance-survey-card-current"}
+         (instrument-card
+          req
+          (:insurance.survey.report/coverage (:active-report data))
+          (:decisions page-state)
+          true)]]
+        (:milestone? page-state) (conj (milestone data)))))))
 
 (defn- question-node [step-key question-key coverage]
   (if (= step-key :confirm-go-private)
@@ -202,15 +332,25 @@
   (let [step-key              (:current-flow-key page-state)
         {:keys [question secondary answers]} (get flow/steps step-key)
         action-url            (d*/act req ::actions/transition)]
-    [card/Card {:id         "insurance-survey-question"
-                :appearance "filled-outlined"}
-     [:form {:class          "wa-stack wa-gap-l"
+    [:section {:id              "insurance-survey-question"
+               :class           "insurance-survey-question"
+               :aria-labelledby "insurance-survey-question-title"}
+     [:form {:class          "wa-stack wa-gap-s"
+             :data-id        "insurance-survey-question"
+             :data-attr:aria-busy "$loading === 'insurance-survey-transition' ? 'true' : 'false'"
              :data-on:submit (str "evt.preventDefault(); "
                                   "$insuranceSurvey.answer = evt.submitter.value; "
+                                  "$insuranceSurvey.transitionKind = evt.submitter.dataset.transitionKind; "
                                   "$loading = 'insurance-survey-transition'; "
-                                  "@post('" action-url "')")}
-      [:div {:class "wa-stack wa-gap-xs"}
-       [:h2 {:class "wa-heading-l"}
+                                  "const submit = () => @post('" action-url "'); "
+                                  "if (window.InsuranceSurveyMotion) { "
+                                  "window.InsuranceSurveyMotion.submit($insuranceSurvey.transitionKind, submit); "
+                                  "} else { submit(); }")}
+      [:div {:class       "wa-stack wa-gap-2xs"
+             :aria-live   "polite"
+             :aria-atomic "true"}
+       [:h2 {:id    "insurance-survey-question-title"
+             :class "wa-heading-m"}
         (question-node step-key question coverage)]
        (when secondary
          [:p {:class "wa-color-text-quiet"} [:i18n/tr secondary]])
@@ -220,22 +360,39 @@
            {:cost (or (ui2/money-format (:instrument.coverage/cost coverage) :EUR)
                       "—")}]])]
       (into
-       [:div {:class "wa-cluster wa-gap-s"}]
-       (for [{:keys [id label]} answers]
+       [:div {:class "wa-cluster wa-gap-xs"}]
+       (for [{:keys [id label next]} answers]
          [button/Button {:appearance "outlined"
                          :type       "submit"
                          :name       "answer"
-                         :value      (name id)}
+                         :value      (name id)
+                         :data-transition-kind (if (= :complete next)
+                                                 "item"
+                                                 "question")
+                         :data-attr:disabled "$loading === 'insurance-survey-transition'"}
           [:i18n/tr label]]))]]))
 
-(defn- progress [total-reports current-index]
-  (step-circles/StepCircles
-   {::step-circles/label [:i18n/tr :insurance/review-progress]
-    ::step-circles/current-step current-index
-    ::step-circles/steps
-    (mapv (fn [number]
-            {:label [:i18n/tr :insurance/review-item-step {:number number}]})
-          (range 1 (inc total-reports)))}))
+(defn- progress [total-reports current-index answered-count]
+  (let [answered-count       (or answered-count 0)
+        completed-items      (dec current-index)
+        ;; Opening the survey earns first-question progress. Further branching
+        ;; questions approach the end of this item's segment, and completing
+        ;; the item fills the remainder.
+        current-item-progress (if (pos? answered-count)
+                                (/ (double answered-count)
+                                   (inc answered-count))
+                                0.25)
+        value                (* 100.0
+                                (/ (+ completed-items current-item-progress)
+                                   total-reports))
+        next-value           (* 100.0 (/ current-index total-reports))]
+    [:wa-progress-bar
+     {:id              "insurance-survey-progress"
+      :class           "insurance-survey-progress"
+      :label           [:i18n/tr :insurance/review-progress]
+      :style           {"--insurance-survey-progress-value" (str value "%")}
+      :value           value
+      :data-next-value next-value}]))
 
 (defn- empty-content [req policy-id]
   [:div {:id "insurance-survey-empty"
@@ -266,44 +423,54 @@
      [:a {:href (urls/link-faq-insurance-team)}
       [:i18n/tr :insurance/review-contact-team]]]]])
 
-(defn- complete-content [req policy-id]
-  [:div {:id "insurance-survey-complete"
-         :class "wa-stack wa-gap-l"}
-   [:wa-callout {:appearance "outlined"
-                 :variant    "success"
-                 :role       "status"}
-    [:div {:class "wa-stack wa-gap-xs"}
-     [:strong [:i18n/tr :insurance/review-complete-title]]
-     [:span [:i18n/tr :insurance/review-complete-body]]]]
-   [:div {:class "wa-cluster wa-gap-s"}
-    [button/Button {:appearance "filled"
-                    :variant    "brand"
-                    :href       (urls/link-coverage-create
-                                 policy-id
-                                 (urls/absolute-link-insurance-survey-start
-                                  (get-in req [:system :env]) policy-id))}
-     [:i18n/tr :insurance/add-coverage]]
-    [button/Button {:appearance "outlined" :href "/"}
-     [:i18n/tr :action/done]]]])
-
-(defn- encouragement-content [req data]
-  (let [completed (- (:total-reports data) (:total-todo data))]
-    [:div {:id "insurance-survey-encouragement"
-           :class "wa-stack wa-gap-l"}
-     [:wa-callout {:appearance "outlined"
-                   :variant    "success"
-                   :role       "status"}
-      [:div {:class "wa-stack wa-gap-xs"}
-       [:strong [:i18n/tr :insurance/review-good-job]]
-       [:span [:i18n/tr :insurance/review-completed-progress
-               {:completed completed
-                :remaining (:total-todo data)}]]]]
-     [button/Button {:id          "insurance-survey-continue"
-                     :appearance  "filled"
-                     :variant     "brand"
-                     :data-id     "insurance-survey-continue"
-                     :data-action (d*/act req ::actions/continue-review)}
-      [:i18n/tr :insurance/review-keep-going]]]))
+(defn- complete-content [req data]
+  (let [policy-id   (get-in data [:policy :insurance.policy/policy-id])
+        response-id (get-in data [:response :insurance.survey.response/response-id])]
+    [:div {:id                                  "insurance-survey-complete"
+           :class                               "insurance-survey-completion wa-stack wa-gap-m"
+           :data-insurance-survey-celebration   true
+           :data-celebration-key                (str "insurance-survey-celebration-" response-id)
+           :data-celebrate-automatically        "true"}
+     [:div {:class "intro wa-stack wa-gap-xs"}
+      [ico/Icon {::ico/name :shield-check-outline}]
+      [:h1 {:class "wa-heading-l"}
+       [:i18n/tr :insurance/review-complete-title]]
+      [:p {:class "wa-color-text-quiet"}
+       [:i18n/tr :insurance/review-complete-body]]]
+     [button/Button {:id         "insurance-survey-celebrate"
+                     :appearance "filled"
+                     :variant    "brand"
+                     :size       "large"
+                     :data-celebration-button true}
+      [ico/Icon {::ico/library :phosphor
+                 ::ico/name    :star
+                 :slot         "start"}]
+      [:i18n/tr :insurance/review-celebrate]]
+     [:p {:class                   "stage"
+          :data-celebration-stage "1"
+          :hidden                  true}
+      [:i18n/tr :insurance/review-celebrate-again]]
+     [:p {:class                   "stage"
+          :data-celebration-stage "2"
+          :hidden                  true}
+      [:i18n/tr :insurance/review-celebrate-feels-good]]
+     [:div {:class                   "stage final wa-stack wa-gap-m"
+            :data-celebration-stage "3"
+            :hidden                  true}
+      [:p {:class "thanks wa-cluster wa-gap-2xs"}
+       [:i18n/tr :insurance/review-celebrate-thanks]
+       [ico/Icon {::ico/name  :smile
+                  :class     "thanks-icon"}]]
+      [:div {:class "wa-cluster wa-gap-s"}
+       [button/Button {:appearance "filled"
+                       :variant    "brand"
+                       :href       (urls/link-coverage-create
+                                    policy-id
+                                    (urls/absolute-link-insurance-survey-start
+                                     (get-in req [:system :env]) policy-id))}
+        [:i18n/tr :insurance/add-coverage]]
+       [button/Button {:appearance "outlined" :href "/"}
+        [:i18n/tr :action/done]]]]]))
 
 (defn- edit-content [req data page-state]
   (let [coverage   (:insurance.survey.report/coverage (:active-report data))
@@ -313,7 +480,8 @@
             :class          "wa-stack wa-gap-xl"
             :data-id        "insurance-survey-edit"
             :data-action    (d*/act req ::actions/save-edit)
-            :data-on:submit "evt.preventDefault();"}
+            :data-on:submit (str "evt.preventDefault(); "
+                                 "$insuranceSurvey.transitionKind = 'item';")}
      (ui2/section-card
       {:title    [:i18n/tr :insurance/review-correct-data-title]
        :subtitle [:i18n/tr :insurance/review-correct-data-body]
@@ -369,66 +537,74 @@
        [:i18n/tr :action/save]]]]))
 
 (defn- active-content [req data page-state]
-  (let [coverage (:insurance.survey.report/coverage (:active-report data))]
-    [:div {:class "wa-stack wa-gap-xl"}
+  (let [coverage        (:insurance.survey.report/coverage (:active-report data))
+        transition-kind (name (or (:transition-kind page-state) :none))]
+    [:div {:class                          "insurance-survey-workflow wa-stack wa-gap-s"
+           :data-transition-kind           transition-kind
+           :data-attr:data-transition-kind "$insuranceSurvey.transitionKind"}
      (when-let [error (:error page-state)]
        [:wa-callout {:appearance "outlined" :variant "danger" :role "alert"}
         error])
-     (if (= :encouragement (:mode page-state))
-       (encouragement-content req data)
-       (list
-        (progress (:total-reports data) (:current-index data))
-        (if (= :edit (:mode page-state))
-          (edit-content req data page-state)
-          (list
-           (question-panel req page-state coverage)
-           (instrument-card coverage (:decisions page-state))))))]))
+     (progress (:total-reports data)
+               (:current-index data)
+               (:answered-count page-state))
+     (if (= :edit (:mode page-state))
+       (edit-content req data page-state)
+       [:div {:class "insurance-survey-stage wa-stack wa-gap-s"}
+        (instrument-deck req data page-state)
+        (question-panel req page-state coverage)
+        #_(when (:dev? req)
+            (animation-lab data))])]))
 
-(defn page [{:keys [db policy] :as req}]
+(defn page [{:keys [db] :as req}]
   (let [policy-id         (http.util/path-param-uuid! req :policy-id)
-        policy            (or policy (q/retrieve-policy db policy-id))
+        dev?              (or (:dev? req)
+                              (config/dev-mode? (-> req :system :env)))
+        req               (assoc req :dev? dev?)
         current-member-id (get-in req [:session :session/member :member/member-id])
         data              (queries/survey-data db policy-id current-member-id)
         page-state        (actions/page-state req data)
+        transition-kind   (name (or (:transition-kind page-state) :none))
         edit              (merge (some-> data :active-report
                                          :insurance.survey.report/coverage
                                          coverage->edit)
                                  (:edit page-state))]
     (ui2/datastar-page*
      [page-surface/PageSurface
-      {::page-surface/width :standard
+      {::page-surface/width :compact
        ::page-surface/toolbar
        [page-toolbar/PageToolbar
         {::page-toolbar/breadcrumb
          [breadcrumb/Breadcrumb
           {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-           [:i18n/tr :insurance/title]]
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-           (:insurance.policy/name policy)]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/coverage-review]]]
+          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+           [:i18n/tr :home]]
+          [breadcrumb/BreadcrumbItem
+           [:i18n/tr :insurance/review-title]]]
          ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-policy policy)
-                             :label (:insurance.policy/name policy)}]
+         [button/BackButton {:href  (urls/link-dashboard)
+                             :label [:i18n/tr :home]}]
          :aria-label [:i18n/tr :insurance/toolbar-label]}]}
-      [:div {:class              "insurance-coverage-edit-page wa-stack wa-gap-2xl"
+      [:div {:class              "insurance-survey-page wa-stack wa-gap-l"
              :data-preserve-attr "data-signals"
              :data-signals       (d*/->signals
                                   {actions/signal-key
                                    {:policyId (str policy-id)
                                     :answer   ""
+                                    :transitionKind transition-kind
                                     :edit     (edit->signals edit)}})}
-       [page-header/PageHeader
-        {:title    [:i18n/tr :insurance/coverage-review]
-         :subtitle (:insurance.policy/name policy)}]
        (case (:status data)
          :closed      (closed-content)
-         :complete    (complete-content req policy-id)
+         :complete    (complete-content req data)
          :empty       (empty-content req policy-id)
          :unavailable (ui2/empty-state
                        [:i18n/tr :insurance/review-not-available-title]
                        [:i18n/tr :insurance/review-not-available])
          (active-content req data page-state))
-       (upload/upload-script)]])))
+       (upload/upload-script)
+       (html/script "/js/insurance-survey-celebration.js" :type "module")
+       (html/script "/js/insurance-survey-motion.js" :type "module")
+       #_(when dev?
+           (html/script "/js/insurance-survey-animation-lab.js" :type "module"))]])))
 
 (d*/refresh-all!)

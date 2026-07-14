@@ -16,6 +16,8 @@
    [app.insurance.test-support :as insurance-test]
    [app.queries :as q]
    [app.test-common :as tc]
+   [app.ui2.button :as button]
+   [app.ui2.card :as card]
    [app.ui2.icon :as ico]
    [app.ui2.page-shell-test-support :as page-shell]
    [app.ui2.page-surface :as page-surface]
@@ -103,6 +105,15 @@
                              request-for
                              dashboard.views/page
                              page-shell/page-contract)
+        sent-db          (:db-after
+                          @(d/transact conn [[:db/add
+                                              [:insurance.policy/policy-id policy-id]
+                                              :insurance.policy/status
+                                              :insurance.policy.status/sent]]))
+        sent-contract    (-> sent-db
+                             request-for
+                             dashboard.views/page
+                             page-shell/page-contract)
         active-db        (:db-after
                           @(d/transact conn [[:db/add
                                               [:insurance.policy/policy-id policy-id]
@@ -121,12 +132,17 @@
                         :href       changes-url
                         :appearance "filled"
                         :variant    "brand"}]
+              :sent   [{:label      :insurance/workbench
+                        :href       workbench-url
+                        :appearance "filled"
+                        :variant    "brand"}]
               :active [{:label      :insurance/request-payments-title
                         :href       notifications-url
                         :appearance "filled"
                         :variant    "brand"}]}
              {:todo   (:actions todo-contract)
               :ready  (:actions ready-contract)
+              :sent   (:actions sent-contract)
               :active (:actions active-contract)})))
     (testing "Secondary actions remain reachable without offering a live blocked destination."
       (is (= {:todo [{:label :insurance/workbench
@@ -149,6 +165,14 @@
                        :value settings-url}
                       {:label :insurance/manage-surveys
                        :value surveys-url}]
+              :sent [{:label :insurance/review
+                      :value review-url}
+                     {:label :insurance/add-coverage
+                      :value (str "/insurance-coverage-create/" policy-id)}
+                     {:label :insurance/policy-settings
+                      :value settings-url}
+                     {:label :insurance/manage-surveys
+                      :value surveys-url}]
               :active [{:label :insurance/review
                         :value review-url}
                        {:label :insurance/workbench
@@ -161,7 +185,177 @@
                         :value surveys-url}]}
              {:todo   (:overflow todo-contract)
               :ready  (:overflow ready-contract)
+              :sent   (:overflow sent-contract)
               :active (:overflow active-contract)})))))
+
+(deftest open-policy-survey-is-prominent-on-the-dashboard
+  (let [{:keys [conn coverage-id outsider-id request policy-id]} (fixture)
+        member-id   (get-in request [:session :session/member :member/member-id])
+        surveys-url (urls/link-policy-surveys policy-id)
+        _           @(d/transact
+                      conn
+                      [{:insurance.survey/survey-id   (random-uuid)
+                        :insurance.survey/policy      [:insurance.policy/policy-id policy-id]
+                        :insurance.survey/created-at  #inst "2026-07-01T00:00:00.000-00:00"
+                        :insurance.survey/closes-at   #inst "2099-08-01T00:00:00.000-00:00"
+                        :insurance.survey/responses
+                        [{:insurance.survey.response/response-id  (random-uuid)
+                          :insurance.survey.response/member       [:member/member-id member-id]
+                          :insurance.survey.response/completed-at #inst "2026-07-02T00:00:00.000-00:00"}
+                         {:insurance.survey.response/response-id (random-uuid)
+                          :insurance.survey.response/member      [:member/member-id outsider-id]
+                          :insurance.survey.response/coverage-reports
+                          [{:insurance.survey.report/report-id (random-uuid)
+                            :insurance.survey.report/coverage  [:instrument.coverage/coverage-id coverage-id]}]}]}])
+        view        (-> request
+                        (assoc :db (d/db conn)
+                               :path-params {:policy-id policy-id})
+                        dashboard.views/page)
+        contract    (page-shell/page-contract view)
+        main-column (first (l/select ".leading-none.wa-grid" view))
+        cards       (->> (l/children main-column)
+                         (filter #(= card/Card (first %)))
+                         vec)
+        survey-card (second cards)
+        card-action (l/select-one button/Button survey-card)
+        action-icon (l/select-one ico/Icon card-action)
+        progress    (l/select-one 'div.insurance-dashboard-survey-progress survey-card)
+        percentage  (l/select-one ".insurance-dashboard-survey-progress-value" survey-card)
+        summary     (l/select-one ".wa-text-end" survey-card)]
+    (is (= {:toolbar-actions [{:label      :insurance/manage-surveys
+                               :href       surveys-url
+                               :appearance "outlined"
+                               :variant    "brand"}]
+            :overflow-labels [:insurance/review
+                              :insurance/workbench
+                              :insurance/add-coverage
+                              :insurance/policy-settings
+                              :insurance/send-changes]
+            :card-position   1
+            :card-classes    #{"insurance-dashboard-card"
+                               "insurance-dashboard-survey-progress-card"}
+            :card-title      :insurance/survey-responses-title
+            :card-action     {:slot       "header-actions"
+                              :href       surveys-url
+                              :appearance "plain"
+                              :variant    "brand"
+                              :title      "manage-surveys"
+                              :aria-label "manage-surveys"
+                              :icon       :clipboard-text}
+            :progress       {:role          "progressbar"
+                             :aria-valuemin 0
+                             :aria-valuemax 100
+                             :aria-valuenow 50
+                             :aria-label    [:i18n/tr
+                                             :insurance/survey-progress-summary
+                                             {:completed 1 :total 2}]
+                             :style         {"--progress-value" "50.0%"}}
+            :percentage     {:type                    "percent"
+                             :value                   0.5
+                             :minimum-fraction-digits 0
+                             :maximum-fraction-digits 0}
+            :legend-labels   [:insurance/survey-complete
+                              :insurance/survey-incomplete]
+            :legend-counts   ["1" "1"]
+            :summary         {:key  :insurance/survey-progress-summary
+                              :vars {:completed 1 :total 2}}}
+           {:toolbar-actions (:actions contract)
+            :overflow-labels (mapv :label (:overflow contract))
+            :card-position   (.indexOf cards survey-card)
+            :card-classes    (:class (l/attrs survey-card))
+            :card-title      (page-shell/translation-key
+                              (l/select-one 'h2 survey-card))
+            :card-action     (assoc
+                              (select-keys (l/attrs card-action)
+                                           [:slot
+                                            :href
+                                            :appearance
+                                            :variant
+                                            :title
+                                            :aria-label])
+                              :icon (::ico/name (l/attrs action-icon)))
+            :progress       (select-keys (l/attrs progress)
+                                         [:role
+                                          :aria-valuemin
+                                          :aria-valuemax
+                                          :aria-valuenow
+                                          :aria-label
+                                          :style])
+            :percentage     (select-keys (l/attrs percentage)
+                                         [:type
+                                          :value
+                                          :minimum-fraction-digits
+                                          :maximum-fraction-digits])
+            :legend-labels   (mapv page-shell/translation-key
+                                   (l/select '[dl dt] survey-card))
+            :legend-counts   (mapv l/text (l/select '[dl dd] survey-card))
+            :summary         {:key  (page-shell/translation-key summary)
+                              :vars (some-> (l/select-one :i18n/tr summary)
+                                            l/last-child)}}))))
+
+(deftest open-survey-replaces-each-policy-primary-action
+  (let [{:keys [conn coverage-id request policy-id]} (fixture)
+        _           @(d/transact
+                      conn
+                      [{:insurance.survey/survey-id   (random-uuid)
+                        :insurance.survey/policy      [:insurance.policy/policy-id policy-id]
+                        :insurance.survey/created-at  #inst "2026-07-01T00:00:00.000-00:00"
+                        :insurance.survey/closes-at   #inst "2099-08-01T00:00:00.000-00:00"}])
+        contract-at (fn [db]
+                      (-> request
+                          (assoc :db db
+                                 :path-params {:policy-id policy-id})
+                          dashboard.views/page
+                          page-shell/page-contract))
+        todo        (contract-at (d/db conn))
+        ready-db    (:db-after
+                     @(d/transact conn [[:db/add
+                                         [:instrument.coverage/coverage-id coverage-id]
+                                         :instrument.coverage/status
+                                         :instrument.coverage.status/reviewed]]))
+        ready       (contract-at ready-db)
+        sent-db     (:db-after
+                     @(d/transact conn [[:db/add
+                                         [:insurance.policy/policy-id policy-id]
+                                         :insurance.policy/status
+                                         :insurance.policy.status/sent]]))
+        sent        (contract-at sent-db)
+        active-db   (:db-after
+                     @(d/transact conn [[:db/add
+                                         [:insurance.policy/policy-id policy-id]
+                                         :insurance.policy/status
+                                         :insurance.policy.status/active]]))
+        active      (contract-at active-db)
+        summarize   (fn [contract]
+                      {:actions  (mapv :label (:actions contract))
+                       :overflow (mapv :label (:overflow contract))})]
+    (is (= {:todo   {:actions  [:insurance/manage-surveys]
+                     :overflow [:insurance/review
+                                :insurance/workbench
+                                :insurance/add-coverage
+                                :insurance/policy-settings
+                                :insurance/send-changes]}
+            :ready  {:actions  [:insurance/manage-surveys]
+                     :overflow [:insurance/send-changes
+                                :insurance/review
+                                :insurance/workbench
+                                :insurance/add-coverage
+                                :insurance/policy-settings]}
+            :sent   {:actions  [:insurance/manage-surveys]
+                     :overflow [:insurance/workbench
+                                :insurance/review
+                                :insurance/add-coverage
+                                :insurance/policy-settings]}
+            :active {:actions  [:insurance/manage-surveys]
+                     :overflow [:insurance/request-payments-title
+                                :insurance/review
+                                :insurance/workbench
+                                :insurance/add-coverage
+                                :insurance/policy-settings]}}
+           {:todo   (summarize todo)
+            :ready  (summarize ready)
+            :sent   (summarize sent)
+            :active (summarize active)}))))
 
 (deftest policy-dashboard-overflow-actions-have-icons
   (let [{:keys [request policy-id]} (fixture)
@@ -343,19 +537,17 @@
                surveys.views/page
                page-shell/page-contract)))))
 
-(deftest coverage-review-uses-a-standard-context-only-surface
+(deftest member-instrument-check-uses-a-compact-context-only-surface
   (let [{:keys [conn request policy-id coverage-id]} (fixture)
         member-id (get-in request [:session :session/member :member/member-id])
         _ (insurance-test/seed-member-survey!
            conn
            {:coverage-ids [coverage-id]
             :member-id    member-id
-            :policy-id    policy-id})
-        policy-url (urls/link-policy policy-id)]
-    (is (= {:width       :standard
-            :breadcrumbs [:insurance/title "Insurance 2026"
-                          :insurance/coverage-review]
-            :mobile      {:label "Insurance 2026" :href policy-url}
+            :policy-id    policy-id})]
+    (is (= {:width       :compact
+            :breadcrumbs [:home :insurance/review-title]
+            :mobile      {:label :home :href "/"}
             :actions     []
             :overflow    []}
            (-> request

@@ -3,7 +3,8 @@
    [app.insurance.domain :as domain]
    [app.insurance.queries :as insurance.queries]
    [app.queries :as q]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [datomic.api :as d]))
 
 (defn members-for-survey
   [db policy]
@@ -29,11 +30,20 @@
   [response policy-id]
   (survey-belongs-to-policy? (:survey response) policy-id))
 
-(defn policy-has-open-survey-at?
-  [db policy now]
-  (boolean
-   (some #(domain/survey-open-at? now %)
-         (q/surveys-for-policy db policy))))
+(defn active-survey-exists-at?
+  ([db now]
+   (active-survey-exists-at? db now nil))
+  ([db now excluded-survey-id]
+   (boolean
+    (some #(not= excluded-survey-id %)
+          (d/q '[:find [?survey-id ...]
+                 :in $ ?now
+                 :where
+                 [?survey :insurance.survey/survey-id ?survey-id]
+                 [?survey :insurance.survey/closes-at ?closes-at]
+                 [(< ?now ?closes-at)]
+                 [(missing? $ ?survey :insurance.survey/closed-at)]]
+               db now)))))
 
 (defn policy-surveys
   ([db policy-id current-member-id]
@@ -46,7 +56,13 @@
                           (sort-by :insurance.survey/created-at #(compare %2 %1))
                           vec)
          open        (filterv #(domain/survey-open-at? now %) surveys)
-         closed      (filterv #(not (domain/survey-open-at? now %)) surveys)
+         closed      (->> surveys
+                          (remove #(domain/survey-open-at? now %))
+                          (sort-by #(or (:insurance.survey/closed-at %)
+                                        (:insurance.survey/closes-at %)
+                                        (:insurance.survey/created-at %))
+                                   #(compare %2 %1))
+                          vec)
          active      (first open)
          response-rows
          (mapv (fn [{:insurance.survey.response/keys

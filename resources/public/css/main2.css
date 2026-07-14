@@ -63,4 +63,9 @@
   wa-dropdown:not(:defined) > :not([slot="trigger"]) {
     display: none !important;
   }
+
+  wa-progress-bar:not(:defined) {
+    display: flex;
+    block-size: var(--track-height, 1rem);
+  }
 }

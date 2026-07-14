@@ -49,36 +49,59 @@ workbench = Table
 add-coverage = Add Instrument
 policy-settings = Policy Settings
 manage-surveys = Manage surveys
-pending-coverage-reviews = Coverage reviews
-# $count (Number) - Instruments left to review. $total (Number) - Total instruments. $policy (String) - Policy name. $date (String) - Localized closing date and time.
-survey-response-detail =
+instrument-insurance = Instrument insurance
+# $count (Number) - Instruments left to review. $total (Number) - Total instruments.
+review-dashboard-progress =
     { $count ->
         [0] Ready to finish
-        [one] One of { $total } instruments needs review
-       *[other] { $count } of { $total } instruments need review
-    } · { $policy } · closes { $date }
+        [one] 1 out of { $total } instruments is waiting for you
+       *[other] { $count } out of { $total } instruments are waiting for you
+    }
+# Shown immediately before a relative time such as “in 4 days”.
+review-dashboard-due = Due
+# $name (String) - The member's display name.
+review-dashboard-greeting = { $name }, it’s time to review your insured instruments.
+# $minutes (Number) - Estimated whole minutes needed to finish the review.
+review-dashboard-estimate = About { $minutes } min.
+review-dashboard-start = Start review
 survey-admin-title = Coverage surveys
 survey-admin-subtitle = Ask every member to review the instruments covered by this policy.
 start-survey = Start survey
 survey-details-title = Survey details
 survey-details-subtitle = Members can respond until the closing date or until the insurance team closes the survey.
-survey-name = Survey name
-survey-name-hint = Give this review a short, recognizable name.
 survey-closes-at = Closes at
 survey-closes-at-hint = The date and time after which members should no longer respond.
-survey-name-required = Enter a survey name.
 survey-closes-at-invalid = Enter a valid closing date and time.
 survey-closes-at-future = Choose a closing date in the future.
+survey-closes-at-saving = Saving…
+survey-closes-at-saved = Saved
+survey-closes-at-save-failed = Could not save
 survey-open = Open
 survey-no-open-title = No open coverage survey
 survey-no-open-body = Start a survey when members should check their currently insured instruments.
 survey-responses-title = Member responses
 survey-responses-subtitle = Track progress and correct a completion status when necessary.
+survey-responses-table-caption = Member responses to this insurance survey
+survey-response-actions = Response actions
+# Accessible label for the segmented response filter.
+survey-filter-label = Filter member responses
+# $count (Number) - All member responses.
+survey-filter-all = All ({ $count })
+# $count (Number) - Member responses not yet marked complete.
+survey-filter-incomplete = Incomplete ({ $count })
+# $count (Number) - Member responses marked complete.
+survey-filter-completed = Complete ({ $count })
+survey-filter-empty-all = No member responses yet.
+survey-filter-empty-incomplete = Everyone has completed this survey.
+survey-filter-empty-completed = No completed responses yet.
 survey-reviewed = Reviewed
 survey-status = Status
 survey-complete = Complete
 survey-incomplete = Incomplete
 survey-progress = { $completed } of { $total }
+# Summary of member completion on an open insurance survey.
+# $completed (Number) - Member responses marked complete. $total (Number) - All member responses.
+survey-progress-summary = { $completed } of { $total } member responses complete.
 survey-mark-complete = Mark complete
 survey-mark-incomplete = Mark incomplete
 survey-no-responses = This survey has no member responses.
@@ -97,12 +120,15 @@ survey-close = Close survey
 survey-close-title = Close this coverage survey?
 survey-close-body = Members will no longer be able to change their responses.
 survey-close-confirm = Close survey
-survey-created = The coverage survey was started.
-survey-updated = The survey details were saved.
+survey-created = The coverage survey was started. No reminders were sent. Click “Send reminders” to notify members.
 survey-closed = The coverage survey was closed.
+survey-more-actions = More survey actions
 survey-closed-title = Closed surveys
 survey-closed-subtitle = Earlier surveys for this policy.
-survey-closed-on = Closed { $date }
+# $created (String) - Localized start date and time. $ended (String) - Localized manual closing date and time.
+survey-history-closed = Started { $created } · Closed { $ended }
+# $created (String) - Localized start date and time. $ended (String) - Localized expiry date and time.
+survey-history-expired = Started { $created } · Expired { $ended }
 survey-error-not-found = This policy or survey could not be found.
 survey-error-not-allowed = Only members of the insurance team can manage coverage surveys.
 survey-error-open-exists = Close the current survey before starting another one.
@@ -142,10 +168,11 @@ payment-notifications-sent =
        *[other] { $count } payment notifications were sent.
     }
 
-### Member coverage review
+### Member instrument check
 
+review-title = Instrument check
 coverage-review = Coverage review
-review-progress = Coverage review progress
+review-progress = Instrument check progress
 review-item-step = Item { $number }
 review-used-at-gig = Was this used at a Street Noise gig in the past year?
 review-yes = Yes
@@ -164,24 +191,35 @@ review-confirm-private-cost = Keeping this instrument insured will cost approxim
 review-data-correct = Is all the information shown here still correct?
 review-data-correct-hint = Check the insured value and coverage types in particular.
 review-invalid-transition = That answer is not valid for the current review question.
-review-not-available-title = No coverage review available
-review-not-available = There is no coverage review available for you on this policy.
-review-cannot-finish = Finish reviewing the remaining instruments before completing this coverage review.
+review-not-available-title = No instrument check available
+review-not-available = There is no instrument check available for you right now.
+review-cannot-finish = Check the remaining instruments before finishing.
 review-no-items-title = No instruments to review
-review-no-items-body = You do not currently have any insured instruments in this review. You can add one or finish the review.
+review-no-items-body = You do not currently have any insured instruments in this check. You can add one or finish.
 review-finish = I’m finished
-review-closed-title = This coverage review is closed
-review-closed-body = Answers can no longer be changed because the insurance team has closed this review.
+review-closed-title = This instrument check is closed
+review-closed-body = Answers can no longer be changed because the insurance team has closed this check.
 review-contact-team = Contact the insurance team if something still needs to change.
-review-complete-title = Coverage review complete
+review-complete-title = All done!
 review-complete-body = Thanks. The insurance team has received your responses.
+review-celebrate = Celebrate!
+review-celebrate-again = Why not celebrate again?
+review-celebrate-feels-good = Feels good, right? One more.
+review-celebrate-thanks = The insurance team thanks you.
 review-good-job = Good job
-review-completed-progress =
-    { $completed ->
-        [one] You reviewed one instrument. { $remaining } remain.
-       *[other] You reviewed { $completed } instruments. { $remaining } remain.
+review-milestone =
+    { $remaining ->
+        [one] Just one instrument left.
+       *[other] Only { $remaining } instruments left.
     }
-review-keep-going = Keep going
+review-animation-lab = Animation lab (dev only)
+review-animation-sequence = Full sequence
+review-animation-throw = Throw card
+review-animation-advance = Advance deck
+review-animation-question = Question
+review-animation-encouragement = Encouragement
+review-animation-reset = Reset
+review-card-details = Instrument details
 review-correct-data-title = Correct the instrument information
 review-correct-data-body = Update anything that has changed, then save to finish reviewing this instrument.
 review-coverage-body = Check the insured value and coverage types.

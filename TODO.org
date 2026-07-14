@@ -85,3 +85,4 @@
       - Keeps /act entirely JSON-based.
       - Requires temporary-upload persistence, expiration, authorization, and abandoned-upload cleanup.
 Then replace the /account-settings/profile/save and other upload locations with it
+** collapse app/<thing>/<subthing1,subthing2>/queries into just <thing>/queries.clj

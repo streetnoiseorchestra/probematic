@@ -1,5 +1,7 @@
 (ns app.insurance.policy.dashboard.queries
   (:require
+   [app.datomic :as d]
+   [app.datomic.shim :as datomic]
    [app.datastar :as d*]
    [app.insurance.domain :as domain]
    [app.queries :as q]
@@ -80,10 +82,41 @@
        (sort-by (juxt owner-name instrument-name))
        (mapv recent-change-item)))
 
+(defn- open-survey-progress
+  [db policy now]
+  (when-let [survey-eid
+             (->> (datomic/q '[:find ?survey ?created-at
+                               :in $ ?policy ?now
+                               :where
+                               [?survey :insurance.survey/policy ?policy]
+                               [?survey :insurance.survey/created-at ?created-at]
+                               [?survey :insurance.survey/closes-at ?closes-at]
+                               [(> ?closes-at ?now)]
+                               [(missing? $ ?survey :insurance.survey/closed-at)]]
+                             db
+                             (d/ref policy)
+                             now)
+                  (sort-by second #(compare %2 %1))
+                  ffirst)]
+    (let [responses       (:insurance.survey/responses
+                           (datomic/pull
+                            db
+                            [{:insurance.survey/responses
+                              [:insurance.survey.response/response-id
+                               :insurance.survey.response/completed-at]}]
+                            survey-eid))
+          completed-count (count (filter :insurance.survey.response/completed-at
+                                         responses))
+          total-count     (count responses)]
+      {:completed-count completed-count
+       :waiting-count   (- total-count completed-count)
+       :total-count     total-count})))
+
 (defn policy-dashboard
   ([db policy-id]
    (policy-dashboard db policy-id {}))
-  ([db policy-id {:keys [current-member-id]}]
+  ([db policy-id {:keys [current-member-id now]
+                  :or   {now (java.util.Date.)}}]
    (let [policy            (q/retrieve-policy db policy-id)
          coverages         (enriched-coverages policy)
          band-coverages    (filterv (complement :instrument.coverage/private?) coverages)
@@ -104,6 +137,7 @@
                                 :band-cost                     (coverage-cost-total band-coverages)}
       :status-counts           (count-by domain/instrument-coverage-statuses :instrument.coverage/status coverages)
       :change-counts           (count-by domain/instrument-coverage-changes :instrument.coverage/change coverages)
+      :survey-progress         (open-survey-progress db policy now)
       :recent-changes          (recent-changes coverages)})))
 
 (d*/refresh-all!)

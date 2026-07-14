@@ -434,7 +434,6 @@
   :keep-insured-private-hint
   "Da dies im letzten Jahr nicht bei einem Gig verwendet wurde, kann die Band nicht mehr dafür bezahlen.",
   :already-closed "Bereits geschlossen",
-  :survey-name "Umfragebezeichnung",
   :keep-insured-pay "Willst du zahlen, um es versichert zu halten?",
   :keep-insured-private-cost
   "Wenn du möchtest, dass der Artikel versichert bleibt, musst du selbst dafür bezahlen. Das wird etwa %1 pro Jahr für diesen Artikel kosten.",

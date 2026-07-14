@@ -220,6 +220,78 @@
   border-block-end: 0;
 }
 
+.dashboard-insurance-survey {
+  --content-percentage: 62%;
+  --flank-size: calc(var(--wa-space-5xl) * 1.15);
+
+  padding: var(--wa-space-l);
+  background-color: var(--wa-color-brand-fill-quiet);
+}
+
+@scope (.dashboard-insurance-survey) {
+  .mascot {
+    flex: none;
+    inline-size: var(--flank-size);
+    block-size: var(--flank-size);
+    padding: var(--wa-space-2xs);
+    background-color: var(--wa-color-surface-default);
+    border: var(--wa-border-width-s) var(--wa-border-style)
+      var(--wa-color-surface-border);
+    border-radius: var(--wa-border-radius-circle);
+    box-shadow: var(--wa-shadow-s);
+  }
+
+  .mascot img {
+    object-fit: contain;
+  }
+
+  .copy {
+    min-inline-size: min(100%, 16rem);
+  }
+
+  .meta {
+    color: var(--wa-color-text-quiet);
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--wa-font-size-m);
+    line-height: var(--wa-line-height-condensed);
+    text-wrap: balance;
+  }
+
+  p {
+    margin: 0;
+    line-height: var(--wa-line-height-normal);
+  }
+
+  .meta {
+    align-items: baseline;
+    font-size: var(--wa-font-size-s);
+  }
+
+  .sno-button {
+    inline-size: fit-content;
+  }
+}
+
+@container (max-width: 28rem) {
+  .dashboard-insurance-survey {
+    justify-content: center;
+    text-align: center;
+  }
+
+  @scope (.dashboard-insurance-survey) {
+    .copy {
+      align-items: center;
+    }
+
+    .meta {
+      justify-content: center;
+    }
+  }
+}
+
 .dashboard-gig-row,
 .dashboard-insurance-todo-row {
   display: grid;

@@ -1,6 +1,7 @@
 (ns app.dashboard.views-test
   (:require
    [app.dashboard.index.views :as views]
+   [app.ui2 :as ui2]
    [app.ui2.button :as button]
    [app.ui2.card :as card]
    [app.ui2.page-surface :as page-surface]
@@ -8,6 +9,7 @@
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]
+   [reitit.core :as r]
    [tick.core :as t]))
 
 (defn tr
@@ -17,7 +19,8 @@
    (tr path)))
 
 (def request
-  {:current-locale :en
+  {::r/router       (r/router ["/act" {:name :app.routes.datastar/act}])
+   :current-locale :en
    :page-state     {}
    :system         {:env {}}
    :tr             tr})
@@ -33,7 +36,7 @@
    data))
 
 (deftest home-content-renders-the-approved-dashboard-regions
-  (let [view (home-content {:insurance-surveys []
+  (let [view (home-content {:insurance-survey  nil
                             :insurance-todos   []
                             :ledger            nil
                             :unanswered        []
@@ -58,19 +61,20 @@
     (is (nil? (l/select-one page-surface/PageSurface view)))
     (is (nil? (l/select-one page-toolbar/PageToolbar view)))))
 
-(deftest my-responses-includes-personal-coverage-reviews-and-polls
+(deftest my-responses-includes-one-rich-insurance-review-and-polls
   (let [policy-id (random-uuid)
         survey-id (random-uuid)
         poll-id   (random-uuid)
+        closes-at (t/date-time "2026-08-10T20:00")
         view      (home-content
-                   {:insurance-surveys
-                    [{:closes-at  (t/date-time "2026-08-10T20:00")
-                      :name       "Coverage check"
-                      :policy-id  policy-id
-                      :policy-name "Insurance 2026"
-                      :survey-id  survey-id
-                      :todo-count 2
-                      :total-count 3}]
+                   {:insurance-survey
+                    {:closes-at   closes-at
+                     :name        "Coverage check"
+                     :policy-id   policy-id
+                     :policy-name "Insurance 2026"
+                     :survey-id   survey-id
+                     :todo-count  2
+                     :total-count 3}
                     :insurance-todos  []
                     :ledger           nil
                     :unanswered       []
@@ -80,9 +84,24 @@
                     :upcoming         []})
         responses (some #(when (str/includes? (:class (l/attrs %)) "responses") %)
                         (l/select card/Card view))
-        hrefs     (set (keep (comp :href l/attrs)
-                             (concat (l/select :a responses)
-                                     (l/select button/Button responses))))
+        survey-task (l/select-one ".dashboard-insurance-survey" responses)
+        picture      (l/select-one :picture survey-task)
+        relative-time (l/select-one 'wa-relative-time survey-task)
+        progress      (some #(when (and (vector? %)
+                                        (= :i18n/tr (first %))
+                                        (= :insurance/review-dashboard-progress
+                                           (second %)))
+                               %)
+                            (tree-seq coll? seq survey-task))
+        summary       (some #(when (and (vector? %)
+                                        (= :i18n/tr (first %))
+                                        (= :insurance/review-dashboard-summary
+                                           (second %)))
+                               %)
+                            (tree-seq coll? seq survey-task))
+        hrefs        (set (keep (comp :href l/attrs)
+                                (concat (l/select :a responses)
+                                        (l/select button/Button responses))))
         section-keys (set (keep (fn [section]
                                   (some #(when (and (vector? %)
                                                     (= :i18n/tr (first %)))
@@ -91,12 +110,81 @@
                                 (l/select ".dashboard-response-section"
                                           responses)))]
     (is (= "2" (l/text (l/select-one :wa-badge responses))))
+    (is (= {:animated       "/img/peanut_butter_jelly_time.gif"
+            :frame-classes  #{"mascot" "wa-frame:square" "wa-gap-0"}
+            :progress       [:i18n/tr :insurance/review-dashboard-progress
+                             {:count 2 :total 3}]
+            :relative-time  {:date    "2026-08-10T20:00"
+                             :format  "long"
+                             :numeric "auto"
+                             :sync    true
+                             :title   (ui2/format-date-time request
+                                                            :medium
+                                                            closes-at)}
+            :still          "/img/peanut_butter_jelly_time_still.gif"
+            :summary        nil}
+           {:animated       (-> (l/select-one :img survey-task) l/attrs :src)
+            :frame-classes  (:class (l/attrs picture))
+            :progress       progress
+            :relative-time  (select-keys (l/attrs relative-time)
+                                         [:date :format :numeric :sync :title])
+            :still          (-> (l/select-one :source survey-task) l/attrs :srcset)
+            :summary        summary}))
+    (is (= 1
+           (count (filter #(= (str "/insurance-survey/" policy-id "/")
+                              (:href (l/attrs %)))
+                          (concat (l/select :a responses)
+                                  (l/select button/Button responses))))))
     (is (= #{(str "/insurance-survey/" policy-id "/")
              (str "/poll/" poll-id)}
            hrefs))
-    (is (= #{:insurance/pending-coverage-reviews
+    (is (= #{:insurance/instrument-insurance
              :polls/response-needed}
            section-keys))))
+
+(deftest my-responses-orders-survey-todos-and-attendance-by-priority
+  (let [policy-id (random-uuid)
+        member-id (random-uuid)
+        view      (home-content
+                   {:insurance-survey
+                    {:closes-at   (t/date-time "2026-08-10T20:00")
+                     :policy-id   policy-id
+                     :todo-count  6
+                     :total-count 6}
+                    :insurance-todos
+                    [{:insurance.policy/name "Insurance 2026"
+                      :insurance.policy/policy-id policy-id
+                      :total-needs-review 1
+                      :total-changed      0
+                      :total-new          0
+                      :total-removed      0}]
+                    :ledger           nil
+                    :unanswered
+                    [{:gig/gig-id    (random-uuid)
+                      :gig/title     "Summer concert"
+                      :gig/status    :gig.status/confirmed
+                      :gig/date      (t/date "2026-08-12")
+                      :gig/call-time (t/time "18:00")
+                      :attendance    {:attendance/member
+                                      {:member/member-id member-id}
+                                      :attendance/plan :plan/no-response}}]
+                    :unanswered-polls []
+                    :upcoming         []})
+        responses (some #(when (str/includes? (:class (l/attrs %)) "responses") %)
+                        (l/select card/Card view))]
+    (is (= [:insurance-survey :insurance-todos :attendance]
+           (mapv (fn [section]
+                   (let [classes (:class (l/attrs section))]
+                     (cond
+                       (contains? classes "dashboard-insurance-todo-section")
+                       :insurance-todos
+
+                       (contains? classes "dashboard-gig-section")
+                       :attendance
+
+                       :else
+                       :insurance-survey)))
+                 (l/select :section responses))))))
 
 (deftest ledger-widget-renders-native-card-body
   (let [widget (#'views/ledger-widget

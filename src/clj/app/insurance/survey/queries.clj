@@ -65,7 +65,6 @@
                     :keys [survey]}]
                 (let [policy (:insurance.survey/policy survey)]
                   {:closes-at   (:insurance.survey/closes-at survey)
-                   :name        (:insurance.survey/survey-name survey)
                    :policy-id   (:insurance.policy/policy-id policy)
                    :policy-name (:insurance.policy/name policy)
                    :response-id response-id
@@ -76,7 +75,7 @@
         (sort-by :closes-at)
         vec)))
 
-(defn show-encouragement? [current-index total-todo]
+(defn show-milestone? [current-index total-todo]
   (or (= current-index 2)
       (and (pos? current-index)
            (zero? (mod current-index 4))
