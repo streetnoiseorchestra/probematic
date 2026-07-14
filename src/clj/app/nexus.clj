@@ -1,6 +1,7 @@
 (ns app.nexus
   (:require
    [app.account.actions]
+   [app.account.effects :as account.effects]
    [app.datastar :as datastar]
    [app.file-browser.actions]
    [app.gigs.actions]
@@ -240,6 +241,8 @@
 (defn nexus []
   {:nexus/system->state system->state
    :nexus/effects       {:db/transact                              (with-meta db-transact-fx {:nexus/batch true})
+                         :app.account/save-profile                 account.effects/save-profile-fx
+                         :app.account/discard-upload               account.effects/discard-upload-fx
                          :app.datastar/merge-signals               merge-signals-fx
                          :app.datastar/remove-signals              remove-signals-fx
                          :app.datastar/open-form                   open-form-fx

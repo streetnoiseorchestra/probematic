@@ -108,6 +108,7 @@
                   :app.account.actions/end-break
                   :app.account.actions/launch-app}))
     (is (contains? (:nexus/effects nexus-config) :db/transact))
+    (is (contains? (:nexus/effects nexus-config) :app.account/save-profile))
     (is (contains? (:nexus/effects nexus-config) :app.datastar/redirect))
     (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-details-edited))
     (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-created))
@@ -180,6 +181,7 @@
                      [:page-state :existing])))
       (finally
         (swap! datastar/!page-state dissoc tab-id)))))
+
 (deftest db-transact-fx-dispatches-on-success-actions
   (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-success")
         team-id        (random-uuid)
