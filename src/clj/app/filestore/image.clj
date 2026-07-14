@@ -90,6 +90,54 @@
   (assert quality "quality required")
   (generic-process params))
 
+(defn process-avatar-square
+  "Creates an exact square avatar rendition centered on the source image.
+
+  The image is autorotated, scaled in either direction, center-cropped, stripped
+  of metadata, and written to a temporary output file owned by the caller.
+
+  Options:
+
+  | key        | description
+  |------------|-------------
+  | `:input`   | Map containing `:path` or `:content-thunk`
+  | `:size`    | Required output width and height in physical pixels
+  | `:quality` | Required encoder quality
+  | `:format`  | Required output format keyword"
+  [{:keys [input size quality format] :as params}]
+  (assert input "input required")
+  (assert size "size required")
+  (assert quality "quality required")
+  (assert format "output format required")
+  (let [[path input-temp] (prepare-input input)
+        ext (format->extension format)
+        output (bfs/file
+                (bfs/create-temp-file
+                 {:prefix "snorga.avatar." :suffix ext}))
+        succeeded? (volatile! false)]
+    (try
+      (with-open [avatar (ops/thumbnail path
+                                        (int size)
+                                        {:height (int size)
+                                         :size :both
+                                         :crop :centre
+                                         :auto-rotate true})]
+        (write-thumbnail-to-file! avatar output format quality))
+      (let [result (assoc params
+                          :avatar-size size
+                          :ext ext
+                          :format format
+                          :mime-type (format->mime format)
+                          :size (bfs/size output)
+                          :out-file output)]
+        (vreset! succeeded? true)
+        result)
+      (finally
+        (when input-temp
+          (bfs/delete-if-exists input-temp))
+        (when-not @succeeded?
+          (bfs/delete-if-exists output))))))
+
 (defn- loader->format [loader]
   (when-let [loader (some-> loader str str/lower-case)]
     (cond
@@ -123,23 +171,36 @@
   (bfs/move source target {:replace-existing true}))
 
 (defn strip-metadata-in-place!
-  "Strip all metadata from the image in place."
+  "Strips all metadata from an image in place.
+
+  The output encoder is selected from the detected image content rather than
+  the input filename, so multipart temporary files with a `.tmp` suffix are
+  handled correctly."
   [{:keys [input]}]
   (let [path (:path input)
-        _ (assert path "In place operations require a path on disk, not a stream")
-        [_ suffix] (bfs/split-ext path)
-        tmp (bfs/file (bfs/create-temp-file {:prefix "snorga.strip." :suffix (if suffix (str "." suffix) ".img")}))]
-    (try
-      (with-open [image (v/from-file path {:access :sequential})
-                  oriented (ops/autorot image)]
-        (v/write-to-file oriented tmp {:strip true}))
-      (move-file! tmp path)
-      (finally
-        (bfs/delete-if-exists tmp)))))
+        _ (assert path "In place operations require a path on disk, not a stream")]
+    (with-open [image (v/from-file path {:access :sequential})
+                oriented (ops/autorot image)]
+      (let [format (image->format image path)
+            extension (format->extension format)]
+        (when-not extension
+          (throw (ex-info "Unsupported image format"
+                          {:path path
+                           :format format})))
+        (let [tmp (bfs/file
+                   (bfs/create-temp-file
+                    {:prefix "snorga.strip."
+                     :suffix extension}))]
+          (try
+            (v/write-to-file oriented tmp {:strip true})
+            (move-file! tmp path)
+            (finally
+              (bfs/delete-if-exists tmp))))))))
 
 (defn process-thumbnail [{:keys [thumbnail-mode] :as params}]
   (condp = thumbnail-mode
     :thumbnail-down (process-thumbnail-down params)
+    :avatar-square (process-avatar-square params)
     nil))
 
 (defn- identify* [path]

@@ -95,8 +95,49 @@
       (finally
         (delete-result-file! result)))))
 
+(deftest process-avatar-square-center-crops-and-upscales-to-the-exact-size
+  (let [process-avatar-square
+        (some-> (ns-resolve 'app.filestore.image 'process-avatar-square) deref)]
+    (is (fn? process-avatar-square)
+        "app.filestore.image/process-avatar-square should exist")
+    (when process-avatar-square
+      (doseq [size [40 80 160 320]]
+        (let [result (process-avatar-square
+                      {:input {:path jpeg-path}
+                       :size size
+                       :quality 85
+                       :format :webp})]
+          (try
+            (is (= {:format :webp
+                    :mime-type "image/webp"
+                    :width size
+                    :height size}
+                   (select-keys
+                    (merge result (image/identify (:out-file result)))
+                    [:format :mime-type :width :height])))
+            (finally
+              (delete-result-file! result))))))))
+
+(deftest process-avatar-square-cleans-its-output-after-processing-fails
+  (let [temp-dir (bfs/temp-dir)
+        pattern "snorga.avatar.*.webp"
+        before (set (bfs/glob temp-dir pattern))]
+    (is (thrown? Throwable
+                 (image/process-avatar-square
+                  {:input {:path "/path/that/does/not/exist/avatar.jpg"}
+                   :size 80
+                   :quality 85
+                   :format :webp})))
+    (let [after (set (bfs/glob temp-dir pattern))]
+      (try
+        (is (= before after))
+        (finally
+          (doseq [path after
+                  :when (not (contains? before path))]
+            (bfs/delete-if-exists path)))))))
+
 (deftest strip-metadata-in-place-test
-  (let [copy (copy-to-temp-file jpeg-path ".jpg")]
+  (let [copy (copy-to-temp-file jpeg-path ".tmp")]
     (try
       (let [before (image/identify-detailed copy)]
         (is (has-metadata-marker? before))

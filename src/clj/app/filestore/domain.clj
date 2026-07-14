@@ -58,7 +58,8 @@
     (read-string filter-spec-encoded)))
 
 (defn txs-new-rendition [rendition-id tempid file-tempid {:image/keys [image-id] :as parent-image} width height filter-spec]
-  [[:db/add [:image/image-id image-id] :image/renditions tempid]
+  [[:db/add (or (:db/id parent-image) [:image/image-id image-id])
+    :image/renditions tempid]
    (-> {:db/id tempid
         :image/image-id rendition-id
         :image/source-file file-tempid

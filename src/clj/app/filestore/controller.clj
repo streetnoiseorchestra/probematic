@@ -56,6 +56,122 @@ So here we provide functions to store the content and generate datoms for use in
      :file-tempid file-tempid
      :tx-data (concat file-txs image-txs)}))
 
+(def avatar-rendition-sizes [40 80 160 320])
+
+(declare build-rendition-filename)
+
+(defn- store-avatar-rendition!
+  [{:keys [filestore file file-name image-id parent-image]} avatar-size]
+  (let [filter-spec {:thumbnail-mode :avatar-square
+                     :width avatar-size
+                     :height avatar-size
+                     :format :webp
+                     :quality 85}
+        result (img/process-avatar-square
+                {:input {:path file}
+                 :size avatar-size
+                 :format :webp
+                 :quality 85})]
+    (try
+      (let [{rendition-size :size
+             rendition-hash :hash
+             rendition-width :width
+             rendition-height :height
+             rendition-mime :mime-type
+             :as prepared}
+            (filestore/prepare-image! (:out-file result))
+            rendition-tempid (d/tempid)
+            rendition-file-tempid (d/tempid)
+            rendition-id (sq/generate-squuid)
+            rendition-filename
+            (build-rendition-filename
+             {:image/image-id image-id
+              :image/source-file
+              {:filestore.file/file-name file-name}}
+             filter-spec
+             ".webp")
+            file-txs
+            (domain/txs-new-file rendition-file-tempid
+                                 rendition-filename
+                                 rendition-mime
+                                 rendition-size
+                                 rendition-hash)
+            rendition-txs
+            (domain/txs-new-rendition rendition-id
+                                      rendition-tempid
+                                      rendition-file-tempid
+                                      parent-image
+                                      rendition-width
+                                      rendition-height
+                                      filter-spec)]
+        (filestore/put-sync! filestore prepared)
+        {:rendition {:size avatar-size
+                     :image-id rendition-id
+                     :hash rendition-hash
+                     :mime-type rendition-mime}
+         :tx-data (into [] (concat file-txs rendition-txs))})
+      (finally
+        (bfs/delete-if-exists (:out-file result))))))
+
+(defn store-avatar!
+  "Stores a stripped avatar original and prepares its fixed square renditions.
+
+  All file blocks are stored before this function returns, while the returned
+  Datomic transaction data remains untransacted so the caller can attach the
+  parent image to its member atomically.
+
+  Options:
+
+  | key          | description
+  |--------------|-------------
+  | `:file-name` | Original upload filename
+  | `:file`      | Uploaded image file on disk
+  | `:mime-type` | Browser-reported JPEG, PNG, or WebP MIME type"
+  [{:keys [filestore]} {:keys [file-name file mime-type]}]
+  (assert filestore "filestore service required")
+  (assert file-name "file-name required")
+  (assert mime-type "mime-type required")
+  (assert file "file required")
+  (let [{original-size :size
+         original-hash :hash
+         width :width
+         height :height
+         actual-mime-type :mime-type
+         :as original}
+        (filestore/prepare-image! file)
+        image-tempid (d/tempid)
+        file-tempid (d/tempid)
+        image-id (sq/generate-squuid)
+        original-file-txs
+        (domain/txs-new-file file-tempid
+                             file-name
+                             (fix-mime-type mime-type actual-mime-type)
+                             original-size
+                             original-hash)
+        image-txs [{:db/id image-tempid
+                    :image/image-id image-id
+                    :image/source-file file-tempid
+                    :image/width width
+                    :image/height height}]
+        parent-image {:db/id image-tempid
+                      :image/image-id image-id}]
+    (filestore/put-sync! filestore original)
+    (let [rendition-results
+          (mapv #(store-avatar-rendition!
+                  {:filestore filestore
+                   :file file
+                   :file-name file-name
+                   :image-id image-id
+                   :parent-image parent-image}
+                  %)
+                avatar-rendition-sizes)]
+      {:image-id image-id
+       :image-tempid image-tempid
+       :file-tempid file-tempid
+       :renditions (mapv :rendition rendition-results)
+       :tx-data (into (vec (concat original-file-txs image-txs))
+                      (mapcat :tx-data rendition-results))})))
+
 (defn -load-image
   [filestore {:image/keys [source-file]}]
   (let [{:filestore.file/keys [size hash mime-type file-name mtime]} source-file]
