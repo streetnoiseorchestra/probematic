@@ -313,8 +313,11 @@
        [:app.datastar/assoc-state [form-key] (assoc params :_error errors)]]
       (let [coverage-id (sq/generate-squuid)]
         [[:db/transact
-          (support/with-audit (create-coverage-tx-data ctx params coverage-id)
-            current-member-id)
+          [[:instrument.coverage/create-once
+            (:policy-id ctx)
+            (:instrument-id ctx)
+            (support/with-audit (create-coverage-tx-data ctx params coverage-id)
+              current-member-id)]]
           {}]
          support/clear-loading
          [:app.datastar/redirect

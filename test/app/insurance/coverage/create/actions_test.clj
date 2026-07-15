@@ -101,8 +101,14 @@
 (defn transact-effect [effects]
   (first (filter #(= :db/transact (first %)) effects)))
 
-(defn tx-data [effects]
+(defn raw-tx-data [effects]
   (second (transact-effect effects)))
+
+(defn tx-data [effects]
+  (let [tx-data (raw-tx-data effects)]
+    (if (= :instrument.coverage/create-once (ffirst tx-data))
+      (nth (first tx-data) 3)
+      tx-data)))
 
 (defn tx-set [effects]
   (set (tx-data effects)))
@@ -336,6 +342,18 @@
   (get-in (first (filter #(= :app.datastar/assoc-state (first %)) effects))
           [2 :_error]))
 
+(defn policy-instrument-coverage-ids
+  [db policy-id instrument-id]
+  (d/q '[:find [?coverage-id ...]
+         :in $ ?policy-id ?instrument-id
+         :where
+         [?policy :insurance.policy/policy-id ?policy-id]
+         [?policy :insurance.policy/covered-instruments ?coverage]
+         [?coverage :instrument.coverage/coverage-id ?coverage-id]
+         [?coverage :instrument.coverage/instrument ?instrument]
+         [?instrument :instrument/instrument-id ?instrument-id]]
+       db policy-id instrument-id))
+
 (deftest create-coverage-action-creates-band-coverage-with-all-policy-types-test
   (testing "band coverage ignores submitted type ids and uses every policy type"
     (let [{:keys [conn member-id] :as system} (new-system)
@@ -378,6 +396,23 @@
               :clear-loading? (contains? (set effects) support/clear-loading)
               :redirects      (redirects effects)}))
       (is (uuid? coverage-id)))))
+
+(deftest create-coverage-action-is-idempotent-for-stale-retries-test
+  (testing "two requests expanded from the same database value create one policy coverage"
+    (let [{:keys [conn] :as system} (new-system)
+          fixture       (seed-step3! conn {})
+          state         (state-for system)
+          signals       (coverage-signals fixture)
+          first-effects (actions/create-coverage-action state signals)
+          retry-effects (actions/create-coverage-action state signals)]
+      @(d/transact conn (raw-tx-data first-effects))
+      @(d/transact conn (raw-tx-data retry-effects))
+      (is (= 1
+             (count
+              (policy-instrument-coverage-ids
+               (d/db conn)
+               (:policy-id fixture)
+               (:instrument-id fixture))))))))
 
 (deftest create-coverage-action-protects-harmonia-id-test
   (testing "An ordinary member creates coverage without authority to set a Harmonia ID."
