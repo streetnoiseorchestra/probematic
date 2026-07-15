@@ -1,14 +1,17 @@
 (ns app.interceptors.csrf
-  "Enforces the browser's same-origin boundary for state-changing requests.
+  "Protects the application from cross-site request forgery with Fetch Metadata.
 
-  `GET`, `HEAD`, and `OPTIONS` pass without Fetch Metadata. Every other method
-  requires an exact `Sec-Fetch-Site: same-origin` header. Missing, malformed,
-  and all other values fail closed with an empty `403` response.
+  Probematic accepts state-changing browser requests only when the browser says
+  they originated from the application's own origin. Requests without that
+  browser signal are rejected rather than falling back to CSRF tokens or
+  permissive `Origin` or `Referer` checks.
 
-  The interceptor runs in Reitit's handler-level queue before request parsing
-  and session loading, so it also protects fallback responses, redirects, and
-  static resources. Unsafe responses vary on `Sec-Fetch-Site`, and explicit
-  `same-site` or `cross-site` rejections emit a sanitized security event."
+  This strategy fits the application's current-browser requirement. Browsers
+  attach `Sec-Fetch-Site` to native forms, Datastar requests, and uploads
+  automatically, while a page on another origin cannot forge it. This gives all
+  state-changing entry points the same protection without distributing or
+  rotating application tokens. `SameSite=Strict` session cookies remain an
+  additional defense."
   (:require
    [app.interceptors.util :as int]
    [clojure.string :as str]
