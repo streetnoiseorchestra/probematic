@@ -46,3 +46,13 @@
     (is (number? css-index))
     (when (and (number? init-index) (number? css-index))
       (is (< init-index css-index)))))
+
+(deftest datastar-authentication-errors-replace-stale-page-history
+  (let [markup (layout2/shim-html head-request {})]
+    (is (str/includes? markup
+                       "evt.detail.argsRaw.status === &apos;401&apos;"))
+    (is (str/includes? markup "window.location.replace"))
+    (is (str/includes?
+         markup
+         "encodeURIComponent(window.location.pathname + window.location.search)"))
+    (is (str/includes? markup "retryMaxCount: Infinity"))))

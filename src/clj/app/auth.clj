@@ -293,17 +293,32 @@
   [req]
   (admin? (get-in req [:session :session/roles])))
 
+(defn- login-location [{:keys [uri query-string]}]
+  (str "/login?next=" (util/url-encode (str uri "?" query-string))))
+
+(defn- datastar-request? [request]
+  (= "true" (get-in request [:headers "datastar-request"])))
+
+(defn- authentication-required-response [request]
+  (if (datastar-request? request)
+    {:status 401
+     :headers {"Cache-Control" "no-store"}
+     :body ""}
+    {:status 302
+     :headers {"location" (login-location request)}
+     :body ""}))
+
 (def require-authenticated-user
-  "Redirects to the login page when there is no authenticated user"
+  "Requires an authenticated application user.
+
+  Document requests redirect to login. Datastar requests receive a same-origin
+  401 so the application shell can initiate a top-level login navigation."
   {:name  ::require-authenticated-user
    :enter (fn [ctx]
-            (let [{:keys [uri query-string] :as req} (:request ctx)]
+            (let [req (:request ctx)]
               (cond
                 (not (get-current-email req))
-                (int/terminate ctx
-                               {:status  302
-                                :headers {"location" (str "/login?next=" (util/url-encode (str uri "?" query-string)))}
-                                :body    ""})
+                (int/terminate ctx (authentication-required-response req))
 
                 (get-current-member req)
                 ctx

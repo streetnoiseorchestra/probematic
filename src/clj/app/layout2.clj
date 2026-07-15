@@ -191,11 +191,17 @@
   ;; unique against a given users other tabs.
   "self.crypto.randomUUID().substring(0,8)")
 
-(def ^:private datastar-fetch-progress-js
-  "evt.detail.el.id !== 'long-lived-sse' && (evt.detail.type === 'started' ? BProgressJS.BProgress.start() : (evt.detail.type === 'finished' || evt.detail.type === 'error') && BProgressJS.BProgress.done()); ")
+(def ^:private datastar-fetch-js
+  (str
+   "if (evt.detail.type === 'error' && evt.detail.argsRaw.status === '401') { "
+   "window.location.replace('/login?next=' + encodeURIComponent(window.location.pathname + window.location.search)); "
+   "} else if (evt.detail.el.id !== 'long-lived-sse') { "
+   "evt.detail.type === 'started' ? BProgressJS.BProgress.start() : "
+   "(evt.detail.type === 'finished' || evt.detail.type === 'error') && BProgressJS.BProgress.done(); "
+   "}"))
 
 (defn- datastar-page-body [content]
-  [:body {:data-on:datastar-fetch datastar-fetch-progress-js}
+  [:body {:data-on:datastar-fetch datastar-fetch-js}
    [:div {:data-signals:tab-id__case.kebab tab-id-js}]
    [:div {:data-init on-load-js
           :id        "long-lived-sse"}]
