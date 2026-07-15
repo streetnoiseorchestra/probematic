@@ -134,6 +134,7 @@
       import 'wa/components/tooltip/tooltip.js';
       import 'wa/components/badge/badge.js';
       import 'wa/components/select/select.js';
+      import 'wa/components/combobox/combobox.js';
       import 'wa/components/dropdown/dropdown.js';
       import 'wa/components/dropdown-item/dropdown-item.js';
       import 'wa/components/popover/popover.js';

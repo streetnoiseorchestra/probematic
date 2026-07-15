@@ -620,6 +620,39 @@
                 :slot         "start"}]
      (icons/display-name icon)]))
 
+(def ^:private registered-icons
+  (set (icons/catalog)))
+
+(def ^:private sprite-url-by-library
+  (into {}
+        (map (fn [{:keys [icons id]}]
+               [(clojure.core/name id)
+                (-> (icons/sprite-href id (first icons))
+                    (str/split #"#" 2)
+                    first)]))
+        icons/icon-libraries))
+
+(defn- coverage-type-current-icon
+  [icon]
+  (let [selected-icon (some-> (icon-value icon) not-empty keyword)
+        initial-icon  (if (registered-icons selected-icon)
+                        selected-icon
+                        :phosphor/shield)]
+    [ico/Icon
+     (cond->
+      {::ico/library (keyword (namespace initial-icon))
+       ::ico/name    (keyword (clojure.core/name initial-icon))
+       :data-effect
+       (str
+        "const value = $insurancePolicySettings.coverageType.icon; "
+        "const [library, iconName] = value.split('/'); "
+        "const sprite = " (d*/->signals sprite-url-by-library) "[library]; "
+        "el.querySelector('use').setAttribute('href', "
+        "sprite && iconName ? `${sprite}#${library}-${iconName}` : '')")
+       :data-attr:slot
+       "$insurancePolicySettings.coverageType.icon ? 'start' : null"}
+       (registered-icons selected-icon) (assoc :slot "start"))]))
+
 (defn- coverage-type-icon-field
   [tr icon error id-prefix]
   (into
@@ -632,7 +665,8 @@
              :appearance "outlined"
              :data-bind  "insurancePolicySettings.coverageType.icon"}
       error (assoc :hint error
-                   :data-invalid "true"))]
+                   :data-invalid "true"))
+    (coverage-type-current-icon icon)]
    (map (partial coverage-type-icon-option icon))
    (icons/catalog)))
 

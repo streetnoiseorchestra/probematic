@@ -13,6 +13,16 @@
           (when (pred element) index))
         (map-indexed vector elements)))
 
+(deftest combobox-is-defined-before-datastar-initializes
+  (let [head          (layout2/head head-request {})
+        loader-script (some (fn [script]
+                              (when (str/includes? (str (l/first-child script))
+                                                   "startLoader")
+                                script))
+                            (l/select 'script head))]
+    (is (str/includes? (str (some-> loader-script l/first-child))
+                       "import 'wa/components/combobox/combobox.js';"))))
+
 (deftest appearance-initializer-runs-before-the-main-stylesheet
   (let [head       (layout2/head head-request {})
         children   (vec (l/children head))

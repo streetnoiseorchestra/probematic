@@ -131,6 +131,13 @@
   ([req settings]
    (sut/settings-page-content req settings)))
 
+(defn combobox-current-icon
+  [combobox]
+  (some (fn [child]
+          (when (= ico/Icon (first child))
+            child))
+        (l/children combobox)))
+
 (defn select-attrs
   [selector hiccup]
   (some-> (l/select-one selector hiccup)
@@ -426,7 +433,9 @@
                      :premium-factor "1.0"
                      :icon           :snoico/home})
           edit-view     (settings-view edit-request editable-draft-settings)
-          edit-combobox (l/select-one "#coverage-type-edit-icon" edit-view)]
+          edit-combobox (l/select-one "#coverage-type-edit-icon" edit-view)
+          current-icon  (combobox-current-icon combobox)
+          edit-current-icon (combobox-current-icon edit-combobox)]
       (is (= {:control
               {:required?          true
                :multiple?          false
@@ -447,6 +456,14 @@
                :outlined {::ico/library :snoico
                           ::ico/name    :circle-check-outline
                           :slot         "start"}}
+              :current-icons
+              {:create {::ico/library :phosphor
+                        ::ico/name    :shield
+                        :slot         "start"}
+               :edit   {::ico/library :snoico
+                        ::ico/name    :home
+                        :slot         "start"}
+               :reactive? true}
               :wa-icons 0}
              {:control
               (let [attrs (l/attrs combobox)]
@@ -473,6 +490,27 @@
                :outlined (select-keys
                           (l/attrs (l/select-one ico/Icon outlined))
                           [::ico/library ::ico/name :slot])}
+              :current-icons
+              {:create (some-> current-icon
+                               l/attrs
+                               (select-keys [::ico/library ::ico/name :slot]))
+               :edit   (some-> edit-current-icon
+                               l/attrs
+                               (select-keys [::ico/library ::ico/name :slot]))
+               :reactive?
+               (every?
+                (fn [icon]
+                  (let [attrs (some-> icon l/attrs)]
+                    (and icon
+                         (str/includes?
+                          (:data-effect attrs "")
+                          "$insurancePolicySettings.coverageType.icon")
+                         (str/includes?
+                          (:data-effect attrs "")
+                          "#${library}-${iconName}")
+                         (= "$insurancePolicySettings.coverageType.icon ? 'start' : null"
+                            (:data-attr:slot attrs)))))
+                [current-icon edit-current-icon])}
               :wa-icons (count (l/select 'wa-icon combobox))})))))
 
 (deftest coverage-type-required-and-impact-controls
