@@ -702,9 +702,8 @@
     (ui2/datastar-page*
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
-     [page-surface/PageSurface
-      {::page-surface/width :wide
-       ::page-surface/toolbar (policy-toolbar req dashboard)}
+     [page-surface/PageSurface {::page-surface/width   :wide
+                                ::page-surface/toolbar (policy-toolbar req dashboard)}
       [:div {:class "wa-stack"}
        (page-header req policy)
        (overview-section req dashboard)

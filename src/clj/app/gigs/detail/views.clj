@@ -292,9 +292,7 @@ window.DiscourseEmbed = %s;
         gig    (q/retrieve-gig db gig-id)]
     (if gig
       (ui2/datastar-page*
-       [page-surface/PageSurface
-        {::page-surface/width :wide
-         ::page-surface/toolbar (gig-toolbar req gig)}
+       [page-surface/PageSurface {::page-surface/toolbar (gig-toolbar req gig)}
         [:div {:class        "wa-stack wa-gap-2xl"
                :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
          (gig-summary req gig)

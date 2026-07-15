@@ -10,7 +10,7 @@
     (let [{:keys [conn]} (support/new-system "gig-setlist-surface")
           gig-id         (random-uuid)]
       (support/seed-gig! conn gig-id)
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:gigs/title "Summer Concert" :gigs/setlist]
               :mobile      {:label "Summer Concert"
                             :href  (str "/gig/" gig-id)}

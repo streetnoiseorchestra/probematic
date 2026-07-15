@@ -10,7 +10,7 @@
     (let [{:keys [conn]} (support/new-system "gig-probeplan-surface")
           gig-id         (random-uuid)]
       (support/seed-gig! conn gig-id {:gig/gig-type :gig.type/probe})
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:gigs/title "Summer Concert 7/15/26" :gigs/probeplan]
               :mobile      {:label "Summer Concert 7/15/26"
                             :href  (str "/gig/" gig-id)}

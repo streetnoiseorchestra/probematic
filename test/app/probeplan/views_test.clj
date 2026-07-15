@@ -120,14 +120,14 @@
                             last)
         actions        (l/select button/Button (::page-toolbar/actions toolbar-attrs))
         header         (l/select-one page-header/PageHeader surface)]
-    (testing "The probeplan uses a wide workspace with its lifecycle action in the toolbar."
-      (is (= {:width       :wide
+    (testing "The probeplan uses a standard workspace with its lifecycle action in the toolbar."
+      (is (= {:width       :standard
               :breadcrumbs [:home :probeplan/title]
               :mobile      {:href "/" :label :home}
               :actions     [{:id "probeplan-edit" :label :action/edit}]
               :heading     :probeplan/title
               :header-actions nil}
-             {:width       (::page-surface/width surface-attrs)
+             {:width       (or (::page-surface/width surface-attrs) :standard)
               :breadcrumbs (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                                  (l/select breadcrumb/BreadcrumbItem breadcrumb))
               :mobile      {:href  (-> parent l/attrs ::breadcrumb/href)

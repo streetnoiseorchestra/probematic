@@ -32,7 +32,7 @@
 (deftest repertoire-page-surface
   (testing "The repertoire has collection context and keeps synchronization secondary."
     (let [{:keys [conn]} (support/new-system "songs-index-surface")]
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:home :repertoire/title]
               :mobile      {:label :home :href "/"}
               :actions     [{:label      :repertoire/add-song

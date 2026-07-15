@@ -295,17 +295,16 @@
         policy   (:policy review)
         selected (:selected-coverage review)]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width :wide
-       ::page-surface/toolbar
-       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
-                                  [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
-                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-                                    [:i18n/tr :insurance/title]]
-                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-                                    (:insurance.policy/name policy)]
-                                   [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/review]]]
-                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+     [page-surface/PageSurface {::page-surface/width :wide
+                                ::page-surface/toolbar
+                                [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                                           [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
+                                                            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                                             [:i18n/tr :insurance/title]]
+                                                            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                                             (:insurance.policy/name policy)]
+                                                            [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/review]]]
+                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-xl"}
        [page-header/PageHeader
         {:title    (tr [:insurance.review/title])

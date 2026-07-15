@@ -89,7 +89,7 @@
            overflow      (::page-toolbar/overflow-items toolbar-attrs)
            header-attrs  (some-> (l/select-one page-header/PageHeader surface) l/attrs)]
        (cond->
-        {:width       (::page-surface/width surface-attrs)
+        {:width       (or (::page-surface/width surface-attrs) :standard)
          :breadcrumbs (mapv node-label
                             (l/select breadcrumb/BreadcrumbItem breadcrumb))
          :mobile      (breadcrumb-mobile-context breadcrumb)

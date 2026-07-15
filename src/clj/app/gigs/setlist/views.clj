@@ -111,9 +111,8 @@
 
       :else
       (ui2/datastar-page*
-       [page-surface/PageSurface
-        {::page-surface/width   :wide
-         ::page-surface/toolbar (plan.views/page-toolbar req gig :gigs/setlist)}
+       [page-surface/PageSurface {::page-surface/toolbar
+                                  (plan.views/page-toolbar req gig :gigs/setlist)}
         [:div {:class        "wa-stack wa-gap-xl gigs-probeplan-editor-page"
                :data-signals (d*/->signals {:gig-setlist {:gig-id            (str gig-id)
                                                           :repertoire-filter repertoire-filter

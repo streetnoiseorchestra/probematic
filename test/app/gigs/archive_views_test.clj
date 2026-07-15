@@ -8,7 +8,7 @@
 (deftest gigs-archive-page-surface
   (testing "The gig archive returns to the complete gigs directory."
     (let [{:keys [conn]} (support/new-system "gigs-archive-surface")]
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:gigs/title :gigs/archive-title]
               :mobile      {:label :gigs/title :href "/gigs"}
               :actions     []
@@ -18,7 +18,7 @@
 (deftest gigs-archive-year-page-surface
   (testing "An archive year uses responsive breadcrumb limits and links back to the archive."
     (let [{:keys [conn]} (support/new-system "gigs-archive-year-surface")]
-      (is (= {:width                :wide
+      (is (= {:width                :standard
               :breadcrumbs [:gigs/title :gigs/archive-title "2025"]
               :mobile               {:label :gigs/archive-title :href "/gigs/archive"}
               :actions              []

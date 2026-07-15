@@ -57,10 +57,9 @@
                                    (http.util/path-param req :year)
                                    (:gigs-archive page-state))]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width   :wide
-       ::page-surface/toolbar (page-toolbar selected-year
-                                            (some? (http.util/path-param req :year)))}
+     [page-surface/PageSurface {::page-surface/toolbar
+                                (page-toolbar selected-year
+                                              (some? (http.util/path-param req :year)))}
       [:div {:class        "wa-stack wa-gap-l"
              :data-signals (d*/->signals {:gigs-archive archive-page-state})}
        [page-header/PageHeader

@@ -51,7 +51,7 @@
                                                                           15)}}
                                     :tr             tr}
         member-url                 (str "/member/" member-id)]
-    (testing "the directory uses a wide Members surface"
+    (testing "the directory uses a standard Members surface"
       (let [view          (index.views/page request)
             surface       (l/select-one page-surface/PageSurface view)
             surface-attrs (some-> surface l/attrs)
@@ -60,7 +60,7 @@
             breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
             actions       (::page-toolbar/actions toolbar-attrs)
             header        (l/select-one page-header/PageHeader surface)]
-        (is (= :wide (::page-surface/width surface-attrs)))
+        (is (= :standard (or (::page-surface/width surface-attrs) :standard)))
         (is (= [:home :members/title]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem breadcrumb))))
@@ -125,7 +125,7 @@
             actions       (::page-toolbar/actions toolbar-attrs)
             overflow      (::page-toolbar/overflow-items toolbar-attrs)
             download      (l/select-one 'wa-dropdown-item overflow)]
-        (is (= :wide (::page-surface/width surface-attrs)))
+        (is (= :standard (or (::page-surface/width surface-attrs) :standard)))
         (is (= [:members/title nil]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem
@@ -158,7 +158,8 @@
                                                 :member-detail-tab "travel"}))
             surface       (l/select-one page-surface/PageSurface view)
             toolbar-attrs (some-> surface l/attrs ::page-surface/toolbar l/attrs)]
-        (is (= :wide (some-> surface l/attrs ::page-surface/width)))
+        (is (= :standard
+               (or (some-> surface l/attrs ::page-surface/width) :standard)))
         (is (= [:members/title nil]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem
@@ -187,7 +188,7 @@
             toolbar-attrs (some-> surface-attrs ::page-surface/toolbar l/attrs)
             breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
             actions       (l/select button/Button (::page-toolbar/actions toolbar-attrs))]
-        (is (= :wide (::page-surface/width surface-attrs)))
+        (is (= :standard (or (::page-surface/width surface-attrs) :standard)))
         (is (= [:members/title nil :action/edit]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem

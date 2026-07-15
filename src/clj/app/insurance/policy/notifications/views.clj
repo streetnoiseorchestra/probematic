@@ -115,18 +115,17 @@
                                                   :data-attr:loading  "$loading === 'insurance-payment-notifications'"}
                                    [:i18n/tr :insurance/send-payment-notifications]]])]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width :wide
-       ::page-surface/toolbar
-       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
-                                  [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
-                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-                                    [:i18n/tr :insurance/title]]
-                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-                                    (:insurance.policy/name policy)]
-                                   [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/request-payments-title]]]
-                                  ::page-toolbar/actions toolbar-actions
-                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+     [page-surface/PageSurface {::page-surface/width :wide
+                                ::page-surface/toolbar
+                                [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                                           [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
+                                                            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                                             [:i18n/tr :insurance/title]]
+                                                            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                                             (:insurance.policy/name policy)]
+                                                            [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/request-payments-title]]]
+                                                           ::page-toolbar/actions toolbar-actions
+                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div (cond-> {:class "wa-stack wa-gap-xl"}
               authorized?
               (assoc :data-preserve-attr "data-signals"

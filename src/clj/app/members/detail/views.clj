@@ -778,48 +778,46 @@
         travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))
         ledger-entry-signals            (form-state->signals (get-in page-state [:member-detail :ledger-entry]))]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width :wide
-       ::page-surface/toolbar
-       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
-                                  [breadcrumb/Breadcrumb (cond-> {}
-                                                           form-state (assoc ::breadcrumb/max-items [2 3]))
-                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
-                                    [:i18n/tr :members/title]]
-                                   [breadcrumb/BreadcrumbItem (cond-> {}
-                                                                form-state (assoc ::breadcrumb/href member-url))
-                                    (:member/name member)]
-                                   (when form-state
-                                     [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]])]
-                                  ::page-toolbar/actions
-                                  (if form-state
-                                    [[button/Button {:appearance  "plain"
-                                                     :data-id     "member-contact-cancel"
-                                                     :data-action (d*/act req ::actions/close-contact-edit)}
-                                      [:i18n/tr :action/cancel]]
-                                     [button/Button {:appearance         "filled"
-                                                     :variant            "brand"
-                                                     :type               "submit"
-                                                     :form               "member-contact-form"
-                                                     :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
-                                                     :data-attr:loading  "$loading === 'member-contact'"}
-                                      [:i18n/tr :action/save]]]
-                                    [[button/Button {:appearance  "filled"
-                                                     :variant     "brand"
-                                                     :data-id     (:member/member-id member)
-                                                     :data-action (d*/act req ::actions/open-contact-edit)}
-                                      [:i18n/tr :action/edit]]])
-                                  ::page-toolbar/overflow-items
-                                  (when-not form-state
-                                    [[:wa-dropdown-item {:value   (str "/member-vcard/" (:member/member-id member))
-                                                         :onclick "window.location = this.value"}
-                                      [:i18n/tr :members/download-contact]]])
-                                  ::page-toolbar/overflow-label
-                                  (when-not form-state [:i18n/tr :action/more-actions])
-                                  :aria-label
-                                  (if form-state
-                                    [:i18n/tr :members/edit-toolbar-label]
-                                    [:i18n/tr :members/detail-toolbar-label])}]}
+     [page-surface/PageSurface {::page-surface/toolbar
+                                [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                                           [breadcrumb/Breadcrumb (cond-> {}
+                                                                                    form-state (assoc ::breadcrumb/max-items [2 3]))
+                                                            [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
+                                                             [:i18n/tr :members/title]]
+                                                            [breadcrumb/BreadcrumbItem (cond-> {}
+                                                                                         form-state (assoc ::breadcrumb/href member-url))
+                                                             (:member/name member)]
+                                                            (when form-state
+                                                              [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]])]
+                                                           ::page-toolbar/actions
+                                                           (if form-state
+                                                             [[button/Button {:appearance  "plain"
+                                                                              :data-id     "member-contact-cancel"
+                                                                              :data-action (d*/act req ::actions/close-contact-edit)}
+                                                               [:i18n/tr :action/cancel]]
+                                                              [button/Button {:appearance         "filled"
+                                                                              :variant            "brand"
+                                                                              :type               "submit"
+                                                                              :form               "member-contact-form"
+                                                                              :data-attr:disabled "!!$loading && $loading !== 'member-contact'"
+                                                                              :data-attr:loading  "$loading === 'member-contact'"}
+                                                               [:i18n/tr :action/save]]]
+                                                             [[button/Button {:appearance  "filled"
+                                                                              :variant     "brand"
+                                                                              :data-id     (:member/member-id member)
+                                                                              :data-action (d*/act req ::actions/open-contact-edit)}
+                                                               [:i18n/tr :action/edit]]])
+                                                           ::page-toolbar/overflow-items
+                                                           (when-not form-state
+                                                             [[:wa-dropdown-item {:value   (str "/member-vcard/" (:member/member-id member))
+                                                                                  :onclick "window.location = this.value"}
+                                                               [:i18n/tr :members/download-contact]]])
+                                                           ::page-toolbar/overflow-label
+                                                           (when-not form-state [:i18n/tr :action/more-actions])
+                                                           :aria-label
+                                                           (if form-state
+                                                             [:i18n/tr :members/edit-toolbar-label]
+                                                             [:i18n/tr :members/detail-toolbar-label])}]}
       [:div {:class        "wa-stack wa-gap-2xl"
              :data-effect  (tab-url-effect member)
              :data-signals (d*/->signals {:member-detail {:active-tab             active-tab
