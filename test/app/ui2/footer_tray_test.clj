@@ -141,10 +141,11 @@
                 :account-settings-link? true
                 :avatar? true
                 :menu-values ["/member/11111111-1111-4111-8111-111111111111"
-                              "/account-settings"
-                              "/logout"]
+                              "/account-settings"]
                 :logout-danger? false
                 :logout-icon? true
+                :logout-form-submit? true
+                :logout-navigation? false
                 :account-menu-divider-count 0
                 :account-menu-item-count 3
                 :navigation-handler-count 3
@@ -173,6 +174,16 @@
                 :menu-values (mapv second (re-seq #"<wa-dropdown-item[^>]+value=\"([^\"]+)\"" rendered))
                 :logout-danger? (some-> logout-item (str/includes? "variant=\"danger\""))
                 :logout-icon? (str/includes? rendered "#phosphor-sign-out")
+                :logout-form-submit?
+                (some-> logout-item
+                        (str/includes?
+                         (str "document.getElementById(&apos;logout-form&apos;)"
+                              ".requestSubmit()")))
+                :logout-navigation?
+                (some-> logout-item
+                        ((fn [item]
+                           (or (str/includes? item "value=\"/logout\"")
+                               (str/includes? item "window.location")))))
                 :account-menu-divider-count (count (re-seq #"<hr class=\"sno-divider\"" rendered))
                 :account-menu-item-count (count dropdown-items)
                 :navigation-handler-count (count (re-seq #"<wa-dropdown-item[^>]+onclick=" rendered))

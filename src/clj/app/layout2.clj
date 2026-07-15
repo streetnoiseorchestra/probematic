@@ -247,6 +247,9 @@
        {::footer-tray/member member
         ::footer-tray/shortcuts footer-tray-shortcuts
         ::footer-tray/notification footer-tray-notification})
+      [:form {:id auth/logout-form-id
+              :method "post"
+              :action "/logout"}]
       #_(when (config/dev-mode? (-> req :system :env))
           [:datastar-inspector])]
      (footer-tray-sheets))))

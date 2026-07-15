@@ -1,16 +1,9 @@
 (ns app.account.index.views-test
   (:require
    [app.account.test-support :as support]
+   [app.ui2.button :as button]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]))
-
-(def expected-row-hrefs
-  ["/account-settings/profile"
-   "/account-settings/notifications"
-   "/account-settings/preferences"
-   "/account-settings/on-a-break"
-   "#"
-   "/logout"])
 
 (def expected-row-keys
   [:account-settings/profile-row-title
@@ -21,8 +14,12 @@
    :account-settings/logout-row-title])
 
 (defn row-summary [row]
-  {:href  (:href (support/attrs row))
-   :title (some-> (l/select-one :i18n/tr row) l/first-child)})
+  (let [attrs (support/attrs row)]
+    {:tag   (first row)
+     :href  (:href attrs)
+     :form  (:form attrs)
+     :type  (:type attrs)
+     :title (some-> (l/select-one :i18n/tr row) l/first-child)}))
 
 (deftest account-directory-renders-the-approved-destination-order
   (let [page (support/public-fn 'app.account.index.views/page)]
@@ -30,17 +27,45 @@
     (when page
       (let [view      (page (support/request))
             directory (support/element-by-id "account-settings-directory" view)
-            rows      (filter #(contains? (support/class-tokens %)
-                                          "account-settings-row")
-                              (support/elements :a directory))]
+            rows      (filter
+                       #(contains? (support/class-tokens %)
+                                   "account-settings-row")
+                       (tree-seq coll? seq directory))
+            logout-attrs (support/attrs (nth rows 5))]
         (is (= :main (first view)))
         (is (contains? (support/class-tokens view) "account-settings"))
-        (is (= (mapv (fn [href title] {:href href :title title})
-                     expected-row-hrefs
-                     expected-row-keys)
+        (is (= [{:tag :a
+                 :href "/account-settings/profile"
+                 :form nil
+                 :type nil
+                 :title :account-settings/profile-row-title}
+                {:tag :a
+                 :href "/account-settings/notifications"
+                 :form nil
+                 :type nil
+                 :title :account-settings/notifications-row-title}
+                {:tag :a
+                 :href "/account-settings/preferences"
+                 :form nil
+                 :type nil
+                 :title :account-settings/preferences-row-title}
+                {:tag :a
+                 :href "/account-settings/on-a-break"
+                 :form nil
+                 :type nil
+                 :title :account-settings/break-row-title}
+                {:tag :a
+                 :href "#"
+                 :form nil
+                 :type nil
+                 :title :account-settings/help-row-title}
+                {:tag button/Button
+                 :href nil
+                 :form "logout-form"
+                 :type "submit"
+                 :title :account-settings/logout-row-title}]
                (mapv row-summary rows)))
-        (is (= "#" (:href (support/attrs (nth rows 4)))))
-        (is (= "/logout" (:href (support/attrs (nth rows 5)))))))))
+        (is (nil? (:href logout-attrs)))))))
 
 (deftest account-directory-renders-local-store-assets-and-real-prototype-actions
   (let [page (support/public-fn 'app.account.index.views/page)]

@@ -19,6 +19,10 @@
    [medley.core :as m]
    [org.httpkit.client :as http]))
 
+(def logout-form-id
+  "Identifies the application shell's shared native logout form."
+  "logout-form")
+
 (defn throw-unauthorized
   ([msg data]
    (throw (ex-info msg
@@ -165,8 +169,9 @@
     [:form {:method "post" :action "/login/restart"}
      [:button {:type "submit"}
       (tr [:identity-mismatch/restart-login])]]
-    [:a {:href "/logout"}
-     (tr [:identity-mismatch/log-out])]]))
+    [:form {:method "post" :action "/logout"}
+     [:button {:type "submit"}
+      (tr [:identity-mismatch/log-out])]]]))
 
 (defn oauth2-load-certificate [{:keys [openid-config]}]
   (->>
@@ -235,9 +240,8 @@
 (defn routes [system]
   (cond-> [""
            ["/login" {:handler (fn [req] (login-page-handler (:env system) (:oauth2 system) req))}]
-           ["/login/restart" {:post {:handler (fn [_req] (restart-login-handler (:env system)))}
-                              :get  {:handler (fn [_req] (restart-login-handler (:env system)))}}]
-           ["/logout" {:handler (fn [req] (logout-page-handler (:env system) (:oauth2 system) req))}]
+           ["/login/restart" {:post {:handler (fn [_req] (restart-login-handler (:env system)))}}]
+           ["/logout" {:post {:handler (fn [req] (logout-page-handler (:env system) (:oauth2 system) req))}}]
            ["/oauth2"
             ["/callback" {:handler (fn [req] (oauth2-callback-handler (:env system) (:oauth2 system) req))}]]]
     (config/dev-mode? (:env system))
