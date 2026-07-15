@@ -1,9 +1,9 @@
 .dashboard-home {
   container: dashboard-home / inline-size;
   grid-template-columns:
-    minmax(calc(var(--wa-space-5xl) * 2.5), calc(var(--wa-space-5xl) * 4))
-    minmax(calc(var(--wa-space-5xl) * 7), calc(var(--wa-space-5xl) * 11))
-    minmax(calc(var(--wa-space-5xl) * 3), calc(var(--wa-space-5xl) * 4.5));
+    minmax(0, 4fr)
+    minmax(0, 11fr)
+    minmax(0, 4.5fr);
   justify-content: center;
   max-inline-size: calc(var(--wa-space-5xl) * 20);
   margin-inline: auto;
@@ -130,19 +130,7 @@
   }
 }
 
-@container app-content (width < 70rem) {
-  .dashboard-home {
-    grid-template-columns:
-      minmax(calc(var(--wa-space-5xl) * 2.5), calc(var(--wa-space-5xl) * 4))
-      minmax(0, 1fr);
-  }
-
-  .dashboard-home > .activity {
-    display: none;
-  }
-}
-
-@container app-content (width < 58rem) {
+@container app-content (width < 60rem) {
   .dashboard-home {
     grid-template-columns: minmax(0, 1fr);
   }
