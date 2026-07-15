@@ -562,7 +562,7 @@
     @(d/transact
       conn
       [{:db/id [:insurance.policy/policy-id policy-id]
-        :insurance.policy/exporter-id :insurance.exporter/inventory-xls-v1
+        :insurance.policy/exporter-id :insurance/exporter-harmonia-v1
         :insurance.policy/export-mappings
         [{:insurance.export.mapping/role :overnight-vehicle
           :insurance.export.mapping/coverage-type

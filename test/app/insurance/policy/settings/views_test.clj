@@ -93,9 +93,9 @@
    :unused-categories      [{:category-id   percussion-category-id
                              :category-name "Percussion"}]
    :exporter-options       [{:exporter-id
-                             :insurance.exporter/inventory-xls-v1
+                             :insurance/exporter-harmonia-v1
                              :label-key
-                             :insurance/exporter-inventory-xls-v1
+                             :insurance/exporter-harmonia-v1
                              :role-rows
                              [{:role      :overnight-vehicle
                                :label-key :insurance/exporter-role-overnight-vehicle
@@ -104,7 +104,7 @@
                                :label-key :insurance/exporter-role-unattended-building
                                :required? true}]}]
    :exporter-configuration
-   {:exporter-id :insurance.exporter/inventory-xls-v1
+   {:exporter-id :insurance/exporter-harmonia-v1
     :status      :complete
     :role-rows   [{:role             :overnight-vehicle
                    :label-key
@@ -223,7 +223,7 @@
           [:insurance/exporter
            :insurance/exporter-subtitle
            :insurance/exporter-none
-           :insurance/exporter-inventory-xls-v1
+           :insurance/exporter-harmonia-v1
            :insurance/exporter-role-overnight-vehicle
            :insurance/exporter-role-unattended-building
            :insurance/exporter-role-unmapped
@@ -241,7 +241,7 @@
       (is (= {:en ["Exporter"
                    "Choose the spreadsheet format for this policy and map its required roles to coverage types."
                    "No exporter"
-                   "Inventory spreadsheet (version 1)"
+                   "Harmonia excel (v1)"
                    "Overnight in a vehicle"
                    "Unattended in a locked building"
                    "Choose a coverage type"
@@ -255,7 +255,7 @@
               :de ["Exportformat"
                    "Wähle das Tabellenformat für diese Police und ordne seine erforderlichen Rollen den Versicherungsarten zu."
                    "Kein Exportformat"
-                   "Inventartabelle (Version 1)"
+                   "Harmonia excel (v1)"
                    "Über Nacht im Fahrzeug"
                    "Unbeaufsichtigt in einem verschlossenen Gebäude"
                    "Versicherungsart wählen"
@@ -596,9 +596,9 @@
                "insurancePolicySettings.exporter.exporterId"
                :options
                [["" "exporter-none"]
-                ["insurance.exporter/inventory-xls-v1"
-                 "exporter-inventory-xls-v1"]]
-               :selected ["insurance.exporter/inventory-xls-v1"]}
+                ["insurance/exporter-harmonia-v1"
+                 "exporter-harmonia-v1"]]
+               :selected ["insurance/exporter-harmonia-v1"]}
               :roles
               [{:role "overnight-vehicle"
                 :data-bind
@@ -639,14 +639,14 @@
                            :role-rows   []})
           view     (settings-view settings)
           version  (l/select-one "#insurance-policy-settings-exporter-id" view)
-          role-set (some #(when (= "insurance.exporter/inventory-xls-v1"
+          role-set (some #(when (= "insurance/exporter-harmonia-v1"
                                    (:data-exporter-id (l/attrs %)))
                             %)
                          (l/select 'div view))
           on-change (:data-on:change (l/attrs version))]
       (is (= {:selected [""]
               :show
-              "$insurancePolicySettings.exporter.exporterId === 'insurance.exporter/inventory-xls-v1'"
+              "$insurancePolicySettings.exporter.exporterId === 'insurance/exporter-harmonia-v1'"
               :prepares-version? true
               :prepares-roles?   true}
              {:selected (mapv (comp :value l/attrs)
@@ -654,7 +654,7 @@
               :show (:data-show (l/attrs role-set))
               :prepares-version?
               (str/includes? on-change
-                             "insurance.exporter/inventory-xls-v1")
+                             "insurance/exporter-harmonia-v1")
               :prepares-roles?
               (and (str/includes? on-change "overnight-vehicle")
                    (str/includes? on-change "unattended-building"))})))))

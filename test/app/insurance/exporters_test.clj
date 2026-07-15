@@ -11,6 +11,9 @@
 (def building-role
   :unattended-building)
 
+(def harmonia-exporter-id
+  :insurance/exporter-harmonia-v1)
+
 (defn coverage-type
   [type-id name]
   {:insurance.coverage.type/type-id type-id
@@ -65,11 +68,11 @@
       (select-keys (ex-data error)
                    [:type :exporter-id :status :missing-roles]))))
 
-(deftest inventory-xls-v1-registry-test
+(deftest harmonia-v1-registry-test
   (testing "the current provider format is an immutable versioned descriptor"
-    (is (= [{:exporter-id exporters/inventory-xls-v1
+    (is (= [{:exporter-id harmonia-exporter-id
              :label-key
-             :insurance/exporter-inventory-xls-v1
+             :insurance/exporter-harmonia-v1
              :template-resource "insurance-changes-template.xls"
              :sheet-name        "Inventar"
              :roles
@@ -88,10 +91,10 @@
                                   :roles])
                  (exporters/descriptors))))
     (is (= (first (exporters/descriptors))
-           (exporters/descriptor exporters/inventory-xls-v1)))
-    (is (fn? (:generator (exporters/descriptor exporters/inventory-xls-v1))))
+           (exporters/descriptor harmonia-exporter-id)))
+    (is (fn? (:generator (exporters/descriptor harmonia-exporter-id))))
     (is (nil? (exporters/descriptor
-               :insurance.exporter/inventory-xls-v2)))))
+               :insurance/exporter-harmonia-v2)))))
 
 (deftest policy-exporter-configuration-test
   (let [overnight-id (random-uuid)
@@ -99,24 +102,24 @@
         types        [(coverage-type overnight-id "Renamed worldwide cover")
                       (coverage-type building-id "Renamed storage cover")]]
     (testing "v1 roles resolve through coverage-type references"
-      (is (= {:exporter-id exporters/inventory-xls-v1
+      (is (= {:exporter-id harmonia-exporter-id
               :status      :complete
               :missing-roles []
               :role->coverage-type-id
               {overnight-role overnight-id
                building-role  building-id}}
              (configuration-summary
-              (policy exporters/inventory-xls-v1
+              (policy harmonia-exporter-id
                       types
                       {overnight-role overnight-id
                        building-role  building-id})))))
 
     (testing "exporter selection and mappings remain independent per policy"
-      (let [first-policy  (policy exporters/inventory-xls-v1
+      (let [first-policy  (policy harmonia-exporter-id
                                   types
                                   {overnight-role overnight-id
                                    building-role  building-id})
-            second-policy (policy exporters/inventory-xls-v1
+            second-policy (policy harmonia-exporter-id
                                   types
                                   {overnight-role building-id
                                    building-role  overnight-id})
@@ -130,21 +133,21 @@
 
     (testing "unconfigured, unknown, and incomplete policies are explicit"
       (let [unconfigured (policy nil types {})
-            unknown      (policy :insurance.exporter/inventory-xls-v2
+            unknown      (policy :insurance/exporter-harmonia-v2
                                  types
                                  {})
-            incomplete   (policy exporters/inventory-xls-v1
+            incomplete   (policy harmonia-exporter-id
                                  types
                                  {overnight-role overnight-id})]
         (is (= [{:exporter-id nil
                  :status      :not-configured
                  :missing-roles []
                  :role->coverage-type-id {}}
-                {:exporter-id :insurance.exporter/inventory-xls-v2
+                {:exporter-id :insurance/exporter-harmonia-v2
                  :status      :unknown
                  :missing-roles []
                  :role->coverage-type-id {}}
-                {:exporter-id exporters/inventory-xls-v1
+                {:exporter-id harmonia-exporter-id
                  :status      :incomplete
                  :missing-roles [building-role]
                  :role->coverage-type-id {overnight-role overnight-id}}]
@@ -155,22 +158,22 @@
                  :status      :not-configured
                  :missing-roles []}
                 {:type        :insurance.exporter/configuration-error
-                 :exporter-id :insurance.exporter/inventory-xls-v2
+                 :exporter-id :insurance/exporter-harmonia-v2
                  :status      :unknown
                  :missing-roles []}
                 {:type        :insurance.exporter/configuration-error
-                 :exporter-id exporters/inventory-xls-v1
+                 :exporter-id harmonia-exporter-id
                  :status      :incomplete
                  :missing-roles [building-role]}]
                (mapv #(export-error % (coverage []))
                      [unconfigured unknown incomplete])))))))
 
-(deftest inventory-xls-v1-row-generation-is-rename-safe-test
+(deftest harmonia-v1-row-generation-is-rename-safe-test
   (let [overnight-id   (random-uuid)
         building-id    (random-uuid)
         overnight-type (coverage-type overnight-id "Nothing like the legacy label")
         building-type  (coverage-type building-id "Another administrator rename")
-        policy         (policy exporters/inventory-xls-v1
+        policy         (policy harmonia-exporter-id
                                [overnight-type building-type]
                                {overnight-role overnight-id
                                 building-role  building-id})]
@@ -195,12 +198,12 @@
               policy
               (coverage [overnight-type])))))))
 
-(deftest inventory-xls-v1-workbook-generation-test
+(deftest harmonia-v1-workbook-generation-test
   (let [overnight-id (random-uuid)
         building-id  (random-uuid)
         types        [(coverage-type overnight-id "Renamed worldwide cover")
                       (coverage-type building-id "Renamed storage cover")]
-        policy       (assoc (policy exporters/inventory-xls-v1
+        policy       (assoc (policy harmonia-exporter-id
                                     types
                                     {overnight-role overnight-id
                                      building-role  building-id})

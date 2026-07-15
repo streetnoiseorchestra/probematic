@@ -90,7 +90,7 @@
   [policy]
   (when (and (nil? (:insurance.policy/exporter-id policy))
              (legacy-policy? policy))
-    (let [descriptor (exporters/descriptor exporters/inventory-xls-v1)
+    (let [descriptor (exporters/descriptor exporters/harmonia-v1)
           by-name    (group-by :insurance.coverage.type/name
                                (:insurance.policy/coverage-types policy))
           role-matches (mapv (partial role-match by-name)
@@ -105,7 +105,7 @@
                                (filter #(= :ambiguous (:status %)))
                                (mapv :role))]
       {:tx (cond-> {:db/id                        (:db/id policy)
-                    :insurance.policy/exporter-id exporters/inventory-xls-v1}
+                    :insurance.policy/exporter-id exporters/harmonia-v1}
              (seq mapping-txs)
              (assoc :insurance.policy/export-mappings mapping-txs))
        :incomplete

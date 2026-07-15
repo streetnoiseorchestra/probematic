@@ -2,16 +2,16 @@
   (:require
    [app.insurance.excel :as excel]))
 
-(def inventory-xls-v1
-  :insurance.exporter/inventory-xls-v1)
+(def harmonia-v1
+  :insurance/exporter-harmonia-v1)
 
 (def ^:private exporter-order
-  [inventory-xls-v1])
+  [harmonia-v1])
 
 (def ^:private registry
-  {inventory-xls-v1
-   {:exporter-id      inventory-xls-v1
-    :label-key        :insurance/exporter-inventory-xls-v1
+  {harmonia-v1
+   {:exporter-id      harmonia-v1
+    :label-key        :insurance/exporter-harmonia-v1
     :template-resource "insurance-changes-template.xls"
     :sheet-name       "Inventar"
     :generator        excel/generate-excel-changeset!

@@ -128,7 +128,7 @@
     @(d/transact
       conn
       [{:db/id                            [:insurance.policy/policy-id policy-id]
-        :insurance.policy/exporter-id     :insurance.exporter/inventory-xls-v1
+        :insurance.policy/exporter-id     :insurance/exporter-harmonia-v1
         :insurance.policy/export-mappings
         (mapv (fn [[role coverage-type-id]]
                 {:insurance.export.mapping/role role
@@ -274,9 +274,9 @@
           policy-id      (random-uuid)]
       (seed-settings-policy! conn policy-id {})
       (is (= {:exporter-options
-              [{:exporter-id :insurance.exporter/inventory-xls-v1
+              [{:exporter-id :insurance/exporter-harmonia-v1
                 :label-key
-                :insurance/exporter-inventory-xls-v1
+                :insurance/exporter-harmonia-v1
                 :role-rows
                 [{:role      :overnight-vehicle
                   :label-key :insurance/exporter-role-overnight-vehicle
@@ -306,9 +306,9 @@
       (is (= {:seed-status :accepted
               :read-model
               {:exporter-options
-               [{:exporter-id :insurance.exporter/inventory-xls-v1
+               [{:exporter-id :insurance/exporter-harmonia-v1
                  :label-key
-                 :insurance/exporter-inventory-xls-v1
+                 :insurance/exporter-harmonia-v1
                  :role-rows
                  [{:role      :overnight-vehicle
                    :label-key :insurance/exporter-role-overnight-vehicle
@@ -317,7 +317,7 @@
                    :label-key :insurance/exporter-role-unattended-building
                    :required? true}]}]
                :exporter-configuration
-               {:exporter-id :insurance.exporter/inventory-xls-v1
+               {:exporter-id :insurance/exporter-harmonia-v1
                 :status      :complete
                 :role-rows
                 [{:role             :overnight-vehicle

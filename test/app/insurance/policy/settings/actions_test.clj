@@ -1045,7 +1045,7 @@
       (let [{:keys [unused-type-id used-type-id]}
             (seed-coverage-types! conn policy-id)]
         (is (= {:transact?   true
-                :exporter-id :insurance.exporter/inventory-xls-v1
+                :exporter-id :insurance/exporter-harmonia-v1
                 :mappings    {:overnight-vehicle    used-type-id
                               :unattended-building unused-type-id}}
                (exporter-transaction-summary
@@ -1053,7 +1053,7 @@
                  (state system)
                  (exporter-signals
                   policy-id
-                  "insurance.exporter/inventory-xls-v1"
+                  "insurance/exporter-harmonia-v1"
                   [{:role           "overnight-vehicle"
                     :coverageTypeId (str used-type-id)}
                    {:role           "unattended-building"
@@ -1076,7 +1076,7 @@
            [:db/add
             [:insurance.policy/policy-id policy-id]
             :insurance.policy/exporter-id
-            :insurance.exporter/inventory-xls-v1]
+            :insurance/exporter-harmonia-v1]
            [:db/add
             [:insurance.policy/policy-id policy-id]
             :insurance.policy/export-mappings
@@ -1105,7 +1105,7 @@
                    [:db/retract
                     [:insurance.policy/policy-id policy-id]
                     :insurance.policy/exporter-id
-                    :insurance.exporter/inventory-xls-v1])
+                    :insurance/exporter-harmonia-v1])
                   :retract-mapping?
                   (contains? (set tx-data) [:db/retractEntity mapping-eid])
                   :new-mappings
@@ -1162,19 +1162,19 @@
                {:unknown (summarize "insurance.exporter/unknown" [])
                 :incomplete
                 (summarize
-                 "insurance.exporter/inventory-xls-v1"
+                 "insurance/exporter-harmonia-v1"
                  [{:role           "overnight-vehicle"
                    :coverageTypeId (str used-type-id)}])
                 :foreign
                 (summarize
-                 "insurance.exporter/inventory-xls-v1"
+                 "insurance/exporter-harmonia-v1"
                  [{:role           "overnight-vehicle"
                    :coverageTypeId (str used-type-id)}
                   {:role           "unattended-building"
                    :coverageTypeId (str foreign-type-id)}])
                 :duplicate
                 (summarize
-                 "insurance.exporter/inventory-xls-v1"
+                 "insurance/exporter-harmonia-v1"
                  [{:role           "overnight-vehicle"
                    :coverageTypeId (str used-type-id)}
                   {:role           "overnight-vehicle"

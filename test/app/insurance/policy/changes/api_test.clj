@@ -17,7 +17,7 @@
      {:coverage-types
       [{:type-id overnight-id :name "Worldwide" :premium-factor 0.2M}
        {:type-id building-id :name "Locked storage" :premium-factor 0.3M}]
-      :exporter-id :insurance.exporter/inventory-xls-v1
+      :exporter-id :insurance/exporter-harmonia-v1
       :export-mappings
       [{:role :overnight-vehicle :coverage-type-id overnight-id}
        {:role :unattended-building :coverage-type-id building-id}]})

@@ -29,7 +29,7 @@
          (case exporter-status
            :complete
            {:coverage-types coverage-types
-            :exporter-id    :insurance.exporter/inventory-xls-v1
+            :exporter-id    :insurance/exporter-harmonia-v1
             :export-mappings
             [{:role             :overnight-vehicle
               :coverage-type-id overnight-id}
@@ -38,14 +38,14 @@
 
            :incomplete
            {:coverage-types coverage-types
-            :exporter-id    :insurance.exporter/inventory-xls-v1
+            :exporter-id    :insurance/exporter-harmonia-v1
             :export-mappings
             [{:role             :overnight-vehicle
               :coverage-type-id overnight-id}]}
 
            :unknown
            {:coverage-types coverage-types
-            :exporter-id    :insurance.exporter/inventory-xls-v2}
+            :exporter-id    :insurance/exporter-harmonia-v2}
 
            :not-configured
            {:coverage-types coverage-types})]

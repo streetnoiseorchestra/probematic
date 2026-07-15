@@ -100,7 +100,7 @@
   :insurance.policy/currency :currency/EUR
   :insurance.policy/premium-factor 0.0047829M
   :insurance.policy/coverage-types ["basic" "overnight" "proberaum"]
-  :insurance.policy/exporter-id :insurance.exporter/inventory-xls-v1
+  :insurance.policy/exporter-id :insurance/exporter-harmonia-v1
   :insurance.policy/export-mappings
   [{:insurance.export.mapping/role :overnight-vehicle
     :insurance.export.mapping/coverage-type "overnight"}

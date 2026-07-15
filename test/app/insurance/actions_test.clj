@@ -126,7 +126,7 @@
          :insurance.policy/currency        :currency/EUR
          :insurance.policy/premium-factor  0.01M
          :insurance.policy/coverage-types  [overnight-type building-type]
-         :insurance.policy/exporter-id     :insurance.exporter/inventory-xls-v1
+         :insurance.policy/exporter-id     :insurance/exporter-harmonia-v1
          :insurance.policy/export-mappings
          [{:insurance.export.mapping/role :overnight-vehicle
            :insurance.export.mapping/coverage-type overnight-type}
@@ -154,7 +154,7 @@
                 {:name      "Locked storage renamed"
                  :icon      :phosphor/warehouse
                  :required? false}}
-              :exporter-id :insurance.exporter/inventory-xls-v1
+              :exporter-id :insurance/exporter-harmonia-v1
               :mapping-targets
               {:overnight-vehicle
                (get type-name->tempid "Worldwide touring renamed")
@@ -214,7 +214,7 @@
                conn
                policy-id
                {:coverage-types coverage-types
-                :exporter-id    :insurance.exporter/inventory-xls-v1
+                :exporter-id    :insurance/exporter-harmonia-v1
                 :export-mappings
                 [{:role             :overnight-vehicle
                   :coverage-type-id overnight-id}
@@ -241,7 +241,7 @@
                     {:name      "Locked storage renamed"
                      :icon      :phosphor/warehouse
                      :required? false}}
-                  :exporter-id :insurance.exporter/inventory-xls-v1
+                  :exporter-id :insurance/exporter-harmonia-v1
                   :mappings
                   #{[:overnight-vehicle true]
                     [:unattended-building true]}}

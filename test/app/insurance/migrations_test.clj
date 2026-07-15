@@ -6,8 +6,8 @@
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
 
-(def inventory-exporter-id
-  :insurance.exporter/inventory-xls-v1)
+(def harmonia-exporter-id
+  :insurance/exporter-harmonia-v1)
 
 (defn coverage-type
   [name]
@@ -92,7 +92,7 @@
                             :premium-factor 0.25M
                             :icon           :phosphor/star
                             :required?      false}]
-                          :exporter-id inventory-exporter-id
+                          :exporter-id harmonia-exporter-id
                           :export-mappings
                           [{:role             :overnight-vehicle
                             :coverage-type-id optional-id}]}
@@ -109,7 +109,7 @@
                              "Optional"
                              {:insurance.coverage.type/icon      :phosphor/star
                               :insurance.coverage.type/required? false}}
-                :exporter   {:exporter-id inventory-exporter-id
+                :exporter   {:exporter-id harmonia-exporter-id
                              :mappings    {:overnight-vehicle "Optional"}}}
                {:fresh-plan (migrations/plan-legacy-metadata (d/db conn))
                 :coverage   (coverage-metadata-by-name (d/db conn) policy-id)
@@ -160,7 +160,7 @@
                            "Proberaum"
                            {:insurance.coverage.type/icon      :phosphor/warehouse
                             :insurance.coverage.type/required? false}}
-                :exporter {:exporter-id inventory-exporter-id
+                :exporter {:exporter-id harmonia-exporter-id
                            :mappings    {:overnight-vehicle   "Nachzeit im Auto"
                                          :unattended-building "Proberaum"}}}
                {:result   (dissoc result :tx-data)
@@ -189,10 +189,10 @@
                   :missing-roles  [:unattended-building]
                   :ambiguous-roles []}]
                 :ambiguous-exporter
-                {:exporter-id inventory-exporter-id
+                {:exporter-id harmonia-exporter-id
                  :mappings    {:unattended-building "Proberaum"}}
                 :missing-exporter
-                {:exporter-id inventory-exporter-id
+                {:exporter-id harmonia-exporter-id
                  :mappings    {:overnight-vehicle "Nachzeit im Auto"}}
                 :unknown-metadata {}}
                {:incomplete         (:incomplete-policies result)
