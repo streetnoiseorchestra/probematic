@@ -7,7 +7,7 @@
    [java.io ByteArrayInputStream ByteArrayOutputStream]))
 
 (defn download-excel
-  [{:keys [db parameters policy]}]
+  [{:keys [db parameters policy tr]}]
   (let [policy-id           (get-in parameters [:path :policy-id])
         policy              (or policy (queries/retrieve-policy db policy-id))
         attachment-filename (get-in parameters [:query :attachment-filename])
@@ -20,10 +20,10 @@
                               #{:instrument.coverage.change/changed
                                 :instrument.coverage.change/removed})
         output-stream       (ByteArrayOutputStream.)]
-    (if-not (exporters/configured? policy)
+    (if-let [guidance-key (exporters/configuration-guidance-key policy)]
       {:status  409
        :headers {"Content-Type" "text/plain; charset=utf-8"}
-       :body    "Policy exporter configuration is incomplete."}
+       :body    (tr [guidance-key])}
       (let [_          (exporters/generate-changeset!
                         changeset-scope
                         policy

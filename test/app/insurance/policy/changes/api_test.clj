@@ -1,5 +1,6 @@
 (ns app.insurance.policy.changes.api-test
   (:require
+   [app.i18n :as i18n]
    [app.insurance.policy.changes.api :as sut]
    [app.insurance.test-support :as insurance-test]
    [app.test-common :as tc]
@@ -42,16 +43,35 @@
                 :content-length      (get-in response [:headers "Content-Length"])
                 :ole-signature       (mapv #(bit-and 0xff %) (take 4 bytes))}))))))
 
-(deftest unconfigured-excel-download-response-test
-  (let [{:keys [conn]} (tc/new-system "insurance-policy-changes-excel-unconfigured")
-        policy-id      (random-uuid)]
-    (insurance-test/seed-policy! conn policy-id)
-    (testing "a direct download request cannot bypass exporter configuration"
-      (is (= 409
-             (:status
-              (sut/download-excel
-               {:db (d/db conn)
-                :parameters
-                {:path  {:policy-id policy-id}
-                 :query {:attachment-filename "new instruments.xls"
-                         :preview-type        "new"}}})))))))
+(deftest invalid-exporter-excel-download-response-is-localized-test
+  (let [languages (i18n/read-langs)
+        cases     [{:description "an exporter has not been configured"
+                    :policy      {}
+                    :messages    {:en (str "Choose and configure an exporter in the policy settings "
+                                           "before previewing or sending spreadsheets.")
+                                  :de (str "Wähle und konfiguriere in den Policeneinstellungen "
+                                           "ein Exportformat, bevor du Tabellen ansiehst oder sendest.")}}
+                   {:description "the configured exporter is unknown"
+                    :policy      {:insurance.policy/exporter-id :insurance/exporter-unknown}
+                    :messages    {:en (str "The policy uses an exporter version this application does not "
+                                           "recognize. Choose a supported version in the policy settings.")
+                                  :de (str "Die Police verwendet eine unbekannte Exportversion. "
+                                           "Wähle in den Policeneinstellungen eine unterstützte Version.")}}
+                   {:description "the exporter configuration is incomplete"
+                    :policy      {:insurance.policy/exporter-id :insurance/exporter-harmonia-v1}
+                    :messages    {:en (str "Map every required exporter role in the policy settings "
+                                           "before previewing or sending spreadsheets.")
+                                  :de (str "Ordne in den Policeneinstellungen alle erforderlichen "
+                                           "Exportrollen zu, bevor du Tabellen ansiehst oder sendest.")}}]]
+    (doseq [{:keys [description messages policy]} cases
+            locale                              [:en :de]]
+      (testing (str description " in " (name locale))
+        (is (= {:status  409
+                :headers {"Content-Type" "text/plain; charset=utf-8"}
+                :body    (messages locale)}
+               (sut/download-excel
+                {:policy policy
+                 :tr     (i18n/tr-with languages [locale])
+                 :parameters
+                 {:query {:attachment-filename "new instruments.xls"
+                          :preview-type        "new"}}})))))))
