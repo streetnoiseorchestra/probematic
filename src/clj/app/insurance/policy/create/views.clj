@@ -46,28 +46,23 @@
      [page-surface/PageSurface
       {::page-surface/width :standard
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-           [:i18n/tr :insurance/title]]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/create-title]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-insurance)
-                             :label [:i18n/tr :insurance/title]}]
-         ::page-toolbar/actions
-         [[button/Button {:appearance "outlined"
-                          :href       (urls/link-insurance)}
-           [:i18n/tr :action/cancel]]
-          [button/Button {:appearance         "filled"
-                          :variant            "brand"
-                          :type               "submit"
-                          :form               "insurance-policy-create-form"
-                          :data-attr:disabled "!!$loading && $loading !== 'insurance-policy-create'"
-                          :data-attr:loading  "$loading === 'insurance-policy-create'"}
-           [:i18n/tr :action/create]]]
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                    [:i18n/tr :insurance/title]]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/create-title]]]
+                                  ::page-toolbar/actions
+                                  [[button/Button {:appearance "outlined"
+                                                   :href       (urls/link-insurance)}
+                                    [:i18n/tr :action/cancel]]
+                                   [button/Button {:appearance         "filled"
+                                                   :variant            "brand"
+                                                   :type               "submit"
+                                                   :form               "insurance-policy-create-form"
+                                                   :data-attr:disabled "!!$loading && $loading !== 'insurance-policy-create'"
+                                                   :data-attr:loading  "$loading === 'insurance-policy-create'"}
+                                    [:i18n/tr :action/create]]]
+                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-xl"
              :data-signals (d*/->signals {actions/form-key (dissoc form-state :_error)})}
        [page-header/PageHeader

@@ -15,6 +15,14 @@
    [lookup.core :as l]
    [reitit.core :as r]))
 
+(defn- breadcrumb-parent-context [breadcrumb]
+  (let [items  (vec (l/select breadcrumb/BreadcrumbItem breadcrumb))
+        parent (nth items (- (count items) 2))
+        attrs  (l/attrs parent)]
+    {:href  (or (::breadcrumb/href attrs) (:href attrs))
+     :label (or (some-> (l/select-one :i18n/tr parent) l/first-child)
+                (l/text parent))}))
+
 (deftest member-page-shells
   (let [{:keys [conn member-id]} (tc/new-system "member-page-shells")
         _                          @(d/transact
@@ -50,7 +58,6 @@
             toolbar       (::page-surface/toolbar surface-attrs)
             toolbar-attrs (some-> toolbar l/attrs)
             breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
-            mobile-back   (::page-toolbar/mobile-back toolbar-attrs)
             actions       (::page-toolbar/actions toolbar-attrs)
             header        (l/select-one page-header/PageHeader surface)]
         (is (= :wide (::page-surface/width surface-attrs)))
@@ -59,9 +66,8 @@
                      (l/select breadcrumb/BreadcrumbItem breadcrumb))))
         (is (= {:href  "/"
                 :label :home}
-               {:href  (some-> (l/select-one button/BackButton mobile-back) l/attrs :href)
-                :label (some-> (l/select-one button/BackButton mobile-back)
-                               l/attrs :label l/first-child)}))
+               (breadcrumb-parent-context breadcrumb)))
+        (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
         (is (= [{:href  "/members/invite"
                  :label :members/invite-member}]
                (mapv (fn [action]
@@ -76,6 +82,7 @@
             surface       (l/select-one page-surface/PageSurface view)
             surface-attrs (some-> surface l/attrs)
             toolbar-attrs (some-> surface-attrs ::page-surface/toolbar l/attrs)
+            breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
             actions       (::page-toolbar/actions toolbar-attrs)
             buttons       (l/select button/Button actions)
             form          (l/select-one "form#member-invite-form" surface)]
@@ -83,15 +90,11 @@
         (is (= [:members/title :members/invite-member]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem
-                               (::page-toolbar/breadcrumb toolbar-attrs)))))
+                               breadcrumb))))
         (is (= {:href  "/members"
                 :label :members/title}
-               {:href  (some-> (l/select-one button/BackButton
-                                             (::page-toolbar/mobile-back toolbar-attrs))
-                               l/attrs :href)
-                :label (some-> (l/select-one button/BackButton
-                                             (::page-toolbar/mobile-back toolbar-attrs))
-                               l/attrs :label l/first-child)}))
+               (breadcrumb-parent-context breadcrumb)))
+        (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
         (is (= [{:form nil
                  :href "/members"
                  :label :action/cancel
@@ -118,6 +121,7 @@
             surface       (l/select-one page-surface/PageSurface view)
             surface-attrs (some-> surface l/attrs)
             toolbar-attrs (some-> surface-attrs ::page-surface/toolbar l/attrs)
+            breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
             actions       (::page-toolbar/actions toolbar-attrs)
             overflow      (::page-toolbar/overflow-items toolbar-attrs)
             download      (l/select-one 'wa-dropdown-item overflow)]
@@ -125,20 +129,16 @@
         (is (= [:members/title nil]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem
-                               (::page-toolbar/breadcrumb toolbar-attrs)))))
+                               breadcrumb))))
         (is (= "Casey Jones"
                (-> (l/select breadcrumb/BreadcrumbItem
-                             (::page-toolbar/breadcrumb toolbar-attrs))
+                             breadcrumb)
                    second
                    l/text)))
         (is (= {:href  "/members"
                 :label :members/title}
-               {:href  (some-> (l/select-one button/BackButton
-                                             (::page-toolbar/mobile-back toolbar-attrs))
-                               l/attrs :href)
-                :label (some-> (l/select-one button/BackButton
-                                             (::page-toolbar/mobile-back toolbar-attrs))
-                               l/attrs :label l/first-child)}))
+               (breadcrumb-parent-context breadcrumb)))
+        (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
         (is (= [:action/edit]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select button/Button actions))))
@@ -185,12 +185,13 @@
             surface       (l/select-one page-surface/PageSurface view)
             surface-attrs (some-> surface l/attrs)
             toolbar-attrs (some-> surface-attrs ::page-surface/toolbar l/attrs)
+            breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
             actions       (l/select button/Button (::page-toolbar/actions toolbar-attrs))]
         (is (= :wide (::page-surface/width surface-attrs)))
         (is (= [:members/title nil :action/edit]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      (l/select breadcrumb/BreadcrumbItem
-                               (::page-toolbar/breadcrumb toolbar-attrs)))))
+                               breadcrumb))))
         (is (= [2 3]
                (some-> toolbar-attrs
                        ::page-toolbar/breadcrumb
@@ -198,17 +199,13 @@
                        ::breadcrumb/max-items)))
         (is (= "Casey Jones"
                (-> (l/select breadcrumb/BreadcrumbItem
-                             (::page-toolbar/breadcrumb toolbar-attrs))
+                             breadcrumb)
                    second
                    l/text)))
         (is (= {:href  member-url
                 :label "Casey Jones"}
-               {:href  (some-> (l/select-one button/BackButton
-                                             (::page-toolbar/mobile-back toolbar-attrs))
-                               l/attrs :href)
-                :label (some-> (l/select-one button/BackButton
-                                             (::page-toolbar/mobile-back toolbar-attrs))
-                               l/attrs :label)}))
+               (breadcrumb-parent-context breadcrumb)))
+        (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
         (is (= [{:form nil
                  :label :action/cancel
                  :type nil}

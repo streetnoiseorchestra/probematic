@@ -30,31 +30,25 @@
                   :form       form-id}
    label])
 
-(defn account-toolbar [title actions mobile-back?]
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href account-root}
-      [:i18n/tr :account-settings/title]]
-     [breadcrumb/BreadcrumbItem title]]
-    ::page-toolbar/mobile-back
-    (when mobile-back?
-      [button/BackButton {:href  account-root
-                          :label [:i18n/tr :account-settings/title]}])
-    ::page-toolbar/actions actions
-    :aria-label [:i18n/tr :account-settings/toolbar-label]}])
+(defn account-toolbar [title actions mobile-mode]
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb (cond-> {}
+                                                      mobile-mode (assoc ::breadcrumb/mobile-mode mobile-mode))
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href account-root}
+                               [:i18n/tr :account-settings/title]]
+                              [breadcrumb/BreadcrumbItem title]]
+                             ::page-toolbar/actions actions
+                             :aria-label [:i18n/tr :account-settings/toolbar-label]}])
 
 (defn standard-page
-  [{:keys [title subtitle actions after show-header? mobile-back?]
-    :or {show-header? true
-         mobile-back? true}} & content]
+  [{:keys [title subtitle actions after show-header? breadcrumb-mobile-mode]
+    :or   {show-header? true}} & content]
   (account-main
    (into
     [page-surface/PageSurface
      {::page-surface/width :standard
       :class "account-detail-surface"
-      ::page-surface/toolbar (account-toolbar title actions mobile-back?)}
+      ::page-surface/toolbar (account-toolbar title actions breadcrumb-mobile-mode)}
      (into (cond-> [:div {:class "wa-stack wa-gap-xl"}]
              show-header?
              (conj [page-header/PageHeader

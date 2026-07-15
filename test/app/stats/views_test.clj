@@ -106,7 +106,10 @@
           surface-attrs  (l/attrs surface)
           toolbar-attrs  (-> surface-attrs ::page-surface/toolbar l/attrs)
           breadcrumb     (::page-toolbar/breadcrumb toolbar-attrs)
-          mobile-back    (::page-toolbar/mobile-back toolbar-attrs)
+          parent         (->> (l/select breadcrumb/BreadcrumbItem breadcrumb)
+                              vec
+                              butlast
+                              last)
           header         (l/select-one page-header/PageHeader surface)
           timespans      (l/select button/Button (l/select-one 'wa-button-group surface))]
       (is (= {:width       :wide
@@ -121,13 +124,11 @@
              {:width       (::page-surface/width surface-attrs)
               :breadcrumbs (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                                  (l/select breadcrumb/BreadcrumbItem breadcrumb))
-              :mobile      {:href  (-> (l/select-one button/BackButton mobile-back) l/attrs :href)
-                            :label (some-> (l/select-one button/BackButton mobile-back)
-                                           l/attrs
-                                           :label
-                                           l/first-child)}
+              :mobile      {:href  (-> parent l/attrs ::breadcrumb/href)
+                            :label (some-> (l/select-one :i18n/tr parent) l/first-child)}
               :toolbar-actions (::page-toolbar/actions toolbar-attrs)
               :heading     (some-> header l/attrs ::page-header/title l/first-child)
               :subtitle    (some-> header l/attrs ::page-header/subtitle l/first-child)
               :timespans   (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
-                                 timespans)})))))
+                                 timespans)}))
+      (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back))))))

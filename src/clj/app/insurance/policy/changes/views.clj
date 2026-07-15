@@ -107,32 +107,27 @@
      [page-surface/PageSurface
       {::page-surface/width :standard
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {::breadcrumb/max-items [2 2]}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-           [:i18n/tr :insurance/title]]
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-           policy-name]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/send-changes]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-policy policy)
-                             :label policy-name}]
-         ::page-toolbar/actions
-         [[button/Button {:appearance "outlined"
-                          :href       (urls/link-policy policy)}
-           [:i18n/tr :action/cancel]]
-          [button/Button (cond-> {:appearance  "filled"
-                                  :variant     "brand"
-                                  :data-dialog "open insurance-policy-send-changes-dialog"}
-                           (not export-enabled?) (assoc :disabled true))
-           [:i18n/tr :insurance/confirm-and-send]]]
-         ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-         ::page-toolbar/overflow-items
-         [[:wa-dropdown-item {:data-dialog "open insurance-policy-confirm-changes-dialog"}
-           [:i18n/tr :insurance/confirm-skip-send]]]
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                    [:i18n/tr :insurance/title]]
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                    policy-name]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/send-changes]]]
+                                  ::page-toolbar/actions
+                                  [[button/Button {:appearance "outlined"
+                                                   :href       (urls/link-policy policy)}
+                                    [:i18n/tr :action/cancel]]
+                                   [button/Button (cond-> {:appearance  "filled"
+                                                           :variant     "brand"
+                                                           :data-dialog "open insurance-policy-send-changes-dialog"}
+                                                    (not export-enabled?) (assoc :disabled true))
+                                    [:i18n/tr :insurance/confirm-and-send]]]
+                                  ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                                  ::page-toolbar/overflow-items
+                                  [[:wa-dropdown-item {:data-dialog "open insurance-policy-confirm-changes-dialog"}
+                                    [:i18n/tr :insurance/confirm-skip-send]]]
+                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-xl"
              :data-signals (d*/->signals {actions/form-key
                                           (dissoc form-state :_error :labels)})}

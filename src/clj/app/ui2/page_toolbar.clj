@@ -4,13 +4,10 @@
    [app.ui2.button :as button]
    [app.ui2.core :as uic]
    [app.ui2.icon :as ico]
-   [dev.onionpancakes.chassis.compiler :as cc]
    [dev.onionpancakes.chassis.core :as c]))
 
 (def doc-page-toolbar
-  {:examples ["[page-toolbar/PageToolbar
-              {::page-toolbar/breadcrumb breadcrumb
-               ::page-toolbar/mobile-back back-link
+  {:examples ["[page-toolbar/PageToolbar {::page-toolbar/breadcrumb breadcrumb
                ::page-toolbar/actions [log-plays-button]
                ::page-toolbar/overflow-items overflow-items
                ::page-toolbar/overflow-label \"More gig actions\"
@@ -22,11 +19,7 @@
    :alias    ::page-toolbar
    :schema
    [:map {}
-    [::breadcrumb {:optional true
-                   :doc      "Desktop breadcrumb or other contextual node."}
-     :any]
-    [::mobile-back {:optional true
-                    :doc      "Single back target shown at narrow widths."}
+    [::breadcrumb {:doc "Breadcrumb context rendered by the toolbar."}
      :any]
     [::actions {:optional true
                 :doc      "Visible action node or collection of action nodes."}
@@ -42,7 +35,7 @@
   ::page-toolbar)
 
 (def ^:private consumed-props
-  #{::actions ::breadcrumb ::mobile-back ::overflow-items ::overflow-label})
+  #{::actions ::breadcrumb ::overflow-items ::overflow-label})
 
 (defn- hiccup-node? [value]
   (and (vector? value)
@@ -70,54 +63,33 @@
 (defmethod c/resolve-alias ::page-toolbar
   [_ attrs _children]
   (let [attrs          (or attrs {})
-        _              (uic/validate-opts! doc-page-toolbar attrs)
         breadcrumb     (get attrs ::breadcrumb)
-        breadcrumb?    (= breadcrumb/Breadcrumb (first breadcrumb))
-        breadcrumb-attrs (when breadcrumb?
-                           (or (second (uic/norm breadcrumb)) {}))
-        breadcrumb-max-items (when breadcrumb?
-                               (cond
-                                 (contains? breadcrumb-attrs
-                                            ::breadcrumb/max-items)
-                                 (::breadcrumb/max-items breadcrumb-attrs)
-
-                                 (contains? breadcrumb-attrs :max-items)
-                                 (:max-items breadcrumb-attrs)))
-        responsive-breadcrumb? (vector? breadcrumb-max-items)
-        breadcrumb     (cond-> breadcrumb
-                         (and breadcrumb-attrs
-                              (not (or
-                                    (contains? breadcrumb-attrs
-                                               ::breadcrumb/max-items)
-                                    (contains? breadcrumb-attrs :max-items))))
-                         (uic/assoc-attr ::breadcrumb/max-items 3)
-
-                         (and breadcrumb-attrs
-                              (not (or
-                                    (contains? breadcrumb-attrs
-                                               ::breadcrumb/items-before-collapse)
-                                    (contains? breadcrumb-attrs
-                                               :items-before-collapse))))
-                         (uic/assoc-attr ::breadcrumb/items-before-collapse 0))
-        mobile-back    (get attrs ::mobile-back)
+        _              (when-not (and (vector? breadcrumb)
+                                      (= breadcrumb/Breadcrumb (first breadcrumb)))
+                         (throw
+                          (ex-info
+                           "PageToolbar requires ::breadcrumb/Breadcrumb"
+                           {:breadcrumb breadcrumb})))
+        _              (uic/validate-opts! doc-page-toolbar attrs)
         actions        (nodes (get attrs ::actions))
         overflow-items (get attrs ::overflow-items)
         overflow-label (get attrs ::overflow-label)
         overflow       (overflow-menu overflow-label overflow-items)
         attrs          (-> (apply dissoc attrs consumed-props)
                            (uic/merge-attrs :class "sno-page-toolbar")
-                           (update :role #(or % "toolbar")))
+                           (update :role #(or % "toolbar"))
+                           (assoc :data-class:stuck "$pageToolbarStuck"))
         _              (assert (:aria-label attrs)
                                "PageToolbar requires an accessible :aria-label")]
-    (cc/compile
+    [[:div {:class                                  "sno-page-toolbar-sentinel"
+            :aria-hidden                            true
+            :data-signals:page-toolbar-stuck        "false"
+            :data-on-intersect                      "$pageToolbarStuck = false"
+            :data-on-intersect__exit
+            "$pageToolbarStuck = el.getBoundingClientRect().top < 0"}]
      [:header attrs
-      (into
-       [:div {:class "context"}]
-       (if responsive-breadcrumb?
-         [[:div {:class "responsive-breadcrumb"} breadcrumb]]
-         [[:div {:class "desktop"} breadcrumb]
-          [:div {:class "mobile"} mobile-back]]))
+      [:div {:class "context"} breadcrumb]
       (when (or (seq actions) overflow)
         (into [:menu {:class "actions"}]
               (concat (map (fn [action] [:li action]) actions)
-                      (when overflow [[:li {:class "overflow"} overflow]]))))])))
+                      (when overflow [[:li {:class "overflow"} overflow]]))))]]))

@@ -187,34 +187,29 @@
         log-plays-url (urls/link-gig-log-plays gig-id)
         edit-label    [:i18n/tr :action/edit]
         log-label     [:i18n/tr :gigs/log-plays]]
-    [page-toolbar/PageToolbar
-     {::page-toolbar/breadcrumb
-      [breadcrumb/Breadcrumb
-       {}
-       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
-        [:i18n/tr :gigs/navigation-label]]
-       [breadcrumb/BreadcrumbItem (gigs.ui/gig-breadcrumb-label req gig)]]
-      ::page-toolbar/mobile-back
-      [button/BackButton {:href  (urls/link-gigs-home)
-                          :label [:i18n/tr :gigs/navigation-label]}]
-      ::page-toolbar/actions
-      [(if future?
-         (toolbar-action edit-url edit-label)
-         (toolbar-action log-plays-url log-label))]
-      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-      ::page-toolbar/overflow-items
-      (cond->
-       [(if future?
-          (toolbar-menu-item log-plays-url
-                             {::ico/library :snoico
-                              ::ico/name    :music-note-outline}
-                             log-label)
-          (toolbar-menu-item edit-url
-                             {::ico/library :phosphor
-                              ::ico/name    :pencil-simple}
-                             edit-label))]
-        (not archived?) (conj (remind-all-menu-item req)))
-      :aria-label [:i18n/tr :gigs/detail-toolbar-label]}]))
+    [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                               [breadcrumb/Breadcrumb {}
+                                [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+                                 [:i18n/tr :gigs/navigation-label]]
+                                [breadcrumb/BreadcrumbItem (gigs.ui/gig-breadcrumb-label req gig)]]
+                               ::page-toolbar/actions
+                               [(if future?
+                                  (toolbar-action edit-url edit-label)
+                                  (toolbar-action log-plays-url log-label))]
+                               ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                               ::page-toolbar/overflow-items
+                               (cond->
+                                [(if future?
+                                   (toolbar-menu-item log-plays-url
+                                                      {::ico/library :snoico
+                                                       ::ico/name    :music-note-outline}
+                                                      log-label)
+                                   (toolbar-menu-item edit-url
+                                                      {::ico/library :phosphor
+                                                       ::ico/name    :pencil-simple}
+                                                      edit-label))]
+                                 (not archived?) (conj (remind-all-menu-item req)))
+                               :aria-label [:i18n/tr :gigs/detail-toolbar-label]}]))
 
 (defn- remind-all-dialog [{:keys [tr] :as req} gig-id]
   [:wa-dialog {:id    "gig-detail-remind-all-dialog"

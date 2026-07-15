@@ -126,7 +126,9 @@
          (range 1 (inc (count (re-seq #"/" path)))))))
 
 (defn file-breadcrumb [req picker-id root-dir current-dir]
-  (into [breadcrumb/Breadcrumb {::breadcrumb/separator "/"}]
+  (into [breadcrumb/Breadcrumb {::breadcrumb/separator   "/"
+                                ::breadcrumb/max-items   nil
+                                ::breadcrumb/mobile-mode :trail}]
         (for [path (filter #(actions/within-root? root-dir %)
                            (component-paths current-dir))]
           [breadcrumb/BreadcrumbItem {::breadcrumb/href "#"
@@ -185,23 +187,18 @@
      [page-surface/PageSurface
       {::page-surface/width :standard
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-           [:i18n/tr :home]]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :files/choose-file]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-dashboard)
-                             :label [:i18n/tr :home]}]
-         ::page-toolbar/actions
-         (when-not (:open? picker)
-           [[button/Button {:appearance    "filled"
-                            :variant       "brand"
-                            :data-on:click (open-demo-action req root-dir current-dir)}
-             [:i18n/tr :files/choose-file]]])
-         :aria-label [:i18n/tr :files/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                                    [:i18n/tr :home]]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :files/choose-file]]]
+                                  ::page-toolbar/actions
+                                  (when-not (:open? picker)
+                                    [[button/Button {:appearance    "filled"
+                                                     :variant       "brand"
+                                                     :data-on:click (open-demo-action req root-dir current-dir)}
+                                      [:i18n/tr :files/choose-file]]])
+                                  :aria-label [:i18n/tr :files/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"
              :data-signals (d*/->signals {:file-browser {:picker-id     nil
                                                          :target-dir    nil

@@ -325,17 +325,12 @@
      [page-surface/PageSurface
       {::page-surface/width :wide
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (url/link-dashboard)}
-           [:i18n/tr :home]]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :statistics/title]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (url/link-dashboard)
-                             :label [:i18n/tr :home]}]
-         :aria-label [:i18n/tr :statistics/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (url/link-dashboard)}
+                                    [:i18n/tr :home]]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :statistics/title]]]
+                                  :aria-label [:i18n/tr :statistics/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-xl"}
        [page-header/PageHeader
         {::page-header/title    [:i18n/tr :statistics/title]

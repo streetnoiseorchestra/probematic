@@ -1120,19 +1120,14 @@
      [page-surface/PageSurface
       {::page-surface/width :wide
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {::breadcrumb/max-items [2 2]}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-           [:i18n/tr :insurance/title]]
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy (:policy settings))}
-           (get-in settings [:policy :insurance.policy/name])]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/policy-settings]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-policy (:policy settings))
-                             :label (get-in settings [:policy :insurance.policy/name])}]
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                    [:i18n/tr :insurance/title]]
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy (:policy settings))}
+                                    (get-in settings [:policy :insurance.policy/name])]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/policy-settings]]]
+                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       (settings-page-content req settings)])))
 
 (d*/refresh-all!)

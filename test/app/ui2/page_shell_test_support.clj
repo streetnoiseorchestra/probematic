@@ -51,6 +51,24 @@
     (or (::breadcrumb/max-items attrs)
         (:max-items attrs))))
 
+(defn- breadcrumb-mobile-context [breadcrumb]
+  (let [attrs  (l/attrs breadcrumb)
+        mode   (or (::breadcrumb/mobile-mode attrs)
+                   (:mobile-mode attrs)
+                   :parent)
+        items  (vec (l/select breadcrumb/BreadcrumbItem breadcrumb))
+        parent (when (< 1 (count items))
+                 (nth items (- (count items) 2)))
+        parent-attrs (some-> parent l/attrs)
+        href   (or (::breadcrumb/href parent-attrs)
+                   (:href parent-attrs))]
+    (case mode
+      :hidden nil
+      :parent (when parent
+                {:label (node-label parent)
+                 :href  href})
+      :trail {:mode :trail})))
+
 (defn page-contract
   "Returns the shared PageSurface and PageToolbar contract from `view`.
 
@@ -67,7 +85,6 @@
            toolbar       (::page-surface/toolbar surface-attrs)
            toolbar-attrs (some-> toolbar l/attrs)
            breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
-           mobile-back   (::page-toolbar/mobile-back toolbar-attrs)
            actions       (::page-toolbar/actions toolbar-attrs)
            overflow      (::page-toolbar/overflow-items toolbar-attrs)
            header-attrs  (some-> (l/select-one page-header/PageHeader surface) l/attrs)]
@@ -75,9 +92,7 @@
         {:width       (::page-surface/width surface-attrs)
          :breadcrumbs (mapv node-label
                             (l/select breadcrumb/BreadcrumbItem breadcrumb))
-         :mobile      (when-let [back (l/select-one button/BackButton mobile-back)]
-                        {:label (node-label (:label (l/attrs back)))
-                         :href  (:href (l/attrs back))})
+         :mobile      (breadcrumb-mobile-context breadcrumb)
          :actions     (mapv action-summary
                             (l/select button/Button actions))
          :overflow    (mapv overflow-summary

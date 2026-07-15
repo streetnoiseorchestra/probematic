@@ -37,20 +37,15 @@
      [page-surface/PageSurface
       {::page-surface/width :wide
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {::breadcrumb/max-items [2 2]}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-           [:i18n/tr :insurance/title]]
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-           (:insurance.policy/name policy)]
-          [breadcrumb/BreadcrumbItem (:instrument/name instrument)]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-policy policy)
-                             :label (:insurance.policy/name policy)}]
-         ::page-toolbar/actions (page-actions coverage policy)
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                    [:i18n/tr :insurance/title]]
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                    (:insurance.policy/name policy)]
+                                   [breadcrumb/BreadcrumbItem (:instrument/name instrument)]]
+                                  ::page-toolbar/actions (page-actions coverage policy)
+                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "insurance-coverage-detail-page wa-stack wa-gap-xl"}
        [page-header/PageHeader {:class "insurance-coverage-page-header"
                                 :title (:instrument/name instrument)}]

@@ -284,25 +284,20 @@
      [page-surface/PageSurface
       {::page-surface/width :wide
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/"}
-           [:i18n/tr :home]]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/title]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  "/"
-                             :label [:i18n/tr :home]}]
-         ::page-toolbar/actions
-         [[button/Button {:appearance "filled"
-                          :variant    "brand"
-                          :href       "/insurance-new/"}
-           [ico/Icon {::ico/library :snoico
-                      ::ico/name    :circle-plus-solid
-                      :slot         "start"}]
-           [:i18n/tr :insurance/new-policy]]]
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href "/"}
+                                    [:i18n/tr :home]]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/title]]]
+                                  ::page-toolbar/actions
+                                  [[button/Button {:appearance "filled"
+                                                   :variant    "brand"
+                                                   :href       "/insurance-new/"}
+                                    [ico/Icon {::ico/library :snoico
+                                               ::ico/name    :circle-plus-solid
+                                               :slot         "start"}]
+                                    [:i18n/tr :insurance/new-policy]]]
+                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "insurance-index-page wa-stack wa-gap-xl"}
        [page-header/PageHeader {:title (tr [:insurance/title])}]
        (insurance-faq req active-policy)

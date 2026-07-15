@@ -12,27 +12,22 @@
    [app.urls :as urls]))
 
 (defn- page-toolbar []
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-      [:i18n/tr :gigs/dashboard]]
-     [breadcrumb/BreadcrumbItem [:i18n/tr :gigs/title]]]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-dashboard)
-                        :label [:i18n/tr :gigs/dashboard]}]
-    ::page-toolbar/actions
-    [[button/Button {:appearance "filled"
-                     :variant    "brand"
-                     :href       (urls/link-gig-create)}
-      [:i18n/tr :gigs/new-gig]]]
-    ::page-toolbar/overflow-items
-    [[:wa-dropdown-item {:value   (urls/link-gig-archive)
-                         :onclick "window.location = this.value"}
-      [:i18n/tr :gigs/view-archive]]]
-    ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-    :aria-label                    [:i18n/tr :gigs/index-toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb {}
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                               [:i18n/tr :gigs/dashboard]]
+                              [breadcrumb/BreadcrumbItem [:i18n/tr :gigs/title]]]
+                             ::page-toolbar/actions
+                             [[button/Button {:appearance "filled"
+                                              :variant    "brand"
+                                              :href       (urls/link-gig-create)}
+                               [:i18n/tr :gigs/new-gig]]]
+                             ::page-toolbar/overflow-items
+                             [[:wa-dropdown-item {:value   (urls/link-gig-archive)
+                                                  :onclick "window.location = this.value"}
+                               [:i18n/tr :gigs/view-archive]]]
+                             ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                             :aria-label                    [:i18n/tr :gigs/index-toolbar-label]}])
 
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [future-gigs past-gigs]} (queries/index-page-data db)]

@@ -148,48 +148,38 @@
    [:i18n/tr :action/save]])
 
 (defn- create-toolbar []
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
-      [:i18n/tr :polls/title]]
-     [breadcrumb/BreadcrumbItem [:i18n/tr :polls/new-poll]]]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-polls-home)
-                        :label [:i18n/tr :polls/title]}]
-    ::page-toolbar/actions
-    [[button/Button {:appearance "plain"
-                     :href       (urls/link-polls-home)}
-      [:i18n/tr :action/cancel]]
-     (save-button)]
-    :aria-label [:i18n/tr :polls/edit-toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb {}
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
+                               [:i18n/tr :polls/title]]
+                              [breadcrumb/BreadcrumbItem [:i18n/tr :polls/new-poll]]]
+                             ::page-toolbar/actions
+                             [[button/Button {:appearance "plain"
+                                              :href       (urls/link-polls-home)}
+                               [:i18n/tr :action/cancel]]
+                              (save-button)]
+                             :aria-label [:i18n/tr :polls/edit-toolbar-label]}])
 
 (defn- edit-toolbar [poll]
   (let [poll-url (urls/link-poll poll)]
-    [page-toolbar/PageToolbar
-     {::page-toolbar/breadcrumb
-      [breadcrumb/Breadcrumb
-       {::breadcrumb/max-items [2 3]}
-       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
-        [:i18n/tr :polls/title]]
-       [breadcrumb/BreadcrumbItem {::breadcrumb/href poll-url}
-        (:poll/title poll)]
-       [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
-      ::page-toolbar/mobile-back
-      [button/BackButton {:href  poll-url
-                          :label (:poll/title poll)}]
-      ::page-toolbar/actions
-      [[button/Button {:appearance "plain"
-                       :href       poll-url}
-        [:i18n/tr :action/cancel]]
-       (save-button)]
-      ::page-toolbar/overflow-items
-      [[:wa-dropdown-item {:variant     "danger"
-                           :data-dialog (str "open " (delete-dialog-id poll))}
-        [:i18n/tr :action/delete]]]
-      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-      :aria-label                    [:i18n/tr :polls/edit-toolbar-label]}]))
+    [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                               [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 3]}
+                                [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-polls-home)}
+                                 [:i18n/tr :polls/title]]
+                                [breadcrumb/BreadcrumbItem {::breadcrumb/href poll-url}
+                                 (:poll/title poll)]
+                                [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
+                               ::page-toolbar/actions
+                               [[button/Button {:appearance "plain"
+                                                :href       poll-url}
+                                 [:i18n/tr :action/cancel]]
+                                (save-button)]
+                               ::page-toolbar/overflow-items
+                               [[:wa-dropdown-item {:variant     "danger"
+                                                    :data-dialog (str "open " (delete-dialog-id poll))}
+                                 [:i18n/tr :action/delete]]]
+                               ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                               :aria-label                    [:i18n/tr :polls/edit-toolbar-label]}]))
 
 (defn- create-header []
   [page-header/PageHeader {:title [:i18n/tr :polls/new-poll]}])

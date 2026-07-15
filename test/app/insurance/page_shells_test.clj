@@ -672,7 +672,7 @@
     (testing "The instrument step can be cancelled or submitted from the toolbar."
       (is (= {:width       :standard
               :breadcrumbs [:insurance/title "Insurance 2026"
-                            :insurance/add-coverage-title :insurance/instrument-step]
+                            :insurance/instrument-step]
               :mobile      {:label "Insurance 2026"
                             :href  (str "/insurance-policy/" policy-id "/")}
               :actions     [{:label :action/cancel
@@ -693,7 +693,7 @@
     (testing "The photos step preserves the redirect in both directions."
       (is (= {:width       :standard
               :breadcrumbs [:insurance/title "Insurance 2026"
-                            :insurance/add-coverage-title :insurance/photos-step]
+                            :insurance/instrument-step :insurance/photos-step]
               :mobile      {:label :insurance/instrument-step :href step-one}
               :actions     [{:label :action/back
                              :href step-one
@@ -712,7 +712,8 @@
     (testing "The coverage step submits the final form and returns to Photos."
       (is (= {:width       :standard
               :breadcrumbs [:insurance/title "Insurance 2026"
-                            :insurance/add-coverage-title :insurance/coverage-step]
+                            :insurance/instrument-step :insurance/photos-step
+                            :insurance/coverage-step]
               :mobile      {:label :insurance/photos-step :href step-two}
               :actions     [{:label :action/back
                              :href step-two

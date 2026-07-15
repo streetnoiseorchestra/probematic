@@ -168,20 +168,15 @@
                       ::ico/name    :clipboard-text
                       :slot         "start"}]
            [:i18n/tr :insurance/manage-surveys]])]
-    [page-toolbar/PageToolbar
-     {::page-toolbar/breadcrumb
-      [breadcrumb/Breadcrumb
-       {}
-       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-        [:i18n/tr :insurance/title]]
-       [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]]
-      ::page-toolbar/mobile-back
-      [button/BackButton {:href  (urls/link-insurance)
-                          :label [:i18n/tr :insurance/title]}]
-      ::page-toolbar/actions        [(or manage-surveys-button primary-button)]
-      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-      ::page-toolbar/overflow-items overflow-items
-      :aria-label                    [:i18n/tr :insurance/toolbar-label]}]))
+    [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                               [breadcrumb/Breadcrumb {}
+                                [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                 [:i18n/tr :insurance/title]]
+                                [breadcrumb/BreadcrumbItem (:insurance.policy/name policy)]]
+                               ::page-toolbar/actions        [(or manage-surveys-button primary-button)]
+                               ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                               ::page-toolbar/overflow-items overflow-items
+                               :aria-label                    [:i18n/tr :insurance/toolbar-label]}]))
 
 (defn metric-card
   [{:keys [id tooltip icon label value library]}]

@@ -3,7 +3,6 @@
    [app.datastar :as d*]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
-   [app.ui2.button :as button]
    [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
@@ -80,17 +79,12 @@
       :icon        :cog}]}])
 
 (defn- page-toolbar []
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-      [:i18n/tr :home]]
-     [breadcrumb/BreadcrumbItem [:i18n/tr :everything/title]]]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-dashboard)
-                        :label [:i18n/tr :home]}]
-    :aria-label [:i18n/tr :everything/toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb {}
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                               [:i18n/tr :home]]
+                              [breadcrumb/BreadcrumbItem [:i18n/tr :everything/title]]]
+                             :aria-label [:i18n/tr :everything/toolbar-label]}])
 
 (defn- destination-copy [{:keys [description external? label disabled?]}]
   [:span {:class "copy wa-stack wa-gap-2xs"}

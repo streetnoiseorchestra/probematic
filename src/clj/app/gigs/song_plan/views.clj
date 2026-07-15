@@ -36,25 +36,19 @@
                              duration))))))))
 
 (defn page-toolbar [req gig title-key]
-  (let [gig-url   (urls/link-gig gig)
-        gig-label (gigs.ui/gig-breadcrumb-label req gig)]
-    [page-toolbar/PageToolbar
-     {::page-toolbar/breadcrumb
-      [breadcrumb/Breadcrumb
-       {::breadcrumb/max-items [2 3]}
-       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
-        [:i18n/tr :gigs/title]]
-       (gigs.ui/gig-breadcrumb req gig)
-       [breadcrumb/BreadcrumbItem [:i18n/tr title-key]]]
-      ::page-toolbar/mobile-back
-      [button/BackButton {:href  gig-url
-                          :label gig-label}]
-      ::page-toolbar/actions
-      [[button/Button {:appearance "filled"
-                       :variant    "brand"
-                       :href       gig-url}
-        [:i18n/tr :action/done]]]
-      :aria-label [:i18n/tr :gigs/tool-toolbar-label]}]))
+  (let [gig-url (urls/link-gig gig)]
+    [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                               [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 3]}
+                                [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+                                 [:i18n/tr :gigs/title]]
+                                (gigs.ui/gig-breadcrumb req gig)
+                                [breadcrumb/BreadcrumbItem [:i18n/tr title-key]]]
+                               ::page-toolbar/actions
+                               [[button/Button {:appearance "filled"
+                                                :variant    "brand"
+                                                :href       gig-url}
+                                 [:i18n/tr :action/done]]]
+                               :aria-label [:i18n/tr :gigs/tool-toolbar-label]}]))
 
 (defn page-summary [title-key]
   [page-header/PageHeader {:title [:i18n/tr title-key]}])

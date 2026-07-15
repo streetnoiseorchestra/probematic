@@ -239,17 +239,12 @@
      [page-surface/PageSurface
       {::page-surface/width :standard
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
-           [:i18n/tr :band-settings/title]]
-          [breadcrumb/BreadcrumbItem title]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  "/band-settings"
-                             :label [:i18n/tr :band-settings/title]}]
-         :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
+                                    [:i18n/tr :band-settings/title]]
+                                   [breadcrumb/BreadcrumbItem title]]
+                                  :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-l"}
        [page-header/PageHeader
         {:title    title

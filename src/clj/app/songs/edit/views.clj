@@ -97,48 +97,38 @@
    [:i18n/tr :action/save]])
 
 (defn- create-toolbar []
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
-      [:i18n/tr :repertoire/title]]
-     [breadcrumb/BreadcrumbItem [:i18n/tr :repertoire/add-song]]]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-songs-home)
-                        :label [:i18n/tr :repertoire/title]}]
-    ::page-toolbar/actions
-    [[button/Button {:appearance "plain"
-                     :href       (urls/link-songs-home)}
-      [:i18n/tr :action/cancel]]
-     (save-button)]
-    :aria-label [:i18n/tr :repertoire/edit-toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb {}
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+                               [:i18n/tr :repertoire/title]]
+                              [breadcrumb/BreadcrumbItem [:i18n/tr :repertoire/add-song]]]
+                             ::page-toolbar/actions
+                             [[button/Button {:appearance "plain"
+                                              :href       (urls/link-songs-home)}
+                               [:i18n/tr :action/cancel]]
+                              (save-button)]
+                             :aria-label [:i18n/tr :repertoire/edit-toolbar-label]}])
 
 (defn- edit-toolbar [song]
   (let [song-url (urls/link-song song)]
-    [page-toolbar/PageToolbar
-     {::page-toolbar/breadcrumb
-      [breadcrumb/Breadcrumb
-       {::breadcrumb/max-items [2 3]}
-       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
-        [:i18n/tr :repertoire/title]]
-       [breadcrumb/BreadcrumbItem {::breadcrumb/href song-url}
-        (:song/title song)]
-       [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
-      ::page-toolbar/mobile-back
-      [button/BackButton {:href  song-url
-                          :label (:song/title song)}]
-      ::page-toolbar/actions
-      [[button/Button {:appearance "plain"
-                       :href       song-url}
-        [:i18n/tr :action/cancel]]
-       (save-button)]
-      ::page-toolbar/overflow-items
-      [[:wa-dropdown-item {:variant     "danger"
-                           :data-dialog (str "open " (song-remove-dialog-id song))}
-        [:i18n/tr :action/delete]]]
-      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-      :aria-label                    [:i18n/tr :repertoire/edit-toolbar-label]}]))
+    [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                               [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 3]}
+                                [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+                                 [:i18n/tr :repertoire/title]]
+                                [breadcrumb/BreadcrumbItem {::breadcrumb/href song-url}
+                                 (:song/title song)]
+                                [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
+                               ::page-toolbar/actions
+                               [[button/Button {:appearance "plain"
+                                                :href       song-url}
+                                 [:i18n/tr :action/cancel]]
+                                (save-button)]
+                               ::page-toolbar/overflow-items
+                               [[:wa-dropdown-item {:variant     "danger"
+                                                    :data-dialog (str "open " (song-remove-dialog-id song))}
+                                 [:i18n/tr :action/delete]]]
+                               ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                               :aria-label                    [:i18n/tr :repertoire/edit-toolbar-label]}]))
 
 (defn- edit-header [{:keys [tr]} {:song/keys [active? title]}]
   [page-header/PageHeader

@@ -607,18 +607,13 @@
      [page-surface/PageSurface
       {::page-surface/width :compact
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-           [:i18n/tr :home]]
-          [breadcrumb/BreadcrumbItem
-           [:i18n/tr :insurance/review-title]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-dashboard)
-                             :label [:i18n/tr :home]}]
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                                    [:i18n/tr :home]]
+                                   [breadcrumb/BreadcrumbItem
+                                    [:i18n/tr :insurance/review-title]]]
+                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class              "insurance-survey-page wa-stack wa-gap-l"
              :data-preserve-attr "data-signals"
              :data-signals       (d*/->signals

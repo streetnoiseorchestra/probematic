@@ -265,34 +265,25 @@
        [page-surface/PageSurface
         {::page-surface/width :standard
          ::page-surface/toolbar
-         [page-toolbar/PageToolbar
-          {::page-toolbar/breadcrumb
-           [breadcrumb/Breadcrumb
-            {::breadcrumb/max-items [2 3]}
-            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-             [:i18n/tr :insurance/title]]
-            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-             (:insurance.policy/name policy)]
-            [breadcrumb/BreadcrumbItem
-             {::breadcrumb/href
-              (urls/link-coverage-create-edit policy-id instrument-id redirect)}
-             [:i18n/tr :insurance/add-coverage-title]]
-            [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/instrument-step]]]
-           ::page-toolbar/mobile-back
-           [button/BackButton {:href  (urls/link-policy policy)
-                               :label (:insurance.policy/name policy)}]
-           ::page-toolbar/actions
-           [[button/Button {:appearance "outlined"
-                            :href       (urls/link-policy policy)}
-             [:i18n/tr :action/cancel]]
-            [button/Button {:appearance         "filled"
-                            :variant            "brand"
-                            :type               "submit"
-                            :form               "coverage-create-instrument-form"
-                            :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
-                            :data-attr:loading  "$loading === 'coverage-create'"}
-             [:i18n/tr :action/next]]]
-           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+         [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                    [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 3]}
+                                     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                      [:i18n/tr :insurance/title]]
+                                     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                      (:insurance.policy/name policy)]
+                                     [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/instrument-step]]]
+                                    ::page-toolbar/actions
+                                    [[button/Button {:appearance "outlined"
+                                                     :href       (urls/link-policy policy)}
+                                      [:i18n/tr :action/cancel]]
+                                     [button/Button {:appearance         "filled"
+                                                     :variant            "brand"
+                                                     :type               "submit"
+                                                     :form               "coverage-create-instrument-form"
+                                                     :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
+                                                     :data-attr:loading  "$loading === 'coverage-create'"}
+                                      [:i18n/tr :action/next]]]
+                                    :aria-label [:i18n/tr :insurance/toolbar-label]}]}
         (instrument-page-content req policy instrument redirect)]))))
 
 (defn photos-page-content
@@ -340,31 +331,25 @@
          [page-surface/PageSurface
           {::page-surface/width :standard
            ::page-surface/toolbar
-           [page-toolbar/PageToolbar
-            {::page-toolbar/breadcrumb
-             [breadcrumb/Breadcrumb
-              {::breadcrumb/max-items [2 3]}
-              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-               [:i18n/tr :insurance/title]]
-              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-               (:insurance.policy/name policy)]
-              [breadcrumb/BreadcrumbItem
-               {::breadcrumb/href
-                (urls/link-coverage-create-edit policy-id instrument-id redirect)}
-               [:i18n/tr :insurance/add-coverage-title]]
-              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/photos-step]]]
-             ::page-toolbar/mobile-back
-             [button/BackButton {:href  previous-url
-                                 :label [:i18n/tr :insurance/instrument-step]}]
-             ::page-toolbar/actions
-             [[button/Button {:appearance "outlined"
-                              :href       previous-url}
-               [:i18n/tr :action/back]]
-              [button/Button {:appearance "filled"
-                              :variant    "brand"
-                              :href       next-url}
-               [:i18n/tr :action/next]]]
-             :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+           [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                      [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 3]}
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                        [:i18n/tr :insurance/title]]
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                        (:insurance.policy/name policy)]
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href
+                                                                   (urls/link-coverage-create-edit policy-id instrument-id redirect)}
+                                        [:i18n/tr :insurance/instrument-step]]
+                                       [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/photos-step]]]
+                                      ::page-toolbar/actions
+                                      [[button/Button {:appearance "outlined"
+                                                       :href       previous-url}
+                                        [:i18n/tr :action/back]]
+                                       [button/Button {:appearance "filled"
+                                                       :variant    "brand"
+                                                       :href       next-url}
+                                        [:i18n/tr :action/next]]]
+                                      :aria-label [:i18n/tr :insurance/toolbar-label]}]}
           (photos-page-content req instrument)])))))
 
 (defn- coverage-validate-field-action [req field]
@@ -570,35 +555,31 @@
          [page-surface/PageSurface
           {::page-surface/width :standard
            ::page-surface/toolbar
-           [page-toolbar/PageToolbar
-            {::page-toolbar/breadcrumb
-             [breadcrumb/Breadcrumb
-              {::breadcrumb/max-items [2 3]}
-              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-               [:i18n/tr :insurance/title]]
-              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-               (:insurance.policy/name policy)]
-              [breadcrumb/BreadcrumbItem
-               {::breadcrumb/href
-                (urls/link-coverage-create-edit policy-id instrument-id redirect)}
-               [:i18n/tr :insurance/add-coverage-title]]
-              [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/coverage-step]]]
-             ::page-toolbar/mobile-back
-             [button/BackButton {:href  previous-url
-                                 :label [:i18n/tr :insurance/photos-step]}]
-             ::page-toolbar/actions
-             [[button/Button {:appearance "outlined"
-                              :href       previous-url}
-               [:i18n/tr :action/back]]
-              [button/Button (cond-> {:appearance         "filled"
-                                      :variant            "brand"
-                                      :type               "submit"
-                                      :form               "coverage-create-coverage-form"
-                                      :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
-                                      :data-attr:loading  "$loading === 'coverage-create'"}
-                               disabled? (assoc :disabled true))
-               [:i18n/tr :action/save]]]
-             :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+           [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                      [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 3]}
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                        [:i18n/tr :insurance/title]]
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                        (:insurance.policy/name policy)]
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href
+                                                                   (urls/link-coverage-create-edit policy-id instrument-id redirect)}
+                                        [:i18n/tr :insurance/instrument-step]]
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href previous-url}
+                                        [:i18n/tr :insurance/photos-step]]
+                                       [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/coverage-step]]]
+                                      ::page-toolbar/actions
+                                      [[button/Button {:appearance "outlined"
+                                                       :href       previous-url}
+                                        [:i18n/tr :action/back]]
+                                       [button/Button (cond-> {:appearance         "filled"
+                                                               :variant            "brand"
+                                                               :type               "submit"
+                                                               :form               "coverage-create-coverage-form"
+                                                               :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
+                                                               :data-attr:loading  "$loading === 'coverage-create'"}
+                                                        disabled? (assoc :disabled true))
+                                        [:i18n/tr :action/save]]]
+                                      :aria-label [:i18n/tr :insurance/toolbar-label]}]}
           (coverage-page-content req policy instrument redirect)])))))
 
 (d*/refresh-all!)

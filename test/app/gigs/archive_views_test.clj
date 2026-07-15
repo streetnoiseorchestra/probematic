@@ -20,7 +20,7 @@
     (let [{:keys [conn]} (support/new-system "gigs-archive-year-surface")]
       (is (= {:width                :wide
               :breadcrumbs [:gigs/title :gigs/archive-title "2025"]
-              :mobile               {:label :gigs/title :href "/gigs"}
+              :mobile               {:label :gigs/archive-title :href "/gigs/archive"}
               :actions              []
               :overflow             []}
              (-> conn

@@ -286,38 +286,33 @@
          [page-surface/PageSurface
           {::page-surface/width :standard
            ::page-surface/toolbar
-           [page-toolbar/PageToolbar
-            {::page-toolbar/breadcrumb
-             [breadcrumb/Breadcrumb
-              {::breadcrumb/max-items [2 3]}
-              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-               [:i18n/tr :insurance/title]]
-              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-               (:insurance.policy/name policy)]
-              [breadcrumb/BreadcrumbItem {::breadcrumb/href coverage-url}
-               (:instrument/name instrument)]
-              [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
-             ::page-toolbar/mobile-back
-             [button/BackButton {:href  coverage-url
-                                 :label (:instrument/name instrument)}]
-             ::page-toolbar/actions
-             [[button/Button {:appearance "plain"
-                              :href       coverage-url}
-               [:i18n/tr :action/cancel]]
-              [button/Button {:appearance         "filled"
-                              :variant            "brand"
-                              :type               "submit"
-                              :form               "coverage-edit-form"
-                              :data-attr:disabled "!!$loading && $loading !== 'coverage-edit'"
-                              :data-attr:loading  "$loading === 'coverage-edit'"}
-               [:i18n/tr :action/save]]]
-             ::page-toolbar/overflow-items
-             (when (insurance-team-member? req)
-               [[:wa-dropdown-item {:variant     "danger"
-                                    :data-dialog (str "open " (remove-dialog-id coverage))}
-                 [:i18n/tr :action/delete]]])
-             ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-             :aria-label                    [:i18n/tr :insurance/toolbar-label]}]}
+           [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                      [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 3]}
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                        [:i18n/tr :insurance/title]]
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                        (:insurance.policy/name policy)]
+                                       [breadcrumb/BreadcrumbItem {::breadcrumb/href coverage-url}
+                                        (:instrument/name instrument)]
+                                       [breadcrumb/BreadcrumbItem [:i18n/tr :action/edit]]]
+                                      ::page-toolbar/actions
+                                      [[button/Button {:appearance "plain"
+                                                       :href       coverage-url}
+                                        [:i18n/tr :action/cancel]]
+                                       [button/Button {:appearance         "filled"
+                                                       :variant            "brand"
+                                                       :type               "submit"
+                                                       :form               "coverage-edit-form"
+                                                       :data-attr:disabled "!!$loading && $loading !== 'coverage-edit'"
+                                                       :data-attr:loading  "$loading === 'coverage-edit'"}
+                                        [:i18n/tr :action/save]]]
+                                      ::page-toolbar/overflow-items
+                                      (when (insurance-team-member? req)
+                                        [[:wa-dropdown-item {:variant     "danger"
+                                                             :data-dialog (str "open " (remove-dialog-id coverage))}
+                                          [:i18n/tr :action/delete]]])
+                                      ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                                      :aria-label                    [:i18n/tr :insurance/toolbar-label]}]}
           [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
            [page-header/PageHeader {:class    "insurance-coverage-page-header"
                                     :title    (:instrument/name instrument)

@@ -114,7 +114,10 @@
         surface-attrs  (l/attrs surface)
         toolbar-attrs  (-> surface-attrs ::page-surface/toolbar l/attrs)
         breadcrumb     (::page-toolbar/breadcrumb toolbar-attrs)
-        mobile-back    (::page-toolbar/mobile-back toolbar-attrs)
+        parent         (->> (l/select breadcrumb/BreadcrumbItem breadcrumb)
+                            vec
+                            butlast
+                            last)
         actions        (l/select button/Button (::page-toolbar/actions toolbar-attrs))
         header         (l/select-one page-header/PageHeader surface)]
     (testing "The probeplan uses a wide workspace with its lifecycle action in the toolbar."
@@ -127,17 +130,15 @@
              {:width       (::page-surface/width surface-attrs)
               :breadcrumbs (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                                  (l/select breadcrumb/BreadcrumbItem breadcrumb))
-              :mobile      {:href  (-> (l/select-one button/BackButton mobile-back) l/attrs :href)
-                            :label (some-> (l/select-one button/BackButton mobile-back)
-                                           l/attrs
-                                           :label
-                                           l/first-child)}
+              :mobile      {:href  (-> parent l/attrs ::breadcrumb/href)
+                            :label (some-> (l/select-one :i18n/tr parent) l/first-child)}
               :actions     (mapv (fn [action]
                                    {:id    (:data-id (l/attrs action))
                                     :label (some-> (l/select-one :i18n/tr action) l/first-child)})
                                  actions)
               :heading     (some-> header l/attrs ::page-header/title l/first-child)
               :header-actions (some-> header l/attrs ::page-header/actions)})))
+    (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
 
     (testing "Edit mode replaces Edit with Cancel and Save without changing page context."
       (let [edit-view          (views/page (assoc request :page-state {:probeplan {:editing true}}))

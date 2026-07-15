@@ -96,24 +96,19 @@
    [:i18n/tr :repertoire/sync-songs]])
 
 (defn- page-toolbar [req]
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-      [:i18n/tr :home]]
-     [breadcrumb/BreadcrumbItem [:i18n/tr :repertoire/title]]]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-dashboard)
-                        :label [:i18n/tr :home]}]
-    ::page-toolbar/actions
-    [[button/Button {:appearance "filled"
-                     :variant    "brand"
-                     :href       (urls/link-song-create)}
-      [:i18n/tr :repertoire/add-song]]]
-    ::page-toolbar/overflow-items [(sync-menu-item req)]
-    ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-    :aria-label                    [:i18n/tr :repertoire/index-toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb {}
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                               [:i18n/tr :home]]
+                              [breadcrumb/BreadcrumbItem [:i18n/tr :repertoire/title]]]
+                             ::page-toolbar/actions
+                             [[button/Button {:appearance "filled"
+                                              :variant    "brand"
+                                              :href       (urls/link-song-create)}
+                               [:i18n/tr :repertoire/add-song]]]
+                             ::page-toolbar/overflow-items [(sync-menu-item req)]
+                             ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
+                             :aria-label                    [:i18n/tr :repertoire/index-toolbar-label]}])
 
 (defn- collection-controls [req page-state]
   [:div {:class "songs-index-toolbar-controls"}

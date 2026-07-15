@@ -14,23 +14,18 @@
    [app.util.http :as http.util]))
 
 (defn- page-toolbar [selected-year include-year?]
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     (cond-> {}
-       include-year? (assoc ::breadcrumb/max-items [2 3]))
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
-      [:i18n/tr :gigs/title]]
-     [breadcrumb/BreadcrumbItem (cond-> {}
-                                  include-year? (assoc ::breadcrumb/href
-                                                       (urls/link-gig-archive)))
-      [:i18n/tr :gigs/archive-title]]
-     (when include-year?
-       [breadcrumb/BreadcrumbItem selected-year])]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-gigs-home)
-                        :label [:i18n/tr :gigs/title]}]
-    :aria-label [:i18n/tr :gigs/archive-toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb (cond-> {}
+                                                      include-year? (assoc ::breadcrumb/max-items [2 3]))
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-gigs-home)}
+                               [:i18n/tr :gigs/title]]
+                              [breadcrumb/BreadcrumbItem (cond-> {}
+                                                           include-year? (assoc ::breadcrumb/href
+                                                                                (urls/link-gig-archive)))
+                               [:i18n/tr :gigs/archive-title]]
+                              (when include-year?
+                                [breadcrumb/BreadcrumbItem selected-year])]
+                             :aria-label [:i18n/tr :gigs/archive-toolbar-label]}])
 
 (defn- year-button [selected-year year]
   [button/Button (cond-> {:appearance "outlined"

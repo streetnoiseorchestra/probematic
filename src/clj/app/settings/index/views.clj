@@ -29,17 +29,12 @@
    [page-surface/PageSurface
     {::page-surface/width :standard
      ::page-surface/toolbar
-     [page-toolbar/PageToolbar
-      {::page-toolbar/breadcrumb
-       [breadcrumb/Breadcrumb
-        {}
-        [breadcrumb/BreadcrumbItem {::breadcrumb/href "/"}
-         [:i18n/tr :home]]
-        [breadcrumb/BreadcrumbItem [:i18n/tr :band-settings/title]]]
-       ::page-toolbar/mobile-back
-       [button/BackButton {:href  "/"
-                           :label [:i18n/tr :home]}]
-       :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
+     [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                [breadcrumb/Breadcrumb {}
+                                 [breadcrumb/BreadcrumbItem {::breadcrumb/href "/"}
+                                  [:i18n/tr :home]]
+                                 [breadcrumb/BreadcrumbItem [:i18n/tr :band-settings/title]]]
+                                :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
     [:div {:class "wa-grid" :style "--min-column-size: var(--sno-settings-index-min-column-size);"}
      [page-header/PageHeader {:class "wa-span-grid"
                               :title [:i18n/tr :band-settings/title]}]

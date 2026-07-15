@@ -57,21 +57,16 @@
             (ui2/active-badge tr active?)]}])
 
 (defn- detail-toolbar [{:song/keys [title] :as song}]
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
-      [:i18n/tr :repertoire/title]]
-     [breadcrumb/BreadcrumbItem title]]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-songs-home)
-                        :label [:i18n/tr :repertoire/title]}]
-    ::page-toolbar/actions
-    [[button/Button {:appearance "filled"
-                     :href       (urls/link-song-edit song)}
-      [:i18n/tr :action/edit]]]
-    :aria-label [:i18n/tr :repertoire/detail-toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb {}
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-songs-home)}
+                               [:i18n/tr :repertoire/title]]
+                              [breadcrumb/BreadcrumbItem title]]
+                             ::page-toolbar/actions
+                             [[button/Button {:appearance "filled"
+                                              :href       (urls/link-song-edit song)}
+                               [:i18n/tr :action/edit]]]
+                             :aria-label [:i18n/tr :repertoire/detail-toolbar-label]}])
 
 (defn background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
   (ui2/section-card

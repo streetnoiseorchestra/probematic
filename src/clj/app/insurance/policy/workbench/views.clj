@@ -1726,19 +1726,14 @@
      [page-surface/PageSurface
       {::page-surface/width :wide
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {::breadcrumb/max-items [2 2]}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
-           [:i18n/tr :insurance/title]]
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
-           (:insurance.policy/name policy)]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/workbench]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  (urls/link-policy policy)
-                             :label (:insurance.policy/name policy)}]
-         :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {::breadcrumb/max-items [2 2]}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-insurance)}
+                                    [:i18n/tr :insurance/title]]
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
+                                    (:insurance.policy/name policy)]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/workbench]]]
+                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
              :data-preserve-attr "data-signals"
              :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table (:view workbench)))}

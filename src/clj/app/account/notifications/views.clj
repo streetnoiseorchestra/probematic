@@ -254,7 +254,7 @@
     (support/standard-page
      {:title title
       :subtitle [:i18n/tr :account-settings/notifications-subtitle]
-      :mobile-back? false
+      :breadcrumb-mobile-mode :hidden
       :actions []}
      [:form {:id form-id
              :class "wa-stack wa-gap-l"

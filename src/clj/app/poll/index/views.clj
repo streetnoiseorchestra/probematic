@@ -11,22 +11,17 @@
    [app.urls :as urls]))
 
 (defn- page-toolbar []
-  [page-toolbar/PageToolbar
-   {::page-toolbar/breadcrumb
-    [breadcrumb/Breadcrumb
-     {}
-     [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-      [:i18n/tr :home]]
-     [breadcrumb/BreadcrumbItem [:i18n/tr :polls/title]]]
-    ::page-toolbar/mobile-back
-    [button/BackButton {:href  (urls/link-dashboard)
-                        :label [:i18n/tr :home]}]
-    ::page-toolbar/actions
-    [[button/Button {:appearance "filled"
-                     :variant    "brand"
-                     :href       (urls/link-polls-create)}
-      [:i18n/tr :polls/new-poll]]]
-    :aria-label [:i18n/tr :polls/index-toolbar-label]}])
+  [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                             [breadcrumb/Breadcrumb {}
+                              [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                               [:i18n/tr :home]]
+                              [breadcrumb/BreadcrumbItem [:i18n/tr :polls/title]]]
+                             ::page-toolbar/actions
+                             [[button/Button {:appearance "filled"
+                                              :variant    "brand"
+                                              :href       (urls/link-polls-create)}
+                               [:i18n/tr :polls/new-poll]]]
+                             :aria-label [:i18n/tr :polls/index-toolbar-label]}])
 
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [running-polls past-polls]} (queries/index-page-data db)]

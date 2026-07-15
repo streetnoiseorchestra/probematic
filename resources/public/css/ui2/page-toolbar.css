@@ -1,3 +1,10 @@
+.sno-page-toolbar-sentinel {
+  display: none;
+  block-size: var(--wa-border-width-s);
+  margin-block-end: calc(-1 * var(--wa-border-width-s));
+  pointer-events: none;
+}
+
 .sno-page-toolbar {
   position: relative;
   z-index: var(--sno-page-toolbar-z-index);
@@ -15,8 +22,7 @@
 
 @scope (.sno-page-toolbar) {
   .context,
-  .context > .desktop,
-  .context > .responsive-breadcrumb {
+  .context > .sno-breadcrumb {
     min-inline-size: 0;
   }
 
@@ -24,13 +30,8 @@
     grid-area: context;
   }
 
-  .context > .desktop,
-  .context > .responsive-breadcrumb {
+  .context > .sno-breadcrumb {
     inline-size: var(--sno-size-full);
-  }
-
-  .context > .mobile {
-    display: none;
   }
 
   .actions {
@@ -56,40 +57,34 @@
 }
 
 @media (--sno-viewport-s) {
+  .sno-page-toolbar-sentinel {
+    display: block;
+  }
+
   .sno-page-toolbar {
     position: sticky;
     inset-block-start: 0;
+  }
+
+  .sno-page-toolbar.stuck {
+    --sno-breadcrumb-expanded-item-track: 0fr;
+    --sno-breadcrumb-expanded-item-opacity: 0;
+    --sno-breadcrumb-expanded-item-visibility: hidden;
+    --sno-breadcrumb-expanded-item-visibility-delay: var(
+      --wa-transition-normal
+    );
+    --sno-breadcrumb-expanded-item-margin: 0;
+    --sno-breadcrumb-compact-item-track: 1fr;
+    --sno-breadcrumb-compact-item-opacity: 1;
+    --sno-breadcrumb-compact-item-visibility: visible;
+    --sno-breadcrumb-compact-item-visibility-delay: 0s;
+    --sno-breadcrumb-compact-item-margin: var(--wa-space-xs);
+    --sno-breadcrumb-expanded-label-visibility: hidden;
+    --sno-breadcrumb-compact-label-visibility: visible;
+
     grid-template-areas: "context safe-lane actions";
     grid-template-columns:
       minmax(0, 1fr) var(--sno-jump-menu-safe-inline-size) minmax(0, 1fr);
-  }
-}
-
-@media (--sno-viewport-below-s) {
-  @scope (.sno-page-toolbar) {
-    .context > .desktop {
-      display: none;
-    }
-
-    .context > .mobile {
-      display: block;
-      min-inline-size: 0;
-      overflow: hidden;
-    }
-
-    .context > .mobile > :is(a, button, wa-button) {
-      max-inline-size: 100%;
-    }
-
-    .context > .mobile > :is(a, button) {
-      overflow: hidden;
-    }
-
-    .context > .mobile > :is(a, button) > .trim-cap {
-      min-inline-size: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
   }
 }
 

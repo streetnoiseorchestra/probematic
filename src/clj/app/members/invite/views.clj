@@ -90,28 +90,23 @@
      [page-surface/PageSurface
       {::page-surface/width :standard
        ::page-surface/toolbar
-       [page-toolbar/PageToolbar
-        {::page-toolbar/breadcrumb
-         [breadcrumb/Breadcrumb
-          {}
-          [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
-           [:i18n/tr :members/title]]
-          [breadcrumb/BreadcrumbItem [:i18n/tr :members/invite-member]]]
-         ::page-toolbar/mobile-back
-         [button/BackButton {:href  "/members"
-                             :label [:i18n/tr :members/title]}]
-         ::page-toolbar/actions
-         [[button/Button {:appearance "plain"
-                          :href       "/members"}
-           [:i18n/tr :action/cancel]]
-          [button/Button {:appearance         "filled"
-                          :variant            "brand"
-                          :type               "submit"
-                          :form               "member-invite-form"
-                          :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
-                          :data-attr:loading  "$loading === 'member-invite'"}
-           [:i18n/tr :members/invite-member]]]
-         :aria-label [:i18n/tr :members/invite-toolbar-label]}]}
+       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                  [breadcrumb/Breadcrumb {}
+                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href "/members"}
+                                    [:i18n/tr :members/title]]
+                                   [breadcrumb/BreadcrumbItem [:i18n/tr :members/invite-member]]]
+                                  ::page-toolbar/actions
+                                  [[button/Button {:appearance "plain"
+                                                   :href       "/members"}
+                                    [:i18n/tr :action/cancel]]
+                                   [button/Button {:appearance         "filled"
+                                                   :variant            "brand"
+                                                   :type               "submit"
+                                                   :form               "member-invite-form"
+                                                   :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
+                                                   :data-attr:loading  "$loading === 'member-invite'"}
+                                    [:i18n/tr :members/invite-member]]]
+                                  :aria-label [:i18n/tr :members/invite-toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-2xl"
              :data-signals (d*/->signals {:member-invite form-state})}
        [page-header/PageHeader
