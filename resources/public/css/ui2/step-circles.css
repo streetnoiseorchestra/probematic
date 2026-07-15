@@ -24,11 +24,12 @@
     position: relative;
     display: grid;
     justify-items: center;
-    flex: 1 0 var(--sno-step-circles-step-size);
+    flex: 1 1 var(--sno-step-circles-step-size);
     gap: var(--wa-space-2xs);
     inline-size: var(--sno-step-circles-step-size);
-    min-inline-size: var(--sno-step-circles-step-size);
+    min-inline-size: min-content;
     max-inline-size: 9rem;
+    margin: 0;
   }
 
   /* line connector */
