@@ -1,9 +1,29 @@
 (ns app.datomic.migrations.post002-backfill-insurance-metadata
   "Backfills configurable insurance metadata introduced with policy exporters.
 
-  Historical labels are matched only here. Stork runs [[tx-data]] after the
-  canonical schema is installed and records the migration atomically with the
-  returned transaction data."
+  ## Why This Migration Exists
+
+  Older insurance policies were created before coverage types stored their own
+  icons or indicated whether the type was required for an insured instrument.
+  The application instead recognized the names `Grundschutz`,
+  `Nachzeit im Auto`, and `Proberaum`. It used those names to choose icons,
+  require `Grundschutz`, and fill the matching fields in Harmonia's spreadsheet.
+
+  Insurance team members can rename coverage types, so those names cannot safely
+  control application behavior. The newer database fields store these choices
+  directly: each coverage type records its icon and whether it is required. Each
+  insurance policy records the spreadsheet format and version it uses, plus the
+  coverage types that mean `overnight in a vehicle` and `unattended in a locked
+  building` for that format. This migration fills those fields for existing
+  insurance policies so the rest of the application no longer needs to recognize
+  the old names.
+
+  ## What It Does
+
+  The migration assigns metadata to recognized legacy coverage types, adds
+  newly required coverage to existing instruments for review, and configures
+  Harmonia v1 with every role mapping that can be matched unambiguously. It
+  reports policies with missing or ambiguous mappings."
   (:require
    [app.insurance.exporters :as exporters]
    [com.brunobonacci.mulog :as μ]
