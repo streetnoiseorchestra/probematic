@@ -4,6 +4,7 @@
    [app.auth :as auth]
    [app.config :as config]
    [app.i18n :as i18n]
+   [app.interceptors.csrf :as csrf]
    [app.queries :as q]
    [app.rand-human-id :as human-id]
    [app.routes.errors :as errors]
@@ -265,13 +266,18 @@
        (assoc-in [:formats "application/json" :decoder-opts]
                  {:decode-key-fn keyword}))))
 
+(defn handler-reitit-interceptors
+  "Returns the early interceptor prefix shared by matched routes and Reitit's
+  fallback queue."
+  []
+  [(error-int/exception-backstop-interceptor)
+   human-id-interceptor
+   log-request-interceptor
+   csrf/fetch-metadata-interceptor])
+
 (defn default-reitit-interceptors [system]
   (into [] (remove nil?
-                   [(error-int/exception-backstop-interceptor)
-                    ;; inject-debug-interceptor
-                    human-id-interceptor
-                    (i18n-interceptor system)
-                    log-request-interceptor
+                   [(i18n-interceptor system)
                     ;; (csp-interceptor system)
                     #_(cond (config/demo-mode? (:env system))
                             auth/demo-auth-interceptor
