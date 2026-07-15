@@ -62,10 +62,7 @@
 ** DONE polls
 ** DONE dashboard poll
 * 2026 cleanups and slimming down
-** TODO move new member invitation storage from redis to datomic (we dont do renders on redis key changes)
-** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
-** TODO investigate insurance query slowness and speed it up
-** TODO member invite fields should validate as you type/move between the fields
+** DONE investigate insurance query slowness and speed it up
 ** TODO remove active field from member invite form, just default to true
 ** TODO remove Create SNO ID field from member invite form, just default to true
 ** TODO member invite acceptance - > remove password creation
@@ -88,3 +85,10 @@
 Then replace the /account-settings/profile/save and other upload locations with it
 ** DONE collapse app/<thing>/<subthing1,subthing2>/queries into just <thing>/queries.clj
 ** DONE remove/cleanup unused icons from app.icons
+** DONE step circles on instrument create page has horizontal scroll on mobile
+** TODO instrument creation third step can fail and cause multiple instruments and or coverages to be created
+** TODO introduce sqlite4clj for cache/ephemeral storage
+** TODO use sqlite4clj for db sessions
+** TODO move new member invitation storage from redis to datomic add A minimal necessary :member/<somethings> attributes to support this, make it db/noHistory
+** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
+** TODO member invite fields should validate as you type/move between the fields with server roudntrip validation like our other forms, including uniqueness checks, and they should have inline validation errors.. The code looks like it's there, but it's not working.
