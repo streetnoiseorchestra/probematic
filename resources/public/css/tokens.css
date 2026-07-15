@@ -58,6 +58,7 @@
     --sno-gigs-attendance-row-gap: var(--wa-space-xs);
     --sno-gigs-attendance-row-padding-inline: var(--wa-space-l);
     --sno-gigs-attendance-row-padding-block: 0.15rem;
+    --sno-gigs-attendance-motivation-inline-size: 11rem;
     --sno-gigs-attendance-link-blue: #2563eb;
     --sno-gigs-probeplan-editor-font-size: var(--wa-font-size-s);
     --sno-log-play-not-played-fill: #f3f4f6;

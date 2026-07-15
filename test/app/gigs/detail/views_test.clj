@@ -1,14 +1,22 @@
 (ns app.gigs.detail.views-test
   (:require
+   [app.gigs.attendance.ui :as attendance.ui]
    [app.gigs.detail.views :as views]
+   [app.gigs.view-test-support :as support]
+   [app.ui2.button :as button]
    [app.ui2.page-toolbar :as page-toolbar]
    [app.util :as util]
    [clojure.test :refer [deftest is testing]]
+   [dev.onionpancakes.chassis.core :as c]
    [lookup.core :as l]
+   [reitit.core :as r]
    [tick.core :as t]))
 
 (def gig-id
   #uuid "00000000-0000-0000-0000-000000000123")
+
+(def member-id
+  #uuid "00000000-0000-0000-0000-000000000456")
 
 (defn tr
   ([path]
@@ -117,3 +125,22 @@
                      {:datetime (:datetime (l/attrs time))
                       :text     (l/text time)})
                    (l/select 'time view)))))))
+
+(deftest attendance-plan-trigger-uses-native-caret-button
+  (testing "The attendance trigger uses the native SVG caret button contract."
+    (let [view     (attendance.ui/plan-dropdown
+                    {::r/router support/router :tr tr}
+                    gig-id
+                    member-id
+                    :plan/definitely)
+          trigger  (l/select-one button/Button view)
+          resolved (c/resolve-alias button/Button
+                                    (l/attrs trigger)
+                                    (l/raw-children trigger))]
+      (is (= {:tag             :button
+              :caret-count     1
+              :plan-icon-count 1}
+             {:tag             (first resolved)
+              :caret-count     (count (l/select ".caret" resolved))
+              :plan-icon-count (count (l/select ".gigs-attendance-plan-icon"
+                                                resolved))})))))
