@@ -267,8 +267,12 @@
                  {:decode-key-fn keyword}))))
 
 (defn handler-reitit-interceptors
-  "Returns the early interceptor prefix shared by matched routes and Reitit's
-  fallback queue."
+  "Returns interceptors that must wrap matched routes and fallback responses.
+
+  Reitit route interceptors do not run for fallback handlers such as static
+  resources, trailing-slash redirects, method mismatches, and unknown paths.
+  This prefix keeps exception handling, request IDs, logging, and Fetch
+  Metadata protection around both queues."
   []
   [(error-int/exception-backstop-interceptor)
    human-id-interceptor
