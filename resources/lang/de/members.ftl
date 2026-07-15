@@ -8,6 +8,7 @@ member-count =
     }
 invite-member = Mitglied einladen
 invite-description = Erstelle ein Mitglied und sende optional eine SNO-ID-Einladung.
+error-email-invalid = Gib eine gültige E-Mail-Adresse ein.
 download-contact = Kontakt herunterladen
 directory-toolbar-label = Aktionen im Mitgliederverzeichnis
 invite-toolbar-label = Aktionen bei der Mitgliedereinladung

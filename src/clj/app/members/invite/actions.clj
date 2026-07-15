@@ -3,6 +3,7 @@
    [app.form :as form]
    [app.members.domain :as members.domain]
    [app.nexus.actions :as support]
+   [app.schemas :as schemas]
    [app.util :as util]
    [clojure.string :as str]
    [datomic.api :as d]))
@@ -47,6 +48,8 @@
      {:name (required-error tr (tr [:member/name]))})
    (when (str/blank? email)
      {:email (required-error tr (tr [:Email]))})
+   (when (and (seq email) (not (schemas/valid? ::schemas/email-address email)))
+     {:email {:error (tr [:members/error-email-invalid])}})
    (when (str/blank? username)
      {:username (required-error tr (tr [:member/username]))})
    (when (str/blank? phone)

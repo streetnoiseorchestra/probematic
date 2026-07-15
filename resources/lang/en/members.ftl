@@ -8,6 +8,7 @@ member-count =
     }
 invite-member = Invite member
 invite-description = Create a member and optionally send a SNO ID invitation.
+error-email-invalid = Enter a valid email address.
 download-contact = Download contact
 directory-toolbar-label = Member directory controls
 invite-toolbar-label = Member invitation controls

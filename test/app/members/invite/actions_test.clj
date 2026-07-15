@@ -29,6 +29,7 @@
     [:Phone] "Phone"
     [:section] "Section"
     [:error/is-required] (format "%s is required." (first args))
+    [:members/error-email-invalid] "Enter a valid email address."
     [:error/member-username-format] "Username format is invalid."
     [:error/member-phone-format] "Phone format is invalid."
     [:error/member-unique-username] "A member already has that username"
@@ -74,6 +75,10 @@
                 :field :email
                 :value "  "
                 :error {:error "Email is required."}}
+               {:case  "email format is checked"
+                :field :email
+                :value "sdfsdf"
+                :error {:error "Enter a valid email address."}}
                {:case  "username is required"
                 :field :username
                 :value "  "
@@ -249,17 +254,19 @@
                {:member-id     (str new-member-id)
                 :name          "Alice Admin"
                 :nick          ""
-                :email         "alice@example.com"
+                :email         "not-an-email"
                 :username      "bad user"
                 :phone         "123"
                 :section-name  "Trumpets"
                 :active        true
                 :create-sno-id true
-                :error         {:username {:error "Username format is invalid."}
+                :error         {:email    {:error "Enter a valid email address."}
+                                :username {:error "Username format is invalid."}
                                 :phone    {:error "Phone format is invalid."}}}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals new-member-id {:username "bad user"
+              (submit-signals new-member-id {:email "not-an-email"
+                                             :username "bad user"
                                              :phone "123"}))))))
 
   (testing "returns uniqueness errors for duplicate member attributes"
