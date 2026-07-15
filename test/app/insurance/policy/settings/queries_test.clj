@@ -24,7 +24,7 @@
   [conn policy-id {:keys [category-factors currency]
                    :or   {category-factors {"brass"    0.10M
                                             "woodwind" 0.20M}
-                          currency         :EUR}}]
+                          currency         :currency/EUR}}]
   (let [brass-id      (random-uuid)
         woodwind-id   (random-uuid)
         percussion-id (random-uuid)
@@ -278,10 +278,12 @@
                 :label-key
                 :insurance/exporter-harmonia-v1
                 :role-rows
-                [{:role      :overnight-vehicle
+                [{:role
+                  :insurance.exporter.harmonia-v1/overnight-vehicle
                   :label-key :insurance/exporter-role-overnight-vehicle
                   :required? true}
-                 {:role      :unattended-building
+                 {:role
+                  :insurance.exporter.harmonia-v1/unattended-building
                   :label-key :insurance/exporter-role-unattended-building
                   :required? true}]}]
               :exporter-configuration
@@ -301,8 +303,9 @@
           (configure-exporter!
            conn
            policy-id
-           [[:overnight-vehicle extended-id]
-            [:unattended-building basic-type-id]])]
+           [[:insurance.exporter.harmonia-v1/overnight-vehicle extended-id]
+            [:insurance.exporter.harmonia-v1/unattended-building
+             basic-type-id]])]
       (is (= {:seed-status :accepted
               :read-model
               {:exporter-options
@@ -310,23 +313,27 @@
                  :label-key
                  :insurance/exporter-harmonia-v1
                  :role-rows
-                 [{:role      :overnight-vehicle
+                 [{:role
+                   :insurance.exporter.harmonia-v1/overnight-vehicle
                    :label-key :insurance/exporter-role-overnight-vehicle
                    :required? true}
-                  {:role      :unattended-building
+                  {:role
+                   :insurance.exporter.harmonia-v1/unattended-building
                    :label-key :insurance/exporter-role-unattended-building
                    :required? true}]}]
                :exporter-configuration
                {:exporter-id :insurance/exporter-harmonia-v1
                 :status      :complete
                 :role-rows
-                [{:role             :overnight-vehicle
+                [{:role
+                  :insurance.exporter.harmonia-v1/overnight-vehicle
                   :label-key
                   :insurance/exporter-role-overnight-vehicle
                   :required?        true
                   :coverage-type-id extended-id
                   :coverage-type-name "Extended"}
-                 {:role             :unattended-building
+                 {:role
+                  :insurance.exporter.harmonia-v1/unattended-building
                   :label-key
                   :insurance/exporter-role-unattended-building
                   :required?        true

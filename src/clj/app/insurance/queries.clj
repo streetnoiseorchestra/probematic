@@ -526,6 +526,8 @@
                            (throw (ex-info "Unknown coverage impact scope"
                                            {:scope scope})))]
     (->> scoped-coverages
+         (remove #(= :instrument.coverage.change/removed
+                     (:instrument.coverage/change %)))
          (remove #(and type-id
                        (contains? (coverage-type-ids %) type-id)))
          (sort-by (comp str :instrument.coverage/coverage-id))
@@ -700,7 +702,9 @@
    :effective-at    (:insurance.policy/effective-at policy)
    :effective-until (:insurance.policy/effective-until policy)
    :premium-factor  (:insurance.policy/premium-factor policy)
-   :currency        (or (:insurance.policy/currency policy) :EUR)
+   :currency        (or (domain/simple-keyword
+                         (:insurance.policy/currency policy))
+                        :EUR)
    :status          (:insurance.policy/status policy)})
 
 (defn- exporter-options

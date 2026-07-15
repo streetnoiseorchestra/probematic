@@ -36,7 +36,9 @@
    :insurance.category.factor/factor                     factor})
 
 (defn- coverage-tx
-  [idx coverage-type-old->new {:instrument.coverage/keys [status instrument types private? value change]}]
+  [idx coverage-type-old->new
+   {:instrument.coverage/keys [status instrument types private? value change
+                               item-count insurer-id]}]
   (util/remove-nils
    {:db/id                           (str "coverage_" idx)
     :instrument.coverage/coverage-id (sq/generate-squuid)
@@ -47,7 +49,9 @@
     :instrument.coverage/private?    private?
     :instrument.coverage/status      status
     :instrument.coverage/change      change
-    :instrument.coverage/value       value}))
+    :instrument.coverage/value       value
+    :instrument.coverage/item-count  item-count
+    :instrument.coverage/insurer-id  insurer-id}))
 
 (defn- export-mapping-tx
   [idx coverage-type-old->new

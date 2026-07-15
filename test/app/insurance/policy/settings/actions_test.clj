@@ -29,7 +29,7 @@
   @(d/transact conn [{:insurance.policy/policy-id       policy-id
                       :insurance.policy/name            "Insurance 2026"
                       :insurance.policy/status          status
-                      :insurance.policy/currency        :EUR
+                      :insurance.policy/currency        :currency/EUR
                       :insurance.policy/effective-at    (date-inst "2026-01-01")
                       :insurance.policy/effective-until (date-inst "2026-12-31")
                       :insurance.policy/premium-factor  0.01M}])
@@ -377,7 +377,9 @@
                   [:db/add policy-ref :insurance.policy/effective-at (date-inst "2027-01-01")]
                   [:db/add policy-ref :insurance.policy/effective-until (date-inst "2027-12-31")]
                   [:db/add policy-ref :insurance.policy/premium-factor 0.025M]
-                  [:db/add policy-ref :insurance.policy/currency :EUR]]
+                  [:db/add policy-ref
+                   :insurance.policy/currency
+                   :currency/EUR]]
                  member-id)
                {}]
               support/clear-loading
@@ -565,6 +567,39 @@
                               (actions/delete-coverage-type-action
                                (state system)
                                {:targetid (str used-type-id)}))}))))))
+
+(deftest mapped-coverage-type-cannot-be-deleted-test
+  (testing "keeps a coverage type while an exporter role references it"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-delete-mapped-type")
+          policy-id (random-uuid)]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      (let [{:keys [unused-type-id]}
+            (seed-coverage-types! conn policy-id)]
+        @(d/transact
+          conn
+          [{:db/id "mapped-unused-type"
+            :insurance.export.mapping/role
+            :insurance.exporter.harmonia-v1/overnight-vehicle
+            :insurance.export.mapping/coverage-type
+            [:insurance.coverage.type/type-id unused-type-id]}
+           [:db/add
+            [:insurance.policy/policy-id policy-id]
+            :insurance.policy/export-mappings
+            "mapped-unused-type"]])
+        (is (= {:transact?      false
+                :clear-loading? true
+                :state-path
+                [:insurance-policy-settings :coverage-type-delete]
+                :submitted      {:type-id unused-type-id}
+                :error-keys     #{:_top}
+                :top-error
+                [:insurance.policy-settings/error-coverage-type-in-use]}
+               (coverage-type-failure-summary
+                (actions/delete-coverage-type-action
+                 (state system)
+                 {:targetid (str unused-type-id)}))))))))
 
 (deftest coverage-type-validation-test
   (testing "validates coverage type fields, duplicate names, and policy membership"
@@ -975,6 +1010,112 @@
                     :required         true
                     :confirmationCount "2"})))}))))))
 
+(deftest bulk-coverage-type-assignment-updates-workflow-test
+  (testing "adds the type to active coverages and records an insurer-visible change"
+    (let [{:keys [conn member-id] :as system}
+          (tc/new-system "insurance-settings-bulk-type-workflow")
+          policy-id (random-uuid)
+          coverage-ids
+          {:unchanged (random-uuid)
+           :changed   (random-uuid)
+           :new       (random-uuid)
+           :removed   (random-uuid)}]
+      (seed-insurance-team! conn member-id)
+      (seed-policy! conn policy-id :insurance.policy.status/draft)
+      @(d/transact
+        conn
+        (into
+         (mapv (fn [[state coverage-id]]
+                 {:db/id                           (name state)
+                  :instrument.coverage/coverage-id coverage-id
+                  :instrument.coverage/private?    false
+                  :instrument.coverage/status
+                  :instrument.coverage.status/reviewed
+                  :instrument.coverage/change
+                  (case state
+                    :unchanged :instrument.coverage.change/none
+                    :changed   :instrument.coverage.change/changed
+                    :new       :instrument.coverage.change/new
+                    :removed   :instrument.coverage.change/removed)})
+               coverage-ids)
+         (mapv (fn [[state _coverage-id]]
+                 [:db/add
+                  [:insurance.policy/policy-id policy-id]
+                  :insurance.policy/covered-instruments
+                  (name state)])
+               coverage-ids)))
+      (let [prompt
+            (actions/create-coverage-type-action
+             (state system)
+             (coverage-type-signals policy-id {:required true}))
+            confirmed
+            (actions/create-coverage-type-action
+             (state system)
+             (coverage-type-signals
+              policy-id
+              {:required          true
+               :confirmationCount "3"}))
+            tx-data (transaction-data confirmed)]
+        (when tx-data
+          @(d/transact conn tx-data))
+        (let [db          (d/db conn)
+              new-type-id (d/q '[:find ?type-id .
+                                 :in $ ?policy-id ?name
+                                 :where
+                                 [?policy :insurance.policy/policy-id ?policy-id]
+                                 [?policy :insurance.policy/coverage-types ?type]
+                                 [?type :insurance.coverage.type/name ?name]
+                                 [?type :insurance.coverage.type/type-id ?type-id]]
+                               db
+                               policy-id
+                               "Extended")
+              summaries
+              (into
+               {}
+               (map (fn [[state coverage-id]]
+                      (let [coverage
+                            (d/pull
+                             db
+                             '[:instrument.coverage/status
+                               :instrument.coverage/change
+                               {:instrument.coverage/types
+                                [:insurance.coverage.type/type-id]}]
+                             [:instrument.coverage/coverage-id coverage-id])]
+                        [state
+                         {:status
+                          (:instrument.coverage/status coverage)
+                          :change
+                          (:instrument.coverage/change coverage)
+                          :selected?
+                          (contains?
+                           (set (map :insurance.coverage.type/type-id
+                                     (:instrument.coverage/types coverage)))
+                           new-type-id)}])))
+               coverage-ids)]
+          (is (= {:impact-count 3
+                  :transact?    true
+                  :coverages
+                  {:unchanged
+                   {:status    :instrument.coverage.status/needs-review
+                    :change    :instrument.coverage.change/changed
+                    :selected? true}
+                   :changed
+                   {:status    :instrument.coverage.status/needs-review
+                    :change    :instrument.coverage.change/changed
+                    :selected? true}
+                   :new
+                   {:status    :instrument.coverage.status/needs-review
+                    :change    :instrument.coverage.change/new
+                    :selected? true}
+                   :removed
+                   {:status    :instrument.coverage.status/reviewed
+                    :change    :instrument.coverage.change/removed
+                    :selected? false}}}
+                 {:impact-count
+                  (:impact-count (coverage-type-confirmation-summary prompt))
+                  :transact? (boolean tx-data)
+                  :coverages summaries})))))))
+
 (deftest required-to-optional-coverage-type-test
   (testing "keeps existing coverage links when a type becomes optional"
     (let [{:keys [conn member-id] :as system}
@@ -1046,17 +1187,22 @@
             (seed-coverage-types! conn policy-id)]
         (is (= {:transact?   true
                 :exporter-id :insurance/exporter-harmonia-v1
-                :mappings    {:overnight-vehicle    used-type-id
-                              :unattended-building unused-type-id}}
+                :mappings
+                {:insurance.exporter.harmonia-v1/overnight-vehicle
+                 used-type-id
+                 :insurance.exporter.harmonia-v1/unattended-building
+                 unused-type-id}}
                (exporter-transaction-summary
                 (actions/save-exporter-action
                  (state system)
                  (exporter-signals
                   policy-id
                   "insurance/exporter-harmonia-v1"
-                  [{:role           "overnight-vehicle"
+                  [{:role
+                    "insurance.exporter.harmonia-v1/overnight-vehicle"
                     :coverageTypeId (str used-type-id)}
-                   {:role           "unattended-building"
+                   {:role
+                    "insurance.exporter.harmonia-v1/unattended-building"
                     :coverageTypeId (str unused-type-id)}])))))))))
 
 (deftest save-no-exporter-clears-policy-configuration-test
@@ -1070,7 +1216,8 @@
         @(d/transact
           conn
           [{:db/id "existing-export-mapping"
-            :insurance.export.mapping/role :overnight-vehicle
+            :insurance.export.mapping/role
+            :insurance.exporter.harmonia-v1/overnight-vehicle
             :insurance.export.mapping/coverage-type
             [:insurance.coverage.type/type-id used-type-id]}
            [:db/add
@@ -1163,23 +1310,29 @@
                 :incomplete
                 (summarize
                  "insurance/exporter-harmonia-v1"
-                 [{:role           "overnight-vehicle"
+                 [{:role
+                   "insurance.exporter.harmonia-v1/overnight-vehicle"
                    :coverageTypeId (str used-type-id)}])
                 :foreign
                 (summarize
                  "insurance/exporter-harmonia-v1"
-                 [{:role           "overnight-vehicle"
+                 [{:role
+                   "insurance.exporter.harmonia-v1/overnight-vehicle"
                    :coverageTypeId (str used-type-id)}
-                  {:role           "unattended-building"
+                  {:role
+                   "insurance.exporter.harmonia-v1/unattended-building"
                    :coverageTypeId (str foreign-type-id)}])
                 :duplicate
                 (summarize
                  "insurance/exporter-harmonia-v1"
-                 [{:role           "overnight-vehicle"
+                 [{:role
+                   "insurance.exporter.harmonia-v1/overnight-vehicle"
                    :coverageTypeId (str used-type-id)}
-                  {:role           "overnight-vehicle"
+                  {:role
+                   "insurance.exporter.harmonia-v1/overnight-vehicle"
                    :coverageTypeId (str unused-type-id)}
-                  {:role           "unattended-building"
+                  {:role
+                   "insurance.exporter.harmonia-v1/unattended-building"
                    :coverageTypeId (str unused-type-id)}])}))))))
 
 (deftest category-factor-create-update-delete-action-test

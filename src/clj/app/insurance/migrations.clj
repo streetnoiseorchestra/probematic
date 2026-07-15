@@ -15,8 +15,10 @@
     :insurance.coverage.type/required? false}})
 
 (def ^:private legacy-role-coverage-names
-  {:overnight-vehicle   "Nachzeit im Auto"
-   :unattended-building "Proberaum"})
+  {:insurance.exporter.harmonia-v1/overnight-vehicle
+   "Nachzeit im Auto"
+   :insurance.exporter.harmonia-v1/unattended-building
+   "Proberaum"})
 
 (def ^:private policy-pattern
   [:db/id
@@ -27,7 +29,14 @@
      :insurance.coverage.type/type-id
      :insurance.coverage.type/name
      :insurance.coverage.type/icon
-     :insurance.coverage.type/required?]}])
+     :insurance.coverage.type/required?]}
+   {:insurance.policy/covered-instruments
+    [:db/id
+     :instrument.coverage/coverage-id
+     :instrument.coverage/status
+     :instrument.coverage/change
+     {:instrument.coverage/types
+      [:insurance.coverage.type/type-id]}]}])
 
 (defn- policies
   [db]
@@ -62,6 +71,43 @@
        (sort-by :db/id)
        (keep coverage-metadata-tx)
        vec))
+
+(defn- newly-required-coverage-type
+  [policy]
+  (some (fn [coverage-type]
+          (when (true? (:insurance.coverage.type/required?
+                        (coverage-metadata-tx coverage-type)))
+            coverage-type))
+        (:insurance.policy/coverage-types policy)))
+
+(defn- coverage-type-ids
+  [coverage]
+  (set (map :insurance.coverage.type/type-id
+            (:instrument.coverage/types coverage))))
+
+(defn- required-coverage-txs
+  [policies]
+  (into []
+        (mapcat
+         (fn [policy]
+           (when-let [coverage-type (newly-required-coverage-type policy)]
+             (let [type-id  (:insurance.coverage.type/type-id coverage-type)
+                   type-ref (:db/id coverage-type)]
+               (->> (:insurance.policy/covered-instruments policy)
+                    (remove #(= :instrument.coverage.change/removed
+                                (:instrument.coverage/change %)))
+                    (remove #(contains? (coverage-type-ids %) type-id))
+                    (mapv (fn [coverage]
+                            (let [change (:instrument.coverage/change coverage)]
+                              {:db/id (:db/id coverage)
+                               :instrument.coverage/types type-ref
+                               :instrument.coverage/status
+                               :instrument.coverage.status/needs-review
+                               :instrument.coverage/change
+                               (if (= :instrument.coverage.change/new change)
+                                 :instrument.coverage.change/new
+                                 :instrument.coverage.change/changed)}))))))))
+        policies))
 
 (defn- legacy-policy?
   [policy]
@@ -118,8 +164,10 @@
   [db]
   (let [policies      (policies db)
         coverage-txs  (coverage-metadata-txs policies)
+        required-coverage-txs (required-coverage-txs policies)
         policy-plans  (into [] (keep policy-export-plan) policies)]
-    {:tx-data (into coverage-txs (map :tx) policy-plans)
+    {:tx-data (into coverage-txs
+                    (concat required-coverage-txs (map :tx policy-plans)))
      :migrated-coverage-type-count (count coverage-txs)
      :configured-policy-count      (count policy-plans)
      :incomplete-policies          (into [] (keep :incomplete) policy-plans)}))

@@ -8,6 +8,7 @@
    [app.ui2.icon :as ico]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
+   [jsonista.core :as j]
    [lookup.core :as l]
    [reitit.core :as r]))
 
@@ -97,22 +98,26 @@
                              :label-key
                              :insurance/exporter-harmonia-v1
                              :role-rows
-                             [{:role      :overnight-vehicle
+                             [{:role
+                               :insurance.exporter.harmonia-v1/overnight-vehicle
                                :label-key :insurance/exporter-role-overnight-vehicle
                                :required? true}
-                              {:role      :unattended-building
+                              {:role
+                               :insurance.exporter.harmonia-v1/unattended-building
                                :label-key :insurance/exporter-role-unattended-building
                                :required? true}]}]
    :exporter-configuration
    {:exporter-id :insurance/exporter-harmonia-v1
     :status      :complete
-    :role-rows   [{:role             :overnight-vehicle
+    :role-rows   [{:role
+                   :insurance.exporter.harmonia-v1/overnight-vehicle
                    :label-key
                    :insurance/exporter-role-overnight-vehicle
                    :required?        true
                    :coverage-type-id coverage-type-id
                    :coverage-type-name "Basic"}
-                  {:role             :unattended-building
+                  {:role
+                   :insurance.exporter.harmonia-v1/unattended-building
                    :label-key
                    :insurance/exporter-role-unattended-building
                    :required?        true
@@ -165,6 +170,60 @@
         (mapcat (fn [{:keys [id icons]}]
                   (map #(str (name id) "/" (name %)) icons)))
         icons/icon-libraries))
+
+(defn initial-signals
+  [view]
+  (-> (l/select-one "#insurance-policy-settings" view)
+      l/attrs
+      :data-signals
+      j/read-value
+      (get "insurancePolicySettings")))
+
+(deftest settings-signals-use-browser-value-representations
+  (testing "Qualified keywords and empty state serialize without leading colons."
+    (let [request-with-icon
+          (assoc-in req
+                    [:page-state
+                     :insurance-policy-settings
+                     :coverage-type-create]
+                    {:open      true
+                     :policy-id policy-id
+                     :icon      :phosphor/shield})
+          configured (initial-signals
+                      (settings-view request-with-icon
+                                     editable-draft-settings))
+          unconfigured-settings
+          (assoc editable-draft-settings
+                 :exporter-configuration
+                 {:exporter-id nil
+                  :status      :not-configured
+                  :role-rows   []})
+          unconfigured (initial-signals
+                        (settings-view unconfigured-settings))]
+      (is (= {:configured
+              {:icon        "phosphor/shield"
+               :exporter-id "insurance/exporter-harmonia-v1"
+               :roles
+               ["insurance.exporter.harmonia-v1/overnight-vehicle"
+                "insurance.exporter.harmonia-v1/unattended-building"]
+               :coverage-type-ids
+               [(str coverage-type-id) (str coverage-type-id)]}
+              :unconfigured
+              {:icon "" :exporter-id "" :roles []}}
+             {:configured
+              {:icon (get-in configured ["coverageType" "icon"])
+               :exporter-id (get-in configured ["exporter" "exporterId"])
+               :roles (mapv #(get % "role")
+                            (get-in configured ["exporter" "mappings"]))
+               :coverage-type-ids
+               (mapv #(get % "coverageTypeId")
+                     (get-in configured ["exporter" "mappings"]))}
+              :unconfigured
+              {:icon (get-in unconfigured ["coverageType" "icon"])
+               :exporter-id
+               (get-in unconfigured ["exporter" "exporterId"])
+               :roles (mapv #(get % "role")
+                            (get-in unconfigured ["exporter" "mappings"]))}})))))
 
 (deftest coverage-type-metadata-translations
   (testing "Coverage metadata controls have complete English and German copy."
@@ -638,11 +697,13 @@
                  "exporter-harmonia-v1"]]
                :selected ["insurance/exporter-harmonia-v1"]}
               :roles
-              [{:role "overnight-vehicle"
+              [{:role
+                "insurance.exporter.harmonia-v1/overnight-vehicle"
                 :data-bind
                 "insurancePolicySettings.exporter.mappings.0.coverageTypeId"
                 :selected [(str coverage-type-id)]}
-               {:role "unattended-building"
+               {:role
+                "insurance.exporter.harmonia-v1/unattended-building"
                 :data-bind
                 "insurancePolicySettings.exporter.mappings.1.coverageTypeId"
                 :selected [(str coverage-type-id)]}]
@@ -694,8 +755,13 @@
               (str/includes? on-change
                              "insurance/exporter-harmonia-v1")
               :prepares-roles?
-              (and (str/includes? on-change "overnight-vehicle")
-                   (str/includes? on-change "unattended-building"))})))))
+              (and
+               (str/includes?
+                on-change
+                "insurance.exporter.harmonia-v1/overnight-vehicle")
+               (str/includes?
+                on-change
+                "insurance.exporter.harmonia-v1/unattended-building"))})))))
 
 (deftest complete-category-factors
   (testing "Every available instrument category already has a category factor."

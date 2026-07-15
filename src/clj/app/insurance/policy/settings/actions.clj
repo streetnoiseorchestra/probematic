@@ -66,9 +66,14 @@
 
 (defn- currency-value
   [value]
-  (when-let [currency (some-> value form/optional-text keyword)]
+  (when-let [currency (some-> value
+                              form/optional-text
+                              (str/replace #"^:" "")
+                              keyword
+                              name
+                              keyword)]
     (when (contains? (set queries/supported-currencies) currency)
-      currency)))
+      (keyword "currency" (name currency)))))
 
 (defn- icon-value
   [value]
@@ -548,16 +553,31 @@
          [:app.datastar/assoc-state [form-key :exporter] false]]))))
 
 (defn- coverage-type-assignment-tx-data
-  [coverage-ids type-ref]
-  (mapv (fn [coverage-id]
-          [:db/add
-           [:instrument.coverage/coverage-id coverage-id]
-           :instrument.coverage/types
-           type-ref])
-        coverage-ids))
+  [policy coverage-ids type-ref]
+  (let [coverage-by-id (into {}
+                             (map (juxt :instrument.coverage/coverage-id
+                                        identity))
+                             (:insurance.policy/covered-instruments policy))]
+    (into []
+          (mapcat
+           (fn [coverage-id]
+             (let [coverage    (get coverage-by-id coverage-id)
+                   coverage-ref [:instrument.coverage/coverage-id coverage-id]
+                   change      (:instrument.coverage/change coverage)]
+               [[:db/add coverage-ref :instrument.coverage/types type-ref]
+                [:db/add coverage-ref
+                 :instrument.coverage/status
+                 :instrument.coverage.status/needs-review]
+                [:db/add coverage-ref
+                 :instrument.coverage/change
+                 (if (= :instrument.coverage.change/new change)
+                   :instrument.coverage.change/new
+                   :instrument.coverage.change/changed)]])))
+          coverage-ids)))
 
 (defn- create-coverage-type-tx-data
-  [{:keys [policy-id name description premium-factor icon required?]}
+  [policy
+   {:keys [policy-id name description premium-factor icon required?]}
    coverage-ids]
   (let [tempid "coverage-type-create"]
     (into [{:db/id                                  tempid
@@ -571,7 +591,7 @@
             [:insurance.policy/policy-id policy-id]
             :insurance.policy/coverage-types
             tempid]]
-          (coverage-type-assignment-tx-data coverage-ids tempid))))
+          (coverage-type-assignment-tx-data policy coverage-ids tempid))))
 
 (defn- policy-coverage-type
   [policy type-id]
@@ -625,14 +645,15 @@
            impact-count)
           [[:db/transact
             (support/with-audit
-              (create-coverage-type-tx-data form coverage-ids)
+              (create-coverage-type-tx-data policy form coverage-ids)
               current-member-id)
             {}]
            support/clear-loading
            clear-coverage-type-create])))))
 
 (defn- update-coverage-type-tx-data
-  [{:keys [type-id name description premium-factor icon required?]}
+  [policy
+   {:keys [type-id name description premium-factor icon required?]}
    coverage-ids]
   (let [type-ref [:insurance.coverage.type/type-id type-id]]
     (into [[:db/add type-ref :insurance.coverage.type/name name]
@@ -640,7 +661,7 @@
            [:db/add type-ref :insurance.coverage.type/premium-factor (decimal-value premium-factor)]
            [:db/add type-ref :insurance.coverage.type/icon icon]
            [:db/add type-ref :insurance.coverage.type/required? required?]]
-          (coverage-type-assignment-tx-data coverage-ids type-ref))))
+          (coverage-type-assignment-tx-data policy coverage-ids type-ref))))
 
 (defn update-coverage-type-action
   [{:keys [current-member-id db tr] :as state} signals]
@@ -660,7 +681,7 @@
            impact-count)
           [[:db/transact
             (support/with-audit
-              (update-coverage-type-tx-data form coverage-ids)
+              (update-coverage-type-tx-data policy form coverage-ids)
               current-member-id)
             {}]
            support/clear-loading
@@ -680,11 +701,21 @@
 
 (defn- coverage-type-usage-count
   [policy type-id]
-  (count
-   (filter (fn [coverage]
-             (contains? (set (map coverage-type-id (:instrument.coverage/types coverage)))
-                        type-id))
-           (:insurance.policy/covered-instruments policy))))
+  (+
+   (count
+    (filter (fn [coverage]
+              (contains?
+               (set (map coverage-type-id
+                         (:instrument.coverage/types coverage)))
+               type-id))
+            (:insurance.policy/covered-instruments policy)))
+   (count
+    (filter (fn [mapping]
+              (= type-id
+                 (get-in mapping
+                         [:insurance.export.mapping/coverage-type
+                          :insurance.coverage.type/type-id])))
+            (:insurance.policy/export-mappings policy)))))
 
 (defn- delete-coverage-type-form
   [{:keys [targetid]}]

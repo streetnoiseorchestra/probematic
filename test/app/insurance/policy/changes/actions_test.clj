@@ -31,16 +31,16 @@
            {:coverage-types coverage-types
             :exporter-id    :insurance/exporter-harmonia-v1
             :export-mappings
-            [{:role             :overnight-vehicle
+            [{:role             :insurance.exporter.harmonia-v1/overnight-vehicle
               :coverage-type-id overnight-id}
-             {:role             :unattended-building
+             {:role             :insurance.exporter.harmonia-v1/unattended-building
               :coverage-type-id building-id}]}
 
            :incomplete
            {:coverage-types coverage-types
             :exporter-id    :insurance/exporter-harmonia-v1
             :export-mappings
-            [{:role             :overnight-vehicle
+            [{:role             :insurance.exporter.harmonia-v1/overnight-vehicle
               :coverage-type-id overnight-id}]}
 
            :unknown

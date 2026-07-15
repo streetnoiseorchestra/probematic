@@ -128,9 +128,9 @@
          :insurance.policy/coverage-types  [overnight-type building-type]
          :insurance.policy/exporter-id     :insurance/exporter-harmonia-v1
          :insurance.policy/export-mappings
-         [{:insurance.export.mapping/role :overnight-vehicle
+         [{:insurance.export.mapping/role :insurance.exporter.harmonia-v1/overnight-vehicle
            :insurance.export.mapping/coverage-type overnight-type}
-          {:insurance.export.mapping/role :unattended-building
+          {:insurance.export.mapping/role :insurance.exporter.harmonia-v1/unattended-building
            :insurance.export.mapping/coverage-type building-type}]}
         tx-data      (actions/duplicate-policy-tx-data
                       "Duplicate"
@@ -156,9 +156,9 @@
                  :required? false}}
               :exporter-id :insurance/exporter-harmonia-v1
               :mapping-targets
-              {:overnight-vehicle
+              {:insurance.exporter.harmonia-v1/overnight-vehicle
                (get type-name->tempid "Worldwide touring renamed")
-               :unattended-building
+               :insurance.exporter.harmonia-v1/unattended-building
                (get type-name->tempid "Locked storage renamed")}
               :policy-mapping-refs (set (map :db/id mapping-txs))}
              {:coverage-types
@@ -197,6 +197,8 @@
       (let [policy-id    (random-uuid)
             overnight-id (random-uuid)
             building-id  (random-uuid)
+            instrument-id (random-uuid)
+            coverage-id   (random-uuid)
             coverage-types
             [{:type-id        overnight-id
               :name           "Worldwide touring renamed"
@@ -216,10 +218,32 @@
                {:coverage-types coverage-types
                 :exporter-id    :insurance/exporter-harmonia-v1
                 :export-mappings
-                [{:role             :overnight-vehicle
+                [{:role             :insurance.exporter.harmonia-v1/overnight-vehicle
                   :coverage-type-id overnight-id}
-                 {:role             :unattended-building
+                 {:role             :insurance.exporter.harmonia-v1/unattended-building
                   :coverage-type-id building-id}]})
+            _ @(d/transact
+                conn
+                [{:db/id                    "duplicated-instrument"
+                  :instrument/instrument-id instrument-id
+                  :instrument/name          "Three trumpets"}
+                 {:db/id                           "duplicated-coverage"
+                  :instrument.coverage/coverage-id coverage-id
+                  :instrument.coverage/instrument  "duplicated-instrument"
+                  :instrument.coverage/types
+                  [[:insurance.coverage.type/type-id overnight-id]]
+                  :instrument.coverage/private?    false
+                  :instrument.coverage/status
+                  :instrument.coverage.status/reviewed
+                  :instrument.coverage/change
+                  :instrument.coverage.change/none
+                  :instrument.coverage/value       1200M
+                  :instrument.coverage/item-count  3
+                  :instrument.coverage/insurer-id  "H-77"}
+                 [:db/add
+                  [:insurance.policy/policy-id policy-id]
+                  :insurance.policy/covered-instruments
+                  "duplicated-coverage"]])
             effects (actions/duplicate-policy-action
                      {:current-member-id member-id
                       :db                (d/db conn)
@@ -230,6 +254,8 @@
         @(d/transact conn tx-data)
         (let [cloned-policy (q/retrieve-policy (d/db conn) new-policy-id)
               cloned-types  (:insurance.policy/coverage-types cloned-policy)
+              cloned-coverages
+              (:insurance.policy/covered-instruments cloned-policy)
               cloned-type-ids
               (set (map :insurance.coverage.type/type-id cloned-types))]
           (is (= {:source-type-ids #{overnight-id building-id}
@@ -243,8 +269,11 @@
                      :required? false}}
                   :exporter-id :insurance/exporter-harmonia-v1
                   :mappings
-                  #{[:overnight-vehicle true]
-                    [:unattended-building true]}}
+                  #{[:insurance.exporter.harmonia-v1/overnight-vehicle true]
+                    [:insurance.exporter.harmonia-v1/unattended-building true]}
+                  :coverages
+                  #{{:item-count 3
+                     :insurer-id "H-77"}}}
                  {:source-type-ids #{overnight-id building-id}
                   :cloned-type-ids-disjoint?
                   (empty? (set/intersection
@@ -272,4 +301,11 @@
                                  [:insurance.export.mapping/coverage-type
                                   :insurance.coverage.type/type-id]))])
                             (:insurance.policy/export-mappings
-                             cloned-policy)))})))))))
+                             cloned-policy)))
+                  :coverages
+                  (set (map (fn [coverage]
+                              {:item-count
+                               (:instrument.coverage/item-count coverage)
+                               :insurer-id
+                               (:instrument.coverage/insurer-id coverage)})
+                            cloned-coverages))})))))))

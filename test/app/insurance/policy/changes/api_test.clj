@@ -19,8 +19,10 @@
        {:type-id building-id :name "Locked storage" :premium-factor 0.3M}]
       :exporter-id :insurance/exporter-harmonia-v1
       :export-mappings
-      [{:role :overnight-vehicle :coverage-type-id overnight-id}
-       {:role :unattended-building :coverage-type-id building-id}]})
+      [{:role :insurance.exporter.harmonia-v1/overnight-vehicle
+        :coverage-type-id overnight-id}
+       {:role :insurance.exporter.harmonia-v1/unattended-building
+        :coverage-type-id building-id}]})
     (testing "a requested changeset is returned as an Excel attachment"
       (let [response (sut/download-excel
                       {:db (d/db conn)

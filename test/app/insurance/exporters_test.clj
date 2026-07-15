@@ -6,10 +6,10 @@
    [java.io ByteArrayOutputStream]))
 
 (def overnight-role
-  :overnight-vehicle)
+  :insurance.exporter.harmonia-v1/overnight-vehicle)
 
 (def building-role
-  :unattended-building)
+  :insurance.exporter.harmonia-v1/unattended-building)
 
 (def harmonia-exporter-id
   :insurance/exporter-harmonia-v1)
@@ -73,7 +73,7 @@
     (is (= [{:exporter-id harmonia-exporter-id
              :label-key
              :insurance/exporter-harmonia-v1
-             :template-resource "insurance-changes-template.xls"
+             :template-resource "insurance/exporters/harmonia-v1.xls"
              :sheet-name        "Inventar"
              :roles
              [{:role      overnight-role

@@ -1,30 +1,15 @@
 (ns app.insurance.exporters
   (:require
-   [app.insurance.excel :as excel]))
+   [app.insurance.exporters.harmonia-v1 :as harmonia]))
 
 (def harmonia-v1
-  :insurance/exporter-harmonia-v1)
+  harmonia/id)
 
 (def ^:private exporter-order
   [harmonia-v1])
 
 (def ^:private registry
-  {harmonia-v1
-   {:exporter-id      harmonia-v1
-    :label-key        :insurance/exporter-harmonia-v1
-    :template-resource "insurance-changes-template.xls"
-    :sheet-name       "Inventar"
-    :generator        excel/generate-excel-changeset!
-    :row-generator    excel/coverage->row
-    :roles
-    [{:role      :overnight-vehicle
-      :label-key
-      :insurance/exporter-role-overnight-vehicle
-      :required? true}
-     {:role      :unattended-building
-      :label-key
-      :insurance/exporter-role-unattended-building
-      :required? true}]}})
+  {harmonia-v1 harmonia/descriptor})
 
 (defn descriptors
   []
@@ -126,7 +111,7 @@
 (defn send-email!
   [policy smtp-params from to subject body attachment-filename-new
    attachment-filename-changes]
-  (excel/send-email!
+  (harmonia/send-email!
    generate-changeset!
    policy
    smtp-params

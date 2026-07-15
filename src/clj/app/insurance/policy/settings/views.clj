@@ -61,12 +61,6 @@
     (str value)
     ""))
 
-(defn- keyword-signal
-  [value]
-  (if (keyword? value)
-    (subs (str value) 1)
-    (signal-string value)))
-
 (defn- policy-signal
   [{:keys [currency effective-at effective-until name policy-id premium-factor]}]
   {:policyId       (signal-string policy-id)
@@ -123,10 +117,6 @@
       create-state
       edit-state)))
 
-(defn- icon-value
-  [icon]
-  (keyword-signal icon))
-
 (defn- coverage-type-signal
   [{:keys [add-to-band-instruments? confirmation-count description icon name
            policy-id premium-factor required? type-id]}]
@@ -134,7 +124,9 @@
            :name          (signal-string name)
            :description   (signal-string description)
            :premiumFactor (signal-string premium-factor)
-           :icon          (icon-value icon)
+           :icon          (if (keyword? icon)
+                            (subs (str icon) 1)
+                            "")
            :required      (boolean required?)
            :addToBandInstruments (boolean add-to-band-instruments?)
            :confirmationCount (signal-string confirmation-count)}
@@ -194,10 +186,14 @@
 (defn- exporter-signal
   [{:keys [exporter-id mappings policy-id]}]
   {:policyId  (signal-string policy-id)
-   :exporterId (keyword-signal exporter-id)
+   :exporterId (if (keyword? exporter-id)
+                 (subs (str exporter-id) 1)
+                 "")
    :mappings
    (mapv (fn [{:keys [coverage-type-id role]}]
-           {:role           (keyword-signal role)
+           {:role           (if (keyword? role)
+                              (subs (str role) 1)
+                              "")
             :coverageTypeId (signal-string coverage-type-id)})
          mappings)})
 
@@ -402,13 +398,9 @@
                        :data-attr:loading  "$loading === 'insurance-policy-settings-policy'"}
         (tr [:action/save])]]])))
 
-(defn- exporter-id-value
-  [exporter-id]
-  (keyword-signal exporter-id))
-
 (defn- exporter-version-option
   [tr selected-exporter-id {:keys [exporter-id label-key]}]
-  (let [value (exporter-id-value exporter-id)]
+  (let [value (subs (str exporter-id) 1)]
     [:option (cond-> {:value value}
                (= exporter-id selected-exporter-id) (assoc :selected true))
      (tr [label-key])]))
@@ -418,9 +410,9 @@
   (let [mappings-by-exporter
         (into (array-map)
               (map (fn [{:keys [exporter-id role-rows]}]
-                     [(exporter-id-value exporter-id)
+                     [(subs (str exporter-id) 1)
                       (mapv (fn [{:keys [role]}]
-                              {:role           (keyword-signal role)
+                              {:role           (subs (str role) 1)
                                :coverageTypeId ""})
                             role-rows)]))
               exporter-options)]
@@ -453,9 +445,9 @@
         (tr [:insurance/exporter-none])]
        (when (and exporter-id
                   (not (contains? known-exporter-ids exporter-id)))
-         [:option {:value    (exporter-id-value exporter-id)
+         [:option {:value    (subs (str exporter-id) 1)
                    :selected true}
-          (exporter-id-value exporter-id)])]
+          (subs (str exporter-id) 1)])]
       (map (partial exporter-version-option tr exporter-id))
       exporter-options))))
 
@@ -479,7 +471,7 @@
       :label (tr [label-key])}
      (into
       [:select (cond-> {:id                 id
-                        :data-exporter-role (name role)
+                        :data-exporter-role (subs (str role) 1)
                         :data-bind
                         (str "insurancePolicySettings.exporter.mappings."
                              idx
@@ -497,7 +489,7 @@
   [req coverage-type-rows selected-exporter-id mappings disabled?
    {:keys [exporter-id role-rows]}]
   (let [selected-by-role (into {} (map (juxt :role :coverage-type-id)) mappings)
-        exporter-value  (exporter-id-value exporter-id)]
+        exporter-value  (subs (str exporter-id) 1)]
     (into
      [:div {:class            "wa-stack wa-gap-m"
             :data-exporter-id exporter-value
@@ -611,10 +603,10 @@
 
 (defn- coverage-type-icon-option
   [selected-icon icon]
-  (let [value (icon-value icon)]
+  (let [value (subs (str icon) 1)]
     [:wa-option
      (cond-> {:value value}
-       (= value (icon-value selected-icon)) (assoc :selected true))
+       (= icon selected-icon) (assoc :selected true))
      [ico/Icon {::ico/library (keyword (namespace icon))
                 ::ico/name    (keyword (clojure.core/name icon))
                 :slot         "start"}]
@@ -634,9 +626,8 @@
 
 (defn- coverage-type-current-icon
   [icon]
-  (let [selected-icon (some-> (icon-value icon) not-empty keyword)
-        initial-icon  (if (registered-icons selected-icon)
-                        selected-icon
+  (let [initial-icon  (if (registered-icons icon)
+                        icon
                         :phosphor/shield)]
     [ico/Icon
      (cond->
@@ -651,7 +642,7 @@
         "sprite && iconName ? `${sprite}#${library}-${iconName}` : '')")
        :data-attr:slot
        "$insurancePolicySettings.coverageType.icon ? 'start' : null"}
-       (registered-icons selected-icon) (assoc :slot "start"))]))
+       (registered-icons icon) (assoc :slot "start"))]))
 
 (defn- coverage-type-icon-field
   [tr icon error id-prefix]
@@ -660,7 +651,9 @@
     (cond-> {:id         (str id-prefix "-icon")
              :label      (tr [:insurance/coverage-type-icon])
              :hint       (tr [:insurance/coverage-type-icon-hint])
-             :value      (icon-value icon)
+             :value      (if (keyword? icon)
+                           (subs (str icon) 1)
+                           "")
              :required   true
              :appearance "outlined"
              :data-bind  "insurancePolicySettings.coverageType.icon"}

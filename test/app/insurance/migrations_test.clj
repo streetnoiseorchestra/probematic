@@ -94,7 +94,7 @@
                             :required?      false}]
                           :exporter-id harmonia-exporter-id
                           :export-mappings
-                          [{:role             :overnight-vehicle
+                          [{:role             :insurance.exporter.harmonia-v1/overnight-vehicle
                             :coverage-type-id optional-id}]}
           tx-result      (metadata-transaction conn policy-id opts)]
       (is (= :accepted (:status tx-result)) (:error tx-result))
@@ -109,8 +109,11 @@
                              "Optional"
                              {:insurance.coverage.type/icon      :phosphor/star
                               :insurance.coverage.type/required? false}}
-                :exporter   {:exporter-id harmonia-exporter-id
-                             :mappings    {:overnight-vehicle "Optional"}}}
+                :exporter
+                {:exporter-id harmonia-exporter-id
+                 :mappings
+                 {:insurance.exporter.harmonia-v1/overnight-vehicle
+                  "Optional"}}}
                {:fresh-plan (migrations/plan-legacy-metadata (d/db conn))
                 :coverage   (coverage-metadata-by-name (d/db conn) policy-id)
                 :exporter   (exporter-summary (d/db conn) policy-id)}))))))
@@ -160,12 +163,112 @@
                            "Proberaum"
                            {:insurance.coverage.type/icon      :phosphor/warehouse
                             :insurance.coverage.type/required? false}}
-                :exporter {:exporter-id harmonia-exporter-id
-                           :mappings    {:overnight-vehicle   "Nachzeit im Auto"
-                                         :unattended-building "Proberaum"}}}
+                :exporter
+                {:exporter-id harmonia-exporter-id
+                 :mappings
+                 {:insurance.exporter.harmonia-v1/overnight-vehicle
+                  "Nachzeit im Auto"
+                  :insurance.exporter.harmonia-v1/unattended-building
+                  "Proberaum"}}}
                {:result   (dissoc result :tx-data)
                 :coverage (coverage-metadata-by-name (d/db conn) policy-id)
                 :exporter (exporter-summary (d/db conn) policy-id)}))))))
+
+(deftest legacy-required-type-migration-updates-active-coverages-test
+  (testing "required metadata and coverage membership migrate together"
+    (let [{:keys [conn]} (tc/new-system
+                          "insurance-migration-required-coverages")
+          policy-id      (random-uuid)
+          coverage-types (seed-legacy-policy!
+                          conn
+                          policy-id
+                          ["Grundschutz" "Nachzeit im Auto" "Proberaum"])
+          required-id    (:type-id
+                          (some #(when (= "Grundschutz" (:name %)) %)
+                                coverage-types))
+          coverage-ids   {:unchanged (random-uuid)
+                          :new       (random-uuid)
+                          :removed   (random-uuid)
+                          :present   (random-uuid)}]
+      @(d/transact
+        conn
+        (into
+         [{:db/id                           "legacy-unchanged"
+           :instrument.coverage/coverage-id (:unchanged coverage-ids)
+           :instrument.coverage/private?    false
+           :instrument.coverage/status
+           :instrument.coverage.status/reviewed
+           :instrument.coverage/change
+           :instrument.coverage.change/none}
+          {:db/id                           "legacy-new"
+           :instrument.coverage/coverage-id (:new coverage-ids)
+           :instrument.coverage/private?    true
+           :instrument.coverage/status
+           :instrument.coverage.status/reviewed
+           :instrument.coverage/change
+           :instrument.coverage.change/new}
+          {:db/id                           "legacy-removed"
+           :instrument.coverage/coverage-id (:removed coverage-ids)
+           :instrument.coverage/private?    false
+           :instrument.coverage/status
+           :instrument.coverage.status/reviewed
+           :instrument.coverage/change
+           :instrument.coverage.change/removed}
+          {:db/id                           "legacy-present"
+           :instrument.coverage/coverage-id (:present coverage-ids)
+           :instrument.coverage/private?    true
+           :instrument.coverage/types
+           [[:insurance.coverage.type/type-id required-id]]
+           :instrument.coverage/status
+           :instrument.coverage.status/reviewed
+           :instrument.coverage/change
+           :instrument.coverage.change/none}]
+         (mapv (fn [[state _coverage-id]]
+                 [:db/add
+                  [:insurance.policy/policy-id policy-id]
+                  :insurance.policy/covered-instruments
+                  (str "legacy-" (name state))])
+               coverage-ids)))
+      (apply-plan! conn)
+      (let [db        (d/db conn)
+            summaries
+            (into
+             {}
+             (map (fn [[state coverage-id]]
+                    (let [coverage
+                          (d/pull
+                           db
+                           '[:instrument.coverage/status
+                             :instrument.coverage/change
+                             {:instrument.coverage/types
+                              [:insurance.coverage.type/type-id]}]
+                           [:instrument.coverage/coverage-id coverage-id])]
+                      [state
+                       {:status (:instrument.coverage/status coverage)
+                        :change (:instrument.coverage/change coverage)
+                        :required?
+                        (contains?
+                         (set (map :insurance.coverage.type/type-id
+                                   (:instrument.coverage/types coverage)))
+                         required-id)}])))
+             coverage-ids)]
+        (is (= {:unchanged
+                {:status    :instrument.coverage.status/needs-review
+                 :change    :instrument.coverage.change/changed
+                 :required? true}
+                :new
+                {:status    :instrument.coverage.status/needs-review
+                 :change    :instrument.coverage.change/new
+                 :required? true}
+                :removed
+                {:status    :instrument.coverage.status/reviewed
+                 :change    :instrument.coverage.change/removed
+                 :required? false}
+                :present
+                {:status    :instrument.coverage.status/reviewed
+                 :change    :instrument.coverage.change/none
+                 :required? true}}
+               summaries))))))
 
 (deftest ambiguous-and-missing-legacy-mappings-test
   (testing "reports ambiguous and missing roles without guessing a mapping"
@@ -184,16 +287,22 @@
         (is (= {:incomplete
                 [{:policy-id      ambiguous-id
                   :missing-roles  []
-                  :ambiguous-roles [:overnight-vehicle]}
+                  :ambiguous-roles
+                  [:insurance.exporter.harmonia-v1/overnight-vehicle]}
                  {:policy-id      missing-id
-                  :missing-roles  [:unattended-building]
+                  :missing-roles
+                  [:insurance.exporter.harmonia-v1/unattended-building]
                   :ambiguous-roles []}]
                 :ambiguous-exporter
                 {:exporter-id harmonia-exporter-id
-                 :mappings    {:unattended-building "Proberaum"}}
+                 :mappings
+                 {:insurance.exporter.harmonia-v1/unattended-building
+                  "Proberaum"}}
                 :missing-exporter
                 {:exporter-id harmonia-exporter-id
-                 :mappings    {:overnight-vehicle "Nachzeit im Auto"}}
+                 :mappings
+                 {:insurance.exporter.harmonia-v1/overnight-vehicle
+                  "Nachzeit im Auto"}}
                 :unknown-metadata {}}
                {:incomplete         (:incomplete-policies result)
                 :ambiguous-exporter (exporter-summary (d/db conn) ambiguous-id)

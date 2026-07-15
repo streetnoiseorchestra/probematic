@@ -564,10 +564,12 @@
       [{:db/id [:insurance.policy/policy-id policy-id]
         :insurance.policy/exporter-id :insurance/exporter-harmonia-v1
         :insurance.policy/export-mappings
-        [{:insurance.export.mapping/role :overnight-vehicle
+        [{:insurance.export.mapping/role
+          :insurance.exporter.harmonia-v1/overnight-vehicle
           :insurance.export.mapping/coverage-type
           [:insurance.coverage.type/type-id coverage-type-id]}
-         {:insurance.export.mapping/role :unattended-building
+         {:insurance.export.mapping/role
+          :insurance.exporter.harmonia-v1/unattended-building
           :insurance.export.mapping/coverage-type
           [:insurance.coverage.type/type-id coverage-type-id]}]}])
     (let [view (-> request
