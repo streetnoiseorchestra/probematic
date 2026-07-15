@@ -308,9 +308,7 @@ window.DiscourseEmbed = %s;
         song    (q/retrieve-song db song-id)]
     (if song
       (ui2/datastar-page*
-       [page-surface/PageSurface
-        {::page-surface/width   :wide
-         ::page-surface/toolbar (detail-toolbar song)}
+       [page-surface/PageSurface {::page-surface/toolbar (detail-toolbar song)}
         [:div {:class "wa-stack wa-gap-2xl"}
          (song-summary req song)
          (background-section req song)

@@ -377,9 +377,7 @@
     (if gig
       (ui2/datastar-page*
        (ui2/markdown-editor-scripts)
-       [page-surface/PageSurface
-        {::page-surface/width   :wide
-         ::page-surface/toolbar (edit-toolbar req gig)}
+       [page-surface/PageSurface {::page-surface/toolbar (edit-toolbar req gig)}
         [:div {:class "wa-stack wa-gap-2xl"}
          (edit-header req gig)
          (edit-form req gig)]]
@@ -390,9 +388,7 @@
 (defn- create-page [req]
   (ui2/datastar-page*
    (ui2/markdown-editor-scripts)
-   [page-surface/PageSurface
-    {::page-surface/width   :wide
-     ::page-surface/toolbar (create-toolbar)}
+   [page-surface/PageSurface {::page-surface/toolbar (create-toolbar)}
     [:div {:class "wa-stack wa-gap-2xl"}
      (create-header)
      (create-form req)]]))

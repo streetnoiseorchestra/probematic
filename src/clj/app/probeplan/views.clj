@@ -212,16 +212,14 @@
                                      :data-action (d*/act req ::actions/open-edit)}
                       [:i18n/tr :action/edit]]])]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width :wide
-       ::page-surface/toolbar
-       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
-                                  [breadcrumb/Breadcrumb {}
-                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-                                    [:i18n/tr :home]]
-                                   [breadcrumb/BreadcrumbItem [:i18n/tr :probeplan/title]]]
-                                  ::page-toolbar/actions actions
-                                  :aria-label            [:i18n/tr :probeplan/toolbar-label]}]}
+     [page-surface/PageSurface {::page-surface/toolbar
+                                [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                                           [breadcrumb/Breadcrumb {}
+                                                            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                                                             [:i18n/tr :home]]
+                                                            [breadcrumb/BreadcrumbItem [:i18n/tr :probeplan/title]]]
+                                                           ::page-toolbar/actions actions
+                                                           :aria-label            [:i18n/tr :probeplan/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"
              :data-signals (d*/->signals (editable-signals rows))}
        [page-header/PageHeader {::page-header/title [:i18n/tr :probeplan/title]}]

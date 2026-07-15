@@ -180,20 +180,18 @@
         members          (queries/members db page-state)
         open-invitations (queries/members-with-open-invites req)]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width :wide
-       ::page-surface/toolbar
-       [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
-                                  [breadcrumb/Breadcrumb {}
-                                   [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
-                                    [:i18n/tr :home]]
-                                   [breadcrumb/BreadcrumbItem [:i18n/tr :members/title]]]
-                                  ::page-toolbar/actions
-                                  [[button/Button {:appearance "filled"
-                                                   :variant    "brand"
-                                                   :href       "/members/invite"}
-                                    [:i18n/tr :members/invite-member]]]
-                                  :aria-label [:i18n/tr :members/directory-toolbar-label]}]}
+     [page-surface/PageSurface {::page-surface/toolbar
+                                [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
+                                                           [breadcrumb/Breadcrumb {}
+                                                            [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
+                                                             [:i18n/tr :home]]
+                                                            [breadcrumb/BreadcrumbItem [:i18n/tr :members/title]]]
+                                                           ::page-toolbar/actions
+                                                           [[button/Button {:appearance "filled"
+                                                                            :variant    "brand"
+                                                                            :href       "/members/invite"}
+                                                             [:i18n/tr :members/invite-member]]]
+                                                           :aria-label [:i18n/tr :members/directory-toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"
              :data-signals (d*/->signals {:members-index page-state
                                           :invite        {:action nil

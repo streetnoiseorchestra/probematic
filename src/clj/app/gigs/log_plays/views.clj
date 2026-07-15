@@ -229,9 +229,8 @@
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id}))
       (ui2/datastar-page*
-       [page-surface/PageSurface
-        {::page-surface/width   :wide
-         ::page-surface/toolbar (plan.views/page-toolbar req gig :gigs/log-plays)}
+       [page-surface/PageSurface {::page-surface/toolbar
+                                  (plan.views/page-toolbar req gig :gigs/log-plays)}
         [:div {:class        "wa-stack wa-gap-xl gigs-log-plays-page"
                :data-signals (d*/->signals {:gig-log-plays {:gig-id            (str gig-id)
                                                             :repertoire-filter repertoire-filter

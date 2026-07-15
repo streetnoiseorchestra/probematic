@@ -99,7 +99,7 @@
   (testing "A song uses repertoire context and exposes editing as its primary action."
     (let [{:keys [conn]} (support/new-system "song-detail-surface")]
       (support/seed-song! conn song-id)
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:repertoire/title "Watermelon Man"]
               :mobile      {:label :repertoire/title :href "/songs"}
               :actions     [{:label      :action/edit

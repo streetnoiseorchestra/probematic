@@ -119,9 +119,7 @@
   (let [page-state (queries/normalize-page-state (:songs-index page-state))
         songs      (queries/songs db page-state)]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width   :wide
-       ::page-surface/toolbar (page-toolbar req)}
+     [page-surface/PageSurface {::page-surface/toolbar (page-toolbar req)}
       [:div {:class        "wa-stack wa-gap-l"
              :data-signals (d*/->signals {:songs-index page-state})}
        [page-header/PageHeader

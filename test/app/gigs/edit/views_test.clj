@@ -16,7 +16,7 @@
   (testing "New Gig uses the edit toolbar without a destructive overflow."
     (let [{:keys [conn]} (support/new-system "gig-create-surface")]
       (is (= {:contract
-              {:width       :wide
+              {:width       :standard
                :breadcrumbs [:gigs/title :gigs/new-gig]
                :mobile      {:label :gigs/title :href "/gigs"}
                :actions     [{:label      :action/cancel
@@ -37,7 +37,7 @@
           gig-id         (random-uuid)]
       (support/seed-gig! conn gig-id)
       (is (= {:contract
-              {:width       :wide
+              {:width       :standard
                :breadcrumbs [:gigs/title "Summer Concert" :action/edit]
                :mobile      {:label "Summer Concert"
                              :href  (str "/gig/" gig-id)}

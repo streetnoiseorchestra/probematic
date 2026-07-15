@@ -8,7 +8,7 @@
 (deftest gigs-index-page-surface
   (testing "The complete gigs directory has collection context and creation actions."
     (let [{:keys [conn]} (support/new-system "gigs-index-surface")]
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:gigs/dashboard :gigs/title]
               :mobile      {:label :gigs/dashboard :href "/"}
               :actions     [{:label      :gigs/new-gig

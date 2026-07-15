@@ -32,9 +32,7 @@
 (defn page [{:keys [db tr] :as req}]
   (let [{:keys [future-gigs past-gigs]} (queries/index-page-data db)]
     (ui2/datastar-page*
-     [page-surface/PageSurface
-      {::page-surface/width   :wide
-       ::page-surface/toolbar (page-toolbar)}
+     [page-surface/PageSurface {::page-surface/toolbar (page-toolbar)}
       [:div {:class "wa-stack wa-gap-l"}
        [page-header/PageHeader {:title (tr [:gigs/title])}]
        [:div {:class "wa-grid wa-gap-m gigs-index-columns"}

@@ -56,7 +56,7 @@
 (deftest directory-and-coverage-use-shared-page-shells
   (let [{:keys [request policy-id coverage-id]} (fixture)]
     (testing "The Insurance directory owns collection context and policy creation."
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:home :insurance/title]
               :mobile      {:label :home :href "/"}
               :actions     [{:label :insurance/new-policy
@@ -66,7 +66,7 @@
               :overflow    []}
              (-> request index.views/page page-shell/page-contract))))
     (testing "Coverage detail keeps the policy and instrument in context."
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:insurance/title "Insurance 2026" "Test Trumpet"]
               :mobile      {:label "Insurance 2026"
                             :href  (str "/insurance-policy/" policy-id "/")}

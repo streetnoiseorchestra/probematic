@@ -95,7 +95,7 @@
                            (get-in config ["options" "scales" "y" "title" "text"])]}))))))
 
 (deftest statistics-page-surface
-  (testing "Statistics uses a wide read-only workspace and keeps timespan filters in its content."
+  (testing "Statistics uses a standard read-only workspace and keeps timespan filters in its content."
     (let [{:keys [conn]} (tc/new-system "statistics-page-surface")
           view           (views/page {::r/router       (r/router ["/act" {:name :app.routes.datastar/act}])
                                       :current-locale :en
@@ -112,7 +112,7 @@
                               last)
           header         (l/select-one page-header/PageHeader surface)
           timespans      (l/select button/Button (l/select-one 'wa-button-group surface))]
-      (is (= {:width       :wide
+      (is (= {:width       :standard
               :breadcrumbs [:home :statistics/title]
               :mobile      {:href "/" :label :home}
               :toolbar-actions nil
@@ -121,7 +121,7 @@
               :timespans   [:statistics/last-three-months
                             :statistics/last-six-months
                             :statistics/last-year]}
-             {:width       (::page-surface/width surface-attrs)
+             {:width       (or (::page-surface/width surface-attrs) :standard)
               :breadcrumbs (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                                  (l/select breadcrumb/BreadcrumbItem breadcrumb))
               :mobile      {:href  (-> parent l/attrs ::breadcrumb/href)
