@@ -199,7 +199,8 @@
           gig-tx-data
           {:transact-w-nils? true
            :on-success       [[:app.gigs/trigger-gig-details-edited gig-id notify? takeover-topic?]]}]
-         [:app.datastar/redirect (urls/link-gig gig-id)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]))))
 
 (defn create-gig-action
   [{:keys [tr]} signals]
@@ -215,7 +216,8 @@
         [[:db/transact
           (create-gig-tx-data params)
           {:on-success [[:app.gigs/trigger-gig-created gig-id notify? thread?]]}]
-         [:app.datastar/redirect (urls/link-gig gig-id)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]))))
 
 (defn delete-gig-tx-data [db gig-id]
   (let [gig-ref     [:gig/gig-id gig-id]
@@ -255,7 +257,8 @@
         [[:db/transact
           tx-data
           {:on-success [[:app.gigs/trigger-gig-deleted gig-id recalc-play-stats?]]}]
-         [:app.datastar/redirect (urls/link-gigs-home)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-gigs-home)]]]]))))
 
 (def actions
   {::validate-gig-field #'validate-gig-field-action

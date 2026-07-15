@@ -54,7 +54,8 @@
                  :forum.topic/topic-id     nil}]
                {:transact-w-nils? true
                 :on-success       [[:app.songs/trigger-song-edited song-id]]}]
-              [:app.datastar/redirect (str "/song/" song-id)]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/redirect (str "/song/" song-id)]]]]
              (actions/update-song-action
               (state-for system)
               {:song-edit {:song-id             (str song-id)
@@ -74,7 +75,7 @@
       (seed-song! conn {:song/song-id song-id
                         :song/title   "Old Title"
                         :song/active? true})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
                [:song-edit]
                {:song-id (str song-id)

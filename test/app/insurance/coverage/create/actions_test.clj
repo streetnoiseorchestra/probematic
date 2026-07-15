@@ -113,8 +113,17 @@
 (defn tx-set [effects]
   (set (tx-data effects)))
 
+(defn sse-events [effects]
+  (into []
+        (comp (filter #(= :app.datastar/respond-sse (first %)))
+              (mapcat second))
+        effects))
+
 (defn redirects [effects]
-  (filterv #(= :app.datastar/redirect (first %)) effects))
+  (filterv #(= :app.datastar.sse/redirect (first %)) (sse-events effects)))
+
+(defn clear-loading? [effects]
+  (contains? (set (sse-events effects)) support/clear-loading-event))
 
 (defn instrument-tx [effects]
   (first (filter :instrument/instrument-id (tx-data effects))))
@@ -128,7 +137,7 @@
           created-id (:instrument/instrument-id tx)]
       (is (= {:transact-effects 1
               :opts             {}
-              :redirects        [[:app.datastar/redirect
+              :redirects        [[:app.datastar.sse/redirect
                                   (urls/link-coverage-create2 (:policy-id fixture) created-id "/return")]]
               :clear-loading?   false
               :audit?           true
@@ -136,7 +145,7 @@
              {:transact-effects (count (filter #(= :db/transact (first %)) effects))
               :opts             (nth (transact-effect effects) 2)
               :redirects        (redirects effects)
-              :clear-loading?   (contains? (set effects) support/clear-loading)
+              :clear-loading?   (clear-loading? effects)
               :audit?           (contains? (tx-set effects)
                                            [:db/add "datomic.tx" :audit/user [:member/member-id member-id]])
               :created-id?      (uuid? created-id)}))
@@ -168,7 +177,7 @@
                            :instrument/serial-number "SN-2"
                            :instrument/build-year    "1999"
                            :instrument/description   "Updated description"}
-              :redirects  [[:app.datastar/redirect
+              :redirects  [[:app.datastar.sse/redirect
                             (urls/link-coverage-create2 (:policy-id fixture) (:instrument-id fixture) "/return")]]}
              {:instrument (select-keys (instrument-tx effects)
                                        [:instrument/instrument-id
@@ -381,7 +390,7 @@
               :policy-link?   true
               :audit?         true
               :clear-loading? true
-              :redirects      [[:app.datastar/redirect "/return"]]}
+              :redirects      [[:app.datastar.sse/redirect "/return"]]}
              {:transact-count (count (filter #(= :db/transact (first %)) effects))
               :opts           (nth (transact-effect effects) 2)
               :coverage       coverage
@@ -393,7 +402,7 @@
                                           "covered_instrument"])
               :audit?         (contains? (tx-set effects)
                                          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]])
-              :clear-loading? (contains? (set effects) support/clear-loading)
+              :clear-loading? (clear-loading? effects)
               :redirects      (redirects effects)}))
       (is (uuid? coverage-id)))))
 

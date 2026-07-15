@@ -84,7 +84,8 @@
                  :forum.topic/topic-id   nil}]
                {:transact-w-nils? true
                 :on-success       [[:app.gigs/trigger-gig-details-edited gig-id true false]]}]
-              [:app.datastar/redirect (urls/link-gig gig-id)]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]
              (actions/update-gig-action
               (action-state conn)
               (valid-signals gig-id))))))
@@ -111,7 +112,7 @@
     (let [{:keys [conn]} (tc/new-system "gig-edit-update-archived-action")
           gig-id         (random-uuid)]
       (seed-gig! conn gig-id (t/date "2020-01-01"))
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
                [:gig-edit]
                {:gig-id       (str gig-id)
@@ -136,7 +137,7 @@
     (let [{:keys [conn]} (tc/new-system "gig-edit-update-invalid-action")
           gig-id         (random-uuid)]
       (seed-gig! conn gig-id (t/date "2026-05-01"))
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
                [:gig-edit]
                {:gig-id            (str gig-id)
@@ -225,12 +226,13 @@
       (is (= :gig.status/confirmed (:gig/status tx)))
       (is (= {:on-success [[:app.gigs/trigger-gig-created gig-id true true]]}
              opts))
-      (is (= [:app.datastar/redirect (urls/link-gig gig-id)]
+      (is (= [:app.datastar/respond-sse
+              [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]
              redirect))
       (is (= 2 (count effects)))))
 
   (testing "returns validation errors"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state
              [:gig-edit]
              {:gig-id    "00000000-0000-0000-0000-000000000000"
@@ -273,7 +275,8 @@
                 [:db/retractEntity [:probeplan/gig [:gig/gig-id gig-id]]]
                 [:db/retractEntity [:gig/gig-id gig-id]]]
                {:on-success [[:app.gigs/trigger-gig-deleted gig-id false]]}]
-              [:app.datastar/redirect (urls/link-gigs-home)]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/redirect (urls/link-gigs-home)]]]]
              (actions/delete-gig-action
               (action-state conn)
               {:gig-id (str gig-id)
@@ -283,7 +286,7 @@
     (let [{:keys [conn]} (tc/new-system "gig-edit-delete-archived-action")
           gig-id         (random-uuid)]
       (seed-gig! conn gig-id (t/date "2020-01-01"))
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
                [:gig-edit :_error :_top]
                {:error "You are not allowed to edit this gig."}]]

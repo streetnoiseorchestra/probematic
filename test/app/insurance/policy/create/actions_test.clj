@@ -42,7 +42,9 @@
              policy))
       (is (= [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
              (last tx-data)))
-      (is (= [:app.datastar/redirect (str "/insurance-policy/" policy-id "/")]
+      (is (= [:app.datastar/respond-sse
+              [[:app.datastar.sse/redirect
+                (str "/insurance-policy/" policy-id "/")]]]
              redirect))))
 
   (testing "an invalid form remains on the page with field errors"

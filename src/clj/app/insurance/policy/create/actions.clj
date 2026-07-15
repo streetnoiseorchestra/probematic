@@ -82,7 +82,8 @@
               :insurance.policy/premium-factor  (decimal-value (:base-factor params))}]
             current-member-id)
           {}]
-         [:app.datastar/redirect (urls/link-policy policy-id)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-policy policy-id)]]]]))))
 
 (def actions
   {::create-policy #'create-policy-action})

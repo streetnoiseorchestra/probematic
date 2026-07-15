@@ -6,7 +6,6 @@
   the optional identity-provider synchronization performed after a successful
   transaction."
   (:require
-   [app.datastar :as datastar]
    [app.filestore.controller :as filestore.controller]
    [app.members.effects :as members.effects]
    [babashka.fs :as bfs]
@@ -135,20 +134,7 @@
     (bfs/delete-if-exists tempfile)))
 
 (defn save-profile-fx
-  "Executes a validated profile save and returns its Datastar signal response."
-  [_coeffects {:keys [system request]} params]
+  "Persists a validated profile save."
+  [_coeffects {:keys [system]} params]
   (save-profile! system params)
-  (let [transient-state
-        {:avatar nil
-         :avatar-removed? false
-         :_error {}
-         :_saved? true
-         :_feedback
-         [:i18n/tr :account-settings/profile-saved-feedback]}]
-    (datastar/state-transact!
-     request
-     #(assoc % :account-profile transient-state))
-    (datastar/respond-signals
-     request
-     :merge {:account-profile (merge (:profile params) transient-state)}
-     :execute "window.StreetnoiseAccountAvatar.saved();")))
+  nil)

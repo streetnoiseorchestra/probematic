@@ -111,7 +111,8 @@
              :members-data    to-send
              :result-path     [form-key :result]
              :success         {:status :sent :count-sent (count to-send)}
-             :failure-message (tr [:insurance/send-payment-notifications-failed])}]])))))
+             :failure-message (tr [:insurance/send-payment-notifications-failed])}]
+           support/clear-loading])))))
 
 (def actions
   {::send-notifications #'send-notifications-action})

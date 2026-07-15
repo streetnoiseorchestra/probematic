@@ -131,7 +131,8 @@
                                         vote-txs
                                         (retract-existing-votes existing-votes)))]
         [[:db/transact tx-data {}]
-         [:app.datastar/redirect (urls/link-poll poll-id)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-poll poll-id)]]]]))))
 
 (def actions
   {::open-poll  #'open-poll-action

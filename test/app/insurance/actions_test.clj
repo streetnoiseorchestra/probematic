@@ -45,20 +45,21 @@
                         :insurance.policy/effective-at    #inst "2026-01-01T00:00:00.000-00:00"
                         :insurance.policy/effective-until #inst "2026-12-31T00:00:00.000-00:00"
                         :insurance.policy/premium-factor  0.01M}])
-    (let [[db-effect _clear-loading redirect-effect]
+    (let [[db-effect response-effect]
           (actions/duplicate-policy-action
            {:db (d/db conn)
             :tr (constantly "Duplicate")}
            {:targetid (str policy-id)})
           [_ tx-data opts] db-effect
           policy-tx         (last tx-data)
-          [_ redirect-url]  redirect-effect]
+          [_ [clear-event redirect-event]] response-effect
+          [_ redirect-url]  redirect-event]
       (is (= {} opts))
       (is (= "Duplicate 2026" (:insurance.policy/name policy-tx)))
       (is (uuid? (:insurance.policy/policy-id policy-tx)))
       (is (not= policy-id (:insurance.policy/policy-id policy-tx)))
-      (is (= [:app.datastar/redirect]
-             (subvec redirect-effect 0 1)))
+      (is (= support/clear-loading-event clear-event))
+      (is (= :app.datastar.sse/redirect (first redirect-event)))
       (is (re-find #"^/insurance-policy/.+/$" redirect-url)))))
 
 (deftest duplicate-policy-tx-data-test

@@ -100,7 +100,9 @@
           (conj [:app.members/send-user-invitation member-id])
 
           true
-          (conj [:app.datastar/redirect (str "/member/" member-id)]))))))
+          (conj [:app.datastar/respond-sse
+                 [[:app.datastar.sse/redirect
+                   (str "/member/" member-id)]]]))))))
 
 (def actions
   {::submit-member-invite #'submit-member-invite-action})

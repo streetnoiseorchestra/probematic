@@ -2,8 +2,11 @@
   (:require
    [datomic.api :as d]))
 
+(def clear-loading-event
+  [:app.datastar.sse/merge-signals {:loading false :targetid false}])
+
 (def clear-loading
-  [:app.datastar/merge-signals {:loading false :targetid false}])
+  [:app.datastar/respond-sse [clear-loading-event]])
 
 (defn lookup-eid [db lookup-ref]
   (:db/id (d/entity db lookup-ref)))

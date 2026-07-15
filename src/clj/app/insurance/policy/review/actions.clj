@@ -106,11 +106,14 @@
                                                :instrument.coverage/insurer-id
                                                insurer-id)]
         (if (has-db-transact? effects)
-          (conj effects
-                [:app.datastar/remove-signals
-                 ["insuranceReview.insurerId"
-                  "insurance-review.insurer-id"
-                  (str "insurance-review.insurer-id-" coverage-id)]])
+          (conj
+           (filterv #(not= support/clear-loading %) effects)
+           [:app.datastar/respond-sse
+            [support/clear-loading-event
+             [:app.datastar.sse/remove-signals
+              ["insuranceReview.insurerId"
+               "insurance-review.insurer-id"
+               (str "insurance-review.insurer-id-" coverage-id)]]]])
           effects)))))
 
 (def actions

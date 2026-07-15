@@ -54,11 +54,11 @@
               :time-range      (:time-range data)})))
 
     (testing "the action returns one ordered ledger-and-email effect"
-      (let [[effect] (actions/send-notifications-action
-                      state
-                      {:insurancePayments
-                       {:policyId  (str policy-id)
-                        :memberIds [(str member-id)]}})
+      (let [[effect response] (actions/send-notifications-action
+                               state
+                               {:insurancePayments
+                                {:policyId  (str policy-id)
+                                 :memberIds [(str member-id)]}})
             [_ payload] effect]
         (is (= :app.insurance/send-payment-notifications (first effect)))
         (is (= {:member-ids   [member-id]
@@ -74,7 +74,8 @@
                 :result-path (:result-path payload)}))
         (is (seq (:tx-data payload)))
         (is (= [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
-               (last (:tx-data payload)))))))
+               (last (:tx-data payload))))
+        (is (= support/clear-loading response)))))
 
   (testing "a non-insurance-team member cannot send payment notifications"
     (let [{:keys [conn member-id outsider-id policy-id]} (fixture)

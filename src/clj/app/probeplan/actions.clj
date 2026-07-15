@@ -8,7 +8,8 @@
 (def row-signals-path "probeplan.rows")
 
 (defn- clear-row-signals-effect []
-  [:app.datastar/remove-signals [row-signals-path]])
+  [:app.datastar/respond-sse
+   [[:app.datastar.sse/remove-signals [row-signals-path]]]])
 
 (defn open-edit-action [_state _signals]
   [(clear-row-signals-effect)

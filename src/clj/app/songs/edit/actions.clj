@@ -99,7 +99,8 @@
         (update-song-tx-data params)
         {:transact-w-nils? true
          :on-success       [[:app.songs/trigger-song-edited song-id]]}]
-       [:app.datastar/redirect (urls/link-song song-id)]])))
+       [:app.datastar/respond-sse
+        [[:app.datastar.sse/redirect (urls/link-song song-id)]]]])))
 
 (defn create-song-action
   [{:keys [tr]} signals]
@@ -111,7 +112,8 @@
       (let [song-id (sq/generate-squuid)
             params  (assoc params :song-id (str song-id))]
         [[:db/transact (create-song-tx-data params) {}]
-         [:app.datastar/redirect (urls/link-song song-id)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-song song-id)]]]]))))
 
 (defn delete-song-tx-data [db song-id]
   (let [song-ref    [:song/song-id song-id]
@@ -141,7 +143,8 @@
           tx-data
           {:on-success (when recalc-play-stats?
                          [[:app.songs/recalc-play-stats]])}]
-         [:app.datastar/redirect (urls/link-songs-home)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-songs-home)]]]]))))
 
 (def actions
   {::validate-song-field #'validate-song-field-action

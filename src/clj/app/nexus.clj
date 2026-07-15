@@ -20,7 +20,8 @@
    [com.yetanalytics.squuid :as sq]
    [datomic.api :as d]
    [medley.core :as m]
-   [nexus.core :as nexus]))
+   [nexus.core :as nexus]
+   [nexus.strategies :as strategies]))
 
 (def unique-attrs
   #{:user-account/id
@@ -142,11 +143,27 @@
 (defn response? [x]
   (and (map? x) (contains? x :status)))
 
+(defn- response-result? [x]
+  (or (response? x) (datastar/sse-response-plan? x)))
+
+(defn- result-responses [dispatch-result]
+  (letfn [(collect-response [result]
+            (cond
+              (response-result? result) [result]
+              (and (map? result) (sequential? (:results result)))
+              (mapcat (comp collect-response :res) (:results result))
+              :else []))]
+    (mapcat (comp collect-response :res) (:results dispatch-result))))
+
+(defn- single-response [responses]
+  (when (> (count responses) 1)
+    (throw (ex-info
+            "One Nexus dispatch may contain at most one response owner"
+            {:response-count (count responses)})))
+  (first responses))
+
 (defn result-response [dispatch-result]
-  (some->> (:results dispatch-result)
-           (keep :res)
-           (filter response?)
-           last))
+  (some-> dispatch-result result-responses single-response))
 
 (defn ^:nexus/batch db-transact-fx
   [{:keys [dispatch]} {:keys [system]} transact-actions]
@@ -171,18 +188,6 @@
             (result-response (dispatch actions {:tx-error tx-error}))
             (throw e)))))))
 
-(defn merge-signals-fx [_ {req :request} merge-signals]
-  (datastar/respond-signals req :merge merge-signals))
-
-(defn remove-signals-fx [_ {req :request} remove-signals]
-  (datastar/respond-signals req :remove remove-signals))
-
-(defn open-form-fx [_ {req :request} form-name form-id-key form-id-value]
-  (datastar/open-form req form-name form-id-key form-id-value))
-
-(defn close-form-fx [_ {req :request} form-name form-id-key]
-  (datastar/close-form req form-name form-id-key))
-
 (defn assoc-page-state-fx [_ {req :request} path value]
   (datastar/state-transact! req #(assoc-in % path value)))
 
@@ -191,8 +196,13 @@
                             (fn [s]
                               (update-in s path (fnil m/deep-merge {}) value))))
 
-(defn redirect-fx [_ {req :request} url]
-  (datastar/redirect req url))
+(defn- respond-sse-fx [_ _ responses]
+  (let [response-count (count responses)]
+    (when-not (= 1 response-count)
+      (throw (ex-info
+              "One Nexus dispatch may contain at most one response owner"
+              {:response-count response-count})))
+    (datastar/sse-response-plan (ffirst responses))))
 
 (defn send-user-invitation-fx [_ {req :request} member-id]
   (members.effects/send-user-invitation! req member-id))
@@ -211,14 +221,27 @@
 
 (defn dispatch-actions
   [nexus system {:keys [request response]} on-error]
-  (let [result (nexus/dispatch nexus {:system system :request request} {:request request} response)]
-    (when-let [error (->> (:errors result) (keep :err) first)]
-      (on-error error))
-    (or
-     (result-response result)
-     {:status  204
-      :headers {}
-      :body    ""})))
+  (let [empty-response {:status 204 :headers {} :body ""}
+        result         (nexus/dispatch nexus
+                                       {:system system :request request}
+                                       {:request request}
+                                       response)]
+    (if-let [error (->> (:errors result) (keep :err) first)]
+      (do
+        (on-error error)
+        empty-response)
+      (try
+        (if-let [response (result-response result)]
+          (if (datastar/sse-response-plan? response)
+            (let [sse-response
+                  (datastar/respond-sse request
+                                        (datastar/sse-response-events response))]
+              (if (response? sse-response) sse-response empty-response))
+            response)
+          empty-response)
+        (catch Exception error
+          (on-error error)
+          empty-response)))))
 
 (defn nexus-interceptor
   "Dispatch Nexus action vectors returned by a Reitit route handler.
@@ -240,16 +263,13 @@
 
 (defn nexus []
   {:nexus/system->state system->state
+   :nexus/interceptors  [strategies/fail-fast]
    :nexus/effects       {:db/transact                              (with-meta db-transact-fx {:nexus/batch true})
                          :app.account/save-profile                 account.effects/save-profile-fx
                          :app.account/discard-upload               account.effects/discard-upload-fx
-                         :app.datastar/merge-signals               merge-signals-fx
-                         :app.datastar/remove-signals              remove-signals-fx
-                         :app.datastar/open-form                   open-form-fx
-                         :app.datastar/close-form                  close-form-fx
                          :app.datastar/assoc-state                 assoc-page-state-fx
                          :app.datastar/merge-state                 merge-page-state-fx
-                         :app.datastar/redirect                    redirect-fx
+                         :app.datastar/respond-sse                 (with-meta respond-sse-fx {:nexus/batch true})
                          :app.insurance/send-policy-changes        insurance.effects/send-policy-changes-fx
                          :app.insurance/send-payment-notifications insurance.effects/send-payment-notifications-fx
                          :app.insurance/send-survey-notifications  insurance.effects/send-survey-notifications-fx

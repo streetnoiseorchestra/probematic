@@ -129,8 +129,9 @@
         duplicate-txes  (support/with-audit (duplicate-policy-tx-data duplicate-label new-policy-id policy)
                           current-member-id)]
     [[:db/transact duplicate-txes {}]
-     support/clear-loading
-     [:app.datastar/redirect (urls/link-policy new-policy-id)]]))
+     [:app.datastar/respond-sse
+      [support/clear-loading-event
+       [:app.datastar.sse/redirect (urls/link-policy new-policy-id)]]]]))
 
 (def actions
   (merge

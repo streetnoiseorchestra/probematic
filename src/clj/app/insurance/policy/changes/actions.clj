@@ -82,7 +82,9 @@
     (if-not context
       (failure-effects params {:_top {:error (tr [:error/not-found-title])}})
       [(confirmation-transaction current-member-id (:policy context))
-       [:app.datastar/redirect (urls/link-policy (:policy-id context))]])))
+       [:app.datastar/respond-sse
+        [[:app.datastar.sse/redirect
+          (urls/link-policy (:policy-id context))]]]])))
 
 (defn confirm-sent-action
   [{:keys [current-member-id db tr]} signals]
@@ -104,8 +106,10 @@
             (dissoc :preview-type)
             (assoc :policy-id  (:policy-id context)
                    :on-success [[::confirm-sent
-                                 {form-key {:policy-id (str (:policy-id context))}}]]
-                   :redirect    (urls/link-policy (:policy-id context))))]])))
+                                 {form-key {:policy-id (str (:policy-id context))}}]
+                                [:app.datastar/respond-sse
+                                 [[:app.datastar.sse/redirect
+                                   (urls/link-policy (:policy-id context))]]]]))]])))
 
 (defn preview-attachment-action
   [{:keys [db tr]} signals]
@@ -122,11 +126,12 @@
     (if guidance-key
       (failure-effects params {:_top {:error (tr [guidance-key])}})
       (if (and context (contains? #{"new" "changes"} preview-type) (not (str/blank? filename)))
-        [[:app.datastar/redirect
-          (urls/link-policy-changes-download-excel
-           (:policy-id context)
-           preview-type
-           filename)]]
+        [[:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect
+            (urls/link-policy-changes-download-excel
+             (:policy-id context)
+             preview-type
+             filename)]]]]
         (failure-effects params {:_top {:error (tr [:error/form-has-errors])}})))))
 
 (def actions

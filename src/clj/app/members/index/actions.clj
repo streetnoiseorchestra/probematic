@@ -52,9 +52,11 @@
      [:app.datastar/assoc-state [:members-index :sort-order] next-sort-order]]))
 
 (def clear-invite-signals
-  [:app.datastar/merge-signals {:invite {:action nil
-                                         :code nil
-                                         :inflight false}}])
+  [:app.datastar/respond-sse
+   [[:app.datastar.sse/merge-signals
+     {:invite {:action nil
+               :code nil
+               :inflight false}}]]])
 
 (defn resend-invitation-action
   [{:keys [now]} {:keys [invite]}]

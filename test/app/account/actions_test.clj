@@ -186,7 +186,27 @@
              {:member-id member-id
               :profile normalized-profile
               :avatar-upload nil
-              :sync-keycloak? true}]]
+              :sync-keycloak? true}]
+            [:app.datastar/assoc-state
+             [:account-profile]
+             {:avatar nil
+              :avatar-removed? false
+              :_error {}
+              :_saved? true
+              :_feedback
+              [:i18n/tr :account-settings/profile-saved-feedback]}]
+            [:app.datastar/respond-sse
+             [[:app.datastar.sse/merge-signals
+               {:account-profile
+                (merge normalized-profile
+                       {:avatar nil
+                        :avatar-removed? false
+                        :_error {}
+                        :_saved? true
+                        :_feedback
+                        [:i18n/tr :account-settings/profile-saved-feedback]})}]
+              [:app.datastar.sse/execute-script
+               "window.StreetnoiseAccountAvatar.saved();"]]]]
            (actions/save-profile-action
             (action-state system)
             {:account-profile (assoc valid-profile :member-id (str other-id))})))

@@ -160,10 +160,11 @@
           (support/with-audit (save-instrument-step-tx-data state ctx params instrument-id)
             current-member-id)
           {}]
-         [:app.datastar/redirect
-          (urls/link-coverage-create2 (:policy-id ctx)
-                                      instrument-id
-                                      (form/optional-text (:redirect params)))]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect
+            (urls/link-coverage-create2 (:policy-id ctx)
+                                        instrument-id
+                                        (form/optional-text (:redirect params)))]]]]))))
 
 (defn normalize-coverage-form [params]
   (reduce
@@ -319,10 +320,11 @@
             (support/with-audit (create-coverage-tx-data ctx params coverage-id)
               current-member-id)]]
           {}]
-         support/clear-loading
-         [:app.datastar/redirect
-          (or (form/optional-text (:redirect params))
-              (urls/link-policy (:policy-id ctx)))]]))))
+         [:app.datastar/respond-sse
+          [support/clear-loading-event
+           [:app.datastar.sse/redirect
+            (or (form/optional-text (:redirect params))
+                (urls/link-policy (:policy-id ctx)))]]]]))))
 
 (def actions
   {::validate-instrument-field #'validate-instrument-field-action

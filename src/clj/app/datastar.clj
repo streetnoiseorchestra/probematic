@@ -34,7 +34,6 @@
    [datomic.api :as d]
    [integrant.core :as ig]
    [jsonista.core :as j]
-   [medley.core :as medley]
    [starfederation.datastar.clojure.adapter.common :as d*com]
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
    [starfederation.datastar.clojure.api :as d*])
@@ -302,30 +301,85 @@
      :enter (fn [ctx]
               (assoc-in ctx [:request ::refresh-mult] refresh-mult))}))
 
-(defn respond-and-close [request on-open & {:keys [on-close]}]
+(defn- respond-and-close [request on-open & {:keys [on-close]}]
   (hk-gen/->sse-response request
                          {hk-gen/on-open  (fn [sse-gen]
-                                            (on-open sse-gen)
-                                            (d*/close-sse! sse-gen))
+                                            (try
+                                              (on-open sse-gen)
+                                              (finally
+                                                (d*/close-sse! sse-gen))))
                           hk-gen/on-close on-close}))
 
-(defn respond-signals
-  ([request & {:keys [merge remove execute]}]
-   (respond-and-close request (fn [sse-gen]
-                                (when merge
-                                  (d*/patch-signals! sse-gen (->signals merge)))
-                                (when remove
-                                  (d*/patch-signals! sse-gen (->signals (remove-signals-patch remove))))
-                                (when execute
-                                  (d*/execute-script! sse-gen execute))))))
-(defn redirect
-  ([request url]
-   (respond-and-close request (fn [sse-gen]
-                                (d*/redirect! sse-gen url)))))
+(def ^:private sse-event-kinds
+  #{:app.datastar.sse/execute-script
+    :app.datastar.sse/merge-signals
+    :app.datastar.sse/patch-elements
+    :app.datastar.sse/redirect
+    :app.datastar.sse/remove-signals})
 
-(defn respond [request on-open  & {:keys [on-close]}]
-  (hk-gen/->sse-response request {hk-gen/on-open  on-open
-                                  hk-gen/on-close on-close}))
+(defn- validate-sse-event! [event]
+  (let [[kind _payload opts] event]
+    (when-not (and (vector? event)
+                   (<= 2 (count event) 3)
+                   (contains? sse-event-kinds kind)
+                   (or (nil? opts) (map? opts)))
+      (throw (ex-info "Unknown Datastar SSE event" {:event event}))))
+  event)
+
+(defn- validate-sse-events! [events]
+  (when-not (vector? events)
+    (throw (ex-info "Datastar SSE events must be a vector" {:events events})))
+  (doseq [event events]
+    (validate-sse-event! event))
+  events)
+
+(defn- emit-sse-event! [sse-gen [kind payload opts]]
+  (let [opts (or opts {})]
+    (case kind
+      :app.datastar.sse/merge-signals
+      (d*/patch-signals! sse-gen (->signals payload) opts)
+
+      :app.datastar.sse/remove-signals
+      (d*/patch-signals! sse-gen (->signals (remove-signals-patch payload)) opts)
+
+      :app.datastar.sse/patch-elements
+      (d*/patch-elements! sse-gen payload opts)
+
+      :app.datastar.sse/execute-script
+      (d*/execute-script! sse-gen payload opts)
+
+      :app.datastar.sse/redirect
+      (d*/redirect! sse-gen payload opts))))
+
+(defn respond-sse
+  "Emits `events` in order through one finite SSE response, then closes it.
+
+  `events` must be a vector of event vectors in the form `[kind payload]` or
+  `[kind payload opts]`, where `opts` is an optional map. Supported kinds are
+  `:app.datastar.sse/execute-script`, `:app.datastar.sse/merge-signals`,
+  `:app.datastar.sse/patch-elements`, `:app.datastar.sse/redirect`, and
+  `:app.datastar.sse/remove-signals`."
+  [request events]
+  (validate-sse-events! events)
+  (respond-and-close request
+                     (fn [sse-gen]
+                       (run! #(emit-sse-event! sse-gen %) events))))
+
+(defn sse-response-plan
+  "Creates a validated ordered SSE response plan for the Nexus HTTP boundary."
+  [events]
+  (validate-sse-events! events)
+  {::sse-events events})
+
+(defn sse-response-plan?
+  "Returns whether `x` is an ordered SSE response plan."
+  [x]
+  (and (map? x) (contains? x ::sse-events)))
+
+(defn sse-response-events
+  "Returns the ordered events from `response-plan`."
+  [response-plan]
+  (::sse-events response-plan))
 
 (defmethod ig/init-key ::refresh-mult
   [_ sys]
@@ -420,45 +474,3 @@
    #_(action :post
              (urls/url-for req :app.routes.datastar/act nil (action-query-params cmd))
              opts)))
-
-(defn open-form [req form-name form-id-key form-id-value]
-  (state-transact! req #(assoc-in % [:form :current form-name form-id-key] form-id-value))
-  (respond-signals req :merge {form-name {:open true}}))
-
-(defn close-form [req form-name form-id-key]
-  (state-transact! req #(medley/dissoc-in % [:form :current form-name form-id-key]))
-  (respond-signals req :remove [(name form-name)]))
-
-(defn get-form-current [page-state form-name form-id-key]
-  (get-in page-state [:form :current form-name form-id-key]))
-
-;;; ------------------------------------------------------------
-;;; TODO move these to a better ns
-;;; They are generic helpers for validating forms and returning errors
-
-(defn unhandled-form-error [{:keys [tr] :as req} e]
-  (error/log-error! req e)
-  {:_top (str (tr [:error/unknown-form-error]) " " (:human-id req))})
-
-(defn untouched-fields [req form-key]
-  (keys (medley/filter-vals #(== % 0) (-> req :parameters :body form-key :touched))))
-
-(defn touched-fields [req form-key]
-  (keys (medley/filter-vals #(> % 0) (-> req :parameters :body form-key :touched))))
-(defn all-fields [req form-key]
-  (keys (-> req :parameters :body form-key :touched)))
-
-(defn form-errors
-  ([req form-key error]
-   (form-errors req form-key error nil))
-  ([req form-key error {:as _opts :keys [only] :or {only :all}}]
-   (let [fields (-> (if (= only :touched)
-                      (touched-fields req form-key)
-                      (all-fields req form-key))
-                    (zipmap (repeat nil))
-                    (assoc :_top nil))]
-
-     (respond-signals req :merge {form-key {:error (merge fields error)}}))))
-
-(defn clear-form-errors [req form-key]
-  (form-errors req form-key nil))

@@ -67,7 +67,9 @@
                             (= :poll/votes (nth % 2)))
                       tx-data)))
       (is (= {} opts))
-      (is (= [:app.datastar/redirect (urls/link-poll poll-id)] redirect))))
+      (is (= [:app.datastar/respond-sse
+              [[:app.datastar.sse/redirect (urls/link-poll poll-id)]]]
+             redirect))))
 
   (testing "changes an existing vote by retracting the old vote"
     (let [{:keys [conn member-id]} (tc/new-system "poll-vote-change-action")

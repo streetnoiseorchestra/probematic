@@ -54,8 +54,9 @@
   ([state form errors]
    (form-error-effects state form errors nil))
   ([{:keys [tr]} form errors signal-patch]
-   [[:app.datastar/merge-signals
-     (merge {:loading false :targetid false} signal-patch)]
+   [[:app.datastar/respond-sse
+     [[:app.datastar.sse/merge-signals
+       (merge {:loading false :targetid false} signal-patch)]]]
     [:app.datastar/assoc-state
      [form-key]
      {:form (assoc form :_error
@@ -229,10 +230,11 @@
           current-member-id)
         {:on-success
          [[:app.datastar/assoc-state [form-key] {:form form}]
-          [:app.datastar/merge-signals
-           {:loading            false
-            :targetid           false
-            signal-key         {:saveStatus "saved"}}]]
+          [:app.datastar/respond-sse
+           [[:app.datastar.sse/merge-signals
+             {:loading            false
+              :targetid           false
+              signal-key         {:saveStatus "saved"}}]]]]
          :on-error
          {:insurance.survey.error/active-exists
           (form-error-effects
@@ -280,9 +282,10 @@
             (t/inst now)]]
           current-member-id)
         {}]
-       [:app.datastar/remove-signals [(name signal-key)]]
        [:app.datastar/assoc-state [form-key :result] {:status :closed}]
-       support/clear-loading])))
+       [:app.datastar/respond-sse
+        [[:app.datastar.sse/remove-signals [(name signal-key)]]
+         support/clear-loading-event]]])))
 
 (defn toggle-response-action
   [{:keys [current-member-id db now tr] :as state} signals]
@@ -345,7 +348,8 @@
              :sender-name     (:member/name
                                (q/retrieve-member db current-member-id))
              :success         {:status     :sent
-                               :count-sent (count incomplete)}}]])))))
+                               :count-sent (count incomplete)}}]
+           support/clear-loading])))))
 
 (def actions
   {::close-survey    #'close-survey-action
