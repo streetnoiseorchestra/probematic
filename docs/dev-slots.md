@@ -2,9 +2,11 @@
 
 Parallel dev slots let host-based agents work from separate Git worktrees while sharing the project checkout's ignored setup inputs.
 
-The main checkout owns `.dev-state` and the shared `data.dev/filestore`.
+The main checkout owns `.dev-state`, including each slot's Firefox profile, and
+the shared `data.dev/filestore`.
 
-Treat `.dev-state` as sensitive because Datomic templates and hydrated slot databases may contain production-derived data.
+Treat `.dev-state` as sensitive because Datomic data may be production-derived
+and Firefox profiles contain authenticated browser state.
 
 Do not stage `.dev-state`, generated slot files, or ignored artifact links unless an operator explicitly asks for that.
 
@@ -59,9 +61,27 @@ git worktree add -b feature/agent-1 .worktrees/probematic-agent-1 HEAD
 bb dev-slot init agent-1 .worktrees/probematic-agent-1 --branch feature/agent-1
 ```
 
+Use `init` as the normal slot-acquisition command. It claims the slot and
+initializes it in one operation. Do not run `bb dev-slot claim` first.
+Standalone `claim` only records ownership; it does not create generated state
+or connect the slot's Firefox profile.
+
+Every agent must run `init` after creating or selecting its worktree and before
+hydrating, starting services, or starting the app.
+
 Initialization writes generated slot state under `.dev-state/slots/agent-1`.
 
-It also links `data.dev/current-slot` and `data.dev/filestore` inside the worktree.
+It creates the slot's persistent Firefox profile under
+`.dev-state/slots/agent-1/firefox`.
+
+It also links `data.dev/current-slot`, `data.dev/filestore`, and
+`data.dev/firefox` inside the worktree.
+
+The first initialization after this upgrade migrates an existing worktree
+Firefox profile when the slot has no profile. Initialization refuses to migrate
+a locked profile or merge two existing profiles. It also refuses unsafe slot
+state paths instead of following symlinks during migration. Stop Firefox before
+migration; remove stale locks only after Firefox has stopped.
 
 ## Hydrate the slot database
 
@@ -104,12 +124,20 @@ Each slot's browser-facing services use `<slot>.probematic.localhost` so they re
 
 ## Firefox profile
 
-Use `<worktree>/data.dev/firefox` for each slot.
+Use `<worktree>/data.dev/firefox` with Etaoin and other browser tools.
+Initialization manages this path as a symlink to the slot's profile.
 
-Never reuse or symlink the main checkout's profile.
+The profile belongs to the slot rather than the worktree. It retains cookies,
+logins, and other browser state across `down`, `release`, and later slot claims.
 
-Create it before Etaoin; clear locks only in that worktree's profile.
+Never replace the managed symlink with a directory or point it at another slot's profile.
 
+Close Firefox before repairing or migrating the profile. Clear locks only after Firefox has stopped.
+
+If both the worktree and slot profile locations exist, the tools refuse to
+choose between them, even when one appears empty. Keep both profiles, compare
+or back them up after Firefox has stopped, and decide which one is authoritative
+before repairing the managed path.
 
 The app URL for `agent-1` is `http://agent-1.probematic.localhost:6171`.
 
@@ -131,8 +159,17 @@ Release stops and removes the slot's Compose services, then verifies that all as
 
 It removes the slot's Datomic database, smtp4dev data, logs, generated environment, generated secrets, and claim.
 
-It also removes `data.dev/current-slot` and `data.dev/filestore` from the released worktree when those links still point to the released slot's managed targets.
+It also removes `data.dev/current-slot`, `data.dev/filestore`, and
+`data.dev/firefox` from the released worktree when those links still point to
+the released slot's managed targets.
 
-Release preserves the shared `data.dev/filestore`, Datomic templates, and the ignored artifact cache.
+When releasing a pre-upgrade slot, release first migrates a real
+`data.dev/firefox` directory into the slot. It refuses the release if Firefox
+still holds a profile lock or if both profile locations exist.
 
-The next claimant must run `init` and hydrate from the intended Datomic template before starting the slot.
+Release preserves the slot's Firefox profile, the shared
+`data.dev/filestore`, Datomic templates, and the ignored artifact cache.
+
+The next agent must run `init`. That command claims the slot and attaches the
+preserved Firefox profile. The agent must then hydrate from the intended
+Datomic template before starting the slot.

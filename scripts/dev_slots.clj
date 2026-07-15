@@ -8,6 +8,9 @@
 
 (def script-version "dev-slots-1")
 (def ^:private datastar-inspector-filename "datastar-inspector@1.1.4.js")
+(def ^:private firefox-lock-filenames [".parentlock" "lock" "parent.lock"])
+(def ^:private slot-id-pattern
+  #"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?")
 (def slot-port-keys
   [:http-port
    :nrepl-port
@@ -34,12 +37,18 @@
 (defn- slot-key [slot-or-name]
   (let [slot-name (if (map? slot-or-name)
                     (:slot slot-or-name)
-                    slot-or-name)]
-    (cond
-      (keyword? slot-name) slot-name
-      (string? slot-name) (keyword slot-name)
-      :else (throw (ex-info "Slot name must be a keyword or string"
-                            {:slot slot-name})))))
+                    slot-or-name)
+        slot (cond
+               (keyword? slot-name) slot-name
+               (string? slot-name) (keyword slot-name)
+               :else (throw (ex-info "Slot name must be a keyword or string"
+                                     {:slot slot-name})))]
+    (when-not (and (nil? (namespace slot))
+                   (re-matches slot-id-pattern (name slot)))
+      (throw (ex-info "Slot name must be a safe lowercase name"
+                      {:slot slot-name
+                       :required-pattern (str slot-id-pattern)})))
+    slot))
 
 (defn- slot-id [slot-or-name]
   (name (slot-key slot-or-name)))
@@ -71,7 +80,9 @@
     (throw (ex-info "Slot has missing required keys"
                     {:slot (:slot slot)
                      :missing (vec missing)})))
-  (when-let [dupes (seq (duplicate-values (map :slot registry)))]
+  (doseq [slot registry]
+    (slot-key slot))
+  (when-let [dupes (seq (duplicate-values (map slot-key registry)))]
     (throw (ex-info "Duplicate slot names in slot registry"
                     {:duplicate-slots (vec dupes)})))
   (let [port-entries (for [slot registry
@@ -125,7 +136,29 @@
      :datomic-config-dir (path-str slot-root "datomic" "config")
      :smtp4dev-dir (path-str slot-root "smtp4dev")
      :logs-dir (path-str slot-root "logs")
+     :firefox-profile-dir (path-str slot-root "firefox")
      :shared-filestore-dir (path-str main-root "data.dev" "filestore")}))
+
+(defn- validate-slot-state-paths!
+  [main-root paths]
+  (let [{:keys [state-root slots-root]} (state-paths main-root)
+        slots-root (fs/normalize (fs/absolutize slots-root))
+        slot-root (fs/normalize (fs/absolutize (:slot-root paths)))]
+    (when-not (= slots-root (fs/parent slot-root))
+      (throw (ex-info "The slot state path must remain inside the slots directory"
+                      {:slots-root (str slots-root)
+                       :slot-root (str slot-root)})))
+    (doseq [path [state-root (str slots-root) (str slot-root)]]
+      (when (fs/sym-link? path)
+        (throw (ex-info "The slot state path must not be a symlink"
+                        {:path path
+                         :slot-root (str slot-root)})))
+      (when (and (fs/exists? path {:nofollow-links true})
+                 (not (fs/directory? path)))
+        (throw (ex-info "The slot state path must be a directory"
+                        {:path path
+                         :slot-root (str slot-root)}))))
+    paths))
 
 (defn- shell-double-quote [s]
   (str "\""
@@ -243,7 +276,9 @@
   (let [main-root (-> main-root state-paths :main-root)
         slot (slot-key slot)
         worktree (absolutize-str worktree)
-        {:keys [claim-file]} (slot-paths main-root slot)
+        paths (slot-paths main-root slot)
+        _ (validate-slot-state-paths! main-root paths)
+        claim-file (:claim-file paths)
         existing-claim (read-claim-file claim-file)]
     (cond
       (and existing-claim
@@ -264,7 +299,9 @@
 
 (defn with-slot-lock!
   [{:keys [main-root slot]} f]
-  (let [{:keys [lock-file]} (slot-paths main-root (slot-key slot))
+  (let [paths (slot-paths main-root (slot-key slot))
+        _ (validate-slot-state-paths! main-root paths)
+        lock-file (:lock-file paths)
         lock-path (fs/path lock-file)]
     (fs/create-dirs (fs/parent lock-path))
     (try
@@ -278,14 +315,30 @@
       (finally
         (fs/delete-tree lock-path)))))
 
+(defn- symlink-target? [link target]
+  (let [link (fs/path link)
+        target (fs/normalize (fs/absolutize target))]
+    (and (fs/sym-link? link)
+         (= (str target)
+            (str (fs/normalize
+                  (fs/path (fs/parent link) (fs/read-link link))))))))
+
+(defn- validate-symlink! [link target]
+  (let [link (fs/path link)]
+    (when (and (fs/exists? link {:nofollow-links true})
+               (not (fs/sym-link? link)))
+      (throw (ex-info "Refusing to replace existing path with symlink"
+                      {:link (str link)
+                       :target (str (fs/path target))})))))
+
 (defn- ensure-symlink!
   [link target]
   (let [link (fs/path link)
         target (fs/path target)]
+    (validate-symlink! link target)
     (fs/create-dirs (fs/parent link))
     (cond
-      (and (fs/sym-link? link)
-           (= (str target) (str (fs/read-link link))))
+      (symlink-target? link target)
       (str link)
 
       (fs/sym-link? link)
@@ -304,37 +357,115 @@
         (fs/create-sym-link link target)
         (str link)))))
 
+(defn- firefox-profile-locks [profile]
+  (let [profile (fs/path profile)]
+    (if (and (fs/exists? profile {:nofollow-links true})
+             (not (fs/sym-link? profile))
+             (fs/directory? profile))
+      (->> firefox-lock-filenames
+           (map #(fs/path profile %))
+           (filter #(fs/exists? % {:nofollow-links true}))
+           (mapv str))
+      [])))
+
+(defn- validate-firefox-profile!
+  [worktree-profile slot-profile]
+  (let [worktree-profile (fs/path worktree-profile)
+        slot-profile (fs/path slot-profile)
+        worktree-profile-exists? (fs/exists? worktree-profile
+                                             {:nofollow-links true})
+        slot-profile-exists? (fs/exists? slot-profile
+                                         {:nofollow-links true})
+        profile-locks (into (firefox-profile-locks worktree-profile)
+                            (firefox-profile-locks slot-profile))]
+    (when (and (fs/sym-link? worktree-profile)
+               (not (symlink-target? worktree-profile slot-profile)))
+      (throw (ex-info "The Firefox profile symlink points outside the slot"
+                      {:worktree-profile (str worktree-profile)
+                       :symlink-target (str (fs/read-link worktree-profile))
+                       :slot-profile (str slot-profile)})))
+    (when (and worktree-profile-exists?
+               (not (fs/sym-link? worktree-profile))
+               (not (fs/directory? worktree-profile)))
+      (throw (ex-info "The worktree Firefox profile must be a directory"
+                      {:worktree-profile (str worktree-profile)})))
+    (when (and slot-profile-exists?
+               (or (fs/sym-link? slot-profile)
+                   (not (fs/directory? slot-profile))))
+      (throw (ex-info "The slot Firefox profile must be a real directory"
+                      {:slot-profile (str slot-profile)})))
+    (when (and worktree-profile-exists?
+               (not (fs/sym-link? worktree-profile))
+               slot-profile-exists?)
+      (throw (ex-info
+              "Cannot continue because both the worktree and slot Firefox profiles exist"
+              {:worktree-profile (str worktree-profile)
+               :slot-profile (str slot-profile)})))
+    (when (seq profile-locks)
+      (throw (ex-info "The Firefox profile appears to be in use"
+                      {:worktree-profile (str worktree-profile)
+                       :slot-profile (str slot-profile)
+                       :lock-files profile-locks})))))
+
+(defn- ensure-firefox-profile!
+  [worktree-profile slot-profile]
+  (validate-firefox-profile! worktree-profile slot-profile)
+  (let [worktree-profile (fs/path worktree-profile)
+        slot-profile (fs/path slot-profile)]
+    (when (and (fs/exists? worktree-profile {:nofollow-links true})
+               (not (fs/sym-link? worktree-profile)))
+      (fs/move worktree-profile slot-profile))
+    (fs/create-dirs slot-profile)
+    (ensure-symlink! worktree-profile slot-profile)))
+
 (defn init-slot!
   [{:keys [main-root worktree slot base-secrets branch force?]}]
   (let [main-root (-> main-root state-paths :main-root)
         worktree (absolutize-str worktree)
         slot-name (:slot slot)
         paths (slot-paths main-root slot-name)
+        _ (validate-slot-state-paths! main-root paths)
         logback-template (path-str main-root "dev" "datomic" "logback.xml")
         logback-target (path-str (:datomic-config-dir paths) "logback.xml")
         current-slot-link (path-str worktree "data.dev" "current-slot")
-        filestore-link (path-str worktree "data.dev" "filestore")]
+        filestore-link (path-str worktree "data.dev" "filestore")
+        firefox-profile-link (path-str worktree "data.dev" "firefox")
+        claim-file (:claim-file paths)]
     (when-not (fs/regular-file? logback-template)
       (throw (ex-info "Datomic logback template is missing"
                       {:template logback-template})))
-    (claim-slot! {:main-root main-root
-                  :slot slot-name
-                  :worktree worktree
-                  :branch branch
-                  :force? force?})
-    (doseq [dir [(:datomic-data-dir paths)
-                 (:datomic-config-dir paths)
-                 (:smtp4dev-dir paths)
-                 (:logs-dir paths)
-                 (:shared-filestore-dir paths)]]
-      (fs/create-dirs dir))
-    (fs/copy logback-template logback-target {:replace-existing true})
-    (write-text-file! (:env-file paths) (render-env-sh main-root slot))
-    (write-text-file! (:compose-env-file paths) (render-compose-env main-root slot))
-    (write-slot-secrets! main-root slot base-secrets)
-    (ensure-symlink! current-slot-link (:slot-root paths))
-    (ensure-symlink! filestore-link (:shared-filestore-dir paths))
-    paths))
+    (validate-firefox-profile! firefox-profile-link
+                               (:firefox-profile-dir paths))
+    (validate-symlink! current-slot-link (:slot-root paths))
+    (validate-symlink! filestore-link (:shared-filestore-dir paths))
+    (let [previous-claim (read-claim-file claim-file)]
+      (claim-slot! {:main-root main-root
+                    :slot slot-name
+                    :worktree worktree
+                    :branch branch
+                    :force? force?})
+      (try
+        (doseq [dir [(:datomic-data-dir paths)
+                     (:datomic-config-dir paths)
+                     (:smtp4dev-dir paths)
+                     (:logs-dir paths)
+                     (:shared-filestore-dir paths)]]
+          (fs/create-dirs dir))
+        (fs/copy logback-template logback-target {:replace-existing true})
+        (write-text-file! (:env-file paths) (render-env-sh main-root slot))
+        (write-text-file! (:compose-env-file paths) (render-compose-env main-root slot))
+        (write-slot-secrets! main-root slot base-secrets)
+        (ensure-symlink! current-slot-link (:slot-root paths))
+        (ensure-symlink! filestore-link (:shared-filestore-dir paths))
+        (validate-slot-state-paths! main-root paths)
+        (ensure-firefox-profile! firefox-profile-link
+                                 (:firefox-profile-dir paths))
+        paths
+        (catch Exception e
+          (if previous-claim
+            (write-text-file! claim-file (str (pr-str previous-claim) "\n"))
+            (fs/delete-if-exists claim-file))
+          (throw e))))))
 
 (defn detect-webawesome-version
   [source-root]
@@ -747,11 +878,6 @@
             :message message}
      data (assoc :data data))))
 
-(defn- symlink-target? [link target]
-  (and (fs/sym-link? link)
-       (= (str (fs/path target))
-          (str (fs/read-link link)))))
-
 (defn- delete-path! [path]
   (if (and (fs/directory? path)
            (not (fs/sym-link? path)))
@@ -763,16 +889,19 @@
     (doseq [[link target] [[(path-str worktree "data.dev" "current-slot")
                             (:slot-root paths)]
                            [(path-str worktree "data.dev" "filestore")
-                            (:shared-filestore-dir paths)]]]
+                            (:shared-filestore-dir paths)]
+                           [(path-str worktree "data.dev" "firefox")
+                            (:firefox-profile-dir paths)]]]
       (when (symlink-target? link target)
         (fs/delete-if-exists link)))))
 
-(defn- clear-slot-state! [{:keys [slot-root claim-file lock-file]}]
+(defn- clear-slot-state!
+  [{:keys [slot-root claim-file lock-file firefox-profile-dir]}]
   (when (fs/sym-link? slot-root)
     (throw (ex-info "Refusing to reset a symlinked slot root"
                     {:command "release"
                      :slot-root slot-root})))
-  (let [preserved-paths #{claim-file lock-file}
+  (let [preserved-paths #{claim-file lock-file firefox-profile-dir}
         stale-paths (when (fs/directory? slot-root)
                       (remove #(contains? preserved-paths (str %))
                               (fs/list-dir slot-root)))
@@ -820,14 +949,27 @@
                    (find-slot (load-registry main-root) slot))
         slot (slot-key slot-map)
         paths (slot-paths main-root slot)
+        _ (validate-slot-state-paths! main-root paths)
         released-claim (read-claim-file (:claim-file paths))
+        firefox-profile-link (some-> (:worktree released-claim)
+                                     (path-str "data.dev" "firefox"))
+        firefox-profile-attached? (and firefox-profile-link
+                                       (fs/exists? firefox-profile-link
+                                                   {:nofollow-links true}))
         released? (boolean released-claim)]
+    (when firefox-profile-link
+      (validate-firefox-profile! firefox-profile-link
+                                 (:firefox-profile-dir paths)))
     (when stop-services?
       (stop-slot-for-release! {:main-root main-root
                                :slot slot-map
                                :runner runner
                                :port-open? port-open?
                                :paths paths}))
+    (when firefox-profile-attached?
+      (validate-slot-state-paths! main-root paths)
+      (ensure-firefox-profile! firefox-profile-link
+                               (:firefox-profile-dir paths)))
     (unlink-worktree-state! paths released-claim)
     (clear-slot-state! paths)
     (cond-> {:slot slot
@@ -846,6 +988,8 @@
         worktree (:worktree claim)
         current-slot-link (when worktree (fs/path worktree "data.dev" "current-slot"))
         filestore-link (when worktree (fs/path worktree "data.dev" "filestore"))
+        firefox-profile-link (when worktree
+                               (fs/path worktree "data.dev" "firefox"))
         compose-result (ps-slot! {:main-root main-root
                                   :slot slot-map
                                   :runner runner})
@@ -883,6 +1027,17 @@
                                    (symlink-target? filestore-link (:shared-filestore-dir slot-paths)))
                               "worktree filestore link points at shared filestore"
                               (some-> filestore-link str))
+                (check-result :firefox-profile-dir
+                              (and (fs/directory? (:firefox-profile-dir slot-paths))
+                                   (not (fs/sym-link? (:firefox-profile-dir slot-paths))))
+                              "slot Firefox profile directory exists"
+                              (:firefox-profile-dir slot-paths))
+                (check-result :firefox-profile-link
+                              (and firefox-profile-link
+                                   (symlink-target? firefox-profile-link
+                                                    (:firefox-profile-dir slot-paths)))
+                              "worktree Firefox profile link points at slot profile"
+                              (some-> firefox-profile-link str))
                 (check-result :http-port-free
                               (not (port-open? (:http-port slot-map)))
                               "HTTP port is free before app startup"
@@ -1088,7 +1243,7 @@
      "  bb dev-slot release SLOT [options]\n\n"
      "Options:\n"
      (cli/format-opts release-help-spec)
-     "\nRelease removes all per-slot state but preserves shared state and templates.\n"
+     "\nRelease removes resettable slot state but preserves each slot's Firefox profile, shared state, and templates.\n"
      "\nExamples:\n"
      "  bb dev-slot release agent-1\n")
 

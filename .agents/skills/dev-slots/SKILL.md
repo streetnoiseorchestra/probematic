@@ -64,6 +64,20 @@ Initialize the slot for that worktree.
 bb dev-slot init agent-1 .worktrees/probematic-agent-1 --branch feature/agent-1
 ```
 
+`init` is the normal slot-acquisition command. It claims and initializes the
+slot in one operation. Do not run `bb dev-slot claim` first. Standalone `claim`
+only records ownership; it does not create generated state or connect the
+Firefox profile.
+
+Every agent must run `init` after creating or selecting its worktree and before
+hydrating, starting services, or starting the app.
+
+Initialization makes `<worktree>/data.dev/firefox` point to the slot's
+persistent Firefox profile. Use that managed path for browser automation; do
+not replace the symlink. Before the first migration of an existing worktree
+profile, stop Firefox and remove only stale lock files. Initialization refuses
+symlinked slot-state paths and conflicting profile locations.
+
 Link ignored artifacts after the worktree exists.
 
 ```bash
@@ -123,6 +137,12 @@ bb dev-slot release agent-1
 
 A released worktree can be attached again by rerunning `init` for the intended slot and worktree.
 
+Release preserves the slot's Firefox profile so later initialization retains
+browser logins. For a pre-upgrade worktree, it migrates the existing profile
+during release and refuses to continue while Firefox holds a profile lock. If
+both profile locations exist, keep both and ask the human which one is
+authoritative.
+
 ## Repair hints
 
 If generated files or safe symlinks are stale, rerun `init`.
@@ -151,5 +171,11 @@ Do not stage `.dev-state/`, generated slot files, ignored artifacts, or symlinke
 Do not hydrate a slot database while a host app or REPL for that slot is running.
 
 Do not delete the shared main-root `data.dev/filestore` during cleanup.
+
+Do not delete a slot's Firefox profile during cleanup or replace its managed
+worktree symlink.
+
+Do not use standalone `claim` as the normal startup step. Use `init`, which
+claims and initializes the slot.
 
 Do not intentionally run two slots against one worktree at the same time.
