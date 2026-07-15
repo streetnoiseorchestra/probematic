@@ -41,7 +41,13 @@
     (if form
       [button/Button {:type "submit"
                       :form form
-                      :class "account-settings-row sno-no-visited"}
+                      :class "account-settings-row sno-no-visited"
+                      :appearance "plain"
+                      :style {:border-radius "0"
+                              :font-weight "inherit"
+                              :height "auto"
+                              :justify-content "normal"
+                              :text-align "start"}}
        icon
        label]
       [:a (cond-> {:href href

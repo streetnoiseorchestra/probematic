@@ -65,6 +65,13 @@
                  :type "submit"
                  :title :account-settings/logout-row-title}]
                (mapv row-summary rows)))
+        (is (= {:appearance "plain"
+                :style      {:border-radius  "0"
+                             :font-weight    "inherit"
+                             :height         "auto"
+                             :justify-content "normal"
+                             :text-align     "start"}}
+               (select-keys logout-attrs [:appearance :style])))
         (is (nil? (:href logout-attrs)))))))
 
 (deftest account-directory-renders-local-store-assets-and-real-prototype-actions
