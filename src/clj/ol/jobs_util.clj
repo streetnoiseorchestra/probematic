@@ -59,7 +59,7 @@
                                  (fn [{:keys [id]}] (= id schedule-id))
                                  @schedules))]
     (when matched-schedule
-      (let [closeable (:closeable matched-schedule)
+      (let [^java.lang.AutoCloseable closeable (:closeable matched-schedule)
             updated-schedules (filter (fn [schedule]
                                         (not (= schedule matched-schedule)))
                                       @schedules)]

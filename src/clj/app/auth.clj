@@ -323,9 +323,9 @@
 
 (defn is-password-pwned? [password]
   (let [sha1sum ^String (secret-box/sha1-str password)
-        r (:body @(http/get (str "https://api.pwnedpasswords.com/range/" (.substring sha1sum 0 5))
-                            {:keepalive -1
-                             :headers   {"user-agent" "probematic: https://github.com/Ramblurr/probematic"}}))
+        r ^String (:body @(http/get (str "https://api.pwnedpasswords.com/range/" (.substring sha1sum 0 5))
+                                    {:keepalive -1
+                                     :headers   {"user-agent" "probematic: https://github.com/Ramblurr/probematic"}}))
         lines (when r (.split r "(?m)\n"))]
     (some #(-> (.toLowerCase ^String %)
                (.split ":")

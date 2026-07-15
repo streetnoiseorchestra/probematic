@@ -5,7 +5,9 @@
    [clojure.string :as str]
    [medley.core :as m]
    [ol.vips :as v]
-   [ol.vips.operations :as ops]))
+   [ol.vips.operations :as ops])
+  (:import
+   (java.io InputStream)))
 
 (def supported-formats [{:format :gif :ext ".gif" :mime-type "image/gif" :im-tag "GIF"}
                         {:format :jpeg :ext ".jpeg" :mime-type "image/jpeg" :im-tag "JPEG"}
@@ -44,7 +46,7 @@
     [path nil]
     (let [tmp (bfs/file (bfs/create-temp-file {:prefix "probematic." :suffix ".tmp"}))]
       (assert content-thunk "input path or content-thunk required")
-      (with-open [stream (content-thunk)]
+      (with-open [^InputStream stream (content-thunk)]
         (io/copy stream tmp))
       [(str tmp) tmp])))
 
@@ -66,11 +68,11 @@
         ext (format->extension format)
         tmp (bfs/file (bfs/create-temp-file {:prefix "snorga." :suffix ext}))]
     (try
-      (with-open [thumbnail (ops/thumbnail path
-                                           (int width)
-                                           {:height      (int height)
-                                            :size        :down
-                                            :auto-rotate true})]
+      (with-open [^java.lang.AutoCloseable thumbnail (ops/thumbnail path
+                                                                    (int width)
+                                                                    {:height      (int height)
+                                                                     :size        :down
+                                                                     :auto-rotate true})]
         (write-thumbnail-to-file! thumbnail tmp format quality))
       (finally
         (when input-temp
@@ -116,12 +118,12 @@
                  {:prefix "snorga.avatar." :suffix ext}))
         succeeded? (volatile! false)]
     (try
-      (with-open [avatar (ops/thumbnail path
-                                        (int size)
-                                        {:height (int size)
-                                         :size :both
-                                         :crop :centre
-                                         :auto-rotate true})]
+      (with-open [^java.lang.AutoCloseable avatar (ops/thumbnail path
+                                                                 (int size)
+                                                                 {:height (int size)
+                                                                  :size :both
+                                                                  :crop :centre
+                                                                  :auto-rotate true})]
         (write-thumbnail-to-file! avatar output format quality))
       (let [result (assoc params
                           :avatar-size size
@@ -179,8 +181,8 @@
   [{:keys [input]}]
   (let [path (:path input)
         _ (assert path "In place operations require a path on disk, not a stream")]
-    (with-open [image (v/from-file path {:access :sequential})
-                oriented (ops/autorot image)]
+    (with-open [^java.lang.AutoCloseable image (v/from-file path {:access :sequential})
+                ^java.lang.AutoCloseable oriented (ops/autorot image)]
       (let [format (image->format image path)
             extension (format->extension format)]
         (when-not extension
@@ -204,7 +206,7 @@
     nil))
 
 (defn- identify* [path]
-  (with-open [image (v/from-file path {:access :sequential})]
+  (with-open [^java.lang.AutoCloseable image (v/from-file path {:access :sequential})]
     (let [headers (v/headers image)
           metadata (v/metadata image)
           format (image->format image path)]

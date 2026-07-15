@@ -34,7 +34,7 @@
     FALLBACK-FILENAME
     filename))
 
-(defn- filter-dot [filename]
+(defn- filter-dot [^String filename]
   (if (.startsWith filename ".")
     (str FALLBACK-FILENAME filename)
     filename))
@@ -53,7 +53,7 @@
       filter-blank
       filter-dot))
 
-(defn- truncate [filename padding]
+(defn- truncate [^String filename padding]
   (let [threshold (- 254 (or padding 0))]
     (if (> (.length filename) threshold)
       (.substring filename 0 threshold)

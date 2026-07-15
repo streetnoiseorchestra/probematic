@@ -19,7 +19,7 @@
         matrix (.encode writer s BarcodeFormat/QR_CODE width height)]
     (MatrixToImageWriter/toBufferedImage matrix)))
 
-(defn image-to-data-uri [image]
+(defn image-to-data-uri [^BufferedImage image]
   (let [baos (ByteArrayOutputStream.)]
     (ImageIO/write image "png" baos)
     (.flush baos)
@@ -33,7 +33,7 @@
 
 (def non-alphanum "[^a-zA-Z0-9]")
 
-(defn serialize-iban [iban]
+(defn serialize-iban [^String iban]
   (.toUpperCase (.replaceAll iban non-alphanum "")))
 
 (serialize-iban "AT1234")

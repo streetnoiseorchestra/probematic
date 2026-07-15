@@ -5,7 +5,8 @@
    [tick.core :as t])
   (:import
    [java.io ByteArrayOutputStream]
-   [java.util Locale]))
+   [java.util Locale]
+   [org.apache.poi.ss.usermodel Cell CellStyle]))
 
 (def id
   :insurance/exporter-harmonia-v1)
@@ -49,9 +50,9 @@
      (or images-share-url "")]))
 
 (defn get-cell-style-at
-  [sheet row col]
+  ^CellStyle [sheet row col]
   (let [r (nth (excel/row-seq sheet) row)
-        c (nth (excel/cell-seq r) col)]
+        ^Cell c (nth (excel/cell-seq r) col)]
     (.getCellStyle c)))
 
 (defn clear-rows!
@@ -63,7 +64,7 @@
 
 (defn set-item-styles!
   [row normal-style stuckpreis-style total-style]
-  (doseq [cell (excel/cell-seq row)]
+  (doseq [^Cell cell (excel/cell-seq row)]
     (when cell
       (when (>= (.getRowIndex cell) START-ROW)
         (.setCellStyle cell normal-style))
@@ -102,17 +103,17 @@
     :as _changeset}]
   (let [wb               (excel/load-workbook-from-resource fname)
         sheet            (excel/select-sheet sheet-name wb)
-        total-style      (get-cell-style-at sheet 4 TOTAL-COL)
-        stuckpreis-style (doto (get-cell-style-at sheet START-ROW STUCKPREIS-COL)
-                           (.setLocked false))
-        label-style      (doto (excel/create-cell-style!
-                                wb
-                                {:font {:size 14 :bold true}
-                                 :wrap false})
-                           (.setLocked false))
-        normal-style     (doto (excel/create-cell-style! wb {})
-                           (.setLocked false)
-                           (.setFillBackgroundColor (excel/color-index :white)))
+        ^CellStyle total-style (get-cell-style-at sheet 4 TOTAL-COL)
+        ^CellStyle stuckpreis-style (doto (get-cell-style-at sheet START-ROW STUCKPREIS-COL)
+                                      (.setLocked false))
+        ^CellStyle label-style (doto ^CellStyle (excel/create-cell-style!
+                                                 wb
+                                                 {:font {:size 14 :bold true}
+                                                  :wrap false})
+                                 (.setLocked false))
+        ^CellStyle normal-style (doto ^CellStyle (excel/create-cell-style! wb {})
+                                  (.setLocked false)
+                                  (.setFillBackgroundColor (short (excel/color-index :white))))
         date-today       (t/format (t/formatter "dd MMM yyyy" Locale/GERMAN)
                                    (t/today))
         add-instruments! (partial -add-instruments!

@@ -109,7 +109,8 @@
 (defn qp-bool
   "Parse the query parameter specified by k as a boolean"
   [req k]
-  (Boolean/valueOf (-> req :query-params k)))
+  (let [^String value (-> req :query-params k)]
+    (Boolean/valueOf value)))
 
 (defn post? [{:keys [request-method]}]
   (= :post request-method))
@@ -225,7 +226,7 @@
 (defn index-sort-by
   "Sorts the items in coll by k according to the order of values of k in manifest.
   Probably too slow on large collections."
-  [manifest k coll]
+  [^java.util.List manifest k coll]
   (sort-by (fn [item]
              (.indexOf manifest (get item k)))
            coll))

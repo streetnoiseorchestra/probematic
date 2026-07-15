@@ -12,6 +12,7 @@
    [keycloak.utils :as keycloak.utils]
    [medley.core :as m])
   (:import
+   (org.keycloak.admin.client Keycloak)
    (org.keycloak.representations.idm UserRepresentation)))
 
 (defn create-client [sys]
@@ -19,7 +20,7 @@
     (-> (keycloak/client-conf (dissoc kc-env :client-secret))
         (keycloak/keycloak-client (:client-secret kc-env)))))
 
-(defn close-client! [client]
+(defn close-client! [^Keycloak client]
   (when client
     (.close client)))
 
@@ -104,7 +105,7 @@
                                   (.setEnabled enabled)))
 
 (defn- update-user [{:keys [client realm] :as kc} keycloak-id person]
-  (-> client
+  (-> ^Keycloak client
       (.realm realm)
       (.users)
       (.get keycloak-id)
@@ -147,7 +148,7 @@
     (subs (str loc) (+ (str/last-index-of (str loc) "/") 1))))
 
 (defn- create-user! [{:keys [client realm] :as kc} person]
-  (let [resp (-> client (.realm realm) (.users) (.create (user/user-for-update person)) parse-response)]
+  (let [resp (-> ^Keycloak client (.realm realm) (.users) (.create (user/user-for-update person)) parse-response)]
     (if-not (= 201 (:status resp))
       (throw (ex-info "Create Keycloak User Failed" {:response (:body resp)}))
       (let [group-id (admin/get-group-id client realm (:group person))

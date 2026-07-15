@@ -14,6 +14,7 @@
   (:import
    (java.time
     DayOfWeek
+    Instant
     LocalTime
     Period
     ZoneId
@@ -100,13 +101,14 @@
 
 (defn- start-rehearsal-leader-notify!
   [system]
-  (let [next-wednesdays-at-10-pm (->> (chime/periodic-seq (-> (LocalTime/of 22 0 0)
-                                                              (.adjustInto (ZonedDateTime/now (ZoneId/of "Europe/Berlin")))
-                                                              .toInstant)
+  (let [zone-id (ZoneId/of "Europe/Berlin")
+        ^ZonedDateTime first-run (.adjustInto (LocalTime/of 22 0 0)
+                                              (ZonedDateTime/now zone-id))
+        next-wednesdays-at-10-pm (->> (chime/periodic-seq (.toInstant first-run)
                                                           (Period/ofDays 1))
-                                      (map #(.atZone % (ZoneId/of "Europe/Berlin")))
+                                      (map #(.atZone ^Instant % zone-id))
                                       (filter (comp #{DayOfWeek/WEDNESDAY}
-                                                    #(.getDayOfWeek %))))]
+                                                    #(.getDayOfWeek ^ZonedDateTime %))))]
     (chime/chime-at next-wednesdays-at-10-pm
                     (fn [_] (notify-rehearsal-leader! system)))))
 

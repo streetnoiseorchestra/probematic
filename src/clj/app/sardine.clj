@@ -5,8 +5,9 @@
    [clojure.java.io :as io]
    [clojure.string :as string])
   (:import
-   (com.github.sardine DavResource)
+   (com.github.sardine DavResource Sardine)
    (com.github.sardine.impl SardineException SardineImpl)
+   (java.io InputStream)
    (java.net URLEncoder)
    (org.apache.http.client.utils URIBuilder)))
 
@@ -42,7 +43,7 @@
   (assert (string/starts-with? webdav-base-path "/") "webdav base path must start and end with a slash")
   (path-join webdav-base-path (strip-leading-slash remote-path)))
 
-(defn build-uri [{:keys [host]} full-path]
+(defn build-uri ^String [{:keys [host]} full-path]
   (-> (URIBuilder.)
       (.setScheme "https")
       (.setHost host)
@@ -50,7 +51,7 @@
       (.setPath full-path)
       (.toString)))
 
-(defn build-sardine [token]
+(defn build-sardine [^String token]
   (SardineImpl. token))
 
 (defn build-config [{:keys [host webdav-base-path token]}]
@@ -86,7 +87,8 @@
    (list-directory webdav-config remote-path 1))
   ([{:keys [client] :as webdav-config} remote-path depth]
    (let [full-path (build-full-path webdav-config remote-path)
-         result (-> client (.list (build-uri webdav-config full-path) depth))]
+         result (-> ^Sardine client
+                    (.list (build-uri webdav-config full-path) (int depth)))]
      (->> (for [r result]
             (->dav-resource webdav-config r))
           (remove (fn [{:keys [path]}] (some #(re-find % path) excluded-folder-patterns)))
@@ -103,9 +105,9 @@
 
 (defn stream-file [{:keys [client] :as webdav-config} remote-path]
   (let [uri (build-uri webdav-config (build-full-path webdav-config remote-path))]
-    (-> client (.get uri))))
+    (-> ^Sardine client (.get uri))))
 
-(defn content-disposition-filename [prefix name]
+(defn content-disposition-filename [prefix ^String name]
   (format "%s; filename*=UTF-8''%s" prefix (URLEncoder/encode name "UTF-8")))
 
 (defn fetch-file-response [{:keys [webdav] :as req} path inline?]
@@ -132,16 +134,18 @@
 (defn mkdirs [{:keys [client] :as webdav-config} remote-path]
   (doseq [component (component-paths remote-path)]
     (when-not (dir-exists? webdav-config component)
-      (-> client (.createDirectory (build-uri webdav-config (build-full-path webdav-config component)))))))
+      (-> ^Sardine client
+          (.createDirectory (build-uri webdav-config (build-full-path webdav-config component)))))))
 
-(defn- upload-file [{:keys [client] :as webdav-config} remote-path in content-type]
+(defn- upload-file [{:keys [client] :as webdav-config} remote-path ^InputStream in ^String content-type]
   (assert (string/starts-with? remote-path "/") "remote-path must start with a slash")
   (let [parent-path (fs/unixify (fs/parent remote-path))]
     (when-not (dir-exists? webdav-config parent-path)
       (mkdirs webdav-config parent-path)))
   (try
-    (-> client (.put (build-uri webdav-config (build-full-path webdav-config remote-path))
-                     in content-type))
+    (-> ^Sardine client
+        (.put (build-uri webdav-config (build-full-path webdav-config remote-path))
+              in content-type))
     (catch Exception _e
       ;; ignoring exceptions until this bug is fixed because an exception is always being throwed even on success
       ;; https://github.com/nextcloud/server/issues/35931

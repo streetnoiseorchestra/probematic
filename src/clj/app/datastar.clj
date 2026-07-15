@@ -39,7 +39,8 @@
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
    [starfederation.datastar.clojure.api :as d*])
   (:import
-   (java.time Duration Instant)))
+   (java.time Duration Instant)
+   (java.util.concurrent BlockingQueue)))
 
 (defn ->signals [m]
   (j/write-value-as-string m))
@@ -116,7 +117,7 @@
 (defn clean-stale-watches!
   "Removes watches for tab-ids that are no longer in the page state."
   []
-  (let [watches       (-> !page-state .getWatches keys)
+  (let [watches       (-> (.getWatches ^clojure.lang.IRef !page-state) keys)
         stale-watches (remove #(clojure.core/get @!page-state %) watches)]
     (doseq [watch-key stale-watches]
       (remove-watch !page-state watch-key))))
@@ -227,7 +228,7 @@
   [conn c]
   (a/thread
     (try
-      (let [queue (d/tx-report-queue conn)]
+      (let [^BlockingQueue queue (d/tx-report-queue conn)]
         (while true
           (let [report (.take queue)]
             (a/>!! c report))))
@@ -289,7 +290,7 @@
     (reset! refresh-ch_ nil))
   (when chime-schedule
     (prn "CLOSE chime -schedule")
-    (.close chime-schedule))
+    (.close ^java.lang.AutoCloseable chime-schedule))
   (when datomic
     (prn "CLOSE datomic react")
     (stop-react-datomic-tx datomic)))
