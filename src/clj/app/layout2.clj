@@ -219,6 +219,7 @@
     (into
      [:div {:id "morph"}
       [:app-shell
+       (jump-menu/StickySentinel)
        [:header
         (jump-menu/JumpMenu
          {::jump-menu/logotype

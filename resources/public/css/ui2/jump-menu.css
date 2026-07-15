@@ -1,3 +1,12 @@
+.jump-menu-sentinel {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: var(--wa-border-width-s);
+  pointer-events: none;
+}
+
 .jump-menu {
   --jump-menu-panel-inline-size: min(
     calc(100dvi - var(--wa-space-xl)),
@@ -16,6 +25,16 @@
 }
 
 @scope (.jump-menu) {
+  :scope.stuck {
+    background-color: color-mix(
+      in oklab,
+      var(--wa-color-surface-default) 60%,
+      transparent
+    );
+    box-shadow: var(--wa-shadow-s);
+    backdrop-filter: blur(calc(var(--wa-shadow-blur-l) * 2));
+  }
+
   .trigger > .brand {
     display: flex;
   }
@@ -190,16 +209,6 @@
 
 @media (--sno-viewport-below-s) {
   @scope (.jump-menu) {
-    :scope.stuck {
-      background-color: color-mix(
-        in oklab,
-        var(--wa-color-surface-default) 60%,
-        transparent
-      );
-      box-shadow: var(--wa-shadow-s);
-      backdrop-filter: blur(calc(var(--wa-shadow-blur-l) * 2));
-    }
-
     .shortcuts {
       gap: var(--wa-space-2xs);
     }

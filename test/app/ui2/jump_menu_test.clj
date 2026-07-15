@@ -66,11 +66,8 @@
             gigs       (l/select ".gig" view)
             see-all    (l/select-one ".see-all" view)
             translation-nodes (l/select :i18n/tr view)]
-        (is (= {:root-class "jump-menu"
-                :root-signals "false"
-                :root-init "$jumpMenuStuck = window.scrollY > 0"
-                :root-scroll "$jumpMenuStuck = window.scrollY > 0"
-                :root-stuck "$jumpMenuStuck"
+        (is (= {:root-attrs {:class "jump-menu"
+                             :data-class:stuck "$jumpMenuStuck"}
                 :trigger {:id "jump-menu-trigger"
                           :appearance "plain"
                           :with-caret true
@@ -93,13 +90,7 @@
                 :gig-labels ["Sommerfest at Kulturhof" "Streetnoise at Hafenklang"]
                 :see-all-href "/gigs"
                 :translation-node-count 0}
-               {:root-class (-> view l/attrs :class)
-                :root-signals
-                (-> view l/attrs :data-signals:jump-menu-stuck__ifmissing)
-                :root-init (-> view l/attrs :data-init)
-                :root-scroll
-                (-> view l/attrs :data-on:scroll__window__throttle.50ms)
-                :root-stuck (-> view l/attrs :data-class:stuck)
+               {:root-attrs (l/attrs view)
                 :trigger (select-keys (l/attrs trigger)
                                       [:id :appearance :with-caret :aria-controls
                                        :aria-expanded :aria-haspopup :aria-label])
@@ -125,14 +116,25 @@
                                                     (name (last resource-ids))))}
                                        [:main "Page content"])
         shell          (l/select-one 'app-shell view)
-        header         (first (direct-children shell))
+        sentinel       (l/select-one ".jump-menu-sentinel" shell)
+        header         (l/select-one 'header shell)
         children       (vec (direct-children header))]
-    (is (= {:header-tag :header
+    (is (= {:sentinel {:aria-hidden true
+                       :data-signals:jump-menu-stuck "false"
+                       :data-on-intersect "$jumpMenuStuck = false"
+                       :data-on-intersect__exit "$jumpMenuStuck = true"}
+            :header-tag :header
             :direct-child-count 1
             :jump-menu-count 1
             :account-control-count 0
             :navigation-toggle-count 0}
-           {:header-tag (first header)
+           {:sentinel (select-keys
+                       (l/attrs sentinel)
+                       [:aria-hidden
+                        :data-signals:jump-menu-stuck
+                        :data-on-intersect
+                        :data-on-intersect__exit])
+            :header-tag (first header)
             :direct-child-count (count children)
             :jump-menu-count (count (l/select ".jump-menu" header))
             :account-control-count (count (l/select 'app-shell-user header))
@@ -141,3 +143,14 @@
              (filter (fn [node]
                        (= :bars (:app.ui2.icon/name (l/attrs node))))
                      (l/select :app.ui2.icon/icon header)))}))))
+
+(deftest stuck-jump-menu-keeps-its-glass-treatment-at-every-breakpoint
+  (let [css         (slurp "resources/public/css/ui2/jump-menu.css")
+        stuck-index (.indexOf css ":scope.stuck")
+        mobile-index (.indexOf css "@media (--sno-viewport-below-s)")]
+    (is (= 1 (count (re-seq #":scope\.stuck" css))))
+    (is (and (pos? stuck-index)
+             (pos? mobile-index)
+             (< stuck-index mobile-index)))
+    (is (re-find #"(?s):scope\.stuck\s*\{.*background-color:\s*color-mix\(.*box-shadow:\s*var\(--wa-shadow-s\);.*backdrop-filter:\s*blur\(calc\(var\(--wa-shadow-blur-l\)\s*\*\s*2\)\);"
+                 css))))
