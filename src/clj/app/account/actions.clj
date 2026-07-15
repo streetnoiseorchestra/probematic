@@ -179,6 +179,13 @@
     (:tempfile avatar-upload)
     (conj [:app.account/discard-upload (:tempfile avatar-upload)])))
 
+(def ^:private saved-profile-state
+  {:avatar nil
+   :avatar-removed? false
+   :_error {}
+   :_saved? true
+   :_feedback [:i18n/tr :account-settings/profile-saved-feedback]})
+
 (defn save-profile-action
   [{:keys [db current-member-id]}
    {:keys [account-profile avatar-upload]}]
@@ -202,7 +209,15 @@
             {:member-id current-member-id
              :profile profile
              :avatar-upload avatar-upload
-             :sync-keycloak? (keycloak-sync-required? member)}]])))))
+             :sync-keycloak? (keycloak-sync-required? member)}]
+           [:app.datastar/assoc-state
+            [:account-profile]
+            saved-profile-state]
+           [:app.datastar/respond-sse
+            [[:app.datastar.sse/merge-signals
+              {:account-profile (merge profile saved-profile-state)}]
+             [:app.datastar.sse/execute-script
+              "window.StreetnoiseAccountAvatar.saved();"]]]])))))
 
 (defn- valid-zone? [value]
   (boolean

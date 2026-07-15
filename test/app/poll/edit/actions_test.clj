@@ -59,7 +59,9 @@
                                              :poll.option/value])) option-maps)))
       (is (= 2 (count option-adds)))
       (is (= {} opts))
-      (is (= [:app.datastar/redirect (urls/link-poll poll-id)] redirect))
+      (is (= [:app.datastar/respond-sse
+              [[:app.datastar.sse/redirect (urls/link-poll poll-id)]]]
+             redirect))
       (is (= 2 (count effects))))))
 
 (deftest update-poll-action-test
@@ -109,7 +111,9 @@
                                              :poll.option/value])) option-maps)))
       (is (= 3 (count option-adds)))
       (is (= {} opts))
-      (is (= [:app.datastar/redirect (urls/link-poll poll-id)] redirect))))
+      (is (= [:app.datastar/respond-sse
+              [[:app.datastar.sse/redirect (urls/link-poll poll-id)]]]
+             redirect))))
 
   (testing "rejects changed type or options for an open poll"
     (let [{:keys [conn member-id]} (tc/new-system "poll-update-open-action")
@@ -145,7 +149,8 @@
       (is (= [[:db/transact
                [[:db/retractEntity (pts/poll-ref poll-id)]]
                {}]
-              [:app.datastar/redirect (urls/link-polls-home)]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/redirect (urls/link-polls-home)]]]]
              (actions/delete-poll-action
               (pts/action-state conn member-id)
               {:poll-edit {:poll-id (str poll-id)}}))))))

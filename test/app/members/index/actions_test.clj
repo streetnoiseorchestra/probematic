@@ -66,9 +66,11 @@
   (let [now (java.util.Date.)]
     (is (= [[:app.members.index/resend-invitation "invite-123"]
             [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
-            [:app.datastar/merge-signals {:invite {:action nil
-                                                   :code nil
-                                                   :inflight false}}]]
+            [:app.datastar/respond-sse
+             [[:app.datastar.sse/merge-signals
+               {:invite {:action nil
+                         :code nil
+                         :inflight false}}]]]]
            (actions/resend-invitation-action
             {:now now}
             {:invite {:code "invite-123"}})))))
@@ -77,9 +79,11 @@
   (let [now (java.util.Date.)]
     (is (= [[:app.members.index/delete-invitation "invite-123"]
             [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
-            [:app.datastar/merge-signals {:invite {:action nil
-                                                   :code nil
-                                                   :inflight false}}]]
+            [:app.datastar/respond-sse
+             [[:app.datastar.sse/merge-signals
+               {:invite {:action nil
+                         :code nil
+                         :inflight false}}]]]]
            (actions/delete-invitation-action
             {:now now}
             {:invite {:code "invite-123"}})))))

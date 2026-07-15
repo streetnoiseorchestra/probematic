@@ -94,7 +94,7 @@
   (testing "invalid plan values do not transact"
     (let [{:keys [conn]}         (tc/new-system "gig-attendance-plan-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
                [:gig-detail :attendance :_error]
                {:error "Invalid attendance plan."}]]
@@ -129,7 +129,7 @@
   (testing "invalid motivation values do not transact"
     (let [{:keys [conn]}         (tc/new-system "gig-attendance-motivation-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
                [:gig-detail :attendance :_error]
                {:error "Invalid attendance motivation."}]]
@@ -199,7 +199,7 @@
   (testing "does not create an attendance entity for a blank comment"
     (let [{:keys [conn]}         (tc/new-system "gig-attendance-comment-nop")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
                [:gig-detail :attendance :comment-edit]
                nil]]
@@ -225,7 +225,9 @@
               [:app.datastar/assoc-state
                [:gig-detail :attendance :comment-edit]
                {:gig-id (str gig-id) :member-id (str next-member-id) :comment "next"}]
-              [:app.datastar/merge-signals {:gig-attendance {:switching-comment false}}]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/merge-signals
+                 {:gig-attendance {:switching-comment false}}]]]]
              (actions/switch-attendance-comment-action
               (state conn)
               {:gig-attendance {:comment-gig-id    (str gig-id)
@@ -247,7 +249,9 @@
       (is (= [[:app.datastar/assoc-state
                [:gig-detail :attendance :comment-edit]
                {:gig-id (str gig-id) :member-id (str next-member-id) :comment ""}]
-              [:app.datastar/merge-signals {:gig-attendance {:switching-comment false}}]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/merge-signals
+                 {:gig-attendance {:switching-comment false}}]]]]
              (actions/switch-attendance-comment-action
               (state conn)
               {:gig-attendance {:comment-gig-id    (str gig-id)

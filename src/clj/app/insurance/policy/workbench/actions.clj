@@ -47,9 +47,10 @@
   [[:db/transact
     (support/with-audit tx-data current-member-id)
     {}]
-   support/clear-loading
    [:app.datastar/assoc-state [form-key :error] nil]
-   [:app.datastar/remove-signals [selection-signal-path]]])
+   [:app.datastar/respond-sse
+    [support/clear-loading-event
+     [:app.datastar.sse/remove-signals [selection-signal-path]]]]])
 
 (def invalid-uuid ::invalid-uuid)
 
@@ -182,11 +183,12 @@
 
 (defn- clear-filter-editor-signals
   [field]
-  [:app.datastar/merge-signals
-   {:insuranceWorkbench {:filterEditor  {:field        ""
-                                         :source       nil
-                                         :appliedField (some-> field name)}
-                         :filterPopover {:open false}}}])
+  [:app.datastar/respond-sse
+   [[:app.datastar.sse/merge-signals
+     {:insuranceWorkbench {:filterEditor  {:field        ""
+                                           :source       nil
+                                           :appliedField (some-> field name)}
+                           :filterPopover {:open false}}}]]])
 
 (defn apply-filter-action
   [_state signals]

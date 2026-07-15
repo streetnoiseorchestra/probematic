@@ -108,11 +108,13 @@
                  "H-123"]
                 [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {}]
-              support/clear-loading
               [:app.datastar/assoc-state [:insurance-review :error] nil]
-              [:app.datastar/remove-signals ["insuranceReview.insurerId"
-                                             "insurance-review.insurer-id"
-                                             (str "insurance-review.insurer-id-" coverage-id)]]]
+              [:app.datastar/respond-sse
+               [support/clear-loading-event
+                [:app.datastar.sse/remove-signals
+                 ["insuranceReview.insurerId"
+                  "insurance-review.insurer-id"
+                  (str "insurance-review.insurer-id-" coverage-id)]]]]]
              (actions/update-insurer-id-action
               (state system)
               {:targetid         (str coverage-id)

@@ -40,14 +40,14 @@
                               :travel.discount.type/discount-type-name "Klimaticket"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:discount-type-create] false]]
              (discount-actions/create-discount-type-action
               (state-for system)
               {:discount-type-create {:discount-type-name "Klimaticket"}})))))
 
   (testing "returns a validation error when the discount type name is blank"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:discount-type-create :error :discount-type-name]
              {:error "Discount type name is required."}]]
            (discount-actions/create-discount-type-action
@@ -59,7 +59,7 @@
       (seed-discount-type! conn {:discount-type-id   (random-uuid)
                                  :discount-type-name "Klimaticket"
                                  :enabled?           true})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:discount-type-create]
                {:discount-type-name "Klimaticket"
@@ -80,7 +80,7 @@
                               :travel.discount.type/discount-type-name "New Name"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:discount-type] false]]
              (discount-actions/update-discount-type-action
               (state-for system)
@@ -97,7 +97,7 @@
       (seed-discount-type! conn {:discount-type-id   (random-uuid)
                                  :discount-type-name "Taken"
                                  :enabled?           true})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:discount-type]
                {:discount-type-name "Taken"
@@ -115,7 +115,7 @@
       (is (= [[:db/transact [[:db/retractEntity [:travel.discount.type/discount-type-id discount-type-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:discount-type] false]]
              (discount-actions/delete-discount-type-action
               (state-for system)
@@ -127,7 +127,7 @@
       (seed-discount-type! conn {:discount-type-id   discount-type-id
                                  :discount-type-name "Old Name"
                                  :enabled?           true})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:discount-type]
                {:discount-type-id      discount-type-id
                 :discount-type-name    "Old Name"
@@ -137,19 +137,19 @@
               {:targetid (str discount-type-id)})))))
 
   (testing "closes the discount type edit form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:discount-type] false]]
            (discount-actions/close-discount-type-edit-action {} {}))))
 
   (testing "opens the discount type create form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:discount-type-create]
              {:open true
               :discount-type-name ""}]]
            (discount-actions/open-discount-type-create-action {} {}))))
 
   (testing "closes the discount type create form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:discount-type-create] false]]
            (discount-actions/close-discount-type-create-action {} {})))))
 
@@ -160,14 +160,14 @@
                               :team/name    "Booking"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:team-create] false]]
              (team-actions/create-team-action
               (state-for system)
               {:team-create {:team-name "Booking"}})))))
 
   (testing "returns a validation error when the team name is blank"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:team-create :error :team-name]
              {:error "Team name is required."}]]
            (team-actions/create-team-action
@@ -178,7 +178,7 @@
     (let [{:keys [conn] :as system} (new-system)]
       (seed-team! conn {:team-id   (random-uuid)
                         :team-name "Booking"})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:team-create]
                {:team-name "Booking"
@@ -198,7 +198,7 @@
                              [:db/retract [:team/team-id team-id] :team/team-type :team.type/insurance]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:team] false]]
              (team-actions/update-team-action
               (state-for system)
@@ -214,7 +214,7 @@
                         :team-type :team.type/insurance})
       (seed-team! conn {:team-id   (random-uuid)
                         :team-name "Taken"})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:team]
                {:team-name "Taken"
@@ -232,7 +232,7 @@
       (is (= [[:db/transact [[:db/retractEntity [:team/team-id team-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:team] false]]
              (team-actions/delete-team-action
               (state-for system)
@@ -245,7 +245,7 @@
       (is (= [[:db/transact [[:db/retract [:team/team-id team-id] :team/members [:member/member-id remove-member-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:team :remove-member-id] nil]]
              (team-actions/remove-team-member-action
               (state-for system)
@@ -260,7 +260,7 @@
       (is (= [[:db/transact [[:db/add [:team/team-id team-id] :team/members [:member/member-id new-member-id]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:team :member-id] ""]]
              (team-actions/add-team-member-action
               (state-for system)
@@ -273,7 +273,7 @@
       (seed-team! conn {:team-id   team-id
                         :team-name "Old Team"
                         :team-type :team.type/insurance})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:team]
                {:team-id   team-id
                 :team-name "Old Team"
@@ -284,19 +284,19 @@
               {:targetid (str team-id)})))))
 
   (testing "closes the team edit form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:team] false]]
            (team-actions/close-team-edit-action {} {}))))
 
   (testing "opens the team create form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:team-create]
              {:open true
               :team-name ""}]]
            (team-actions/open-team-create-action {} {}))))
 
   (testing "closes the team create form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:team-create] false]]
            (team-actions/close-team-create-action {} {})))))
 
@@ -307,14 +307,14 @@
                               :section/name    "Trumpets"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:section-create] false]]
              (section-actions/create-section-action
               (state-for system)
               {:section-create {:section-name "Trumpets"}})))))
 
   (testing "returns a validation error when the section name is blank"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:section-create :error :section-name]
              {:error "Section name is required."}]]
            (section-actions/create-section-action
@@ -325,7 +325,7 @@
     (let [{:keys [conn] :as system} (new-system)]
       (seed-section! conn {:section-name "Trumpets"
                            :active?      true})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:section-create]
                {:section-name "Trumpets"
@@ -343,7 +343,7 @@
                              [:db/add [:section/name "Old Section"] :section/active? false]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:section] false]]
              (section-actions/update-section-action
               (state-for system)
@@ -357,7 +357,7 @@
                            :active?      true})
       (seed-section! conn {:section-name "Taken"
                            :active?      true})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:section]
                {:section-name "Taken"
@@ -374,7 +374,7 @@
       (is (= [[:db/transact [[:db/retractEntity [:section/name "Trumpets"]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/merge-signals {:loading false :targetid false}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:section] false]]
              (section-actions/delete-section-action
               (state-for system)
@@ -384,7 +384,7 @@
     (let [{:keys [conn] :as system} (new-system)]
       (seed-section! conn {:section-name "Trumpets"
                            :active?      false})
-      (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state [:section]
                {:section-id      "Trumpets"
                 :section-name    "Trumpets"
@@ -394,30 +394,32 @@
               {:targetid "Trumpets"})))))
 
   (testing "closes the section edit form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:section] false]]
            (section-actions/close-section-edit-action {} {}))))
 
   (testing "opens the section create form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:section-create]
              {:open true
               :section-name ""}]]
            (section-actions/open-section-create-action {} {}))))
 
   (testing "closes the section create form"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:section-create] false]]
            (section-actions/close-section-create-action {} {}))))
 
   (testing "opens section reordering"
-    (is (= [[:app.datastar/merge-signals {:loading false :targetid false}]
+    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:section-reorder :open] true]]
            (section-actions/open-section-reorder-action {} {}))))
 
   (testing "closes section reordering"
     (is (= [[:app.datastar/assoc-state [:section-reorder :open] false]
-            [:app.datastar/merge-signals {:section-reorder {:open false}}]]
+            [:app.datastar/respond-sse
+             [[:app.datastar.sse/merge-signals
+               {:section-reorder {:open false}}]]]]
            (section-actions/close-section-reorder-action {} {}))))
 
   (testing "updates the section order"

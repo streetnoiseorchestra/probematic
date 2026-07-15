@@ -176,7 +176,8 @@
           (vec (concat [poll-tx]
                        (option-txs "new-poll" (:options params))))
           {}]
-         [:app.datastar/redirect (urls/link-poll poll-id)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-poll poll-id)]]]]))))
 
 (defn- option-values [options]
   (->> options
@@ -219,7 +220,8 @@
                                      (concat (retract-options-txs existing-poll)
                                              (option-txs (poll-ref poll-id) (:options params))))))]
         [[:db/transact tx-data {}]
-         [:app.datastar/redirect (urls/link-poll poll-id)]]))))
+         [:app.datastar/respond-sse
+          [[:app.datastar.sse/redirect (urls/link-poll poll-id)]]]]))))
 
 (defn delete-poll-action
   [_state signals]
@@ -228,7 +230,8 @@
     [[:db/transact
       [[:db/retractEntity (poll-ref poll-id)]]
       {}]
-     [:app.datastar/redirect (urls/link-polls-home)]]))
+     [:app.datastar/respond-sse
+      [[:app.datastar.sse/redirect (urls/link-polls-home)]]]]))
 
 (defn add-option-action [_state signals]
   (let [params  (or (:poll-edit signals) {})

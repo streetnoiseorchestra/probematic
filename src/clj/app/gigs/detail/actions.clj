@@ -129,7 +129,9 @@
                            {:gig-id    (str next-gig-id)
                             :member-id (str next-member-id)
                             :comment   (or next-comment "")}]
-        clear-switching   [:app.datastar/merge-signals {:gig-attendance {:switching-comment false}}]]
+        clear-switching   [:app.datastar/respond-sse
+                           [[:app.datastar.sse/merge-signals
+                             {:gig-attendance {:switching-comment false}}]]]]
     (cond-> []
       tx-data (conj (transact-attendance-effect comment-gig-id tx-data))
       true    (conj open-next clear-switching))))

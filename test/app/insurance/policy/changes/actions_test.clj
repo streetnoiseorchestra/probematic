@@ -76,7 +76,9 @@
              (:insurance.policy/status (first tx-data))))
       (is (= [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
              (last tx-data)))
-      (is (= [:app.datastar/redirect (urls/link-policy policy-id)] redirect)))))
+      (is (= [:app.datastar/respond-sse
+              [[:app.datastar.sse/redirect (urls/link-policy policy-id)]]]
+             redirect)))))
 
 (deftest send-and-confirm-changes-action-test
   (testing "email delivery is one ordered effect with confirmation as its continuation"
@@ -94,8 +96,10 @@
               :attachment-filename-changes "changes.xls"
               :on-success                  [[::actions/confirm-sent
                                              {:insurance-policy-changes
-                                              {:policy-id (str policy-id)}}]]
-              :redirect                    (urls/link-policy policy-id)}
+                                              {:policy-id (str policy-id)}}]
+                                            [:app.datastar/respond-sse
+                                             [[:app.datastar.sse/redirect
+                                               (urls/link-policy policy-id)]]]]}
              payload)))))
 
 (deftest exporter-configuration-guards-delivery-actions-test

@@ -71,7 +71,8 @@
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
               [:app.members/send-user-invitation new-member-id]
-              [:app.datastar/redirect (str "/member/" new-member-id)]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/redirect (str "/member/" new-member-id)]]]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
               (submit-signals new-member-id {}))))))
@@ -94,7 +95,8 @@
                               :ledger/balance   0}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? false}]
-              [:app.datastar/redirect (str "/member/" new-member-id)]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/redirect (str "/member/" new-member-id)]]]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
               (submit-signals new-member-id {:active false

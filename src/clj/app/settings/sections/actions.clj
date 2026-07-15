@@ -105,7 +105,9 @@
 
 (defn close-section-reorder-action [_state _signals]
   [[:app.datastar/assoc-state [:section-reorder :open] false]
-   [:app.datastar/merge-signals {:section-reorder {:open false}}]])
+   [:app.datastar/respond-sse
+    [[:app.datastar.sse/merge-signals
+      {:section-reorder {:open false}}]]]])
 
 (defn update-section-order-action
   [{:keys [current-member-id]} {:keys [section]}]

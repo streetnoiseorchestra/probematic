@@ -207,8 +207,17 @@
           :private-band    "private"})]
     (apply-coverage-type-transactions initial-type-ids transactions)))
 
+(defn sse-events [effects]
+  (into []
+        (comp (filter #(= :app.datastar/respond-sse (first %)))
+              (mapcat second))
+        effects))
+
 (defn redirects [effects]
-  (filterv #(= :app.datastar/redirect (first %)) effects))
+  (filterv #(= :app.datastar.sse/redirect (first %)) (sse-events effects)))
+
+(defn clear-loading? [effects]
+  (contains? (set (sse-events effects)) support/clear-loading-event))
 
 (deftest update-instrument-coverage-action-test
   (testing "a valid update returns one transaction and redirects to the coverage detail page"
@@ -216,12 +225,12 @@
           fixture (seed-coverage! conn {})
           effects (actions/update-instrument-coverage-action (state-for system) (signals-for fixture))]
       (is (= {:transact-effects 1
-              :redirects        [[:app.datastar/redirect (urls/link-coverage (:coverage-id fixture))]]
+              :redirects        [[:app.datastar.sse/redirect (urls/link-coverage (:coverage-id fixture))]]
               :clear-loading?   true
               :audit?           true}
              {:transact-effects (count (filter #(= :db/transact (first %)) effects))
               :redirects        (redirects effects)
-              :clear-loading?   (contains? (set effects) support/clear-loading)
+              :clear-loading?   (clear-loading? effects)
               :audit?           (contains? (tx-set effects)
                                            [:db/add "datomic.tx" :audit/user [:member/member-id member-id]])}))))
 
@@ -401,7 +410,7 @@
       (is (= {:transact? false
               :clear-loading? true}
              {:transact?      (boolean (transact-effect effects))
-              :clear-loading? (contains? (set effects) support/clear-loading)}))))
+              :clear-loading? (clear-loading? effects)}))))
 
   (testing "delete returns a retract transaction and policy redirect for an insurance-team member"
     (let [{:keys [conn member-id] :as system} (new-system)
@@ -413,6 +422,6 @@
         (is (= {:tx-data [[[:db/retractEntity [:instrument.coverage/coverage-id (:coverage-id fixture)]]
                            [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                           {}]
-                :redirects [[:app.datastar/redirect (urls/link-policy (:policy-id fixture))]]}
+                :redirects [[:app.datastar.sse/redirect (urls/link-policy (:policy-id fixture))]]}
                {:tx-data   (rest (transact-effect effects))
                 :redirects (redirects effects)}))))))

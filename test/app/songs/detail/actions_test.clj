@@ -59,16 +59,20 @@
                  :file/webdav-path     "Noten - Scores/Bella Ciao/Bella Ciao Trumpet.pdf"}]
                {:on-success [[:app.songs/trigger-song-edited song-id]]}]
               [:app.datastar/assoc-state [:file-browser :song-sheet-music] nil]
-              [:app.datastar/merge-signals {:file-browser {:selected-path nil
-                                                           :target-dir nil}}]]
+              [:app.datastar/respond-sse
+               [[:app.datastar.sse/merge-signals
+                 {:file-browser {:selected-path nil
+                                 :target-dir nil}}]]]]
              (actions/add-sheet-music-action
               (state-for system page-state)
               {:file-browser {:picker-id     "song-sheet-music"
                               :selected-path "/Noten - Scores/Bella Ciao/Bella Ciao Trumpet.pdf"}})))))
 
   (testing "does not transact when no selected file is present"
-    (is (= [[:app.datastar/merge-signals {:file-browser {:selected-path nil
-                                                         :target-dir nil}}]]
+    (is (= [[:app.datastar/respond-sse
+             [[:app.datastar.sse/merge-signals
+               {:file-browser {:selected-path nil
+                               :target-dir nil}}]]]]
            (actions/add-sheet-music-action
             (state-for (new-system)
                        {:file-browser {:song-sheet-music {:target {:song-id      (str (random-uuid))

@@ -5,8 +5,10 @@
 (def default-picker-id :default)
 
 (def clear-file-browser-signals
-  [:app.datastar/merge-signals {:file-browser {:selected-path nil
-                                               :target-dir nil}}])
+  [:app.datastar/respond-sse
+   [[:app.datastar.sse/merge-signals
+     {:file-browser {:selected-path nil
+                     :target-dir nil}}]]])
 
 (defn picker-key [picker-id]
   (cond

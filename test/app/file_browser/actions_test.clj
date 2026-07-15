@@ -75,8 +75,10 @@
 
 (deftest close-picker-action-test
   (is (= [[:app.datastar/assoc-state [:file-browser :song-sheet-music] nil]
-          [:app.datastar/merge-signals {:file-browser {:selected-path nil
-                                                       :target-dir nil}}]]
+          [:app.datastar/respond-sse
+           [[:app.datastar.sse/merge-signals
+             {:file-browser {:selected-path nil
+                             :target-dir nil}}]]]]
          (actions/close-picker-action
           {}
           {:file-browser {:picker-id "song-sheet-music"}}))))

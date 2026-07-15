@@ -6,6 +6,10 @@
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
 
+(defn merge-signals-response [signals]
+  [:app.datastar/respond-sse
+   [[:app.datastar.sse/merge-signals signals]]])
+
 (defn tr
   ([k] k)
   ([k args] [k args]))
@@ -158,9 +162,11 @@
                  :instrument.coverage.status/reviewed]
                 [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {}]
-              support/clear-loading
               [:app.datastar/assoc-state [:insurance-workbench :error] nil]
-              [:app.datastar/remove-signals ["insuranceWorkbench.selectedCoverageIds"]]]
+              [:app.datastar/respond-sse
+               [support/clear-loading-event
+                [:app.datastar.sse/remove-signals
+                 ["insuranceWorkbench.selectedCoverageIds"]]]]]
              (actions/bulk-update-workflow-status-action
               (state system)
               (workbench-signals {:policy-id policy-id
@@ -376,11 +382,11 @@
     (is (= [[:app.datastar/assoc-state
              [:insurance-workbench :filters :category-ids]
              [category-a category-b]]
-            [:app.datastar/merge-signals
+            (merge-signals-response
              {:insuranceWorkbench {:filterEditor  {:field ""
                                                    :source nil
                                                    :appliedField "category"}
-                                   :filterPopover {:open false}}}]]
+                                   :filterPopover {:open false}}})]
            (actions/apply-filter-action
             {}
             (apply-filter-signals {:category-ids [category-a category-b]}))))))
@@ -389,11 +395,11 @@
   (is (= [[:app.datastar/assoc-state
            [:insurance-workbench :filters :ownership]
            :private]
-          [:app.datastar/merge-signals
+          (merge-signals-response
            {:insuranceWorkbench {:filterEditor  {:field ""
                                                  :source nil
                                                  :appliedField "ownership"}
-                                 :filterPopover {:open false}}}]]
+                                 :filterPopover {:open false}}})]
          (actions/apply-filter-action
           {}
           (apply-filter-signals {:field :ownership
@@ -448,29 +454,29 @@
                           [:insurance-workbench :filters :value-filter]
                           {:operator :greater-than
                            :value    1000M}]
-                         [:app.datastar/merge-signals
+                         (merge-signals-response
                           {:insuranceWorkbench {:filterEditor  {:field ""
                                                                 :source nil
                                                                 :appliedField "value"}
-                                                :filterPopover {:open false}}}]]
+                                                :filterPopover {:open false}}})]
           :between      [[:app.datastar/assoc-state
                           [:insurance-workbench :filters :value-filter]
                           {:operator :between
                            :min      1000M
                            :max      3000M}]
-                         [:app.datastar/merge-signals
+                         (merge-signals-response
                           {:insuranceWorkbench {:filterEditor  {:field ""
                                                                 :source nil
                                                                 :appliedField "value"}
-                                                :filterPopover {:open false}}}]]
+                                                :filterPopover {:open false}}})]
           :blank        [[:app.datastar/assoc-state
                           [:insurance-workbench :filters :value-filter]
                           nil]
-                         [:app.datastar/merge-signals
+                         (merge-signals-response
                           {:insuranceWorkbench {:filterEditor  {:field ""
                                                                 :source nil
                                                                 :appliedField "value"}
-                                                :filterPopover {:open false}}}]]}
+                                                :filterPopover {:open false}}})]}
          {:greater-than
           (actions/apply-filter-action
            {}

@@ -240,8 +240,9 @@
         (support/with-audit (update-instrument-coverage-tx-data state ctx params)
           current-member-id)
         {}]
-       support/clear-loading
-       [:app.datastar/redirect (urls/link-coverage (:coverage-id ctx))]])))
+       [:app.datastar/respond-sse
+        [support/clear-loading-event
+         [:app.datastar.sse/redirect (urls/link-coverage (:coverage-id ctx))]]]])))
 
 (defn- delete-coverage-id [signals]
   (some-> (or (:targetid signals)
@@ -276,8 +277,9 @@
         (support/with-audit [[:db/retractEntity [:instrument.coverage/coverage-id coverage-id]]]
           current-member-id)
         {}]
-       support/clear-loading
-       [:app.datastar/redirect (urls/link-policy policy-id)]])))
+       [:app.datastar/respond-sse
+        [support/clear-loading-event
+         [:app.datastar.sse/redirect (urls/link-policy policy-id)]]]])))
 
 (def actions
   {::validate-coverage-field      #'validate-coverage-field-action

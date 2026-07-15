@@ -17,7 +17,7 @@
 (defn send-policy-changes-fx
   [{:keys [dispatch]} {:keys [request system]}
    {:keys [attachment-filename-changes attachment-filename-new body on-success
-           policy-id recipient redirect subject]}]
+           policy-id recipient subject]}]
   (let [db     (or (:db request) (some-> system :datomic :conn d/db))
         policy (q/retrieve-policy db policy-id)
         smtp   (-> system :env :smtp-sno)]
@@ -29,8 +29,7 @@
                            body
                            attachment-filename-new
                            attachment-filename-changes)
-    (ordered-dispatch! dispatch on-success)
-    (d*/redirect request redirect)))
+    (ordered-dispatch! dispatch on-success)))
 
 (defn send-payment-notifications-fx
   [{:keys [dispatch]} {request :request}
@@ -49,7 +48,7 @@
                           #(assoc-in % result-path
                                      {:status  :error
                                       :message failure-message}))))
-  (d*/respond-signals request :merge {:loading false :targetid false}))
+  nil)
 
 (defn send-survey-notifications-fx
   [_ {request :request}
@@ -68,4 +67,4 @@
                           #(assoc-in % result-path
                                      {:status  :error
                                       :message failure-message}))))
-  (d*/respond-signals request :merge {:loading false :targetid false}))
+  nil)

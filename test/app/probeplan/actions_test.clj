@@ -72,12 +72,14 @@
         effects))
 
 (deftest open-edit-action-enters-edit-mode-with-fresh-row-signals
-  (is (= [[:app.datastar/remove-signals ["probeplan.rows"]]
+  (is (= [[:app.datastar/respond-sse
+           [[:app.datastar.sse/remove-signals ["probeplan.rows"]]]]
           [:app.datastar/assoc-state [:probeplan :editing] true]]
          (open-edit-action {} {}))))
 
 (deftest cancel-edit-action-leaves-edit-mode-and-clears-row-signals
-  (is (= [[:app.datastar/remove-signals ["probeplan.rows"]]
+  (is (= [[:app.datastar/respond-sse
+           [[:app.datastar.sse/remove-signals ["probeplan.rows"]]]]
           [:app.datastar/assoc-state [:probeplan :editing] false]]
          (cancel-edit-action {} {}))))
 
@@ -113,7 +115,8 @@
               [:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id replacement] 1 :probeplan.emphasis/intensive]]
               [:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-b] 1 :probeplan.emphasis/intensive]]]
              {}]
-            [:app.datastar/remove-signals ["probeplan.rows"]]
+            [:app.datastar/respond-sse
+             [[:app.datastar.sse/remove-signals ["probeplan.rows"]]]]
             [:app.datastar/assoc-state [:probeplan :editing] false]]
            (normalize-effects
             (save-probeplans-action
@@ -154,7 +157,8 @@
               [:db/add "probeplan" :probeplan.classic/ordered-songs [[:song/song-id replacement] 1 :probeplan.emphasis/intensive]]
               [:db/retract "probeplan" :probeplan.classic/ordered-songs [[:song/song-id song-b] 1 :probeplan.emphasis/intensive]]]
              {}]
-            [:app.datastar/remove-signals ["probeplan.rows"]]
+            [:app.datastar/respond-sse
+             [[:app.datastar.sse/remove-signals ["probeplan.rows"]]]]
             [:app.datastar/assoc-state [:probeplan :editing] false]]
            (normalize-effects
             (save-probeplans-action
@@ -163,7 +167,8 @@
 
 (deftest save-probeplans-action-closes-edit-mode-without-valid-rows
   (let [{:keys [conn]} (tc/new-system "probeplan-save-invalid-rows")]
-    (is (= [[:app.datastar/remove-signals ["probeplan.rows"]]
+    (is (= [[:app.datastar/respond-sse
+             [[:app.datastar.sse/remove-signals ["probeplan.rows"]]]]
             [:app.datastar/assoc-state [:probeplan :editing] false]]
            (save-probeplans-action
             (state conn)

@@ -15,6 +15,12 @@
   ([path _vars]
    (tr path)))
 
+(defn sse-events [effects]
+  (into []
+        (comp (filter #(= :app.datastar/respond-sse (first %)))
+              (mapcat second))
+        effects))
+
 (defn fixture []
   (let [{:keys [conn member-id]} (tc/new-system "insurance-policy-surveys-actions")
         ids                      (insurance-test/seed-page-shell-fixture! conn member-id)]
@@ -184,10 +190,11 @@
                  {:form {:policy-id policy-id
                          :survey-id survey-id
                          :closes-at "2026-04-25T19:30"}}]
-                [:app.datastar/merge-signals
-                 {:loading            false
-                  :targetid           false
-                  actions/signal-key {:saveStatus "saved"}}]]
+                [:app.datastar/respond-sse
+                 [[:app.datastar.sse/merge-signals
+                   {:loading            false
+                    :targetid           false
+                    actions/signal-key {:saveStatus "saved"}}]]]]
                (:on-success opts)))
         (is (= "survey-error-open-exists"
                (get-in opts
@@ -218,7 +225,8 @@
     (is (= "survey-error-open-exists"
            (get-in effects [1 2 :form :_error :_top :error])))
     (is (= "error"
-           (get-in effects [0 1 actions/signal-key :saveStatus])))))
+           (get-in (first (sse-events effects))
+                   [1 actions/signal-key :saveStatus])))))
 
 (deftest survey-mutations-validate-input-and-membership
   (let [{:keys [outsider-id policy-id state]} (fixture)]
@@ -296,15 +304,14 @@
                                         :closesAt "2026-04-25T19:30"}))]
           (is (= {:transacts? false
                   :signal-effects
-                  [[:app.datastar/merge-signals
+                  [[:app.datastar.sse/merge-signals
                     {:loading            false
                      :targetid           false
                      actions/signal-key {:saveStatus "error"}}]]}
                  {:transacts? (boolean
                                (some #(= :db/transact (first %)) effects))
                   :signal-effects
-                  (filterv #(= :app.datastar/merge-signals (first %))
-                           effects)}))))
+                  (sse-events effects)}))))
 
       (testing "closed surveys cannot be rescheduled"
         @(d/transact conn [[:db/add
@@ -372,14 +379,15 @@
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        [effect] (actions/send-reminders-action
-                  (assoc state :db (d/db conn))
-                  (assoc (survey-signals policy-id {})
-                         :targetid (str survey-id)))
+        [effect response] (actions/send-reminders-action
+                           (assoc state :db (d/db conn))
+                           (assoc (survey-signals policy-id {})
+                                  :targetid (str survey-id)))
         [_ payload] effect]
     (is (= :app.insurance/send-survey-notifications (first effect)))
     (is (= [member-id]
            (mapv :member/member-id (:members payload))))
     (is (= "Ada" (:sender-name payload)))
     (is (= [:insurance-survey-admin :result] (:result-path payload)))
-    (is (= {:status :sent :count-sent 1} (:success payload)))))
+    (is (= {:status :sent :count-sent 1} (:success payload)))
+    (is (= support/clear-loading response))))
