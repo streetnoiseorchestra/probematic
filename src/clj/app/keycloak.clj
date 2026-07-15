@@ -12,8 +12,8 @@
    [keycloak.utils :as keycloak.utils]
    [medley.core :as m])
   (:import
-   (org.keycloak.admin.client Keycloak)
-   (org.keycloak.representations.idm UserRepresentation)))
+   [org.keycloak.admin.client Keycloak]
+   [org.keycloak.representations.idm UserRepresentation]))
 
 (defn create-client [sys]
   (let [kc-env (-> sys :env :keycloak)]

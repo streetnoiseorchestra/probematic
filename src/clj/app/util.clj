@@ -11,13 +11,12 @@
    [tick.core :as t])
 
   (:import
-   (java.net URLDecoder URLEncoder)
-   (java.net URLEncoder)
-   (java.security SecureRandom)
-   (java.text NumberFormat ParsePosition)
-   (java.time LocalDate)
-   (java.time.format DateTimeFormatter DateTimeFormatterBuilder ResolverStyle)
-   (java.util Locale)))
+   [java.net URLDecoder URLEncoder]
+   [java.security SecureRandom]
+   [java.text NumberFormat ParsePosition]
+   [java.time LocalDate]
+   [java.time.format DateTimeFormatter DateTimeFormatterBuilder ResolverStyle]
+   [java.util Locale]))
 
 (defn url-encode [^String v]
   (URLEncoder/encode v "UTF-8"))

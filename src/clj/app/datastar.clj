@@ -39,8 +39,8 @@
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
    [starfederation.datastar.clojure.api :as d*])
   (:import
-   (java.time Duration Instant)
-   (java.util.concurrent BlockingQueue)))
+   [java.time Duration Instant]
+   [java.util.concurrent BlockingQueue]))
 
 (defn ->signals [m]
   (j/write-value-as-string m))

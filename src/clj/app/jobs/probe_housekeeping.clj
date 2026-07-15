@@ -12,13 +12,13 @@
    [ol.jobs-util :as jobs]
    [tick.core :as t])
   (:import
-   (java.time
+   [java.time
     DayOfWeek
     Instant
     LocalTime
     Period
     ZoneId
-    ZonedDateTime)))
+    ZonedDateTime]))
 
 (def minimum-gigs 4)
 (def maximum-create 4)

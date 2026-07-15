@@ -5,11 +5,11 @@
    [clojure.java.io :as io]
    [clojure.string :as string])
   (:import
-   (com.github.sardine DavResource Sardine)
-   (com.github.sardine.impl SardineException SardineImpl)
-   (java.io InputStream)
-   (java.net URLEncoder)
-   (org.apache.http.client.utils URIBuilder)))
+   [com.github.sardine DavResource Sardine]
+   [com.github.sardine.impl SardineException SardineImpl]
+   [java.io InputStream]
+   [java.net URLEncoder]
+   [org.apache.http.client.utils URIBuilder]))
 
 (defn- strip-leading-slash [path]
   (when path

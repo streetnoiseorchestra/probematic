@@ -7,7 +7,7 @@
    [ol.vips :as v]
    [ol.vips.operations :as ops])
   (:import
-   (java.io InputStream)))
+   [java.io InputStream]))
 
 (def supported-formats [{:format :gif :ext ".gif" :mime-type "image/gif" :im-tag "GIF"}
                         {:format :jpeg :ext ".jpeg" :mime-type "image/jpeg" :im-tag "JPEG"}
