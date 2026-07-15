@@ -30,7 +30,8 @@
   that persists between requests. A cookie (by default `ring-session`) is used to connect requests and responses
   to a session. A store (the default is an in-memory Atom) stores the data between requests.
 
-  When using `session` also consider using `csrf-protection` to avoid Cross Site Request Forgery attacks.
+  Install the Fetch Metadata CSRF interceptor before `session` to reject
+  cross-origin state-changing requests before session loading.
 
   The request key `:session` is a map storing the session data, and `:session/key` stores the key uniquely
   identifying the client session.

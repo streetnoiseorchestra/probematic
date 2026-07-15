@@ -99,10 +99,6 @@
                    :integrity   sri-hash}
                   (apply hash-map extra))]))
 
-(defn csrf-token-input
-  [req]
-  [:input {:type "hidden" :name "__anti-forgery-token" :value (:pink.interceptors.csrf/token req)}])
-
 (defn html-document [{:keys [class lang title description image favicon svg-icon apple-touch-icon url canonical head body-attrs]} & body]
   [chassis/doctype-html5
    [:html {:lang (or lang "en") :class class}

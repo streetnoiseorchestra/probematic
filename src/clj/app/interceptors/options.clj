@@ -102,38 +102,6 @@
    [:map [:render-fn {:doc "An arity 1 function free of side-effects that produces an HTML string"}
           [:function [:=> [:cat :any] :string]]]]))
 
-(def CSRFProtectionInterceptorOptions
-  (m/schema
-   [:and
-    [:map
-     [:read-token {:optional true
-                   :doc      "Function that takes a request and returns an anti-forgery token, or nil if not found"}
-      [:=> [:cat :any] [:maybe :string]]]
-
-     [:error-response {:optional true
-                       :doc      "Response to return if token is incorrect or missing"}
-      :map]
-
-     [:error-handler {:optional true
-                      :doc      "Handler function called with the context (not req!) if token is incorrect or missing, default: 403 response with HTML message"}
-      [:=> [:cat :any] :map]]
-
-     [:body-params {:optional true
-                    :doc      "Body-params parser map to use"}
-      [:map-of :keyword :any]]
-
-     [:cookie-token? {:default true
-                      :doc     "If true (the default), the csrf token is also added as a cookie."}
-      :boolean]
-     [:cookie-attrs {:default {:path "/" :same-site :lax :http-only true}
-                     :doc     "Map of attributes for the CSRF cookie"}
-      CookieAttrsOption]]
-
-    ;; Ensure only one of error-response or error-handler is present
-    [:fn {:error/message "Only one of :error-response or :error-handler may be specified"}
-     (fn [x]
-       (not (and (:error-response x) (:error-handler x))))]]))
-
 (def SessionStoreInstance
   [:fn {:error/message "implementation of ring.middleware.session.store.SesionStore"}
    #(instance? SessionStore %)])

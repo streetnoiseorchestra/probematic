@@ -89,8 +89,9 @@
     (ring/redirect-trailing-slash-handler)
     (ring/create-default-handler))
    {:executor     sieppari/executor
-    :interceptors [compression/compress-response-interceptor
-                   interceptors/cache-control-interceptor]}))
+    :interceptors (into (interceptors/handler-reitit-interceptors)
+                        [compression/compress-response-interceptor
+                         interceptors/cache-control-interceptor])}))
 
 (comment
   (do
