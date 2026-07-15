@@ -1,13 +1,55 @@
 (ns app.insurance.migrations-test
   (:require
-   [app.insurance.migrations :as migrations]
+   [app.datomic.system :as datomic.system]
+   [app.datomic.migrations.post002-backfill-insurance-metadata :as migrations]
    [app.insurance.test-support :as test-support]
-   [app.test-common :as tc]
-   [clojure.test :refer [deftest is testing]]
-   [datomic.api :as d]))
+   [clojure.test :refer [deftest is testing use-fixtures]]
+   [datomic.api :as d]
+   [dev.gethop.stork :as stork]))
 
 (def harmonia-exporter-id
   :insurance/exporter-harmonia-v1)
+
+(def insurance-metadata-migration-id
+  :app.migration/post002-backfill-insurance-metadata)
+
+(def ^:private insurance-metadata-attributes
+  #{:insurance.coverage.type/icon
+    :insurance.coverage.type/required?
+    :insurance.policy/exporter-id
+    :insurance.policy/export-mappings
+    :insurance.export.mapping/role
+    :insurance.export.mapping/coverage-type})
+
+(def ^:dynamic *test-connections* nil)
+
+(defn- with-released-test-connections [f]
+  (binding [*test-connections* (atom [])]
+    (try
+      (f)
+      (finally
+        (run! d/release @*test-connections*)))))
+
+(use-fixtures :each with-released-test-connections)
+
+(defn- new-unmigrated-system
+  ([name-prefix]
+   (new-unmigrated-system name-prefix #{}))
+  ([name-prefix excluded-attributes]
+   (let [uri (str "datomic:mem://" name-prefix "-" (random-uuid))]
+     (d/create-database uri)
+     (let [conn   (d/connect uri)
+           schema (into []
+                        (remove #(contains? excluded-attributes
+                                            (:db/ident %)))
+                        (stork/read-resource "schema.edn"))]
+       (swap! *test-connections* conj conn)
+       @(d/transact conn (stork/read-resource "schema-meta.edn"))
+       @(d/transact conn schema)
+       {:conn conn}))))
+
+(defn- new-legacy-system [name-prefix]
+  (new-unmigrated-system name-prefix insurance-metadata-attributes))
 
 (defn coverage-type
   [name]
@@ -27,7 +69,13 @@
 
 (defn apply-plan!
   [conn]
-  (migrations/migrate-legacy-metadata! conn))
+  (let [plan (migrations/plan-legacy-metadata (d/db conn))]
+    (datomic.system/prepare-database! conn)
+    plan))
+
+(defn migration-installed?
+  [db]
+  (boolean (stork/installed? db insurance-metadata-migration-id)))
 
 (defn coverage-metadata-by-name
   [db policy-id]
@@ -75,7 +123,7 @@
 
 (deftest fresh-schema-and-enriched-policy-test
   (testing "accepts explicit coverage and exporter metadata and leaves it unchanged"
-    (let [{:keys [conn]} (tc/new-system "insurance-migration-fresh")
+    (let [{:keys [conn]} (new-unmigrated-system "insurance-migration-fresh")
           policy-id      (random-uuid)
           required-id    (random-uuid)
           optional-id    (random-uuid)
@@ -114,13 +162,14 @@
                  :mappings
                  {:insurance.exporter.harmonia-v1/overnight-vehicle
                   "Optional"}}}
-               {:fresh-plan (migrations/plan-legacy-metadata (d/db conn))
+               {:fresh-plan (apply-plan! conn)
                 :coverage   (coverage-metadata-by-name (d/db conn) policy-id)
                 :exporter   (exporter-summary (d/db conn) policy-id)}))))))
 
 (deftest explicit-metadata-without-exporter-remains-unconfigured-test
   (testing "an intentional no-exporter policy is not mistaken for legacy data"
-    (let [{:keys [conn]} (tc/new-system "insurance-migration-no-exporter")
+    (let [{:keys [conn]} (new-unmigrated-system
+                          "insurance-migration-no-exporter")
           policy-id      (random-uuid)
           coverage-types
           [{:type-id        (random-uuid)
@@ -139,12 +188,12 @@
                          :incomplete-policies          []}
               :exporter {:exporter-id nil
                          :mappings    {}}}
-             {:plan     (migrations/migrate-legacy-metadata! conn)
+             {:plan     (apply-plan! conn)
               :exporter (exporter-summary (d/db conn) policy-id)})))))
 
 (deftest known-legacy-policy-migration-test
   (testing "backfills known metadata and a complete v1 exporter configuration"
-    (let [{:keys [conn]} (tc/new-system "insurance-migration-known")
+    (let [{:keys [conn]} (new-legacy-system "insurance-migration-known")
           policy-id      (random-uuid)]
       (seed-legacy-policy!
        conn
@@ -169,14 +218,16 @@
                  {:insurance.exporter.harmonia-v1/overnight-vehicle
                   "Nachzeit im Auto"
                   :insurance.exporter.harmonia-v1/unattended-building
-                  "Proberaum"}}}
+                  "Proberaum"}}
+                :migration-installed? true}
                {:result   (dissoc result :tx-data)
                 :coverage (coverage-metadata-by-name (d/db conn) policy-id)
-                :exporter (exporter-summary (d/db conn) policy-id)}))))))
+                :exporter (exporter-summary (d/db conn) policy-id)
+                :migration-installed? (migration-installed? (d/db conn))}))))))
 
 (deftest legacy-required-type-migration-updates-active-coverages-test
   (testing "required metadata and coverage membership migrate together"
-    (let [{:keys [conn]} (tc/new-system
+    (let [{:keys [conn]} (new-legacy-system
                           "insurance-migration-required-coverages")
           policy-id      (random-uuid)
           coverage-types (seed-legacy-policy!
@@ -272,7 +323,8 @@
 
 (deftest ambiguous-and-missing-legacy-mappings-test
   (testing "reports ambiguous and missing roles without guessing a mapping"
-    (let [{:keys [conn]}  (tc/new-system "insurance-migration-incomplete")
+    (let [{:keys [conn]}  (new-legacy-system
+                           "insurance-migration-incomplete")
           ambiguous-id   (random-uuid)
           missing-id     (random-uuid)]
       (seed-legacy-policy!
@@ -314,7 +366,7 @@
 
 (deftest legacy-migration-is-idempotent-test
   (testing "a second execution produces no transaction or metadata changes"
-    (let [{:keys [conn]} (tc/new-system "insurance-migration-repeat")
+    (let [{:keys [conn]} (new-legacy-system "insurance-migration-repeat")
           policy-id      (random-uuid)]
       (seed-legacy-policy!
        conn

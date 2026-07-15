@@ -1,6 +1,12 @@
-(ns app.insurance.migrations
+(ns app.datomic.migrations.post002-backfill-insurance-metadata
+  "Backfills configurable insurance metadata introduced with policy exporters.
+
+  Historical labels are matched only here. Stork runs [[tx-data]] after the
+  canonical schema is installed and records the migration atomically with the
+  returned transaction data."
   (:require
    [app.insurance.exporters :as exporters]
+   [com.brunobonacci.mulog :as μ]
    [datomic.api :as d]))
 
 (def ^:private legacy-coverage-metadata
@@ -156,26 +162,34 @@
              (assoc :insurance.policy/export-mappings mapping-txs))
        :incomplete
        (when (or (seq missing-roles) (seq ambiguous-roles))
-         {:policy-id      (:insurance.policy/policy-id policy)
-          :missing-roles  missing-roles
+         {:policy-id       (:insurance.policy/policy-id policy)
+          :missing-roles   missing-roles
           :ambiguous-roles ambiguous-roles})})))
 
 (defn plan-legacy-metadata
+  "Plans legacy insurance metadata transactions and reports migration counts."
   [db]
-  (let [policies      (policies db)
-        coverage-txs  (coverage-metadata-txs policies)
+  (let [policies              (policies db)
+        coverage-txs          (coverage-metadata-txs policies)
         required-coverage-txs (required-coverage-txs policies)
-        policy-plans  (into [] (keep policy-export-plan) policies)]
+        policy-plans          (into [] (keep policy-export-plan) policies)]
     {:tx-data (into coverage-txs
                     (concat required-coverage-txs (map :tx policy-plans)))
      :migrated-coverage-type-count (count coverage-txs)
      :configured-policy-count      (count policy-plans)
      :incomplete-policies          (into [] (keep :incomplete) policy-plans)}))
 
-(defn migrate-legacy-metadata!
+(defn tx-data
+  "Returns the legacy insurance metadata transaction data for Stork."
   [conn]
-  (let [{:keys [tx-data] :as plan}
+  (let [{:keys [configured-policy-count
+                incomplete-policies
+                migrated-coverage-type-count
+                tx-data]}
         (plan-legacy-metadata (d/db conn))]
-    (when (seq tx-data)
-      @(d/transact conn tx-data))
-    plan))
+    (μ/log ::migration-planned
+           :configured-policy-count configured-policy-count
+           :incomplete-policy-count (count incomplete-policies)
+           :incomplete-policy-ids (mapv :policy-id incomplete-policies)
+           :migrated-coverage-type-count migrated-coverage-type-count)
+    tx-data))

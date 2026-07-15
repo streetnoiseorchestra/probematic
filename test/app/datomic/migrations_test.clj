@@ -1,6 +1,6 @@
 (ns app.datomic.migrations-test
   (:require
-   [app.datomic.migrations]
+   [app.datomic.migrations :as migrations]
    [app.datomic.system :as datomic.system]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]
@@ -60,6 +60,13 @@
            [:insurance.survey/closed-at]
            [:insurance.survey/survey-id survey-id])))
 
+(deftest ordered-migration-registry-test
+  (is (= {:pre  [:app.migration/pre001-prepare-member-uniqueness]
+          :post [:app.migration/post001-normalize-active-insurance-surveys
+                 :app.migration/post002-backfill-insurance-metadata]}
+         {:pre  (mapv :id migrations/pre-schema-migrations)
+          :post (mapv :id migrations/post-schema-migrations)})))
+
 (deftest peer-start-prepares-database-test
   (let [uri  (str "datomic:mem://schema-lifecycle-peer-" (random-uuid))
         peer (datomic.system/start-peer {:peer {:db-uri uri}})]
@@ -68,7 +75,8 @@
         (is (= {:schema-installed? true
                 :migration-ids
                 #{:app.migration/pre001-prepare-member-uniqueness
-                  :app.migration/post001-normalize-active-insurance-surveys}}
+                  :app.migration/post001-normalize-active-insurance-surveys
+                  :app.migration/post002-backfill-insurance-metadata}}
                {:schema-installed?
                 (boolean (d/entid (d/db conn) :member/member-id))
                 :migration-ids (migration-ids (d/db conn))})))
@@ -130,7 +138,8 @@
               :stored-function? true
               :migration-ids
               #{:app.migration/pre001-prepare-member-uniqueness
-                :app.migration/post001-normalize-active-insurance-surveys}}
+                :app.migration/post001-normalize-active-insurance-surveys
+                :app.migration/post002-backfill-insurance-metadata}}
              {:returned-final-db?
               (= (d/basis-t prepared) preparation-basis)
               :metadata
