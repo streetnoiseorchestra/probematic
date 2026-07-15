@@ -96,13 +96,11 @@
      [button/Button {:slot       "trigger"
                      :appearance "outlined"
                      :size       "s"
+                     :with-caret true
                      :class      "gigs-attendance-plan-button"
                      :title      (plan-label tr plan)
                      :aria-label (plan-label tr plan)}
-      (plan-icon plan)
-      [ico/Icon {::ico/library :snoico
-                 ::ico/name    :chevron-down
-                 :class        "gigs-attendance-plan-caret"}]]
+      (plan-icon plan)]
      (for [option selectable-plans]
        [:wa-dropdown-item {:value (name option)}
         (plan-icon option {:slot "icon"})

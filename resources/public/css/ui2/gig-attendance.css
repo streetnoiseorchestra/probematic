@@ -79,10 +79,11 @@
 }
 
 .gigs-attendance-row--editable {
-  grid-template-columns: minmax(8rem, 12rem) 2.8rem minmax(9rem, 13rem) minmax(
-      2rem,
-      1fr
-    );
+  grid-template-columns:
+    minmax(8rem, 12rem)
+    max-content
+    minmax(9rem, var(--sno-gigs-attendance-motivation-inline-size))
+    minmax(2rem, 1fr);
   padding: var(--sno-gigs-attendance-row-padding-block)
     var(--sno-gigs-attendance-row-padding-inline);
 }
@@ -114,7 +115,7 @@
   overflow-wrap: anywhere;
 }
 
-.gigs-attendance-plan-button::part(base) {
+.gigs-attendance-plan-button {
   block-size: var(--sno-gigs-attendance-control-block-size);
   min-block-size: var(--sno-gigs-attendance-control-block-size);
   padding: var(--wa-space-3xs) var(--wa-space-2xs);
@@ -128,13 +129,16 @@
   font-size: var(--sno-gigs-attendance-dropdown-icon-size);
 }
 
-.gigs-attendance-plan-caret {
+.gigs-attendance-plan-button > .caret {
   color: var(--wa-color-text-quiet);
   font-size: 0.75rem;
 }
 
 .gigs-attendance-motivation-select {
-  inline-size: min(100%, 13rem);
+  inline-size: min(
+    100%,
+    var(--sno-gigs-attendance-motivation-inline-size)
+  );
 }
 
 .gigs-attendance-motivation-select::part(combobox) {
