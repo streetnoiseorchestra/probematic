@@ -85,7 +85,25 @@
             breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
             actions       (::page-toolbar/actions toolbar-attrs)
             buttons       (l/select button/Button actions)
-            form          (l/select-one "form#member-invite-form" surface)]
+            form          (l/select-one "form#member-invite-form" surface)
+            signals-attrs (some-> (l/select-one "[data-signals]" surface) l/attrs)
+            validation-action
+            (fn [field]
+              (str "$member-invite.validate-field = '"
+                   field
+                   "'; @post('/act?ns=app.members.invite.actions&kw=validate-member-invite-field')"))
+            input-validation
+            (into
+             {}
+             (map
+              (fn [input]
+                (let [attrs (l/attrs input)]
+                  [(:data-bind attrs)
+                   (select-keys attrs
+                                [:data-on:blur
+                                 :data-on:input__debounce.500ms])])))
+             (l/select "wa-input" form))
+            section-attrs (some-> (l/select-one "wa-select" form) l/attrs)]
         (is (= :standard (::page-surface/width surface-attrs)))
         (is (= [:members/title :members/invite-member]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
@@ -110,11 +128,58 @@
                         :type  (:type (l/attrs action))})
                      buttons)))
         (is (= "member-invite-form" (some-> form l/attrs :id)))
+        (is (= "data-signals" (:data-preserve-attr signals-attrs)))
+        (is (every? #(= "value" (:data-preserve-attr (l/attrs %)))
+                    (l/select "wa-input" form)))
         (is (= :members/invite-member
                (some-> (l/select-one page-header/PageHeader surface)
                        l/attrs
                        ::page-header/title
-                       l/first-child)))))
+                       l/first-child)))
+        (is (= {"member-invite.name"
+                {:data-on:blur                    (validation-action "name")
+                 :data-on:input__debounce.500ms (validation-action "name")}
+                "member-invite.nick"
+                {:data-on:blur                    (validation-action "nick")
+                 :data-on:input__debounce.500ms (validation-action "nick")}
+                "member-invite.email"
+                {:data-on:blur                    (validation-action "email")
+                 :data-on:input__debounce.500ms (validation-action "email")}
+                "member-invite.username"
+                {:data-on:blur                    (validation-action "username")
+                 :data-on:input__debounce.500ms (validation-action "username")}
+                "member-invite.phone"
+                {:data-on:blur                    (validation-action "phone")
+                 :data-on:input__debounce.500ms (validation-action "phone")}}
+               input-validation))
+        (is (= {:data-on:blur (validation-action "section-name")}
+               (select-keys section-attrs
+                            [:data-on:blur :data-on:change])))
+        (is (= "value" (:data-preserve-attr section-attrs)))
+        (let [error-view
+              (invite.views/page
+               (assoc request
+                      :page-state
+                      {:member-invite
+                       {:error
+                        {:email        {:error "Email is already in use."}
+                         :section-name {:error "Section is required."}}}}))
+              error-form    (l/select-one "form#member-invite-form" error-view)
+              email-attrs   (some (fn [input]
+                                    (let [attrs (l/attrs input)]
+                                      (when (= "member-invite.email"
+                                               (:data-bind attrs))
+                                        attrs)))
+                                  (l/select "wa-input" error-form))
+              section-attrs (some-> (l/select-one "wa-select" error-form)
+                                    l/attrs)]
+          (is (= {:email   {:hint         "Email is already in use."
+                            :data-invalid "true"}
+                  :section {:hint         "Section is required."
+                            :data-invalid "true"}}
+                 {:email   (select-keys email-attrs [:hint :data-invalid])
+                  :section (select-keys section-attrs
+                                        [:hint :data-invalid])})))))
 
     (testing "a member detail route uses member context and keeps Download contact secondary"
       (let [view          (detail.views/page (assoc request :path-params {:member-id (str member-id)}))

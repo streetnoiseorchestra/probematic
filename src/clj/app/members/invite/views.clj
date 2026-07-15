@@ -26,25 +26,41 @@
 (defn- form-input [form-state signal label attrs]
   (let [field (form/signal-field signal)
         error (form/field-error form-state :error field)]
-    [:wa-input (merge {:label        label
-                       :appearance   "outlined"
-                       :size         "m"
-                       :value        (get form-state field "")
-                       :hint         error
-                       :data-invalid (when error "true")
-                       :data-bind    signal}
+    [:wa-input (merge {:label              label
+                       :appearance         "outlined"
+                       :size               "m"
+                       :value              (get form-state field "")
+                       :hint               error
+                       :data-invalid       (when error "true")
+                       :data-bind          signal
+                       :data-preserve-attr "value"}
                       attrs)]))
 
-(defn- section-select [{:keys [tr]} form-state sections]
-  (let [error (form/field-error form-state :error :section-name)]
+(defn- validate-field-action [req field]
+  (str "$member-invite.validate-field = '"
+       (name field)
+       "'; @post('"
+       (d*/act req ::actions/validate-member-invite-field)
+       "')"))
+
+(defn- validate-input-attrs [req field]
+  (let [action (validate-field-action req field)]
+    {:data-on:blur                    action
+     :data-on:input__debounce.500ms action}))
+
+(defn- section-select [{:keys [tr] :as req} form-state sections]
+  (let [error  (form/field-error form-state :error :section-name)
+        action (validate-field-action req :section-name)]
     (into
-     [:wa-select {:label          (tr [:section])
-                  :appearance     "outlined"
-                  :size           "m"
-                  :value          (:section-name form-state)
-                  :hint           error
-                  :data-invalid   (when error "true")
-                  :data-bind      "member-invite.section-name"}
+     [:wa-select {:label              (tr [:section])
+                  :appearance         "outlined"
+                  :size               "m"
+                  :value              (:section-name form-state)
+                  :hint               error
+                  :data-invalid       (when error "true")
+                  :data-bind          "member-invite.section-name"
+                  :data-preserve-attr "value"
+                  :data-on:blur       action}
       [:wa-option {:value ""} " - "]]
      (for [{:section/keys [name]} sections]
        [:wa-option {:value name} name]))))
@@ -68,11 +84,30 @@
     (when-let [top-error (form/field-error form-state :error :_top)]
       [:wa-callout {:appearance "outlined" :variant "danger"}
        top-error])
-    (form-input form-state "member-invite.name" (tr [:member/name]) {:required true :autofocus true})
-    (form-input form-state "member-invite.nick" (tr [:member/nick]) {})
-    (form-input form-state "member-invite.email" (tr [:Email]) {:type "email" :required true})
-    (form-input form-state "member-invite.username" (tr [:member/username]) {:required true})
-    (form-input form-state "member-invite.phone" (tr [:Phone]) {:type "tel" :required true})
+    (form-input form-state
+                "member-invite.name"
+                (tr [:member/name])
+                (merge {:required true :autofocus true}
+                       (validate-input-attrs req :name)))
+    (form-input form-state
+                "member-invite.nick"
+                (tr [:member/nick])
+                (validate-input-attrs req :nick))
+    (form-input form-state
+                "member-invite.email"
+                (tr [:Email])
+                (merge {:type "email" :required true}
+                       (validate-input-attrs req :email)))
+    (form-input form-state
+                "member-invite.username"
+                (tr [:member/username])
+                (merge {:required true}
+                       (validate-input-attrs req :username)))
+    (form-input form-state
+                "member-invite.phone"
+                (tr [:Phone])
+                (merge {:type "tel" :required true}
+                       (validate-input-attrs req :phone)))
     (section-select req form-state sections)
     (toggle-field "member-invite.create-sno-id"
                   (tr [:member/create-sno-id])
@@ -107,8 +142,9 @@
                                                    :data-attr:loading  "$loading === 'member-invite'"}
                                     [:i18n/tr :members/invite-member]]]
                                   :aria-label [:i18n/tr :members/invite-toolbar-label]}]}
-      [:div {:class        "wa-stack wa-gap-2xl"
-             :data-signals (d*/->signals {:member-invite form-state})}
+      [:div {:class              "wa-stack wa-gap-2xl"
+             :data-signals       (d*/->signals {:member-invite form-state})
+             :data-preserve-attr "data-signals"}
        [page-header/PageHeader
         {::page-header/title    [:i18n/tr :members/invite-member]
          ::page-header/subtitle [:i18n/tr :members/invite-description]}]

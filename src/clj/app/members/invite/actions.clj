@@ -78,6 +78,26 @@
    :ledger/owner     "new-member"
    :ledger/balance   0})
 
+(def ^:private validation-fields
+  {"name"         :name
+   "nick"         :nick
+   "email"        :email
+   "username"     :username
+   "phone"        :phone
+   "section-name" :section-name})
+
+(defn validate-member-invite-field-action
+  [{:keys [db tr]} {:keys [member-invite]}]
+  (if-let [field (get validation-fields (:validate-field member-invite))]
+    (let [tr            (or tr (fn [path & _] (name (last path))))
+          member-invite (normalize-form member-invite)
+          error         (get (validation-errors {:db db :tr tr} member-invite)
+                             field)]
+      [[:app.datastar/assoc-state
+        [:member-invite :error field]
+        error]])
+    []))
+
 (defn submit-member-invite-action
   [{:keys [db current-member-id tr]} {:keys [member-invite]}]
   (let [tr            (or tr (fn [path & _] (name (last path))))
@@ -105,4 +125,5 @@
                    (str "/member/" member-id)]]]))))))
 
 (def actions
-  {::submit-member-invite #'submit-member-invite-action})
+  {::validate-member-invite-field #'validate-member-invite-field-action
+   ::submit-member-invite         #'submit-member-invite-action})

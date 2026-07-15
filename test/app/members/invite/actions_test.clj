@@ -51,6 +51,114 @@
            :create-sno-id  true}
           overrides)})
 
+(defn- validate-field [state signals]
+  (if-let [action (get actions/actions
+                       ::actions/validate-member-invite-field)]
+    (action state signals)
+    ::missing-validate-member-invite-field-action))
+
+(deftest validate-member-invite-field-action-test
+  (let [{:keys [conn] :as system} (new-system)
+        new-member-id            (random-uuid)
+        state                    (assoc (state-for system) :tr tr)
+        raw-form                 (:member-invite (submit-signals new-member-id {}))]
+    (seed-section! conn "Trumpets")
+
+    (testing "validates each field independently"
+      (doseq [{:keys [case field value error]}
+              [{:case  "name is required"
+                :field :name
+                :value "  "
+                :error {:error "Name is required."}}
+               {:case  "email is required"
+                :field :email
+                :value "  "
+                :error {:error "Email is required."}}
+               {:case  "username is required"
+                :field :username
+                :value "  "
+                :error {:error "Username is required."}}
+               {:case  "phone is required"
+                :field :phone
+                :value "  "
+                :error {:error "Phone is required."}}
+               {:case  "section is required"
+                :field :section-name
+                :value "  "
+                :error {:error "Section is required."}}
+               {:case  "username format is checked"
+                :field :username
+                :value "Bad User"
+                :error {:error "Username format is invalid."}}
+               {:case  "phone format is checked"
+                :field :phone
+                :value "123"
+                :error {:error "Phone format is invalid."}}
+               {:case  "section existence is checked"
+                :field :section-name
+                :value "Unknown"
+                :error {:error "Please choose a valid section."}}
+               {:case  "optional blank nick is valid"
+                :field :nick
+                :value "  "
+                :error nil}]]
+        (testing case
+          (is (= [[:app.datastar/assoc-state
+                   [:member-invite :error field]
+                   error]]
+                 (validate-field
+                  state
+                  {:member-invite
+                   (assoc raw-form
+                          field value
+                          :validate-field (name field)
+                          :error {:phone {:error "stale client error"}})}))))))
+
+    (testing "checks every unique member attribute after normalization"
+      (seed-member! conn {:member/member-id (random-uuid)
+                          :member/name      "Existing Member"
+                          :member/nick      "existing"
+                          :member/email     "existing@example.com"
+                          :member/username  "existing.user"
+                          :member/phone     "+43699123456"
+                          :member/section   [:section/name "Trumpets"]
+                          :member/active?   true})
+      (let [state (assoc state :db (d/db conn))]
+        (doseq [{:keys [case field value error]}
+                [{:case  "email"
+                  :field :email
+                  :value "EXISTING@example.com  "
+                  :error "A member already has that email address"}
+                 {:case  "username"
+                  :field :username
+                  :value "Existing.User"
+                  :error "A member already has that username"}
+                 {:case  "nick"
+                  :field :nick
+                  :value "  existing  "
+                  :error "A member already has that nick"}
+                 {:case  "phone"
+                  :field :phone
+                  :value "+43 699 123456"
+                  :error "A member already has that phone number"}]]
+          (testing case
+            (is (= [[:app.datastar/assoc-state
+                     [:member-invite :error field]
+                     {:error error}]]
+                   (validate-field
+                    state
+                    {:member-invite
+                     (assoc raw-form
+                            field value
+                            :validate-field (name field))})))))))
+
+    (testing "rejects unsupported client-provided field names"
+      (is (= []
+             (validate-field
+              state
+              {:member-invite
+               (assoc raw-form :validate-field "not-an-invite-field")}))))))
+
 (deftest submit-member-invite-action-test
   (testing "creates a member, ledger, and invitation when create-sno-id is enabled"
     (let [{:keys [member-id] :as system} (new-system)
