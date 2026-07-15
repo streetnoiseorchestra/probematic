@@ -47,3 +47,26 @@
     (is (= {:status 403}
            (select-keys (:response ctx) [:status])))
     (is (re-find #"new@example.com" (get-in ctx [:response :body])))))
+
+(deftest require-authenticated-user-keeps-datastar-login-navigation-same-origin
+  (let [enter    (:enter auth/require-authenticated-user)
+        request  {:uri "/account-settings"
+                  :query-string "tab=profile"}
+        document-response
+        (:response (enter {:request request}))
+        datastar-response
+        (:response
+         (enter {:request
+                 (assoc request :headers {"datastar-request" "true"})}))]
+    (is (= {:document
+            {:status 302
+             :headers
+             {"location"
+              "/login?next=%2Faccount-settings%3Ftab%3Dprofile"}
+             :body ""}
+            :datastar
+            {:status 401
+             :headers {"Cache-Control" "no-store"}
+             :body ""}}
+           {:document document-response
+            :datastar datastar-response}))))
