@@ -76,7 +76,16 @@
          clojure.lang.ExceptionInfo
          #"missing required"
          (slots/validate-registry
-          [(dissoc (first valid-registry) :smtp4dev-imap-port)])))))
+          [(dissoc (first valid-registry) :smtp4dev-imap-port)]))))
+
+  (testing "rejects slot names that can escape the slots directory"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"safe lowercase name"
+         (slots/validate-registry
+          [(assoc (first valid-registry)
+                  :slot
+                  (keyword "x/../victim"))])))))
 
 (deftest state-path-rendering-test
   (fs/with-temp-dir [main-root {}]
@@ -101,8 +110,15 @@
                 :datomic-config-dir (str (fs/path main-root ".dev-state" "slots" "agent-1" "datomic" "config"))
                 :smtp4dev-dir (str (fs/path main-root ".dev-state" "slots" "agent-1" "smtp4dev"))
                 :logs-dir (str (fs/path main-root ".dev-state" "slots" "agent-1" "logs"))
+                :firefox-profile-dir (str (fs/path main-root ".dev-state" "slots" "agent-1" "firefox"))
                 :shared-filestore-dir (str (fs/path main-root "data.dev" "filestore"))}
-               (slots/slot-paths main-root :agent-1)))))))
+               (slots/slot-paths main-root :agent-1))))
+
+      (testing "refuses unsafe slot path segments"
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"safe lowercase name"
+             (slots/slot-paths main-root (keyword "x/../../victim"))))))))
 
 (deftest env-sh-rendering-test
   (fs/with-temp-dir [main-root {}]
@@ -224,7 +240,8 @@
       (is (= 0 exit))
       (is (= "" err))
       (is (str/includes? out "dev-slot release - Stop, reset, and release a dev slot"))
-      (is (str/includes? out "bb dev-slot release SLOT")))))
+      (is (str/includes? out "bb dev-slot release SLOT"))
+      (is (str/includes? out "preserves each slot's Firefox profile")))))
 
 (deftest artifact-help-test
   (testing "artifacts help describes artifact subcommands"
@@ -461,12 +478,15 @@
                                       :slot agent-1
                                       :base-secrets base-secrets})
             current-slot-link (fs/path worktree "data.dev" "current-slot")
-            filestore-link (fs/path worktree "data.dev" "filestore")]
+            filestore-link (fs/path worktree "data.dev" "filestore")
+            firefox-profile-dir (str (fs/path (:slot-root paths) "firefox"))
+            firefox-profile-link (fs/path worktree "data.dev" "firefox")]
         (is (= paths result))
         (is (fs/directory? (:datomic-data-dir paths)))
         (is (fs/directory? (:datomic-config-dir paths)))
         (is (fs/directory? (:smtp4dev-dir paths)))
         (is (fs/directory? (:logs-dir paths)))
+        (is (fs/directory? firefox-profile-dir))
         (is (fs/directory? (:shared-filestore-dir paths)))
         (is (= (slots/render-env-sh main-root agent-1)
                (slurp (:env-file paths))))
@@ -482,6 +502,9 @@
         (is (fs/sym-link? filestore-link))
         (is (= (:shared-filestore-dir paths)
                (str (fs/read-link filestore-link))))
+        (is (and (fs/sym-link? firefox-profile-link)
+                 (= firefox-profile-dir
+                    (str (fs/read-link firefox-profile-link)))))
         (is (= paths
                (slots/init-slot! {:main-root main-root
                                   :worktree worktree
@@ -495,7 +518,10 @@
     (fs/with-temp-dir [main-root {}]
       (let [main-root (str (fs/absolutize main-root))
             worktree (str (fs/path main-root "worktree"))
-            filestore-dir (fs/path worktree "data.dev" "filestore")]
+            filestore-dir (fs/path worktree "data.dev" "filestore")
+            claim-file (fs/path main-root ".dev-state" "slots" "agent-1" "claim.edn")
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            slot-profile (fs/path main-root ".dev-state" "slots" "agent-1" "firefox")]
         (write-logback-template! main-root)
         (fs/create-dirs filestore-dir)
         (is (thrown-with-msg?
@@ -504,7 +530,269 @@
              (slots/init-slot! {:main-root main-root
                                 :worktree worktree
                                 :slot agent-1
+                                :base-secrets base-secrets})))
+        (is (not (fs/exists? claim-file)))
+        (is (and (not (fs/exists? worktree-profile {:nofollow-links true}))
+                 (not (fs/exists? slot-profile))))))))
+
+(deftest firefox-profile-init-test
+  (testing "migrates an existing worktree Firefox profile into empty slot state"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            profile-marker (fs/path worktree-profile "session-marker")
+            slot-profile (fs/path main-root ".dev-state" "slots" "agent-1" "firefox")]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree-profile)
+        (spit (str profile-marker) "authenticated")
+        (slots/init-slot! {:main-root main-root
+                           :worktree worktree
+                           :slot agent-1
+                           :base-secrets base-secrets})
+        (is (and (fs/sym-link? worktree-profile)
+                 (= (str slot-profile)
+                    (str (fs/read-link worktree-profile)))))
+        (is (and (fs/regular-file? (fs/path slot-profile "session-marker"))
+                 (= "authenticated"
+                    (slurp (str (fs/path slot-profile "session-marker")))))))))
+
+  (testing "refuses to merge worktree and slot Firefox profiles"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            slot-profile (fs/path main-root ".dev-state" "slots" "agent-1" "firefox")]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree-profile)
+        (fs/create-dirs slot-profile)
+        (spit (str (fs/path worktree-profile "worktree-marker")) "worktree")
+        (spit (str (fs/path slot-profile "slot-marker")) "slot")
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"both the worktree and slot Firefox profiles exist"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
+                                :base-secrets base-secrets})))
+        (is (and (fs/regular-file? (fs/path worktree-profile "worktree-marker"))
+                 (fs/regular-file? (fs/path slot-profile "slot-marker")))))))
+
+  (testing "refuses a symlinked slot Firefox profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            external-profile (fs/path main-root "external-firefox")
+            slot-profile (fs/path main-root ".dev-state" "slots" "agent-1" "firefox")]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree)
+        (fs/create-dirs external-profile)
+        (fs/create-dirs (fs/parent slot-profile))
+        (fs/create-sym-link slot-profile external-profile)
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"slot Firefox profile must be a real directory"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
+                                :base-secrets base-secrets}))))))
+
+  (testing "refuses a non-directory worktree Firefox profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")]
+        (write-logback-template! main-root)
+        (fs/create-dirs (fs/parent worktree-profile))
+        (spit (str worktree-profile) "not a profile")
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"worktree Firefox profile must be a directory"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
                                 :base-secrets base-secrets})))))))
+
+(deftest firefox-profile-migration-safety-test
+  (testing "refuses to migrate a locked worktree Firefox profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            slot-profile (fs/path main-root ".dev-state" "slots" "agent-1" "firefox")
+            claim-file (fs/path main-root ".dev-state" "slots" "agent-1" "claim.edn")]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree-profile)
+        (spit (str (fs/path worktree-profile ".parentlock")) "locked")
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"Firefox profile appears to be in use"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
+                                :base-secrets base-secrets})))
+        (is (and (fs/directory? worktree-profile)
+                 (not (fs/sym-link? worktree-profile))
+                 (not (fs/exists? slot-profile))))
+        (is (not (fs/exists? claim-file))))))
+
+  (testing "refuses to attach a worktree to a locked slot profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            paths (slots/slot-paths main-root :agent-1)
+            lock-file (fs/path (:firefox-profile-dir paths) ".parentlock")]
+        (write-logback-template! main-root)
+        (fs/create-dirs (:firefox-profile-dir paths))
+        (spit (str lock-file) "locked")
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"Firefox profile appears to be in use"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
+                                :base-secrets base-secrets})))
+        (is (fs/regular-file? lock-file))
+        (is (not (fs/exists? worktree-profile {:nofollow-links true})))
+        (is (not (fs/exists? (:claim-file paths))))))))
+
+(deftest firefox-profile-slot-path-safety-test
+  (testing "refuses migration through a symlinked slot root"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            session-marker (fs/path worktree-profile "session-marker")
+            external-slot-root (fs/path main-root "external-slot")
+            slots-root (fs/path main-root ".dev-state" "slots")
+            slot-root (fs/path slots-root "agent-1")]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree-profile)
+        (spit (str session-marker) "authenticated")
+        (fs/create-dirs external-slot-root)
+        (fs/create-dirs slots-root)
+        (fs/create-sym-link slot-root external-slot-root)
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"slot state path must not be a symlink"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
+                                :base-secrets base-secrets})))
+        (is (= "authenticated" (slurp (str session-marker))))
+        (is (not (fs/exists? (fs/path external-slot-root "firefox"))))
+        (is (not (fs/exists? (fs/path external-slot-root "claim.edn"))))))))
+
+(deftest firefox-profile-symlink-conflict-test
+  (testing "preserves a worktree Firefox symlink to another profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            external-profile (fs/path main-root "external-firefox")
+            slot-profile (fs/path main-root ".dev-state" "slots" "agent-1" "firefox")
+            claim-file (fs/path main-root ".dev-state" "slots" "agent-1" "claim.edn")]
+        (write-logback-template! main-root)
+        (fs/create-dirs (fs/parent worktree-profile))
+        (fs/create-dirs external-profile)
+        (spit (str (fs/path external-profile "session-marker")) "external")
+        (fs/create-sym-link worktree-profile external-profile)
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"Firefox profile symlink points outside the slot"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
+                                :base-secrets base-secrets})))
+        (is (and (fs/sym-link? worktree-profile)
+                 (= (str external-profile)
+                    (str (fs/read-link worktree-profile)))
+                 (= "external"
+                    (slurp (str (fs/path external-profile "session-marker"))))))
+        (is (and (not (fs/exists? slot-profile))
+                 (not (fs/exists? claim-file)))))))
+
+  (testing "preserves a dangling worktree Firefox symlink"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            missing-profile (fs/path main-root "missing-firefox")
+            slot-profile (fs/path main-root ".dev-state" "slots" "agent-1" "firefox")]
+        (write-logback-template! main-root)
+        (fs/create-dirs (fs/parent worktree-profile))
+        (fs/create-sym-link worktree-profile missing-profile)
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"Firefox profile symlink points outside the slot"
+             (slots/init-slot! {:main-root main-root
+                                :worktree worktree
+                                :slot agent-1
+                                :base-secrets base-secrets})))
+        (is (and (fs/sym-link? worktree-profile)
+                 (= (str missing-profile)
+                    (str (fs/read-link worktree-profile)))
+                 (not (fs/exists? slot-profile))))))))
+
+(deftest firefox-profile-failed-force-init-test
+  (testing "a refused forced migration preserves the previous claim"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree-a (str (fs/path main-root "worktree-a"))
+            worktree-b (str (fs/path main-root "worktree-b"))
+            worktree-b-profile (fs/path worktree-b "data.dev" "firefox")
+            claim-file (fs/path main-root ".dev-state" "slots" "agent-1" "claim.edn")]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree-b-profile)
+        (spit (str (fs/path worktree-b-profile ".parentlock")) "locked")
+        (let [original-claim (slots/claim-slot! {:main-root main-root
+                                                 :slot agent-1
+                                                 :worktree worktree-a
+                                                 :branch "feature/a"})]
+          (is (thrown-with-msg?
+               clojure.lang.ExceptionInfo
+               #"Firefox profile appears to be in use"
+               (slots/init-slot! {:main-root main-root
+                                  :worktree worktree-b
+                                  :slot agent-1
+                                  :base-secrets base-secrets
+                                  :branch "feature/b"
+                                  :force? true})))
+          (is (= original-claim
+                 (edn/read-string (slurp (str claim-file)))))))))
+
+  (testing "a late failure leaves profile state with the previous claimant"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree-a (str (fs/path main-root "worktree-a"))
+            worktree-a-profile (fs/path worktree-a "data.dev" "firefox")
+            worktree-b (str (fs/path main-root "worktree-b"))
+            worktree-b-profile (fs/path worktree-b "data.dev" "firefox")
+            session-marker (fs/path worktree-a-profile "session-marker")
+            paths (slots/slot-paths main-root :agent-1)]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree-a-profile)
+        (fs/create-dirs worktree-b)
+        (spit (str session-marker) "authenticated")
+        (spit (str (fs/path main-root "data.dev")) "not a directory")
+        (let [original-claim (slots/claim-slot! {:main-root main-root
+                                                 :slot agent-1
+                                                 :worktree worktree-a
+                                                 :branch "feature/a"})]
+          (is (thrown?
+               Exception
+               (slots/init-slot! {:main-root main-root
+                                  :worktree worktree-b
+                                  :slot agent-1
+                                  :base-secrets base-secrets
+                                  :branch "feature/b"
+                                  :force? true})))
+          (is (= original-claim
+                 (edn/read-string (slurp (:claim-file paths)))))
+          (is (= "authenticated" (slurp (str session-marker))))
+          (is (not (fs/exists? worktree-b-profile {:nofollow-links true})))
+          (is (not (fs/exists? (:firefox-profile-dir paths)))))))))
 
 (testing "refuses to initialize a worktree over another worktree's claim"
   (fs/with-temp-dir [main-root {}]
@@ -523,6 +811,102 @@
                               :worktree worktree-b
                               :slot agent-1
                               :base-secrets base-secrets}))))))
+
+(deftest firefox-profile-release-test
+  (testing "release unlinks the worktree and preserves the slot Firefox profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            _ (write-logback-template! main-root)
+            _ (fs/create-dirs worktree)
+            paths (slots/init-slot! {:main-root main-root
+                                     :worktree worktree
+                                     :slot agent-1
+                                     :base-secrets base-secrets})
+            firefox-profile-dir (fs/path (:slot-root paths) "firefox")
+            session-marker (fs/path firefox-profile-dir "session-marker")
+            firefox-profile-link (fs/path worktree "data.dev" "firefox")]
+        (fs/create-dirs firefox-profile-dir)
+        (spit (str session-marker) "authenticated")
+        (slots/release-slot! {:main-root main-root
+                              :slot agent-1
+                              :stop-services? false})
+        (is (and (fs/directory? firefox-profile-dir)
+                 (fs/regular-file? session-marker)
+                 (= "authenticated" (slurp (str session-marker)))))
+        (is (not (fs/exists? firefox-profile-link {:nofollow-links true})))
+        (is (not (fs/exists? (:logs-dir paths))))
+        (is (not (fs/exists? (:env-file paths)))))))
+
+  (testing "release migrates a pre-upgrade worktree Firefox profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            paths (slots/slot-paths main-root :agent-1)
+            slot-profile (fs/path (:firefox-profile-dir paths))
+            session-marker (fs/path worktree-profile "session-marker")]
+        (fs/create-dirs worktree-profile)
+        (spit (str session-marker) "authenticated")
+        (slots/claim-slot! {:main-root main-root
+                            :slot agent-1
+                            :worktree worktree
+                            :branch "feature/agent-1"})
+        (slots/release-slot! {:main-root main-root
+                              :slot agent-1
+                              :stop-services? false})
+        (is (not (fs/exists? worktree-profile {:nofollow-links true})))
+        (is (= "authenticated"
+               (slurp (str (fs/path slot-profile "session-marker")))))
+        (is (not (fs/exists? (:claim-file paths)))))))
+
+  (testing "release refuses to migrate a locked pre-upgrade Firefox profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            worktree-profile (fs/path worktree "data.dev" "firefox")
+            paths (slots/slot-paths main-root :agent-1)
+            lock-file (fs/path worktree-profile ".parentlock")]
+        (fs/create-dirs worktree-profile)
+        (spit (str lock-file) "locked")
+        (slots/claim-slot! {:main-root main-root
+                            :slot agent-1
+                            :worktree worktree
+                            :branch "feature/agent-1"})
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"Firefox profile appears to be in use"
+             (slots/release-slot! {:main-root main-root
+                                   :slot agent-1
+                                   :stop-services? false})))
+        (is (fs/regular-file? lock-file))
+        (is (fs/regular-file? (:claim-file paths)))
+        (is (not (fs/exists? (:firefox-profile-dir paths)))))))
+
+  (testing "release refuses a lock in an already managed Firefox profile"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            _ (write-logback-template! main-root)
+            _ (fs/create-dirs worktree)
+            paths (slots/init-slot! {:main-root main-root
+                                     :worktree worktree
+                                     :slot agent-1
+                                     :base-secrets base-secrets})
+            firefox-profile-link (fs/path worktree "data.dev" "firefox")
+            lock-file (fs/path (:firefox-profile-dir paths) ".parentlock")]
+        (spit (str lock-file) "locked")
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"Firefox profile appears to be in use"
+             (slots/release-slot! {:main-root main-root
+                                   :slot agent-1
+                                   :stop-services? false})))
+        (is (fs/regular-file? lock-file))
+        (is (fs/regular-file? (:claim-file paths)))
+        (is (and (fs/sym-link? firefox-profile-link)
+                 (= (str (:firefox-profile-dir paths))
+                    (str (fs/read-link firefox-profile-link)))))))))
 
 (defn fake-webawesome-source! [source-root]
   (let [layout-file (fs/path source-root "src" "clj" "app" "layout2.clj")
@@ -961,7 +1345,9 @@
         (is (every? :ok? (:checks result)))
         (doseq [check [:slot-root :env-file :compose-env-file :secrets-file
                        :datomic-db :datomic-logback :current-slot-link
-                       :filestore-link :http-port-free :nrepl-port-free :compose-ps]]
+                       :filestore-link :firefox-profile-dir
+                       :firefox-profile-link :http-port-free :nrepl-port-free
+                       :compose-ps]]
           (is (contains? checks-by-name check)))
         (is (= [(slots/compose-command main-root agent-1 ["ps"])]
                @calls))
