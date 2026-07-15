@@ -806,6 +806,28 @@
   :db/valueType   :db.type/string
   :db/cardinality :db.cardinality/one}
 
+ {:db/ident :instrument.coverage/create-once
+  :db/doc "Creates at most one coverage for an instrument in a policy."
+  :db/fn
+  #db/fn
+  {:lang "clojure"
+   :params [db policy-id instrument-id tx-data]
+   :requires [[datomic.api :as d]]
+   :code
+   (let [existing-coverage
+         (d/q
+          (quote [:find ?coverage .
+                  :in $ ?policy-id ?instrument-id
+                  :where
+                  [?policy :insurance.policy/policy-id ?policy-id]
+                  [?policy :insurance.policy/covered-instruments ?coverage]
+                  [?coverage :instrument.coverage/instrument ?instrument]
+                  [?instrument :instrument/instrument-id ?instrument-id]])
+          db policy-id instrument-id)]
+     (if existing-coverage
+       []
+       tx-data))}}
+
 ;;;; Insurance - Policy
  {:db/ident       :insurance.policy/policy-id
   :db/doc         "The id of the policy"
