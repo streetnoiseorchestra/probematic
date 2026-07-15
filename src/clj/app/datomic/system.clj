@@ -2,8 +2,6 @@
   (:require
    [app.datomic.migrations :as migrations]
    [app.datomic.shim :as shim]
-   [clojure.edn :as edn]
-   [clojure.java.io :as io]
    [com.brunobonacci.mulog :as μ]
    [com.fulcrologic.guardrails.malli.core :refer [>defn-]]
    [datomic.api :as d]
@@ -25,11 +23,6 @@
         (when (d/create-database db-uri)
           (μ/log ::db-created :msg "Datomic database created"))
         (d/connect db-uri))
-
-(defn- resource-data [resource-name]
-  (edn/read-string
-   {:readers *data-readers*}
-   (slurp (io/resource resource-name))))
 
 (defn- sync-schema! [conn phase]
   (let [basis-t (d/basis-t (d/db conn))
@@ -67,7 +60,7 @@
   [conn]
   (μ/log ::metadata-schema-start
          :msg "Datomic installing application schema metadata")
-  @(d/transact conn (resource-data "schema-meta.edn"))
+  @(d/transact conn (stork/read-resource "schema-meta.edn"))
   (μ/log ::metadata-schema-complete
          :msg "Datomic application schema metadata installed")
 
@@ -80,7 +73,7 @@
 
   (μ/log ::canonical-schema-start
          :msg "Datomic installing canonical application schema")
-  @(d/transact conn (resource-data "schema.edn"))
+  @(d/transact conn (stork/read-resource "schema.edn"))
   (sync-schema! conn :canonical-schema)
   (μ/log ::canonical-schema-complete
          :msg "Datomic canonical application schema installed")

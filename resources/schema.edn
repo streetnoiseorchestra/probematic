@@ -41,7 +41,7 @@
  {:db/ident       :member/email
   :db/doc         "The email address of the member"
   :db/valueType   :db.type/string
-  :db/unique      :db.unique/value ;; TODO(pro migrate)
+  :db/unique      :db.unique/value
   :db/cardinality :db.cardinality/one}
 
  {:db/ident       :member/username

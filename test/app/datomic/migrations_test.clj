@@ -2,34 +2,31 @@
   (:require
    [app.datomic.migrations]
    [app.datomic.system :as datomic.system]
-   [clojure.edn :as edn]
-   [clojure.java.io :as io]
-   [clojure.test :refer [deftest is testing]]
+   [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]
    [dev.gethop.stork :as stork]))
 
-(def ^:private member-attributes
-  [:member/nick :member/email :member/username])
+(def ^:dynamic *test-connections* nil)
 
-(def ^:private prepare-member-uniqueness-id
-  (keyword "app.migration" "001-prepare-member-uniqueness"))
+(defn- with-released-test-connections [f]
+  (binding [*test-connections* (atom [])]
+    (try
+      (f)
+      (finally
+        (run! d/release @*test-connections*)))))
 
-(def ^:private normalize-active-surveys-id
-  (keyword "app.migration" "002-normalize-active-insurance-surveys"))
+(use-fixtures :each with-released-test-connections)
 
 (defn- fresh-connection [name-prefix]
   (let [uri (str "datomic:mem://" name-prefix "-" (random-uuid))]
     (d/create-database uri)
-    (d/connect uri)))
-
-(defn- resource-data [resource-name]
-  (edn/read-string
-   {:readers *data-readers*}
-   (slurp (io/resource resource-name))))
+    (let [conn (d/connect uri)]
+      (swap! *test-connections* conj conn)
+      conn)))
 
 (defn- install-current-schema! [conn]
-  @(d/transact conn (resource-data "schema-meta.edn"))
-  @(d/transact conn (resource-data "schema.edn")))
+  @(d/transact conn (stork/read-resource "schema-meta.edn"))
+  @(d/transact conn (stork/read-resource "schema.edn")))
 
 (defn- ref-ident [db entity-id attribute]
   (get-in (d/pull db [{attribute [:db/ident]}] entity-id)
@@ -69,8 +66,9 @@
     (try
       (let [conn (:conn peer)]
         (is (= {:schema-installed? true
-                :migration-ids #{prepare-member-uniqueness-id
-                                 normalize-active-surveys-id}}
+                :migration-ids
+                #{:app.migration/pre001-prepare-member-uniqueness
+                  :app.migration/post001-normalize-active-insurance-surveys}}
                {:schema-installed?
                 (boolean (d/entid (d/db conn) :member/member-id))
                 :migration-ids (migration-ids (d/db conn))})))
@@ -131,8 +129,8 @@
                        :member/username "fresh-user"}
               :stored-function? true
               :migration-ids
-              #{prepare-member-uniqueness-id
-                normalize-active-surveys-id}}
+              #{:app.migration/pre001-prepare-member-uniqueness
+                :app.migration/post001-normalize-active-insurance-surveys}}
              {:returned-final-db?
               (= (d/basis-t prepared) preparation-basis)
               :metadata
@@ -194,7 +192,7 @@
               (into {}
                     (map (fn [ident]
                            [ident (ref-ident db ident :db/unique)]))
-                    member-attributes)
+                    [:member/nick :member/email :member/username])
               :members
               (->> (d/q '[:find [(pull ?member
                                        [:member/nick
@@ -260,7 +258,7 @@
               (boolean
                (stork/installed?
                 db
-                prepare-member-uniqueness-id))})))))
+                :app.migration/pre001-prepare-member-uniqueness))})))))
 
 (deftest active-survey-normalization-test
   (let [conn (fresh-connection "schema-lifecycle-survey-normalization")
@@ -342,7 +340,7 @@
                 (boolean
                  (stork/installed?
                   db
-                  normalize-active-surveys-id))})))))
+                  :app.migration/post001-normalize-active-insurance-surveys))})))))
   (testing "one active survey"
     (let [conn      (fresh-connection "schema-lifecycle-one-active")
           survey-id #uuid "10000000-0000-0000-0000-000000000002"]
@@ -363,7 +361,7 @@
                 (boolean
                  (stork/installed?
                   db
-                  normalize-active-surveys-id))}))))))
+                  :app.migration/post001-normalize-active-insurance-surveys))}))))))
 
 (deftest active-survey-normalization-tie-breaking-test
   (testing "survey UUID string orders equal creation times"
