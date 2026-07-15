@@ -1,15 +1,28 @@
 (ns app.schema-helpers-test
   (:require
    [app.schema-helpers :refer [DurationSchema EmailAddress InstSchema InstantSchema NonBlankString interval?]]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
    [malli.core :as m]
    [malli.transform :as mt]
    [tick.core :as t]))
 
 (deftest email-schema-test
-  (is (= "hello@world.com" (m/validate EmailAddress "hello@world.com")))
-  (is (= "hello@world.com" (m/decode EmailAddress "HeLLo@world.COM" mt/string-transformer)))
-  (is (not (m/validate EmailAddress "hellp@world@"))))
+  (testing "accepts the supported address characters and a two-character-or-longer TLD"
+    (doseq [address ["hello@world.com"
+                     "HELLO@WORLD.COM"
+                     "first.last+tag@example.co.uk"
+                     "customer%code_test@example-domain.test"]]
+      (is (m/validate EmailAddress address) address)))
+
+  (testing "rejects addresses outside the configured pattern"
+    (doseq [address ["hello @world.com"
+                     "hello@world.c"
+                     "hello@world"
+                     "hello@world@"]]
+      (is (not (m/validate EmailAddress address)) address)))
+
+  (is (= "hello@world.com"
+         (m/decode EmailAddress "HeLLo@world.COM" mt/string-transformer))))
 
 (deftest duration-schema test
   (is (m/validate DurationSchema (t/new-duration 30 :minutes)) "a duration")

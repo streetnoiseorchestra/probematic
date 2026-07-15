@@ -3,18 +3,16 @@
    [app.form :as form]
    [app.members.domain :as members.domain]
    [app.nexus.actions :as support]
-   [app.schemas :as schemas]
    [app.util :as util]
    [clojure.string :as str]
    [datomic.api :as d]))
 
 (defn- normalize-form [member-invite]
-  (let [email-raw (form/trim-value (:email member-invite))
-        phone-raw (form/trim-value (:phone member-invite))]
+  (let [phone-raw (form/trim-value (:phone member-invite))]
     {:member-id     (some-> (:member-id member-invite) str)
      :name          (form/trim-value (:name member-invite))
      :nick          (form/trim-value (:nick member-invite))
-     :email         (some-> email-raw members.domain/clean-email)
+     :email         (some-> (:email member-invite) members.domain/clean-email)
      :username      (some-> (:username member-invite) members.domain/clean-username)
      :phone         (cond-> phone-raw
                       (and (seq phone-raw) (members.domain/phone-valid? phone-raw))
@@ -48,7 +46,7 @@
      {:name (required-error tr (tr [:member/name]))})
    (when (str/blank? email)
      {:email (required-error tr (tr [:Email]))})
-   (when (and (seq email) (not (schemas/valid? ::schemas/email-address email)))
+   (when (and (seq email) (not (members.domain/email-valid? email)))
      {:email {:error (tr [:members/error-email-invalid])}})
    (when (str/blank? username)
      {:username (required-error tr (tr [:member/username]))})
