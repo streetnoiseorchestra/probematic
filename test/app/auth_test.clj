@@ -3,7 +3,9 @@
    [app.auth :as auth]
    [app.i18n :as i18n]
    [buddy.sign.jwt :as jwt]
-   [clojure.test :refer [deftest is]])
+   [clojure.test :refer [deftest is]]
+   [reitit.core :as r]
+   [reitit.http :as http])
   (:import
    [java.security KeyPairGenerator]))
 
@@ -11,6 +13,23 @@
   (jwt/sign claims private-key {:alg :rs256}))
 
 (def test-tr (i18n/tr-with (i18n/read-langs) [i18n/default-locale]))
+
+(defn- route-methods [router path]
+  (let [data (:data (r/match-by-path router path))]
+    {:generic? (some? (:handler data))
+     :get? (some? (:get data))
+     :post? (some? (:post data))}))
+
+(defn- html-attribute [attrs attribute]
+  (second
+   (re-find (re-pattern (str "\\b" attribute "=\"([^\"]*)\""))
+            attrs)))
+
+(defn- form-summaries [body]
+  (mapv (fn [[_ attrs]]
+          {:method (html-attribute attrs "method")
+           :action (html-attribute attrs "action")})
+        (re-seq #"<form\b([^>]*)>" body)))
 
 (deftest build-oauth2-session-stores-keycloak-subject
   (let [key-pair (.generateKeyPair (doto (KeyPairGenerator/getInstance "RSA")
@@ -70,3 +89,33 @@
              :body ""}}
            {:document document-response
             :datastar datastar-response}))))
+
+(deftest logout-and-login-restart-are-post-only
+  (let [router (http/router
+                ["" (auth/routes
+                     {:env {:ig/system {:app.ig/profile :test}}
+                      :oauth2 {}})])]
+    (is (= {:logout-form-id "logout-form"
+            :logout {:generic? false
+                     :get? false
+                     :post? true}
+            :login-restart {:generic? false
+                            :get? false
+                            :post? true}}
+           {:logout-form-id
+            (some-> (ns-resolve 'app.auth 'logout-form-id) deref)
+            :logout (route-methods router "/logout")
+            :login-restart (route-methods router "/login/restart")}))))
+
+(deftest identity-mismatch-actions-use-native-post-forms
+  (let [body (:body
+              (auth/identity-mismatch-response
+               {:tr test-tr
+                :session {:session/email "new@example.com"}}))]
+    (is (= {:forms [{:method "post"
+                     :action "/login/restart"}
+                    {:method "post"
+                     :action "/logout"}]
+            :logout-link? false}
+           {:forms (form-summaries body)
+            :logout-link? (boolean (re-find #"href=\"/logout\"" body))}))))

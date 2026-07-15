@@ -1,5 +1,6 @@
 (ns app.ui2.footer-tray
   (:require
+   [app.auth :as auth]
    [app.ui2.avatar :as avatar]
    [app.ui2.button :as button]
    [app.ui2.core :as uic]
@@ -95,8 +96,10 @@
                        :onclick "window.location = this.value"}
     (menu-icon :cog)
     (:account-settings labels)]
-   [:wa-dropdown-item {:value (url/link-logout)
-                       :onclick "window.location = this.value"}
+   [:wa-dropdown-item
+    {:onclick (str "document.getElementById('"
+                   auth/logout-form-id
+                   "').requestSubmit()")}
     (menu-icon :phosphor :sign-out)
     (:logout labels)]])
 

@@ -56,3 +56,20 @@
          markup
          "encodeURIComponent(window.location.pathname + window.location.search)"))
     (is (str/includes? markup "retryMaxCount: Infinity"))))
+
+(deftest application-shell-owns-one-empty-logout-form
+  (let [body (layout2/app-shell-body
+              {:session {:session/member {}}}
+              [:main "Page content"])
+        forms (filter #(= "logout-form" (:id (l/attrs %)))
+                      (l/select 'form body))
+        form  (first forms)]
+    (is (= {:count 1
+            :attrs {:id "logout-form"
+                    :method "post"
+                    :action "/logout"}
+            :children []}
+           {:count (count forms)
+            :attrs (some-> form l/attrs
+                           (select-keys [:id :method :action]))
+            :children (if form (vec (l/children form)) [])}))))

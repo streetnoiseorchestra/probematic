@@ -2,7 +2,9 @@
   (:require
    [app.account.actions :as actions]
    [app.account.ui :as support]
+   [app.auth :as auth]
    [app.datastar :as d*]
+   [app.ui2.button :as button]
    [app.ui2.card :as card]
    [app.ui2.icon :as ico]))
 
@@ -26,18 +28,27 @@
     :icon :question
     :title :account-settings/help-row-title
     :prevent-default? true}
-   {:href "/logout"
+   {:form auth/logout-form-id
     :icon :sign-out
     :icon-library :phosphor
     :title :account-settings/logout-row-title}])
 
 (defn- directory-row
-  [{:keys [href icon icon-library title prevent-default?]}]
-  [:a (cond-> {:href href :class "account-settings-row sno-no-visited"}
-        prevent-default? (assoc :data-on:click "evt.preventDefault();"))
-   [ico/Icon {::ico/library (or icon-library :snoico)
-              ::ico/name icon}]
-   [:span [:i18n/tr title]]])
+  [{:keys [form href icon icon-library title prevent-default?]}]
+  (let [icon  [ico/Icon {::ico/library (or icon-library :snoico)
+                         ::ico/name icon}]
+        label [:span [:i18n/tr title]]]
+    (if form
+      [button/Button {:type "submit"
+                      :form form
+                      :class "account-settings-row sno-no-visited"}
+       icon
+       label]
+      [:a (cond-> {:href href
+                   :class "account-settings-row sno-no-visited"}
+            prevent-default? (assoc :data-on:click "evt.preventDefault();"))
+       icon
+       label])))
 
 (defn- app-action [req platform]
   (str "evt.preventDefault(); $account-app.platform = '" platform
