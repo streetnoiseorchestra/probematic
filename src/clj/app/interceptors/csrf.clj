@@ -1,5 +1,14 @@
 (ns app.interceptors.csrf
-  "Fail-closed Fetch Metadata CSRF protection for browser requests."
+  "Enforces the browser's same-origin boundary for state-changing requests.
+
+  `GET`, `HEAD`, and `OPTIONS` pass without Fetch Metadata. Every other method
+  requires an exact `Sec-Fetch-Site: same-origin` header. Missing, malformed,
+  and all other values fail closed with an empty `403` response.
+
+  The interceptor runs in Reitit's handler-level queue before request parsing
+  and session loading, so it also protects fallback responses, redirects, and
+  static resources. Unsafe responses vary on `Sec-Fetch-Site`, and explicit
+  `same-site` or `cross-site` rejections emit a sanitized security event."
   (:require
    [app.interceptors.util :as int]
    [clojure.string :as str]
@@ -40,13 +49,8 @@
      :security-event? (and (not allowed?)
                            (security-event? request))}))
 
-(defn- header-name [header]
-  (if (keyword? header)
-    (name header)
-    (str header)))
-
 (defn- header-key? [header expected]
-  (= (str/lower-case (header-name header))
+  (= (str/lower-case header)
      (str/lower-case expected)))
 
 (defn- response-header [headers expected]
@@ -72,15 +76,14 @@
           fields))
 
 (defn- add-fetch-site-vary [headers]
-  (let [headers (or headers {})
-        vary    (response-header headers "Vary")
-        fields  (distinct-header-fields
-                 (if (str/blank? (str vary))
-                   []
-                   (mapv str/trim (str/split (str vary) #","))))
-        fields  (cond-> fields
-                  (not-any? #(header-key? % "Sec-Fetch-Site") fields)
-                  (conj "Sec-Fetch-Site"))]
+  (let [vary   (response-header headers "Vary")
+        fields (distinct-header-fields
+                (if (str/blank? vary)
+                  []
+                  (mapv str/trim (str/split vary #","))))
+        fields (cond-> fields
+                 (not-any? #(header-key? % "Sec-Fetch-Site") fields)
+                 (conj "Sec-Fetch-Site"))]
     (assoc (without-header headers "Vary")
            "Vary" (str/join ", " fields))))
 
