@@ -465,6 +465,95 @@
     (fs/create-dirs (fs/parent template))
     (spit (str template) logback-template)))
 
+(def task-env-probe-config
+  '{:tasks
+    {task-env-probe
+     (-> (clojure {:extra-env {"PROBE_EXTRA" "kept"}
+                   :out :string}
+                  "-Srepro"
+                  "-Sdeps"
+                  "{}"
+                  "-M"
+                  "-e"
+                  (str "(prn (select-keys (System/getenv) "
+                       "[\"PROBEMATIC_SLOT\" \"HTTP_PORT\" "
+                       "\"APP_SECRETS_FILE\" \"PROBE_EXTRA\"]))"))
+         :out
+         print)}})
+
+(defn task-env-probe [worktree inherited-env]
+  (let [repo-root (str (fs/normalize (fs/absolutize ".")))
+        {:keys [exit out err]}
+        (shell {:continue true
+                :dir worktree
+                :err :string
+                :extra-env inherited-env
+                :out :string}
+               "bb"
+               "--config" (str (fs/path repo-root "bb.edn"))
+               "--deps-root" repo-root
+               "-Sdeps" (pr-str task-env-probe-config)
+               "task-env-probe")]
+    {:exit exit
+     :out (when-not (str/blank? out)
+            (edn/read-string out))
+     :err err}))
+
+(deftest task-env-installation-test
+  (testing "bb tasks automatically use the initialized worktree's slot environment"
+    (fs/with-temp-dir [main-root {}]
+      (let [main-root (str (fs/absolutize main-root))
+            worktree (str (fs/path main-root "worktree"))
+            paths (slots/slot-paths main-root :agent-1)]
+        (write-logback-template! main-root)
+        (fs/create-dirs worktree)
+        (slots/init-slot! {:main-root main-root
+                           :worktree worktree
+                           :slot agent-1
+                           :base-secrets base-secrets})
+        (is (= {:exit 0
+                :out {"PROBEMATIC_SLOT" "agent-1"
+                      "HTTP_PORT" "6171"
+                      "APP_SECRETS_FILE" (:secrets-file paths)
+                      "PROBE_EXTRA" "kept"}
+                :err ""}
+               (task-env-probe worktree
+                               {"PROBEMATIC_SLOT" "wrong-slot"
+                                "HTTP_PORT" "9999"
+                                "APP_SECRETS_FILE" "/wrong/secrets.edn"}))))))
+
+  (testing "bb tasks outside an initialized slot keep their inherited environment"
+    (fs/with-temp-dir [worktree {}]
+      (is (= {:exit 0
+              :out {"PROBEMATIC_SLOT" "inherited-slot"
+                    "HTTP_PORT" "9999"
+                    "APP_SECRETS_FILE" "/inherited/secrets.edn"
+                    "PROBE_EXTRA" "kept"}
+              :err ""}
+             (task-env-probe (str worktree)
+                             {"PROBEMATIC_SLOT" "inherited-slot"
+                              "HTTP_PORT" "9999"
+                              "APP_SECRETS_FILE" "/inherited/secrets.edn"})))))
+
+  (testing "bb tasks fail clearly when the current slot environment is missing"
+    (fs/with-temp-dir [worktree {}]
+      (let [current-slot-link (fs/path worktree "data.dev" "current-slot")
+            missing-slot-root (fs/path worktree "missing-slot")]
+        (fs/create-dirs (fs/parent current-slot-link))
+        (fs/create-sym-link current-slot-link missing-slot-root)
+        (let [{:keys [exit out err]}
+              (task-env-probe (str worktree)
+                              {"PROBEMATIC_SLOT" "inherited-slot"})]
+          (is (= {:exit 1
+                  :out nil
+                  :missing-env-error?
+                  true}
+                 {:exit exit
+                  :out out
+                  :missing-env-error?
+                  (str/includes? err
+                                 "Current dev slot environment is missing")})))))))
+
 (deftest init-slot-test
   (testing "initializes generated slot files, directories, and worktree symlinks idempotently"
     (fs/with-temp-dir [main-root {}]

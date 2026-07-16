@@ -112,12 +112,21 @@ bb dev-slot doctor agent-1
 
 ## Start the host app
 
-Source the generated environment from the agent worktree before starting the REPL or app.
+Start the app through its Babashka task from the initialized worktree. Babashka
+tasks automatically apply the environment from `data.dev/current-slot/env.sh`
+to their child processes.
 
 ```bash
 cd .worktrees/probematic-agent-1
-source /home/ramblurr/src/sno/probematic/.dev-state/slots/agent-1/env.sh
 bb dev
+```
+
+Commands outside the Babashka task system still require manual setup. Source
+the generated environment before running `clojure` directly or invoking a
+Babashka script file.
+
+```bash
+source "$(bb dev-slot env agent-1)"
 ```
 
 Each slot's browser-facing services use `<slot>.probematic.localhost` so they remain distinct trustworthy local origins.

@@ -2,7 +2,7 @@
   (:require
    [babashka.cli :as cli]
    [babashka.fs :as fs]
-   [babashka.process :refer [shell]]
+   [babashka.process :as process :refer [shell]]
    [clojure.edn :as edn]
    [clojure.string :as str]))
 
@@ -190,6 +190,45 @@
             (str "datomic:sql://app?jdbc:sqlite:" datomic-data-dir "/datomic-sqlite.db")))
       (str "export APP_FILESTORE_DIR=" (shell-double-quote shared-filestore-dir))
       ""])))
+
+(def ^:private env-export-pattern
+  #"(?m)^export ([A-Za-z_][A-Za-z0-9_]*)=")
+
+(defn- null-separated-env [text]
+  (into {}
+        (comp
+         (remove str/blank?)
+         (map #(str/split % #"=" 2)))
+        (str/split text #"\u0000")))
+
+(defn- source-env-file [env-file]
+  (let [env-names (map second (re-seq env-export-pattern (slurp (str env-file))))
+        env (-> (shell {:err :string :out :string}
+                       "bash" "-c" "source \"$1\" && env -0"
+                       "dev-slot-env" (str env-file))
+                :out
+                null-separated-env)]
+    (select-keys env env-names)))
+
+(defn install-task-env! []
+  (let [current-slot-link (fs/path "data.dev" "current-slot")
+        env-file (fs/path current-slot-link "env.sh")]
+    (cond
+      (not (fs/exists? current-slot-link {:nofollow-links true}))
+      nil
+
+      (not (fs/regular-file? env-file))
+      (throw (ex-info "Current dev slot environment is missing; rerun bb dev-slot init from the main checkout"
+                      {:current-slot-link (str current-slot-link)
+                       :env-file (str env-file)}))
+
+      :else
+      (let [slot-env (source-env-file env-file)]
+        (alter-var-root #'process/*defaults*
+                        assoc
+                        :env
+                        (merge (into {} (System/getenv)) slot-env))
+        slot-env))))
 
 (defn render-compose-env
   [main-root slot]

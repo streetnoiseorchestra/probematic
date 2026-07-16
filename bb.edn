@@ -7,10 +7,12 @@
           [clojure.string :as str]
           [clojure.pprint :refer [print-table]]
           [babashka.tasks :refer [shell]]
+          [dev-slots :as slots]
           [ol.bb-tasks.publish-clojars :as publish-clojars])
 
          :init
-         (do (def paths ["src" "test"]))
+         (do (def paths ["src" "test"])
+             (slots/install-task-env!))
 
          dev
          {:doc  "Start a local development server"
