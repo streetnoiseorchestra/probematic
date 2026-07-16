@@ -81,15 +81,13 @@
 
 (defn- song-choices [req gig-id songs repertoire-filter selected-songs]
   (plan.views/song-choices
-   {:req               req
-    :title-kw          [:gig/probeplan-choose]
-    :guidance-kw       [:gig/probeplan-guidance]
+   {:title-kw          :gigs/probeplan-choose
+    :guidance-kw       :gigs/probeplan-guidance
     :songs             songs
     :repertoire-filter repertoire-filter
     :selected-songs    selected-songs
     :filter-control    (plan.views/repertoire-filter-control
-                        {:req            req
-                         :current-filter repertoire-filter
+                        {:current-filter repertoire-filter
                          :button         (partial repertoire-filter-button req)})
     :choice            (partial song-choice req gig-id)}))
 
@@ -122,9 +120,8 @@
 
 (defn- selected-songs-list [req gig-id selected-songs]
   (plan.views/selected-songs-list
-   {:req            req
-    :title-kw       [:gig/probeplan-sort]
-    :guidance-kw    [:gig/probeplan-order-guidance]
+   {:title-kw       :gigs/probeplan-order
+    :guidance-kw    :gigs/probeplan-order-guidance
     :selected-songs selected-songs
     :list-id        "gig-probeplan-selected-songs"
     :list-class     "gigs-song-plan-selected gigs-song-plan-selected--with-actions"

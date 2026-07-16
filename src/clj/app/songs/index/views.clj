@@ -47,7 +47,7 @@
         :tabindex    "-1"}]
    [:div {:class "songs-index-row-date"}
     (song-stat {:icon  "calendar"
-                :label (tr [:song/last-played])
+                :label [:i18n/tr :repertoire/last-played]
                 :value (or (ui2/format-date req :compact-with-weekday last-played-on) "—")})]])
 
 (defn- songs-list [req songs]
@@ -60,7 +60,7 @@
      ((:tr req) [:song/search-empty]))))
 
 (defn- search-control [{:keys [tr] :as req} {:keys [search]}]
-  [:wa-input {:label                        (tr [:action/search])
+  [:wa-input {:label                        [:i18n/tr :action/search]
               :placeholder                  (tr [:song/search])
               :appearance                   "outlined"
               :size                         "m"
@@ -73,8 +73,8 @@
               ::ico/name    :magnifying-glass
               :slot         "start"}]])
 
-(defn- repertoire-filter-control [{:keys [tr] :as req} {:keys [repertoire-filter]}]
-  [:wa-select {:label          (tr [:gig/probeplan-repertoire])
+(defn- repertoire-filter-control [req {:keys [repertoire-filter]}]
+  [:wa-select {:label          [:i18n/tr :repertoire/filter-label]
                :appearance     "outlined"
                :size           "m"
                :value          repertoire-filter
@@ -83,9 +83,9 @@
    [ico/Icon {::ico/library :snoico
               ::ico/name    :music-note-outline
               :slot         "start"}]
-   [:wa-option {:value "current"} (tr [:gig/probeplan-repertoire-current])]
-   [:wa-option {:value "old"} (tr [:gig/probeplan-repertoire-old])]
-   [:wa-option {:value "all"} (tr [:gig/probeplan-repertoire-all])]])
+   [:wa-option {:value "current"} [:i18n/tr :repertoire/filter-current]]
+   [:wa-option {:value "old"} [:i18n/tr :repertoire/filter-old]]
+   [:wa-option {:value "all"} [:i18n/tr :repertoire/filter-all]]])
 
 (defn- sync-menu-item [req]
   [:wa-dropdown-item

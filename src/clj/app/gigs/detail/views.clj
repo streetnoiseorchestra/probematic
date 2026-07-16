@@ -65,65 +65,66 @@
     (ui2/date-range-display req :compact-with-weekday date end-date)
     (muted nil)))
 
-(defn- gig-summary [{:keys [tr]} {:gig/keys [title gig-type status]}]
+(defn- gig-summary [{:gig/keys [title gig-type status]}]
   [page-header/PageHeader
    {:title [:span {:class "wa-cluster wa-gap-xs wa-align-items-center gigs-detail-title"}
             (when status
               (gigs.ui/gig-status-icon status {:class "gigs-detail-status-icon"}))
             title
-            [:wa-badge {:appearance "outlined" :class "wa-font-size-xs"} (tr [gig-type])]]}])
+            [:wa-badge {:appearance "outlined" :class "wa-font-size-xs"}
+             [:i18n/tr (domain/gig-type-label-key gig-type)]]]}])
 
 (defn- gig-info-section
-  [{:keys [tr] :as req}
+  [req
    {:gig/keys [call-time contact end-time leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time setlist]
     :as       gig}]
   (ui2/section-card
-   {:title (tr [:gig/gig-info])}
+   {:title [:i18n/tr :gigs/gig-info]}
    [:dl {:class "particulars gigs-detail-info-list"}
-    (detail-item (tr [:gig/date]) (gig-date req gig))
-    (detail-item (tr [:gig/location]) (if (str/blank? location)
-                                        (muted nil)
-                                        (markdown/render-one-line location)))
-    (detail-item (tr [:gig/contact]) (member-name contact))
-    (detail-item (tr [:gig/call-time]) (muted (ui2/format-time req :short call-time)))
-    (optional-item (tr [:gig/set-time]) (ui2/format-time req :short set-time))
-    (optional-item (tr [:gig/end-time]) (ui2/format-time req :short end-time))
-    (optional-item (tr [:gig/leader]) leader)
+    (detail-item [:i18n/tr :gigs/date] (gig-date req gig))
+    (detail-item [:i18n/tr :gigs/location] (if (str/blank? location)
+                                             (muted nil)
+                                             (markdown/render-one-line location)))
+    (detail-item [:i18n/tr :gigs/contact] (member-name contact))
+    (detail-item [:i18n/tr :gigs/call-time] (muted (ui2/format-time req :short call-time)))
+    (optional-item [:i18n/tr :gigs/set-time] (ui2/format-time req :short set-time))
+    (optional-item [:i18n/tr :gigs/end-time] (ui2/format-time req :short end-time))
+    (optional-item [:i18n/tr :gigs/leader] leader)
     (when (domain/probe? gig)
       (list
-       (optional-item (tr [:gig/rehearsal-leader1]) (some-> rehearsal-leader1 ui2/member-nick))
-       (optional-item (tr [:gig/rehearsal-leader2]) (some-> rehearsal-leader2 ui2/member-nick))))
-    (optional-item (tr [:gig/pay-deal]) pay-deal)
-    (optional-item (tr [:gig/outfit]) outfit)
-    (optional-markdown-item (tr [:gig/more-details]) more-details)
-    (optional-lines-item (tr [:gig/setlist]) setlist)
-    (optional-item (tr [:gig/post-gig-plans]) post-gig-plans)]))
+       (optional-item [:i18n/tr :gigs/rehearsal-leader-1] (some-> rehearsal-leader1 ui2/member-nick))
+       (optional-item [:i18n/tr :gigs/rehearsal-leader-2] (some-> rehearsal-leader2 ui2/member-nick))))
+    (optional-item [:i18n/tr :gigs/pay-deal] pay-deal)
+    (optional-item [:i18n/tr :gigs/outfit] outfit)
+    (optional-markdown-item [:i18n/tr :gigs/more-details] more-details)
+    (optional-lines-item [:i18n/tr :gigs/setlist] setlist)
+    (optional-item [:i18n/tr :gigs/post-gig-plans] post-gig-plans)]))
 
-(defn- setlist-section [{:keys [db tr]} gig-id]
+(defn- setlist-section [{:keys [db]} gig-id]
   (let [songs (q/setlist-songs-for-gig db gig-id)]
     (ui2/section-card
-     {:title    (tr [:gig/setlist])
+     {:title    [:i18n/tr :gigs/setlist]
       :divider? true
       :actions  [[button/Button {:appearance "outlined"
                                  :variant    "brand"
                                  :href       (urls/link-gig-setlist gig-id)}
                   (if (seq songs)
-                    (tr [:action/edit])
-                    (tr [:gig/create-setlist]))]]}
+                    [:i18n/tr :action/edit]
+                    [:i18n/tr :gigs/create-setlist])]]}
      (gigs.ui/setlist-list songs))))
 
-(defn- probeplan-section [{:keys [db tr]} gig-id]
+(defn- probeplan-section [{:keys [db]} gig-id]
   (let [songs (q/probeplan-songs-for-gig db gig-id)]
     (ui2/section-card
-     {:title    (tr [:gig/probeplan])
+     {:title    [:i18n/tr :gigs/probeplan]
       :divider? true
       :actions  [[button/Button {:appearance "outlined"
                                  :variant    "brand"
                                  :href       (urls/link-gig-probeplan gig-id)}
                   (if (seq songs)
-                    (tr [:action/edit])
-                    (tr [:gig/create-probeplan]))]]}
-     (gigs.ui/probeplan-list tr songs))))
+                    [:i18n/tr :action/edit]
+                    [:i18n/tr :gigs/create-probeplan])]]}
+     (gigs.ui/probeplan-list songs))))
 
 (defn- planned-songs-section [req {:gig/keys [gig-id] :as gig}]
   (cond
@@ -211,14 +212,14 @@
                                  (not archived?) (conj (remind-all-menu-item req)))
                                :aria-label [:i18n/tr :gigs/detail-toolbar-label]}]))
 
-(defn- remind-all-dialog [{:keys [tr] :as req} gig-id]
+(defn- remind-all-dialog [req gig-id]
   [:wa-dialog {:id    "gig-detail-remind-all-dialog"
-               :label (tr [:reminders/confirm-remind-all-title])}
-   [:p (tr [:reminders/confirm-remind-all])]
+               :label [:i18n/tr :gigs/remind-all-dialog-title]}
+   [:p [:i18n/tr :gigs/remind-all-dialog-body]]
    [button/Button {:slot        "footer"
                    :appearance  "outlined"
                    :data-dialog "close"}
-    (tr [:action/cancel])]
+    [:i18n/tr :action/cancel]]
    [button/Button {:slot          "footer"
                    :appearance    "filled"
                    :variant       "brand"
@@ -226,7 +227,7 @@
                    :data-on:click (attendance.ui/action-js req
                                                            ::actions/send-reminder-to-all
                                                            {:gig-id gig-id})}
-    (tr [:reminders/confirm])]])
+    [:i18n/tr :gigs/remind-all-dialog-confirm]]])
 
 (defn- attendance-actions [req archived? show-committed?]
   (when-not archived?
@@ -237,19 +238,19 @@
                                                        ::actions/toggle-attendance-committed
                                                        {:show-committed (not show-committed?)}))
       (if show-committed?
-        ((:tr req) [:gig/show-all])
-        ((:tr req) [:gig/show-committed]))]]))
+        [:i18n/tr :gigs/show-all-attendance]
+        [:i18n/tr :gigs/show-committed-attendance])]]))
 
-(defn- attendance-section [{:keys [db page-state tr] :as req} {:gig/keys [gig-id] :as gig}]
+(defn- attendance-section [{:keys [db page-state] :as req} {:gig/keys [gig-id] :as gig}]
   (let [show-committed? (boolean (get-in page-state [:gig-detail :attendance :show-committed?]))
         {:keys [archived? sections summary]} (gigs.queries/attendance-data db gig show-committed?)]
     (ui2/section-card
      {:id       "gig-attendance"
-      :title    (tr [:gig/attendance])
+      :title    [:i18n/tr :gigs/attendance]
       :class    "gigs-attendance-card"
       :divider? true
       :actions  (attendance-actions req archived? show-committed?)}
-     (attendance.ui/summary-counts tr summary)
+     (attendance.ui/summary-counts summary)
      [:div {:class "gigs-attendance-sections"}
       (map-indexed (fn [idx section]
                      (attendance-section-view (assoc req :gig-id gig-id) archived? idx section))
@@ -295,7 +296,7 @@ window.DiscourseEmbed = %s;
        [page-surface/PageSurface {::page-surface/toolbar (gig-toolbar req gig)}
         [:div {:class        "wa-stack wa-gap-2xl"
                :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
-         (gig-summary req gig)
+         (gig-summary gig)
          (gig-info-section req gig)
          (planned-songs-section req gig)
          (attendance-section req gig)

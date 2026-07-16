@@ -80,9 +80,9 @@
 (defn song-remove-dialog [{:keys [tr] :as req} {:song/keys [title] :as song}]
   (ui2/remove-dialog
    {:id            (song-remove-dialog-id song)
-    :label         (tr [:action/confirm-generic])
-    :cancel-label  (tr [:action/cancel])
-    :confirm-label (tr [:action/confirm-delete])
+    :label         [:i18n/tr :action/confirm-generic]
+    :cancel-label  [:i18n/tr :action/cancel]
+    :confirm-label [:i18n/tr :action/confirm-delete]
     :confirm-attrs {:data-id     "song-edit-delete"
                     :data-action (d*/act req ::actions/delete-song)}}
    [:p (tr [:action/confirm-delete-song] [title])]))

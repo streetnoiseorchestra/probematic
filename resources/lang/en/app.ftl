@@ -8,6 +8,7 @@ my-responses = My Responses
 responses-empty = You’re all caught up.
 actions = Actions
 none = None
+invitation-expired = Sorry, the invitation code has expired. Please ask for a new one!
 greeting-morning = Good morning, { $name }
 greeting-afternoon = Good afternoon, { $name }
 greeting-evening = Good evening, { $name }

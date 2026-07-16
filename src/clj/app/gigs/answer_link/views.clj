@@ -15,7 +15,9 @@
 (defn- page-shell [req & body]
   (apply ui2/standalone-page
          {:title       "SNOrga"
-          :description ((:tr req) [:gig/answer-link-submitted])}
+          :description [:i18n/tr :gigs/answer-link-submitted]
+          :lang        (some-> req :current-locale name)
+          :translator  (:tr req)}
          body))
 
 (defn- redirect-to-gig-snippet [gig]
@@ -29,21 +31,19 @@
   ([req]
    (success-page req nil))
   ([req gig]
-   (let [tr (:tr req)]
-     (apply page-shell
-            req
-            (cond-> [[:header
-                      [:p "SNOrga"]
-                      [:h1 (tr [:gig/answer-link-submitted])]]]
-              gig (conj (redirect-to-gig-snippet gig)))))))
+   (apply page-shell
+          req
+          (cond-> [[:header
+                    [:p "SNOrga"]
+                    [:h1 [:i18n/tr :gigs/answer-link-submitted]]]]
+            gig (conj (redirect-to-gig-snippet gig))))))
 
 (defn- invalid-page [req]
-  (let [tr (:tr req)]
-    (page-shell
-     req
-     [:header {:class "danger"}
-      [:p "SNOrga"]
-      [:h1 (tr [:email/invite-expired])]])))
+  (page-shell
+   req
+   [:header {:class "danger"}
+    [:p "SNOrga"]
+    [:h1 [:i18n/tr :invitation-expired]]]))
 
 (defn answer-link [req]
   (try

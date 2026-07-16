@@ -74,20 +74,22 @@
   [:span {:class "gigs-probeplan-editor-count"}
    (str (count songs) " selected")])
 
-(defn repertoire-filter-control [{:keys [req current-filter button]}]
+(defn repertoire-filter-control [{:keys [current-filter button]}]
   [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
    [:span {:class "gigs-probeplan-editor-guidance"}
-    (str ((:tr req) [:gig/probeplan-repertoire]) ":")]
-   [:wa-button-group {:label ((:tr req) [:gig/probeplan-repertoire])}
-    (button current-filter "current" ((:tr req) [:gig/probeplan-repertoire-current]))
-    (button current-filter "old" ((:tr req) [:gig/probeplan-repertoire-old]))
-    (button current-filter "all" ((:tr req) [:gig/probeplan-repertoire-all]))]])
+    [:i18n/tr :repertoire/filter-label]
+    ":"]
+   [:wa-button-group {:label [:i18n/tr :repertoire/filter-label]}
+    (button current-filter "current" [:i18n/tr :repertoire/filter-current])
+    (button current-filter "old" [:i18n/tr :repertoire/filter-old])
+    (button current-filter "all" [:i18n/tr :repertoire/filter-all])]])
 
-(defn last-played-subtitle [{:keys [tr] :as req} last-played-on]
+(defn last-played-subtitle [req last-played-on]
   (when last-played-on
     (let [label (ui2/format-date-time req :medium last-played-on)]
       [:span
-       (str (tr [:song/last-played]) ": ")
+       [:i18n/tr :repertoire/last-played]
+       ": "
        [:time {:datetime   (str last-played-on)
                :title      label
                :aria-label label}
@@ -105,15 +107,15 @@
       [:span {:class "gigs-probeplan-editor-choice-subtitle"}
        subtitle])]])
 
-(defn song-choices [{:keys [req title-kw guidance-kw songs repertoire-filter selected-songs filter-control choice]}]
+(defn song-choices [{:keys [title-kw guidance-kw songs repertoire-filter selected-songs filter-control choice]}]
   (let [selected-ids (selected-song-ids selected-songs)
         songs        (visible-song-choices songs repertoire-filter)]
     (ui2/section-card
-     {:title    ((:tr req) title-kw)
+     {:title    [:i18n/tr title-kw]
       :divider? true
       :actions  [(selected-count selected-songs)]}
      [:p {:class "gigs-probeplan-editor-guidance"}
-      ((:tr req) guidance-kw)]
+      [:i18n/tr guidance-kw]]
      filter-control
      [:div {:class "gigs-probeplan-editor-choices"}
       (for [song songs]
@@ -150,12 +152,12 @@
                                                   {:bubbles true
                                                    :detail  {:order order}}))))})))))
 
-(defn selected-songs-list [{:keys [req title-kw guidance-kw selected-songs list-id list-class on-reordered row]}]
+(defn selected-songs-list [{:keys [title-kw guidance-kw selected-songs list-id list-class on-reordered row]}]
   (ui2/section-card
-   {:title    ((:tr req) title-kw)
+   {:title    [:i18n/tr title-kw]
     :divider? true}
    [:p {:class "gigs-probeplan-editor-guidance"}
-    ((:tr req) guidance-kw)]
+    [:i18n/tr guidance-kw]]
    (if (seq selected-songs)
      (list
       [:ol {:id                                 list-id

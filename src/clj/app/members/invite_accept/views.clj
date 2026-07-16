@@ -8,23 +8,25 @@
   (or (:tr req)
       (i18n/tr-from-req req)))
 
-(defn- page-shell [description & body]
+(defn- page-shell [req description & body]
   (apply ui2/standalone-page
          {:title       "SNOrga"
-          :description description}
+          :description description
+          :translator  (tr req)}
          body))
 
 (defn- invalid-page [req]
-  (let [tr (tr req)]
-    (page-shell
-     (tr [:email/invite-expired])
-     [:header {:class "danger"}
-      [:p "SNO ID"]
-      [:h1 (tr [:email/invite-expired])]])))
+  (page-shell
+   req
+   [:i18n/tr :invitation-expired]
+   [:header {:class "danger"}
+    [:p "SNO ID"]
+    [:h1 [:i18n/tr :invitation-expired]]]))
 
 (defn- invite-form [req {:keys [member invite-code]}]
   (let [tr (tr req)]
     (page-shell
+     req
      (tr [:account/create-sno-id-subtitle])
      [:header
       [:p "SNOrga"]
@@ -43,6 +45,7 @@
 (defn- success-page [req member]
   (let [tr (tr req)]
     (page-shell
+     req
      (tr [:account/account-created-subtitle])
      [:header
       [:p "SNOrga"]

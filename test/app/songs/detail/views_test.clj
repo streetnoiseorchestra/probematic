@@ -27,7 +27,7 @@
    [:song/choose-sheet-music-title]    "Choose Sheet Music File"
    [:song/composition-credits]         "Composition By"
    [:song/gig-count]                   "Gig Count"
-   [:song/last-played]                 "Last Played"
+   [:repertoire/last-played]           "Last Played"
    [:song/last-played-gig]             "Last Played Gig"
    [:song/last-played-probe]           "Last Played Rehearsal"
    [:song/lyrics]                      "Lyrics"
@@ -78,7 +78,8 @@
 (defn details-by-label [view]
   (into {}
         (map (fn [item]
-               [(-> (l/select-one 'dt item) l/text)
+               [(or (some-> (l/select-one :i18n/tr item) l/first-child)
+                    (-> (l/select-one 'dt item) l/text))
                 (-> (l/select-one 'dd item) l/text)]))
         (l/select '[dl > div] view)))
 
@@ -156,10 +157,10 @@
                                           :gig/date   (t/date "2026-06-07")}})
           details (details-by-label view)]
       (testing "Both dates use the compact weekday format."
-        (is (= {"Last Played"           "Thu 04 Jun 2026"
+        (is (= {:repertoire/last-played "Thu 04 Jun 2026"
                 "Last Played Rehearsal" "Sun 07 Jun 2026"}
                (select-keys details
-                            ["Last Played" "Last Played Rehearsal"])))))))
+                            [:repertoire/last-played "Last Played Rehearsal"])))))))
 
 (deftest sheet-music
   (testing "A Trumpets member views a song with a trumpet PDF."

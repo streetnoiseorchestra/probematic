@@ -8,8 +8,8 @@
 
 (defn tr [[k] & _]
   (case k
-    :gig/answer-link-submitted "Your answer has been submitted - thanks!"
-    :email/invite-expired "Sorry, the invitation code has expired. Please ask for a new one!"
+    :gigs/answer-link-submitted "Your answer has been submitted - thanks!"
+    :invitation-expired "Sorry, the invitation code has expired. Please ask for a new one!"
     :login "Login"
     (name k)))
 

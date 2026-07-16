@@ -9,9 +9,15 @@
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
+(def translations
+  {[:gigs/type-extra-probe] "Extra Probe"
+   [:gigs/type-gig]         "Gig"
+   [:gigs/type-meeting]     "Meeting"
+   [:gigs/type-probe]       "Probe"})
+
 (defn tr
   ([path]
-   (name (last path)))
+   (get translations path (name (last path))))
   ([path _args]
    (tr path)))
 

@@ -11,12 +11,12 @@
 (defn tr [[k] & [args]]
   (case k
     :error/is-required (str (:field args) " is required.")
-    :gig/title "Title"
-    :gig/date "Date"
-    :gig/location "Location"
-    :gig/gig-type "Type"
-    :gig/status "Status"
-    :gig/call-time "Call Time"
+    :gigs/title-label "Title"
+    :gigs/date "Date"
+    :gigs/location "Location"
+    :gigs/type-label "Type"
+    :gigs/status-label "Status"
+    :gigs/call-time "Call Time"
     :error/gig-end-date-before-date "End date must be on or after date."
     :error/gig-set-time-before-call-time "Set time must be at or after call time."
     :error/gig-end-time-before-set-time "End time must be at or after set time."

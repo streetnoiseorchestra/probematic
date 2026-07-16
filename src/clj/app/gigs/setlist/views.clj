@@ -61,28 +61,25 @@
 
 (defn- song-choices [req gig-id songs repertoire-filter selected-songs]
   (plan.views/song-choices
-   {:req               req
-    :title-kw          [:gig/setlist-choose]
-    :guidance-kw       [:gig/setlist-guidance]
+   {:title-kw          :gigs/setlist-choose
+    :guidance-kw       :gigs/setlist-guidance
     :songs             songs
     :repertoire-filter repertoire-filter
     :selected-songs    selected-songs
     :filter-control    (plan.views/repertoire-filter-control
-                        {:req            req
-                         :current-filter repertoire-filter
+                        {:current-filter repertoire-filter
                          :button         (partial repertoire-filter-button req)})
     :choice            (partial song-choice req gig-id)}))
 
-(defn- selected-song-row [_req _gig-id {:song/keys [song-id title]}]
+(defn- selected-song-row [{:song/keys [song-id title]}]
   [:li {:id             (str "gig-setlist-selected-" (ui2/safe-dom-id song-id))
         :data-song-id   (str song-id)}
    (plan.views/drag-zone title)])
 
 (defn- selected-songs-list [req gig-id selected-songs]
   (plan.views/selected-songs-list
-   {:req            req
-    :title-kw       [:gig/setlist-sort]
-    :guidance-kw    [:gig/setlist-order-guidance]
+   {:title-kw       :gigs/setlist-order
+    :guidance-kw    :gigs/setlist-order-guidance
     :selected-songs selected-songs
     :list-id        "gig-setlist-selected-songs"
     :list-class     "gigs-song-plan-selected"
@@ -90,7 +87,7 @@
                      (set! $gig-setlist.gig-id ~(str gig-id))
                      (set! $gig-setlist.order evt.detail.order)
                      (@post ~(d*/act req ::actions/reorder-setlist-songs)))
-    :row            (partial selected-song-row req gig-id)}))
+    :row            selected-song-row}))
 
 (defn page [{:keys [db page-state] :as req}]
   (let [gig-id            (http.util/path-param-uuid! req :gig/gig-id)

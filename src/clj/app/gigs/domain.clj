@@ -40,7 +40,63 @@
    :motivation/medium
    :motivation/low
    :motivation/very-low])
+
 (def gig-types [:gig.type/probe :gig.type/extra-probe :gig.type/meeting :gig.type/gig])
+
+(def gig-status-label-key
+  {:gig.status/cancelled   :gigs/status-cancelled
+   :gig.status/confirmed   :gigs/status-confirmed
+   :gig.status/unconfirmed :gigs/status-unconfirmed})
+
+(def gig-type-label-key
+  {:gig.type/extra-probe :gigs/type-extra-probe
+   :gig.type/gig         :gigs/type-gig
+   :gig.type/meeting     :gigs/type-meeting
+   :gig.type/probe       :gigs/type-probe})
+
+(def ^:private plan-label-keys
+  {:plan/definitely     :gigs/plan-definitely
+   :plan/definitely-not :gigs/plan-definitely-not
+   :plan/no-response    :gigs/plan-no-response
+   :plan/not-interested :gigs/plan-not-interested
+   :plan/probably       :gigs/plan-probably
+   :plan/probably-not   :gigs/plan-probably-not
+   :plan/unknown        :gigs/plan-unknown})
+
+(def ^:private motivation-label-keys
+  {:motivation/high      :gigs/motivation-high
+   :motivation/low       :gigs/motivation-low
+   :motivation/medium    :gigs/motivation-medium
+   :motivation/none      :gigs/motivation-none
+   :motivation/very-high :gigs/motivation-very-high
+   :motivation/very-low  :gigs/motivation-very-low})
+
+(def gig-attribute-label-key
+  {:gig/call-time         :gigs/call-time
+   :gig/contact           :gigs/contact
+   :gig/date              :gigs/date
+   :gig/description       :gigs/description
+   :gig/end-date          :gigs/end-date
+   :gig/end-time          :gigs/end-time
+   :gig/gig-type          :gigs/type-label
+   :gig/leader            :gigs/leader
+   :gig/location          :gigs/location
+   :gig/more-details      :gigs/more-details
+   :gig/outfit            :gigs/outfit
+   :gig/pay-deal          :gigs/pay-deal
+   :gig/post-gig-plans    :gigs/post-gig-plans
+   :gig/rehearsal-leader1 :gigs/rehearsal-leader-1
+   :gig/rehearsal-leader2 :gigs/rehearsal-leader-2
+   :gig/set-time          :gigs/set-time
+   :gig/setlist           :gigs/setlist
+   :gig/status            :gigs/status-label
+   :gig/title             :gigs/title-label})
+
+(defn plan-label-key [plan]
+  (get plan-label-keys (or plan :plan/no-response)))
+
+(defn motivation-label-key [motivation]
+  (get motivation-label-keys (or motivation :motivation/none)))
 
 (defn setlist-gig?
   [{:gig/keys [gig-type]}]

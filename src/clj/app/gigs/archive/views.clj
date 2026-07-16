@@ -41,17 +41,17 @@
           :aria-label "Archive years"}]
    (map (partial year-button selected-year) years)))
 
-(defn- archive-tools [{:keys [tr] :as req} _ selected-year years]
+(defn- archive-tools [req _ selected-year years]
   [:div {:class "wa-stack wa-gap-s gigs-archive-tools"}
    (year-selector selected-year years)
    [:wa-input {:type               "search"
-               :label              (tr [:action/search])
+               :label              [:i18n/tr :action/search]
                :placeholder        "Search gig titles"
                :with-clear         true
                :data-on:input__debounce.250ms
                (str "@post(`" (d*/act req ::actions/set-search-phrase) "&q=${evt.target.value}`)")}]])
 
-(defn page [{:keys [db page-state tr] :as req}]
+(defn page [{:keys [db page-state] :as req}]
   (let [{:keys [selected-year years gigs] archive-page-state :page-state}
         (queries/archive-page-data db
                                    (http.util/path-param req :year)
@@ -67,7 +67,7 @@
          :subtitle selected-year}]
        (archive-tools req archive-page-state selected-year years)
        (gigs.ui/gig-section req {:title         selected-year
-                                 :empty-message (tr [:gigs/no-past])
+                                 :empty-message [:i18n/tr :gigs/no-recent]
                                  :gigs          gigs})]])))
 
 (d*/refresh-all!)

@@ -14,19 +14,19 @@
 
 (def rating-options
   [{:rating :play-rating/not-played
-    :label  [:play-log/not-played]
+    :label  :gigs/play-rating-not-played
     :icon   "circle-xmark-outline"
     :class  "gigs-log-play-icon--not-played"}
    {:rating :play-rating/good
-    :label  [:play-log/nice]
+    :label  :gigs/play-rating-nice
     :icon   "smile"
     :class  "gigs-log-play-icon--good"}
    {:rating :play-rating/ok
-    :label  [:play-log/okay]
+    :label  :gigs/play-rating-okay
     :icon   "meh"
     :class  "gigs-log-play-icon--ok"}
    {:rating :play-rating/bad
-    :label  [:play-log/bad]
+    :label  :gigs/play-rating-bad
     :icon   "sad"
     :class  "gigs-log-play-icon--bad"}])
 
@@ -89,35 +89,34 @@
 
 (defn- repertoire-filter-control [req repertoire-filter]
   (plan.views/repertoire-filter-control
-   {:req            req
-    :current-filter repertoire-filter
+   {:current-filter repertoire-filter
     :button         (partial repertoire-filter-button req)}))
 
-(defn- legend-item [{:keys [tr]} {:keys [class icon label]}]
+(defn- legend-item [{:keys [class icon label]}]
   [:div {:class "gigs-log-plays-legend-item"}
    [ico/Icon {::ico/library :snoico
               ::ico/name    icon
               :class        (ui2/cs "gigs-log-play-icon gigs-log-play-icon--checked" class)}]
-   [:span (tr label)]])
+   [:span [:i18n/tr label]]])
 
-(defn- intensive-legend-item [{:keys [tr]}]
+(defn- intensive-legend-item []
   [:div {:class "gigs-log-plays-legend-item gigs-log-plays-legend-item--intensive"}
    [ico/Icon {::ico/library :snoico
               ::ico/name    :fist-punch
               :class        "gigs-log-play-icon gigs-log-play-icon--checked gigs-log-play-icon--intensive"}]
-   [:span (tr [:play-log/intensive])]])
+   [:span [:i18n/tr :gigs/play-intensive]]])
 
-(defn- legend [req]
+(defn- legend []
   [:div {:class "gigs-log-plays-legend"}
    (for [option rating-options]
-     (legend-item req option))
-   (intensive-legend-item req)])
+     (legend-item option))
+   (intensive-legend-item)])
 
 (defn- rating-button [req gig-id {:song/keys [song-id]} play {:keys [class icon label rating]}]
   (let [selected? (= (actions/normalize-rating rating) (play-rating play))]
     [button/Button {:appearance         "plain"
                     :size               "s"
-                    :aria-label         ((:tr req) label)
+                    :aria-label         [:i18n/tr label]
                     :aria-pressed       (if selected? "true" "false")
                     :data-rating        (rating-signal rating)
                     :data-rating-button true
@@ -138,7 +137,7 @@
   (let [disabled? (not (active-play? play))]
     [button/Button {:appearance         "plain"
                     :size               "s"
-                    :aria-label         ((:tr req) [:play-log/intensive])
+                    :aria-label         [:i18n/tr :gigs/play-intensive]
                     :aria-pressed       (if (intensive? play) "true" "false")
                     :disabled           disabled?
                     :data-preserve-attr "class"
@@ -197,17 +196,17 @@
   (let [{planned true other false} (group-by :planned? rows)
         repertoire                 (filter (partial song-visible? repertoire-filter) other)]
     (ui2/section-card
-     {:title    ((:tr req) [:song/log-play])
+     {:title    [:i18n/tr :gigs/log-play]
       :divider? true}
      [:div {:class "wa-stack wa-gap-m"}
       [:div {:class "wa-stack wa-gap-xs"}
        [:p {:class "gigs-log-plays-guidance gigs-log-plays-intro"}
-        ((:tr req) [:gig/play-log-subtitle])]
-       (legend req)]
+        [:i18n/tr :gigs/play-log-guidance]]
+       (legend)]
       (when (seq planned)
         (list
          [:p {:class "gigs-log-plays-guidance gigs-log-plays-planned-guidance"}
-          ((:tr req) [:gig/was-planned-to-play])]
+          [:i18n/tr :gigs/planned-to-play]]
          [:div {:class "gigs-log-plays-items gigs-log-plays-items--planned"}
           (for [row planned]
             (play-row req gig-id row))]

@@ -55,9 +55,9 @@
    label
    [:span {:aria-hidden true} (or (sort-indicator page-state field) "")]])
 
-(defn- search-control [{:keys [tr] :as req} {:keys [search]}]
-  [:wa-input {:label                        (tr [:action/search])
-              :placeholder                  (tr [:action/search])
+(defn- search-control [req {:keys [search]}]
+  [:wa-input {:label                        [:i18n/tr :action/search]
+              :placeholder                  [:i18n/tr :action/search]
               :appearance                   "outlined"
               :size                         "m"
               :value                        search

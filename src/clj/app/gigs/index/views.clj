@@ -29,18 +29,18 @@
                              ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
                              :aria-label                    [:i18n/tr :gigs/index-toolbar-label]}])
 
-(defn page [{:keys [db tr] :as req}]
+(defn page [{:keys [db] :as req}]
   (let [{:keys [future-gigs past-gigs]} (queries/index-page-data db)]
     (ui2/datastar-page*
      [page-surface/PageSurface {::page-surface/toolbar (page-toolbar)}
       [:div {:class "wa-stack wa-gap-l"}
-       [page-header/PageHeader {:title (tr [:gigs/title])}]
+       [page-header/PageHeader {:title [:i18n/tr :gigs/title]}]
        [:div {:class "wa-grid wa-gap-m gigs-index-columns"}
-        (gigs.ui/gig-section req {:title         (tr [:gigs/upcoming])
-                                  :empty-message (tr [:gigs/no-future])
+        (gigs.ui/gig-section req {:title         [:i18n/tr :gigs/upcoming]
+                                  :empty-message [:i18n/tr :gigs/no-upcoming]
                                   :gigs          future-gigs})
-        (gigs.ui/gig-section req {:title         (tr [:gigs/past])
-                                  :empty-message (tr [:gigs/no-past])
+        (gigs.ui/gig-section req {:title         [:i18n/tr :gigs/past]
+                                  :empty-message [:i18n/tr :gigs/no-recent]
                                   :gigs          past-gigs})]]])))
 
 (d*/refresh-all!)

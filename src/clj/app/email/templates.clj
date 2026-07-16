@@ -1,6 +1,7 @@
 (ns app.email.templates
   (:require
    [app.config :as config]
+   [app.gigs.domain :as gig.domain]
    [app.markdown :as markdown]
    [app.secret-box :as secret-box]
    [app.ui2 :as ui2]
@@ -68,28 +69,33 @@
 
           {} members))
 
+(defn- edited-gig-attribute-label [tr attribute]
+  (if-let [label-key (gig.domain/gig-attribute-label-key attribute)]
+    (tr [label-key])
+    (name attribute)))
+
 (defn template-snippet-gig-details [{:keys [tr]} {:gig/keys [date end-date title set-time call-time end-time status location more-details pay-deal gig-type]}]
   [:div
    [:p [:strong title]]
    [:ul
-    [:li (tr [:gig/gig-type]) ": " (tr [gig-type])]
-    [:li (tr [:gig/status]) ": " (tr [status])]
-    [:li (tr [:gig/date]) ": " (format-date date)]
+    [:li (tr [:gigs/type-label]) ": " (tr [(gig.domain/gig-type-label-key gig-type)])]
+    [:li (tr [:gigs/status-label]) ": " (tr [(gig.domain/gig-status-label-key status)])]
+    [:li (tr [:gigs/date]) ": " (format-date date)]
     (when end-date
-      [:li (tr [:gig/end-date]) ": " (format-date end-date)])
+      [:li (tr [:gigs/end-date]) ": " (format-date end-date)])
     (when call-time
-      [:li (tr [:gig/call-time]) ": " (format-time call-time)])
+      [:li (tr [:gigs/call-time]) ": " (format-time call-time)])
     (when set-time
-      [:li (tr [:gig/set-time]) ": " (format-time set-time)])
+      [:li (tr [:gigs/set-time]) ": " (format-time set-time)])
     (when end-time
-      [:li (tr [:gig/end-time]) ": " (format-time end-time)])
+      [:li (tr [:gigs/end-time]) ": " (format-time end-time)])
     (when location
-      [:li (tr [:gig/location]) ": " (markdown/render-one-line location)])
+      [:li (tr [:gigs/location]) ": " (markdown/render-one-line location)])
     (when-not (str/blank? pay-deal)
-      [:li (tr [:gig/pay-deal]) ": " pay-deal])]
+      [:li (tr [:gigs/pay-deal]) ": " pay-deal])]
 
    (when more-details
-     [:p (tr [:gig/more-details]) ": " [:br]
+     [:p (tr [:gigs/more-details]) ": " [:br]
       (markdown/render more-details)])])
 
 (defn template-snippet-gig-details-plain [{:keys [tr]} {:gig/keys [date end-date title set-time call-time end-time status location more-details pay-deal gig-type]}]
@@ -102,23 +108,23 @@
 {{more-details}}{% endif %}"
    {:title title
     :more-details more-details
-    :more-details-label (tr [:gig/more-details])
+    :more-details-label (tr [:gigs/more-details])
     :gig-details (util/remove-nils [;
-                                    {:name (tr [:gig/gig-type]) :value (tr [gig-type])}
-                                    {:name (tr [:gig/status]) :value (tr [status])}
-                                    {:name (tr [:gig/date]) :value  (format-date date)}
+                                    {:name (tr [:gigs/type-label]) :value (tr [(gig.domain/gig-type-label-key gig-type)])}
+                                    {:name (tr [:gigs/status-label]) :value (tr [(gig.domain/gig-status-label-key status)])}
+                                    {:name (tr [:gigs/date]) :value  (format-date date)}
                                     (when end-date
-                                      {:name (tr [:gig/end-date]) :value (format-date end-date)})
+                                      {:name (tr [:gigs/end-date]) :value (format-date end-date)})
                                     (when call-time
-                                      {:name (tr [:gig/call-time]) :value (format-time call-time)})
+                                      {:name (tr [:gigs/call-time]) :value (format-time call-time)})
                                     (when set-time
-                                      {:name (tr [:gig/set-time]) :value (format-time set-time)})
+                                      {:name (tr [:gigs/set-time]) :value (format-time set-time)})
                                     (when end-time
-                                      {:name (tr [:gig/end-time]) :value (format-time end-time)})
+                                      {:name (tr [:gigs/end-time]) :value (format-time end-time)})
                                     (when location
-                                      {:name (tr [:gig/location]) :value location})
+                                      {:name (tr [:gigs/location]) :value location})
                                     (when-not (str/blank? pay-deal)
-                                      {:name (tr [:gig/pay-deal]) :value pay-deal})
+                                      {:name (tr [:gigs/pay-deal]) :value pay-deal})
                                     ;;
                                     ])}))
 (defn gig-created-email-html [{:keys [tr env] :as sys} gig reminder?]
@@ -206,7 +212,7 @@
           (tr [:email/greeting])]
          [:p (tr [:email/gig-edited])]
          [:p]
-         [:p (tr [:email/gig-edit-type]) ": " (str/join ", " (map #(tr [%]) edited-attrs))]
+         [:p (tr [:email/gig-edit-type]) ": " (str/join ", " (map #(edited-gig-attribute-label tr %) edited-attrs))]
          [:p]
          (template-snippet-gig-details sys gig)
          [:p]
@@ -237,7 +243,7 @@
       {:greeting (tr [:email/greeting])
        :intro (tr [:email/gig-edited])
        :gig-edit-type-label (tr [:email/gig-edit-type])
-       :gig-edit-type-attrs (str/join ", " (map #(tr [%]) edited-attrs))
+       :gig-edit-type-attrs (str/join ", " (map #(edited-gig-attribute-label tr %) edited-attrs))
        :gig-info (template-snippet-gig-details-plain sys gig)
        :need-to-change (tr [:email/need-to-change-availability?])
        :gig-info-page (tr [:email/gig-info-page])

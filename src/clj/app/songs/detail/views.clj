@@ -92,7 +92,7 @@
     (detail-item (tr [:song/total-plays]) (muted total-plays))
     (detail-item (tr [:song/gig-count]) (muted total-performances))
     (detail-item (tr [:song/probe-count]) (muted total-rehearsals))
-    (detail-item (tr [:song/last-played]) (muted (ui2/format-date req :compact-with-weekday last-played-on)))
+    (detail-item [:i18n/tr :repertoire/last-played] (muted (ui2/format-date req :compact-with-weekday last-played-on)))
     (detail-item (tr [:song/last-played-gig]) (muted (gig-link req last-performance)))
     (detail-item (tr [:song/last-played-probe]) (muted (gig-link req last-rehearsal)))]))
 
@@ -149,9 +149,9 @@
   (let [tr (:tr req)]
     (ui2/remove-dialog
      {:id            (sheet-remove-dialog-id sheet-id)
-      :label         (tr [:action/confirm-generic])
-      :cancel-label  (tr [:action/cancel])
-      :confirm-label (tr [:action/confirm-delete])
+      :label         [:i18n/tr :action/confirm-generic]
+      :cancel-label  [:i18n/tr :action/cancel]
+      :confirm-label [:i18n/tr :action/confirm-delete]
       :confirm-attrs {:data-id     sheet-id
                       :data-action (d*/act req ::actions/remove-sheet-music)}}
      [:p (str (tr [:action/remove]) " " title "?")])))

@@ -22,8 +22,8 @@
     :plan/not-interested {:icon "xmark" :class "gigs-attendance-plan-icon--not-interested"}
     {:icon "minus" :class "gigs-attendance-plan-icon--unknown"}))
 
-(defn plan-label [tr plan]
-  (tr [(or plan :plan/no-response)]))
+(defn plan-label [plan]
+  [:i18n/tr (domain/plan-label-key plan)])
 
 (defn plan-icon
   ([plan]
@@ -72,7 +72,7 @@
                    :comment   (or comment "")})
        " }"))
 
-(defn summary-counts [tr summary]
+(defn summary-counts [summary]
   [:div {:class "gigs-attendance-summary"}
    (for [plan plan-display-order
          :let [count (get summary plan 0)]
@@ -81,9 +81,9 @@
      [:div {:class "gigs-attendance-summary-item"}
       (plan-icon plan)
       [:span count]
-      [:span {:class "wa-visually-hidden"} (plan-label tr plan)]])])
+      [:span {:class "wa-visually-hidden"} (plan-label plan)]])])
 
-(defn plan-dropdown [{:keys [tr] :as req} gig-id member-id plan]
+(defn plan-dropdown [req gig-id member-id plan]
   (let [plan (or plan :plan/no-response)]
     [:wa-dropdown {:class              "gigs-attendance-plan-dropdown"
                    :placement          "bottom-start"
@@ -98,15 +98,15 @@
                      :size       "s"
                      :with-caret true
                      :class      "gigs-attendance-plan-button"
-                     :title      (plan-label tr plan)
-                     :aria-label (plan-label tr plan)}
+                     :title      (plan-label plan)
+                     :aria-label (plan-label plan)}
       (plan-icon plan)]
      (for [option selectable-plans]
        [:wa-dropdown-item {:value (name option)}
         (plan-icon option {:slot "icon"})
-        (plan-label tr option)])]))
+        (plan-label option)])]))
 
-(defn motivation-select [{:keys [tr] :as req} gig-id member-id motivation]
+(defn motivation-select [req gig-id member-id motivation]
   [:wa-select {:size               "s"
                :data-preserve-attr "open"
                :class              "gigs-attendance-motivation-select"
@@ -117,7 +117,7 @@
                                         "; @post('" (d*/act req ::actions/update-attendance-motivation) "')")}
    (for [motivation domain/motivations]
      [:wa-option {:value (name motivation)}
-      (tr [motivation])])])
+      [:i18n/tr (domain/motivation-label-key motivation)]])])
 
 (defn comment-control [req gig-id member-id comment]
   (if (comment-editing? req gig-id member-id)
@@ -151,7 +151,7 @@
       [button/Button {:appearance        "plain"
                       :size              "s"
                       :class             "gigs-attendance-comment-button"
-                      :aria-label        ((:tr req) [:action/comment])
+                      :aria-label        [:i18n/tr :action/comment]
                       :data-on:mousedown (comment-open-js req gig-id member-id "")}
        [ico/Icon {::ico/library :snoico
                   ::ico/name    :comment-outline}]])))

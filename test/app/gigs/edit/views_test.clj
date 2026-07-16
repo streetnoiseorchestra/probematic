@@ -49,7 +49,7 @@
                               :data-dialog (str "open gig-remove-" gig-id)
                               :variant     "danger"}]}
               :heading "Summer Concert"
-              :subtitle "gig"
+              :subtitle [:i18n/tr :gigs/type-gig]
               :form-id  "gig-edit-form"
               :last-tag :wa-dialog
               :last-id  (str "gig-remove-" gig-id)}

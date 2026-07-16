@@ -4,6 +4,7 @@ add = Add
 apply = Apply
 back = Back
 cancel = Cancel
+comment = Comment
 create = Create
 delete = Delete
 done = Done
@@ -21,11 +22,14 @@ remove = Remove
 reorder = Reorder
 respond = Respond
 save = Save
+search = Search
 select-all = Select all
 update = Update
 view-all = View all
 confirm-generic = Are you sure?
 confirm-delete = Yes, delete it
+# $title (String) - Title of the gig being deleted.
+confirm-delete-gig = Are you sure you want to delete the gig { $title }?
 # $instrument-name (String) - Name of the instrument being deleted.
 confirm-delete-instrument = Are you sure you want to delete the instrument { $instrument-name }?
 # $policy-name (String) - Name of the insurance policy being deleted.

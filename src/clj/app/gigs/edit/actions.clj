@@ -47,12 +47,12 @@
 
 (defn- label [tr field]
   (case field
-    :title (tr [:gig/title])
-    :date (tr [:gig/date])
-    :location (tr [:gig/location])
-    :gig-type (tr [:gig/gig-type])
-    :status (tr [:gig/status])
-    :call-time (tr [:gig/call-time])
+    :title (tr [:gigs/title-label])
+    :date (tr [:gigs/date])
+    :location (tr [:gigs/location])
+    :gig-type (tr [:gigs/type-label])
+    :status (tr [:gigs/status-label])
+    :call-time (tr [:gigs/call-time])
     (name field)))
 
 (defn- required-error [tr field]

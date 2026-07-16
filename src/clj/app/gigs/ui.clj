@@ -27,8 +27,6 @@
   ([status attrs]
    [ico/Icon (merge attrs
                     {::ico/library :snoico
-                     ;; todo plumb in tr for accessability label
-                     #_::ico/label #_(tr [status])
                      ::ico/name    (status-icon-name status)
                      :class        (str "gigs-status-icon "
                                         (status-class status)
@@ -100,7 +98,7 @@
           [:span {:class "gigs-song-note"} (str " (" solo-info ")")])])]
     [:div {:class "gigs-empty"} "—"]))
 
-(defn probeplan-list [_tr songs]
+(defn probeplan-list [songs]
   (if (seq songs)
     [:ol {:class "gigs-probeplan-list"}
      (for [{:song/keys [song-id title] :keys [emphasis] :as song} songs]

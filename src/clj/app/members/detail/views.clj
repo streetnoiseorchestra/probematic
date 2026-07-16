@@ -256,7 +256,7 @@
        [[button/Button {:appearance  "outlined"
                         :data-id     "member-travel-discount-create-cancel"
                         :data-action (d*/act req ::actions/close-travel-discount-create)}
-         (tr [:action/cancel])]
+         [:i18n/tr :action/cancel]]
         [button/Button {:appearance         "filled"
                         :variant            "brand"
                         :type               "submit"
@@ -284,7 +284,7 @@
     [button/Button {:appearance  "outlined"
                     :data-id     "member-travel-discount-cancel"
                     :data-action (d*/act req ::actions/close-travel-discount-edit)}
-     (tr [:action/cancel])]
+     [:i18n/tr :action/cancel]]
     [button/Button {:appearance         "filled"
                     :variant            "brand"
                     :type               "submit"
@@ -295,9 +295,9 @@
 (defn- travel-discount-remove-dialog [{:keys [tr] :as req} {:travel.discount/keys [discount-id discount-type]}]
   (ui2/remove-dialog
    {:id            (ui2/remove-dialog-id "travel-discount" discount-id)
-    :label         (tr [:action/confirm-generic])
-    :cancel-label  (tr [:action/cancel])
-    :confirm-label (tr [:action/confirm-delete])
+    :label         [:i18n/tr :action/confirm-generic]
+    :cancel-label  [:i18n/tr :action/cancel]
+    :confirm-label [:i18n/tr :action/confirm-delete]
     :confirm-attrs {:data-id     discount-id
                     :data-action (d*/act req ::actions/delete-travel-discount)}}
    [:p (str (tr [:action/delete]) " " (:travel.discount.type/discount-type-name discount-type) "?")]))
@@ -544,7 +544,7 @@
         [[button/Button {:appearance  "outlined"
                          :data-id     "member-ledger-entry-create-cancel"
                          :data-action (d*/act req ::actions/close-ledger-entry-create)}
-          (tr [:action/cancel])]
+          [:i18n/tr :action/cancel]]
          [button/Button {:appearance         "filled"
                          :variant            "brand"
                          :type               "submit"
@@ -556,14 +556,14 @@
        [[button/Button {:appearance  "outlined"
                         :data-id     "member-ledger-entry-create-cancel"
                         :data-action (d*/act req ::actions/close-ledger-entry-create)}
-         (tr [:action/cancel])]])]]))
+         [:i18n/tr :action/cancel]]])]]))
 
 (defn- ledger-entry-remove-dialog [{:keys [tr] :as req} {:ledger.entry/keys [entry-id description]}]
   (ui2/remove-dialog
    {:id            (ui2/remove-dialog-id "ledger-entry" entry-id)
-    :label         (tr [:action/confirm-generic])
-    :cancel-label  (tr [:action/cancel])
-    :confirm-label (tr [:action/confirm-delete])
+    :label         [:i18n/tr :action/confirm-generic]
+    :cancel-label  [:i18n/tr :action/cancel]
+    :confirm-label [:i18n/tr :action/confirm-delete]
     :confirm-attrs {:data-id     entry-id
                     :data-action (d*/act req ::actions/delete-ledger-entry)}}
    [:p (str (tr [:action/delete]) " " description "?")]))

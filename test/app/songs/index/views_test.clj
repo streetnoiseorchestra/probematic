@@ -9,7 +9,7 @@
    [tick.core :as t]))
 
 (def translations
-  {[:song/last-played]  "Last Played"
+  {[:repertoire/last-played] "Last Played"
    [:song/score]        "Score"
    [:song/total-plays]  "Total Play Count"
    [:Active]            "Active"
