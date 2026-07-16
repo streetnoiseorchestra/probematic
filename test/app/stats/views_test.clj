@@ -40,8 +40,8 @@
 
 (deftest cards-use-native-card-chassis
   (let [summary       (#'views/summary-card {})
-        chart-section (views/charts-section tr {:gig-histogram []
-                                                :probe-histogram []})
+        chart-section (views/charts-section {:tr tr} {:gig-histogram []
+                                                      :probe-histogram []})
         chart         (nth chart-section 2)]
     (is (= [{:tag card/Card :class "stats-summary-card"}
             {:tag card/Card :class "stats-chart-card" :header-slot "header"}]
@@ -54,7 +54,7 @@
 (deftest attendance-chart
   (testing "Gig and rehearsal attendance histograms contain three percentage bins."
     (let [view   (views/charts-section
-                  tr
+                  {:tr tr}
                   {:gig-histogram   [{:x 0 :y 1} {:x 50 :y 2} {:x 100 :y 3}]
                    :probe-histogram [{:x 0 :y 4} {:x 50 :y 5} {:x 100 :y 6}]})
           chart  (l/select-one 'wa-chart view)

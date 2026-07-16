@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.html :as html]
+   [app.stats.charts :as charts]
    [app.stats.queries :as stats]
    [app.stats.state :as state]
    [app.ui2 :as ui2]
@@ -13,8 +14,7 @@
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
-   [app.urls :as url]
-   [jsonista.core :as j]))
+   [app.urls :as url]))
 
 (defn- fmt-double [value]
   (if (some? value)
@@ -118,58 +118,6 @@
                       (assoc :variant "brand"))
       [:i18n/tr label-key]])))
 
-(defn- histogram-values-by-bin [values]
-  (into {} (map (juxt :x :y)) values))
-
-(defn- histogram-bins [gig-histogram probe-histogram]
-  (->> (concat gig-histogram probe-histogram)
-       (map :x)
-       distinct
-       sort
-       vec))
-
-(defn- histogram-bin-label [bin]
-  (str bin "%"))
-
-(defn- histogram-dataset [label color values-by-bin bins]
-  {:label           label
-   :data            (mapv #(get values-by-bin % 0) bins)
-   :backgroundColor color
-   :borderColor     color
-   :borderRadius    4})
-
-(defn- attendance-histogram-chart-config [{:keys [gig-histogram gig-title probe-histogram probe-title x-axis-label y-axis-label]}]
-  (let [bins            (histogram-bins gig-histogram probe-histogram)
-        gig-values     (histogram-values-by-bin gig-histogram)
-        probe-values   (histogram-values-by-bin probe-histogram)
-        gig-dataset    (histogram-dataset gig-title "var(--wa-color-warning-fill-loud)" gig-values bins)
-        probe-dataset  (histogram-dataset probe-title "var(--wa-color-success-fill-loud)" probe-values bins)
-        dataset-options {:barPercentage      0.85
-                         :categoryPercentage 0.75}]
-    {:type    "bar"
-     :data    {:labels   (mapv histogram-bin-label bins)
-               :datasets [(merge gig-dataset dataset-options)
-                          (merge probe-dataset dataset-options)]}
-     :options {:responsive          true
-               :maintainAspectRatio false
-               :font                {:size 16}
-               :interaction         {:mode "index" :intersect false}
-               :scales              {:x {:title {:display true
-                                                 :text    x-axis-label}
-                                         :grid  {:display false}
-                                         :ticks {:padding 0
-                                                 :font    {:size 14}}}
-                                     :y {:title      {:display true
-                                                      :padding 0
-                                                      :text    y-axis-label}
-                                         :ticks      {:padding   0
-                                                      :precision 0
-                                                      :font      {:size 14}}
-                                         :beginAtZero true}}
-               :plugins             {:tooltip {:enabled false}
-                                     :legend  {:position "bottom"
-                                               :labels   {:font {:size 16}}}}}}))
-
 (defn- histogram-chart-effect [signal-path]
   (str "const chartConfigJson = $"
        signal-path
@@ -188,20 +136,8 @@
                 :data-effect     (histogram-chart-effect signal-path)
                 :style           "display: block; block-size: 100%; inline-size: var(--sno-size-full);"}]]])
 
-(defn charts-section [tr {:keys [gig-histogram probe-histogram]}]
-  (let [x-axis-label (tr [:statistics/attendance-rate])
-        y-axis-label (tr [:statistics/num-members])
-        gig-title    (tr [:statistics/gig-attendance])
-        probe-title  (tr [:statistics/probe-attendance])
-        signals      {:statsDashboard
-                      {:attendanceHistogramChartJson
-                       (j/write-value-as-string
-                        (attendance-histogram-chart-config {:gig-histogram   gig-histogram
-                                                            :gig-title       gig-title
-                                                            :probe-histogram probe-histogram
-                                                            :probe-title     probe-title
-                                                            :x-axis-label    x-axis-label
-                                                            :y-axis-label    y-axis-label}))}}]
+(defn charts-section [req stats]
+  (let [signals (charts/attendance-histogram-signals req stats)]
     [:section {:class        "wa-stack wa-gap-m"
                :data-signals (d*/->signals signals)}
      (histogram-card {:description [:i18n/tr :statistics/methodology-histograms-body]
@@ -316,7 +252,7 @@
        [:i18n/tr :statistics/member-table-empty-title]
        [:i18n/tr :statistics/member-table-empty-body])))))
 
-(defn page [{:keys [db tr] :as req}]
+(defn page [{:keys [db] :as req}]
   (let [{:keys [from to]} (state/selected-range req)
         stats            (stats/stats-for db from to (state/sort-spec req))]
     (ui2/datastar-page*
@@ -337,7 +273,7 @@
                                   :to   (ui2/format-date req :medium to)}]}]
        (timespan-controls req)
        (summary-card stats)
-       (charts-section tr stats)
+       (charts-section req stats)
        (methodology)
        (member-table req (:per-member-stats stats))]])))
 
