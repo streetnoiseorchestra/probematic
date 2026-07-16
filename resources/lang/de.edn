@@ -18,231 +18,10 @@
   :medium "Ambivalent",
   :low "Nicht Motiviert",
   :very-low "Gar nicht Motiviert!"},
- :private-instruments "Private Instrumente",
  :ledger
  {:add-transaction "Zahlung hinzufügen",
   :add-payment "Zahlung hinzufügen",
   :add-debt "Schulden hinzufügen"},
- :insurance
- {:error-edit-frozen-policy
-  "Du kannst ein Instrument und den Versicherungsschutz für eine Police, die sich nicht im Entwurfsstatus befindet, nicht aktualisieren",
-  :error-invalid-number "%1 muss eine ganze Zahl größer als null sein.",
-  :error-invalid-coverage-type "Bitte wähle gültige Versicherungsarten aus.",
-  :email-p3
-  "Möchtest du genau wissen woraus sich deine Kosten zusammenstellen, kannst du dies im Forum unter folgendem Link nachlesen.",
-  :total-needs-review-tooltip "Insgesamt zu überprüfende Instrumente",
-  :total-total-changed-tooltip "Insgesamt veränderte Instrumente",
-  :policies "Versicherungspolicen",
-  :insurance-policy "Versicherungspolice",
-  :total-total-removed-tooltip "Insgesamt entfernte Instrumente",
-  :email-p5
-  "Solltest du weitere Fragen haben, kannst du dich gerne bei uns melden.",
-  :send-changes-disabled-hint
-  "Änderungen können nicht gesendet werden, solange offene Aufgaben vorhanden sind",
-  :email-p1
-  "wir möchten dich darum bitten deine Versicherungskosten an das Street Noise Orchestra zu überweisen. Es handelt sich dabei um Kosten für privat versicherte Instrumente für den Zeitraum: ",
-  :title "Versicherung & Instrumente",
-  :dashboard-title "Insurance TODOs",
-  :value-abbrev "Vers.-Wert"
-  :confirm-mark-as-button "Markieren als",
-  :coverage-type-description "Beschreibung",
-  :category-factors "Kategoriefaktoren",
-  :email-p4
-  "Im Falle eines Schadens findest du die Anleitung für eine Schadensmeldung und das dazu gehörige Schadensformular im Anhang.",
-  :value-hint
-  "Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben",
-  :email-p2 "Versicherungskosten %1:",
-  :currency "Währung",
-  :premium-factor "Premium-Faktor",
-  :bank-data "Bankdaten",
-  :cost "Kosten",
-  :coverage-name "Name des Versicherungsdeckung",
-  :confirm-mark-as
-  "Bist du sicher, dass du als %1 markieren möchtest?",
-  :email-subject "%1 Versicherungskosten %2 SNO",
-  :total-total-new-tooltip "Insgesamt hinzugefügte Instrumente",
-  :confirm-mark-as-title "Als %1 markieren?",
-  :covered-instruments "Instrumente mit Versicherung"},
- :insurance.dashboard
- {:continue-reviewing "Review",
-  :review-queue "Review",
-  :coverage-workbench "Tabelle",
-  :activity-log "Aktivitätsprotokoll",
-  :policy-settings "Policeneinstellungen",
-  :next-actions "Nächste Aktionen",
-  :action-pages-subtitle
-  "Diese Links werden im weiteren Redesign eigene Policen-Seiten.",
-  :opens-later "Kommt später",
-  :review-status "Review-Status",
-  :review-complete "%1 von %2 erledigt",
-  :health-checklist "Daten-Checkliste",
-  :health-checklist-subtitle
-  "Erforderliche Daten vor dem Senden von Änderungen.",
-  :health-checks-complete "%1 von %2 Prüfungen bestanden",
-  :coverage-mix "Instrumentenmix",
-  :coverage-mix-subtitle
-  "Band- und private Instrumente in dieser Police.",
-  :coverage-mix-total "%1 Instrumente gesamt",
-  :no-covered-instruments "Keine versicherten Instrumente",
-  :recent-changes "Aktuelle Änderungen",
-  :recent-changes-subtitle
-  "Aktuelle Änderungsmarkierungen für diese Police.",
-  :no-recent-changes
-  "Keine geänderten, neuen oder entfernten Instrumente.",
-  :policy-details "Policendetails",
-  :policy-status "Policenstatus",
-  :total-instruments "Instrumente gesamt",
-  :total-instruments-tooltip
-  "Anzahl der versicherten Instrumente in dieser Police.",
-  :total-insured-value "Versicherungswert gesamt",
-  :total-insured-value-tooltip
-  "Summe der Versicherungswerte aller versicherten Instrumente.",
-  :policy-cost "Policenkosten",
-  :policy-cost-tooltip
-  "Geschätzte Policenkosten aus aktuellen Versicherungswerten und Prämienfaktoren.",
-  :missing-photos "Fehlende Fotos",
-  :missing-insurer-ids "Fehlende Harmonia-IDs",
-  :band-instruments "Band-Instrumente",
-  :private-instruments "Private Instrumente"},
- :insurance.policy-settings
- {:category-factors-subtitle "Faktoren nach Instrumentenkategorie."
-  :coverage-types-subtitle "Versicherungsarten in dieser Police.",
-  :add-coverage-type "Versicherungsart hinzufügen",
-  :add-category-factor "Kategoriefaktor hinzufügen"
-  :category-factor-create-disabled-tooltip
-  "Jede Instrumentenkategorie hat bereits einen Kategoriefaktor."
-  :coverage-type-delete-confirm "Versicherungsart %1 löschen?",
-  :coverage-type-in-use
-  "Diese Versicherungsart wird von %1 aktuellen Versicherungen verwendet und kann nicht gelöscht werden.",
-  :category-factor-delete-confirm "Kategoriefaktor für %1 löschen?"
-  :category-factor-in-use
-  "Dieser Kategoriefaktor wird von %1 aktuellen Versicherungen verwendet und kann nicht gelöscht werden."
-  :current-cost "Aktuell geschätzte Kosten",
-  :current-totals "Aktuelle Summen",
-  :current-totals-subtitle "Sichere Summen aus der aktuellen Konfiguration.",
-  :error-policy-not-found "Police nicht gefunden.",
-  :error-not-allowed "Du darfst Policeneinstellungen nicht ändern.",
-  :error-frozen-policy
-  "Diese Police ist nicht im Entwurf, daher können Einstellungen nicht geändert werden.",
-  :error-invalid-date "Gib ein gültiges Datum ein.",
-  :error-invalid-premium-factor "Gib einen gültigen nicht-negativen Prämienfaktor ein.",
-  :error-invalid-currency "Wähle eine unterstützte Währung.",
-  :error-effective-until-before-effective-at
-  "Das Enddatum muss nach dem Startdatum liegen.",
-  :edit-coverage-type "Versicherungsart bearbeiten",
-  :edit-category-factor "Kategoriefaktor bearbeiten"
-  :error-coverage-type-in-use "Versicherungsart wird noch verwendet.",
-  :error-coverage-type-not-found "Versicherungsart wurde in dieser Police nicht gefunden.",
-  :error-duplicate-coverage-type-name
-  "Eine Versicherungsart mit diesem Namen existiert bereits in dieser Police.",
-  :error-category-factor-in-use "Kategoriefaktor wird noch verwendet."
-  :error-category-factor-not-found "Kategoriefaktor wurde in dieser Police nicht gefunden."
-  :error-category-not-found "Kategorie nicht gefunden."
-  :error-duplicate-category-factor
-  "Ein Kategoriefaktor für diese Kategorie existiert bereits in dieser Police."
-  :missing-category-factors-title "Fehlende Kategoriefaktoren",
-  :missing-category-factors-body
-  "Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1.",
-  :no-category-factors "Keine Kategoriefaktoren konfiguriert.",
-  :policy-details-subtitle "Bearbeite die Policendaten für Kostenberechnungen.",
-  :read-only-title "Einstellungen sind schreibgeschützt",
-  :status-read-only "Der Policenstatus ist hier schreibgeschützt.",
-  :subtitle "Einstellungen für %1 konfigurieren.",
-  :usage "Verwendung"},
- :insurance.review
- {:title "Review-Warteschlange",
-  :subtitle "Versicherte Instrumente für %1 prüfen.",
-  :filters "Review-Filter",
-  :filter-needs-review "Todo",
-  :filter-missing-insurer-id "Fehlende ID",
-  :items-left "%1 Einträge übrig.",
-  :item-left "%1 Eintrag übrig.",
-  :see-all-in-workbench "Alle in der Workbench anzeigen",
-  :queue "Warteschlange",
-  :empty-title "Keine passenden Versicherungen",
-  :empty-body "Wähle einen anderen Filter oder gehe zurück zum Dashboard.",
-  :reviewing-owner "Besitzer: %1",
-  :mark-reviewed "Als geprüft markieren",
-  :skip "Überspringen",
-  :approve-and-next "Freigeben und weiter",
-  :save-and-continue "Speichern und weiter",
-  :comments "Kommentare",
-  :comment-placeholder "Notiz zu diesem Eintrag hinzufügen.",
-  :add-comment "Kommentar hinzufügen",
-  :commented "kommentierte",
-  :leave-reply "Antwort hinterlassen",
-  :not-insurance-team
-  "Nur Mitglieder des Versicherungsteams können Review-Einträge ändern.",
-  :frozen-policy
-  "Diese Police ist nicht im Entwurf, daher sind Review-Aktionen schreibgeschützt.",
-  :error-coverage-not-found "Versicherung nicht gefunden.",
-  :error-not-allowed "Du darfst diesen Review-Eintrag nicht ändern.",
-  :error-frozen-policy
-  "Diese Police ist nicht im Entwurf, daher können Review-Einträge nicht geändert werden."},
- :insurance.workbench
- {:title "Versicherungs-Workbench",
-  :view "Ansicht",
-  :view-all "Alle Versicherungen",
-  :view-todo "Todo",
-  :view-missing-id "Fehlende Harmonia-IDs",
-  :view-missing-photos "Fehlende Fotos",
-  :view-private "Private Instrumente",
-  :view-changed "Geändert",
-  :view-new "Neu",
-  :view-removed "Entfernt",
-  :group "Gruppierung",
-  :group-member "Nach Mitglied gruppieren",
-  :group-none "Flache Liste",
-  :ownership "Besitz",
-  :ownership-all "Alle",
-  :ownership-band "Band",
-  :ownership-private "Privat",
-  :all-categories "Alle Kategorien",
-  :all-coverage-types "Alle Versicherungsarten",
-  :member-search "Mitglied",
-  :member-search-placeholder "Nach Name, Spitzname, Benutzername oder E-Mail suchen",
-  :search "Suche",
-  :selection "Auswahl",
-  :selected "ausgewählt",
-  :photos "Fotos",
-  :workflow-status "Workflow-Status",
-  :change-status "Änderungsstatus",
-  :status "Status",
-  :present "Vorhanden",
-  :missing "Fehlt",
-  :table-settings "Tabelleneinstellungen",
-  :columns "Spalten",
-  :filter-by "Filtern nach: %1",
-  :value-operator "Wertoperator",
-  :value-greater-than "ist größer als",
-  :value-less-than "ist kleiner als",
-  :value-equal-to "ist gleich",
-  :value-between "liegt zwischen",
-  :value-min "Minimum",
-  :value-max "Maximum",
-  :pagination "Seitennavigation",
-  :pagination-summary "%1–%2 von %3 Ergebnissen",
-  :rows-per-page "Zeilen pro Seite",
-  :and "und",
-  :select-row "Versicherung auswählen",
-  :group-summary "%1 Einträge, %2 Wert, %3 Kosten",
-  :expand-all "Alle aufklappen",
-  :collapse-all "Alle zuklappen",
-  :mark-todo "Als Todo markieren",
-  :mark-reviewed "Als geprüft markieren",
-  :mark-active "Als aktiv markieren",
-  :read-only "Sammelaktionen sind schreibgeschützt.",
-  :mark-workflow "Workflow markieren",
-  :set-change "Änderung setzen",
-  :deselect-all "Auswahl aufheben",
-  :empty-title "Keine passenden Versicherungen",
-  :empty-body "Wähle eine andere Ansicht oder einen anderen Filter.",
-  :error-empty-selection "Wähle mindestens eine Versicherung aus.",
-  :error-invalid-target-status "Wähle einen gültigen Workflow- oder Änderungsstatus.",
-  :error-not-allowed "Du darfst diese Versicherungen nicht ändern.",
-  :error-frozen-policy "Diese Police ist nicht im Entwurf, daher können Versicherungen nicht geändert werden.",
-  :error-coverage-not-found "Versicherung nicht gefunden.",
-  :error-coverage-not-in-policy "Alle ausgewählten Versicherungen müssen zu dieser Police gehören."},
  :email
  {:invite-expired
   "Entschuldigung, der Einladungscode ist abgelaufen, bitte frag nach einem neuen!",
@@ -257,7 +36,6 @@
   :body-log-plays
   "Bitte erzählt SNOrga, was wir bei der Probe am %1 gespielt haben *und* wer die Probeleitung für nächste Woche ist! Es dauert nur 1 Minute.",
   :subject-log-plays "Was haben wir im Probe gespielt?",
-  :sign-off-insurance-team "Versicherungsteam StreetNoise Orchestra",
   :new-probe-added "Eine neue Probe steht an!",
   :need-to-change-availability? "Ich muss meine Verfügbarkeit ändern",
   :can-you-make-it? "Kannst du es schaffen?",
@@ -284,12 +62,6 @@
   :extra-probe "Extraprobe",
   :meeting "Treffen",
   :gig "Gig"},
- :instrument
- {:create-title "Neues Instrument",
-  :photo-upload-title "Lade Instrumentenfotos hoch",
-  :images-share-url-hint
-  "Verwende diesen Link, wenn du ihn außerhalb der Band teilst",
-  :images-share-url "Fotos öffentlicher Link"},
  :selected "ausgewählt",
  :play-log
  {:not-played "Nicht gespielt",
@@ -304,11 +76,6 @@
   :cancelled "Abgesagt"},
  :now "jetzt",
  :Contact-Information "Kontakt Informationen",
- :instrument.coverage.change
- {:new "Hinzugefügt",
-  :removed "Entfernt",
-  :none "Keine Änderungen",
-  :changed "Verändert"},
  :password
  {:commonly-used
   "Das Passwort ist ein bekanntes gehacktes Passwort. Bitte wähle ein sicheres Passwort.",
@@ -335,87 +102,13 @@
  {:welcome "Willkommen %1!",
   :upcoming "Alle kommenden Termine",
   :unanswered "Zukünftige Termine: Sag Bescheid!",
-  :insurance-todo "Versicherungsteam TODOs",
   :you-owe "Du schuldest der Band etwas Geld!",
   :polls-open "Wir haben offene Umfragen!"},
- :history
- {:title "Änderungsverlauf",
-  :subtitle-coverage
-  "Änderungen des Versicherungsschutzes dieses Instruments",
-  :editor "Editor",
-  :field "Feld",
-  :before "Vorher",
-  :after "Nachher",
-  :no-changes "Noch keine Änderungen.",
-  :image-deleted "Bild gelöscht.",
-  :retracted "Zurückgezogen",
-  :updated "Aktualisiert",
-  :added "Hinzugefügt"},
  :oebb-discount "ÖBB-Rabatt",
  :my-profile "Mein Profil",
  :or-scan-qr-code "Oder scanne diesen QR-Code mit deiner Banking-App",
  :Active "Aktiv",
  :Inactive "Inaktiv",
- :insurance.survey
- {:edit-survey "Umfrage bearbeiten",
-  :contact-insurance-team "Bitte kontaktiere das Versicherungsteam",
-  :no-stop "Nein, Versicherung entfernen",
-  :confirm-close "Das wird die Umfrage für alle Mitglieder schließen.",
-  :email-p3
-  "Du hast bis %1 Zeit, um die Umfrage auszufüllen (das sind nur noch %2 Tage!).",
-  :all-done "Alles erledigt!",
-  :cta-p1
-  "%1, es ist Zeit, deine versicherten Instrumente/Gegenstände zu überprüfen.",
-  :yes "Ja",
-  :closes-at-hint
-  "Das Datum und die Uhrzeit, wann die Versicherungsumfrage keine Antworten mehr annimmt.",
-  :send-notifications "Benachrichtigungen senden",
-  :cta-p2
-  "Du hast %1 Artikel zu überprüfen, das sollte ungefähr %2 Minuten dauern. Bereit loszulegen?",
-  :email-p2-many
-  "Oder füge neue hinzu! Es dauert nur ein paar Minuten (es sei denn, du bist %1, der %2 zum Überprüfen hat!)",
-  :used-in-last-year
-  "Wurde das im letzten Jahr bei einem SNO-Gig verwendet?",
-  :cta-p2-none
-  "Du hast keine versicherten Instrumente zu überprüfen. Aber du solltest neue hinzufügen!",
-  :start-survey "Umfrage starten",
-  :completed-count "%1 von %2 abgeschlossen",
-  :no-surveys "Keine offenen Umfragen",
-  :closes-at "Schließt um",
-  :already-closed-hint
-  "Diese Versicherungsumfrage ist bereits geschlossen :(",
-  :start-button "Überprüfung starten",
-  :admin-subtitle
-  "Lass die ganze Band ihre versicherten Instrumente überprüfen/kontrollieren.",
-  :email-p1
-  "Es ist Zeit, deine versicherten Instrumente/Gegenstände zu überprüfen.",
-  :yes-pay "Ja, ich werde zahlen",
-  :pay-cost-confirm
-  "Du musst etwa %1 pro Jahr für diesen Artikel bezahlen. Ist das in Ordnung?",
-  :admin-title "Bandversicherungsumfrage",
-  :keep-insured-private-hint
-  "Da dies im letzten Jahr nicht bei einem Gig verwendet wurde, kann die Band nicht mehr dafür bezahlen.",
-  :already-closed "Bereits geschlossen",
-  :keep-insured-pay "Willst du zahlen, um es versichert zu halten?",
-  :keep-insured-private-cost
-  "Wenn du möchtest, dass der Artikel versichert bleibt, musst du selbst dafür bezahlen. Das wird etwa %1 pro Jahr für diesen Artikel kosten.",
-  :close-survey "Umfrage schließen",
-  :email-p2 "Oder füge neue hinzu! Es dauert nur ein paar Minuten.",
-  :almost-there "Fast geschafft",
-  :confirm-close-title "Umfrage schließen?",
-  :confirm-remove-band-hint
-  "Die Band übernimmt die Kosten für die Versicherung, da es ein Instrument der Band ist.",
-  :data-correct-hint
-  "Du möchtest vielleicht den versicherten Wert ändern, wenn sich der Marktwert verändert hat oder wenn du die Art der Deckung ändern willst.",
-  :no-keep "Nein, behalte die Versicherung",
-  :confirm-remove
-  "Bist du sicher, dass du die Versicherung entfernen möchtest?",
-  :email-title "SNO-Versicherungszeit!",
-  :data-correct "Sind alle unten angezeigten Infos noch korrekt?",
-  :keep-insured
-  "Willst du dieses Instrument weiterhin versichert halten?",
-  :yes-remove "Ja, entferne es",
-  :no "Nein"},
  :login "Anmelden",
  :poll
  {:min-choice-hint
@@ -432,8 +125,6 @@
   :max-choice-hint
   "Die maximale Anzahl an Entscheidungen, die eine Person treffen kann."},
  :no-transactions-yet "Noch keine Transaktionen",
- :insurance.policy.status
- {:active "Aktiv?", :sent "Gesendet", :draft "Entwurf"},
  :account
  {:account-created-title "Deine SNO-ID wurde erstellt!",
   :create-account "Konto erstellen",
@@ -447,7 +138,6 @@
   :password-confirm "Kennwort bestätigen",
   :account-created-subtitle
   "Herzlich willkommen! :) Bitte meldest du dich mit deiner neuen SNO-ID an."},
- :band-instruments "Band-Instrumente",
  :member
  {:active? "Aktiv?",
   :email "E-Mail",
@@ -464,15 +154,12 @@
   :filter-all "Alle Mitglieder",
   :filter-active "Aktive Mitglieder",
   :keycloak-id "SNO UUID",
-  :insurance-title "Versicherung & Instrumente",
   :sno-id-disabled "Deaktiviert",
   :create-sno-id "SNO ID erstellen",
   :sno-id-enable-disabled-tooltip
   "Wenn die Option deaktiviert ist, kann sich der Benutzer nicht bei SNO-Systemen anmelden.",
   :phone-validation
   "Telefonnummer, die mit +Landesvorwahl beginnt. Nur Leerzeichen, Bindestriche und Zahlen",
-  :insurance-subtitle
-  "Instrumente und andere Gegenstände, die zu Versicherungszwecken bei der Band angemeldet sind.",
   :username-validation
   "Der Benutzername darf nur A–Z, 0–9 _, ., - oder @ enthalten. Kein Leerzeichen.",
   :create-sno-id-description
@@ -483,45 +170,21 @@
   :browse-empty-subtitle "Versuche einen anderen Suchbegriff oder Filter.",
   :sno-id-enabled-disabled "SNO-ID aktiviert/deaktiviert"},
  :instruments "Instrumente",
- :good-job "Good Job!",
  :total "Gesamt",
- :youve-completed-plural
- "Du hast %1 Aufgaben erledigt! Noch %2 übrig!",
  :Phone "Telefon",
  :team
  {:add-member            "Mitglied hinzufügen",
   :choose-remove-members "Wähle Mitglieder zum Entfernen aus"},
- :private-instrument-payment
- "Die Kosten der Versicherung privater Instrumente werden nicht von Street Noise übernommen.",
- :col
- {:member "Mitglied",
-  :completed? "Erledigt?",
-  :num-reviewed "# überprüft?",
-  :total-instruments "Gesamtinstrumente"},
- :instrument.coverage.status
- {:needs-review "Todo",
-  :reviewed "Kontrolliert",
-  :coverage-active "Aktiv?"},
- :youve-completed-sing
- "Du hast ein Instrument fertiggestellt! %1 ist noch übrig!",
  :poll.type
  {:multiple-hint "Menschen können mehrere Optionen wählen."},
  :sno-id "SNO ID",
  :band-owes-you
  "Die Band schuldet dir %1! Bitte kontaktiere den Kassier.",
  :updating "Aktualisierung…",
- :time-left "Verbleibende Zeit",
  :action
- {:confirm-delete-instrument
-  "Bist du sicher, dass du das Instrument %1 löschen möchtest?",
-  :duplicate "Duplikat",
-  :im-finished "Ich bin fertig",
-  :remove "Entfernen",
+ {:remove "Entfernen",
   :done "Fertig",
   :continue "Fortsetzen",
-  :keep-going "Mach weiter",
-  :confirm-delete-policy
-  "Sind Sie sicher, dass Sie die Versicherungspolice %1 löschen möchten?",
   :create "Erstellen",
   :create-gig "Gig erstellen",
   :copy-link-confirm "Kopiert",
@@ -529,18 +192,14 @@
   :delete "Löschen",
   :confirm-delete "Ja, löschen es.",
   :save "Speichern",
-  :celebrate "Celebrate!",
   :copy-link "Link kopieren",
   :search "Suchen",
   :reset "Zurücksetzen",
-  :filter "Filter",
   :ignore "Ignorieren",
   :select-all "Wählen Alle",
   :quick-edit "Schnellbearbeitung",
   :mark-as "Markieren als",
   :next "Nächste",
-  :previous "Vorherige",
-  :apply "Anwenden",
   :comment "Kommentar",
   :send "Senden",
   :add-to-calendar "Zum Kalender hinzufügen",
@@ -548,12 +207,9 @@
   :confirm-delete-gig "Möchten Sie den Gig %1 wirklich löschen? ",
   :cancel "Abbrechen",
   :add "Hinzufügen",
-  :download "Herunterladen",
   :subscribe "Abonnieren",
   :confirm-delete-song
-  "Sind Sie sicher, dass Sie das Lied %1 löschen möchten?",
-  :view "Sehen",
-  :open-insurance-survey "Offene Versicherungsumfrage"},
+  "Sind Sie sicher, dass Sie das Lied %1 löschen möchten?"},
  :error
  {:go-home "Go Home",
   :item-load-failed
@@ -564,16 +220,12 @@
   :member-unique-email "Ein Mitglied hat diese E-Mail-Adresse bereits",
   :member-unique-nick "Ein Mitglied hat bereits diesen Spitznamen",
   :unauthorized-title "Authentifizierung fehlgeschlagen",
-  :not-allowed "Du darfst das nicht tun",
   :unknown-message
   "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
-  :not-found-title "Nicht gefunden",
   :not-found-message
   "Das, wonach du gesucht hast, wurde nicht gefunden. Wenn du denkst, dass es existieren sollte, bitte kontaktiere Casey und teile ihm diesen Fehlercode mit:",
   :member-unique-phone "Ein Mitglied hat diese Telefonnummer bereits",
-  :is-required "%1 ist erforderlich.",
   :member-section-invalid "Bitte wähle ein gültiges Register aus.",
-  :form-has-errors "Bitte behebe die Fehler im Formular.",
   :gig-end-date-before-date "Das Enddatum muss am oder nach dem Datum liegen.",
   :gig-set-time-before-call-time "Die Auftrittszeit muss gleich oder nach dem Beginn sein.",
   :gig-end-time-before-set-time "Die Endzeit muss gleich oder nach der Auftrittszeit sein.",
@@ -594,23 +246,6 @@
   :one-day "1 Tag",
   :three-days "3 Tage",
   :one-week "1 Woche"},
- :instrument.coverage
- {:private? "Privat?",
-  :private "Privat",
-  :band "Band",
-  :instrument "Instrument",
-  :cost-hint
-  "Die Kosten für die Versicherung des Instruments. Wenn privat, muss der Besitzer diese bezahlen.",
-  :create-button "Instrument hinzufügen",
-  :value "Versicherungswert",
-  :cost-hint-direct "Du musst das an die Band zahlen.",
-  :types "Versicherungsarten",
-  :status "Arbeitsablaufstatus",
-  :item-count "Artikelanzahl",
-  :cost "Kosten",
-  :change "Status ändern",
-  :coverage-id "Coverage ID",
-  :edit-title "Instrumentenversicherung bearbeiten"},
  :missing ":de missing text",
  :ledger.entry
  {:amount "Betrag",
@@ -633,8 +268,7 @@
   :gig-updated "Gig-Bearbeitung: %1",
   :gig-reminder "Gigerinnerung: %1",
   :new-invite "Ihre SNO-ID wartet auf Sie.",
-  :poll-created "Neue Umfrage: %1",
-  :insurance-survey "Es ist Zeit für SNO-Versicherung!"},
+  :poll-created "Neue Umfrage: %1"},
  :plan
  {:definitely "Sicher",
   :probably "Wahrscheinlich",

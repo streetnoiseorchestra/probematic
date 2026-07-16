@@ -63,7 +63,7 @@
      (d/entity db [:section/name section-name]))))
 
 (defn- required-error [tr label]
-  {:error (tr [:error/is-required] [label])})
+  {:error (tr [:error/is-required] {:field label})})
 
 (defn- duplicate-errors [db tr member-ref {:keys [email nick phone]}]
   (merge

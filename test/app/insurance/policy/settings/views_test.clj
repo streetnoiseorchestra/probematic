@@ -1,5 +1,6 @@
 (ns app.insurance.policy.settings.views-test
   (:require
+   [app.i18n :as i18n]
    [app.i18n.fluent :as fluent]
    [app.icons :as icons]
    [app.insurance.policy.settings.views :as sut]
@@ -18,16 +19,16 @@
 (def translations
   {[:insurance/category-factors] "Category factors"
    [:insurance/coverage-types] "Coverage types"
-   [:insurance.dashboard/policy-details] "Policy details"
-   [:insurance.policy-settings/add-category-factor] "Add category factor"
-   [:insurance.policy-settings/category-factor-create-disabled-tooltip] "Every instrument category already has a category factor."
-   [:insurance.policy-settings/current-totals] "Current totals"
-   [:insurance.policy-settings/error-not-allowed] "You are not allowed to change policy settings."
+   [:insurance/dashboard-policy-details] "Policy details"
+   [:insurance/policy-settings-add-category-factor] "Add category factor"
+   [:insurance/policy-settings-category-factor-create-disabled-tooltip] "Every instrument category already has a category factor."
+   [:insurance/policy-settings-current-totals] "Current totals"
+   [:insurance/policy-settings-error-not-allowed] "You are not allowed to change policy settings."
    [:insurance/exporter] "Exporter"
    [:insurance/coverage-type-impact-confirmation] "This will add the coverage type to %count instruments."
    [:insurance/coverage-type-confirmation-count] "Type %count to confirm"
    [:insurance/coverage-type-confirmation-count-hint] "Enter the current number of affected instruments."
-   [:insurance.policy-settings/read-only-title] "Settings are read-only"})
+   [:insurance/policy-settings-read-only-title] "Settings are read-only"})
 
 (defn tr
   ([path]
@@ -134,7 +135,7 @@
   ([settings]
    (settings-view req settings))
   ([req settings]
-   (sut/settings-page-content req settings)))
+   (i18n/resolve-translations tr (sut/settings-page-content req settings))))
 
 (defn combobox-current-icon
   [combobox]

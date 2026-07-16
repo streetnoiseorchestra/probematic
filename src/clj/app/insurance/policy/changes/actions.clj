@@ -11,6 +11,20 @@
 
 (def form-key :insurance-policy-changes)
 
+(defn default-form
+  [tr {:keys [policy-id policy-number recipient-email recipient-name recipient-title sender-name today]}]
+  {:policy-id                   (str policy-id)
+   :recipient                   (format "%s <%s>" recipient-name recipient-email)
+   :subject                     (tr [:insurance/changes-email-subject]
+                                    {:policy-number (or policy-number "")})
+   :body                        (tr [:insurance/changes-email-body]
+                                    {:recipient-title (or recipient-title "")
+                                     :recipient-name  (or recipient-name "")
+                                     :sender-name     (or sender-name "")})
+   :attachment-filename-new     (format "AnlageNeueInstrumente-%s.xls" today)
+   :attachment-filename-changes (format "AnlageÄnderungen-%s.xls" today)
+   :preview-type                ""})
+
 (defn- normalize-form
   [signals]
   (let [params (or (form-key signals) signals)]
@@ -45,7 +59,7 @@
                                     (str/blank? (field params))
                                     (assoc field
                                            {:error (tr [:error/is-required]
-                                                       [(tr [label])])})))
+                                                       {:field (tr [label])})})))
                                 {}
                                 required-fields)
         exporter-error  (some->> policy

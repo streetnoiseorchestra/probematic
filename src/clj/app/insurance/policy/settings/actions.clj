@@ -160,7 +160,7 @@
 
 (defn- required-error
   [tr label-key]
-  {:error (tr [:error/is-required] [(tr label-key)])})
+  {:error (tr [:error/is-required] {:field (tr label-key)})})
 
 (defn- error
   [tr key]
@@ -176,13 +176,13 @@
   [{:keys [current-member-id db]} policy]
   (cond
     (nil? policy)
-    [:insurance.policy-settings/error-policy-not-found]
+    [:insurance/policy-settings-error-policy-not-found]
 
     (not (insurance-team-member? db current-member-id))
-    [:insurance.policy-settings/error-not-allowed]
+    [:insurance/policy-settings-error-not-allowed]
 
     (not (queries/policy-editable? policy))
-    [:insurance.policy-settings/error-frozen-policy]))
+    [:insurance/policy-settings-error-frozen-policy]))
 
 (defn- field-validation-errors
   [tr {:keys [name effective-at effective-until premium-factor currency]}]
@@ -195,37 +195,37 @@
       (assoc :name (required-error tr [:insurance/name]))
 
       (nil? effective-at-inst)
-      (assoc :effective-at (error tr [:insurance.policy-settings/error-invalid-date]))
+      (assoc :effective-at (error tr [:insurance/policy-settings-error-invalid-date]))
 
       (nil? effective-until-inst)
-      (assoc :effective-until (error tr [:insurance.policy-settings/error-invalid-date]))
+      (assoc :effective-until (error tr [:insurance/policy-settings-error-invalid-date]))
 
       (and effective-at-inst
            effective-until-inst
            (not (pos? (compare effective-until-inst effective-at-inst))))
-      (assoc :effective-until (error tr [:insurance.policy-settings/error-effective-until-before-effective-at]))
+      (assoc :effective-until (error tr [:insurance/policy-settings-error-effective-until-before-effective-at]))
 
       (not (non-negative-decimal? premium-factor-value))
-      (assoc :premium-factor (error tr [:insurance.policy-settings/error-invalid-premium-factor]))
+      (assoc :premium-factor (error tr [:insurance/policy-settings-error-invalid-premium-factor]))
 
       (nil? currency-value)
-      (assoc :currency (error tr [:insurance.policy-settings/error-invalid-currency])))))
+      (assoc :currency (error tr [:insurance/policy-settings-error-invalid-currency])))))
 
 (defn- validation-errors
   [{:keys [current-member-id db tr]} form]
   (let [{:keys [policy-id policy]} (policy-context db form)
         context-error-key (cond
                             (not (uuid? policy-id))
-                            [:insurance.policy-settings/error-policy-not-found]
+                            [:insurance/policy-settings-error-policy-not-found]
 
                             (nil? policy)
-                            [:insurance.policy-settings/error-policy-not-found]
+                            [:insurance/policy-settings-error-policy-not-found]
 
                             (not (insurance-team-member? db current-member-id))
-                            [:insurance.policy-settings/error-not-allowed]
+                            [:insurance/policy-settings-error-not-allowed]
 
                             (not (queries/policy-editable? policy))
-                            [:insurance.policy-settings/error-frozen-policy])]
+                            [:insurance/policy-settings-error-frozen-policy])]
     (if context-error-key
       {:_top (error tr context-error-key)}
       (let [field-errors (field-validation-errors tr form)]
@@ -267,21 +267,21 @@
       (assoc :name (required-error tr [:insurance/name]))
 
       (not (non-negative-decimal? premium-factor-value))
-      (assoc :premium-factor (error tr [:insurance.policy-settings/error-invalid-premium-factor]))
+      (assoc :premium-factor (error tr [:insurance/policy-settings-error-invalid-premium-factor]))
 
       (not (contains? (set (icons/catalog)) icon))
       (assoc :icon (error tr [:insurance/error-invalid-coverage-type-icon]))
 
       (and (not (str/blank? name))
            (duplicate-coverage-type-name? policy coverage-type-form))
-      (assoc :name (error tr [:insurance.policy-settings/error-duplicate-coverage-type-name])))))
+      (assoc :name (error tr [:insurance/policy-settings-error-duplicate-coverage-type-name])))))
 
 (defn- coverage-type-validation-errors
   [{:keys [db tr] :as state} {:keys [policy-id type-id] :as form} mode]
   (let [{:keys [policy]} (policy-context db form)
         context-error-key (cond
                             (not (uuid? policy-id))
-                            [:insurance.policy-settings/error-policy-not-found]
+                            [:insurance/policy-settings-error-policy-not-found]
 
                             :else
                             (mutation-context-error-key state policy))]
@@ -292,7 +292,7 @@
       (and (= :update mode)
            (or (not (uuid? type-id))
                (not (coverage-type-belongs-to-policy? policy type-id))))
-      {:_top (error tr [:insurance.policy-settings/error-coverage-type-not-found])}
+      {:_top (error tr [:insurance/policy-settings-error-coverage-type-not-found])}
 
       :else
       (let [field-errors (coverage-type-field-validation-errors tr policy form)]
@@ -346,21 +346,21 @@
 
       (and (uuid? category-id)
            (not (category-exists? db category-id)))
-      (assoc :category-id (error tr [:insurance.policy-settings/error-category-not-found]))
+      (assoc :category-id (error tr [:insurance/policy-settings-error-category-not-found]))
 
       (not (non-negative-decimal? factor-value))
-      (assoc :factor (error tr [:insurance.policy-settings/error-invalid-premium-factor]))
+      (assoc :factor (error tr [:insurance/policy-settings-error-invalid-premium-factor]))
 
       (and (= :create mode)
            (duplicate-category-factor? policy form))
-      (assoc :category-id (error tr [:insurance.policy-settings/error-duplicate-category-factor])))))
+      (assoc :category-id (error tr [:insurance/policy-settings-error-duplicate-category-factor])))))
 
 (defn- category-factor-validation-errors
   [{:keys [db tr] :as state} {:keys [policy-id category-factor-id] :as form} mode]
   (let [{:keys [policy]} (policy-context db form)
         context-error-key (cond
                             (not (uuid? policy-id))
-                            [:insurance.policy-settings/error-policy-not-found]
+                            [:insurance/policy-settings-error-policy-not-found]
 
                             :else
                             (mutation-context-error-key state policy))]
@@ -371,7 +371,7 @@
       (and (= :update mode)
            (or (not (uuid? category-factor-id))
                (not (category-factor-belongs-to-policy? policy category-factor-id))))
-      {:_top (error tr [:insurance.policy-settings/error-category-factor-not-found])}
+      {:_top (error tr [:insurance/policy-settings-error-category-factor-not-found])}
 
       :else
       (let [field-errors (category-factor-field-validation-errors db tr policy form mode)]
@@ -488,7 +488,7 @@
                             (retrieve-policy db policy-id))
         context-error-key (if (uuid? policy-id)
                             (mutation-context-error-key state policy)
-                            [:insurance.policy-settings/error-policy-not-found])]
+                            [:insurance/policy-settings-error-policy-not-found])]
     (if context-error-key
       {:_top (error tr context-error-key)}
       (let [field-errors (exporter-field-validation-errors tr policy form)]
@@ -728,16 +728,16 @@
         context-error-key (mutation-context-error-key state policy)]
     (cond
       (not (uuid? type-id))
-      {:_top (error tr [:insurance.policy-settings/error-coverage-type-not-found])}
+      {:_top (error tr [:insurance/policy-settings-error-coverage-type-not-found])}
 
       (nil? policy-id)
-      {:_top (error tr [:insurance.policy-settings/error-coverage-type-not-found])}
+      {:_top (error tr [:insurance/policy-settings-error-coverage-type-not-found])}
 
       context-error-key
       {:_top (error tr context-error-key)}
 
       (pos? (coverage-type-usage-count policy type-id))
-      {:_top (error tr [:insurance.policy-settings/error-coverage-type-in-use])})))
+      {:_top (error tr [:insurance/policy-settings-error-coverage-type-in-use])})))
 
 (defn delete-coverage-type-action
   [{:keys [current-member-id db] :as state} signals]
@@ -880,16 +880,16 @@
         context-error-key (mutation-context-error-key state policy)]
     (cond
       (not (uuid? category-factor-id))
-      {:_top (error tr [:insurance.policy-settings/error-category-factor-not-found])}
+      {:_top (error tr [:insurance/policy-settings-error-category-factor-not-found])}
 
       (nil? policy-id)
-      {:_top (error tr [:insurance.policy-settings/error-category-factor-not-found])}
+      {:_top (error tr [:insurance/policy-settings-error-category-factor-not-found])}
 
       context-error-key
       {:_top (error tr context-error-key)}
 
       (pos? (category-factor-usage-count policy category-factor-id))
-      {:_top (error tr [:insurance.policy-settings/error-category-factor-in-use])})))
+      {:_top (error tr [:insurance/policy-settings-error-category-factor-in-use])})))
 
 (defn delete-category-factor-action
   [{:keys [current-member-id db] :as state} signals]

@@ -428,7 +428,7 @@
                                                 :premium-factor  "0.025"
                                                 :currency        "EUR"}
                                :error-keys     #{:_top}
-                               :top-error      [:insurance.policy-settings/error-policy-not-found]}}
+                               :top-error      [:insurance/policy-settings-error-policy-not-found]}}
              {:invalid-fields (failure-summary
                                (actions/save-policy-details-action
                                 (state system)
@@ -468,7 +468,7 @@
                                           :premium-factor  "0.025"
                                           :currency        "EUR"}
                          :error-keys     #{:_top}
-                         :top-error      [:insurance.policy-settings/error-not-allowed]}
+                         :top-error      [:insurance/policy-settings-error-not-allowed]}
               :frozen   {:transact?      false
                          :clear-loading? true
                          :state-path     [:insurance-policy-settings :policy]
@@ -478,7 +478,7 @@
                                           :premium-factor  "0.025"
                                           :currency        "EUR"}
                          :error-keys     #{:_top}
-                         :top-error      [:insurance.policy-settings/error-frozen-policy]}}
+                         :top-error      [:insurance/policy-settings-error-frozen-policy]}}
              {:not-team (failure-summary
                          (actions/save-policy-details-action
                           (state draft-system)
@@ -543,7 +543,7 @@
                               :state-path     [:insurance-policy-settings :coverage-type-delete]
                               :submitted      {:type-id used-type-id}
                               :error-keys     #{:_top}
-                              :top-error      [:insurance.policy-settings/error-coverage-type-in-use]}}
+                              :top-error      [:insurance/policy-settings-error-coverage-type-in-use]}}
                {:create {:transact?      (boolean (some transact-effect? create-effects))
                          :opts           create-opts
                          :type-id?       (uuid? (:insurance.coverage.type/type-id new-type-tx))
@@ -595,7 +595,7 @@
                 :submitted      {:type-id unused-type-id}
                 :error-keys     #{:_top}
                 :top-error
-                [:insurance.policy-settings/error-coverage-type-in-use]}
+                [:insurance/policy-settings-error-coverage-type-in-use]}
                (coverage-type-failure-summary
                 (actions/delete-coverage-type-action
                  (state system)
@@ -645,7 +645,7 @@
                                                   :description     "Foreign coverage"
                                                   :premium-factor  "0.5"}
                                  :error-keys     #{:_top}
-                                 :top-error      [:insurance.policy-settings/error-coverage-type-not-found]}}
+                                 :top-error      [:insurance/policy-settings-error-coverage-type-not-found]}}
                {:invalid-create (coverage-type-failure-summary
                                  (actions/create-coverage-type-action
                                   (state system)
@@ -714,7 +714,7 @@
                                                    :description     "Additional coverage"
                                                    :premium-factor  "0.75"}
                                   :error-keys     #{:_top}
-                                  :top-error      [:insurance.policy-settings/error-not-allowed]}
+                                  :top-error      [:insurance/policy-settings-error-not-allowed]}
                 :update-frozen {:transact?      false
                                 :clear-loading? true
                                 :state-path     [:insurance-policy-settings :coverage-type]
@@ -724,13 +724,13 @@
                                                  :description     "Updated coverage"
                                                  :premium-factor  "0.5"}
                                 :error-keys     #{:_top}
-                                :top-error      [:insurance.policy-settings/error-frozen-policy]}
+                                :top-error      [:insurance/policy-settings-error-frozen-policy]}
                 :delete-frozen {:transact?      false
                                 :clear-loading? true
                                 :state-path     [:insurance-policy-settings :coverage-type-delete]
                                 :submitted      {:type-id unused-type-id}
                                 :error-keys     #{:_top}
-                                :top-error      [:insurance.policy-settings/error-frozen-policy]}}
+                                :top-error      [:insurance/policy-settings-error-frozen-policy]}}
                {:create-not-team (coverage-type-failure-summary
                                   (actions/create-coverage-type-action
                                    (state draft-system)
@@ -1384,7 +1384,7 @@
                               :state-path     [:insurance-policy-settings :category-factor-delete]
                               :submitted      {:category-factor-id used-factor-id}
                               :error-keys     #{:_top}
-                              :top-error      [:insurance.policy-settings/error-category-factor-in-use]}}
+                              :top-error      [:insurance/policy-settings-error-category-factor-in-use]}}
                {:create {:transact?      (boolean (some transact-effect? create-effects))
                          :opts           create-opts
                          :factor-id?     (uuid? (:insurance.category.factor/category-factor-id new-factor-tx))
@@ -1448,7 +1448,7 @@
                                                   :category-id         used-category-id
                                                   :factor              "0.5"}
                                  :error-keys     #{:_top}
-                                 :top-error      [:insurance.policy-settings/error-category-factor-not-found]}}
+                                 :top-error      [:insurance/policy-settings-error-category-factor-not-found]}}
                {:invalid-create (category-factor-failure-summary
                                  (actions/create-category-factor-action
                                   (state system)
@@ -1513,7 +1513,7 @@
                                                    :category-id draft-new-category-id
                                                    :factor      "0.35"}
                                   :error-keys     #{:_top}
-                                  :top-error      [:insurance.policy-settings/error-not-allowed]}
+                                  :top-error      [:insurance/policy-settings-error-not-allowed]}
                 :update-frozen {:transact?      false
                                 :clear-loading? true
                                 :state-path     [:insurance-policy-settings :category-factor]
@@ -1522,13 +1522,13 @@
                                                  :category-id         used-category-id
                                                  :factor              "0.5"}
                                 :error-keys     #{:_top}
-                                :top-error      [:insurance.policy-settings/error-frozen-policy]}
+                                :top-error      [:insurance/policy-settings-error-frozen-policy]}
                 :delete-frozen {:transact?      false
                                 :clear-loading? true
                                 :state-path     [:insurance-policy-settings :category-factor-delete]
                                 :submitted      {:category-factor-id unused-factor-id}
                                 :error-keys     #{:_top}
-                                :top-error      [:insurance.policy-settings/error-frozen-policy]}}
+                                :top-error      [:insurance/policy-settings-error-frozen-policy]}}
                {:create-not-team (category-factor-failure-summary
                                   (actions/create-category-factor-action
                                    (state draft-system)

@@ -13,12 +13,12 @@
   ([k args]
    (case k
      [:error/form-has-errors] "Please fix the errors in the form."
-     [:error/is-required] (str (first args) " is required.")
+     [:error/is-required] (str (:field args) " is required.")
      [:error/not-found-title] "Not Found"
      [:error/not-allowed] "Not allowed"
      [:insurance/error-edit-frozen-policy] "Cannot update instrument and coverage on a policy that is not in draft status"
      [:insurance/error-invalid-coverage-type] "Please choose valid coverage types."
-     [:insurance/error-invalid-number] (str (first args) " must be a whole number greater than zero.")
+     [:insurance/error-invalid-number] (str (:field args) " must be a whole number greater than zero.")
      [:instrument/owner] "Owner"
      [:instrument/category] "Category"
      [:instrument/name] "Instrument Name"

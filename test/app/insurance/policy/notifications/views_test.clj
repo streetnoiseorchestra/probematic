@@ -1,5 +1,6 @@
 (ns app.insurance.policy.notifications.views-test
   (:require
+   [app.i18n :as i18n]
    [app.insurance.policy.notifications.views :as sut]
    [app.insurance.test-support :as insurance-test]
    [app.queries :as q]
@@ -38,6 +39,10 @@
              :tr             tr
              ::r/router      router}})))
 
+(defn page
+  [req]
+  (i18n/resolve-translations tr (sut/page req)))
+
 (deftest unavailable-private-cost-cannot-be-selected
   (let [{:keys [conn coverage-id policy-id request]} (fixture)
         policy             (q/retrieve-policy (d/db conn) policy-id)
@@ -57,7 +62,7 @@
                                [:insurance.category.factor/category-factor-id
                                 category-factor-id]]])
         db                 (d/db conn)
-        view               (sut/page
+        view               (page
                             (assoc request
                                    :db db
                                    :policy (q/retrieve-policy db policy-id)))
@@ -88,7 +93,7 @@
         db      (d/db conn)
         surface (l/select-one
                  page-surface/PageSurface
-                 (sut/page
+                 (page
                   (assoc request
                          :db db
                          :policy (q/retrieve-policy db policy-id))))]

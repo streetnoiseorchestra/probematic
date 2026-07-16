@@ -9,6 +9,17 @@
 
 (def form-key :insurance-policy-create)
 
+(defn default-form
+  [tr]
+  (let [this-year (-> (t/year (t/now)) str parse-long)
+        next-year (inc this-year)]
+    {:name            (tr [:insurance/default-policy-name]
+                          {:start-year (str this-year)
+                           :end-year   (str next-year)})
+     :effective-at    (str this-year "-05-01")
+     :effective-until (str next-year "-04-30")
+     :base-factor     "0.0047829"}))
+
 (defn- normalize-form
   [signals]
   (let [params (or (form-key signals) signals)]
@@ -33,7 +44,7 @@
 
 (defn- required-error
   [tr label-key]
-  {:error (tr [:error/is-required] [(tr [label-key])])})
+  {:error (tr [:error/is-required] {:field (tr [label-key])})})
 
 (defn validation-errors
   [tr {:keys [base-factor effective-at effective-until name]}]

@@ -16,7 +16,7 @@
    [clojure.string :as str]))
 
 (defn- payments-table
-  [tr members-data available-member-ids]
+  [members-data available-member-ids]
   (let [selected-ids-js  "($insurancePayments.memberIds || [])"
         all-ids-js       (pr-str available-member-ids)
         all-selected-js  (if (seq available-member-ids)
@@ -28,25 +28,25 @@
     (ui2/table-shell
      [:table {:class "wa-table"}
       [:caption {:class "wa-visually-hidden"}
-       (tr [:insurance/payment-members-title])]
+       [:i18n/tr :insurance/payment-members-title]]
       [:thead
        [:tr
         [:th {:scope "col"}
          [:input {:type           "checkbox"
-                  :aria-label     (tr [:action/select-all])
+                  :aria-label     [:i18n/tr :action/select-all]
                   :checked        (boolean (seq available-member-ids))
                   :disabled       (empty? available-member-ids)
                   :data-effect    (str "el.checked = " all-selected-js "; "
                                        "el.indeterminate = " some-selected-js " && !" all-selected-js)
                   :data-on:change (str "$insurancePayments.memberIds = "
                                        "evt.target.checked ? " all-ids-js " : []")}]]
-        [:th {:scope "col"} (tr [:insurance/member])]
+        [:th {:scope "col"} [:i18n/tr :insurance/member]]
         [:th {:scope "col"
               :style "text-align: end; white-space: normal;"}
-         (tr [:insurance/private-instruments])]
+         [:i18n/tr :insurance/private-instruments]]
         [:th {:scope "col"
               :style "text-align: end; white-space: normal;"}
-         (tr [:insurance/total])]]]
+         [:i18n/tr :insurance/total]]]]
       (into
        [:tbody]
        (for [{:keys [count-private member private-cost-total
@@ -58,8 +58,8 @@
           [:td
            [:input (cond-> {:type       "checkbox"
                             :value      member-id
-                            :aria-label (tr [:insurance/select-member-for-payment]
-                                            {:member-name (:member/name member)})}
+                            :aria-label [:i18n/tr :insurance/select-member-for-payment
+                                         {:member-name (:member/name member)}]}
                      private-costs-available?
                      (assoc :checked   true
                             :data-bind "insurancePayments.memberIds")
@@ -74,10 +74,10 @@
              (ui2/money (/ private-cost-total 100M) :EUR)
              [:span {:id    unavailable-id
                      :class "wa-caption-s wa-color-text-quiet"}
-              (tr [:insurance/cost-unavailable])])]]))])))
+              [:i18n/tr :insurance/cost-unavailable]])]]))])))
 
 (defn page
-  [{:keys [db policy tr] :as req}]
+  [{:keys [db policy] :as req}]
   (let [policy-id       (:insurance.policy/policy-id policy)
         current-member-id
         (get-in req [:session :session/member :member/member-id])
@@ -135,24 +135,24 @@
                        {:policyId  (str policy-id)
                         :memberIds available-member-ids}})))
        [page-header/PageHeader
-        {:title    (tr [:insurance/request-payments-title])
-         :subtitle (tr [:insurance/request-payments-subtitle])}]
+        {:title    [:i18n/tr :insurance/request-payments-title]
+         :subtitle [:i18n/tr :insurance/request-payments-subtitle]}]
        (cond
          (not authorized?)
          [:wa-callout {:appearance "outlined"
                        :variant    "warning"
                        :role       "alert"}
-          (tr [:insurance/payment-error-not-allowed])]
+          [:i18n/tr :insurance/payment-error-not-allowed]]
 
          sent?
          (ui2/section-card
-          {:title (tr [:insurance/payment-notifications-sent-title])}
+          {:title [:i18n/tr :insurance/payment-notifications-sent-title]}
           [:wa-callout {:appearance "outlined"
                         :variant    "success"
                         :role       "status"
                         :aria-live  "polite"}
-           (tr [:insurance/payment-notifications-sent]
-               {:count (:count-sent result)})])
+           [:i18n/tr :insurance/payment-notifications-sent
+            {:count (:count-sent result)}]])
 
          :else
          [:form {:id             "insurance-payment-notifications-form"
@@ -168,20 +168,20 @@
           (when (seq missing-category-names)
             [:wa-callout {:appearance "outlined"
                           :variant    "warning"}
-             (tr [:insurance/payments-missing-category-factors]
-                 {:category-names (str/join ", " missing-category-names)})])
+             [:i18n/tr :insurance/payments-missing-category-factors
+              {:category-names (str/join ", " missing-category-names)}]])
           (if (seq members-data)
             (ui2/section-card
-             {:title    (tr [:insurance/payment-members-title])
-              :subtitle (tr [:insurance/payment-members-subtitle])}
-             (payments-table tr members-data available-member-ids))
+             {:title    [:i18n/tr :insurance/payment-members-title]
+              :subtitle [:i18n/tr :insurance/payment-members-subtitle]}
+             (payments-table members-data available-member-ids))
             (ui2/empty-state
-             (tr [:insurance/no-private-payments-title])
-             (tr [:insurance/no-private-payments])))
+             [:i18n/tr :insurance/no-private-payments-title]
+             [:i18n/tr :insurance/no-private-payments]))
           (when-let [sample-data (first available-members-data)]
             (ui2/section-card
-             {:title    (tr [:insurance/payment-email-preview-title])
-              :subtitle (tr [:insurance/payment-email-preview-subtitle])}
+             {:title    [:i18n/tr :insurance/payment-email-preview-title]
+              :subtitle [:i18n/tr :insurance/payment-email-preview-subtitle]}
              [card/Card {:appearance "filled-outlined"
                          :style      "max-inline-size: 75ch;"}
               [:div {:class "wa-prose"

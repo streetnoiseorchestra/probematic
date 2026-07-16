@@ -17,5 +17,7 @@ build-year = Build Year
 build-year-hint = Enter the build year if available.
 description = Description
 description-hint = e.g., color or material
+images-share-url = Public photo link
+images-share-url-hint = Use this link when sharing outside the band.
 if-available = if available
 create-subtitle = Please enter the information about your instrument/accessories asked below in as much detail as possible.

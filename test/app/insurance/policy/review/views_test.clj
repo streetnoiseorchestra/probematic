@@ -4,38 +4,17 @@
    [app.insurance.policy.review.views :as sut]
    [app.ui2.card :as card]
    [app.test-common :as tu]
-   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [lookup.core :as l]
    [reitit.core :as r]))
 
-(def translations
-  {[:action/previous]                            "Previous"
-   [:insurance.review/filter-needs-review]       "Todo"
-   [:insurance.review/filter-missing-insurer-id] "Missing ID"
-   [:insurance.review/skip]                      "Skip"
-   [:insurance.review/approve-and-next]          "Approve and next"
-   [:insurance.review/save-and-continue]         "Save and continue"
-   [:insurance.review/items-left]                "%1 items left."
-   [:insurance.review/item-left]                 "%1 item left."
-   [:insurance.dashboard/policy-cost]            "Policy cost"
-   [:insurance.review/see-all-in-workbench]      "See all in the workbench"
-   [:insurance.review/comments]                  "Comments"
-   [:insurance.review/comment-placeholder]       "Add a note about this item."
-   [:insurance.review/add-comment]               "Add comment"
-   [:insurance.review/commented]                 "commented"
-   [:insurance.review/leave-reply]               "Leave a reply"
-   [:insurance/insurer-id]                       "Harmonia ID"})
+(def tr
+  (i18n/tr-with (i18n/read-langs) [:en]))
 
-(defn tr
-  ([path]
-   (get translations path (name (last path))))
-  ([path args]
-   (reduce-kv (fn [s idx value]
-                (str/replace s (str "%" (inc idx)) (str value)))
-              (tr path)
-              (vec args))))
+(defn resolve-view
+  [view]
+  (i18n/resolve-translations tr view))
 
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
@@ -119,11 +98,11 @@
 
 (deftest review-filters
   (testing "The review queue supports the Todo and Missing ID workflows."
-    (let [view (sut/filter-bar
-                {:tr tr}
-                {:policy       policy
-                 :filter       :needs-review
-                 :filter-order [:needs-review :missing-insurer-id]})
+    (let [view (resolve-view
+                (sut/filter-bar
+                 {:policy       policy
+                  :filter       :needs-review
+                  :filter-order [:needs-review :missing-insurer-id]}))
           tabs (l/select 'wa-tab view)]
       (testing "Todo is the active workflow."
         (is (= {:group-active "needs-review"
@@ -152,18 +131,18 @@
 
 (deftest workbench-summary
   (testing "The review queue summarizes remaining work and known policy costs."
-    (let [singular-view (sut/workbench-summary
-                         {:tr tr}
-                         {:policy      policy
-                          :filter      :needs-review
-                          :queue-count 1
-                          :totals      {:total-cost 0M}})
-          plural-view   (sut/workbench-summary
-                         {:tr tr}
-                         {:policy      policy
-                          :filter      :missing-insurer-id
-                          :queue-count 23
-                          :totals      {:total-cost 12.34M}})
+    (let [singular-view (resolve-view
+                         (sut/workbench-summary
+                          {:policy      policy
+                           :filter      :needs-review
+                           :queue-count 1
+                           :totals      {:total-cost 0M}}))
+          plural-view   (resolve-view
+                         (sut/workbench-summary
+                          {:policy      policy
+                           :filter      :missing-insurer-id
+                           :queue-count 23
+                           :totals      {:total-cost 12.34M}}))
           link          (l/select-one 'a plural-view)]
       (testing "Remaining item labels use the correct singular or plural form."
         (is (= ["1 item left." "23 items left."]
@@ -187,9 +166,9 @@
                 :queue-count       0
                 :selected-coverage nil
                 :totals            {:total-cost 0M}}
-        cards  [(sut/workbench-summary {:tr tr} review)
-                (second (sut/review-aside {:tr tr} review))
-                (#'sut/queue-card {:tr tr} review)]]
+        cards  [(sut/workbench-summary review)
+                (second (sut/review-aside))
+                (#'sut/queue-card review)]]
     (is (= [card/Card card/Card card/Card]
            (mapv first cards)))))
 
@@ -227,7 +206,7 @@
                   :instrument.coverage/insurer-id nil})
           input (l/select-one 'wa-input view)]
       (testing "The missing Harmonia ID can be entered."
-        (is (= {:label     "Harmonia ID"
+        (is (= {:label     "Insurer ID"
                 :value     ""
                 :data-bind "insuranceReview.insurerId"}
                (select-keys (l/attrs input) [:label :value :data-bind]))))
@@ -239,7 +218,7 @@
 
 (deftest comments
   (testing "The review aside displays the temporary comment thread."
-    (let [view     (sut/review-aside {:tr tr} {})
+    (let [view     (resolve-view (sut/review-aside))
           textarea (l/select-one 'wa-textarea view)]
       (testing "A reviewer can compose a comment."
         (is (= {:heading     ["Comments"]

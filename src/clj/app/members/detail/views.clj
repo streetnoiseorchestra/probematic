@@ -4,6 +4,7 @@
    [app.config :as config]
    [app.form :as form]
    [app.datastar :as d*]
+   [app.insurance.ui :as insurance.ui]
    [app.keycloak :as keycloak]
    [app.members.detail.actions :as actions]
    [app.members.ui :as members.ui]
@@ -634,34 +635,37 @@
     (muted nil)
     (.format (NumberFormat/getCurrencyInstance Locale/GERMANY) value)))
 
-(defn- insurance-kind-badge [{:keys [tr]} private?]
+(defn- insurance-kind-badge [private?]
   [:wa-badge {:appearance "outlined"
               :pill       true
               :variant    (if private? "neutral" "success")}
-   (if private?
-     (tr [:instrument.coverage/private])
-     (tr [:instrument.coverage/band]))])
+   [:i18n/tr (if private?
+               :insurance/ownership-private
+               :insurance/ownership-band)]])
 
-(defn- insurance-policy-summary [{:keys [tr]} policy]
+(defn- insurance-policy-summary [policy]
   (if policy
     [:div {:class "wa-cluster wa-gap-xs wa-align-items-center"}
-     [:span {:class "wa-caption-s"} (tr [:insurance/insurance-policy])]
+     [:span {:class "wa-caption-s"} [:i18n/tr :insurance/insurance-policy]]
      [:a {:href (urls/link-policy policy)}
       (:insurance.policy/name policy)]
      [:wa-badge {:appearance "outlined" :pill true}
-      (tr [(:insurance.policy/status policy)])]
+      [:i18n/tr (insurance.ui/policy-status-label-key
+                 (:insurance.policy/status policy))]]
      (when-let [effective-until (:insurance.policy/effective-until policy)]
        [:span {:class "wa-caption-s"}
-        (str (tr [:insurance/effective-until]) ": " (form/date-value effective-until))])]
+        [:i18n/tr :insurance/effective-until]
+        ": "
+        (form/date-value effective-until)])]
     [:wa-callout {:appearance "outlined" :variant "warning"}
-     (tr [:none])]))
+     [:i18n/tr :none]]))
 
-(defn- insurance-coverage-row [{:keys [tr] :as req} coverage]
+(defn- insurance-coverage-row [coverage]
   (let [{:instrument.coverage/keys [private? value]
          {:instrument/keys [name category]} :instrument.coverage/instrument}
         coverage
         category-name (:instrument.category/name category)
-        kind-badge    (insurance-kind-badge req private?)]
+        kind-badge    (insurance-kind-badge private?)]
     [:tr
      [:td {:class "align-middle"}
       [:div {:class "wa-stack wa-gap-3xs"}
@@ -679,43 +683,43 @@
       [button/Button {:appearance "plain"
                       :size       "s"
                       :href       (urls/link-coverage coverage)}
-       (tr [:action/view])]]]))
+       [:i18n/tr :action/view]]]]))
 
-(defn- insurance-coverages-table [{:keys [tr] :as req} coverages]
+(defn- insurance-coverages-table [coverages]
   (if (seq coverages)
     (ui2/table-shell
      [:table
       [:thead
        [:tr
-        [:th (tr [:instrument/name])]
+        [:th [:i18n/tr :instrument/name]]
         [:th {:class "member-insurance-col"}
-         (tr [:instrument/category])]
+         [:i18n/tr :instrument/category]]
         [:th {:class "text-right"}
-         (tr [:instrument.coverage/value])]
+         [:i18n/tr :insurance/value]]
         [:th {:class "member-insurance-col"}
          [:i18n/tr :insurance/ownership]]
         [:th]]]
       [:tbody
        (for [coverage coverages]
-         (insurance-coverage-row req coverage))]])
+         (insurance-coverage-row coverage))]])
     (ui2/empty-state
-     (tr [:none])
-     (tr [:member/insurance-subtitle]))))
+     [:i18n/tr :none]
+     [:i18n/tr :members/insurance-subtitle])))
 
-(defn- member-insurance-panel [{:keys [db tr] :as req} member]
+(defn- member-insurance-panel [{:keys [db]} member]
   (let [policy    (q/insurance-policy-effective-as-of db (t/inst) q/policy-pattern)
         coverages (q/instruments-for-member-covered-by db member policy q/instrument-coverage-detail-pattern)]
     [:div {:class "wa-stack wa-gap-l"}
      (ui2/section-card
-      {:subtitle (tr [:member/insurance-subtitle])
+      {:subtitle [:i18n/tr :members/insurance-subtitle]
        :actions  (when policy
                    [[button/Button {:appearance "outlined"
                                     :variant    "brand"
                                     :href       (urls/link-coverage-create (:insurance.policy/policy-id policy))}
-                     (tr [:instrument.coverage/create-button])]])}
+                     [:i18n/tr :insurance/add-coverage]]])}
       [:div {:class "wa-stack wa-gap-m"}
-       (insurance-policy-summary req policy)
-       (insurance-coverages-table req coverages)])]))
+       (insurance-policy-summary policy)
+       (insurance-coverages-table coverages)])]))
 
 (defn- contact-form-state [{:keys [page-state] :as req} member]
   (let [form-state (get-in page-state [:member-detail :contact])]
@@ -841,7 +845,7 @@
                          :active active-tab}
           (tab req active-tab "travel" (tr [:travel-discounts/title]))
           (tab req active-tab "money" "Money Stuff")
-          (tab req active-tab "insurance" (tr [:member/insurance-title]))
+          (tab req active-tab "insurance" [:i18n/tr :members/insurance-title])
 
           (tab-panel active-tab "travel"
                      (travel-discounts-panel req member))

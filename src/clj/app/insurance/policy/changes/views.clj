@@ -17,13 +17,20 @@
    [app.util :as util]
    [tick.core :as t]))
 
+(defn- required-marker
+  []
+  [:span {:aria-hidden "true"} " *"])
+
 (defn- field
   [form-state field-name label attrs]
   (let [error (form/field-error form-state field-name)
         id    (str "insurance-policy-changes-" (name field-name))]
     [:label {:class "wa-stack wa-gap-2xs"
              :for   id}
-     [:span {:class "wa-caption-s wa-font-weight-bold"} label]
+     [:span {:class "wa-caption-s wa-font-weight-bold"}
+      label
+      (when (:required attrs)
+        (required-marker))]
      [:input (cond-> (merge {:id        id
                              :name      (name field-name)
                              :value     (form/text-value (field-name form-state))
@@ -58,14 +65,14 @@
      [:i18n/tr :insurance/preview]]]])
 
 (defn- confirm-dialog
-  [{:keys [tr] :as req} id title body action label disabled?]
+  [req id title body action label disabled?]
   [:wa-dialog {:id    id
                :label title}
    [:p body]
    [button/Button {:slot        "footer"
                    :appearance  "outlined"
                    :data-dialog "close"}
-    (tr [:action/cancel])]
+    [:i18n/tr :action/cancel]]
    [button/Button (cond-> {:slot               "footer"
                            :appearance         "filled"
                            :variant            "brand"
@@ -78,7 +85,7 @@
     label]])
 
 (defn page
-  [{:keys [db tr] :as req}]
+  [{:keys [db] :as req}]
   (let [policy-id   (util/ensure-uuid! (get-in req [:path-params :policy-id]))
         policy      (q/retrieve-policy db policy-id)
         policy-name (:insurance.policy/name policy)
@@ -86,18 +93,17 @@
         (config/external-insurance-policy (-> req :system :env))
         sender       (get-in req [:session :session/member :member/name])
         today        (t/format (t/formatter "yyyy-M-d") (t/today))
-        defaults     {:policy-id                   (str policy-id)
-                      :recipient                   (format "%s <%s>" recipient-name recipient-email)
-                      :subject                     (tr [:insurance/changes-email-subject]
-                                                       {:policy-number (or policy-number "")})
-                      :body                        (tr [:insurance/changes-email-body]
-                                                       {:recipient-title (or recipient-title "")
-                                                        :recipient-name  (or recipient-name "")
-                                                        :sender-name     (or sender "")})
-                      :attachment-filename-new     (format "AnlageNeueInstrumente-%s.xls" today)
-                      :attachment-filename-changes (format "AnlageÄnderungen-%s.xls" today)
-                      :preview-type                ""
-                      :labels                      {:attachment-filename (tr [:insurance/attachment-filename])}}
+        defaults     (assoc (actions/default-form
+                             (:tr req)
+                             {:policy-id       policy-id
+                              :policy-number   policy-number
+                              :recipient-email recipient-email
+                              :recipient-name  recipient-name
+                              :recipient-title recipient-title
+                              :sender-name     sender
+                              :today           today})
+                            :labels
+                            {:attachment-filename [:i18n/tr :insurance/attachment-filename]})
         form-state   (merge defaults (get-in req [:page-state actions/form-key]))
         top-error    (form/field-error form-state :_top)
         export-enabled? (exporters/configured? policy)
@@ -132,8 +138,8 @@
              :data-signals (d*/->signals {actions/form-key
                                           (dissoc form-state :_error :labels)})}
        [page-header/PageHeader
-        {:title    (tr [:insurance/changes-title])
-         :subtitle (tr [:insurance/changes-subtitle])}]
+        {:title    [:i18n/tr :insurance/changes-title]
+         :subtitle [:i18n/tr :insurance/changes-subtitle]}]
        (when top-error
          [:wa-callout {:appearance "outlined"
                        :variant    "danger"}
@@ -144,45 +150,48 @@
                        :variant    "warning"}
           [:i18n/tr exporter-guidance-key]])
        (ui2/section-card
-        {:title (tr [:insurance/message-details])}
+        {:title [:i18n/tr :insurance/message-details]}
         [:div {:class "wa-stack wa-gap-m"}
-         (field form-state :recipient (tr [:insurance/recipient]) {:type "text" :required true})
-         (field form-state :subject (tr [:insurance/subject]) {:type "text" :required true})
+         (field form-state :recipient [:i18n/tr :insurance/recipient] {:type "text" :required true})
+         (field form-state :subject [:i18n/tr :insurance/subject] {:type "text" :required true})
          [:label {:class "wa-stack wa-gap-2xs"
                   :for   "insurance-policy-changes-body"}
-          [:span {:class "wa-caption-s wa-font-weight-bold"} (tr [:insurance/message])]
+          [:span {:class "wa-caption-s wa-font-weight-bold"}
+           [:i18n/tr :insurance/message]
+           (required-marker)]
           [:textarea {:id             "insurance-policy-changes-body"
                       :name           "body"
                       :rows           12
+                      :required       true
                       :data-auto-size "true"
                       :data-bind      "insurance-policy-changes.body"}
            (:body form-state)]]])
        (ui2/section-card
-        {:title    (tr [:insurance/attachments])
-         :subtitle (tr [:insurance/attachments-subtitle])}
+        {:title    [:i18n/tr :insurance/attachments]
+         :subtitle [:i18n/tr :insurance/attachments-subtitle]}
         [:div {:id    "insurance-policy-attachments"
                :class "wa-stack wa-gap-l"}
          (attachment req form-state export-enabled?
                      {:field-name :attachment-filename-new
                       :type  "new"
-                      :title (tr [:insurance/new-instruments])})
+                      :title [:i18n/tr :insurance/new-instruments]})
          (attachment req form-state export-enabled?
                      {:field-name :attachment-filename-changes
                       :type  "changes"
-                      :title (tr [:insurance/changed-and-removed-instruments])})])
+                      :title [:i18n/tr :insurance/changed-and-removed-instruments]})])
        (confirm-dialog req
                        "insurance-policy-send-changes-dialog"
-                       (tr [:insurance/confirm-send-title])
-                       (tr [:insurance/confirm-send-body])
+                       [:i18n/tr :insurance/confirm-send-title]
+                       [:i18n/tr :insurance/confirm-send-body]
                        ::actions/send-and-confirm
-                       (tr [:insurance/confirm-and-send])
+                       [:i18n/tr :insurance/confirm-and-send]
                        (not export-enabled?))
        (confirm-dialog req
                        "insurance-policy-confirm-changes-dialog"
-                       (tr [:insurance/confirm-without-sending-title])
-                       (tr [:insurance/confirm-without-sending-body])
+                       [:i18n/tr :insurance/confirm-without-sending-title]
+                       [:i18n/tr :insurance/confirm-without-sending-body]
                        ::actions/confirm-changes
-                       (tr [:insurance/confirm-skip-send])
+                       [:i18n/tr :insurance/confirm-skip-send]
                        false)]])))
 
 (d*/refresh-all!)

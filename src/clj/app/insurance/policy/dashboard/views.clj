@@ -3,6 +3,7 @@
    [app.datastar :as d*]
    [app.html :as html]
    [app.insurance.domain :as domain]
+   [app.insurance.policy.dashboard.chart :as chart]
    [app.insurance.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
@@ -15,19 +16,21 @@
    [app.ui2.icon :as ico]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
-   [app.urls :as urls]
-   [jsonista.core :as j]))
+   [app.urls :as urls]))
 
 (def policy-status-data
-  {:insurance.policy.status/active {:icon    "circle-check-outline"
-                                    :color   "var(--wa-color-success-fill-loud)"
-                                    :variant "success"}
-   :insurance.policy.status/sent   {:icon    "envelope"
-                                    :color   "var(--wa-color-warning-fill-loud)"
-                                    :variant "warning"}
-   :insurance.policy.status/draft  {:icon    "circle-dot-outline"
-                                    :color   "var(--sno-gig-row-gray-400)"
-                                    :variant "neutral"}})
+  {:insurance.policy.status/active {:icon      "circle-check-outline"
+                                    :color     "var(--wa-color-success-fill-loud)"
+                                    :label-key :insurance/policy-status-active
+                                    :variant   "success"}
+   :insurance.policy.status/sent   {:icon      "envelope"
+                                    :color     "var(--wa-color-warning-fill-loud)"
+                                    :label-key :insurance/policy-status-sent
+                                    :variant   "warning"}
+   :insurance.policy.status/draft  {:icon      "circle-dot-outline"
+                                    :color     "var(--sno-gig-row-gray-400)"
+                                    :label-key :insurance/policy-status-draft
+                                    :variant   "neutral"}})
 
 (defn- policy-id
   [{:keys [parameters path-params]}]
@@ -38,22 +41,22 @@
       (string? value) (parse-uuid value))))
 
 (defn- policy-status-badge
-  [tr status]
-  (let [{:keys [variant]} (policy-status-data status)]
+  [status]
+  (let [{:keys [label-key variant]} (policy-status-data status)]
     [:wa-badge {:appearance "outlined"
                 :variant    variant
                 :pill       true}
-     (tr [status])]))
+     [:i18n/tr label-key]]))
 
 (defn- page-header
-  [{:keys [tr]} {:insurance.policy/keys [name status]}]
+  [{:insurance.policy/keys [name status]}]
   [page-header/PageHeader
    {:title [:span {:class "wa-cluster"}
             name
-            (policy-status-badge tr status)]}])
+            (policy-status-badge status)]}])
 
 (defn- policy-toolbar
-  [{:keys [tr]} {:keys [insurance-team-member? policy status-counts survey-progress]}]
+  [{:keys [insurance-team-member? policy status-counts survey-progress]}]
   (let [status          (:insurance.policy/status policy)
         draft?          (= :insurance.policy.status/draft status)
         sent?           (= :insurance.policy.status/sent status)
@@ -147,7 +150,7 @@
                           (when (and insurance-team-member? draft? review-todos?)
                             [[:wa-dropdown-item
                               {:disabled true
-                               :title    (tr [:insurance/send-changes-disabled-hint])}
+                               :title    [:i18n/tr :insurance/send-changes-disabled-hint]}
                               [ico/Icon {::ico/library :phosphor
                                          ::ico/name    :paper-plane-right
                                          :slot         "icon"}]
@@ -199,32 +202,28 @@
       [:span {:class "wa-heading-xl"} value]]]]])
 
 (defn- metric-grid
-  [{:keys [tr] :as _req} {:keys [totals]} currency]
+  [{:keys [totals]} currency]
   [:div {:class "wa-cluster wa-gap-xl wa-align-items-start" :style "flex: auto;"}
    (metric-card {:icon    :trumpet
                  :library :snoico
-                 :label   (tr [:insurance.dashboard/total-instruments])
+                 :label   [:i18n/tr :insurance/dashboard-total-instruments]
                  :id      "metric-total-instruments"
-                 :tooltip (tr [:insurance.dashboard/total-instruments-tooltip])
+                 :tooltip [:i18n/tr :insurance/dashboard-total-instruments-tooltip]
                  :value   (:total-instruments totals)})
    (metric-card {:icon    :bank
-                 :label   (tr [:insurance.dashboard/total-insured-value])
+                 :label   [:i18n/tr :insurance/dashboard-total-insured-value]
                  :id      "metric-total-insured-value"
-                 :tooltip (tr [:insurance.dashboard/total-insured-value-tooltip])
+                 :tooltip [:i18n/tr :insurance/dashboard-total-insured-value-tooltip]
                  :value   (ui2/money (:total-insured-value totals) currency)})
    (metric-card {:icon    :currency-eur
-                 :label   (tr [:insurance.dashboard/policy-cost])
+                 :label   [:i18n/tr :insurance/dashboard-policy-cost]
                  :id      "metric-policy-cost"
-                 :tooltip (tr [:insurance.dashboard/policy-cost-tooltip])
+                 :tooltip [:i18n/tr :insurance/dashboard-policy-cost-tooltip]
                  :value   (ui2/money (:total-cost totals) currency)})])
 
 (defn- overview-section
-  [req {:keys [policy totals]}]
-  (metric-grid req {:totals totals} (:insurance.policy/currency policy)))
-
-(def coverage-mix-colors
-  {:band    "var(--wa-color-success-fill-loud)"
-   :private "var(--wa-color-warning-fill-loud)"})
+  [{:keys [policy totals]}]
+  (metric-grid {:totals totals} (:insurance.policy/currency policy)))
 
 (defn- percent-value
   [part total]
@@ -298,12 +297,11 @@
               ::ico/name    icon}]])
 
 (defn- policy-review-action
-  [{:keys [tr]} policy enabled?]
-  (let [label (tr [:insurance.dashboard/continue-reviewing])]
-    (policy-card-action {:enabled? enabled?
-                         :href     (urls/link-policy-review policy)
-                         :icon     :hand-pointing
-                         :label    label})))
+  [policy enabled?]
+  (policy-card-action {:enabled? enabled?
+                       :href     (urls/link-policy-review policy)
+                       :icon     :hand-pointing
+                       :label    [:i18n/tr :insurance/dashboard-continue-reviewing]}))
 
 (defn- divided-rows
   [rows]
@@ -360,33 +358,34 @@
                                         true)}])]))
 
 (defn- review-status-legend-item
-  [tr status-counts status]
+  [status-counts status]
   (dashboard-row (legend-marker (insurance-ui/status-color status))
-                 (tr [status])
+                 [:i18n/tr (insurance-ui/status-label-key status)]
                  (get status-counts status 0)))
 
 (defn review-status-section
-  [{:keys [tr] :as req} {:keys [insurance-team-member? policy status-counts totals]}]
+  [{:keys [insurance-team-member? policy status-counts totals]}]
   (let [total         (:total-instruments totals)
         needs-review  (get status-counts :instrument.coverage.status/needs-review 0)
         handled       (- total needs-review)
         handled-ratio (if (pos? total) (/ (double handled) total) 0.0)
-        handled-label (tr [:insurance.dashboard/review-complete] [handled total])]
+        handled-label [:i18n/tr :insurance/dashboard-review-complete
+                       {:handled handled
+                        :total   total}]]
     (apply dashboard-card
-           {:title          (tr [:insurance.dashboard/review-status])
-            :header-actions (policy-review-action req
-                                                  policy
+           {:title          [:i18n/tr :insurance/dashboard-review-status]
+            :header-actions (policy-review-action policy
                                                   (and insurance-team-member?
                                                        (pos? needs-review)))}
            (concat
             [(review-status-bar status-counts total handled-ratio handled-label)]
             (divided-rows
-             (map #(review-status-legend-item tr status-counts %) domain/instrument-coverage-review-progress-statuses))
+             (map #(review-status-legend-item status-counts %) domain/instrument-coverage-review-progress-statuses))
             [[:div {:class "wa-caption-s wa-text-end"}
               handled-label]]))))
 
 (defn survey-progress-section
-  [{:keys [tr]} {:keys [insurance-team-member? policy survey-progress]}]
+  [{:keys [insurance-team-member? policy survey-progress]}]
   (when survey-progress
     (let [{:keys [completed-count total-count waiting-count]} survey-progress
           completion-ratio (if (pos? total-count)
@@ -403,7 +402,7 @@
                                {:enabled? insurance-team-member?
                                 :href     (urls/link-policy-surveys policy)
                                 :icon     :clipboard-text
-                                :label    (tr [:insurance/manage-surveys])})}
+                                :label    [:i18n/tr :insurance/manage-surveys]})}
              (concat
               [[:div {:class         "insurance-dashboard-survey-progress"
                       :style         {"--progress-value" (width-style completed-count total-count)}
@@ -433,11 +432,11 @@
                 progress-label]])))))
 
 (def health-checks
-  [{:label-key [:insurance.dashboard/missing-photos]
+  [{:label-key :insurance/dashboard-missing-photos
     :count-key :missing-photo-count}
-   {:label-key [:insurance.dashboard/missing-insurer-ids]
+   {:label-key :insurance/dashboard-missing-insurer-ids
     :count-key :missing-insurer-id-count}
-   {:label-key     [:insurance.policy-settings/missing-category-factors-title]
+   {:label-key     :insurance/policy-settings-missing-category-factors-title
     :count-key     :missing-category-factor-count
     :settings-link? true}])
 
@@ -458,10 +457,10 @@
   (zero? (get totals count-key 0)))
 
 (defn- health-check-row
-  [tr totals policy insurance-team-member? {:keys [count-key label-key settings-link?] :as check}]
+  [totals policy insurance-team-member? {:keys [count-key label-key settings-link?] :as check}]
   (let [count    (get totals count-key 0)
         healthy? (health-check-passed? totals check)
-        label    (tr label-key)
+        label    [:i18n/tr label-key]
         label    (if (and settings-link? insurance-team-member? (pos? count))
                    [:a {:href (urls/link-policy-settings policy)} label]
                    label)]
@@ -470,145 +469,26 @@
                    count)))
 
 (defn health-checklist-section
-  [{:keys [tr] :as req} {:keys [insurance-team-member? policy totals]}]
+  [{:keys [insurance-team-member? policy totals]}]
   (let [total        (count health-checks)
         passed       (count (filter #(health-check-passed? totals %) health-checks))
-        passed-label (tr [:insurance.dashboard/health-checks-complete] [passed total])]
+        passed-label [:i18n/tr :insurance/dashboard-health-checks-complete
+                      {:passed passed
+                       :total  total}]]
     (apply dashboard-card
-           {:title          (tr [:insurance.dashboard/health-checklist])
-            :subtitle       (tr [:insurance.dashboard/health-checklist-subtitle])
-            :header-actions (policy-review-action req
-                                                  policy
+           {:title          [:i18n/tr :insurance/dashboard-health-checklist]
+            :subtitle       [:i18n/tr :insurance/dashboard-health-checklist-subtitle]
+            :header-actions (policy-review-action policy
                                                   (and insurance-team-member?
                                                        (< passed total)))}
            (concat
             (divided-rows
-             (map #(health-check-row tr totals policy insurance-team-member? %) health-checks))
+             (map #(health-check-row totals policy insurance-team-member? %) health-checks))
             [[:div {:class "wa-caption-s wa-text-end"}
               passed-label]]))))
 
-(defn- round-up-to
-  [value step]
-  (* step (long (Math/ceil (/ (double value) step)))))
-
-(defn- rounded-count-max
-  [value]
-  (let [maximum (max 0.0 (double (or value 0)))]
-    (cond
-      (zero? maximum) 10
-      (<= maximum 20) (round-up-to maximum 5)
-      (<= maximum 100) (round-up-to maximum 25)
-      :else (round-up-to maximum 100))))
-
-(defn- rounded-money-max
-  [value]
-  (let [maximum (max 0.0 (double (or value 0)))]
-    (if (zero? maximum)
-      10
-      (let [power       (Math/pow 10 (Math/floor (Math/log10 maximum)))
-            scaled      (/ maximum power)
-            nice-scaled (cond
-                          (<= scaled 1) 1
-                          (<= scaled 2) 2
-                          (<= scaled 2.5) 2.5
-                          (<= scaled 5) 5
-                          :else 10)]
-        (* nice-scaled power)))))
-
-(defn- coverage-mix-total
-  [values]
-  (reduce + 0M (map #(or % 0M) values)))
-
-(defn- coverage-mix-dataset
-  [{:keys [axis-id color data label measure]}]
-  {:label              label
-   :data               data
-   :measure            measure
-   :xAxisID            axis-id
-   :backgroundColor    color
-   :borderColor        "transparent"
-   :borderSkipped      false
-   :borderWidth        0
-   :borderRadius       4
-   :barPercentage      0.7
-   :categoryPercentage 0.75
-   :stack              measure})
-
-(defn- coverage-mix-wa-chart-data
-  [tr currency {:keys [band-count band-cost private-count private-cost]}]
-  (let [band-count    (or band-count 0)
-        private-count (or private-count 0)
-        band-cost     (or band-cost 0M)
-        private-cost  (or private-cost 0M)
-        counts        [band-count private-count]
-        costs         [band-cost private-cost]
-        count-label   (tr [:insurance/item-count])
-        cost-label    (tr [:insurance/cost])
-        currency-code (or (some-> currency name) "EUR")
-        cost-title    (str cost-label " " (ui2/currency-symbol currency))]
-    {:type    "bar"
-     :data    {:labels   [count-label cost-label]
-               :datasets [(coverage-mix-dataset {:label   (tr [:insurance.dashboard/band-instruments])
-                                                 :data    [band-count nil]
-                                                 :measure "count"
-                                                 :axis-id "count"
-                                                 :color   (:band coverage-mix-colors)})
-                          (coverage-mix-dataset {:label   (tr [:insurance.dashboard/private-instruments])
-                                                 :data    [private-count nil]
-                                                 :measure "count"
-                                                 :axis-id "count"
-                                                 :color   (:private coverage-mix-colors)})
-                          (coverage-mix-dataset {:label   (tr [:insurance.dashboard/band-instruments])
-                                                 :data    [nil band-cost]
-                                                 :measure "cost"
-                                                 :axis-id "cost"
-                                                 :color   (:band coverage-mix-colors)})
-                          (coverage-mix-dataset {:label   (tr [:insurance.dashboard/private-instruments])
-                                                 :data    [nil private-cost]
-                                                 :measure "cost"
-                                                 :axis-id "cost"
-                                                 :color   (:private coverage-mix-colors)})]}
-     :options {:indexAxis           "y"
-               :responsive          true
-               :maintainAspectRatio false
-               :animation           false
-               :interaction         {:mode "index" :intersect false}
-               :plugins             {:legend  {:display false}
-                                     :tooltip {:enabled false}}
-               :scales              {:count {:type         "linear"
-                                             :axis         "x"
-                                             :position     "top"
-                                             :stacked      true
-                                             :beginAtZero  true
-                                             :suggestedMax (rounded-count-max (coverage-mix-total counts))
-                                             :title        {:display true
-                                                            :text    count-label}
-                                             :ticks        {:precision 0}
-                                             :grid         {:drawOnChartArea false}}
-                                     :cost  {:type         "linear"
-                                             :axis         "x"
-                                             :position     "bottom"
-                                             :stacked      true
-                                             :beginAtZero  true
-                                             :suggestedMax (rounded-money-max (coverage-mix-total costs))
-                                             :title        {:display true
-                                                            :text    cost-title}
-                                             :ticks        {:format {:style                 "currency"
-                                                                     :currency              currency-code
-                                                                     :maximumFractionDigits 0}}}
-                                     :x     {:display false
-                                             :grid    {:display false}}
-                                     :y     {:stacked true
-                                             :grid    {:display false}}}}}))
-
-(defn- coverage-mix-wa-chart-signals
-  [tr currency totals]
-  {:insuranceDashboard
-   {:coverageMixChartJson
-    (j/write-value-as-string (coverage-mix-wa-chart-data tr currency totals))}})
-
 (defn- coverage-mix-caption
-  [_tr count cost currency]
+  [count cost currency]
   [:span {:class "trim-cap"}
    [:span    (or count 0)]
    [divider/Divider {::divider/orientation :vertical :style "min-block-size: 0.8lh"}]
@@ -623,14 +503,14 @@
     [:dd caption]]])
 
 (defn coverage-mix-section
-  [{:keys [tr]} {:keys [policy totals]}]
+  [req {:keys [policy totals]}]
   (let [currency          (:insurance.policy/currency policy)
-        chart-description (tr [:insurance.dashboard/coverage-mix-subtitle])]
+        chart-description [:i18n/tr :insurance/dashboard-coverage-mix-subtitle]]
     (apply dashboard-card
-           {:title    (tr [:insurance.dashboard/coverage-mix])
-            :subtitle (tr [:insurance.dashboard/coverage-mix-subtitle])}
+           {:title    [:i18n/tr :insurance/dashboard-coverage-mix]
+            :subtitle [:i18n/tr :insurance/dashboard-coverage-mix-subtitle]}
            (concat
-            [[:div {:data-signals (d*/->signals (coverage-mix-wa-chart-signals tr currency totals))}
+            [[:div {:data-signals (d*/->signals (chart/signals (:tr req) currency totals))}
               [:wa-chart {:description       chart-description
                           :without-legend    true
                           :without-animation true
@@ -638,16 +518,16 @@
                           :style             "display: block; block-size: 13rem; inline-size: var(--sno-size-full);"}]]]
             (divided-rows
              [(coverage-mix-caption-row
-               (tr [:insurance.dashboard/band-instruments])
-               (:band coverage-mix-colors)
-               (coverage-mix-caption tr (:band-count totals) (:band-cost totals) currency))
+               [:i18n/tr :insurance/dashboard-band-instruments]
+               (:band chart/colors)
+               (coverage-mix-caption (:band-count totals) (:band-cost totals) currency))
               (coverage-mix-caption-row
-               (tr [:insurance.dashboard/private-instruments])
-               (:private coverage-mix-colors)
-               (coverage-mix-caption tr (:private-count totals) (:private-cost totals) currency))])))))
+               [:i18n/tr :insurance/dashboard-private-instruments]
+               (:private chart/colors)
+               (coverage-mix-caption (:private-count totals) (:private-cost totals) currency))])))))
 
 (defn- change-row
-  [tr currency {:keys [change coverage instrument-name owner-name]}]
+  [currency {:keys [change coverage instrument-name owner-name]}]
   (let [color (insurance-ui/change-color change)]
     [:div {:class "wa-flank"}
      (legend-marker (or color "var(--wa-color-neutral-fill-loud)"))
@@ -659,38 +539,38 @@
        [:dl {:class                        "wa-cluster wa-gap-2xs"
              :data-dashboard-coverage-cost true}
         [:dt {:class "wa-caption-s wa-color-text-quiet"}
-         (tr [:instrument.coverage/cost])]
+         [:i18n/tr :insurance/cost]]
         [:dd (ui2/money (:instrument.coverage/cost coverage) currency)]]
-       (insurance-ui/change-badge tr change)]]]))
+       (insurance-ui/change-badge change)]]]))
 
 (defn- recent-changes-section
-  [{:keys [tr]} {:keys [policy recent-changes]}]
+  [{:keys [policy recent-changes]}]
   (let [currency (:insurance.policy/currency policy)]
     (apply dashboard-card
-           {:title    (tr [:insurance.dashboard/recent-changes])
-            :subtitle (tr [:insurance.dashboard/recent-changes-subtitle])}
+           {:title    [:i18n/tr :insurance/dashboard-recent-changes]
+            :subtitle [:i18n/tr :insurance/dashboard-recent-changes-subtitle]}
            (if (seq recent-changes)
              (divided-rows
-              (map #(change-row tr currency %) (take 8 recent-changes)))
+              (map #(change-row currency %) (take 8 recent-changes)))
              [[:div {:class "wa-caption-s wa-color-text-quiet"}
-               (tr [:insurance.dashboard/no-recent-changes])]]))))
+               [:i18n/tr :insurance/dashboard-no-recent-changes]]]))))
 
 (defn- policy-details-section
-  [{:keys [tr] :as req} {:keys [insurance-team-member? policy]}]
+  [req {:keys [insurance-team-member? policy]}]
   (let [{:insurance.policy/keys [effective-at effective-until premium-factor status]} policy]
     (apply dashboard-card
-           {:title          (tr [:insurance.dashboard/policy-details])
+           {:title          [:i18n/tr :insurance/dashboard-policy-details]
             :header-actions (policy-card-action
                              {:enabled? insurance-team-member?
                               :href     (urls/link-policy-settings policy)
                               :icon     :gear
-                              :label    (tr [:insurance/policy-settings])})}
+                              :label    [:i18n/tr :insurance/policy-settings]})}
            (divided-rows
-            [(detail-row (tr [:insurance/name]) (:insurance.policy/name policy))
-             (detail-row (tr [:insurance.dashboard/policy-status]) (policy-status-badge tr status))
-             (detail-row (tr [:insurance/effective-at]) (ui2/date-display req :medium effective-at))
-             (detail-row (tr [:insurance/effective-until]) (ui2/date-display req :medium effective-until))
-             (detail-row (tr [:insurance/premium-base-factor]) premium-factor)]))))
+            [(detail-row [:i18n/tr :insurance/name] (:insurance.policy/name policy))
+             (detail-row [:i18n/tr :insurance/dashboard-policy-status] (policy-status-badge status))
+             (detail-row [:i18n/tr :insurance/effective-at] (ui2/date-display req :medium effective-at))
+             (detail-row [:i18n/tr :insurance/effective-until] (ui2/date-display req :medium effective-until))
+             (detail-row [:i18n/tr :insurance/premium-base-factor] premium-factor)]))))
 
 (defn page
   [{:keys [db] :as req}]
@@ -703,18 +583,18 @@
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
      [page-surface/PageSurface {::page-surface/width   :wide
-                                ::page-surface/toolbar (policy-toolbar req dashboard)}
+                                ::page-surface/toolbar (policy-toolbar dashboard)}
       [:div {:class "wa-stack"}
-       (page-header req policy)
-       (overview-section req dashboard)
+       (page-header policy)
+       (overview-section dashboard)
        [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 42ch;"}
         [:div {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
          (policy-details-section req dashboard)
-         (survey-progress-section req dashboard)
-         (review-status-section req dashboard)
-         (health-checklist-section req dashboard)
+         (survey-progress-section dashboard)
+         (review-status-section dashboard)
+         (health-checklist-section dashboard)
          (coverage-mix-section req dashboard)]
         [:aside {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
-         (recent-changes-section req dashboard)]]]])))
+         (recent-changes-section dashboard)]]]])))
 
 (d*/refresh-all!)

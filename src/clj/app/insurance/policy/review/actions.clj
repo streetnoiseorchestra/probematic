@@ -44,13 +44,13 @@
         policy      (:insurance.policy/_covered-instruments coverage)]
     (cond
       (nil? coverage)
-      (error-effects tr [:insurance.review/error-coverage-not-found])
+      (error-effects tr [:insurance/review-queue-error-coverage-not-found])
 
       (not (insurance-team-member? db current-member-id))
-      (error-effects tr [:insurance.review/error-not-allowed])
+      (error-effects tr [:insurance/review-queue-error-not-allowed])
 
       (not (queries/policy-editable? policy))
-      (error-effects tr [:insurance.review/error-frozen-policy])
+      (error-effects tr [:insurance/review-queue-error-frozen-policy])
 
       :else
       (success-effects current-member-id
@@ -100,7 +100,7 @@
     (if (str/blank? insurer-id)
       [support/clear-loading
        [:app.datastar/assoc-state [form-key :error]
-        {:error (tr [:error/is-required] [(tr [:insurance/insurer-id])])}]]
+        {:error (tr [:error/is-required] {:field (tr [:insurance/insurer-id])})}]]
       (let [effects (mark-coverage-attr-action state
                                                signals
                                                :instrument.coverage/insurer-id

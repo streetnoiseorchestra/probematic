@@ -9,7 +9,7 @@
 (def translations
   {[:action/save]          "Save"
    [:error/form-has-errors] "Please fix the errors in the form."
-   [:error/is-required]    "%1 is required."
+   [:error/is-required]    "%field is required."
    [:error/not-found-title] "Not Found"
    [:song/title]           "Song Title"})
 
@@ -17,10 +17,10 @@
   ([k]
    (get translations k (name (last k))))
   ([k args]
-   (reduce-kv (fn [s idx arg]
-                (str/replace s (str "%" (inc idx)) (str arg)))
+   (reduce-kv (fn [s key arg]
+                (str/replace s (str "%" (name key)) (str arg)))
               (tr k)
-              (vec args))))
+              args)))
 
 (defn new-system []
   (tc/new-system "songs-edit-actions"))

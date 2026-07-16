@@ -297,8 +297,8 @@
                               :href       surveys-url
                               :appearance "plain"
                               :variant    "brand"
-                              :title      "manage-surveys"
-                              :aria-label "manage-surveys"
+                              :title      [:i18n/tr :insurance/manage-surveys]
+                              :aria-label [:i18n/tr :insurance/manage-surveys]
                               :icon       :clipboard-text}
             :progress       {:role          "progressbar"
                              :aria-valuemin 0

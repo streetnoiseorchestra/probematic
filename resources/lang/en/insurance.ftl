@@ -2,6 +2,7 @@
 
 title = Insurance & Instruments
 toolbar-label = Insurance navigation
+dashboard-todos = Insurance team tasks
 new-policy = New Insurance Policy
 create-title = New Insurance Policy
 create-subtitle = Enter the details for the new policy.
@@ -11,9 +12,36 @@ name = Policy name
 effective-at = Effective from
 effective-until = Effective until
 premium-base-factor = Base premium factor
+policies = Policies
+insurance-policy = Insurance policy
+currency = Currency
+premium-factor = Premium factor
+cost = Cost
+coverage-name = Coverage name
+coverage-type-description = Description
+category-factors = Category factors
+value-abbrev = Insured value
+coverage-status = Workflow status
+coverage-status-needs-review = Todo
+coverage-status-reviewed = Reviewed
+coverage-status-active = Active
+coverage-change-status = Change status
+coverage-change-added = Added
+coverage-change-modified = Modified
+coverage-change-removed = Removed
+coverage-change-none = No changes
+send-changes-disabled-hint = Changes cannot be sent while there are open TODOs.
+total-needs-review-tooltip = Total instruments that need review
+total-total-changed-tooltip = Total instruments that have changed
+total-total-new-tooltip = Total instruments that have been added
+total-total-removed-tooltip = Total instruments that have been removed
 error-invalid-date = Enter a valid date.
 error-effective-until-before-effective-at = The end date must be after the start date.
 error-invalid-premium-factor = Enter a non-negative premium factor.
+error-edit-frozen-policy = Instruments and their coverage cannot be updated unless the policy is in draft status.
+# $field (String) - Localized label of the field containing the invalid number.
+error-invalid-number = { $field } must be a whole number greater than zero.
+error-invalid-coverage-type = Choose valid coverage types.
 send-changes = Send changes
 changes-title = Notify the insurer about changes
 changes-subtitle = Review the message and its spreadsheet attachments before confirming this policy.
@@ -135,6 +163,16 @@ survey-error-open-exists = Close the current survey before starting another one.
 survey-error-closed = This survey is already closed.
 survey-error-expired = This survey has reached its closing date.
 survey-error-no-members = A survey cannot be started because there are no members to invite.
+survey-email-title = SNO Insurance Time!
+survey-email-subject = It’s SNO Insurance Time!
+survey-email-intro = It’s time to review your insured instruments/items.
+survey-email-add-instruments = Or add new ones! It only takes a few minutes.
+# $member-name (String) - Display name of the member with the most instruments. $count (Number) - Instruments assigned to that member.
+survey-email-add-instruments-many = Or add new ones! It only takes a few minutes (unless you’re { $member-name }, who has { $count } to review!)
+# $closes-at (String) - Formatted closing date and time. $days (Number) - Whole days until the survey closes.
+survey-email-deadline = You have until { $closes-at } to complete the survey (that’s only { $days } days!).
+survey-email-start = Start review
+email-team-name = Insurance team, Street Noise Orchestra
 
 ### Instrument coverage creation
 
@@ -150,6 +188,192 @@ add-coverage-separate-warning = A separate form must be filled out for each inst
 # $policy-name (String) - Name of the policy whose coverage details are being entered.
 coverage-for = The following information is for the insurance policy “{ $policy-name }”.
 no-coverage-types = No coverage types configured.
+
+### Policy dashboard
+
+policy-status-active = Active
+policy-status-sent = Sent
+policy-status-draft = Draft
+dashboard-continue-reviewing = Review
+dashboard-review-status = Review status
+# $handled (Number) - Instruments already handled. $total (Number) - All instruments.
+dashboard-review-complete = { $handled } of { $total } handled
+dashboard-health-checklist = Health checklist
+dashboard-health-checklist-subtitle = Required data before sending changes.
+# $passed (Number) - Successful checks. $total (Number) - All checks.
+dashboard-health-checks-complete = { $passed } of { $total } checks passed
+dashboard-coverage-mix = Coverage mix
+dashboard-coverage-mix-subtitle = Band and private instruments in this policy.
+dashboard-recent-changes = Recent changes
+dashboard-recent-changes-subtitle = Current coverage change flags for this policy.
+dashboard-no-recent-changes = No changed, new, or removed instruments.
+dashboard-policy-details = Policy details
+dashboard-policy-status = Policy status
+dashboard-total-instruments = Total instruments
+dashboard-total-instruments-tooltip = Number of covered instruments in this policy.
+dashboard-total-insured-value = Total insured value
+dashboard-total-insured-value-tooltip = Sum of insured values for all covered instruments.
+dashboard-policy-cost = Policy cost
+dashboard-policy-cost-tooltip = Estimated policy cost from current coverage values and premium factors.
+dashboard-missing-photos = Missing photos
+dashboard-missing-insurer-ids = Missing Harmonia IDs
+dashboard-band-instruments = Band instruments
+dashboard-private-instruments = Private instruments
+### Policy settings
+
+policy-settings-category-factors-subtitle = Factors by instrument category.
+policy-settings-coverage-types-subtitle = Insurance options available on this policy.
+policy-settings-add-coverage-type = Add coverage type
+policy-settings-add-category-factor = Add category factor
+policy-settings-category-factor-create-disabled-tooltip = Every instrument category already has a category factor.
+# $coverage-type-name (String) - Name of the coverage type being deleted.
+policy-settings-coverage-type-delete-confirm = Delete coverage type { $coverage-type-name }?
+# $count (Number) - Number of current coverages using the coverage type.
+policy-settings-coverage-type-in-use =
+    { $count ->
+        [one] This coverage type is used by one current coverage and cannot be deleted.
+       *[other] This coverage type is used by { $count } current coverages and cannot be deleted.
+    }
+# $category-name (String) - Name of the instrument category whose factor is being deleted.
+policy-settings-category-factor-delete-confirm = Delete category factor for { $category-name }?
+# $count (Number) - Number of current coverages using the category factor.
+policy-settings-category-factor-in-use =
+    { $count ->
+        [one] This category factor is used by one current coverage and cannot be deleted.
+       *[other] This category factor is used by { $count } current coverages and cannot be deleted.
+    }
+policy-settings-current-cost = Current estimated cost
+policy-settings-current-totals = Current totals
+policy-settings-current-totals-subtitle = Safe totals from the current configuration.
+policy-settings-error-policy-not-found = Policy not found.
+policy-settings-error-not-allowed = You are not allowed to change policy settings.
+policy-settings-error-frozen-policy = This policy is not draft, so settings cannot be changed.
+policy-settings-error-invalid-date = Enter a valid date.
+policy-settings-error-invalid-premium-factor = Enter a valid non-negative premium factor.
+policy-settings-error-invalid-currency = Choose a supported currency.
+policy-settings-error-effective-until-before-effective-at = The end date must be after the start date.
+policy-settings-edit-coverage-type = Edit coverage type
+policy-settings-edit-category-factor = Edit category factor
+policy-settings-error-coverage-type-in-use = Coverage type is still used.
+policy-settings-error-coverage-type-not-found = Coverage type not found for this policy.
+policy-settings-error-duplicate-coverage-type-name = A coverage type with this name already exists for this policy.
+policy-settings-error-category-factor-in-use = Category factor is still used.
+policy-settings-error-category-factor-not-found = Category factor not found for this policy.
+policy-settings-error-category-not-found = Category not found.
+policy-settings-error-duplicate-category-factor = A category factor for this category already exists for this policy.
+policy-settings-missing-category-factors-title = Missing category factors
+# $category-names (String) - Comma-separated names of categories without factors.
+policy-settings-missing-category-factors-body = Covered instruments use categories without category factors: { $category-names }.
+policy-settings-no-category-factors = No category factors configured.
+policy-settings-policy-details-subtitle = Edit policy metadata used for cost calculations.
+policy-settings-read-only-title = Settings are read-only
+policy-settings-status-read-only = Policy status is read-only here.
+# $policy-name (String) - Name of the policy being configured.
+policy-settings-subtitle = Configure settings for { $policy-name }.
+policy-settings-usage = Usage
+
+### Coverage workbench
+
+workbench-title = Coverage workbench
+workbench-view = View
+workbench-view-all = All coverages
+workbench-view-todo = Todo
+workbench-view-missing-id = Missing Harmonia IDs
+workbench-view-missing-photos = Missing photos
+workbench-view-private = Private instruments
+workbench-view-changed = Changed
+workbench-view-new = New
+workbench-view-removed = Removed
+workbench-ownership = Ownership
+workbench-ownership-all = All
+workbench-ownership-band = Band
+workbench-ownership-private = Private
+workbench-member-search-placeholder = Search by name, nickname, username, or email
+workbench-search = Search
+workbench-selected = selected
+workbench-photos = Photos
+workbench-workflow-status = Workflow status
+workbench-change-status = Change status
+workbench-status = Status
+workbench-missing = Missing
+workbench-missing-photos = Missing photos
+workbench-table-settings = Table settings
+workbench-columns = Columns
+# $field (String) - Localized name of the field being filtered.
+workbench-filter-by = Filter by: { $field }
+workbench-value-operator = Value operator
+workbench-value-greater-than = is greater than
+workbench-value-less-than = is less than
+workbench-value-equal-to = is equal to
+workbench-value-between = is between
+workbench-value-min = Minimum
+workbench-value-max = Maximum
+workbench-pagination = Pagination
+# $range-start (Number) - First result on the page.
+# $range-end (Number) - Last result on the page.
+# $total-results (Number) - Total matching results.
+workbench-pagination-summary = { $range-start }–{ $range-end } of { $total-results } results
+workbench-rows-per-page = Rows per page
+workbench-and = and
+workbench-select-row = Select coverage
+workbench-expand-all = Expand all
+workbench-collapse-all = Collapse all
+workbench-read-only = Bulk actions are read-only.
+workbench-mark-workflow = Mark Workflow
+workbench-set-change = Set Change
+workbench-deselect-all = Deselect All
+workbench-empty-title = No matching coverages
+workbench-empty-body = Try another view or filter.
+workbench-error-empty-selection = Select at least one coverage.
+workbench-error-invalid-target-status = Choose a valid workflow or change status.
+workbench-error-not-allowed = You are not allowed to update these coverages.
+workbench-error-frozen-policy = This policy is not draft, so coverages cannot be changed.
+workbench-error-coverage-not-found = Coverage not found.
+workbench-error-coverage-not-in-policy = All selected coverages must belong to this policy.
+workbench-group-member = Group by member
+
+### Policy review queue and coverage history
+
+review-queue-title = Review queue
+# $policy-name (String) - Name of the policy being reviewed.
+review-queue-subtitle = Review covered instruments for { $policy-name }.
+review-queue-filter-needs-review = Todo
+review-queue-filter-missing-insurer-id = Missing ID
+# $count (Number) - Number of review items remaining in the current queue.
+review-queue-items-left =
+    { $count ->
+        [one] { $count } item left.
+       *[other] { $count } items left.
+    }
+review-queue-see-all-in-workbench = See all in the workbench
+review-queue-queue = Queue
+review-queue-empty-title = No matching coverages
+review-queue-empty-body = Try another filter or return to the dashboard.
+# $owner-name (String) - Name of the instrument owner.
+review-queue-reviewing-owner = Owner: { $owner-name }
+review-queue-approve-and-next = Approve and next
+review-queue-save-and-continue = Save and continue
+review-queue-skip = Skip
+review-queue-not-insurance-team = Only insurance team members can update review items.
+review-queue-frozen-policy = This policy is not draft, so review actions are read-only.
+review-queue-error-coverage-not-found = Coverage not found.
+review-queue-error-not-allowed = You are not allowed to update this review item.
+review-queue-error-frozen-policy = This policy is not draft, so review items cannot be changed.
+history-title = History of changes
+history-subtitle-coverage = Changes to the coverage of this instrument
+history-field = Field
+history-before = Before
+history-after = After
+history-no-changes = No changes yet.
+history-image-deleted = Image deleted.
+history-action-added = Added
+history-action-retracted = Retracted
+history-action-updated = Updated
+review-queue-comments = Comments
+review-queue-comment-placeholder = Add a note about this item.
+review-queue-add-comment = Add comment
+review-queue-commented = commented
+review-queue-leave-reply = Leave a reply
 
 ### Coverage type settings
 
@@ -222,6 +446,15 @@ payment-notifications-sent =
         [one] One payment notification was sent.
        *[other] { $count } payment notifications were sent.
     }
+# $member-name (String) - Member receiving the payment request. $time-range (String) - Policy period covered by the request.
+payment-email-subject = { $member-name } insurance costs { $time-range } SNO
+payment-email-intro = Please transfer your insurance costs to Street Noise Orchestra. These are the costs for privately insured instruments for the following period:
+# $member-name (String) - Member receiving the payment request.
+payment-email-member-costs = Insurance costs for { $member-name }:
+payment-email-bank-data = Bank details
+payment-email-cost-details = For a detailed breakdown of your costs, see the following forum link.
+payment-email-claim-guidance = If an insured item is damaged or lost, the attachment contains instructions and the claim form.
+payment-email-contact = If you have any questions, please contact us.
 
 ### Member instrument check
 

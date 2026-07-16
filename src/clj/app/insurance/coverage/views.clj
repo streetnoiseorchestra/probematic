@@ -50,7 +50,7 @@
        [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 50ch;"}
         (insurance-ui/coverage-detail-card req {:coverage coverage
                                                 :policy   policy})
-        (insurance-ui/comments-aside req)]
+        (insurance-ui/comments-aside)]
        (insurance-ui/history-section req coverage)]])))
 
 (d*/refresh-all!)

@@ -72,11 +72,11 @@
             (ui2/member-nick member)
             (some-> selected-member-id str))))
 
-(defn- member-select [{:keys [db tr] :as req} form-state]
+(defn- member-select [{:keys [db] :as req} form-state]
   (let [selected (:owner-member-id form-state)
         members  (q/members-for-select db)]
     (into
-     [:wa-select (merge {:label      (tr [:instrument/owner])
+     [:wa-select (merge {:label      [:i18n/tr :instrument/owner]
                          :name       "owner-member-id"
                          :value      (form/text-value selected)
                          :required   true
@@ -92,11 +92,11 @@
             (:instrument.category/name category)
             (some-> selected-category-id str))))
 
-(defn- category-select [{:keys [db tr] :as req} form-state]
+(defn- category-select [{:keys [db] :as req} form-state]
   (let [selected   (:category-id form-state)
         categories (queries/instrument-categories db)]
     (into
-     [:wa-select (merge {:label      (tr [:instrument/category])
+     [:wa-select (merge {:label      [:i18n/tr :instrument/category]
                          :name       "category-id"
                          :value      (form/text-value selected)
                          :required   true
@@ -149,12 +149,12 @@
       (when-not (str/blank? (str description))
         [:small {:class "wa-color-text-quiet"} description])]]))
 
-(defn- coverage-types-field [{:keys [tr]} form-state coverage-types]
+(defn- coverage-types-field [form-state coverage-types]
   (let [selected-type-ids (set (:coverage-types form-state))
         error             (form/field-error form-state :coverage-types)]
     [:div {:class (ui2/cs "insurance-coverage-edit-wide" "insurance-coverage-edit-choice-list")}
      [:div {:class "insurance-coverage-edit-field-label"}
-      [:span (tr [:insurance/coverage-types])]
+      [:span [:i18n/tr :insurance/coverage-types]]
       (when error
         [:span {:class "wa-caption-s text-danger"} error])]
      (into
@@ -197,31 +197,31 @@
 
 (defn- instrument-section [req form-state]
   (ui2/section-card
-   {:title    ((:tr req) [:instrument/instrument])
-    :subtitle ((:tr req) [:instrument/create-subtitle])
+   {:title    [:i18n/tr :instrument/instrument]
+    :subtitle [:i18n/tr :instrument/create-subtitle]
     :divider? true}
    [:div {:class "insurance-coverage-edit-form-grid"}
-    (input ((:tr req) [:instrument/name]) "instrument-name" (:instrument-name form-state) (merge {:required true} (validate-field-attrs req form-state :instrument-name)))
+    (input [:i18n/tr :instrument/name] "instrument-name" (:instrument-name form-state) (merge {:required true} (validate-field-attrs req form-state :instrument-name)))
     (member-select req form-state)
     (category-select req form-state)
-    (input ((:tr req) [:instrument/make]) "make" (:make form-state) (merge {:required true} (validate-field-attrs req form-state :make)))
-    (input ((:tr req) [:instrument/model]) "model" (:model form-state) (validate-field-attrs req form-state :model))
-    (input ((:tr req) [:instrument/serial-number]) "serial-number" (:serial-number form-state) (validate-field-attrs req form-state :serial-number))
-    (input ((:tr req) [:instrument/build-year]) "build-year" (:build-year form-state) (validate-field-attrs req form-state :build-year))
-    (textarea ((:tr req) [:instrument/description]) "description" (:description form-state) (merge {:class "insurance-coverage-edit-textarea insurance-coverage-edit-wide"}
-                                                                                                   (validate-field-attrs req form-state :description)))]))
+    (input [:i18n/tr :instrument/make] "make" (:make form-state) (merge {:required true} (validate-field-attrs req form-state :make)))
+    (input [:i18n/tr :instrument/model] "model" (:model form-state) (validate-field-attrs req form-state :model))
+    (input [:i18n/tr :instrument/serial-number] "serial-number" (:serial-number form-state) (validate-field-attrs req form-state :serial-number))
+    (input [:i18n/tr :instrument/build-year] "build-year" (:build-year form-state) (validate-field-attrs req form-state :build-year))
+    (textarea [:i18n/tr :instrument/description] "description" (:description form-state) (merge {:class "insurance-coverage-edit-textarea insurance-coverage-edit-wide"}
+                                                                                                (validate-field-attrs req form-state :description)))]))
 
-(defn- coverage-section [{:keys [tr] :as req} form-state policy]
+(defn- coverage-section [req form-state policy]
   (ui2/section-card
-   {:title    (tr [:insurance/instrument-coverage])
+   {:title    [:i18n/tr :insurance/instrument-coverage]
     :subtitle [:i18n/tr :insurance/coverage-for
                {:policy-name (:insurance.policy/name policy)}]
     :divider? true}
    [:div {:class "insurance-coverage-edit-form-grid"}
-    (input (tr [:insurance/item-count]) "item-count" (:item-count form-state) (merge {:type "number" :min 1 :step 1 :required true}
-                                                                                     (validate-field-attrs req form-state :item-count)))
-    (input (tr [:insurance/value]) "value" (:value form-state) (merge {:type "number" :min 1 :step 1 :required true}
-                                                                      (validate-field-attrs req form-state :value)))
+    (input [:i18n/tr :insurance/item-count] "item-count" (:item-count form-state) (merge {:type "number" :min 1 :step 1 :required true}
+                                                                                         (validate-field-attrs req form-state :item-count)))
+    (input [:i18n/tr :insurance/value] "value" (:value form-state) (merge {:type "number" :min 1 :step 1 :required true}
+                                                                          (validate-field-attrs req form-state :value)))
     (private-band-field req form-state)
     (input [:i18n/tr :insurance/insurer-id]
            "insurer-id"
@@ -229,21 +229,21 @@
            (update (validate-field-attrs req form-state :insurer-id)
                    :hint
                    #(or % [:i18n/tr :insurance/insurer-id-hint])))
-    (coverage-types-field req form-state (:insurance.policy/coverage-types policy))]))
+    (coverage-types-field form-state (:insurance.policy/coverage-types policy))]))
 
 (defn- remove-dialog-id [{:instrument.coverage/keys [coverage-id]}]
   (ui2/remove-dialog-id "coverage" coverage-id))
 
-(defn- remove-dialog [{:keys [tr] :as req} coverage]
+(defn- remove-dialog [req coverage]
   (ui2/remove-dialog
    {:id            (remove-dialog-id coverage)
-    :label         (tr [:action/confirm-generic])
-    :cancel-label  (tr [:action/cancel])
-    :confirm-label (tr [:action/confirm-delete])
+    :label         [:i18n/tr :action/confirm-generic]
+    :cancel-label  [:i18n/tr :action/cancel]
+    :confirm-label [:i18n/tr :action/confirm-delete]
     :confirm-attrs {:data-id     (str (:instrument.coverage/coverage-id coverage))
                     :data-action (d*/act req ::actions/delete-instrument-coverage)}}
-   [:p (tr [:action/confirm-delete-instrument]
-           [(get-in coverage [:instrument.coverage/instrument :instrument/name])])]))
+   [:p [:i18n/tr :action/confirm-delete-instrument
+        {:instrument-name (get-in coverage [:instrument.coverage/instrument :instrument/name])}]]))
 
 (defn- insurance-team-member? [{:keys [db] :as req}]
   (q/insurance-team-member? db (get-in req [:session :session/member])))

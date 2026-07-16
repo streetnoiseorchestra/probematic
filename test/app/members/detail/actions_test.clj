@@ -64,7 +64,7 @@
     [:Email] "Email"
     [:Phone] "Phone"
     [:section] "Section"
-    [:error/is-required] (format "%s is required." (first args))
+    [:error/is-required] (format "%s is required." (:field args))
     [:error/member-phone-format] "Phone format is invalid."
     [:error/member-unique-email] "A member already has that email address"
     [:error/member-unique-nick] "A member already has that nick"

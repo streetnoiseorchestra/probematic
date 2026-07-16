@@ -19,17 +19,17 @@
     [[:dt label]
      [:dd value]]))
 
-(defn- instrument-details [tr {:instrument/keys [build-year category description make model serial-number]}]
+(defn- instrument-details [{:instrument/keys [build-year category description make model serial-number]}]
   (into
    [:dl]
    (mapcat identity)
    (keep identity
-         [(detail-item (tr [:instrument/category]) (:instrument.category/name category))
-          (detail-item (tr [:instrument/make]) make)
-          (detail-item (tr [:instrument/model]) model)
-          (detail-item (tr [:instrument/description]) description)
-          (detail-item (tr [:instrument/serial-number]) serial-number)
-          (detail-item (tr [:instrument/build-year]) build-year)])))
+         [(detail-item [:i18n/tr :instrument/category] (:instrument.category/name category))
+          (detail-item [:i18n/tr :instrument/make] make)
+          (detail-item [:i18n/tr :instrument/model] model)
+          (detail-item [:i18n/tr :instrument/description] description)
+          (detail-item [:i18n/tr :instrument/serial-number] serial-number)
+          (detail-item [:i18n/tr :instrument/build-year] build-year)])))
 
 (defn- photo-card [instrument-name {:keys [full thumbnail]}]
   [:a {:href   full
@@ -45,10 +45,11 @@
   (into [:div {:style "display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 1rem; margin-block-start: 1rem;"}]
         (map #(photo-card instrument-name %) photo-uris)))
 
-(defn- public-page-shell [instrument & body]
+(defn- public-page-shell [translator instrument & body]
   (apply ui2/standalone-page
          {:title       (:instrument/name instrument)
-          :description (:instrument/description instrument)}
+          :description (:instrument/description instrument)
+          :translator  translator}
          body))
 
 (defn instrument-public-page [{:keys [db] :as req} instrument-id]
@@ -56,13 +57,14 @@
                        (instrument-not-found! instrument-id))
         photo-uris (api/build-image-uris req instrument)]
     (public-page-shell
+     (:tr req)
      instrument
      [:header
       [:p "SNOrga"]
       [:h1 (:instrument/name instrument)]]
      (when-let [category (not-empty (get-in instrument [:instrument/category :instrument.category/name]))]
        [:p category])
-     (instrument-details (:tr req) instrument)
+     (instrument-details instrument)
      [:div {:style "display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-block: 2rem 0 0;"}
       [:h2 {:style "margin: 0; font-size: 1.25rem; line-height: 1.2;"}
        [:i18n/tr :insurance/photos]]
@@ -73,10 +75,10 @@
           [ico/Icon {::ico/library :phosphor
                      ::ico/name    :download
                      :style        "inline-size: 1em; block-size: 1em;"}]
-          ((:tr req) [:action/download])]])]
+          [:i18n/tr :action/download]]])]
      (if (seq photo-uris)
        (photo-grid (:instrument/name instrument) photo-uris)
-       [:p ((:tr req) [:insurance/no-photos])]))))
+       [:p [:i18n/tr :insurance/no-photos]]))))
 
 (defn instrument-public-page-download-all [req instrument-id]
   (api/get-all-images-as-input-stream! req instrument-id))

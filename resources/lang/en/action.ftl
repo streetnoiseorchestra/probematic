@@ -1,6 +1,7 @@
 ### Shared action labels
 
 add = Add
+apply = Apply
 back = Back
 cancel = Cancel
 create = Create
@@ -25,3 +26,12 @@ update = Update
 view-all = View all
 confirm-generic = Are you sure?
 confirm-delete = Yes, delete it
+# $instrument-name (String) - Name of the instrument being deleted.
+confirm-delete-instrument = Are you sure you want to delete the instrument { $instrument-name }?
+# $policy-name (String) - Name of the insurance policy being deleted.
+confirm-delete-policy = Are you sure you want to delete the insurance policy { $policy-name }?
+download = Download
+duplicate = Duplicate
+filter = Filter
+previous = Previous
+view = View

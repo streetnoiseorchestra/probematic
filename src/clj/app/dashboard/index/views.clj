@@ -64,38 +64,38 @@
                      title
                      (mapv #(gig-row req %) gigs)))
 
-(defn- insurance-todo-row [{:keys [tr]} {:insurance.policy/keys [name policy-id] :keys [total-needs-review total-changed total-new total-removed] :as policy}]
+(defn- insurance-todo-row [{:insurance.policy/keys [name policy-id] :keys [total-needs-review total-changed total-new total-removed] :as policy}]
   (dashboard-row :div {}
                  "dashboard-insurance-todo-row"
                  [:div {:class "dashboard-insurance-todo-name"}
                   [:a {:href (urls/link-policy policy)} name]]
                  [:div {:class "dashboard-insurance-todo-metrics"}
-                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                                :class-prefix "dashboard-insurance-todo"
-                                                :policy-id    policy-id
-                                                :status       :needs-review
-                                                :count        total-needs-review})
-                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                                :class-prefix "dashboard-insurance-todo"
-                                                :policy-id    policy-id
-                                                :status       :changed
-                                                :count        total-changed})
-                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                                :class-prefix "dashboard-insurance-todo"
-                                                :policy-id    policy-id
-                                                :status       :new
-                                                :count        total-new})
-                  (insurance.ui/todo-metric tr {:id-prefix    "dashboard-insurance-todo"
-                                                :class-prefix "dashboard-insurance-todo"
-                                                :policy-id    policy-id
-                                                :status       :removed
-                                                :count        total-removed})]))
+                  (insurance.ui/todo-metric {:id-prefix    "dashboard-insurance-todo"
+                                             :class-prefix "dashboard-insurance-todo"
+                                             :policy-id    policy-id
+                                             :status       :needs-review
+                                             :count        total-needs-review})
+                  (insurance.ui/todo-metric {:id-prefix    "dashboard-insurance-todo"
+                                             :class-prefix "dashboard-insurance-todo"
+                                             :policy-id    policy-id
+                                             :status       :changed
+                                             :count        total-changed})
+                  (insurance.ui/todo-metric {:id-prefix    "dashboard-insurance-todo"
+                                             :class-prefix "dashboard-insurance-todo"
+                                             :policy-id    policy-id
+                                             :status       :new
+                                             :count        total-new})
+                  (insurance.ui/todo-metric {:id-prefix    "dashboard-insurance-todo"
+                                             :class-prefix "dashboard-insurance-todo"
+                                             :policy-id    policy-id
+                                             :status       :removed
+                                             :count        total-removed})]))
 
-(defn- insurance-todos-section [{:keys [tr] :as req} policies]
+(defn- insurance-todos-section [policies]
   (dashboard-section "dashboard-insurance-todo-section"
                      "dashboard-row-list"
-                     (tr [:dashboard/insurance-todo])
-                     (mapv #(insurance-todo-row req %) policies)))
+                     [:i18n/tr :insurance/dashboard-todos]
+                     (mapv insurance-todo-row policies)))
 
 (defn- dashboard-card [class title actions & children]
   (into
@@ -165,7 +165,7 @@
                   :slot         "end"}]]]]))
 
 (defn- responses-card
-  [{:keys [tr] :as req}
+  [req
    member
    {:keys [insurance-survey insurance-todos unanswered unanswered-polls]}]
   (let [count (+ (count unanswered)
@@ -188,9 +188,7 @@
            [:i18n/tr :insurance/instrument-insurance]
            [(insurance-survey-task req member insurance-survey)]))
         (when (seq insurance-todos)
-          (insurance-todos-section
-           (assoc req :tr tr)
-           insurance-todos))
+          (insurance-todos-section insurance-todos))
         (when (seq unanswered)
           (gig-section req
                        [:i18n/tr :gigs/attendance-needed]

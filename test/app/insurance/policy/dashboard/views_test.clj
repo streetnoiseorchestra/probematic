@@ -1,45 +1,19 @@
 (ns app.insurance.policy.dashboard.views-test
   (:require
+   [app.i18n :as i18n]
    [app.insurance.policy.dashboard.views :as sut]
    [app.ui2.button :as button]
    [app.ui2.icon :as ico]
-   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [jsonista.core :as j]
    [lookup.core :as l]))
 
-(def translations
-  {[:insurance.dashboard/coverage-mix]               "Coverage mix"
-   [:insurance.dashboard/coverage-mix-subtitle]      "Band and private instruments in this policy."
-   [:insurance.dashboard/band-instruments]           "Band instruments"
-   [:insurance.dashboard/private-instruments]        "Private instruments"
-   [:insurance.dashboard/review-status]              "Review status"
-   [:insurance.dashboard/health-checklist]            "Health Checklist"
-   [:insurance.dashboard/health-checklist-subtitle]   "Required data before sending changes."
-   [:insurance.dashboard/continue-reviewing]          "Review"
-   [:insurance.dashboard/review-complete]             "%1 of %2 instruments reviewed"
-   [:insurance.dashboard/health-checks-complete]      "%1 of %2 checks passed"
-   [:insurance.dashboard/missing-photos]              "Missing photos"
-   [:insurance.dashboard/missing-insurer-ids]         "Missing insurer IDs"
-   [:insurance.policy-settings/missing-category-factors-title] "Missing category factors"
-   [:insurance.dashboard/recent-changes]              "Recent changes"
-   [:insurance.dashboard/recent-changes-subtitle]     "Current changes."
-   [:instrument.coverage/cost]                        "Cost"
-   [:insurance/item-count]                            "Count"
-   [:insurance/cost]                                  "Cost"
-   [:instrument.coverage/create-button]               "Add Instrument"
-   [:insurance.dashboard/policy-settings]             "Policy Settings"
-   [:insurance.dashboard/opens-later]                 "Coming soon"
-   [:action/more-actions]                             "More actions"})
+(def tr
+  (i18n/tr-with (i18n/read-langs) [:en]))
 
-(defn tr
-  ([path]
-   (get translations path (name (last path))))
-  ([path args]
-   (reduce (fn [s [idx arg]]
-             (str/replace s (str "%" (inc idx)) (str arg)))
-           (tr path)
-           (map-indexed vector args))))
+(defn resolve-view
+  [view]
+  (i18n/resolve-translations tr view))
 
 (def policy-id
   #uuid "00000000-0000-0000-0000-000000000123")
@@ -119,27 +93,24 @@
                                  :insurance-team-member? false
                                  :policy full-policy))
           member-responses (sut/survey-progress-section
-                            {:tr tr}
                             {:insurance-team-member? false
                              :policy policy
                              :survey-progress {:completed-count 1
                                                :waiting-count   2
                                                :total-count     3}})
           review-complete (sut/review-status-section
-                           {:tr tr}
                            {:insurance-team-member? true
                             :policy policy
                             :totals {:total-instruments 3}
                             :status-counts {:instrument.coverage.status/covered 3}})
           health-complete (sut/health-checklist-section
-                           {:tr tr}
                            {:insurance-team-member? true
                             :policy policy
                             :totals {:missing-photo-count            0
                                      :missing-insurer-id-count       0
                                      :missing-category-factor-count  0}})
           action-summary (fn [view]
-                           (let [action (l/select-one button/Button view)
+                           (let [action (l/select-one button/Button (resolve-view view))
                                  attrs  (l/attrs action)]
                              {:href       (:href attrs)
                               :disabled   (:disabled attrs)
@@ -157,8 +128,8 @@
                :slot       "header-actions"
                :appearance "plain"
                :variant    "brand"
-               :title      "policy-settings"
-               :aria-label "policy-settings"
+               :title      "Policy Settings"
+               :aria-label "Policy Settings"
                :icon       :gear}
               :member-responses
               {:href       nil
@@ -166,8 +137,8 @@
                :slot       "header-actions"
                :appearance "plain"
                :variant    "brand"
-               :title      "manage-surveys"
-               :aria-label "manage-surveys"
+               :title      "Manage surveys"
+               :aria-label "Manage surveys"
                :icon       :clipboard-text}
               :review-status
               {:href       nil
@@ -206,21 +177,18 @@
                                  :insurance-team-member? true
                                  :policy full-policy))
           member-responses (sut/survey-progress-section
-                            {:tr tr}
                             {:insurance-team-member? true
                              :policy policy
                              :survey-progress {:completed-count 1
                                                :waiting-count   2
                                                :total-count     3}})
           review-open (sut/review-status-section
-                       {:tr tr}
                        {:insurance-team-member? true
                         :policy policy
                         :totals {:total-instruments 3}
                         :status-counts {:instrument.coverage.status/covered      2
                                         :instrument.coverage.status/needs-review 1}})
           health-open (sut/health-checklist-section
-                       {:tr tr}
                        {:insurance-team-member? true
                         :policy policy
                         :totals {:missing-photo-count            1
@@ -248,19 +216,19 @@
     (let [totals        {:missing-photo-count            1
                          :missing-insurer-id-count       0
                          :missing-category-factor-count  1}
-          team-view     (sut/health-checklist-section
-                         {:tr tr}
-                         {:policy                 policy
-                          :totals                 totals
-                          :insurance-team-member? true})
-          ordinary-view (sut/health-checklist-section
-                         {:tr tr}
-                         {:policy                 policy
-                          :totals                 totals
-                          :insurance-team-member? false})
+          team-view     (resolve-view
+                         (sut/health-checklist-section
+                          {:policy                 policy
+                           :totals                 totals
+                           :insurance-team-member? true}))
+          ordinary-view (resolve-view
+                         (sut/health-checklist-section
+                          {:policy                 policy
+                           :totals                 totals
+                           :insurance-team-member? false}))
           settings-link (l/select-one 'a team-view)]
       (testing "The health checklist includes the missing category factor and incomplete-check count."
-        (is (= {:labels  ["Missing photos" "Missing insurer IDs" "Missing category factors"]
+        (is (= {:labels  ["Missing photos" "Missing Harmonia IDs" "Missing category factors"]
                 :counts  ["1" "0" "1"]
                 :summary "1 of 3 checks passed"}
                {:labels  (mapv l/text (l/select '[dl dt] team-view))
@@ -276,14 +244,15 @@
 
 (deftest coverage-mix
   (testing "The policy contains two band instruments and one private instrument."
-    (let [view   (sut/coverage-mix-section
-                  {:tr tr}
-                  {:policy policy
-                   :totals {:band-count        2
-                            :private-count     1
-                            :band-cost         12.34M
-                            :private-cost      5M
-                            :total-instruments 3}})
+    (let [view   (resolve-view
+                  (sut/coverage-mix-section
+                   {:tr tr}
+                   {:policy policy
+                    :totals {:band-count        2
+                             :private-count     1
+                             :band-cost         12.34M
+                             :private-cost      5M
+                             :total-instruments 3}}))
           chart  (l/select-one 'wa-chart view)
           config (chart-config view)]
       (testing "The chart is described for assistive technology."
@@ -293,7 +262,7 @@
                (select-keys (l/attrs chart)
                             [:description :without-legend :without-animation]))))
       (testing "Count and cost are plotted as separate band and private series."
-        (is (= {:labels   ["Count" "Cost"]
+        (is (= {:labels   ["Number of items" "Cost"]
                 :datasets [{"label"           "Band instruments"
                             "data"            [2 nil]
                             "measure"         "count"
@@ -327,20 +296,20 @@
 
 (deftest recent-change-costs
   (testing "Recent changes include one priced and one unavailable coverage."
-    (let [view (#'sut/recent-changes-section
-                {:tr tr}
-                {:policy policy
-                 :recent-changes
-                 [{:change          :instrument.coverage.change/new
-                   :coverage        {:instrument.coverage/coverage-id (random-uuid)
-                                     :instrument.coverage/cost        nil}
-                   :instrument-name "Missing factor"
-                   :owner-name      "Ada"}
-                  {:change          :instrument.coverage.change/changed
-                   :coverage        {:instrument.coverage/coverage-id (random-uuid)
-                                     :instrument.coverage/cost        0.77M}
-                   :instrument-name "Priced"
-                   :owner-name      "Bea"}]})]
+    (let [view (resolve-view
+                (#'sut/recent-changes-section
+                 {:policy policy
+                  :recent-changes
+                  [{:change          :instrument.coverage.change/new
+                    :coverage        {:instrument.coverage/coverage-id (random-uuid)
+                                      :instrument.coverage/cost        nil}
+                    :instrument-name "Missing factor"
+                    :owner-name      "Ada"}
+                   {:change          :instrument.coverage.change/changed
+                    :coverage        {:instrument.coverage/coverage-id (random-uuid)
+                                      :instrument.coverage/cost        0.77M}
+                    :instrument-name "Priced"
+                    :owner-name      "Bea"}]}))]
       (testing "Each individual cost remains visible without inventing a zero."
         (is (= [{:label "Cost" :value "&mdash;"}
                 {:label "Cost" :value "0,77 €"}]

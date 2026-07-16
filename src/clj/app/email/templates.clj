@@ -314,8 +314,9 @@
   [:div
    [:p
     (tr [:email/greeting-personal] [member-name])]
-   [:p (tr [:insurance/email-p1]) [:strong time-range]]
-   [:p [:strong (tr [:insurance/email-p2] [member-name])]]
+   [:p (tr [:insurance/payment-email-intro]) [:strong time-range]]
+   [:p [:strong (tr [:insurance/payment-email-member-costs]
+                    {:member-name member-name})]]
    [:table
     [:tr
      [:td [:strong (tr [:instrument/instrument])]]
@@ -334,15 +335,15 @@
      [:td {:align "right"} (tr [:total])]
      [:td {:align "right"} amount]]]
    [:p (tr [:please-pay-to-band] [amount])]
-   [:p [:strong (tr [:insurance/bank-data])]]
+   [:p [:strong (tr [:insurance/payment-email-bank-data])]]
    [:p
     account-name [:br]
     iban [:br]
     bic [:br]]
-   [:p (tr [:insurance/email-p3])]
+   [:p (tr [:insurance/payment-email-cost-details])]
    [:p [:a {:href insurance-link} insurance-link]]
-   [:p (tr [:insurance/email-p4])]
-   [:p (tr [:insurance/email-p5])]
+   [:p (tr [:insurance/payment-email-claim-guidance])]
+   [:p (tr [:insurance/payment-email-contact])]
    [:p]
    [:p
     (tr [:email/sign-off-personal])
@@ -383,22 +384,23 @@
 Versicherungsteam StreetNoise Orchestra
 "
     {:greeting (tr [:email/greeting-personal] [member-name])
-     :p1 (str (tr [:insurance/email-p1]) " " time-range)
-     :p2 (tr [:insurance/email-p2] [member-name])
+     :p1 (str (tr [:insurance/payment-email-intro]) " " time-range)
+     :p2 (tr [:insurance/payment-email-member-costs]
+             {:member-name member-name})
      :amount (str (tr [:total]) ": " amount)
      :instruments (str/join "\n"
                             (map (fn [{:keys [value instrument-summary cost]}]
                                    (str "- " instrument-summary " (" (tr [:insurance/value]) ": " value ")"  " - " cost))
                                  private-instruments))
      :please-pay (tr [:please-pay-to-band] [amount])
-     :bank-data (tr [:insurance/bank-data])
+     :bank-data (tr [:insurance/payment-email-bank-data])
      :account-name account-name
      :iban iban
      :bic bic
      :insurance-link insurance-link
-     :p3 (tr [:insurance/email-p3])
-     :p4 (tr [:insurance/email-p4])
-     :p5 (tr [:insurance/email-p5])
+     :p3 (tr [:insurance/payment-email-cost-details])
+     :p4 (tr [:insurance/payment-email-claim-guidance])
+     :p5 (tr [:insurance/payment-email-contact])
      :sender-name sender-name
      :sign-off (tr [:email/sign-off-personal])})))
 
@@ -486,13 +488,18 @@ Versicherungsteam StreetNoise Orchestra
 {{ p3 }}
 "
 
-     {:title (tr [:insurance.survey/email-title])
-      :p1 (tr [:insurance.survey/email-p1])
+     {:title (tr [:insurance/survey-email-title])
+      :p1 (tr [:insurance/survey-email-intro])
       :p2
       (if (and member-most-instruments (> member-most-instrument-count 10))
-        (tr [:insurance.survey/email-p2-many] [(or (:member/nick  member-most-instruments) (:member/name member-most-instruments)) member-most-instrument-count])
-        (tr [:insurance.survey/email-p2]))
-      :p3 (tr [:insurance.survey/email-p3] [closes-at-str-bolded closes-at-days])})))
+        (tr [:insurance/survey-email-add-instruments-many]
+            {:member-name (or (:member/nick member-most-instruments)
+                              (:member/name member-most-instruments))
+             :count       member-most-instrument-count})
+        (tr [:insurance/survey-email-add-instruments]))
+      :p3 (tr [:insurance/survey-email-deadline]
+              {:closes-at closes-at-str-bolded
+               :days      closes-at-days})})))
 
 (defn insurance-survey-created-email-html-body [tr closes-at]
   (markdown/render (insurance-survey-created-email-plain-body tr closes-at)))

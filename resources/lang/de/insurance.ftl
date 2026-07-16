@@ -2,6 +2,7 @@
 
 title = Versicherung & Instrumente
 toolbar-label = Versicherungsnavigation
+dashboard-todos = Aufgaben des Versicherungsteams
 new-policy = Neue Versicherungspolice
 create-title = Neue Versicherungspolice
 create-subtitle = Gib die Details der neuen Versicherungspolice ein.
@@ -11,9 +12,36 @@ name = Name der Versicherungspolice
 effective-at = Gültig ab
 effective-until = Gültig bis
 premium-base-factor = Basis-Prämienfaktor
+policies = Versicherungspolicen
+insurance-policy = Versicherungspolice
+currency = Währung
+premium-factor = Prämienfaktor
+cost = Kosten
+coverage-name = Name der Versicherungsart
+coverage-type-description = Beschreibung
+category-factors = Kategoriefaktoren
+value-abbrev = Vers.-Wert
+coverage-status = Bearbeitungsstatus
+coverage-status-needs-review = Zu erledigen
+coverage-status-reviewed = Überprüft
+coverage-status-active = Aktiv
+coverage-change-status = Änderungsstatus
+coverage-change-added = Hinzugefügt
+coverage-change-modified = Geändert
+coverage-change-removed = Entfernt
+coverage-change-none = Keine Änderungen
+send-changes-disabled-hint = Änderungen können nicht gesendet werden, solange Aufgaben offen sind.
+total-needs-review-tooltip = Gesamtzahl der zu überprüfenden Instrumente
+total-total-changed-tooltip = Gesamtzahl der geänderten Instrumente
+total-total-new-tooltip = Gesamtzahl der hinzugefügten Instrumente
+total-total-removed-tooltip = Gesamtzahl der entfernten Instrumente
 error-invalid-date = Gib ein gültiges Datum ein.
 error-effective-until-before-effective-at = Das Enddatum muss nach dem Startdatum liegen.
 error-invalid-premium-factor = Gib einen nicht negativen Prämienfaktor ein.
+error-edit-frozen-policy = Instrumente und ihr Versicherungsschutz können nur geändert werden, solange die Police im Entwurf ist.
+# $field (String) - Lokalisierte Beschriftung des Feldes mit der ungültigen Zahl.
+error-invalid-number = { $field } muss eine ganze Zahl größer als null sein.
+error-invalid-coverage-type = Wähle gültige Versicherungsarten aus.
 send-changes = Änderungen senden
 changes-title = Änderungen an die Versicherung melden
 changes-subtitle = Prüfe die Nachricht und ihre Tabellenanhänge, bevor du diese Police bestätigst.
@@ -135,6 +163,16 @@ survey-error-open-exists = Schließe die aktuelle Umfrage, bevor du eine neue st
 survey-error-closed = Diese Umfrage ist bereits geschlossen.
 survey-error-expired = Das Enddatum dieser Umfrage ist erreicht.
 survey-error-no-members = Die Umfrage kann nicht gestartet werden, weil keine Mitglieder eingeladen werden können.
+survey-email-title = Zeit für die SNO-Versicherung!
+survey-email-subject = Es ist Zeit für die SNO-Versicherung!
+survey-email-intro = Es ist Zeit, deine versicherten Instrumente und Gegenstände zu überprüfen.
+survey-email-add-instruments = Oder füge neue hinzu! Es dauert nur ein paar Minuten.
+# $member-name (String) - Anzeigename des Mitglieds mit den meisten Instrumenten. $count (Number) - Diesem Mitglied zugeordnete Instrumente.
+survey-email-add-instruments-many = Oder füge neue hinzu! Es dauert nur ein paar Minuten (es sei denn, du bist { $member-name } und hast { $count } zu überprüfen!)
+# $closes-at (String) - Formatiertes Enddatum mit Uhrzeit. $days (Number) - Volle Tage bis zum Ende der Umfrage.
+survey-email-deadline = Du hast bis { $closes-at } Zeit, die Umfrage abzuschließen (das sind nur noch { $days } Tage!).
+survey-email-start = Prüfung starten
+email-team-name = Versicherungsteam Street Noise Orchestra
 
 ### Instrumentenversicherung hinzufügen
 
@@ -150,6 +188,192 @@ add-coverage-separate-warning = Für jedes Instrument und Zubehör muss ein sepa
 # $policy-name (String) - Name der Police, deren Versicherungsangaben eingegeben werden.
 coverage-for = Die folgenden Angaben sind für die Versicherungspolice „{ $policy-name }“.
 no-coverage-types = Keine Versicherungsarten konfiguriert.
+
+### Policenübersicht
+
+policy-status-active = Aktiv
+policy-status-sent = Gesendet
+policy-status-draft = Entwurf
+dashboard-continue-reviewing = Überprüfen
+dashboard-review-status = Review-Status
+# $handled (Number) - Bereits bearbeitete Instrumente. $total (Number) - Alle Instrumente.
+dashboard-review-complete = { $handled } von { $total } erledigt
+dashboard-health-checklist = Daten-Checkliste
+dashboard-health-checklist-subtitle = Erforderliche Daten vor dem Senden von Änderungen.
+# $passed (Number) - Bestandene Prüfungen. $total (Number) - Alle Prüfungen.
+dashboard-health-checks-complete = { $passed } von { $total } Prüfungen bestanden
+dashboard-coverage-mix = Instrumentenmix
+dashboard-coverage-mix-subtitle = Band- und Privatinstrumente in dieser Police.
+dashboard-recent-changes = Aktuelle Änderungen
+dashboard-recent-changes-subtitle = Aktuelle Änderungsmarkierungen für diese Police.
+dashboard-no-recent-changes = Keine geänderten, neuen oder entfernten Instrumente.
+dashboard-policy-details = Policendetails
+dashboard-policy-status = Policenstatus
+dashboard-total-instruments = Instrumente gesamt
+dashboard-total-instruments-tooltip = Anzahl der versicherten Instrumente in dieser Police.
+dashboard-total-insured-value = Versicherungswert gesamt
+dashboard-total-insured-value-tooltip = Summe der Versicherungswerte aller versicherten Instrumente.
+dashboard-policy-cost = Policenkosten
+dashboard-policy-cost-tooltip = Geschätzte Policenkosten aus aktuellen Versicherungswerten und Prämienfaktoren.
+dashboard-missing-photos = Fehlende Fotos
+dashboard-missing-insurer-ids = Fehlende Harmonia-IDs
+dashboard-band-instruments = Bandinstrumente
+dashboard-private-instruments = Privatinstrumente
+### Policeneinstellungen
+
+policy-settings-category-factors-subtitle = Faktoren nach Instrumentenkategorie.
+policy-settings-coverage-types-subtitle = Versicherungsarten in dieser Police.
+policy-settings-add-coverage-type = Versicherungsart hinzufügen
+policy-settings-add-category-factor = Kategoriefaktor hinzufügen
+policy-settings-category-factor-create-disabled-tooltip = Jede Instrumentenkategorie hat bereits einen Kategoriefaktor.
+# $coverage-type-name (String) - Name der zu löschenden Versicherungsart.
+policy-settings-coverage-type-delete-confirm = Versicherungsart { $coverage-type-name } löschen?
+# $count (Number) - Anzahl der aktuellen Versicherungen, die diese Versicherungsart verwenden.
+policy-settings-coverage-type-in-use =
+    { $count ->
+        [one] Diese Versicherungsart wird von einer aktuellen Versicherung verwendet und kann nicht gelöscht werden.
+       *[other] Diese Versicherungsart wird von { $count } aktuellen Versicherungen verwendet und kann nicht gelöscht werden.
+    }
+# $category-name (String) - Name der Instrumentenkategorie, deren Faktor gelöscht wird.
+policy-settings-category-factor-delete-confirm = Kategoriefaktor für { $category-name } löschen?
+# $count (Number) - Anzahl der aktuellen Versicherungen, die diesen Kategoriefaktor verwenden.
+policy-settings-category-factor-in-use =
+    { $count ->
+        [one] Dieser Kategoriefaktor wird von einer aktuellen Versicherung verwendet und kann nicht gelöscht werden.
+       *[other] Dieser Kategoriefaktor wird von { $count } aktuellen Versicherungen verwendet und kann nicht gelöscht werden.
+    }
+policy-settings-current-cost = Aktuell geschätzte Kosten
+policy-settings-current-totals = Aktuelle Summen
+policy-settings-current-totals-subtitle = Sichere Summen aus der aktuellen Konfiguration.
+policy-settings-error-policy-not-found = Police nicht gefunden.
+policy-settings-error-not-allowed = Du darfst Policeneinstellungen nicht ändern.
+policy-settings-error-frozen-policy = Diese Police ist nicht im Entwurf, daher können Einstellungen nicht geändert werden.
+policy-settings-error-invalid-date = Gib ein gültiges Datum ein.
+policy-settings-error-invalid-premium-factor = Gib einen gültigen nicht-negativen Prämienfaktor ein.
+policy-settings-error-invalid-currency = Wähle eine unterstützte Währung.
+policy-settings-error-effective-until-before-effective-at = Das Enddatum muss nach dem Startdatum liegen.
+policy-settings-edit-coverage-type = Versicherungsart bearbeiten
+policy-settings-edit-category-factor = Kategoriefaktor bearbeiten
+policy-settings-error-coverage-type-in-use = Versicherungsart wird noch verwendet.
+policy-settings-error-coverage-type-not-found = Versicherungsart wurde in dieser Police nicht gefunden.
+policy-settings-error-duplicate-coverage-type-name = Eine Versicherungsart mit diesem Namen existiert bereits in dieser Police.
+policy-settings-error-category-factor-in-use = Kategoriefaktor wird noch verwendet.
+policy-settings-error-category-factor-not-found = Kategoriefaktor wurde in dieser Police nicht gefunden.
+policy-settings-error-category-not-found = Kategorie nicht gefunden.
+policy-settings-error-duplicate-category-factor = Ein Kategoriefaktor für diese Kategorie existiert bereits in dieser Police.
+policy-settings-missing-category-factors-title = Fehlende Kategoriefaktoren
+# $category-names (String) - Kommagetrennte Namen der Kategorien ohne Faktoren.
+policy-settings-missing-category-factors-body = Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: { $category-names }.
+policy-settings-no-category-factors = Keine Kategoriefaktoren konfiguriert.
+policy-settings-policy-details-subtitle = Bearbeite die Policendaten für Kostenberechnungen.
+policy-settings-read-only-title = Einstellungen sind schreibgeschützt
+policy-settings-status-read-only = Der Policenstatus ist hier schreibgeschützt.
+# $policy-name (String) - Name der konfigurierten Police.
+policy-settings-subtitle = Einstellungen für { $policy-name } konfigurieren.
+policy-settings-usage = Verwendung
+
+### Versicherungs-Workbench
+
+workbench-title = Versicherungs-Workbench
+workbench-view = Ansicht
+workbench-view-all = Alle Versicherungen
+workbench-view-todo = Todo
+workbench-view-missing-id = Fehlende Harmonia-IDs
+workbench-view-missing-photos = Fehlende Fotos
+workbench-view-private = Private Instrumente
+workbench-view-changed = Geändert
+workbench-view-new = Neu
+workbench-view-removed = Entfernt
+workbench-ownership = Besitz
+workbench-ownership-all = Alle
+workbench-ownership-band = Band
+workbench-ownership-private = Privat
+workbench-member-search-placeholder = Nach Name, Spitzname, Benutzername oder E-Mail suchen
+workbench-search = Suche
+workbench-selected = ausgewählt
+workbench-photos = Fotos
+workbench-workflow-status = Workflow-Status
+workbench-change-status = Änderungsstatus
+workbench-status = Status
+workbench-missing = Fehlt
+workbench-missing-photos = Fehlende Fotos
+workbench-table-settings = Tabelleneinstellungen
+workbench-columns = Spalten
+# $field (String) - Lokalisierter Name des gefilterten Feldes.
+workbench-filter-by = Filtern nach: { $field }
+workbench-value-operator = Wertoperator
+workbench-value-greater-than = ist größer als
+workbench-value-less-than = ist kleiner als
+workbench-value-equal-to = ist gleich
+workbench-value-between = liegt zwischen
+workbench-value-min = Minimum
+workbench-value-max = Maximum
+workbench-pagination = Seitennavigation
+# $range-start (Number) - Erstes Ergebnis auf der Seite.
+# $range-end (Number) - Letztes Ergebnis auf der Seite.
+# $total-results (Number) - Gesamtzahl der passenden Ergebnisse.
+workbench-pagination-summary = { $range-start }–{ $range-end } von { $total-results } Ergebnissen
+workbench-rows-per-page = Zeilen pro Seite
+workbench-and = und
+workbench-select-row = Versicherung auswählen
+workbench-expand-all = Alle aufklappen
+workbench-collapse-all = Alle zuklappen
+workbench-read-only = Sammelaktionen sind schreibgeschützt.
+workbench-mark-workflow = Workflow markieren
+workbench-set-change = Änderung setzen
+workbench-deselect-all = Auswahl aufheben
+workbench-empty-title = Keine passenden Versicherungen
+workbench-empty-body = Wähle eine andere Ansicht oder einen anderen Filter.
+workbench-error-empty-selection = Wähle mindestens eine Versicherung aus.
+workbench-error-invalid-target-status = Wähle einen gültigen Workflow- oder Änderungsstatus.
+workbench-error-not-allowed = Du darfst diese Versicherungen nicht ändern.
+workbench-error-frozen-policy = Diese Police ist nicht im Entwurf, daher können Versicherungen nicht geändert werden.
+workbench-error-coverage-not-found = Versicherung nicht gefunden.
+workbench-error-coverage-not-in-policy = Alle ausgewählten Versicherungen müssen zu dieser Police gehören.
+workbench-group-member = Nach Mitglied gruppieren
+
+### Review-Warteschlange und Versicherungsverlauf
+
+review-queue-title = Review-Warteschlange
+# $policy-name (String) - Name der geprüften Police.
+review-queue-subtitle = Versicherte Instrumente für { $policy-name } prüfen.
+review-queue-filter-needs-review = Todo
+review-queue-filter-missing-insurer-id = Fehlende ID
+# $count (Number) - Anzahl der verbleibenden Einträge in der aktuellen Warteschlange.
+review-queue-items-left =
+    { $count ->
+        [one] { $count } Eintrag übrig.
+       *[other] { $count } Einträge übrig.
+    }
+review-queue-see-all-in-workbench = Alle in der Workbench anzeigen
+review-queue-queue = Warteschlange
+review-queue-empty-title = Keine passenden Versicherungen
+review-queue-empty-body = Wähle einen anderen Filter oder gehe zurück zum Dashboard.
+# $owner-name (String) - Name des Instrumentenbesitzers.
+review-queue-reviewing-owner = Besitzer: { $owner-name }
+review-queue-approve-and-next = Freigeben und weiter
+review-queue-save-and-continue = Speichern und weiter
+review-queue-skip = Überspringen
+review-queue-not-insurance-team = Nur Mitglieder des Versicherungsteams können Review-Einträge ändern.
+review-queue-frozen-policy = Diese Police ist nicht im Entwurf, daher sind Review-Aktionen schreibgeschützt.
+review-queue-error-coverage-not-found = Versicherung nicht gefunden.
+review-queue-error-not-allowed = Du darfst diesen Review-Eintrag nicht ändern.
+review-queue-error-frozen-policy = Diese Police ist nicht im Entwurf, daher können Review-Einträge nicht geändert werden.
+history-title = Änderungsverlauf
+history-subtitle-coverage = Änderungen am Versicherungsschutz dieses Instruments
+history-field = Feld
+history-before = Vorher
+history-after = Nachher
+history-no-changes = Noch keine Änderungen.
+history-image-deleted = Bild gelöscht.
+history-action-added = Hinzugefügt
+history-action-retracted = Zurückgezogen
+history-action-updated = Aktualisiert
+review-queue-comments = Kommentare
+review-queue-comment-placeholder = Notiz zu diesem Eintrag hinzufügen.
+review-queue-add-comment = Kommentar hinzufügen
+review-queue-commented = kommentierte
+review-queue-leave-reply = Antwort hinterlassen
 
 ### Einstellungen für Versicherungsarten
 
@@ -222,6 +446,15 @@ payment-notifications-sent =
         [one] Eine Zahlungsbenachrichtigung wurde gesendet.
        *[other] { $count } Zahlungsbenachrichtigungen wurden gesendet.
     }
+# $member-name (String) - Mitglied, das die Zahlungsaufforderung erhält. $time-range (String) - Policenzeitraum der Aufforderung.
+payment-email-subject = { $member-name } Versicherungskosten { $time-range } SNO
+payment-email-intro = Wir möchten dich darum bitten, deine Versicherungskosten an das Street Noise Orchestra zu überweisen. Es handelt sich dabei um Kosten für privat versicherte Instrumente für den Zeitraum:
+# $member-name (String) - Mitglied, das die Zahlungsaufforderung erhält.
+payment-email-member-costs = Versicherungskosten { $member-name }:
+payment-email-bank-data = Bankdaten
+payment-email-cost-details = Möchtest du genau wissen, woraus sich deine Kosten zusammensetzen, kannst du dies im Forum unter folgendem Link nachlesen.
+payment-email-claim-guidance = Im Falle eines Schadens findest du die Anleitung für eine Schadensmeldung und das dazugehörige Schadensformular im Anhang.
+payment-email-contact = Solltest du weitere Fragen haben, kannst du dich gerne bei uns melden.
 
 ### Instrumentenprüfung durch Mitglieder
 

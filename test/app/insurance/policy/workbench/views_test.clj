@@ -20,71 +20,77 @@
    [:action/remove] "Remove"
    [:action/select-all] "Select all"
    [:action/view] "View"
-   [:actions] "Actions"
-   [:col/member] "Member"
+   [:app/actions] "Actions"
    [:instrument/category] "Category"
    [:instrument/instrument] "Instrument"
    [:instrument.coverage/cost] "Cost"
-   [:instrument.coverage.status/needs-review] "Todo"
-   [:instrument.coverage.status/reviewed] "Reviewed"
-   [:instrument.coverage.status/coverage-active] "Active"
-   [:instrument.coverage.change/changed] "Modified"
-   [:instrument.coverage.change/new] "Added"
-   [:instrument.coverage.change/removed] "Removed"
-   [:instrument.coverage.change/none] "No changes"
    [:insurance/cost] "Cost"
+   [:insurance/coverage-change-added] "Added"
+   [:insurance/coverage-change-modified] "Modified"
+   [:insurance/coverage-change-none] "No changes"
+   [:insurance/coverage-change-removed] "Removed"
+   [:insurance/coverage-status-active] "Active"
+   [:insurance/coverage-status-needs-review] "Todo"
+   [:insurance/coverage-status-reviewed] "Reviewed"
    [:insurance/coverage-types] "Coverage types"
    [:insurance/item-count] "Count"
    [:insurance/insurer-id] "Harmonia ID"
+   [:insurance/member] "Member"
    [:insurance/ownership] "Ownership"
    [:insurance/total] "Total"
    [:insurance/value] "Versicherungswert"
    [:insurance/value-abbrev] "Value"
-   [:insurance.workbench/and] "and"
-   [:insurance.workbench/change-status] "Change"
-   [:insurance.workbench/collapse-all] "Collapse all"
-   [:insurance.workbench/columns] "Columns"
-   [:insurance.workbench/deselect-all] "Deselect All"
-   [:insurance.workbench/expand-all] "Expand all"
-   [:insurance.workbench/filter-by] "Filter by: %1"
-   [:insurance.workbench/group-member] "Group by member"
-   [:insurance.workbench/mark-workflow] "Mark Workflow"
-   [:insurance.workbench/member-search-placeholder] "Search members"
-   [:insurance.workbench/missing] "Missing"
-   [:insurance.workbench/missing-photos] "Missing photos"
-   [:insurance.workbench/ownership] "Ownership"
-   [:insurance.workbench/ownership-all] "All"
-   [:insurance.workbench/ownership-band] "Band"
-   [:insurance.workbench/ownership-private] "Private"
-   [:insurance.workbench/pagination] "Pagination"
-   [:insurance.workbench/pagination-summary] "%1–%2 of %3 results"
-   [:insurance.workbench/photos] "Photos"
-   [:insurance.workbench/rows-per-page] "Rows per page"
-   [:insurance.workbench/search] "Search"
-   [:insurance.workbench/select-row] "Select row"
-   [:insurance.workbench/selected] "selected"
-   [:insurance.workbench/set-change] "Set Change"
-   [:insurance.workbench/status] "Status"
-   [:insurance.workbench/table-settings] "Table settings"
-   [:insurance.workbench/value-between] "is between"
-   [:insurance.workbench/value-equal-to] "is equal to"
-   [:insurance.workbench/value-greater-than] "is greater than"
-   [:insurance.workbench/value-less-than] "is less than"
-   [:insurance.workbench/value-max] "Maximum"
-   [:insurance.workbench/value-min] "Minimum"
-   [:insurance.workbench/value-operator] "Value operator"
-   [:insurance.workbench/view] "View"
-   [:insurance.workbench/workflow-status] "Workflow"
+   [:insurance/workbench-and] "and"
+   [:insurance/workbench-change-status] "Change"
+   [:insurance/workbench-collapse-all] "Collapse all"
+   [:insurance/workbench-columns] "Columns"
+   [:insurance/workbench-deselect-all] "Deselect All"
+   [:insurance/workbench-expand-all] "Expand all"
+   [:insurance/workbench-filter-by] "Filter by: %field"
+   [:insurance/workbench-group-member] "Group by member"
+   [:insurance/workbench-mark-workflow] "Mark Workflow"
+   [:insurance/workbench-member-search-placeholder] "Search members"
+   [:insurance/workbench-missing] "Missing"
+   [:insurance/workbench-missing-photos] "Missing photos"
+   [:insurance/workbench-ownership] "Ownership"
+   [:insurance/workbench-ownership-all] "All"
+   [:insurance/workbench-ownership-band] "Band"
+   [:insurance/workbench-ownership-private] "Private"
+   [:insurance/workbench-pagination] "Pagination"
+   [:insurance/workbench-pagination-summary]
+   "%range-start–%range-end of %total-results results"
+   [:insurance/workbench-photos] "Photos"
+   [:insurance/workbench-rows-per-page] "Rows per page"
+   [:insurance/workbench-search] "Search"
+   [:insurance/workbench-select-row] "Select row"
+   [:insurance/workbench-selected] "selected"
+   [:insurance/workbench-set-change] "Set Change"
+   [:insurance/workbench-status] "Status"
+   [:insurance/workbench-table-settings] "Table settings"
+   [:insurance/workbench-value-between] "is between"
+   [:insurance/workbench-value-equal-to] "is equal to"
+   [:insurance/workbench-value-greater-than] "is greater than"
+   [:insurance/workbench-value-less-than] "is less than"
+   [:insurance/workbench-value-max] "Maximum"
+   [:insurance/workbench-value-min] "Minimum"
+   [:insurance/workbench-value-operator] "Value operator"
+   [:insurance/workbench-view] "View"
+   [:insurance/workbench-workflow-status] "Workflow"
    [:private-instrument] "Private Instrument"})
 
 (defn tr
   ([path]
    (get translations path (name (last path))))
   ([path args]
-   (reduce (fn [s [idx arg]]
-             (str/replace s (str "%" (inc idx)) (str arg)))
-           (tr path)
-           (map-indexed vector args))))
+   (if (map? args)
+     (reduce-kv (fn [s key arg]
+                  (str/replace s (str "%" (name key)) (str arg)))
+                (tr path)
+                args)
+     (reduce (fn [s [idx arg]]
+               (str/replace s (str "%" (inc idx)) (str arg)))
+             (tr path)
+             (map-indexed vector args)))))
 
 (def policy-id
   #uuid "00000000-0000-0000-0000-000000002001")
@@ -214,7 +220,6 @@
   ([view table rows]
    (resolve-view
     (sut/flat-table
-     {:tr tr}
      {:view    view
       :filters {:group :none}
       :table   table
@@ -269,17 +274,17 @@
 
 (deftest filter-controls
   (testing "The policy has one category and one coverage type available for filtering."
-    (let [view [:div
-                (sut/ownership-select tr :private)
-                (sut/category-select
-                 tr
-                 [{:category-id category-id :category-name "Akkordeon"}]
-                 #{category-id})
-                (sut/coverage-type-select tr policy #{coverage-type-id})
-                (sut/missing-photos-switch tr true)
-                (sut/missing-harmonia-id-switch tr false)
-                (sut/workflow-status-select tr #{:needs-review :reviewed})
-                (sut/change-status-select tr #{:changed :new})]
+    (let [view (resolve-view
+                [:div
+                 (sut/ownership-select :private)
+                 (sut/category-select
+                  [{:category-id category-id :category-name "Akkordeon"}]
+                  #{category-id})
+                 (sut/coverage-type-select policy #{coverage-type-id})
+                 (sut/missing-photos-switch true)
+                 (sut/missing-harmonia-id-switch false)
+                 (sut/workflow-status-select #{:needs-review :reviewed})
+                 (sut/change-status-select #{:changed :new})])
           bindings (input-values-by-binding view)]
       (testing "Multi-value filters bind native checkboxes to signal arrays."
         (is (= {"insuranceWorkbench.filterDraft.categoryIds"
@@ -316,10 +321,11 @@
 
 (deftest filter-editor
   (testing "The value filter editor is open."
-    (let [view   (sut/filter-editor-shell
-                  request
-                  :value
-                  (sut/value-filter-control tr))
+    (let [view   (resolve-view
+                  (sut/filter-editor-shell
+                   request
+                   :value
+                   (sut/value-filter-control)))
           inputs (l/select 'input view)
           buttons (l/select :app.ui2.button/button view)]
       (testing "The editor identifies the field being filtered."
@@ -389,17 +395,18 @@
 
 (deftest toolbar
   (testing "The Todo workbench has an active member search and category filter."
-    (let [view (sut/workbench-toolbar
-                request
-                {:policy               policy
-                 :view                 :todo
-                 :pagination           {:page-size 20}
-                 :available-categories [{:category-id category-id
-                                         :category-name "Akkordeon"}]
-                 :filters              {:group        :member
-                                        :ownership    :all
-                                        :member-q     "Anna"
-                                        :category-ids #{category-id}}})
+    (let [view (resolve-view
+                (sut/workbench-toolbar
+                 request
+                 {:policy               policy
+                  :view                 :todo
+                  :pagination           {:page-size 20}
+                  :available-categories [{:category-id category-id
+                                          :category-name "Akkordeon"}]
+                  :filters              {:group        :member
+                                         :ownership    :all
+                                         :member-q     "Anna"
+                                         :category-ids #{category-id}}}))
           forms (l/select 'form view)
           view-select (l/select-one "wa-select[name=view]" view)
           search-input (l/select-one "wa-input[name=member-q]" view)]
@@ -428,16 +435,17 @@
 
 (deftest active-filters
   (testing "Private ownership and the Akkordeon category are active filters."
-    (let [view (sut/workbench-toolbar
-                request
-                {:policy               policy
-                 :view                 :todo
-                 :pagination           {:page-size 20}
-                 :available-categories [{:category-id category-id
-                                         :category-name "Akkordeon"}]
-                 :filters              {:group        :member
-                                        :ownership    :private
-                                        :category-ids #{category-id}}})
+    (let [view (resolve-view
+                (sut/workbench-toolbar
+                 request
+                 {:policy               policy
+                  :view                 :todo
+                  :pagination           {:page-size 20}
+                  :available-categories [{:category-id category-id
+                                          :category-name "Akkordeon"}]
+                  :filters              {:group        :member
+                                         :ownership    :private
+                                         :category-ids #{category-id}}}))
           tags (l/select 'wa-tag view)]
       (testing "Each active filter is presented as a removable, labelled chip."
         (is (= [{:text "Ownership Private" :with-remove true}
@@ -496,15 +504,15 @@
 
 (deftest row-content
   (testing "A workbench row has ownership, workflow, change, and coverage-type data."
-    (let [status-view   (sut/row-cell-content {:tr tr} :EUR row :status)
-          coverage-view (sut/row-cell-content {:tr tr} :EUR row :coverage-types)]
+    (let [status-view   (resolve-view (sut/row-cell-content :EUR row :status))
+          coverage-view (resolve-view (sut/row-cell-content :EUR row :coverage-types))]
       (testing "Ownership uses short labels."
         (is (= ["Band" "Private"]
-               [(-> (sut/row-cell-content {:tr tr} :EUR row :ownership)
+               [(-> (sut/row-cell-content :EUR row :ownership)
                     resolve-view
                     l/text)
                 (-> (sut/row-cell-content
-                     {:tr tr} :EUR (assoc row :private? true) :ownership)
+                     :EUR (assoc row :private? true) :ownership)
                     resolve-view
                     l/text)])))
       (testing "Workflow and change are accessible icons with matching tooltips."
@@ -579,15 +587,15 @@
 
 (deftest flat-table-total
   (testing "The ungrouped table includes a known-cost aggregate."
-    (let [table (sut/flat-table
-                 {:tr tr}
-                 {:view    :all
-                  :filters {:group :none}
-                  :table   nil
-                  :policy  policy
-                  :rows    [row]
-                  :totals  {:total-insured-value 1000M
-                            :total-cost          12.34M}})]
+    (let [table (resolve-view
+                 (sut/flat-table
+                  {:view    :all
+                   :filters {:group :none}
+                   :table   nil
+                   :policy  policy
+                   :rows    [row]
+                   :totals  {:total-insured-value 1000M
+                             :total-cost          12.34M}}))]
       (is (= {:label  "Total"
               :values ["1.000,00 €" "12,34 €"]}
              {:label  (-> (l/select-one '[tfoot th] table) l/text)
@@ -619,7 +627,7 @@
 
 (deftest row-actions
   (testing "A table row represents an existing coverage."
-    (let [actions-view (sut/row-cell-content {:tr tr} :EUR row :actions)
+    (let [actions-view (resolve-view (sut/row-cell-content :EUR row :actions))
           table        (flat-table [row])
           action-buttons (->> (l/select :app.ui2.button/button actions-view)
                               (filter #(contains? (:class (l/attrs %))
@@ -650,16 +658,18 @@
 
 (deftest bulk-actions
   (testing "The editable grouped table has rows but no current selection."
-    (let [grouped (sut/bulk-action-bar
-                   request
-                   {:editable? true
-                    :filters   {:group :member}
-                    :rows      [{}]})
-          flat    (sut/bulk-action-bar
-                   request
-                   {:editable? true
-                    :filters   {:group :none}
-                    :rows      [{}]})]
+    (let [grouped (resolve-view
+                   (sut/bulk-action-bar
+                    request
+                    {:editable? true
+                     :filters   {:group :member}
+                     :rows      [{}]}))
+          flat    (resolve-view
+                   (sut/bulk-action-bar
+                    request
+                    {:editable? true
+                     :filters   {:group :none}
+                     :rows      [{}]}))]
       (testing "Selection and status actions remain visible but disabled at zero selections."
         (is (= {:labels   ["Deselect All" "Mark Workflow" "Set Change"
                            "Expand all" "Collapse all"]
@@ -690,24 +700,24 @@
 
 (deftest pagination
   (testing "The first page shows 20 of 85 results and has another page."
-    (let [view (sut/rows-section
-                {:tr tr}
-                {:policy     policy
-                 :view       :all
-                 :filters    {:group :none
-                              :ownership :all}
-                 :pagination {:page          1
-                              :page-size     20
-                              :page-sizes    [20 50 100]
-                              :total-results 85
-                              :total-pages   5
-                              :range-start   1
-                              :range-end     20
-                              :has-prev?     false
-                              :has-next?     true
-                              :prev-page     nil
-                              :next-page     2}
-                 :rows       [row]})
+    (let [view (resolve-view
+                (sut/rows-section
+                 {:policy     policy
+                  :view       :all
+                  :filters    {:group :none
+                               :ownership :all}
+                  :pagination {:page          1
+                               :page-size     20
+                               :page-sizes    [20 50 100]
+                               :total-results 85
+                               :total-pages   5
+                               :range-start   1
+                               :range-end     20
+                               :has-prev?     false
+                               :has-next?     true
+                               :prev-page     nil
+                               :next-page     2}
+                  :rows       [row]}))
           dropdown (l/select-one
                     "wa-dropdown[data-workbench-page-size=true]"
                     view)

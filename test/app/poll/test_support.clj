@@ -6,7 +6,7 @@
 
 (defn tr [[k] & [args]]
   (case k
-    :error/is-required (str (first args) " is required.")
+    :error/is-required (str (:field args) " is required.")
     :error/form-has-errors "Please fix the errors in the form."
     :polls/error-min-greater-than-max "Min choices must be less than or equal to max choices."
     :polls/error-too-few-options "The poll needs at least as many options as the max choice count."

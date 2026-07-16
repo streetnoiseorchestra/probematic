@@ -10,7 +10,7 @@
 
 (defn tr [[k] & [args]]
   (case k
-    :error/is-required (str (first args) " is required.")
+    :error/is-required (str (:field args) " is required.")
     :gig/title "Title"
     :gig/date "Date"
     :gig/location "Location"

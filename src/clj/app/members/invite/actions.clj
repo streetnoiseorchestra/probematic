@@ -39,7 +39,7 @@
      {:phone {:error (tr [:error/member-unique-phone])}})))
 
 (defn- required-error [tr label]
-  {:error (tr [:error/is-required] [label])})
+  {:error (tr [:error/is-required] {:field label})})
 
 (defn- validation-errors [{:keys [db tr]} {:keys [name nick email username phone section-name]}]
   (merge

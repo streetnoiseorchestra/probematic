@@ -13,3 +13,5 @@ directory-toolbar-label = Member directory controls
 invite-toolbar-label = Member invitation controls
 detail-toolbar-label = Member controls
 edit-toolbar-label = Member editor controls
+insurance-title = Insurance & instruments
+insurance-subtitle = Instruments and other items registered with the band for insurance purposes.

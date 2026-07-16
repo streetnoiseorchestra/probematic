@@ -17,8 +17,8 @@
    [clojure.string :as str]))
 
 (def filter-label-keys
-  {:needs-review       [:insurance.review/filter-needs-review]
-   :missing-insurer-id [:insurance.review/filter-missing-insurer-id]})
+  {:needs-review       :insurance/review-queue-filter-needs-review
+   :missing-insurer-id :insurance/review-queue-filter-missing-insurer-id})
 (defn- policy-id
   [{:keys [parameters path-params]}]
   (let [value (or (get-in parameters [:path :policy-id])
@@ -45,14 +45,14 @@
   (name filter))
 
 (defn- filter-tab
-  [tr policy selected-filter filter]
+  [policy selected-filter filter]
   (let [panel-name (filter-panel-name filter)]
     [:wa-tab (cond-> {:panel         panel-name
                       :data-on:click (str "window.location.href = '"
                                           (urls/link-policy-review policy {:filter filter})
                                           "'")}
                (= selected-filter filter) (assoc :active true))
-     (tr (filter-label-keys filter))]))
+     [:i18n/tr (filter-label-keys filter)]]))
 
 (defn- filter-panel
   [selected-filter filter]
@@ -62,12 +62,12 @@
                      (= selected-filter filter) (assoc :active true))]))
 
 (defn filter-bar
-  [{:keys [tr]} {:keys [filter filter-order policy]}]
+  [{:keys [filter filter-order policy]}]
   (let [selected-filter filter]
     (into [:wa-tab-group {:active (filter-panel-name selected-filter)}]
           (concat
            (for [filter filter-order]
-             (filter-tab tr policy selected-filter filter))
+             (filter-tab policy selected-filter filter))
            (for [filter filter-order]
              (filter-panel selected-filter filter))))))
 
@@ -84,7 +84,7 @@
   "white-space: nowrap; flex: 0 0 auto;")
 
 (defn- approve-and-next-button
-  [{:keys [tr] :as req} coverage]
+  [req coverage]
   [button/Button (merge {:appearance "filled"
                          :variant    "brand"
                          :size       "s"
@@ -95,7 +95,7 @@
    [ico/Icon {::ico/library :snoico
               ::ico/name    :circle-check-outline
               :slot         "start"}]
-   (tr [:insurance.review/approve-and-next])])
+   [:i18n/tr :insurance/review-queue-approve-and-next]])
 
 (defn- insurer-id-input-id
   [coverage]
@@ -115,7 +115,7 @@
      :data-attr:loading  (str "$loading === '" target "'")}))
 
 (defn- insurer-id-action
-  [{:keys [tr] :as req} coverage]
+  [req coverage]
   [:div {:style (str "display: flex; flex-wrap: nowrap; gap: var(--wa-space-xs); "
                      "align-items: end; min-inline-size: min(100%, 24rem); "
                      "margin-inline-start: auto;")}
@@ -134,7 +134,7 @@
     [ico/Icon {::ico/library :snoico
                ::ico/name    :circle-check-outline
                :slot         "start"}]
-    (tr [:insurance.review/save-and-continue])]])
+    [:i18n/tr :insurance/review-queue-save-and-continue]]])
 
 (defn- insurance-team-member?
   [{:keys [db] :as req}]
@@ -149,11 +149,11 @@
   (cond
     (not (insurance-team-member? req))
     [:wa-callout {:appearance "outlined" :variant "neutral"}
-     ((:tr req) [:insurance.review/not-insurance-team])]
+     [:i18n/tr :insurance/review-queue-not-insurance-team]]
 
     (not (policy-editable? policy))
     [:wa-callout {:appearance "outlined" :variant "warning"}
-     ((:tr req) [:insurance.review/frozen-policy])]
+     [:i18n/tr :insurance/review-queue-frozen-policy]]
 
     (= filter :missing-insurer-id)
     (insurer-id-action req selected-coverage)
@@ -170,29 +170,26 @@
   (urls/link-policy-workbench policy {:review-filter (get workbench-filter-slugs filter filter)}))
 
 (defn workbench-summary
-  [{:keys [tr]} {:keys [filter policy queue-count totals]}]
-  (let [items-left-key (if (= 1 queue-count)
-                         [:insurance.review/item-left]
-                         [:insurance.review/items-left])]
-    [card/Card {:appearance "plain"
-                :style      "background: var(--wa-color-surface-default);"}
-     [:div {:class "wa-stack wa-gap-s"}
-      [:div {:class "wa-split wa-gap-m"}
-       [:span {:class                  "wa-font-weight-semibold"
-               :data-review-items-left true}
-        (tr items-left-key [queue-count])]
-       [:a {:href  (workbench-link policy filter)
-            :style "text-align: end;"}
-        (tr [:insurance.review/see-all-in-workbench])]]
-      [:dl {:class                    "wa-cluster wa-gap-xs wa-justify-content-end"
-            :data-review-policy-total true}
-       [:dt {:class "wa-caption-s wa-color-text-quiet"}
-        (tr [:insurance.dashboard/policy-cost])]
-       [:dd {:class "wa-font-weight-semibold"}
-        (ui2/money (:total-cost totals) (:insurance.policy/currency policy))]]]]))
+  [{:keys [filter policy queue-count totals]}]
+  [card/Card {:appearance "plain"
+              :style      "background: var(--wa-color-surface-default);"}
+   [:div {:class "wa-stack wa-gap-s"}
+    [:div {:class "wa-split wa-gap-m"}
+     [:span {:class                  "wa-font-weight-semibold"
+             :data-review-items-left true}
+      [:i18n/tr :insurance/review-queue-items-left {:count queue-count}]]
+     [:a {:href  (workbench-link policy filter)
+          :style "text-align: end;"}
+      [:i18n/tr :insurance/review-queue-see-all-in-workbench]]]
+    [:dl {:class                    "wa-cluster wa-gap-xs wa-justify-content-end"
+          :data-review-policy-total true}
+     [:dt {:class "wa-caption-s wa-color-text-quiet"}
+      [:i18n/tr :insurance/dashboard-policy-cost]]
+     [:dd {:class "wa-font-weight-semibold"}
+      (ui2/money (:total-cost totals) (:insurance.policy/currency policy))]]]])
 
 (defn- queue-item
-  [{:keys [tr]} policy filter selected coverage]
+  [policy filter selected coverage]
   (let [instrument (get coverage :instrument.coverage/instrument)
         active?    (= (:instrument.coverage/coverage-id selected)
                       (:instrument.coverage/coverage-id coverage))]
@@ -206,27 +203,26 @@
       [:span {:class "wa-caption-s wa-color-text-quiet"}
        (get-in instrument [:instrument/owner :member/name])]
       [:span {:class "wa-cluster wa-gap-2xs"}
-       (insurance-ui/status-badge tr (:instrument.coverage/status coverage))
-       (insurance-ui/change-badge tr (:instrument.coverage/change coverage))]]]))
+       (insurance-ui/status-badge (:instrument.coverage/status coverage))
+       (insurance-ui/change-badge (:instrument.coverage/change coverage))]]]))
 
 (defn- queue-card
-  [req {:keys [filter policy queue selected-coverage]}]
+  [{:keys [filter policy queue selected-coverage]}]
   [card/Card {:appearance "plain"
               :style      "background: var(--wa-color-surface-default);"}
    [:div {:class "wa-stack"}
-    [:h2 {:class "wa-heading-l"} ((:tr req) [:insurance.review/queue])]
+    [:h2 {:class "wa-heading-l"} [:i18n/tr :insurance/review-queue-queue]]
     (if (seq queue)
       [:wa-scroller {:orientation "vertical" :style "max-block-size: 65vh;"}
        (into [:div {:class "wa-stack wa-gap-2xs"}]
-             (map #(queue-item req policy filter selected-coverage %) queue))]
-      (ui2/empty-state ((:tr req) [:insurance.review/empty-title])
-                       ((:tr req) [:insurance.review/empty-body])))]])
+             (map #(queue-item policy filter selected-coverage %) queue))]
+      (ui2/empty-state [:i18n/tr :insurance/review-queue-empty-title]
+                       [:i18n/tr :insurance/review-queue-empty-body]))]])
 
 (defn review-aside
-  [req _review]
+  []
   [:aside
-   (insurance-ui/comments-card req insurance-ui/comments-dummy)
-   #_(queue-card req _review)])
+   (insurance-ui/comments-card insurance-ui/comments-dummy)])
 
 (defn- nav-link-button
   [label href]
@@ -238,34 +234,34 @@
    label])
 
 (defn- previous-button
-  [{:keys [tr]} {:keys [filter policy previous-coverage]}]
+  [{:keys [filter policy previous-coverage]}]
   (nav-link-button
-   (tr [:action/previous])
+   [:i18n/tr :action/previous]
    (when previous-coverage
      (coverage-review-link policy filter previous-coverage))))
 
 (defn- skip-button
-  [{:keys [tr]} {:keys [filter next-coverage policy]}]
+  [{:keys [filter next-coverage policy]}]
   (nav-link-button
-   (tr [:insurance.review/skip])
+   [:i18n/tr :insurance/review-queue-skip]
    (when next-coverage
      (coverage-review-link policy filter next-coverage))))
 
 (defn- navigation-button-group
-  [req review]
+  [review]
   [:div {:style (str "display: flex; flex-wrap: nowrap; gap: var(--wa-space-s); "
                      "align-items: end; flex: 0 0 auto;")}
-   (previous-button req review)
-   (skip-button req review)])
+   (previous-button review)
+   (skip-button review)])
 
 (defn- todo-action-row
   [req review]
   [:div {:style (str "display: flex; flex-wrap: nowrap; gap: var(--wa-space-s); "
                      "align-items: end; overflow-x: auto;")}
-   (previous-button req review)
+   (previous-button review)
    [:div {:style (str "display: flex; flex-wrap: nowrap; gap: var(--wa-space-s); "
                       "align-items: end; margin-inline-start: auto;")}
-    (skip-button req review)
+    (skip-button review)
     (primary-review-action req review)]])
 
 (defn review-action-row
@@ -273,12 +269,12 @@
   (if (= filter :missing-insurer-id)
     [:div {:style (str "display: flex; flex-wrap: wrap; gap: var(--wa-space-s); "
                        "align-items: end;")}
-     (navigation-button-group req review)
+     (navigation-button-group review)
      (primary-review-action req review)]
     (todo-action-row req review)))
 
 (defn- review-card
-  [{:keys [page-state tr] :as req} {:keys [policy selected-coverage] :as review}]
+  [{:keys [page-state] :as req} {:keys [policy selected-coverage] :as review}]
   (let [instrument (:instrument.coverage/instrument selected-coverage)]
     (insurance-ui/coverage-detail-card
      req
@@ -286,11 +282,11 @@
       :coverage      selected-coverage
       :error-message (get-in page-state [:insurance-review :error :error])
       :policy        policy
-      :subtitle      (tr [:insurance.review/reviewing-owner]
-                         [(get-in instrument [:instrument/owner :member/name])])})))
+      :subtitle      [:i18n/tr :insurance/review-queue-reviewing-owner
+                      {:owner-name (get-in instrument [:instrument/owner :member/name])}]})))
 
 (defn page
-  [{:keys [db tr] :as req}]
+  [{:keys [db] :as req}]
   (let [review   (queries/policy-review db (policy-id req) (query-params req))
         policy   (:policy review)
         selected (:selected-coverage review)]
@@ -307,16 +303,17 @@
                                                            :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-xl"}
        [page-header/PageHeader
-        {:title    (tr [:insurance.review/title])
-         :subtitle (tr [:insurance.review/subtitle] [(str/trim (:insurance.policy/name policy))])}]
-       (filter-bar req review)
-       (workbench-summary req review)
+        {:title    [:i18n/tr :insurance/review-queue-title]
+         :subtitle [:i18n/tr :insurance/review-queue-subtitle
+                    {:policy-name (str/trim (:insurance.policy/name policy))}]}]
+       (filter-bar review)
+       (workbench-summary review)
        (if selected
          (list
           [:div {:class "wa-flank:end wa-align-items-start" :style "--flank-size: 50ch;"}
            (review-card req review)
-           (review-aside req review)]
+           (review-aside)]
           (insurance-ui/history-section req selected))
-         (queue-card req review))]])))
+         (queue-card review))]])))
 
 (d*/refresh-all!)

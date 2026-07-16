@@ -30,15 +30,15 @@
                  :class        (ui2/cs "insurance-policy-status-icon" class)
                  :aria-hidden  true}])))
 
-(defn- policy-remove-dialog [{:keys [tr] :as req} {:insurance.policy/keys [policy-id name]}]
+(defn- policy-remove-dialog [req {:insurance.policy/keys [policy-id name]}]
   (let [loading-id (pr-str (str policy-id))]
     [:wa-dialog {:id    (ui2/remove-dialog-id "insurance-policy" policy-id)
-                 :label (tr [:action/confirm-generic])}
-     [:p (tr [:action/confirm-delete-policy] [name])]
+                 :label [:i18n/tr :action/confirm-generic]}
+     [:p [:i18n/tr :action/confirm-delete-policy {:policy-name name}]]
      [button/Button {:slot        "footer"
                      :appearance  "outlined"
                      :data-dialog "close"}
-      (tr [:action/cancel])]
+      [:i18n/tr :action/cancel]]
      [button/Button {:slot               "footer"
                      :appearance         "filled"
                      :variant            "danger"
@@ -47,23 +47,23 @@
                      :data-attr:loading  (str "$loading === " loading-id)
                      :data-id            policy-id
                      :data-action        (d*/act req ::actions/delete-policy)}
-      (tr [:action/confirm-delete])]]))
+      [:i18n/tr :action/confirm-delete]]]))
 
-(defn- policy-actions [{:keys [tr] :as req} {:insurance.policy/keys [policy-id]}]
+(defn- policy-actions [req {:insurance.policy/keys [policy-id]}]
   (let [button-id  (str "insurance-policy-actions-" policy-id)
         loading-id (pr-str (str policy-id))]
     (ui2/row-action-menu
      {:button-id button-id
-      :items     [{:label              (tr [:action/duplicate])
+      :items     [{:label              [:i18n/tr :action/duplicate]
                    :data-attr:disabled (str "!!$loading && $loading !== " loading-id)
                    :data-attr:loading  (str "$loading === " loading-id)
                    :data-id            policy-id
                    :data-action        (d*/act req ::actions/duplicate-policy)}
-                  {:label       (tr [:action/delete])
+                  {:label       [:i18n/tr :action/delete]
                    :variant     "danger"
                    :data-dialog (format "open %s" (ui2/remove-dialog-id "insurance-policy" policy-id))}]})))
 
-(defn- policy-row [{:keys [tr] :as req} {:insurance.policy/keys [policy-id name status] :keys [total-instruments total-needs-review total-changed total-removed total-new] :as policy}]
+(defn- policy-row [req {:insurance.policy/keys [policy-id name status] :keys [total-instruments total-needs-review total-changed total-removed total-new] :as policy}]
   [:tr {:id (str "insurance-policy-" policy-id)}
    [:td {:class "align-middle"}
     [:a {:href  (urls/link-policy policy-id)
@@ -74,48 +74,48 @@
     total-instruments]
    [:td {:class "insurance-policy-col insurance-policy-col--metrics align-middle"}
     [:div {:class "insurance-policy-metrics"}
-     (insurance.ui/todo-metric tr {:id-prefix    "insurance-policy"
-                                   :class-prefix "insurance-policy"
-                                   :policy-id    policy-id
-                                   :status       :needs-review
-                                   :count        total-needs-review})
-     (insurance.ui/todo-metric tr {:id-prefix    "insurance-policy"
-                                   :class-prefix "insurance-policy"
-                                   :policy-id    policy-id
-                                   :status       :changed
-                                   :count        total-changed})
-     (insurance.ui/todo-metric tr {:id-prefix    "insurance-policy"
-                                   :class-prefix "insurance-policy"
-                                   :policy-id    policy-id
-                                   :status       :new
-                                   :count        total-new})
-     (insurance.ui/todo-metric tr {:id-prefix    "insurance-policy"
-                                   :class-prefix "insurance-policy"
-                                   :policy-id    policy-id
-                                   :status       :removed
-                                   :count        total-removed})]]
+     (insurance.ui/todo-metric {:id-prefix    "insurance-policy"
+                                :class-prefix "insurance-policy"
+                                :policy-id    policy-id
+                                :status       :needs-review
+                                :count        total-needs-review})
+     (insurance.ui/todo-metric {:id-prefix    "insurance-policy"
+                                :class-prefix "insurance-policy"
+                                :policy-id    policy-id
+                                :status       :changed
+                                :count        total-changed})
+     (insurance.ui/todo-metric {:id-prefix    "insurance-policy"
+                                :class-prefix "insurance-policy"
+                                :policy-id    policy-id
+                                :status       :new
+                                :count        total-new})
+     (insurance.ui/todo-metric {:id-prefix    "insurance-policy"
+                                :class-prefix "insurance-policy"
+                                :policy-id    policy-id
+                                :status       :removed
+                                :count        total-removed})]]
    [:td {:class "insurance-policy-actions align-middle"}
     (policy-actions req policy)]])
 
-(defn- policies-table [{:keys [tr] :as req} policies]
+(defn- policies-table [req policies]
   (ui2/section-card
    {:class "wa-stack insurance-policies"
-    :title (tr [:insurance/policies])}
+    :title [:i18n/tr :insurance/policies]}
    (ui2/table-shell
     (if (seq policies)
       [:table {:class "insurance-policy-table"}
        [:thead
         [:tr
-         [:th (tr [:insurance/name])]
+         [:th [:i18n/tr :insurance/name]]
          [:th {:class "insurance-policy-col insurance-policy-col--count"}
-          (tr [:insurance/item-count])]
+          [:i18n/tr :insurance/item-count]]
          [:th {:class "insurance-policy-col insurance-policy-col--metrics"}
-          (tr [:instrument.coverage/status])]
+          [:i18n/tr :insurance/coverage-status]]
          [:th {:class "insurance-policy-actions"}]]]
        [:tbody
         (for [policy policies]
           (policy-row req policy))]]
-      (ui2/empty-state (tr [:insurance/policies]) (tr [:none]))))))
+      (ui2/empty-state [:i18n/tr :insurance/policies] [:i18n/tr :none])))))
 
 (defn- faq-p [text]
   [:p text])
@@ -135,7 +135,7 @@
     [:span text]))
 
 (defn- coverage-type-faq-row
-  [tr {:insurance.coverage.type/keys [description name required? type-id]}]
+  [{:insurance.coverage.type/keys [description name required? type-id]}]
   [:div {:class                 "wa-stack wa-gap-2xs"
          :data-coverage-type-id (str type-id)}
    [:div {:class "wa-cluster wa-gap-xs"}
@@ -143,14 +143,14 @@
     [:wa-badge {:appearance "outlined"
                 :variant    (if required? "brand" "neutral")
                 :pill       true}
-     (tr [(if required?
-            :insurance/coverage-required
-            :insurance/coverage-optional)])]]
+     [:i18n/tr (if required?
+                 :insurance/coverage-required
+                 :insurance/coverage-optional)]]]
    (when-not (str/blank? description)
      (faq-p description))])
 
 (defn- coverage-types-faq
-  [tr active-policy]
+  [active-policy]
   (let [coverage-types
         (sort-by (juxt (comp not :insurance.coverage.type/required?)
                        (comp str/lower-case
@@ -159,11 +159,11 @@
     [:div {:class "wa-stack wa-gap-m"}
      (if (seq coverage-types)
        (for [coverage-type coverage-types]
-         (coverage-type-faq-row tr coverage-type))
-       (faq-p (tr [:insurance/faq-coverage-types-empty])))
-     (faq-p (tr [:insurance/faq-coverage-types-summary]))]))
+         (coverage-type-faq-row coverage-type))
+       (faq-p [:i18n/tr :insurance/faq-coverage-types-empty]))
+     (faq-p [:i18n/tr :insurance/faq-coverage-types-summary])]))
 
-(defn- faq-items [{:keys [db system tr] :as req} active-policy]
+(defn- faq-items [{:keys [db system] :as req} active-policy]
   (let [member            (auth/get-current-member req)
         form-link         (some-> active-policy :insurance.policy/policy-id urls/link-coverage-create)
         coverages         (queries/member-coverages db member active-policy)
@@ -213,8 +213,8 @@
       :question "Was ist der Unterschied zwischen einem Band-Instrument und einem privaten Instrument?"
       :answer   (faq-p "Ein Band-Instrument ist ein Instrument/Gegenstand, der im letzten Jahr bei einem Auftritt von SNO gespielt oder verwendet wurde. SNO übernimmt die Kosten für Band-Instrumente. Alle anderen Instrumente/Gegenstände gelten als privat, und das Mitglied, dem sie gehören, ist für die Zahlung der Versicherungsprämie verantwortlich.")}
      {:id       "faq5"
-      :question (tr [:insurance/faq-coverage-types-question])
-      :answer   (coverage-types-faq tr active-policy)}
+      :question [:i18n/tr :insurance/faq-coverage-types-question]
+      :answer   (coverage-types-faq active-policy)}
      {:id       "faq6"
       :question "Welche Arten von Gegenständen kann ich versichern?"
       :answer   (faq-p "Obwohl wir die versicherten Gegenstände üblicherweise als \"Instrumente\" bezeichnen, kannst du jeden Artikel im Zusammenhang mit SNO-Auftritten versichern: Instrumente, Gigbags, Mundstücke, Mikrofone und andere elektrische Geräte usw.")}
@@ -277,7 +277,7 @@
    (into [:div {:class "wa-stack wa-gap-0"}]
          (map faq-item (faq-items req active-policy)))))
 
-(defn page [{:keys [db tr] :as req}]
+(defn page [{:keys [db] :as req}]
   (let [policies      (queries/policies db)
         active-policy (queries/active-policy db)]
     (ui2/datastar-page*
@@ -297,7 +297,7 @@
                                                              [:i18n/tr :insurance/new-policy]]]
                                                            :aria-label [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "insurance-index-page wa-stack wa-gap-xl"}
-       [page-header/PageHeader {:title (tr [:insurance/title])}]
+       [page-header/PageHeader {:title [:i18n/tr :insurance/title]}]
        (insurance-faq req active-policy)
        (policies-table req policies)
        (for [policy policies]

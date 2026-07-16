@@ -7,7 +7,7 @@
 
 (defn tr [[key] & [args]]
   (case key
-    :error/is-required (str (first args) " is required.")
+    :error/is-required (str (:field args) " is required.")
     :error/form-has-errors "Please fix the errors in the form."
     :insurance/name "Policy name"
     :insurance/effective-at "Effective from"

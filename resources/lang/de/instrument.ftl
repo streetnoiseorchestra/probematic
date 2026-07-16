@@ -17,5 +17,7 @@ build-year = Baujahr
 build-year-hint = Gib, falls bekannt, das Baujahr ein.
 description = Beschreibung
 description-hint = z. B. Farbe oder Material
+images-share-url = Öffentlicher Fotolink
+images-share-url-hint = Verwende diesen Link, wenn du die Fotos außerhalb der Band teilst.
 if-available = wenn verfügbar
 create-subtitle = Bitte trage die unten gefragten Informationen zu deinem Instrument/Zubehör so detailliert wie möglich ein.

@@ -193,7 +193,9 @@
          (assert (:member/email member))
          (let [args (tmpl/build-insurance-debt-args sys member private-coverages sender-name time-range private-cost-total)
                to (:member/email member)
-               subject (tr [:insurance/email-subject] [(:member/name member) time-range])
+               subject (tr [:insurance/payment-email-subject]
+                           {:member-name (:member/name member)
+                            :time-range  time-range})
                body-html (tmpl/insurance-debt-html sys args)
                body-plain (tmpl/insurance-debt-plain sys args)]
            (build-smtp-email to subject body-html body-plain)))
@@ -220,17 +222,17 @@
         sys (sys-from-req req)]
     (build-batch-emails
      (mapv :member/email members)
-     (tr [:email-subject/insurance-survey])
-     (tmpl/generic-email-html sys (tmpl/insurance-survey-created-email-html-body tr email-data) (tr [:insurance.survey/start-button]) url
+     (tr [:insurance/survey-email-subject])
+     (tmpl/generic-email-html sys (tmpl/insurance-survey-created-email-html-body tr email-data) (tr [:insurance/survey-email-start]) url
                               {:sign-off
                                [:p
                                 (tr [:email/sign-off-personal])
                                 [:br] sender-name
-                                [:br] (tr [:email/sign-off-insurance-team])]})
-     (tmpl/generic-email-plain sys (tmpl/insurance-survey-created-email-plain-body tr email-data) (tr [:insurance.survey/start-button])  url
+                                [:br] (tr [:insurance/email-team-name])]})
+     (tmpl/generic-email-plain sys (tmpl/insurance-survey-created-email-plain-body tr email-data) (tr [:insurance/survey-email-start]) url
                                {:sign-off (str (tr [:email/sign-off-personal])
                                                "\n" sender-name
-                                               "\n" (tr [:email/sign-off-insurance-team]))})
+                                               "\n" (tr [:insurance/email-team-name]))})
      nil)))
 
 (defn send-survey-notifications! [req sender-name policy members email-data]

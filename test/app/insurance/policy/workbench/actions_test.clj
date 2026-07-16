@@ -304,32 +304,32 @@
                                 :effects [support/clear-loading
                                           [:app.datastar/assoc-state
                                            [:insurance-workbench :error]
-                                           {:error [:insurance.workbench/error-empty-selection]}]]}
+                                           {:error [:insurance/workbench-error-empty-selection]}]]}
               :invalid-status  {:has-transaction? false
                                 :effects [support/clear-loading
                                           [:app.datastar/assoc-state
                                            [:insurance-workbench :error]
-                                           {:error [:insurance.workbench/error-invalid-target-status]}]]}
+                                           {:error [:insurance/workbench-error-invalid-target-status]}]]}
               :not-allowed     {:has-transaction? false
                                 :effects [support/clear-loading
                                           [:app.datastar/assoc-state
                                            [:insurance-workbench :error]
-                                           {:error [:insurance.workbench/error-not-allowed]}]]}
+                                           {:error [:insurance/workbench-error-not-allowed]}]]}
               :frozen-policy   {:has-transaction? false
                                 :effects [support/clear-loading
                                           [:app.datastar/assoc-state
                                            [:insurance-workbench :error]
-                                           {:error [:insurance.workbench/error-frozen-policy]}]]}
+                                           {:error [:insurance/workbench-error-frozen-policy]}]]}
               :missing-coverage {:has-transaction? false
                                  :effects [support/clear-loading
                                            [:app.datastar/assoc-state
                                             [:insurance-workbench :error]
-                                            {:error [:insurance.workbench/error-coverage-not-found]}]]}
+                                            {:error [:insurance/workbench-error-coverage-not-found]}]]}
               :foreign-coverage {:has-transaction? false
                                  :effects [support/clear-loading
                                            [:app.datastar/assoc-state
                                             [:insurance-workbench :error]
-                                            {:error [:insurance.workbench/error-coverage-not-in-policy]}]]}}
+                                            {:error [:insurance/workbench-error-coverage-not-in-policy]}]]}}
              {:empty-selection
               (rejection-summary
                (actions/bulk-update-workflow-status-action

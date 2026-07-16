@@ -1,6 +1,7 @@
 ### Gemeinsam verwendete Aktionsbeschriftungen
 
 add = Hinzufügen
+apply = Anwenden
 back = Zurück
 cancel = Abbrechen
 create = Erstellen
@@ -25,3 +26,12 @@ update = Aktualisieren
 view-all = Alle anzeigen
 confirm-generic = Bist du sicher?
 confirm-delete = Ja, löschen
+# $instrument-name (String) - Name des Instruments, das gelöscht wird.
+confirm-delete-instrument = Möchtest du das Instrument { $instrument-name } wirklich löschen?
+# $policy-name (String) - Name der Versicherungspolice, die gelöscht wird.
+confirm-delete-policy = Möchtest du die Versicherungspolice { $policy-name } wirklich löschen?
+download = Herunterladen
+duplicate = Duplizieren
+filter = Filter
+previous = Zurück
+view = Anzeigen

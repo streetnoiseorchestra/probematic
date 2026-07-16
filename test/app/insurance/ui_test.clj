@@ -29,7 +29,7 @@
                        {:tr tr :system {:env {}}}
                        {:coverage coverage
                         :policy   {:insurance.policy/currency :EUR}})
-        comments-view (ui/comments-card {:tr tr} [])]
+        comments-view (ui/comments-card [])]
     (testing "Insurance cards retain their Card chassis appearance and body layout."
       (is (= [{:component  card/Card
                :appearance "plain"

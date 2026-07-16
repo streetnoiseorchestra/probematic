@@ -575,10 +575,11 @@
    footer a:hover { color: #7c2d12; }
    code { overflow-wrap: anywhere; }")
 
-(defn standalone-page [{:keys [description lang status title]} & body]
+(defn standalone-page [{:keys [description lang status title translator]} & body]
   {:status  (or status 200)
    :headers {"Content-Type" "text/html; charset=utf-8"}
    :body    (html/->str
+             translator
              (html/html-document
               {:title       title
                :description description

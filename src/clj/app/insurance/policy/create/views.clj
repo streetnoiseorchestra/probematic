@@ -9,8 +9,10 @@
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
-   [app.urls :as urls]
-   [tick.core :as t]))
+   [app.urls :as urls]))
+
+(defn- required-marker []
+  [:span {:aria-hidden "true"} " *"])
 
 (defn- field
   [form-state field-name label attrs]
@@ -18,7 +20,10 @@
         id    (str "insurance-policy-create-" (name field-name))]
     [:label {:class "wa-stack wa-gap-2xs"
              :for   id}
-     [:span {:class "wa-caption-s wa-font-weight-bold"} label]
+     [:span {:class "wa-caption-s wa-font-weight-bold"}
+      label
+      (when (:required attrs)
+        (required-marker))]
      [:input (cond-> (merge {:id        id
                              :name      (name field-name)
                              :value     (form/text-value (field-name form-state))
@@ -32,15 +37,8 @@
         error])]))
 
 (defn page
-  [{:keys [tr] :as req}]
-  (let [this-year  (-> (t/year (t/now)) str parse-long)
-        next-year  (inc this-year)
-        defaults   {:name            (tr [:insurance/default-policy-name]
-                                         {:start-year (str this-year)
-                                          :end-year   (str next-year)})
-                    :effective-at    (str this-year "-05-01")
-                    :effective-until (str next-year "-04-30")
-                    :base-factor     "0.0047829"}
+  [req]
+  (let [defaults   (actions/default-form (:tr req))
         form-state (merge defaults (get-in req [:page-state actions/form-key]))]
     (ui2/datastar-page*
      [page-surface/PageSurface
@@ -66,8 +64,8 @@
       [:div {:class        "wa-stack wa-gap-xl"
              :data-signals (d*/->signals {actions/form-key (dissoc form-state :_error)})}
        [page-header/PageHeader
-        {:title    (tr [:insurance/create-title])
-         :subtitle (tr [:insurance/create-subtitle])}]
+        {:title    [:i18n/tr :insurance/create-title]
+         :subtitle [:i18n/tr :insurance/create-subtitle]}]
        [:form {:id             "insurance-policy-create-form"
                :class          "wa-stack wa-gap-l"
                :data-id        "insurance-policy-create"
@@ -78,14 +76,14 @@
                         :variant    "danger"}
            error])
         (ui2/section-card
-         {:title    (tr [:insurance/policy-details])
-          :subtitle (tr [:insurance/create-subtitle])}
+         {:title    [:i18n/tr :insurance/policy-details]
+          :subtitle [:i18n/tr :insurance/create-subtitle]}
          [:div {:class "wa-stack wa-gap-m"}
-          (field form-state :name (tr [:insurance/name]) {:type "text" :required true})
+          (field form-state :name [:i18n/tr :insurance/name] {:type "text" :required true})
           [:div {:class "wa-grid wa-gap-m" :style "--min-column-size: 14rem;"}
-           (field form-state :effective-at (tr [:insurance/effective-at]) {:type "date" :required true})
-           (field form-state :effective-until (tr [:insurance/effective-until]) {:type "date" :required true})]
-          (field form-state :base-factor (tr [:insurance/premium-base-factor])
+           (field form-state :effective-at [:i18n/tr :insurance/effective-at] {:type "date" :required true})
+           (field form-state :effective-until [:i18n/tr :insurance/effective-until] {:type "date" :required true})]
+          (field form-state :base-factor [:i18n/tr :insurance/premium-base-factor]
                  {:type "number" :min "0" :step "any" :required true})])]]])))
 
 (d*/refresh-all!)

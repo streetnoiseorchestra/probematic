@@ -69,7 +69,7 @@
     (name field)))
 
 (defn- required-error [tr field]
-  {:error (tr [:error/is-required] [(label tr field)])})
+  {:error (tr [:error/is-required] {:field (label tr field)})})
 
 (defn- top-error [message]
   {:_top {:error message}})

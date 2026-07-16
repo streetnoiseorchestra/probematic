@@ -286,24 +286,24 @@
         coverages       (mapv #(when (uuid? %) (q/retrieve-coverage db %)) selected-ids)]
     (cond
       (empty? selected-ids)
-      (error-effects tr [:insurance.workbench/error-empty-selection])
+      (error-effects tr [:insurance/workbench-error-empty-selection])
 
       (or (= invalid-bulk-target workflow-status)
           (= invalid-bulk-target change-status)
           (empty? tx-data))
-      (error-effects tr [:insurance.workbench/error-invalid-target-status])
+      (error-effects tr [:insurance/workbench-error-invalid-target-status])
 
       (not (insurance-team-member? db current-member-id))
-      (error-effects tr [:insurance.workbench/error-not-allowed])
+      (error-effects tr [:insurance/workbench-error-not-allowed])
 
       (not (queries/policy-editable? policy))
-      (error-effects tr [:insurance.workbench/error-frozen-policy])
+      (error-effects tr [:insurance/workbench-error-frozen-policy])
 
       (some nil? coverages)
-      (error-effects tr [:insurance.workbench/error-coverage-not-found])
+      (error-effects tr [:insurance/workbench-error-coverage-not-found])
 
       (not-every? #(= policy-id (coverage-policy-id %)) coverages)
-      (error-effects tr [:insurance.workbench/error-coverage-not-in-policy])
+      (error-effects tr [:insurance/workbench-error-coverage-not-in-policy])
 
       :else
       (success-effects current-member-id tx-data))))
