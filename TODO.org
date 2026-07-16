@@ -15,6 +15,7 @@
 ** DONE should show changes in the "Is everything OK?"
 ** TODO exclude removed instruments from total
 ** TODO remove images
+** DONE implement modern csrf
 ** TODO save excel to filestore for download again
 * 2026 d* port, cleanups and slimming down
 ** DONE members index
@@ -86,9 +87,10 @@ Then replace the /account-settings/profile/save and other upload locations with 
 ** DONE collapse app/<thing>/<subthing1,subthing2>/queries into just <thing>/queries.clj
 ** DONE remove/cleanup unused icons from app.icons
 ** DONE step circles on instrument create page has horizontal scroll on mobile
-** TODO instrument creation third step can fail and cause multiple instruments and or coverages to be created
+** DONE instrument creation third step can fail and cause multiple instruments and or coverages to be created
+** TODO migrate tempura -> fluent, and tr -> :i18n/tr
 ** TODO introduce sqlite4clj for cache/ephemeral storage
 ** TODO use sqlite4clj for db sessions
 ** TODO move new member invitation storage from redis to datomic add A minimal necessary :member/<somethings> attributes to support this, make it db/noHistory
 ** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
-** TODO member invite fields should validate as you type/move between the fields with server roudntrip validation like our other forms, including uniqueness checks, and they should have inline validation errors.. The code looks like it's there, but it's not working.
+** DONE member invite fields should validate as you type/move between the fields with server roudntrip validation like our other forms, including uniqueness checks, and they should have inline validation errors.. The code looks like it's there, but it's not working.
