@@ -145,7 +145,7 @@
            (template-snippet-gig-details sys gig)
            [:p]
            [:hr]
-           [:p [:strong (tr [:email/can-you-make-it?])]]
+           [:p [:strong (tr [:email/can-you-make-it])]]
            [:p [:a {:href can-make-it-link} (tr [:email/can-make-it])]]
            [:p [:a {:href cannot-make-it-link} (tr [:email/cannot-make-it])]]
            [:p [:a {:href reminder-link} (tr [:email/want-reminder])]]
@@ -185,7 +185,7 @@
                      :gig.type/meeting (if reminder? :email/remind-meeting  :email/new-meeting-added)
                      :gig.type/gig (if reminder? :email/remind-gig :email/new-gig-added))])
        :gig-info (template-snippet-gig-details-plain sys gig)
-       :can-you-make-it (tr [:email/can-you-make-it?])
+       :can-you-make-it (tr [:email/can-you-make-it])
        :can-make-it (tr [:email/can-make-it])
        :can-make-it-link can-make-it-link
 
@@ -217,7 +217,7 @@
          (template-snippet-gig-details sys gig)
          [:p]
          [:hr]
-         [:p [:a {:href (url/absolute-link-gig  env (:gig/gig-id gig))} (tr [:email/need-to-change-availability?])]]
+         [:p [:a {:href (url/absolute-link-gig  env (:gig/gig-id gig))} (tr [:email/change-availability])]]
          [:p]
          [:p (tr [:email/sign-off])]])))
 
@@ -245,7 +245,7 @@
        :gig-edit-type-label (tr [:email/gig-edit-type])
        :gig-edit-type-attrs (str/join ", " (map #(edited-gig-attribute-label tr %) edited-attrs))
        :gig-info (template-snippet-gig-details-plain sys gig)
-       :need-to-change (tr [:email/need-to-change-availability?])
+       :need-to-change (tr [:email/change-availability])
        :gig-info-page (tr [:email/gig-info-page])
        :gig-info-page-link gig-link
        :sign-off (tr [:email/sign-off])
@@ -319,7 +319,7 @@
 (defn insurance-debt-hiccup [{:keys [tr]} {:keys [member-name private-instruments time-range amount account-name iban bic insurance-link sender-name]}]
   [:div
    [:p
-    (tr [:email/greeting-personal] [member-name])]
+    (tr [:email/greeting-personal] {:member-name member-name})]
    [:p (tr [:insurance/payment-email-intro]) [:strong time-range]]
    [:p [:strong (tr [:insurance/payment-email-member-costs]
                     {:member-name member-name})]]
@@ -389,7 +389,7 @@
 {{sender-name}}
 Versicherungsteam StreetNoise Orchestra
 "
-    {:greeting (tr [:email/greeting-personal] [member-name])
+    {:greeting (tr [:email/greeting-personal] {:member-name member-name})
      :p1 (str (tr [:insurance/payment-email-intro]) " " time-range)
      :p2 (tr [:insurance/payment-email-member-costs]
              {:member-name member-name})

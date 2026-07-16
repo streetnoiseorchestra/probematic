@@ -8,6 +8,7 @@ my-responses = My Responses
 responses-empty = You’re all caught up.
 actions = Actions
 none = None
+total = Total
 unknown = unknown
 invitation-expired = Sorry, the invitation code has expired. Please ask for a new one!
 login = Login

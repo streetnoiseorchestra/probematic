@@ -8,6 +8,7 @@ my-responses = Meine Antworten
 responses-empty = Alles erledigt.
 actions = Aktionen
 none = Keine
+total = Gesamt
 unknown = unbekannt
 invitation-expired = Entschuldigung, der Einladungscode ist abgelaufen. Bitte frag nach einem neuen!
 login = Anmelden

@@ -1,0 +1,29 @@
+### Transactional email copy
+
+greeting = Hello!
+# $member-name (String) - The recipient’s display name.
+greeting-personal = Liebe:r { $member-name }
+new-gig-added = A new gig is coming up!
+new-probe-added = A new probe is coming up!
+new-extra-probe-added = A new extra-probe is coming up!
+new-meeting-added = A new meeting is coming up!
+remind-gig = This is a reminder about an upcoming gig! Please respond :)
+remind-probe = This is a reminder about an upcoming probe! Please respond :)
+remind-extra-probe = This is a reminder about an upcoming extra-probe! Please respond :)
+remind-meeting = This is a reminder about an upcoming meeting! Please respond :)
+gig-edited = Something has changed about a gig!
+gig-edit-type = EDITED
+change-availability = I need to change my availability
+want-reminder = Remind me in a few days
+can-you-make-it = Can you make it?
+can-make-it = I can make it!
+cannot-make-it = I cannot make it
+gig-info-page = Take me to the Gig Info page
+sign-off = Mit groovigen Grüßen — SNObot
+sign-off-personal = Danke und liebe Grüße,
+invite-new-user-intro = You’ve received an invite to create a StreetNoise Orchestra (SNO) ID!
+invite-new-user-intro2 = Click the link below to setup your account.
+subject-log-plays = What did we play at the Probe?
+# $gig-date (String) - The localized date of the rehearsal to document.
+body-log-plays = Please tell SNOrga what we played at the Probe on { $gig-date } *and* who the Probeleitungen for next week are! It only takes 1 minute.
+cta-log-plays = Click here!

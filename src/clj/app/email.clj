@@ -62,7 +62,7 @@
 (defn build-gig-created-email [{:keys [tr] :as sys} gig members]
   (build-batch-emails
    (mapv :member/email members)
-   (tr [:email-subject/gig-created] [(:gig/title gig)])
+   (tr [:email-subject/gig-created] {:gig-title (:gig/title gig)})
    (tmpl/gig-created-email-html sys gig false)
    (tmpl/gig-created-email-plain sys gig false)
    (tmpl/gig-created-recipient-variables sys gig members)))
@@ -70,17 +70,16 @@
 (defn build-gig-updated-email [{:keys [tr] :as sys} gig members edited-attrs]
   (build-batch-emails
    (mapv :member/email members)
-   (tr [:email-subject/gig-updated] [(:gig/title gig)])
+   (tr [:email-subject/gig-updated] {:gig-title (:gig/title gig)})
    (tmpl/gig-updated-email-html sys gig edited-attrs)
    (tmpl/gig-updated-email-plain sys gig edited-attrs)
    (tmpl/gig-updated-recipient-variables sys gig members)))
 
 (defn build-gig-reminder-email [{:keys [tr] :as sys} gig members]
   (assert tr)
-  ;; (tap> {:s (tr [:email-subject/gig-reminder] [(:gig/title gig)]) :t (:gig/title gig) :tr tr})
   (build-batch-emails
    (mapv :member/email members)
-   (tr [:email-subject/gig-reminder] [(:gig/title gig)])
+   (tr [:email-subject/gig-reminder] {:gig-title (:gig/title gig)})
    (tmpl/gig-created-email-html sys gig true)
    (tmpl/gig-created-email-plain sys gig true)
    (tmpl/gig-created-recipient-variables sys gig members)))
@@ -89,7 +88,7 @@
   (let [url (url/absolute-link-poll env (:poll/poll-id poll))]
     (build-batch-emails
      (mapv :member/email members)
-     (tr [:email-subject/poll-created] [(:poll/title poll)])
+     (tr [:email-subject/poll-created] {:poll-title (:poll/title poll)})
      (tmpl/generic-email-html sys (tmpl/poll-created-email-html-body tr poll) (tr [:polls/vote-now]) url)
      (tmpl/generic-email-plain sys (tmpl/poll-created-email-plain-body tr poll) (tr [:polls/vote-now])  url)
      nil)))
@@ -181,7 +180,7 @@
                   (build-generic-email sys
                                        (:member/email leader-member)
                                        (tr [:email/subject-log-plays])
-                                       (tr [:email/body-log-plays] [(gig-date-plain gig)])
+                                       (tr [:email/body-log-plays] {:gig-date (gig-date-plain gig)})
                                        (tr [:email/cta-log-plays])
                                        (url/absolute-link-gig-log-plays env (:gig/gig-id gig))))))
 
