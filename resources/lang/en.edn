@@ -4,15 +4,6 @@
 
  :gig {:end-time-warning "WARNING: The end time is only estimated.. someone didn't fill out that field in SNOrga."}
 
- :error
- {:unknown-title        "Something went wrong"
-  :unknown-message      "Sorry about this! It's not your fault. Please contact Casey and tell him this error code:"
-  :not-found-message    "The thing you were looking for wasn't found. If you think it should exist, please contact Casey and tell him this error code:"
-  :unauthorized-title   "Authentication failed"
-  :unauthorized-message "Your identity is unknown to the system.. something probably went wrong. Please contact Casey and tell him this error code:"
-  :go-home              "Go Home"
-  :notify               "Click to notify Casey"}
-
  :email-subject
  {:gig-created  "New Gig: %1"
   :gig-updated  "Gig Edit: %1"

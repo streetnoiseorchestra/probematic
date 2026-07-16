@@ -4,15 +4,6 @@
 
  :gig {:end-time-warning "ACHTUNG: Die Endzeit wird nur geschätzt. Jemand hat dieses Feld in SNOrga nicht ausgefüllt."}
 
- :error
- {:unknown-title        "Ein Fehler ist aufgetreten"
-  :unknown-message      "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:"
-  :not-found-message    "Das, wonach du gesucht hast, wurde nicht gefunden. Wenn du denkst, dass es existieren sollte, bitte kontaktiere Casey und teile ihm diesen Fehlercode mit:"
-  :unauthorized-title   "Authentifizierung fehlgeschlagen"
-  :unauthorized-message "Ihre Identität ist dem System unbekannt. Wahrscheinlich ist etwas schief gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:"
-  :go-home              "Go Home"
-  :notify               "Click to notify Casey"}
-
  :email-subject
  {:gig-created  "Neuer Gig: %1"
   :gig-updated  "Gig-Bearbeitung: %1"

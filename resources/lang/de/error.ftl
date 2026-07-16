@@ -22,3 +22,13 @@ member-username-format = Verwende nur Buchstaben, Zahlen und _ . @ - '.
 member-username-validation = Der Benutzername darf nur A–Z, 0–9 _, ., - oder @ enthalten. Kein Leerzeichen.
 not-allowed = Du darfst das nicht tun.
 not-found-title = Nicht gefunden
+
+### Eigenständige Fehlerseiten
+
+go-home = Zur Startseite
+not-found-message = Das, wonach du gesucht hast, wurde nicht gefunden. Wenn du denkst, dass es existieren sollte, kontaktiere Casey und teile ihm diesen Fehlercode mit:
+notify = Casey benachrichtigen
+unauthorized-message = Deine Identität ist dem System unbekannt. Wahrscheinlich ist etwas schiefgelaufen. Kontaktiere Casey und teile ihm diesen Fehlercode mit:
+unauthorized-title = Authentifizierung fehlgeschlagen
+unknown-message = Das tut uns leid! Es ist nicht deine Schuld. Kontaktiere Casey und teile ihm diesen Fehlercode mit:
+unknown-title = Ein Fehler ist aufgetreten

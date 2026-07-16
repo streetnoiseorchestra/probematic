@@ -22,3 +22,13 @@ member-username-format = should have only letters, numbers and _.@-'
 member-username-validation = Username can only have A-Z, 0-9 _, ., -, or @. No spaces.
 not-allowed = You are not allowed to do that.
 not-found-title = Not found
+
+### Standalone error pages
+
+go-home = Go home
+not-found-message = The thing you were looking for wasn’t found. If you think it should exist, please contact Casey and tell him this error code:
+notify = Click to notify Casey
+unauthorized-message = Your identity is unknown to the system. Something probably went wrong. Please contact Casey and tell him this error code:
+unauthorized-title = Authentication failed
+unknown-message = Sorry about this! It’s not your fault. Please contact Casey and tell him this error code:
+unknown-title = Something went wrong
