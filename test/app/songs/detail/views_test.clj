@@ -11,48 +11,12 @@
    [reitit.core :as r]
    [tick.core :as t]))
 
-(def translations
-  {[:action/add]                       "Add"
-   [:action/back]                      "Back"
-   [:action/cancel]                    "Cancel"
-   [:action/confirm-delete]            "Yes, delete it"
-   [:action/confirm-generic]           "Are you sure?"
-   [:action/download]                  "Download"
-   [:action/edit]                      "Edit"
-   [:action/remove]                    "Remove"
-   [:song/arrangement-credits]         "Arranged By"
-   [:song/arrangement-notes]           "Arrangement Info"
-   [:song/background-title]            "Background"
-   [:song/choose-sheet-music-subtitle] "For section: %1"
-   [:song/choose-sheet-music-title]    "Choose Sheet Music File"
-   [:song/composition-credits]         "Composition By"
-   [:song/gig-count]                   "Gig Count"
-   [:repertoire/last-played]           "Last Played"
-   [:song/last-played-gig]             "Last Played Gig"
-   [:song/last-played-probe]           "Last Played Rehearsal"
-   [:song/lyrics]                      "Lyrics"
-   [:song/origin]                      "Origin"
-   [:song/probe-count]                 "Rehearsal Count"
-   [:song/solo-count]                  "# Solos"
-   [:song/total-plays]                 "Total Play Count"
-   [:Active]                           "Active"
-   [:Inactive]                         "Inactive"})
-
-(defn tr
-  ([path]
-   (get translations path (name (last path))))
-  ([path args]
-   (case path
-     [:song/choose-sheet-music-subtitle] (str "For section: " (first args))
-     (tr path))))
-
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def request
   {::r/router       router
-   :current-locale :en
-   :tr             tr})
+   :current-locale :en})
 
 (def song-id
   #uuid "00000000-0000-0000-0000-000000000101")
@@ -128,7 +92,7 @@
                       :song/total-rehearsals    15}
           summary    (views/song-summary song)
           summary    (l/attrs summary)
-          background (views/background-section request song)
+          background (views/background-section song)
           stats      (views/play-stats-section request song)]
       (testing "The header identifies the active song and its place in the repertoire."
         (let [title (:title summary)]
@@ -137,19 +101,21 @@
                  {:title  (nth title 2)
                   :status (page-shell/translation-key title)}))))
       (testing "The background section shows the song's credits, notes, and lyrics."
-        (is (= {"# Solos"          "Alto"
-                "Composition By"   "Herbie Hancock"
-                "Arranged By"      "StreetNoise"
-                "Origin"           "Hard bop tune"
-                "Arrangement Info" "Watch the break"
-                "Lyrics"           "Watermelon"}
+        (is (= {:repertoire/solo-count-label          "Alto"
+                :repertoire/composition-credits-label "Herbie Hancock"
+                :repertoire/arrangement-credits-label "StreetNoise"
+                :repertoire/origin-label              "Hard bop tune"
+                :repertoire/arrangement-notes-label   "Watch the break"
+                :repertoire/lyrics-label              "Watermelon"}
                (details-by-label background))))
       (testing "The play statistics show performance and rehearsal totals."
-        (is (= {"Total Play Count" "22"
-                "Gig Count"        "7"
-                "Rehearsal Count"  "15"}
+        (is (= {:repertoire/total-plays-label     "22"
+                :repertoire/gig-count-label       "7"
+                :repertoire/rehearsal-count-label "15"}
                (select-keys (details-by-label stats)
-                            ["Total Play Count" "Gig Count" "Rehearsal Count"])))))))
+                            [:repertoire/total-plays-label
+                             :repertoire/gig-count-label
+                             :repertoire/rehearsal-count-label])))))))
 
 (deftest compact-dates
   (testing "A song has a last-played date and a dated rehearsal."
@@ -160,10 +126,11 @@
                                           :gig/date   (t/date "2026-06-07")}})
           details (details-by-label view)]
       (testing "Both dates use the compact weekday format."
-        (is (= {:repertoire/last-played "Thu 04 Jun 2026"
-                "Last Played Rehearsal" "Sun 07 Jun 2026"}
+        (is (= {:repertoire/last-played                 "Thu 04 Jun 2026"
+                :repertoire/last-played-rehearsal-label "Sun 07 Jun 2026"}
                (select-keys details
-                            [:repertoire/last-played "Last Played Rehearsal"])))))))
+                            [:repertoire/last-played
+                             :repertoire/last-played-rehearsal-label])))))))
 
 (deftest sheet-music
   (testing "A Trumpets member views a song with a trumpet PDF."
@@ -190,8 +157,8 @@
                                   "/songs/Bella Ciao Trumpet.pdf")}
                 :download {:href       (urls/link-file-download
                                         "/songs/Bella Ciao Trumpet.pdf")
-                           :aria-label "Download"}
-                :remove   {:aria-label "Remove"}}
+                           :aria-label [:i18n/tr :action/download]}
+                :remove   {:aria-label [:i18n/tr :action/remove]}}
                {:title    {:text (l/text title-link)
                            :href (:href (l/attrs title-link))}
                 :download (select-keys (l/attrs download) [:href :aria-label])
@@ -253,8 +220,9 @@
                            :data-title         title}]))
           picker (l/select-one '.fake-file-picker view)]
       (testing "The picker replaces the grid and targets the requested section."
-        (is (= {:title         "Choose Sheet Music File"
-                :subtitle      "For section: percussion"
+        (is (= {:title         [:i18n/tr :repertoire/choose-sheet-music-title]
+                :subtitle      [:i18n/tr :repertoire/choose-sheet-music-subtitle
+                                {:section-name "percussion"}]
                 :select-action :app.songs.detail.actions/add-sheet-music}
                {:title         (:data-title (l/attrs picker))
                 :subtitle      (:data-subtitle (l/attrs picker))

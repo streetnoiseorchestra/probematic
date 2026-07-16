@@ -3,46 +3,16 @@
    [app.songs.edit.views :as views]
    [app.songs.view-test-support :as support]
    [app.ui2.page-shell-test-support :as page-shell]
-   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [lookup.core :as l]
    [reitit.core :as r]))
-
-(def translations
-  {[:action/cancel]              "Cancel"
-   [:action/confirm-delete]      "Yes, delete it"
-   [:action/confirm-delete-song] "Are you sure you want to delete the song %1?"
-   [:action/confirm-generic]     "Are you sure?"
-   [:action/delete]              "Delete"
-   [:action/edit]                "Edit"
-   [:action/save]                "Save"
-   [:nav/forum]                  "Forum"
-   [:song/active]                "Active?"
-   [:song/arrangement-credits]   "Arranged By"
-   [:song/arrangement-notes]     "Arrangement Info"
-   [:song/background-title]      "Background"
-   [:song/composition-credits]   "Composition By"
-   [:song/lyrics]                "Lyrics"
-   [:song/origin]                "Origin"
-   [:song/solo-count]            "# Solos"
-   [:song/title]                 "Song Title"})
-
-(defn tr
-  ([k]
-   (get translations k (name (last k))))
-  ([k args]
-   (reduce-kv (fn [s idx arg]
-                (str/replace s (str "%" (inc idx)) (str arg)))
-              (tr k)
-              (vec args))))
 
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def request
   {::r/router  router
-   :page-state {}
-   :tr         tr})
+   :page-state {}})
 
 (def song-id
   #uuid "00000000-0000-0000-0000-000000000201")
@@ -126,7 +96,7 @@
 
 (deftest create-song
   (testing "A member is adding a new song."
-    (let [header (views/create-header request)
+    (let [header (views/create-header)
           form   (views/create-form request)
           title  (l/select-one "wa-input[name=title]" form)
           active (l/select-one "input[name=active?]" form)]
@@ -169,7 +139,8 @@
                (mapv #(get (l/attrs %) :data-image-upload-endpoint)
                      (l/select 'textarea.markdown-editor form)))))
       (testing "Delete opens a matching confirmation dialog that submits the delete action."
-        (is (= {:message "Are you sure you want to delete the song Watermelon Man?"
+        (is (= {:message [:i18n/tr :action/confirm-delete-song
+                          {:title "Watermelon Man"}]
                 :actions #{:app.songs.edit.actions/delete-song}}
-               {:message (-> (l/select-one 'p dialog) l/text)
+               {:message (l/select-one :i18n/tr (l/select-one 'p dialog))
                 :actions (action-keywords dialog)}))))))

@@ -68,16 +68,20 @@
                                [:i18n/tr :action/edit]]]
                              :aria-label [:i18n/tr :repertoire/detail-toolbar-label]}])
 
-(defn background-section [{:keys [tr]} {:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
+(defn background-section
+  [{:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
   (ui2/section-card
-   {:title (tr [:song/background-title])}
+   {:title [:i18n/tr :repertoire/background-title]}
    [:dl {:class "particulars songs-detail-info-list"}
-    (optional-item (tr [:song/solo-count]) solo-info)
-    (optional-item (tr [:song/composition-credits]) composition-credits)
-    (optional-item (tr [:song/arrangement-credits]) arrangement-credits)
-    (optional-markdown-item (tr [:song/origin]) origin)
-    (optional-markdown-item (tr [:song/arrangement-notes]) arrangement-notes)
-    (optional-markdown-item (tr [:song/lyrics]) lyrics)]))
+    (optional-item [:i18n/tr :repertoire/solo-count-label] solo-info)
+    (optional-item [:i18n/tr :repertoire/composition-credits-label]
+                   composition-credits)
+    (optional-item [:i18n/tr :repertoire/arrangement-credits-label]
+                   arrangement-credits)
+    (optional-markdown-item [:i18n/tr :repertoire/origin-label] origin)
+    (optional-markdown-item [:i18n/tr :repertoire/arrangement-notes-label]
+                            arrangement-notes)
+    (optional-markdown-item [:i18n/tr :repertoire/lyrics-label] lyrics)]))
 
 (defn- gig-link [req gig]
   (when gig
@@ -85,20 +89,24 @@
      (or (:gig/title gig)
          (ui2/format-date req :compact-with-weekday (:gig/date gig)))]))
 
-(defn play-stats-section [{:keys [tr] :as req} {:song/keys [last-played-on last-performance last-rehearsal total-performances total-plays total-rehearsals]}]
+(defn play-stats-section
+  [req
+   {:song/keys [last-played-on last-performance last-rehearsal total-performances total-plays total-rehearsals]}]
   (ui2/section-card
-   {:title (tr [:song/play-stats-title])}
+   {:title [:i18n/tr :repertoire/play-stats-title]}
    [:dl {:class "particulars songs-detail-stats-list"}
-    (detail-item (tr [:song/total-plays]) (muted total-plays))
-    (detail-item (tr [:song/gig-count]) (muted total-performances))
-    (detail-item (tr [:song/probe-count]) (muted total-rehearsals))
+    (detail-item [:i18n/tr :repertoire/total-plays-label] (muted total-plays))
+    (detail-item [:i18n/tr :repertoire/gig-count-label] (muted total-performances))
+    (detail-item [:i18n/tr :repertoire/rehearsal-count-label] (muted total-rehearsals))
     (detail-item [:i18n/tr :repertoire/last-played] (muted (ui2/format-date req :compact-with-weekday last-played-on)))
-    (detail-item (tr [:song/last-played-gig]) (muted (gig-link req last-performance)))
-    (detail-item (tr [:song/last-played-probe]) (muted (gig-link req last-rehearsal)))]))
+    (detail-item [:i18n/tr :repertoire/last-played-gig-label]
+                 (muted (gig-link req last-performance)))
+    (detail-item [:i18n/tr :repertoire/last-played-rehearsal-label]
+                 (muted (gig-link req last-rehearsal)))]))
 
-(defn- sheet-section-title [tr {:section/keys [default? name]}]
+(defn- sheet-section-title [{:section/keys [default? name]}]
   (if default?
-    (tr [:song/other-sheet-music])
+    [:i18n/tr :repertoire/other-sheet-music]
     name))
 
 (def extension->filetype-icon
@@ -146,43 +154,41 @@
   (ui2/remove-dialog-id "sheet-music" sheet-id))
 
 (defn- sheet-remove-dialog [req {:sheet-music/keys [sheet-id title]}]
-  (let [tr (:tr req)]
-    (ui2/remove-dialog
-     {:id            (sheet-remove-dialog-id sheet-id)
-      :label         [:i18n/tr :action/confirm-generic]
-      :cancel-label  [:i18n/tr :action/cancel]
-      :confirm-label [:i18n/tr :action/confirm-delete]
-      :confirm-attrs {:data-id     sheet-id
-                      :data-action (d*/act req ::actions/remove-sheet-music)}}
-     [:p (str (tr [:action/remove]) " " title "?")])))
+  (ui2/remove-dialog
+   {:id            (sheet-remove-dialog-id sheet-id)
+    :label         [:i18n/tr :action/confirm-generic]
+    :cancel-label  [:i18n/tr :action/cancel]
+    :confirm-label [:i18n/tr :action/confirm-delete]
+    :confirm-attrs {:data-id     sheet-id
+                    :data-action (d*/act req ::actions/remove-sheet-music)}}
+   [:p [:i18n/tr :repertoire/remove-sheet-music-confirm {:title title}]]))
 
 (defn- sheet-link [req {:sheet-music/keys [sheet-id title]
                         :file/keys        [webdav-path]
                         :as               sheet}]
-  (let [tr (:tr req)]
-    (list
-     [:div {:class "songs-detail-sheet-row"}
-      [ico/Icon {::ico/library :snoico
-                 ::ico/name    (filetype-icon-name sheet)}]
-      [:a {:href  (urls/link-file-download webdav-path)
-           :class "songs-detail-sheet-title"}
-       title]
-      [button/Button {:appearance "plain"
-                      :size       "s"
-                      :href       (urls/link-file-download webdav-path)
-                      :class      "songs-detail-sheet-download"
-                      :aria-label (tr [:action/download])}
-       [ico/Icon {::ico/library :phosphor
-                  ::ico/name    :download}]]
-      [button/Button {:appearance  "plain"
-                      :variant     "danger"
-                      :size        "s"
-                      :class       "songs-detail-sheet-remove"
-                      :aria-label  (tr [:action/remove])
-                      :data-dialog (str "open " (sheet-remove-dialog-id sheet-id))}
-       [ico/Icon {::ico/library :snoico
-                  ::ico/name    :xmark}]]]
-     (sheet-remove-dialog req sheet))))
+  (list
+   [:div {:class "songs-detail-sheet-row"}
+    [ico/Icon {::ico/library :snoico
+               ::ico/name    (filetype-icon-name sheet)}]
+    [:a {:href  (urls/link-file-download webdav-path)
+         :class "songs-detail-sheet-title"}
+     title]
+    [button/Button {:appearance "plain"
+                    :size       "s"
+                    :href       (urls/link-file-download webdav-path)
+                    :class      "songs-detail-sheet-download"
+                    :aria-label [:i18n/tr :action/download]}
+     [ico/Icon {::ico/library :phosphor
+                ::ico/name    :download}]]
+    [button/Button {:appearance  "plain"
+                    :variant     "danger"
+                    :size        "s"
+                    :class       "songs-detail-sheet-remove"
+                    :aria-label  [:i18n/tr :action/remove]
+                    :data-dialog (str "open " (sheet-remove-dialog-id sheet-id))}
+     [ico/Icon {::ico/library :snoico
+                ::ico/name    :xmark}]]]
+   (sheet-remove-dialog req sheet)))
 
 (defn- current-member-section-name [req]
   (get-in (auth/get-current-member req) [:member/section :section/name]))
@@ -209,47 +215,47 @@
    [:i18n/tr :action/add]])
 
 (defn- sheet-section [req song-id root-dir current-dir section]
-  (let [tr (:tr req)]
-    [:section {:class (ui2/cs "songs-detail-sheet-section"
-                              (when (current-member-section? req section)
-                                "songs-detail-sheet-section--current"))}
-     [:div {:class "songs-detail-sheet-section-header"}
-      [:h3 {:class "songs-detail-sheet-section-title"}
-       (sheet-section-title tr section)]
-      (sheet-add-button req section song-id root-dir current-dir)]
-     [:div {:class "songs-detail-sheet-rows"}
-      (if (seq (:sheet-music/_section section))
-        (for [sheet (:sheet-music/_section section)]
-          (sheet-link req (assoc sheet :song/song-id song-id)))
-        [:a {:href          "#"
-             :class         "songs-detail-sheet-empty-state"
-             :data-on:click (open-sheet-music-picker-action req song-id (:section/name section) root-dir current-dir)}
-         [ico/Icon {::ico/library :snoico ::ico/name :circle-plus-solid}]
-         [:span [:i18n/tr :action/add]]])]]))
+  [:section {:class (ui2/cs "songs-detail-sheet-section"
+                            (when (current-member-section? req section)
+                              "songs-detail-sheet-section--current"))}
+   [:div {:class "songs-detail-sheet-section-header"}
+    [:h3 {:class "songs-detail-sheet-section-title"}
+     (sheet-section-title section)]
+    (sheet-add-button req section song-id root-dir current-dir)]
+   [:div {:class "songs-detail-sheet-rows"}
+    (if (seq (:sheet-music/_section section))
+      (for [sheet (:sheet-music/_section section)]
+        (sheet-link req (assoc sheet :song/song-id song-id)))
+      [:a {:href          "#"
+           :class         "songs-detail-sheet-empty-state"
+           :data-on:click (open-sheet-music-picker-action req song-id (:section/name section) root-dir current-dir)}
+       [ico/Icon {::ico/library :snoico ::ico/name :circle-plus-solid}]
+       [:span [:i18n/tr :action/add]]])]])
 
 (defn sheet-music-content
   ([req song-id root-dir current-dir sections picker]
    (sheet-music-content req song-id root-dir current-dir sections picker file-browser.view/file-picker-panel))
   ([req song-id root-dir current-dir sections picker render-picker]
-   (let [tr (:tr req)]
-     (if (:open? picker)
-       (render-picker
-        req
-        {:picker-id     actions/sheet-music-picker-id
-         :state         picker
-         :title         (tr [:song/choose-sheet-music-title])
-         :subtitle      (some->> picker :target :section-name vector (tr [:song/choose-sheet-music-subtitle]))
-         :select-action ::actions/add-sheet-music})
-       (if (seq sections)
-         [:div {:class "wa-grid songs-detail-sheet-grid"}
-          (for [section sections]
-            (sheet-section req song-id root-dir current-dir section))]
-         [:div {:class "songs-detail-empty"} "—"])))))
+   (if (:open? picker)
+     (render-picker
+      req
+      {:picker-id     actions/sheet-music-picker-id
+       :state         picker
+       :title         [:i18n/tr :repertoire/choose-sheet-music-title]
+       :subtitle      (when-let [section-name (get-in picker [:target :section-name])]
+                        [:i18n/tr :repertoire/choose-sheet-music-subtitle
+                         {:section-name section-name}])
+       :select-action ::actions/add-sheet-music})
+     (if (seq sections)
+       [:div {:class "wa-grid songs-detail-sheet-grid"}
+        (for [section sections]
+          (sheet-section req song-id root-dir current-dir section))]
+       [:div {:class "songs-detail-empty"} "—"]))))
 
 (defn- nextcloud-env [req]
   (-> req :system :env))
 
-(defn- sheet-music-section [{:keys [db page-state tr] :as req} {:song/keys [song-id]}]
+(defn- sheet-music-section [{:keys [db page-state] :as req} {:song/keys [song-id]}]
   (let [sections    (q/sheet-music-for-song db song-id)
         root-dir    (or (config/nextcloud-path-sheet-music (nextcloud-env req)) "/")
         current-dir (or (q/sheet-music-dir-for-song db song-id)
@@ -257,7 +263,7 @@
                         root-dir)
         picker      (get-in page-state [:file-browser actions/sheet-music-picker-id])]
     (ui2/section-card
-     {:title    (tr [:song/sheet-music-title])
+     {:title    [:i18n/tr :repertoire/sheet-music-title]
       :divider? true}
      [:div {:class        "wa-stack wa-gap-m"
             :data-signals (d*/->signals {:file-browser {:picker-id     nil
@@ -292,11 +298,11 @@ window.DiscourseEmbed = %s;
     (d*/->signals {"discourseUrl" (discourse-url forum-url)
                    "topicId"      topic-id}))))
 
-(defn- discourse-comments-section [{:keys [system tr]} {:forum.topic/keys [topic-id]}]
+(defn- discourse-comments-section [{:keys [system]} {:forum.topic/keys [topic-id]}]
   (when-let [forum-url (and topic-id (config/discourse-forum-url (:env system)))]
     (ui2/section-card
      {:id       "song-forum-comments"
-      :title    (tr [:nav/forum])
+      :title    [:i18n/tr :repertoire/forum-title]
       :divider? true}
      [:div {:id                "discourse-comments"
             :data-ignore-morph ""}]
@@ -311,7 +317,7 @@ window.DiscourseEmbed = %s;
        [page-surface/PageSurface {::page-surface/toolbar (detail-toolbar song)}
         [:div {:class "wa-stack wa-gap-2xl"}
          (song-summary song)
-         (background-section req song)
+         (background-section song)
          (play-stats-section req song)
          (sheet-music-section req song)
          (discourse-comments-section req song)]])

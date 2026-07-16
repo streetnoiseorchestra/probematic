@@ -49,13 +49,11 @@
   [(assoc (util/remove-nils (song-update-map params))
           :song/total-plays 0)])
 
-(defn- label [tr field]
-  (case field
-    :title (tr [:song/title])
-    (name field)))
-
 (defn- required-error [tr field]
-  {:error (tr [:error/is-required] {:field (label tr field)})})
+  {:error (tr [:error/is-required]
+              {:field (if (= :title field)
+                        (tr [:repertoire/song-title-label])
+                        (name field))})})
 
 (defn- top-error [message]
   {:_top {:error message}})

@@ -31,6 +31,8 @@ confirm-generic = Bist du sicher?
 confirm-delete = Ja, löschen
 # $title (String) - Titel des Gigs, der gelöscht wird.
 confirm-delete-gig = Möchtest du den Gig { $title } wirklich löschen?
+# $title (String) - Titel des Lieds, das gelöscht wird.
+confirm-delete-song = Sind Sie sicher, dass Sie das Lied { $title } löschen möchten?
 # $instrument-name (String) - Name des Instruments, das gelöscht wird.
 confirm-delete-instrument = Möchtest du das Instrument { $instrument-name } wirklich löschen?
 # $policy-name (String) - Name der Versicherungspolice, die gelöscht wird.

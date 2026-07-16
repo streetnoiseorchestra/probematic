@@ -31,6 +31,8 @@ confirm-generic = Are you sure?
 confirm-delete = Yes, delete it
 # $title (String) - Title of the gig being deleted.
 confirm-delete-gig = Are you sure you want to delete the gig { $title }?
+# $title (String) - Title of the song being deleted.
+confirm-delete-song = Are you sure you want to delete the song { $title }?
 # $instrument-name (String) - Name of the instrument being deleted.
 confirm-delete-instrument = Are you sure you want to delete the instrument { $instrument-name }?
 # $policy-name (String) - Name of the insurance policy being deleted.

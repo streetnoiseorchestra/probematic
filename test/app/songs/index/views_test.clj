@@ -8,26 +8,12 @@
    [reitit.core :as r]
    [tick.core :as t]))
 
-(def translations
-  {[:repertoire/last-played] "Last Played"
-   [:song/score]        "Score"
-   [:song/total-plays]  "Total Play Count"
-   [:Active]            "Active"
-   [:Inactive]          "Inactive"})
-
-(defn tr
-  ([path]
-   (get translations path (name (last path))))
-  ([path _args]
-   (tr path)))
-
 (def router
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def request
   {::r/router       router
-   :current-locale :en
-   :tr             tr})
+   :current-locale :en})
 
 (deftest repertoire-page-surface
   (testing "The repertoire has collection context and keeps synchronization secondary."

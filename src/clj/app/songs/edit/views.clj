@@ -38,10 +38,14 @@
 
 (defn- textarea [label name value attrs]
   (let [error         (:hint attrs)
+        required?     (:required attrs)
         wrapper-attrs (:wrapper-attrs attrs)
         attrs         (dissoc attrs :hint :wrapper-attrs)]
     [:div (merge {:class "songs-edit-textarea-field"} wrapper-attrs)
-     [:label {:for name} label]
+     [:label {:for name}
+      label
+      (when required?
+        [:span {:aria-hidden "true"} " *"])]
      [:textarea (merge {:id             name
                         :name           name
                         :class          "songs-edit-textarea"
@@ -65,19 +69,19 @@
                                        :wrapper-attrs         {:data-ignore-morph ""}}
                                       attrs))))
 
-(defn- active-input [{:keys [tr]} form-state]
+(defn- active-input [form-state]
   [:label {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-active songs-edit-wide"}
    [:input (cond-> {:type      "checkbox"
                     :name      "active?"
                     :value     "true"
                     :data-bind "song-edit.active?"}
              (:active? form-state) (assoc :checked true))]
-   [:span (tr [:song/active])]])
+   [:span [:i18n/tr :repertoire/active-label]]])
 
 (defn- song-remove-dialog-id [{:song/keys [song-id]}]
   (ui2/remove-dialog-id "song" song-id))
 
-(defn song-remove-dialog [{:keys [tr] :as req} {:song/keys [title] :as song}]
+(defn song-remove-dialog [req {:song/keys [title] :as song}]
   (ui2/remove-dialog
    {:id            (song-remove-dialog-id song)
     :label         [:i18n/tr :action/confirm-generic]
@@ -85,7 +89,7 @@
     :confirm-label [:i18n/tr :action/confirm-delete]
     :confirm-attrs {:data-id     "song-edit-delete"
                     :data-action (d*/act req ::actions/delete-song)}}
-   [:p (tr [:action/confirm-delete-song] [title])]))
+   [:p [:i18n/tr :action/confirm-delete-song {:title title}]]))
 
 (defn- save-button []
   [button/Button {:appearance         "filled"
@@ -136,7 +140,7 @@
             title
             (ui2/active-badge active?)]}])
 
-(defn create-header [_req]
+(defn create-header []
   [page-header/PageHeader {:title [:i18n/tr :repertoire/add-song]}])
 
 (defn- song->form [{:song/keys [active? arrangement-credits arrangement-notes composition-credits lyrics origin solo-info song-id title]
@@ -179,30 +183,54 @@
 (defn- main-fields
   ([req form-state]
    (main-fields req form-state nil))
-  ([{:keys [tr] :as req} form-state song-id]
+  ([req form-state song-id]
    (let [field          #(validate-field-attrs req form-state %)
          markdown-field #(with-upload-endpoint (field %) song-id)]
      (ui2/section-card
-      {:title    (tr [:song/background-title])
+      {:title    [:i18n/tr :repertoire/background-title]
        :divider? true}
       [:div {:class "songs-edit-form-grid"}
-       (input (tr [:song/title]) "title" (:title form-state) (merge {:required true} (field :title)))
-       (active-input req form-state)
-       (input (tr [:song/solo-count]) "solo-info" (:solo-info form-state) (field :solo-info))
-       (textarea (tr [:song/composition-credits]) "composition-credits" (:composition-credits form-state) (merge {:class "songs-edit-textarea"}
-                                                                                                                 (field :composition-credits)))
-       (textarea (tr [:song/arrangement-credits]) "arrangement-credits" (:arrangement-credits form-state) (merge {:class "songs-edit-textarea"}
-                                                                                                                 (field :arrangement-credits)))
-       (markdown-textarea (tr [:song/origin]) "origin" (:origin form-state) (markdown-field :origin))
-       (markdown-textarea (tr [:song/arrangement-notes]) "arrangement-notes" (:arrangement-notes form-state) (markdown-field :arrangement-notes))
-       (markdown-textarea (tr [:song/lyrics]) "lyrics" (:lyrics form-state) (markdown-field :lyrics))]))))
+       (input [:i18n/tr :repertoire/song-title-label]
+              "title"
+              (:title form-state)
+              (merge {:required true} (field :title)))
+       (active-input form-state)
+       (input [:i18n/tr :repertoire/solo-count-label]
+              "solo-info"
+              (:solo-info form-state)
+              (field :solo-info))
+       (textarea [:i18n/tr :repertoire/composition-credits-label]
+                 "composition-credits"
+                 (:composition-credits form-state)
+                 (merge {:class "songs-edit-textarea"}
+                        (field :composition-credits)))
+       (textarea [:i18n/tr :repertoire/arrangement-credits-label]
+                 "arrangement-credits"
+                 (:arrangement-credits form-state)
+                 (merge {:class "songs-edit-textarea"}
+                        (field :arrangement-credits)))
+       (markdown-textarea [:i18n/tr :repertoire/origin-label]
+                          "origin"
+                          (:origin form-state)
+                          (markdown-field :origin))
+       (markdown-textarea [:i18n/tr :repertoire/arrangement-notes-label]
+                          "arrangement-notes"
+                          (:arrangement-notes form-state)
+                          (markdown-field :arrangement-notes))
+       (markdown-textarea [:i18n/tr :repertoire/lyrics-label]
+                          "lyrics"
+                          (:lyrics form-state)
+                          (markdown-field :lyrics))]))))
 
 (defn- forum-fields [req form-state]
-  [:wa-details {:summary            ((:tr req) [:nav/forum])
+  [:wa-details {:summary            [:i18n/tr :repertoire/forum-title]
                 :data-preserve-attr "open"}
    [:div {:class "songs-edit-form-grid"}
-    (input ((:tr req) [:nav/forum]) "topic-id" (:topic-id form-state) (merge {:class "songs-edit-wide"}
-                                                                             (validate-field-attrs req form-state :topic-id)))]])
+    (input [:i18n/tr :repertoire/forum-title]
+           "topic-id"
+           (:topic-id form-state)
+           (merge {:class "songs-edit-wide"}
+                  (validate-field-attrs req form-state :topic-id)))]])
 
 (defn- song-form [{:keys [action create? form-state req]} & children]
   (into
@@ -267,7 +295,7 @@
     {::page-surface/width   :standard
      ::page-surface/toolbar (create-toolbar)}
     [:div {:class "wa-stack wa-gap-2xl"}
-     (create-header req)
+     (create-header)
      (create-form req)]]))
 
 (defn page [req]

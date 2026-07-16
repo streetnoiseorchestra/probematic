@@ -24,8 +24,8 @@
   [:span {:class class}
    (ui2/active-badge active?)])
 
-(defn song-row [{:keys [tr] :as req} {:song/keys [active? last-played-on score title total-plays]
-                                      :as        song}]
+(defn song-row [req {:song/keys [active? last-played-on score title total-plays]
+                     :as        song}]
   [:div {:class "songs-index-row"}
    [:div {:class "songs-index-row-main"}
     [:div {:class "songs-index-title-line"}
@@ -35,10 +35,10 @@
      (song-status-badge active? "songs-index-status songs-index-status--mobile")]
     [:div {:class "songs-index-row-meta"}
      (song-stat {:icon  "hash"
-                 :label (tr [:song/total-plays])
+                 :label [:i18n/tr :repertoire/total-plays-label]
                  :value (or total-plays 0)})
      (song-stat {:icon  "star"
-                 :label (tr [:song/score])
+                 :label [:i18n/tr :repertoire/score-label]
                  :value score})
      (song-status-badge active? "songs-index-status songs-index-status--desktop")]]
    [:a {:class       "wa-link-plain"
@@ -56,12 +56,12 @@
      (for [song songs]
        (song-row req song))]
     (ui2/empty-state
-     ((:tr req) [:song/search-empty])
-     ((:tr req) [:song/search-empty]))))
+     [:i18n/tr :repertoire/search-empty-title]
+     [:i18n/tr :repertoire/search-empty-body])))
 
-(defn- search-control [{:keys [tr] :as req} {:keys [search]}]
+(defn- search-control [req {:keys [search]}]
   [:wa-input {:label                        [:i18n/tr :action/search]
-              :placeholder                  (tr [:song/search])
+              :placeholder                  [:i18n/tr :repertoire/search-placeholder]
               :appearance                   "outlined"
               :size                         "m"
               :value                        search
