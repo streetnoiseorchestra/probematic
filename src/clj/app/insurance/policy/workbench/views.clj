@@ -124,7 +124,7 @@
    :ownership      [:insurance.workbench/ownership]
    :coverage-types [:insurance/coverage-types]
    :photos         [:insurance.workbench/photos]
-   :harmonia-id    [:instrument.coverage/insurer-id]
+   :harmonia-id    [:insurance/insurer-id]
    :workflow       [:insurance.workbench/workflow-status]
    :change         [:insurance.workbench/change-status]
    :value          [:insurance/value]})
@@ -144,9 +144,9 @@
    {:id :member :label-key [:col/member]}
    {:id :instrument :label-key [:instrument/instrument]}
    {:id :category :label-key [:instrument/category]}
-   {:id :ownership :label-key [:band-private]}
+   {:id :ownership :label-key [:insurance/ownership]}
    {:id :photos :label-key [:insurance.workbench/photos] :align :end}
-   {:id :harmonia-id :label-key [:instrument.coverage/insurer-id] :align :end :header-variants #{:nowrap}}
+   {:id :harmonia-id :label-key [:insurance/insurer-id] :align :end :header-variants #{:nowrap}}
    {:id :value :label-key [:insurance/value-abbrev] :align :end}
    {:id :cost :label-key [:instrument.coverage/cost] :align :end}
    {:id :coverage-types :label-key [:insurance/coverage-types]}

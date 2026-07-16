@@ -693,7 +693,7 @@
         [:th {:class "text-right"}
          (tr [:instrument.coverage/value])]
         [:th {:class "member-insurance-col"}
-         (tr [:band-private])]
+         [:i18n/tr :insurance/ownership]]
         [:th]]]
       [:tbody
        (for [coverage coverages]

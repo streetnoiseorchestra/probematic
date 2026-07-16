@@ -30,16 +30,11 @@
   :error-invalid-coverage-type "Bitte wähle gültige Versicherungsarten aus.",
   :email-p3
   "Möchtest du genau wissen woraus sich deine Kosten zusammenstellen, kannst du dies im Forum unter folgendem Link nachlesen.",
-  :item-count-hint
-  "Wie viele identische Produkte möchtest du versichern (z. B. eine Trompete oder vier Drumsticks)?",
   :total-needs-review-tooltip "Insgesamt zu überprüfende Instrumente",
-  :coverage-for
-  "Die folgenden Informationen sind für die Versicherungspolice '%1'",
   :total-total-changed-tooltip "Insgesamt veränderte Instrumente",
   :policies "Versicherungspolicen",
   :insurance-policy "Versicherungspolice",
   :total-total-removed-tooltip "Insgesamt entfernte Instrumente",
-  :value "Versicherungswert",
   :email-p5
   "Solltest du weitere Fragen haben, kannst du dich gerne bei uns melden.",
   :send-changes-disabled-hint
@@ -49,11 +44,8 @@
   :title "Versicherung & Instrumente",
   :dashboard-title "Insurance TODOs",
   :value-abbrev "Vers.-Wert"
-  :no-photos "Es wurden noch keine Fotos hochgeladen.",
-  :coverage-types "Art der Versicherungsdeckung",
   :confirm-mark-as-button "Markieren als",
   :coverage-type-description "Beschreibung",
-  :item-count "Stückzahl",
   :category-factors "Kategoriefaktoren",
   :email-p4
   "Im Falle eines Schadens findest du die Anleitung für eine Schadensmeldung und das dazu gehörige Schadensformular im Anhang.",
@@ -62,7 +54,6 @@
   :email-p2 "Versicherungskosten %1:",
   :currency "Währung",
   :premium-factor "Premium-Faktor",
-  :instrument-coverage "Versicherungsdeckung für Instrumente",
   :bank-data "Bankdaten",
   :cost "Kosten",
   :coverage-name "Name des Versicherungsdeckung",
@@ -153,7 +144,6 @@
   :missing-category-factors-body
   "Versicherte Instrumente verwenden Kategorien ohne Kategoriefaktoren: %1.",
   :no-category-factors "Keine Kategoriefaktoren konfiguriert.",
-  :no-coverage-types "Keine Versicherungsarten konfiguriert.",
   :policy-details-subtitle "Bearbeite die Policendaten für Kostenberechnungen.",
   :read-only-title "Einstellungen sind schreibgeschützt",
   :status-read-only "Der Policenstatus ist hier schreibgeschützt.",
@@ -295,36 +285,11 @@
   :meeting "Treffen",
   :gig "Gig"},
  :instrument
- {:photo-upload-subtitle
-  "Laden Sie ein paar Fotos hoch, die das Instrument/den Gegenstand aus verschiedenen Blickwinkeln zeigen.",
-  :description "Beschreibung",
-  :category "Kategorie",
-  :build-year "Baujahr",
-  :serial-number "Seriennummer",
-  :if-available "wenn verfügbar",
-  :make-hint
-  "Von welcher Firma wird der Artikel hergestellt? Zum Beispiel Yamaha, unbekannt",
-  :make "Marke",
-  :instrument "Instrument",
-  :images "Fotos",
-  :name "Instrumentenname",
-  :create-title "Neues Instrument",
-  :model-hint "Was ist die Modellnummer?",
-  :description-hint "z. B. Farbe oder Material",
+ {:create-title "Neues Instrument",
   :photo-upload-title "Lade Instrumentenfotos hoch",
-  :name-hint "z. B. Trompete, Yamaha oder Mundstück Tenorsax",
   :images-share-url-hint
   "Verwende diesen Link, wenn du ihn außerhalb der Band teilst",
-  :images-share-url "Fotos öffentlicher Link",
-  :separate-warning
-  "Für jedes Instrument und Zubehör muss ein separates Formular ausgefüllt werden.",
-  :category-hint
-  "Was für ein Gegenstand ist das? Pass auf! Flöten sind Holz, aber Saxophone sind Blech, Sax, Elektrisch!",
-  :create-subtitle
-  "Bitte trage die unten gefragten Informationen zu deinem Instrument/Zubehör so detailliert wie möglich ein.",
-  :owner "Inhaber:in",
-  :photo-upload "Foto-Upload",
-  :model "Modell"},
+  :images-share-url "Fotos öffentlicher Link"},
  :selected "ausgewählt",
  :play-log
  {:not-played "Nicht gespielt",
@@ -338,9 +303,6 @@
   :unconfirmed "Nicht fixiert",
   :cancelled "Abgesagt"},
  :now "jetzt",
- :private-instrument-description
- "Ein privates Instrument ist ein Instrument, das der Besitzer auf eigene Kosten versichern wird.",
- :band-private "Band/Privat",
  :Contact-Information "Kontakt Informationen",
  :instrument.coverage.change
  {:new "Hinzugefügt",
@@ -542,8 +504,6 @@
   :coverage-active "Aktiv?"},
  :youve-completed-sing
  "Du hast ein Instrument fertiggestellt! %1 ist noch übrig!",
- :band-instrument-description
- "Ein Bandinstrument ist ein Instrument, das im vergangenen Jahr bei einem SNO-Auftritt gespielt wurde.",
  :poll.type
  {:multiple-hint "Menschen können mehrere Optionen wählen."},
  :sno-id "SNO ID",
@@ -647,27 +607,10 @@
   :types "Versicherungsarten",
   :status "Arbeitsablaufstatus",
   :item-count "Artikelanzahl",
-  :value-hint
-  "Der geschätzte Marktwert des Artikels, also wie viel es kosten würde, ihn zu ersetzen, falls er verloren geht.",
   :cost "Kosten",
   :change "Status ändern",
-  :insurer-id "Harmonia ID",
-  :insurer-id-hint "Gib die von Harmonia vergebene Kennung ein.",
   :coverage-id "Coverage ID",
-  :private?-hint
-  "Ist dieses Instrument ein Bandinstrument oder ein Privatinstrument?",
-  :edit-title "Instrumentenversicherung bearbeiten",
-  :create-title "Instrumentenversicherung hinzufügen",
-  :create-subtitle "Füge ein Instrument hinzu und melde es für %1 an.",
-  :create-steps "Schritte zur Versicherungserstellung",
-  :create-step-instrument "Instrument",
-  :create-step-photos "Fotos",
-  :create-step-coverage "Versicherung",
-  :upload-drop-label "Fotos zum Hochladen auswählen",
-  :upload-help "PNG, JPG oder GIF bis 10 MB.",
-  :upload-progress "Fotos werden hochgeladen…",
-  :upload-complete "Upload abgeschlossen.",
-  :upload-error "Upload fehlgeschlagen"},
+  :edit-title "Instrumentenversicherung bearbeiten"},
  :missing ":de missing text",
  :ledger.entry
  {:amount "Betrag",
@@ -700,7 +643,6 @@
   :definitely-not "Kann nicht",
   :not-interested "Nicht interessiert",
   :no-response "Keine Antwort"},
- :private-instrument "Privates Instrument",
  :gig
  {:description "Beschreibung des öffentlichen Auftritts",
   :no-comments "Keine Kommentare.",
@@ -778,7 +720,6 @@
   :stats "Stats",
   :profile "Profil",
   :band-settings "Bandeinstellungen"},
- :band-instrument "Band-Instrument",
  :none "Keiner",
  :song
  {:last-played "Zuletzt gespielt am",

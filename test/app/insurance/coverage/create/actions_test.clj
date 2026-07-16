@@ -25,7 +25,7 @@
      [:instrument/make] "Make"
      [:insurance/item-count] "Count"
      [:insurance/value] "Value"
-     [:band-private] "Band or private"
+     [:insurance/ownership] "Band or private"
      (name (peek k)))))
 
 (defn new-system []

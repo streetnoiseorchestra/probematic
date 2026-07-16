@@ -54,13 +54,18 @@
      :aria-describedby (described-by field hint error)
      :data-on:change   (validate-field-action req field)}))
 
-(defn- field-wrapper [label field form-state hint & children]
+(defn- required-marker []
+  [:span {:aria-hidden "true"} " *"])
+
+(defn- field-wrapper [label field form-state hint required? & children]
   (let [error (field-error form-state field)]
     (into
      [:div {:class "insurance-coverage-create-field wa-stack wa-gap-2xs"}
       [:label {:class "insurance-coverage-edit-field-label"
                :for   (name field)}
-       label]]
+       label
+       (when required?
+         (required-marker))]]
      (concat
       children
       [(when hint
@@ -78,6 +83,7 @@
    field
    form-state
    hint
+   (:required attrs)
    [:input (merge {:id    (name field)
                    :name  (name field)
                    :type  "text"
@@ -91,6 +97,7 @@
    field
    form-state
    hint
+   false
    [:textarea (merge {:id             (name field)
                       :name           (name field)
                       :class          "insurance-coverage-edit-textarea"
@@ -111,14 +118,15 @@
             (ui2/member-nick member)
             (some-> selected-member-id str))))
 
-(defn- member-select [{:keys [db tr] :as req} form-state]
+(defn- member-select [{:keys [db] :as req} form-state]
   (let [selected (:owner-member-id form-state)
         members  (q/members-for-select db)]
     (field-wrapper
-     (tr [:instrument/owner])
+     [:i18n/tr :instrument/owner]
      :owner-member-id
      form-state
      nil
+     true
      (into
       [:select (merge {:id       "owner-member-id"
                        :name     "owner-member-id"
@@ -134,15 +142,16 @@
             (:instrument.category/name category)
             (some-> selected-category-id str))))
 
-(defn- category-select [{:keys [db tr] :as req} form-state]
+(defn- category-select [{:keys [db] :as req} form-state]
   (let [selected   (:category-id form-state)
         categories (queries/instrument-categories db)
-        hint       (tr [:instrument/category-hint])]
+        hint       [:i18n/tr :instrument/category-hint]]
     (field-wrapper
-     (tr [:instrument/category])
+     [:i18n/tr :instrument/category]
      :category-id
      form-state
      hint
+     true
      (into
       [:select (merge {:id       "category-id"
                        :name     "category-id"
@@ -153,40 +162,39 @@
         (category-option selected category))))))
 
 (defn- instrument-section [req form-state]
-  (let [tr (:tr req)]
-    (ui2/section-card
-     {:title    (tr [:instrument/instrument])
-      :subtitle (tr [:instrument/create-subtitle])
-      :divider? true}
-     [:div {:class "insurance-coverage-edit-form-grid"}
-      (input-field req form-state :instrument-name (tr [:instrument/name]) (:instrument-name form-state)
-                   {:required true}
-                   (tr [:instrument/name-hint]))
-      (member-select req form-state)
-      (category-select req form-state)
-      (input-field req form-state :make (tr [:instrument/make]) (:make form-state)
-                   {:required true}
-                   (tr [:instrument/make-hint]))
-      (input-field req form-state :model (tr [:instrument/model]) (:model form-state)
-                   {}
-                   (str (tr [:instrument/model-hint]) " " (tr [:instrument/if-available])))
-      (input-field req form-state :serial-number (tr [:instrument/serial-number]) (:serial-number form-state)
-                   {}
-                   (tr [:instrument/if-available]))
-      (input-field req form-state :build-year (tr [:instrument/build-year]) (:build-year form-state)
-                   {}
-                   (tr [:instrument/if-available]))
-      (textarea-field req form-state :description (tr [:instrument/description]) (:description form-state)
-                      {:class "insurance-coverage-edit-textarea insurance-coverage-edit-wide"}
-                      (tr [:instrument/description-hint]))])))
+  (ui2/section-card
+   {:title    [:i18n/tr :instrument/instrument]
+    :subtitle [:i18n/tr :instrument/create-subtitle]
+    :divider? true}
+   [:div {:class "insurance-coverage-edit-form-grid"}
+    (input-field req form-state :instrument-name [:i18n/tr :instrument/name] (:instrument-name form-state)
+                 {:required true}
+                 [:i18n/tr :instrument/name-hint])
+    (member-select req form-state)
+    (category-select req form-state)
+    (input-field req form-state :make [:i18n/tr :instrument/make] (:make form-state)
+                 {:required true}
+                 [:i18n/tr :instrument/make-hint])
+    (input-field req form-state :model [:i18n/tr :instrument/model] (:model form-state)
+                 {}
+                 [:i18n/tr :instrument/model-hint-optional])
+    (input-field req form-state :serial-number [:i18n/tr :instrument/serial-number] (:serial-number form-state)
+                 {}
+                 [:i18n/tr :instrument/serial-number-hint])
+    (input-field req form-state :build-year [:i18n/tr :instrument/build-year] (:build-year form-state)
+                 {}
+                 [:i18n/tr :instrument/build-year-hint])
+    (textarea-field req form-state :description [:i18n/tr :instrument/description] (:description form-state)
+                    {:class "insurance-coverage-edit-textarea insurance-coverage-edit-wide"}
+                    [:i18n/tr :instrument/description-hint])]))
 
-(defn- create-steps [tr current-step]
-  (step-circles/StepCircles {::step-circles/label        (tr [:instrument.coverage/create-steps])
+(defn- create-steps [current-step]
+  (step-circles/StepCircles {::step-circles/label        [:i18n/tr :insurance/coverage-create-steps]
                              ::step-circles/current-step current-step
                              ::step-circles/steps
-                             [{:label (tr [:instrument.coverage/create-step-instrument])}
-                              {:label (tr [:instrument.coverage/create-step-photos])}
-                              {:label (tr [:instrument.coverage/create-step-coverage])}]}))
+                             [{:label [:i18n/tr :insurance/instrument-step]}
+                              {:label [:i18n/tr :insurance/photos-step]}
+                              {:label [:i18n/tr :insurance/coverage-step]}]}))
 
 (defn- instrument->form [policy-id redirect instrument]
   {:policy-id       (str policy-id)
@@ -212,13 +220,13 @@
                   :variant    "danger"}
      top-error]))
 
-(defn- warning-callout [{:keys [tr]}]
+(defn- warning-callout []
   [:wa-callout {:appearance "outlined"
                 :variant    "brand"}
    [ico/Icon {::ico/library :phosphor
               ::ico/name    :info
               :slot         "icon"}]
-   (tr [:instrument/separate-warning])])
+   [:i18n/tr :insurance/add-coverage-separate-warning]])
 
 (defn- instrument-form [req form-state]
   [:form {:id             "coverage-create-instrument-form"
@@ -227,20 +235,19 @@
           :data-action    (d*/act req ::actions/save-instrument-step)
           :data-on:submit "evt.preventDefault();"
           :data-signals   (d*/->signals {:coverage-create (dissoc form-state :_error)})}
-   (warning-callout req)
+   (warning-callout)
    (instrument-section req form-state)
    (top-error-callout form-state)])
 
 (defn instrument-page-content [req policy instrument redirect]
-  (let [tr         (:tr req)
-        policy-id  (:insurance.policy/policy-id policy)
+  (let [policy-id  (:insurance.policy/policy-id policy)
         form-state (form-state req policy-id redirect instrument)]
     [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
      [page-header/PageHeader {:class    "insurance-coverage-page-header"
-                              :title    (tr [:instrument.coverage/create-title])
-                              :subtitle (tr [:instrument.coverage/create-subtitle]
-                                            [(:insurance.policy/name policy)])}]
-     (create-steps tr 1)
+                              :title    [:i18n/tr :insurance/add-coverage-title]
+                              :subtitle [:i18n/tr :insurance/add-coverage-subtitle
+                                         {:policy-name (:insurance.policy/name policy)}]}]
+     (create-steps 1)
      (instrument-form req form-state)]))
 
 (defn instrument-page [{:keys [db] :as req}]
@@ -288,26 +295,25 @@
 
 (defn photos-page-content
   [req instrument]
-  (let [tr (:tr req)]
-    [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-     [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                              :title      (tr [:instrument.coverage/create-title])
-                              :subtitle   (:instrument/name instrument)}]
-     (create-steps tr 2)
-     (upload/upload-section
-      req instrument
-      {:complete-label (tr [:instrument.coverage/upload-complete])
-       :drop-label     (tr [:instrument.coverage/upload-drop-label])
-       :empty-body     (tr [:insurance/no-photos])
-       :empty-title    (tr [:instrument/images])
-       :error-label    (tr [:instrument.coverage/upload-error])
-       :help-label     (tr [:instrument.coverage/upload-help])
-       :input-id       "coverage-create-photo-upload"
-       :progress-label (tr [:instrument.coverage/upload-progress])
-       :reload?        true
-       :subtitle       (tr [:instrument/photo-upload-subtitle])
-       :title          (tr [:instrument/photo-upload])})
-     (upload/upload-script)]))
+  [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
+   [page-header/PageHeader {:class    "insurance-coverage-page-header"
+                            :title    [:i18n/tr :insurance/add-coverage-title]
+                            :subtitle (:instrument/name instrument)}]
+   (create-steps 2)
+   (upload/upload-section
+    req instrument
+    {:complete-label [:i18n/tr :insurance/upload-complete]
+     :drop-label     [:i18n/tr :insurance/upload-drop-label]
+     :empty-body     [:i18n/tr :insurance/no-photos]
+     :empty-title    [:i18n/tr :insurance/photos]
+     :error-label    [:i18n/tr :insurance/upload-error]
+     :help-label     [:i18n/tr :insurance/upload-help]
+     :input-id       "coverage-create-photo-upload"
+     :progress-label [:i18n/tr :insurance/upload-progress]
+     :reload?        true
+     :subtitle       [:i18n/tr :insurance/photo-upload-subtitle]
+     :title          [:i18n/tr :insurance/photo-upload]})
+   (upload/upload-script)])
 
 (defn photos-page [{:keys [db instrument] :as req}]
   (let [policy-id     (http.util/path-param-uuid! req :policy-id)
@@ -373,6 +379,7 @@
    field
    form-state
    hint
+   (:required attrs)
    [:input (merge {:id    (name field)
                    :name  (name field)
                    :type  "text"
@@ -424,14 +431,14 @@
       (when-not (str/blank? (str description))
         [:small {:class "wa-color-text-quiet"} description])]]))
 
-(defn- coverage-types-field [{:keys [tr]} form-state coverage-types]
+(defn- coverage-types-field [form-state coverage-types]
   (let [selected-type-ids (set (:coverage-types form-state))
         error             (field-error form-state :coverage-types)]
     [:div {:class     (ui2/cs "insurance-coverage-edit-wide"
                               "insurance-coverage-edit-choice-list")
            :data-show "$coverage-create.private-band === 'private'"}
      [:div {:class "insurance-coverage-edit-field-label"}
-      [:span (tr [:insurance/coverage-types])]
+      [:span [:i18n/tr :insurance/coverage-types]]
       (when error
         [:span {:class "wa-caption-s text-danger"} error])]
      (into
@@ -439,74 +446,77 @@
       (map (partial coverage-type-checkbox selected-type-ids)
            coverage-types))]))
 
-(defn- private-band-field [{:keys [tr] :as req} form-state]
+(defn- private-band-field [req form-state]
   (let [error     (field-error form-state :private-band)
-        hint      (tr [:instrument.coverage/private?-hint])
+        hint      [:i18n/tr :insurance/ownership-hint]
         on-change (str "$coverage-create.private-band = evt.target.value; "
                        (coverage-validate-field-action req :private-band))]
-    [:wa-radio-group (cond-> {:label          (tr [:band-private])
-                              :name           "private-band"
+    [:wa-radio-group (cond-> {:name           "private-band"
                               :value          (:private-band form-state)
                               :required       true
+                              :with-label     true
                               :with-hint      true
                               :data-bind      "coverage-create.private-band"
                               :data-on:change on-change}
                        error (assoc :data-invalid "true"))
+     [:span {:slot "label"}
+      [:i18n/tr :insurance/ownership]]
      [:span {:slot "hint" :class "wa-stack wa-gap-3xs"}
       [:span hint]
       (when error
         [:span {:class "text-danger"} error])]
      [:wa-radio {:value "band"}
       [:span {:class "wa-stack wa-gap-3xs"}
-       [:span (tr [:band-instrument])]
+       [:span [:i18n/tr :insurance/ownership-band]]
        [:small {:class "wa-color-text-quiet"}
-        (tr [:band-instrument-description])]]]
+        [:i18n/tr :insurance/ownership-band-description]]]]
      [:wa-radio {:value "private"}
       [:span {:class "wa-stack wa-gap-3xs"}
-       [:span (tr [:private-instrument])]
+       [:span [:i18n/tr :insurance/ownership-private]]
        [:small {:class "wa-color-text-quiet"}
-        (tr [:private-instrument-description])]]]]))
+        [:i18n/tr :insurance/ownership-private-description]]]]]))
 
-(defn- instrument-summary [{:keys [tr]} instrument]
+(defn- instrument-summary [instrument]
   (ui2/section-card
-   {:title    (tr [:instrument/instrument])
+   {:title    [:i18n/tr :instrument/instrument]
     :subtitle (:instrument/name instrument)
     :divider? true}
    [:dl {:class "particulars wa-grid wa-gap-m"}
-    (ui2/detail-item (tr [:instrument/owner])
+    (ui2/detail-item [:i18n/tr :instrument/owner]
                      (get-in instrument [:instrument/owner :member/name]))
-    (ui2/detail-item (tr [:instrument/category])
+    (ui2/detail-item [:i18n/tr :instrument/category]
                      (get-in instrument [:instrument/category :instrument.category/name]))
-    (ui2/detail-item (tr [:instrument/make])
+    (ui2/detail-item [:i18n/tr :instrument/make]
                      (:instrument/make instrument))
-    (ui2/detail-item (tr [:instrument/model])
+    (ui2/detail-item [:i18n/tr :instrument/model]
                      (:instrument/model instrument))]))
 
 (defn- insurance-team-member? [{:keys [db] :as req}]
   (q/insurance-team-member? db (get-in req [:session :session/member])))
 
-(defn- coverage-section [{:keys [tr] :as req} policy form-state]
+(defn- coverage-section [req policy form-state]
   (ui2/section-card
-   {:title    (tr [:insurance/instrument-coverage])
-    :subtitle (tr [:insurance/coverage-for] [(:insurance.policy/name policy)])
+   {:title    [:i18n/tr :insurance/instrument-coverage]
+    :subtitle [:i18n/tr :insurance/coverage-for
+               {:policy-name (:insurance.policy/name policy)}]
     :divider? true}
    [:div {:class "insurance-coverage-edit-form-grid"}
-    (coverage-input-field req form-state :item-count (tr [:insurance/item-count]) (:item-count form-state)
+    (coverage-input-field req form-state :item-count [:i18n/tr :insurance/item-count] (:item-count form-state)
                           {:type "number" :min 1 :step 1 :required true}
-                          (tr [:insurance/item-count-hint]))
-    (coverage-input-field req form-state :value (tr [:insurance/value]) (:value form-state)
+                          [:i18n/tr :insurance/item-count-hint])
+    (coverage-input-field req form-state :value [:i18n/tr :insurance/value] (:value form-state)
                           {:type "number" :min 1 :step 1 :required true}
-                          (tr [:instrument.coverage/value-hint]))
+                          [:i18n/tr :insurance/insured-value-hint])
     (private-band-field req form-state)
     (when (insurance-team-member? req)
-      (coverage-input-field req form-state :insurer-id (tr [:instrument.coverage/insurer-id]) (:insurer-id form-state)
-                            {} (tr [:instrument.coverage/insurer-id-hint])))
-    (coverage-types-field req form-state (:insurance.policy/coverage-types policy))]))
+      (coverage-input-field req form-state :insurer-id [:i18n/tr :insurance/insurer-id] (:insurer-id form-state)
+                            {} [:i18n/tr :insurance/insurer-id-hint]))
+    (coverage-types-field form-state (:insurance.policy/coverage-types policy))]))
 
-(defn- no-coverage-types-callout [{:keys [tr]}]
+(defn- no-coverage-types-callout []
   [:wa-callout {:appearance "outlined"
                 :variant    "warning"}
-   (tr [:insurance.policy-settings/no-coverage-types])])
+   [:i18n/tr :insurance/no-coverage-types]])
 
 (defn- coverage-form [req policy instrument redirect]
   (let [form-state      (coverage-form-state req policy instrument redirect)
@@ -519,18 +529,18 @@
             :data-on:submit "evt.preventDefault();"
             :data-signals   (d*/->signals {:coverage-create (dissoc form-state :_error)})}
      (if disabled?
-       (no-coverage-types-callout req)
+       (no-coverage-types-callout)
        (coverage-section req policy form-state))
      (top-error-callout form-state)]))
 
 (defn coverage-page-content [req policy instrument redirect]
   [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
-   [page-header/PageHeader {:class      "insurance-coverage-page-header"
-                            :title      ((:tr req) [:instrument.coverage/create-title])
-                            :subtitle   ((:tr req) [:insurance/coverage-for]
-                                                   [(:insurance.policy/name policy)])}]
-   (create-steps (:tr req) 3)
-   (instrument-summary req instrument)
+   [page-header/PageHeader {:class    "insurance-coverage-page-header"
+                            :title    [:i18n/tr :insurance/add-coverage-title]
+                            :subtitle [:i18n/tr :insurance/coverage-for
+                                       {:policy-name (:insurance.policy/name policy)}]}]
+   (create-steps 3)
+   (instrument-summary instrument)
    (coverage-form req policy instrument redirect)])
 
 (defn coverage-page [{:keys [db instrument] :as req}]

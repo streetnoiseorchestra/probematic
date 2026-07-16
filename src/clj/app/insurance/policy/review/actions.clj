@@ -100,7 +100,7 @@
     (if (str/blank? insurer-id)
       [support/clear-loading
        [:app.datastar/assoc-state [form-key :error]
-        {:error (tr [:error/is-required] [(tr [:instrument.coverage/insurer-id])])}]]
+        {:error (tr [:error/is-required] [(tr [:insurance/insurer-id])])}]]
       (let [effects (mark-coverage-attr-action state
                                                signals
                                                :instrument.coverage/insurer-id
