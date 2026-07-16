@@ -1095,12 +1095,6 @@
     "com/taoensso/nippy/3.6.2/nippy-3.6.2.pom": {
       "sha256": "f115390b5d5e5dab523b0cce13e9cb8d8060696c4c7bf48ac71e8db4576bb00c"
     },
-    "com/taoensso/tempura/1.5.4/tempura-1.5.4.jar": {
-      "sha256": "f0b86a59d40bca04172b0b71ef2cc0477136a2f492243b2f7fc6551a2f363367"
-    },
-    "com/taoensso/tempura/1.5.4/tempura-1.5.4.pom": {
-      "sha256": "d36abf400438e1305d9bf534463f8d192c96e499e364acf1f761274f36b38478"
-    },
     "com/taoensso/timbre/5.1.2/timbre-5.1.2.jar": {
       "sha256": "370a483d04546e215862b2a428c2b52d179eb55ef57180df9a13bb21d23e9761"
     },
@@ -1415,6 +1409,12 @@
     },
     "io/github/nextjournal/markdown/0.7.225/markdown-0.7.225.pom": {
       "sha256": "44dead0437ea012eca50b6e039d8d258c017e928488cd74bb408cd6fe7ea9d77"
+    },
+    "io/github/noahtheduke/fluent-clj/0.3.0/fluent-clj-0.3.0.jar": {
+      "sha256": "4dfd0dc9fbe685844f637a0b04315459d871b7681275cf7bcfb318f9729a8963"
+    },
+    "io/github/noahtheduke/fluent-clj/0.3.0/fluent-clj-0.3.0.pom": {
+      "sha256": "d525baec0288909aaf263448ddf24845c051de262b73fbba86fab4654e27c76e"
     },
     "io/github/paintparty/bling/0.10.0/bling-0.10.0.jar": {
       "sha256": "7e63f5094f39961411f7674d0bfb2b7a0ef66d4f3ca5fcd3143f2a9bb8caa744"
@@ -2036,6 +2036,30 @@
     },
     "net/sf/ehcache/ehcache/2.10.6/ehcache-2.10.6.pom": {
       "sha256": "1247599617efaab09bd1bd5f9cdfaf8b577ecfe3dc480abfa1d2a7c2986be626"
+    },
+    "net/xyzsd/fluent/fluent-base/0.72/fluent-base-0.72.jar": {
+      "sha256": "271d75006fe2aaacaa8a2498f6b194c8a214e18f2ea4c0dfe7747f3e4171980e"
+    },
+    "net/xyzsd/fluent/fluent-base/0.72/fluent-base-0.72.pom": {
+      "sha256": "2c6dca3f33fdd5ae547df38c7869ffe74d5767cf36ed2ba2b9383fd4df6c1be1"
+    },
+    "net/xyzsd/fluent/fluent-functions-cldr/0.72/fluent-functions-cldr-0.72.jar": {
+      "sha256": "1a86749a635d7516cc8c8a867902565342527f3218868c1a6cb550b2e4516da5"
+    },
+    "net/xyzsd/fluent/fluent-functions-cldr/0.72/fluent-functions-cldr-0.72.pom": {
+      "sha256": "c5055a8b4abe789d8b4955cb36a9edb8f8cfd63ab7954016f94f648cbb18cd84"
+    },
+    "net/xyzsd/plurals/cldr-plural-rules/41/cldr-plural-rules-41.jar": {
+      "sha256": "873e3cf8f04484ceac9dabeb267779c787a585b6046cad0f00e8b7084094af69"
+    },
+    "net/xyzsd/plurals/cldr-plural-rules/41/cldr-plural-rules-41.pom": {
+      "sha256": "302c44975607f1093bc29b474ea5f0ad4cf4f765cb10b439e02c7a7a0222b87c"
+    },
+    "no/cjohansen/lookup/2026.07.1/lookup-2026.07.1.jar": {
+      "sha256": "02c89785f1abf6b859203b30286e6c675dac94b4d5dc81c55e950a705a77e45a"
+    },
+    "no/cjohansen/lookup/2026.07.1/lookup-2026.07.1.pom": {
+      "sha256": "8ae248b817e99169473867353faf69b07d514300c24fc5b1621f25ddd0e68825"
     },
     "no/cjohansen/nexus/2025.11.1/nexus-2025.11.1.jar": {
       "sha256": "e3edff7c2d7450ac8f027c169da1453bf20baad0aea1c424a754cd350003dacc"

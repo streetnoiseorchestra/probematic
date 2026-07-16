@@ -51,7 +51,6 @@
         com.brunobonacci/mulog                         {:mvn/version "0.10.1"}
         com.brunobonacci/mulog-elasticsearch           {:mvn/version "0.10.1"}
         ;; i18n
-        com.taoensso/tempura                           {:mvn/version "1.5.4"}
         io.github.noahtheduke/fluent-clj               {:mvn/version "0.3.0"}
         ;; Database
         com.datomic/local                              {:mvn/version "1.0.291"}

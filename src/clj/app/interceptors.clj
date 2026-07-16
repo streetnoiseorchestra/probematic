@@ -182,21 +182,13 @@
                     change-lang        (or
                                         (and both-set (not (= lang-qr lang-cookie)))
                                         (and (not both-set) lang-qr))
-                    tempura-accepted   (if (:tempura/accept-langs request)
-                                         (:tempura/accept-langs request)
-                                         [])
-                    accepted           (if all-accepted-langs (into [] (concat all-accepted-langs tempura-accepted)) tempura-accepted)
+                    accepted           all-accepted-langs
                     current-locale     (i18n/supported-lang lang-dicts accepted)
                     tr                 (i18n/tr-with lang-dicts accepted)
-                    req                (if tr
-                                         (assoc request
-                                                :will-change-lang change-lang
-                                                :tr tr
-                                                :tempura/accept-langs accepted
-                                                :current-locale (keyword current-locale))
-                                         (assoc request
-                                                :will-change-lang change-lang
-                                                :current-locale (keyword current-locale)))
+                    req                (assoc request
+                                              :will-change-lang change-lang
+                                              :tr tr
+                                              :current-locale (keyword current-locale))
                     ;;
                     ]
                 (assoc ctx :request req)))

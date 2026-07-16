@@ -1,22 +1,20 @@
 (ns app.i18n
   (:require
    [app.i18n.fluent :as fluent]
-   [app.i18n.tempura :as tempura]
-   [clojure.set :refer [intersection]]
+   [clojure.set :as set]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [dev.onionpancakes.chassis.core :as chassis]
-   [taoensso.encore :as enc])
+   [dev.onionpancakes.chassis.core :as chassis])
   (:import
    [java.util Locale]))
 
-(def default-locale tempura/default-locale)
+(def default-locale :en)
+
+(def ^:private supported-locales [default-locale :de])
 
 (def ^:dynamic *translator*
   "Provides the translator while Chassis resolves component-generated translation nodes."
   nil)
-
-(defrecord LocaleTranslations [tempura fluent])
 
 (defn java-locale
   "Returns a [[java.util.Locale]] for `locale`, defaulting to English when blank."
@@ -47,13 +45,12 @@
   (java-locale (:current-locale req)))
 
 (defn read-langs
-  "Loads the Tempura dictionaries and creates lazy Fluent locale states."
+  "Creates lazy Fluent resource state for each supported locale."
   []
   (into {}
-        (map (fn [[locale dictionary]]
-               [locale (->LocaleTranslations dictionary
-                                             (fluent/new-locale locale))]))
-        (tempura/read-langs)))
+        (map (fn [locale]
+               [locale (fluent/new-locale locale)]))
+        supported-locales))
 
 (defn tr-opts [param-langs]
   {:dict param-langs :default-locale default-locale})
@@ -67,7 +64,7 @@
                                    accepted-empty-removed))
           accept-langs-set (into #{} keyword-accepted-langs)
           langs-set (into #{} (keys param-langs))
-          lang-intersection (intersection langs-set accept-langs-set)
+          lang-intersection (set/intersection langs-set accept-langs-set)
           lang-match (first
                       (filter
                        #(contains? lang-intersection %)
@@ -85,44 +82,37 @@
   (let [selected-locale (supported-lang lang-data (mapv locale-name (or locales [])))]
     (distinct [selected-locale fallback-locale])))
 
-(defn- fluent-locale [lang-data locale]
-  (let [locale-data (get lang-data locale)]
-    (when (instance? LocaleTranslations locale-data)
-      (:fluent locale-data))))
-
 (defn- fluent-translation [lang-data locales fallback-locale resource-ids resource-data]
   (some (fn [resource-id]
-          (when (keyword? resource-id)
+          (cond
+            (keyword? resource-id)
             (some (fn [locale]
-                    (some-> (fluent-locale lang-data locale)
+                    (some-> (get lang-data locale)
                             (fluent/translate resource-id resource-data)))
-                  (candidate-locales lang-data locales fallback-locale))))
+                  (candidate-locales lang-data locales fallback-locale))
+
+            (string? resource-id)
+            resource-id))
         resource-ids))
 
-(defn- tempura-langs [lang-data]
-  (update-vals lang-data
-               #(if (instance? LocaleTranslations %)
-                  (:tempura %)
-                  %)))
-
 (defn tr
-  "Translates `resource-ids` with Fluent first and Tempura second.
+  "Translates the first available candidate in `resource-ids` with Fluent.
 
   Qualified Fluent keys select a matching FTL filename; unqualified Fluent
-  keys select `app.ftl`. Fluent translation data must be a map. Tempura
-  translation data remains a vector."
+  keys select `app.ftl`. A string candidate is returned as a literal fallback.
+  Translation data must be a map."
   ([opts locales resource-ids]
    (tr opts locales resource-ids nil))
   ([opts locales resource-ids resource-data]
-   (or (fluent-translation (:dict opts)
-                           locales
-                           (:default-locale opts default-locale)
-                           resource-ids
-                           resource-data)
-       (tempura/tr (assoc opts :dict (tempura-langs (:dict opts)))
-                   locales
-                   resource-ids
-                   (when-not (map? resource-data) resource-data)))))
+   (when-not (or (nil? resource-data) (map? resource-data))
+     (throw (ex-info "Fluent translation data must be a map"
+                     {:resource-ids resource-ids
+                      :data resource-data})))
+   (fluent-translation (:dict opts)
+                       locales
+                       (:default-locale opts default-locale)
+                       (if (keyword? resource-ids) [resource-ids] resource-ids)
+                       resource-data)))
 
 (defn tr-with
   ([param-langs langs]
@@ -176,14 +166,20 @@
    value))
 
 (defn parse-http-accept-header
-  "Parses HTTP Accept header and returns sequence of [choice weight] pairs
-  sorted by weight."
+  "Parses HTTP Accept `header` into `[choice weight]` pairs sorted by weight."
   [header]
-  (sort-by second enc/rcompare
+  (sort-by second #(compare %2 %1)
            (for [choice (remove str/blank? (str/split (str header) #","))]
              (let [[lang q] (str/split choice #";")]
                [(str/trim lang)
-                (or (when q (enc/as-?float (get (str/split q #"=") 1)))
+                (or (when q
+                      (try
+                        (some-> q
+                                (str/split #"=" 2)
+                                second
+                                parse-double)
+                        (catch NumberFormatException _exception
+                          nil)))
                     1)]))))
 
 (defn browser-lang [headers]
