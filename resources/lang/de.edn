@@ -1,154 +1,60 @@
-{:unknown "unbekannt",
- :actions "Aktionen"
+{:unknown "unbekannt"
+ :total   "Gesamt"
+
  :identity-mismatch
- {:page-title "SNOrga-Kontoproblem",
-  :eyebrow "Kontoproblem",
-  :title "SNOrga kann dein SNO-ID-Konto nicht zuordnen",
-  :body "Du bist mit SNO ID angemeldet, aber SNOrga konnte dieses Konto keinem Mitglied zuordnen.",
-  :signed-in-email "Angemeldete E-Mail-Adresse",
-  :sno-id-subject "SNO-ID-Subjekt",
-  :retry-guidance "Starte den Login-Vorgang neu. Wenn diese Seite wieder erscheint, kontaktiere eine Administratorin oder einen Administrator und gib die oben angezeigte E-Mail-Adresse an.",
-  :restart-login "Login neu starten",
-  :log-out "Abmelden"},
- :email
- {:gig-edit-type "BEARBEITET",
-  :gig-info-page "Bring mich zur Gig-Info-Seite",
-  :want-reminder "Erinnere mich in ein paar Tagen daran",
-  :sign-off "Mit groovigen Grüßen — SNObot",
-  :gig-edited "An einem Gig hat sich etwas geändert!",
-  :remind-extra-probe
-  "Dies ist eine Erinnerung an eine bevorstehende Extrasonde! Bitte antworten :)",
-  :cannot-make-it "Ich schaffe es nicht",
-  :body-log-plays
-  "Bitte erzählt SNOrga, was wir bei der Probe am %1 gespielt haben *und* wer die Probeleitung für nächste Woche ist! Es dauert nur 1 Minute.",
-  :subject-log-plays "Was haben wir im Probe gespielt?",
-  :new-probe-added "Eine neue Probe steht an!",
-  :need-to-change-availability? "Ich muss meine Verfügbarkeit ändern",
-  :can-you-make-it? "Kannst du es schaffen?",
-  :cta-log-plays "Klicken Sie hier!",
-  :remind-probe
-  "Dies ist eine Erinnerung an eine bevorstehende Untersuchung! Bitte antworten :)",
-  :invite-new-user-intro2
-  "Klickst du auf den Link unten, um dein Konto einzurichten.",
-  :invite-new-user-intro
-  "Du hast eine Einladung erhalten, eine StreetNoise Orchestra (SNO)-ID zu erstellen!",
-  :greeting-personal "Liebe:r %1",
-  :sign-off-personal "Danke und liebe Grüße,",
-  :remind-gig
-  "Dies ist eine Erinnerung an einen bevorstehenden Auftritt! Bitte antworten :)",
-  :can-make-it "Ich kann es schaffen!",
-  :new-extra-probe-added "Eine neue Extraprobe steht an!",
-  :greeting "Hallo!",
-  :new-meeting-added "Ein neues Treffen steht an!",
-  :new-gig-added "Ein neuer Gig steht an!",
-  :remind-meeting
-  "Dies ist eine Erinnerung an ein bevorstehendes Treffen! Bitte antworten :)"},
- :selected "ausgewählt",
- :play-log {:diagram-legend "Legende"},
- :now "jetzt",
- :Contact-Information "Kontakt Informationen",
- :password
- {:commonly-used
-  "Das Passwort ist ein bekanntes gehacktes Passwort. Bitte wähle ein sicheres Passwort.",
-  :too-short
-  "Das Passwort ist zu kurz. Es muss mindestens 8 Zeichen lang sein.",
-  :does-not-match "Die Passwörter stimmen nicht überein."},
- :money-input-format-error
- "Gib den Währungsbetrag ein, zum Beispiel 42,05",
- :section-none "Kein Register",
- :choose-calendar-app "Wählen Sie Ihre Kalender-App",
- :dashboard
- {:welcome "Willkommen %1!",
-  :upcoming "Alle kommenden Termine",
-  :unanswered "Zukünftige Termine: Sag Bescheid!",
-  :polls-open "Wir haben offene Umfragen!"},
- :my-profile "Mein Profil",
- :account
- {:password "Passwort",
-  :password-instructions "Muss mindestens 8 Zeichen lang sein",
-  :password-confirm-instructions
-  "Beide Passwörter müssen übereinstimmen",
-  :password-confirm "Kennwort bestätigen"},
- :member
- {:filter-sno-id-disabled "SNO-ID deaktiviert",
-  :gigs-attended "Gigs besucht",
-  :phone-validation
-  "Telefonnummer, die mit +Landesvorwahl beginnt. Nur Leerzeichen, Bindestriche und Zahlen",
-  :probes-attended "Proben besuchtaProben Attended",
-  :new-member "Neues Mitglied"},
- :instruments "Instrumente",
- :total "Gesamt",
- :team
- {:add-member            "Mitglied hinzufügen",
-  :choose-remove-members "Wähle Mitglieder zum Entfernen aus"},
- :updating "Aktualisierung…",
- :action
- {:done "Fertig",
-  :continue "Fortsetzen",
-  :create "Erstellen",
-  :copy-link-confirm "Kopiert",
-  :copy-link "Link kopieren",
-  :reset "Zurücksetzen",
-  :ignore "Ignorieren",
-  :select-all "Wählen Alle",
-  :quick-edit "Schnellbearbeitung",
-  :mark-as "Markieren als",
-  :next "Nächste",
-  :send "Senden",
-  :add-to-calendar "Zum Kalender hinzufügen",
-  :subscribe "Abonnieren"},
+ {:page-title      "SNOrga-Kontoproblem"
+  :eyebrow         "Kontoproblem"
+  :title           "SNOrga kann dein SNO-ID-Konto nicht zuordnen"
+  :body            "Du bist mit SNO ID angemeldet, aber SNOrga konnte dieses Konto keinem Mitglied zuordnen."
+  :signed-in-email "Angemeldete E-Mail-Adresse"
+  :sno-id-subject  "SNO-ID-Subjekt"
+  :retry-guidance  "Starte den Login-Vorgang neu. Wenn diese Seite wieder erscheint, kontaktiere eine Administratorin oder einen Administrator und gib die oben angezeigte E-Mail-Adresse an."
+  :restart-login   "Login neu starten"
+  :log-out         "Abmelden"}
+
+ :dashboard {:welcome "Willkommen %1!"}
+
+ :gig {:end-time-warning "ACHTUNG: Die Endzeit wird nur geschätzt. Jemand hat dieses Feld in SNOrga nicht ausgefüllt."}
+
  :error
- {:go-home "Go Home",
-  :item-load-failed
-  "Beim Laden dieses Elements ist etwas schiefgelaufen. Bitte kontaktiere das Team.",
-  :unauthorized-message
-  "Ihre Identität ist dem System unbekannt. Wahrscheinlich ist etwas schief gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
-  :unknown-title "Ein Fehler ist aufgetreten",
-  :unauthorized-title "Authentifizierung fehlgeschlagen",
-  :unknown-message
-  "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
-  :not-found-message
-  "Das, wonach du gesucht hast, wurde nicht gefunden. Wenn du denkst, dass es existieren sollte, bitte kontaktiere Casey und teile ihm diesen Fehlercode mit:",
-  :notify "Click to notify Casey",
-  }
- :reminders
- {:remind-me-in "Erinnere mich in",
-  :reminded-all-at "Alle erinnert um:",
-  :one-day "1 Tag",
-  :three-days "3 Tage",
-  :one-week "1 Woche"},
- :missing ":de missing text",
- :gigs
- {:view-archive "Gig-Archiv anzeigen",
-  :archive "Gig-Archiv"},
+ {:unknown-title        "Ein Fehler ist aufgetreten"
+  :unknown-message      "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:"
+  :not-found-message    "Das, wonach du gesucht hast, wurde nicht gefunden. Wenn du denkst, dass es existieren sollte, bitte kontaktiere Casey und teile ihm diesen Fehlercode mit:"
+  :unauthorized-title   "Authentifizierung fehlgeschlagen"
+  :unauthorized-message "Ihre Identität ist dem System unbekannt. Wahrscheinlich ist etwas schief gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:"
+  :go-home              "Go Home"
+  :notify               "Click to notify Casey"}
+
  :email-subject
- {:gig-created "Neuer Gig: %1",
-  :gig-updated "Gig-Bearbeitung: %1",
-  :gig-reminder "Gigerinnerung: %1",
-  :new-invite "Ihre SNO-ID wartet auf Sie.",
-  :poll-created "Neue Umfrage: %1"},
- :gig
- {:no-comments "Keine Kommentare.",
-  :description-help
-  "Dieser Text wird auf der Website unter kommende Gigs verwendet.",
-  :comment-placeholder "Melde dich zu Wort!",
-  :probe-info "Probeninfos",
-  :end-day "Enddatum",
-  :end-time-warning
-  "ACHTUNG: Die Endzeit wird nur geschätzt. Jemand hat dieses Feld in SNOrga nicht ausgefüllt."},
- :nav
- {:insurance "Versicherung",
-  :polls "Umfragen",
-  :home "Home",
-  :songs "Repertoire",
-  :logout "Abmelden",
-  :settings "Einstellungen",
-  :chat "Chat",
-  :notifications "Benachrichtigungen",
-  :nextcloud "Data",
-  :members "Mitglieder",
-  :gigs "Gigs & Proben",
-  :stats "Stats",
-  :profile "Profil",
-  :band-settings "Bandeinstellungen"},
- :none "Keiner"}
+ {:gig-created  "Neuer Gig: %1"
+  :gig-updated  "Gig-Bearbeitung: %1"
+  :gig-reminder "Gigerinnerung: %1"
+  :new-invite   "Ihre SNO-ID wartet auf Sie."
+  :poll-created "Neue Umfrage: %1"}
+
+ :email
+ {:gig-edit-type                "BEARBEITET"
+  :gig-info-page                "Bring mich zur Gig-Info-Seite"
+  :want-reminder                "Erinnere mich in ein paar Tagen daran"
+  :sign-off                     "Mit groovigen Grüßen — SNObot"
+  :gig-edited                   "An einem Gig hat sich etwas geändert!"
+  :remind-extra-probe           "Dies ist eine Erinnerung an eine bevorstehende Extrasonde! Bitte antworten :)"
+  :cannot-make-it               "Ich schaffe es nicht"
+  :body-log-plays               "Bitte erzählt SNOrga, was wir bei der Probe am %1 gespielt haben *und* wer die Probeleitung für nächste Woche ist! Es dauert nur 1 Minute."
+  :subject-log-plays            "Was haben wir im Probe gespielt?"
+  :new-probe-added              "Eine neue Probe steht an!"
+  :need-to-change-availability? "Ich muss meine Verfügbarkeit ändern"
+  :can-you-make-it?             "Kannst du es schaffen?"
+  :cta-log-plays                "Klicken Sie hier!"
+  :remind-probe                 "Dies ist eine Erinnerung an eine bevorstehende Untersuchung! Bitte antworten :)"
+  :invite-new-user-intro2       "Klickst du auf den Link unten, um dein Konto einzurichten."
+  :invite-new-user-intro        "Du hast eine Einladung erhalten, eine StreetNoise Orchestra (SNO)-ID zu erstellen!"
+  :greeting-personal            "Liebe:r %1"
+  :sign-off-personal            "Danke und liebe Grüße,"
+  :remind-gig                   "Dies ist eine Erinnerung an einen bevorstehenden Auftritt! Bitte antworten :)"
+  :can-make-it                  "Ich kann es schaffen!"
+  :new-extra-probe-added        "Eine neue Extraprobe steht an!"
+  :greeting                     "Hallo!"
+  :new-meeting-added            "Ein neues Treffen steht an!"
+  :new-gig-added                "Ein neuer Gig steht an!"
+  :remind-meeting               "Dies ist eine Erinnerung an ein bevorstehendes Treffen! Bitte antworten :)"}}
