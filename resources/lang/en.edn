@@ -17,8 +17,7 @@
  :dashboard           {:welcome        "Welcome %1!"
                        :unanswered     "Need Attention!"
                        :upcoming       "All Upcoming Gigs"
-                       :polls-open     "We have open polls!"
-                       :you-owe        "You owe the band some money!"}
+                       :polls-open     "We have open polls!"}
  :member              {:member                 "Member"
                        :gigs-attended          "Gigs Attended"
                        :probes-attended        "Proben Attended"
@@ -44,7 +43,6 @@
                                   :forum         "Forum"
                                   :chat          "Chat"
                                   :nextcloud     "Data"
-                                  :calendar      "Calendar"
                                   :gigs          "Gigs & Proben"
                                   :probeplan     "Probenplan"
                                   :songs         "Repertoire"
@@ -55,7 +53,6 @@
                                   :band-settings "Band Settings"
                                   :notifications "Notifications"
                                   :logout        "Logout"}
- :why                            "Why?"
  :instruments                    "Instruments"
  :none                           "None"
  :section-none                   "No Section"
@@ -68,7 +65,6 @@
                                   :copy-link-confirm            "Copied"
                                   :copy-link                    "Copy Link"
                                   :create                       "Create"
-                                  :create-gig                   "Create Gig"
                                   :done                         "Done"
                                   :mark-as                      "Mark As"
                                   :next                         "Next"

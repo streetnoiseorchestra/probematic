@@ -244,10 +244,10 @@
                              :amount                 (/ balance 100.0)
                              :unstructured-reference (maybe-transfer-reference balance entries)}))))
 
-(defn- ledger-widget [{:keys [tr system] :as req} {:ledger/keys [balance entries owner] :as _ledger}]
+(defn- ledger-widget [{:keys [system] :as req} {:ledger/keys [balance entries owner]}]
   (let [{:keys [iban bic account-name]} (config/band-bank-info (-> system :env))]
     (ui2/section-card
-     {:title (tr [:dashboard/you-owe])}
+     {:title [:i18n/tr :dashboard/ledger-balance-title]}
      [card/Card {:class "dashboard-ledger-card"}
       [:div {:class "dashboard-ledger-grid"}
        [:div {:class "wa-stack wa-gap-xs"}
@@ -255,7 +255,7 @@
         [:div {:class "dashboard-ledger-balance text-danger"}
          (currency-format balance)]
         [:a {:href (urls/link-member-money owner)}
-         (tr [:why])]]
+         [:i18n/tr :dashboard/ledger-balance-details]]]
        [:div {:class "wa-stack wa-gap-s"}
         [:p [:i18n/tr :ledger/please-pay-to-band {:amount (currency-format balance)}]]
         (when (and account-name iban bic)

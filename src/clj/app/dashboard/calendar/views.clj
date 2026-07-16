@@ -7,15 +7,15 @@
    [app.ui2.button :as button]
    [app.urls :as urls]))
 
-(defn page [{:keys [tr]}]
-  (ui2/plain-page
+(defn page [_req]
+  (ui2/plain-page*
    [:div {:class "wa-stack wa-gap-l"}
     [page-header/PageHeader
-     {:title   (tr [:nav/calendar])
+     {:title   [:i18n/tr :dashboard/calendar-title]
       :actions [[button/Button {:appearance "filled"
                                 :variant    "brand"
                                 :href       (urls/link-gig-create)}
-                 (tr [:action/create-gig])]]}]
+                 [:i18n/tr :dashboard/calendar-create-gig]]]}]
     [card/Card
      [:iframe {:class "dashboard-calendar-frame"
                :src   "https://data.streetnoise.at/apps/calendar/embed/yRFYYPnQkasfa8nk/listMonth/now"
