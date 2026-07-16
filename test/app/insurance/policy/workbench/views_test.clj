@@ -1,5 +1,6 @@
 (ns app.insurance.policy.workbench.views-test
   (:require
+   [app.i18n :as i18n]
    [app.insurance.policy.workbench.views :as sut]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -20,13 +21,10 @@
    [:action/select-all] "Select all"
    [:action/view] "View"
    [:actions] "Actions"
-   [:band-instrument] "Band Instrument"
-   [:band-private] "Ownership"
    [:col/member] "Member"
    [:instrument/category] "Category"
    [:instrument/instrument] "Instrument"
    [:instrument.coverage/cost] "Cost"
-   [:instrument.coverage/insurer-id] "Harmonia ID"
    [:instrument.coverage.status/needs-review] "Todo"
    [:instrument.coverage.status/reviewed] "Reviewed"
    [:instrument.coverage.status/coverage-active] "Active"
@@ -37,6 +35,8 @@
    [:insurance/cost] "Cost"
    [:insurance/coverage-types] "Coverage types"
    [:insurance/item-count] "Count"
+   [:insurance/insurer-id] "Harmonia ID"
+   [:insurance/ownership] "Ownership"
    [:insurance/total] "Total"
    [:insurance/value] "Versicherungswert"
    [:insurance/value-abbrev] "Value"
@@ -114,6 +114,10 @@
 (def request
   {::r/router router
    :tr        tr})
+
+(defn resolve-view
+  [view]
+  (i18n/resolve-translations tr view))
 
 (def row
   {:category-name       "Strings"
@@ -208,13 +212,14 @@
   ([rows]
    (flat-table :all nil rows))
   ([view table rows]
-   (sut/flat-table
-    {:tr tr}
-    {:view    view
-     :filters {:group :none}
-     :table   table
-     :policy  policy
-     :rows    rows})))
+   (resolve-view
+    (sut/flat-table
+     {:tr tr}
+     {:view    view
+      :filters {:group :none}
+      :table   table
+      :policy  policy
+      :rows    rows}))))
 
 (defn headings
   [table]
@@ -495,9 +500,12 @@
           coverage-view (sut/row-cell-content {:tr tr} :EUR row :coverage-types)]
       (testing "Ownership uses short labels."
         (is (= ["Band" "Private"]
-               [(-> (sut/row-cell-content {:tr tr} :EUR row :ownership) l/text)
+               [(-> (sut/row-cell-content {:tr tr} :EUR row :ownership)
+                    resolve-view
+                    l/text)
                 (-> (sut/row-cell-content
                      {:tr tr} :EUR (assoc row :private? true) :ownership)
+                    resolve-view
                     l/text)])))
       (testing "Workflow and change are accessible icons with matching tooltips."
         (is (= {:icons [{:kind "workflow" :label "Todo"}

@@ -135,11 +135,21 @@ survey-error-open-exists = Schließe die aktuelle Umfrage, bevor du eine neue st
 survey-error-closed = Diese Umfrage ist bereits geschlossen.
 survey-error-expired = Das Enddatum dieser Umfrage ist erreicht.
 survey-error-no-members = Die Umfrage kann nicht gestartet werden, weil keine Mitglieder eingeladen werden können.
+
+### Instrumentenversicherung hinzufügen
+
 add-coverage-title = Instrumentenversicherung hinzufügen
+# $policy-name (String) - Name der Police, für die das neue Instrument versichert wird.
+add-coverage-subtitle = Füge ein Instrument hinzu und melde es für { $policy-name } an.
+coverage-create-steps = Schritte zur Versicherungserstellung
 instrument-step = Instrument
 photos-step = Fotos
 coverage-step = Versicherungsschutz
 edit-coverage = Instrumentenversicherung bearbeiten
+add-coverage-separate-warning = Für jedes Instrument und Zubehör muss ein separates Formular ausgefüllt werden.
+# $policy-name (String) - Name der Police, deren Versicherungsangaben eingegeben werden.
+coverage-for = Die folgenden Angaben sind für die Versicherungspolice „{ $policy-name }“.
+no-coverage-types = Keine Versicherungsarten konfiguriert.
 
 ### Einstellungen für Versicherungsarten
 
@@ -270,12 +280,16 @@ review-correct-data-body = Aktualisiere alle Änderungen und speichere anschlie�
 review-coverage-body = Prüfe den Versicherungswert und die Versicherungsarten.
 ownership = Zuordnung
 ownership-band = Bandinstrument
+ownership-band-description = Ein Bandinstrument ist ein Instrument, das im vergangenen Jahr bei einem SNO-Auftritt gespielt wurde.
 ownership-private = Privatinstrument
+ownership-private-description = Ein privates Instrument ist ein Instrument, das der Besitzer auf eigene Kosten versichern wird.
+ownership-hint = Ist dieses Instrument ein Bandinstrument oder ein Privatinstrument?
 annual-cost = Geschätzte jährliche Kosten
 item-count = Anzahl der Gegenstände
 item-count-hint = Wie viele identische Produkte möchtest du versichern (z. B. eine Trompete oder vier Drumsticks)?
 value = Versicherungswert
 value-hint = Bei mehreren versicherten Gegenständen bitte nur den Stückpreis angeben
+insured-value-hint = Der geschätzte Marktwert des Artikels, also wie viel es kosten würde, ihn zu ersetzen, falls er verloren geht.
 coverage-types = Versicherungsarten
 instrument-coverage = Versicherungsschutz
 insurer-id = Versicherungskennung

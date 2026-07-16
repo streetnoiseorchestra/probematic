@@ -199,27 +199,25 @@
   (status-badge* tr change-status-data change))
 
 (defn- ownership-badge*
-  [tr private? label-keys]
+  [private? label-keys]
   [:wa-badge {:appearance "outlined"
               :variant    (if private? "warning" "success")
               :pill       true}
-   (tr (if private?
-         (:private label-keys)
-         (:band label-keys)))])
+   [:i18n/tr (if private?
+               (:private label-keys)
+               (:band label-keys))]])
 
 (defn ownership-badge
-  [tr private?]
-  (ownership-badge* tr
-                    private?
-                    {:private [:private-instrument]
-                     :band    [:band-instrument]}))
+  [_tr private?]
+  (ownership-badge* private?
+                    {:private :insurance/ownership-private
+                     :band    :insurance/ownership-band}))
 
 (defn ownership-badge-short
-  [tr private?]
-  (ownership-badge* tr
-                    private?
-                    {:private [:insurance.workbench/ownership-private]
-                     :band    [:insurance.workbench/ownership-band]}))
+  [_tr private?]
+  (ownership-badge* private?
+                    {:private :insurance.workbench/ownership-private
+                     :band    :insurance.workbench/ownership-band}))
 
 (defn member-link
   [member]
@@ -252,14 +250,14 @@
            :alt     ""}]]])
 
 (defn photo-gallery
-  [{:keys [tr] :as req} instrument]
+  [req instrument]
   (let [photo-uris (queries/image-uris req instrument)]
     [:section {:class "wa-stack"}
-     [:h3 {:class "wa-heading-m"} (tr [:instrument/images])]
+     [:h3 {:class "wa-heading-m"} [:i18n/tr :insurance/photos]]
      (if (seq photo-uris)
        (into [:div {:class "wa-grid wa-gap-s" :style "--min-column-size: 10rem;"}]
              (map #(photo-card req %) photo-uris))
-       (ui2/empty-state (tr [:instrument/images]) (tr [:insurance/no-photos])))]))
+       (ui2/empty-state [:i18n/tr :insurance/photos] [:i18n/tr :insurance/no-photos]))]))
 
 (defn instrument-details
   [{:keys [tr]} coverage]
@@ -299,8 +297,8 @@
            (divided-rows
             [(detail-row (tr [:insurance/item-count]) (or (:instrument.coverage/item-count coverage) 1))
              (detail-row (tr [:insurance/value]) (ui2/money (:instrument.coverage/value coverage) currency))
-             (detail-row (tr [:instrument.coverage/insurer-id]) (:instrument.coverage/insurer-id coverage))
-             (detail-row (tr [:band-private]) (ownership-badge tr (:instrument.coverage/private? coverage)))]))
+             (detail-row [:i18n/tr :insurance/insurer-id] (:instrument.coverage/insurer-id coverage))
+             (detail-row [:i18n/tr :insurance/ownership] (ownership-badge tr (:instrument.coverage/private? coverage)))]))
      [:div {:class "insurance-coverage-types"}
       (ui2/table-shell
        [:table
@@ -462,7 +460,7 @@
     [:a {:href full :target "_blank" :class "insurance-history-image-link"}
      [:img {:class "insurance-history-image"
             :src   thumbnail
-            :alt   (tr [:instrument/images])}]]
+            :alt   [:i18n/tr :insurance/photos]}]]
     (tr [:history/image-deleted])))
 
 (defn band-or-private

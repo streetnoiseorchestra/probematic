@@ -1,5 +1,6 @@
 (ns app.insurance.coverage.edit.views-test
   (:require
+   [app.i18n :as i18n]
    [app.insurance.coverage.edit.views :as sut]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -10,27 +11,33 @@
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def translations
-  {[:band-private] "Band or private"
-   [:band-instrument] "Band instrument"
-   [:band-instrument-description] "Played by the band."
-   [:private-instrument] "Private instrument"
-   [:private-instrument-description] "Paid for by the owner."
+  {[:insurance/ownership] "Band or private"
+   [:insurance/ownership-band] "Band instrument"
+   [:insurance/ownership-band-description] "Played by the band."
+   [:insurance/ownership-private] "Private instrument"
+   [:insurance/ownership-private-description] "Paid for by the owner."
    [:insurance/coverage-for] "Coverage details for %1."
    [:insurance/coverage-types] "Coverage types"
    [:insurance/instrument-coverage] "Instrument coverage"
+   [:insurance/insurer-id] "Harmonia ID"
+   [:insurance/insurer-id-hint] "Enter the identifier assigned by Harmonia."
    [:insurance/item-count] "Count"
-   [:insurance/value] "Insured value"
-   [:instrument.coverage/insurer-id] "Harmonia ID"
-   [:instrument.coverage/insurer-id-hint] "Enter the identifier assigned by Harmonia."})
+   [:insurance/value] "Insured value"})
 
 (defn tr
   ([path]
    (get translations path (name (last path))))
-  ([path args]
+  ([path data]
    (reduce-kv (fn [s idx value]
                 (str/replace s (str "%" (inc idx)) (str value)))
               (tr path)
-              (vec args))))
+              (if (map? data)
+                [(:policy-name data)]
+                (vec data)))))
+
+(defn resolve-view
+  [view]
+  (i18n/resolve-translations tr view))
 
 (def request
   {::r/router router
@@ -91,7 +98,8 @@
 
 (deftest coverage-form-controls
   (testing "An existing coverage is being edited."
-    (let [view      (#'sut/coverage-section request form-state policy)
+    (let [view      (resolve-view
+                     (#'sut/coverage-section request form-state policy))
           ownership (l/select-one "wa-radio-group[name=private-band]" view)
           insurer   (l/select-one "wa-input[name=insurer-id]" view)
           attrs     (l/attrs ownership)]
@@ -130,6 +138,7 @@
                     (#'sut/coverage-section
                      request
                      (assoc form-state :private-band "private"))
+                    resolve-view
                     coverage-choice-state))
             (str label " with policy order "
                  (mapv :insurance.coverage.type/name coverage-types)))))))

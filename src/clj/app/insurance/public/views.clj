@@ -65,7 +65,7 @@
      (instrument-details (:tr req) instrument)
      [:div {:style "display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-block: 2rem 0 0;"}
       [:h2 {:style "margin: 0; font-size: 1.25rem; line-height: 1.2;"}
-       ((:tr req) [:instrument/images])]
+       [:i18n/tr :insurance/photos]]
       (when (seq photo-uris)
         [:form {:action (download-link instrument-id) :method "get"}
          [:button {:type  "submit"

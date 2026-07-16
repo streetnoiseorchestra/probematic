@@ -874,7 +874,7 @@
         (into [:tbody]
               (map (partial coverage-type-row (assoc req :editable? editable?) currency))
               coverage-type-rows)]
-       (ui2/empty-state (tr [:insurance.policy-settings/no-coverage-types]) "")))]))
+       (ui2/empty-state [:i18n/tr :insurance/no-coverage-types] "")))]))
 
 (defn- category-factor-create-fields
   [{:keys [tr]} {:keys [_error category-id factor]} unused-categories id-prefix]

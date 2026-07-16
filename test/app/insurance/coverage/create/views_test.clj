@@ -1,5 +1,6 @@
 (ns app.insurance.coverage.create.views-test
   (:require
+   [app.i18n :as i18n]
    [app.insurance.coverage.create.actions :as actions]
    [app.insurance.coverage.create.views :as sut]
    [app.test-common :as tc]
@@ -16,64 +17,72 @@
   {[:action/back] "Back"
    [:action/next] "Next"
    [:action/save] "Save"
-   [:band-private] "Band or private"
-   [:band-instrument] "Band instrument"
-   [:band-instrument-description] "Played by the band."
-   [:private-instrument] "Private instrument"
-   [:private-instrument-description] "Paid for by the owner."
+   [:insurance/add-coverage-separate-warning] "Use a separate form for each item."
+   [:insurance/add-coverage-subtitle] "Add an instrument and register it for %1."
+   [:insurance/add-coverage-title] "Add Instrument Coverage"
    [:insurance/coverage-for] "Coverage details for %1."
+   [:insurance/coverage-create-steps] "Coverage creation steps"
+   [:insurance/coverage-step] "Coverage"
    [:insurance/coverage-types] "Coverage types"
+   [:insurance/insured-value-hint] "The estimated replacement market value of the item."
    [:insurance/instrument-coverage] "Instrument Coverage"
+   [:insurance/instrument-step] "Instrument"
+   [:insurance/insurer-id] "Harmonia ID"
+   [:insurance/insurer-id-hint] "Enter the identifier assigned by Harmonia."
    [:insurance/item-count] "Count"
    [:insurance/item-count-hint] "How many identical items are being insured?"
+   [:insurance/no-coverage-types] "No coverage types configured."
    [:insurance/no-photos] "No photos have been uploaded yet."
+   [:insurance/ownership] "Band or private"
+   [:insurance/ownership-band] "Band instrument"
+   [:insurance/ownership-band-description] "Played by the band."
+   [:insurance/ownership-hint] "Is this a band instrument or private instrument?"
+   [:insurance/ownership-private] "Private instrument"
+   [:insurance/ownership-private-description] "Paid for by the owner."
+   [:insurance/photo-upload] "Photo Upload"
+   [:insurance/photo-upload-subtitle] "Upload photos from several angles."
+   [:insurance/photos] "Photos"
+   [:insurance/photos-step] "Photos"
+   [:insurance/upload-complete] "Upload complete."
+   [:insurance/upload-drop-label] "Choose photos to upload"
+   [:insurance/upload-error] "Upload failed."
+   [:insurance/upload-help] "PNG, JPG, or GIF up to 10 MB."
+   [:insurance/upload-progress] "Uploading photos…"
    [:insurance/value] "Value"
-   [:insurance.policy-settings/no-coverage-types] "No coverage types configured."
    [:instrument/build-year] "Build year"
+   [:instrument/build-year-hint] "if available"
    [:instrument/category] "Category"
    [:instrument/category-hint] "What type of item is this?"
    [:instrument/create-subtitle] "Describe the instrument in detail."
    [:instrument/description] "Description"
    [:instrument/description-hint] "e.g., color or material"
-   [:instrument/if-available] "if available"
-   [:instrument/images] "Images"
    [:instrument/instrument] "Instrument"
    [:instrument/make] "Make"
    [:instrument/make-hint] "Which company manufactures the item?"
    [:instrument/model] "Model"
-   [:instrument/model-hint] "What is the model number?"
+   [:instrument/model-hint-optional] "What is the model number? if available"
    [:instrument/name] "Instrument name"
    [:instrument/name-hint] "e.g., trumpet, Yamaha, or tenor sax mouthpiece"
    [:instrument/owner] "Owner"
-   [:instrument/photo-upload] "Photo Upload"
-   [:instrument/photo-upload-subtitle] "Upload photos from several angles."
-   [:instrument/separate-warning] "Use a separate form for each item."
    [:instrument/serial-number] "Serial number"
-   [:instrument.coverage/insurer-id] "Harmonia ID"
-   [:instrument.coverage/insurer-id-hint] "Enter the identifier assigned by Harmonia."
-   [:instrument.coverage/private?-hint] "Is this a band instrument or private instrument?"
-   [:instrument.coverage/value-hint] "The estimated replacement market value of the item."
-   [:instrument.coverage/create-step-coverage] "Coverage"
-   [:instrument.coverage/create-step-instrument] "Instrument"
-   [:instrument.coverage/create-step-photos] "Photos"
-   [:instrument.coverage/create-steps] "Coverage creation steps"
-   [:instrument.coverage/create-title] "Add Instrument Coverage"
-   [:instrument.coverage/create-subtitle] "Add an instrument and register it for %1."
-   [:instrument.coverage/upload-complete] "Upload complete."
-   [:instrument.coverage/upload-drop-label] "Choose photos to upload"
-   [:instrument.coverage/upload-error] "Upload failed."
-   [:instrument.coverage/upload-help] "PNG, JPG, or GIF up to 10 MB."
-   [:instrument.coverage/upload-progress] "Uploading photos…"
+   [:instrument/serial-number-hint] "if available"
    [:nav/insurance] "Insurance"})
 
 (defn tr
   ([path]
    (get translations path (name (last path))))
-  ([path args]
+  ([path data]
    (reduce (fn [s [idx arg]]
              (str/replace s (str "%" (inc idx)) (str arg)))
            (tr path)
-           (map-indexed vector args))))
+           (map-indexed vector
+                        (if (map? data)
+                          [(:policy-name data)]
+                          data)))))
+
+(defn resolve-view
+  [view]
+  (i18n/resolve-translations tr view))
 
 (def policy-id
   #uuid "00000000-0000-0000-0000-000000000123")
@@ -159,7 +168,8 @@
                      :db (d/db conn)
                      :session {:session/member {:member/member-id member-id}}
                      :path-params {:policy-id policy-id})]
-      (sut/instrument-page-content req policy nil "/return"))))
+      (resolve-view
+       (sut/instrument-page-content req policy nil "/return")))))
 
 (deftest instrument-step-hints
   (testing "A member is entering the instrument details in Step 1."
@@ -200,7 +210,8 @@
 
 (defn photos-view
   [instrument]
-  (sut/photos-page-content (request instrument) instrument))
+  (resolve-view
+   (sut/photos-page-content (request instrument) instrument)))
 
 (deftest photo-upload
   (testing "The newly created instrument does not have any photos yet."
@@ -223,7 +234,7 @@
                                (l/attrs (l/select-one "[aria-current=step]" view))
                                [:aria-label :aria-current])})))
       (testing "The empty photo state explains that nothing has been uploaded."
-        (is (= "Images No photos have been uploaded yet."
+        (is (= "Photos No photos have been uploaded yet."
                (-> (l/select-one 'wa-callout view) l/text))))
       (testing "The upload label and existing format hint are associated with the file control."
         (is (= {:label-for    "coverage-create-photo-upload"
@@ -289,7 +300,8 @@
   ([policy]
    (coverage-view (member-request coverage-instrument false) policy))
   ([req policy]
-   (sut/coverage-page-content req policy coverage-instrument "/return")))
+   (resolve-view
+    (sut/coverage-page-content req policy coverage-instrument "/return"))))
 
 (defn signals [view]
   (-> (l/select-one "form#coverage-create-coverage-form" view)
@@ -471,7 +483,7 @@
     (let [empty-policy (assoc policy :insurance.policy/coverage-types [])
           req          (assoc (member-request coverage-instrument false)
                               :policy empty-policy)
-          view         (sut/coverage-page req)
+          view         (resolve-view (sut/coverage-page req))
           warning      (l/select-one 'wa-callout view)
           save-action  (-> view page-shell/page-contract :actions second)]
       (testing "The page explains why coverage cannot be created."

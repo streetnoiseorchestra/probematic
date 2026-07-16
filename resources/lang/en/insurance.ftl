@@ -135,11 +135,21 @@ survey-error-open-exists = Close the current survey before starting another one.
 survey-error-closed = This survey is already closed.
 survey-error-expired = This survey has reached its closing date.
 survey-error-no-members = A survey cannot be started because there are no members to invite.
+
+### Instrument coverage creation
+
 add-coverage-title = Add Instrument Coverage
+# $policy-name (String) - Name of the policy that will cover the new instrument.
+add-coverage-subtitle = Add an instrument and register it for { $policy-name }.
+coverage-create-steps = Coverage creation steps
 instrument-step = Instrument
 photos-step = Photos
 coverage-step = Coverage
 edit-coverage = Edit Instrument Coverage
+add-coverage-separate-warning = A separate form must be filled out for each instrument and accessory.
+# $policy-name (String) - Name of the policy whose coverage details are being entered.
+coverage-for = The following information is for the insurance policy “{ $policy-name }”.
+no-coverage-types = No coverage types configured.
 
 ### Coverage type settings
 
@@ -270,12 +280,16 @@ review-correct-data-body = Update anything that has changed, then save to finish
 review-coverage-body = Check the insured value and coverage types.
 ownership = Ownership
 ownership-band = Band instrument
+ownership-band-description = A band instrument is an instrument that was played at a SNO gig in the past year.
 ownership-private = Private instrument
+ownership-private-description = A private instrument is an instrument that the owner will insure at their own expense.
+ownership-hint = Is this instrument a band instrument or private instrument?
 annual-cost = Estimated annual cost
 item-count = Number of items
 item-count-hint = How many identical items are being insured (for example, one trumpet or four drumsticks)?
 value = Insured value
 value-hint = For multiple identical insured items, enter the value of one item.
+insured-value-hint = The estimated market value of the item, i.e., how much it would cost to replace it if lost.
 coverage-types = Coverage types
 instrument-coverage = Instrument coverage
 insurer-id = Insurer ID

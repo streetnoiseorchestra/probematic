@@ -44,7 +44,7 @@
     :make (tr [:instrument/make])
     :item-count (tr [:insurance/item-count])
     :value (tr [:insurance/value])
-    :private-band (tr [:band-private])
+    :private-band (tr [:insurance/ownership])
     (name field)))
 
 (defn- required-error [tr field]

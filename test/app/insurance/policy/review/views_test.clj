@@ -1,5 +1,6 @@
 (ns app.insurance.policy.review.views-test
   (:require
+   [app.i18n :as i18n]
    [app.insurance.policy.review.views :as sut]
    [app.ui2.card :as card]
    [app.test-common :as tu]
@@ -25,7 +26,7 @@
    [:insurance.review/add-comment]               "Add comment"
    [:insurance.review/commented]                 "commented"
    [:insurance.review/leave-reply]               "Leave a reply"
-   [:instrument.coverage/insurer-id]             "Harmonia ID"})
+   [:insurance/insurer-id]                       "Harmonia ID"})
 
 (defn tr
   ([path]
@@ -101,14 +102,16 @@
   (let [{:keys [conn member-id]} (tu/new-system
                                   (str "insurance-review-actions-" (name filter)))]
     (seed-insurance-team! conn member-id)
-    (sut/review-action-row
-     (review-req conn member-id)
-     {:filter            filter
-      :selected-coverage (merge {:instrument.coverage/coverage-id selected-coverage-id}
-                                coverage)
-      :previous-coverage {:instrument.coverage/coverage-id previous-coverage-id}
-      :next-coverage     {:instrument.coverage/coverage-id next-coverage-id}
-      :policy            policy})))
+    (i18n/resolve-translations
+     tr
+     (sut/review-action-row
+      (review-req conn member-id)
+      {:filter            filter
+       :selected-coverage (merge {:instrument.coverage/coverage-id selected-coverage-id}
+                                 coverage)
+       :previous-coverage {:instrument.coverage/coverage-id previous-coverage-id}
+       :next-coverage     {:instrument.coverage/coverage-id next-coverage-id}
+       :policy            policy}))))
 
 (defn action-buttons
   [view]

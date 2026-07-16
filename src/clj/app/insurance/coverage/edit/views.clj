@@ -106,8 +106,8 @@
      (for [category categories]
        (category-option selected category)))))
 
-(defn- private-band-field [{:keys [tr] :as req} form-state]
-  (let [attrs (assoc (merge {:label      (tr [:band-private])
+(defn- private-band-field [req form-state]
+  (let [attrs (assoc (merge {:label      [:i18n/tr :insurance/ownership]
                              :name       "private-band"
                              :value      (:private-band form-state)
                              :required   true
@@ -119,12 +119,12 @@
     [:wa-radio-group attrs
      [:wa-radio {:value "band"}
       [:span {:class "wa-stack wa-gap-3xs"}
-       [:span (tr [:band-instrument])]
-       [:small {:class "wa-color-text-quiet"} (tr [:band-instrument-description])]]]
+       [:span [:i18n/tr :insurance/ownership-band]]
+       [:small {:class "wa-color-text-quiet"} [:i18n/tr :insurance/ownership-band-description]]]]
      [:wa-radio {:value "private"}
       [:span {:class "wa-stack wa-gap-3xs"}
-       [:span (tr [:private-instrument])]
-       [:small {:class "wa-color-text-quiet"} (tr [:private-instrument-description])]]]]))
+       [:span [:i18n/tr :insurance/ownership-private]]
+       [:small {:class "wa-color-text-quiet"} [:i18n/tr :insurance/ownership-private-description]]]]]))
 
 (defn- coverage-type-change-action [type-id]
   (let [type-id (str type-id)]
@@ -214,7 +214,8 @@
 (defn- coverage-section [{:keys [tr] :as req} form-state policy]
   (ui2/section-card
    {:title    (tr [:insurance/instrument-coverage])
-    :subtitle (tr [:insurance/coverage-for] [(:insurance.policy/name policy)])
+    :subtitle [:i18n/tr :insurance/coverage-for
+               {:policy-name (:insurance.policy/name policy)}]
     :divider? true}
    [:div {:class "insurance-coverage-edit-form-grid"}
     (input (tr [:insurance/item-count]) "item-count" (:item-count form-state) (merge {:type "number" :min 1 :step 1 :required true}
@@ -222,12 +223,12 @@
     (input (tr [:insurance/value]) "value" (:value form-state) (merge {:type "number" :min 1 :step 1 :required true}
                                                                       (validate-field-attrs req form-state :value)))
     (private-band-field req form-state)
-    (input (tr [:instrument.coverage/insurer-id])
+    (input [:i18n/tr :insurance/insurer-id]
            "insurer-id"
            (:insurer-id form-state)
            (update (validate-field-attrs req form-state :insurer-id)
                    :hint
-                   #(or % (tr [:instrument.coverage/insurer-id-hint]))))
+                   #(or % [:i18n/tr :insurance/insurer-id-hint])))
     (coverage-types-field req form-state (:insurance.policy/coverage-types policy))]))
 
 (defn- remove-dialog-id [{:instrument.coverage/keys [coverage-id]}]
@@ -259,16 +260,16 @@
      (upload/upload-section
       req
       (:instrument.coverage/instrument coverage)
-      {:complete-label ((:tr req) [:instrument.coverage/upload-complete])
-       :drop-label     ((:tr req) [:instrument.coverage/upload-drop-label])
-       :empty-body     ((:tr req) [:insurance/no-photos])
-       :empty-title    ((:tr req) [:instrument/images])
-       :error-label    ((:tr req) [:instrument.coverage/upload-error])
-       :help-label     ((:tr req) [:instrument.coverage/upload-help])
+      {:complete-label [:i18n/tr :insurance/upload-complete]
+       :drop-label     [:i18n/tr :insurance/upload-drop-label]
+       :empty-body     [:i18n/tr :insurance/no-photos]
+       :empty-title    [:i18n/tr :insurance/photos]
+       :error-label    [:i18n/tr :insurance/upload-error]
+       :help-label     [:i18n/tr :insurance/upload-help]
        :input-id       "coverage-edit-photo-upload"
-       :progress-label ((:tr req) [:instrument.coverage/upload-progress])
-       :subtitle       ((:tr req) [:instrument/photo-upload-subtitle])
-       :title          ((:tr req) [:instrument/photo-upload])})
+       :progress-label [:i18n/tr :insurance/upload-progress]
+       :subtitle       [:i18n/tr :insurance/photo-upload-subtitle]
+       :title          [:i18n/tr :insurance/photo-upload]})
      (coverage-section req form-state policy)
      (when-let [top-error (form/field-error form-state :_top)]
        [:wa-callout {:appearance "outlined"

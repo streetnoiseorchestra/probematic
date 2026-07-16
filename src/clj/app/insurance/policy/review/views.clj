@@ -120,7 +120,7 @@
                      "align-items: end; min-inline-size: min(100%, 24rem); "
                      "margin-inline-start: auto;")}
    [:wa-input {:id           (insurer-id-input-id coverage)
-               :label        (tr [:instrument.coverage/insurer-id])
+               :label        [:i18n/tr :insurance/insurer-id]
                :appearance   "outlined"
                :size         "s"
                :value        (or (:instrument.coverage/insurer-id coverage) "")
