@@ -130,6 +130,12 @@
   (assert (not (str/blank? keycloak-id)))
   (update-user kc keycloak-id {:enabled true}))
 
+(defn delete-user!
+  "Deletes the Keycloak user identified by `user-id`."
+  [{:keys [client realm]} user-id]
+  (assert (not (str/blank? user-id)))
+  (admin/delete-user-by-id! client realm user-id))
+
 (defn- maybe-parse-json [s]
   (if (or (nil? s) (str/blank? s))
     s
