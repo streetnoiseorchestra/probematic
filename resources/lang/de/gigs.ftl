@@ -33,6 +33,7 @@ date = Datum
 status-label = Status
 type-label = Art
 end-date = Enddatum
+end-time-warning = ACHTUNG: Die Endzeit wird nur geschätzt. Jemand hat dieses Feld in SNOrga nicht ausgefüllt.
 leader = Dirigent
 rehearsal-leader-1 = Probeleitung 1
 rehearsal-leader-2 = Probeleitung 2

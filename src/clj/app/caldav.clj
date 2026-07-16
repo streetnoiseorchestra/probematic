@@ -20,7 +20,7 @@
               (gig-date-to-inst end-date end-time))
         end-estimated? (nil? end-time)
         description (if end-estimated?
-                      (format "%s\n%s" (tr [:gig/end-time-warning]) (or  more-details ""))
+                      (format "%s\n%s" (tr [:gigs/end-time-warning]) (or more-details ""))
                       more-details)]
     {:ical.event/created-at (t/instant)
      :ical.event/start-time start

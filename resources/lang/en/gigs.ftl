@@ -33,6 +33,7 @@ date = Date
 status-label = Status
 type-label = Type
 end-date = End Date
+end-time-warning = WARNING: The end time is only estimated. Someone didn’t fill out that field in SNOrga.
 leader = Leader
 rehearsal-leader-1 = Probeleitung 1
 rehearsal-leader-2 = Probeleitung 2

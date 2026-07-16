@@ -2,8 +2,6 @@
 
  :dashboard {:welcome "Welcome %1!"}
 
- :gig {:end-time-warning "WARNING: The end time is only estimated.. someone didn't fill out that field in SNOrga."}
-
  :email-subject
  {:gig-created  "New Gig: %1"
   :gig-updated  "Gig Edit: %1"
