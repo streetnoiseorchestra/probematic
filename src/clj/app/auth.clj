@@ -152,26 +152,29 @@
 (defn identity-mismatch-response [{:keys [tr] :as  req}]
   (ui2/standalone-page
    {:status      403
-    :title       (tr [:identity-mismatch/page-title])
-    :description (tr [:identity-mismatch/body])}
+    :lang        (some-> req :current-locale name)
+    :title       [:i18n/tr :identity-mismatch/page-title]
+    :description [:i18n/tr :identity-mismatch/body]
+    :translator  tr}
    [:header
-    [:p (tr [:identity-mismatch/eyebrow])]
-    [:h1 (tr [:identity-mismatch/title])]]
-   [:p (tr [:identity-mismatch/body])]
+    [:p [:i18n/tr :identity-mismatch/eyebrow]]
+    [:h1 [:i18n/tr :identity-mismatch/title]]]
+   [:p [:i18n/tr :identity-mismatch/body]]
    (into [:dl
-          [:dt (tr [:identity-mismatch/signed-in-email])]
-          [:dd [:code (or (get-in req [:session :session/email]) (tr [:unknown]))]]]
+          [:dt [:i18n/tr :identity-mismatch/signed-in-email]]
+          [:dd [:code (or (get-in req [:session :session/email])
+                          [:i18n/tr :unknown])]]]
          (when-let [keycloak-id (get-in req [:session :session/keycloak-id])]
-           [[:dt (tr [:identity-mismatch/sno-id-subject])]
+           [[:dt [:i18n/tr :identity-mismatch/sno-id-subject]]
             [:dd [:code keycloak-id]]]))
-   [:p (tr [:identity-mismatch/retry-guidance])]
+   [:p [:i18n/tr :identity-mismatch/retry-guidance]]
    [:footer
     [:form {:method "post" :action "/login/restart"}
      [:button {:type "submit"}
-      (tr [:identity-mismatch/restart-login])]]
+      [:i18n/tr :identity-mismatch/restart-login]]]
     [:form {:method "post" :action "/logout"}
      [:button {:type "submit"}
-      (tr [:identity-mismatch/log-out])]]]))
+      [:i18n/tr :identity-mismatch/log-out]]]]))
 
 (defn oauth2-load-certificate [{:keys [openid-config]}]
   (->>

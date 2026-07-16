@@ -8,6 +8,7 @@ my-responses = Meine Antworten
 responses-empty = Alles erledigt.
 actions = Aktionen
 none = Keine
+unknown = unbekannt
 invitation-expired = Entschuldigung, der Einladungscode ist abgelaufen. Bitte frag nach einem neuen!
 login = Anmelden
 greeting-morning = Guten Morgen, { $name }
