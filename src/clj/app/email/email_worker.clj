@@ -1,13 +1,13 @@
 (ns app.email.email-worker
   (:require
-   [com.brunobonacci.mulog :as μ]
-   [tarayo.core :as tarayo]
    [app.config :as config]
    [app.email.domain :refer [QueuedEmailMessage]]
-   [app.email.mailgun :as mailgun]
+   [app.email.lettermint :as lettermint]
    [app.schemas :as s]
+   [com.brunobonacci.mulog :as μ]
    [taoensso.carmine :as car]
-   [taoensso.carmine.message-queue :as car-mq]))
+   [taoensso.carmine.message-queue :as car-mq]
+   [tarayo.core :as tarayo]))
 
 (def email-queue-name "email-send-queue")
 
@@ -19,20 +19,60 @@
                  :result result}
          :ex throwable))
 
-(defn mailgun-handler [sys message]
-  (if (:email/batch? message)
-    (mailgun/send-batch! sys
-                         (:email/tos message)
-                         (:email/subject message)
-                         (:email/body-plain message)
-                         (:email/body-html message)
-                         (:email/recipient-variables message))
+(defn- lettermint-client-config [config]
+  (select-keys config
+               [:project-api-token
+                :testing-addresses-only?
+                :timeout-ms]))
 
-    (mailgun/send-email! sys
-                         (first (:email/tos message))
-                         (:email/subject message)
-                         (:email/body-plain message)
-                         (:email/body-html message))))
+(defn- lettermint-message [config message]
+  (cond-> (assoc message :from (:from config))
+    (some? (:route config))
+    (assoc :route (:route config))))
+
+(defn- ensure-valid-lettermint-request! [client-config messages]
+  (when-not (s/valid? lettermint/ClientConfig client-config)
+    (s/throw-error "Invalid Lettermint client configuration."
+                   nil
+                   lettermint/ClientConfig
+                   (dissoc client-config :project-api-token)))
+  (when-not (s/valid? lettermint/Batch messages)
+    (s/throw-error "Invalid Lettermint messages."
+                   nil
+                   lettermint/Batch
+                   messages))
+  (when (and (:testing-addresses-only? client-config)
+             (not (s/valid? lettermint/TestingBatch messages)))
+    (s/throw-error "Invalid Lettermint testing-address messages."
+                   nil
+                   lettermint/TestingBatch
+                   messages)))
+
+(defn- dry-run-summary [message]
+  {:batch? (:email/batch? message)
+   :email-id (:email/email-id message)
+   :message-count (count (:email/messages message))
+   :recipients (mapv :to (:email/messages message))})
+
+(defn lettermint-handler [{:keys [lettermint]} message]
+  (if (:demo-mode? lettermint)
+    (do
+      (tap> {:lettermint/dry-run (dry-run-summary message)})
+      {:mode :demo-mode
+       :result :email-sent})
+    (let [client-config (lettermint-client-config lettermint)
+          messages (mapv #(lettermint-message lettermint %)
+                         (:email/messages message))
+          request-options {:idempotency-key
+                           (str (:email/email-id message))}]
+      (ensure-valid-lettermint-request! client-config messages)
+      (if (:email/batch? message)
+        (lettermint/send-emails! client-config
+                                 messages
+                                 request-options)
+        (lettermint/send-email! client-config
+                                (first messages)
+                                request-options)))))
 
 (defn format-attachments [attachments]
   (map (fn [{:keys [content content-type filename]}]
@@ -60,7 +100,9 @@
   (tap> {:email-worker/received message :email-worker/attempt attempt})
   (try
     (if (s/valid? QueuedEmailMessage message)
-      (let [sender (condp = (:email/sender message) :mailgun mailgun-handler :band-smtp band-smtp-handler)
+      (let [sender (case (:email/sender message)
+                     :lettermint lettermint-handler
+                     :band-smtp band-smtp-handler)
             result (sender sys message)]
         (tap> {:email-send result})
         (if (:error result)
@@ -88,7 +130,11 @@
   (car-mq/stop worker))
 
 (defn queue-mail! [redis-opts email]
-  (assert (:email/subject email))
+  (when-not (s/valid? QueuedEmailMessage email)
+    (s/throw-error "Invalid queued email message."
+                   nil
+                   QueuedEmailMessage
+                   email))
   (car/wcar redis-opts
             (car-mq/enqueue email-queue-name email)))
 
@@ -103,16 +149,23 @@
 
   (queue-mail! redis-opts
                {:email/batch? true
-                :email/email-id "foo"
-                :email/tos []
-                :email/subject "Hello from probematic"
-                :email/body-plain  "Hello world, %recipient.foobar%"
-                :email/body-html (str
-                                  (html [:div [:h1 "Hello world!"]
-                                         [:p " and it is '%recipient.foobar%'"]
-                                         [:p [:a {:href "https://streetnoise.at/%recipient.foobar%"} "streetnoise.at"]]
-                                         [:p "Things and stuff!"]]))
-                :email/recipient-variables {recipient2 {:foobar "FOOBARRECIPIENT2"} recipient1 {:foobar "FOOBARRECIPIENT1"}}})
+                :email/email-id (random-uuid)
+                :email/messages
+                [{:to [recipient1]
+                  :subject "Hello from Probematic"
+                  :text "Hello world."
+                  :html (str
+                         (html [:div
+                                [:h1 "Hello world!"]
+                                [:p "Things and stuff!"]]))}
+                 {:to [recipient2]
+                  :subject "Hello from Probematic"
+                  :text "Hello world."
+                  :html (str
+                         (html [:div
+                                [:h1 "Hello world!"]
+                                [:p "Things and stuff!"]]))}]
+                :email/sender :lettermint})
 
   ;;
   )

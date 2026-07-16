@@ -322,7 +322,7 @@
                        :port 6379
                        :password "base-password"
                        :ssl? true}}
-   :mailgun {:demo-mode? true}
+   :lettermint {:project-api-token "test-token"}
    :untouched {:nested true}})
 
 (def expected-agent-1-secrets
@@ -330,7 +330,7 @@
    :redis {:conn-spec {:host "127.0.0.1"
                        :port 6381
                        :password "devpassword123"}}
-   :mailgun {:demo-mode? true}
+   :lettermint {:project-api-token "test-token"}
    :untouched {:nested true}})
 
 (deftest slot-secrets-test

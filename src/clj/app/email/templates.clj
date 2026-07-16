@@ -28,21 +28,6 @@
 (defn- money-cents-format [value currency]
   (ui2/money-format (/ value 100) currency))
 
-(def plans-template-key {:plan/no-response "noresponse"
-                         :plan/definitely "definitely"
-                         :plan/probably "probably"
-                         :plan/unknown "unknown"
-                         :plan/probably-not "probablynot"
-                         :plan/definitely-not "definitelynot"
-                         :plan/not-interested "notinterested"
-                         :reminder "reminder"})
-
-(defn template-key-gig-attendance [attendance-plan]
-  (str "plan_" (get plans-template-key attendance-plan)))
-
-(defn template-link-gig-attendance [env attendance-plan]
-  (str (url/absolute-gig-answer-link-base env) "?answer=%recipient." (template-key-gig-attendance attendance-plan) "%"))
-
 (defn payload-for-attendance [env gig-id member-id attendance-plan]
   (secret-box/encrypt
    {:member/member-id member-id
@@ -57,17 +42,16 @@
     :reminder true}
    (config/app-secret-key env)))
 
-(defn template-values-gig-attendance [env gig-id members]
-  (reduce (fn [recipient-vars {:member/keys [member-id email]}]
-            (-> recipient-vars
-                (assoc-in  [email (template-key-gig-attendance :plan/definitely)]
-                           (payload-for-attendance env gig-id member-id :plan/definitely))
-                (assoc-in  [email (template-key-gig-attendance :plan/definitely-not)]
-                           (payload-for-attendance env gig-id member-id :plan/definitely-not))
-                (assoc-in [email (template-key-gig-attendance :reminder)]
-                          (payload-for-reminder env gig-id member-id))))
-
-          {} members))
+(defn- gig-attendance-link [env gig-id member-id attendance-plan]
+  (let [payload (if (= :reminder attendance-plan)
+                  (payload-for-reminder env gig-id member-id)
+                  (payload-for-attendance env
+                                          gig-id
+                                          member-id
+                                          attendance-plan))]
+    (str (url/absolute-gig-answer-link-base env)
+         "?answer="
+         payload)))
 
 (defn- edited-gig-attribute-label [tr attribute]
   (if-let [label-key (gig.domain/gig-attribute-label-key attribute)]
@@ -127,10 +111,22 @@
                                       {:name (tr [:gigs/pay-deal]) :value pay-deal})
                                     ;;
                                     ])}))
-(defn gig-created-email-html [{:keys [tr env] :as sys} gig reminder?]
-  (let [can-make-it-link (template-link-gig-attendance env :plan/definitely)
-        cannot-make-it-link (template-link-gig-attendance env :plan/definitely-not)
-        reminder-link (template-link-gig-attendance env :reminder)
+(defn gig-created-email-html
+  [{:keys [tr env] :as sys} gig member reminder?]
+  (let [gig-id (:gig/gig-id gig)
+        member-id (:member/member-id member)
+        can-make-it-link (gig-attendance-link env
+                                              gig-id
+                                              member-id
+                                              :plan/definitely)
+        cannot-make-it-link (gig-attendance-link env
+                                                 gig-id
+                                                 member-id
+                                                 :plan/definitely-not)
+        reminder-link (gig-attendance-link env
+                                           gig-id
+                                           member-id
+                                           :reminder)
         gig-link (url/absolute-link-gig env (:gig/gig-id gig))]
     (str (html
           [:div
@@ -153,11 +149,23 @@
            [:p]
            [:p (tr [:email/sign-off])]]))))
 
-(defn gig-created-email-plain [{:keys [tr env] :as sys} gig reminder?]
+(defn gig-created-email-plain
+  [{:keys [tr env] :as sys} gig member reminder?]
   (selmer.util/without-escaping
-   (let [can-make-it-link (template-link-gig-attendance env :plan/definitely)
-         cannot-make-it-link (template-link-gig-attendance env :plan/definitely-not)
-         reminder-link (template-link-gig-attendance env :reminder)
+   (let [gig-id (:gig/gig-id gig)
+         member-id (:member/member-id member)
+         can-make-it-link (gig-attendance-link env
+                                               gig-id
+                                               member-id
+                                               :plan/definitely)
+         cannot-make-it-link (gig-attendance-link env
+                                                  gig-id
+                                                  member-id
+                                                  :plan/definitely-not)
+         reminder-link (gig-attendance-link env
+                                            gig-id
+                                            member-id
+                                            :reminder)
          gig-link (url/absolute-link-gig env (:gig/gig-id gig))]
      (selmer/render
       "{{greeting}}
@@ -253,12 +261,6 @@
        ;;
        }
       (template-snippet-gig-details sys gig)))))
-
-(defn gig-created-recipient-variables [{:keys [env]} gig members]
-  (template-values-gig-attendance env (:gig/gig-id gig) members))
-
-(defn gig-updated-recipient-variables [{:keys [env]} gig members]
-  (template-values-gig-attendance env (:gig/gig-id gig) members))
 
 (defn new-user-invite-html [{:keys [tr env]} invite-code]
   (str (html

@@ -6,6 +6,7 @@
             [app.config :as config]
             [app.datomic.system :as datomic]
             [app.email.email-worker :as email-worker]
+            [app.email.lettermint :as lettermint]
             [app.errors :as error]
             [app.filestore :as filestore]
             [app.icons]
@@ -15,6 +16,7 @@
             [app.nexus :as app-nexus]
             [app.routes :as routes]
             [app.sardine :as sardine]
+            [app.schemas :as s]
             [com.brunobonacci.mulog :as μ]
             [integrant.core :as ig]
             [nrepl.server :as nrepl]
@@ -88,9 +90,15 @@
   [_ {:keys [client]}]
   (sardine/shutdown client))
 
-(defmethod ig/init-key ::mailgun
+(defmethod ig/init-key ::lettermint
   [_ {:keys [env]}]
-  (:mailgun env))
+  (let [runtime-config (:lettermint env)]
+    (when-not (s/valid? lettermint/RuntimeConfig runtime-config)
+      (s/throw-error "Invalid Lettermint runtime configuration."
+                     nil
+                     lettermint/RuntimeConfig
+                     (dissoc runtime-config :project-api-token)))
+    runtime-config))
 
 (defmethod ig/init-key ::redis
   [_ {:keys [env]}]

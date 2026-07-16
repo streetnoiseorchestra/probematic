@@ -18,17 +18,24 @@
 (defn queue-email! [sys email]
   (email-worker/queue-mail! (:redis sys) email))
 
+(defn- lettermint-message [to subject body-html body-plain]
+  {:to [to]
+   :subject subject
+   :html body-html
+   :text body-plain})
+
+(defn- build-lettermint-email [batch? messages]
+  {:email/sender :lettermint
+   :email/batch? batch?
+   :email/email-id (sq/generate-squuid)
+   :email/messages messages
+   :email/created-at (t/inst)})
+
 (defn build-email [to subject body-html body-plain]
   (assert subject)
-  (util/remove-nils
-   {:email/sender :mailgun
-    :email/batch? false
-    :email/email-id (sq/generate-squuid)
-    :email/tos [to]
-    :email/subject subject
-    :email/body-plain body-plain
-    :email/body-html body-html
-    :email/created-at (t/inst)}))
+  (build-lettermint-email
+   false
+   [(lettermint-message to subject body-html body-plain)]))
 
 (defn build-smtp-email
   ([to subject body-html body-plain]
@@ -46,43 +53,46 @@
      :email/body-html body-html
      :email/created-at (t/inst)})))
 
-(defn build-batch-emails [tos subject body-html body-plain recipient-variables]
+(defn build-batch-emails [tos subject body-html body-plain]
   (assert subject)
-  (util/remove-nils
-   {:email/sender :mailgun
-    :email/batch? true
-    :email/recipient-variables recipient-variables
-    :email/email-id (sq/generate-squuid)
-    :email/tos tos
-    :email/subject subject
-    :email/body-plain body-plain
-    :email/body-html body-html
-    :email/created-at (t/inst)}))
+  (build-lettermint-email
+   true
+   (mapv #(lettermint-message % subject body-html body-plain)
+         tos)))
 
 (defn build-gig-created-email [{:keys [tr] :as sys} gig members]
-  (build-batch-emails
-   (mapv :member/email members)
-   (tr [:email-subject/gig-created] {:gig-title (:gig/title gig)})
-   (tmpl/gig-created-email-html sys gig false)
-   (tmpl/gig-created-email-plain sys gig false)
-   (tmpl/gig-created-recipient-variables sys gig members)))
+  (let [subject (tr [:email-subject/gig-created]
+                    {:gig-title (:gig/title gig)})]
+    (build-lettermint-email
+     true
+     (mapv (fn [member]
+             (lettermint-message
+              (:member/email member)
+              subject
+              (tmpl/gig-created-email-html sys gig member false)
+              (tmpl/gig-created-email-plain sys gig member false)))
+           members))))
 
 (defn build-gig-updated-email [{:keys [tr] :as sys} gig members edited-attrs]
   (build-batch-emails
    (mapv :member/email members)
    (tr [:email-subject/gig-updated] {:gig-title (:gig/title gig)})
    (tmpl/gig-updated-email-html sys gig edited-attrs)
-   (tmpl/gig-updated-email-plain sys gig edited-attrs)
-   (tmpl/gig-updated-recipient-variables sys gig members)))
+   (tmpl/gig-updated-email-plain sys gig edited-attrs)))
 
 (defn build-gig-reminder-email [{:keys [tr] :as sys} gig members]
   (assert tr)
-  (build-batch-emails
-   (mapv :member/email members)
-   (tr [:email-subject/gig-reminder] {:gig-title (:gig/title gig)})
-   (tmpl/gig-created-email-html sys gig true)
-   (tmpl/gig-created-email-plain sys gig true)
-   (tmpl/gig-created-recipient-variables sys gig members)))
+  (let [subject (tr [:email-subject/gig-reminder]
+                    {:gig-title (:gig/title gig)})]
+    (build-lettermint-email
+     true
+     (mapv (fn [member]
+             (lettermint-message
+              (:member/email member)
+              subject
+              (tmpl/gig-created-email-html sys gig member true)
+              (tmpl/gig-created-email-plain sys gig member true)))
+           members))))
 
 (defn build-new-poll-opened [{:keys [tr env] :as sys} poll members]
   (let [url (url/absolute-link-poll env (:poll/poll-id poll))]
@@ -90,8 +100,7 @@
      (mapv :member/email members)
      (tr [:email-subject/poll-created] {:poll-title (:poll/title poll)})
      (tmpl/generic-email-html sys (tmpl/poll-created-email-html-body tr poll) (tr [:polls/vote-now]) url)
-     (tmpl/generic-email-plain sys (tmpl/poll-created-email-plain-body tr poll) (tr [:polls/vote-now])  url)
-     nil)))
+     (tmpl/generic-email-plain sys (tmpl/poll-created-email-plain-body tr poll) (tr [:polls/vote-now])  url))))
 
 (defn build-new-user-invite [{:keys [tr] :as sys} {:member/keys [email]} invite-code]
   (build-email email
@@ -231,8 +240,7 @@
      (tmpl/generic-email-plain sys (tmpl/insurance-survey-created-email-plain-body tr email-data) (tr [:insurance/survey-email-start]) url
                                {:sign-off (str (tr [:email/sign-off-personal])
                                                "\n" sender-name
-                                               "\n" (tr [:insurance/email-team-name]))})
-     nil)))
+                                               "\n" (tr [:insurance/email-team-name]))}))))
 
 (defn send-survey-notifications! [req sender-name policy members email-data]
   (queue-email! (sys-from-req req)
@@ -274,14 +282,18 @@
     (def sys {:tr tr :env env})) ;; rcf
 
   (spit "plain-email.txt"
-        (->
-         (build-new-poll-opened sys (assoc poll :poll/description "") [member])
-         :email/body-plain))
+        (get-in (build-new-poll-opened
+                 sys
+                 (assoc poll :poll/description "")
+                 [member])
+                [:email/messages 0 :text]))
 
   (spit "plain-email.html"
-        (->
-         (build-new-poll-opened sys (assoc poll :poll/description "") [member])
-         :email/body-html))
+        (get-in (build-new-poll-opened
+                 sys
+                 (assoc poll :poll/description "")
+                 [member])
+                [:email/messages 0 :html]))
 
   (spit "plain-email.txt"
         (str
@@ -290,8 +302,7 @@
          "\n++++\n"
          (tmpl/gig-updated-email-plain sys gig2 [:gig/status])))
 
-  (build-gig-created-email sys gig [member])
-  :email/recipient-variables
+  (:email/messages (build-gig-created-email sys gig [member]))
   (build-gig-updated-email sys gig [member member2] [:gig/status])
 
   (queue-email! {:redis redis-opts} (debug/xxx (build-gig-created-email sys gig2 [member2])))

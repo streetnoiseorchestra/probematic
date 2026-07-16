@@ -34,16 +34,16 @@
  :twilio                  {:bot-number     #ref [:secrets :twilio :bot-number]
                            :twilio-account #ref [:secrets :twilio :twilio-account]
                            :twilio-token   #ref [:secrets :twilio :twilio-token]}
- :mailgun                 {;;  test mode hits the mailgun API but mailgun does not send the message.
-                           ;;  this still costs money
-                           :test-mode?             #ref [:secrets :mailgun :test-mode?]
-                           ;; demo mode does not hit the mailgun API.. it just taps the emails instead of sending
-                           :demo-mode?             #ref [:secrets :mailgun :demo-mode?]
-                           :test-mode-disabled-for #ref [:secrets :mailgun :test-mode-disabled-for]
-                           :api-key                #ref [:secrets :mailgun :api-key]
-                           :from                   #ref [:secrets :mailgun :from]
-                           :send-domain            #ref [:secrets :mailgun :send-domain]
-                           :mailgun-domain         #ref [:secrets :mailgun :mailgun-domain]}
+ :lettermint              #merge [#ref [:secrets :lettermint]
+                                  {:timeout-ms              #long #or [#env LETTERMINT_TIMEOUT_MS 10000]
+                                   :demo-mode?              #profile {:prod false
+                                                                      :dev  false
+                                                                      :demo true
+                                                                      :test true}
+                                   :testing-addresses-only? #profile {:prod false
+                                                                      :dev  true
+                                                                      :demo true
+                                                                      :test true}}]
  :redis                   {:conn-spec #ref [:secrets :redis :conn-spec]}
  :max-header-size         12000
  :content-security-policy {:img-src     "https://*.streetnoise.at 'self' data:"
@@ -117,11 +117,11 @@
                                                        :peer   {:db-uri     #or [#env DATOMIC_URI
                                                                                  #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]}}
                            :app.ig/i18n-langs         {}
-                           :app.ig/mailgun            {:env #ig/ref :app.ig/env}
+                           :app.ig/lettermint          {:env #ig/ref :app.ig/env}
                            :app.ig/redis              {:env #ig/ref :app.ig/env}
-                           :app.ig/email-worker       {:env     #ig/ref :app.ig/env
-                                                       :redis   #ig/ref :app.ig/redis
-                                                       :mailgun #ig/ref :app.ig/mailgun}
+                           :app.ig/email-worker       {:env        #ig/ref :app.ig/env
+                                                       :redis      #ig/ref :app.ig/redis
+                                                       :lettermint #ig/ref :app.ig/lettermint}
                            :app.ig/webdav-sardine     {:env #ig/ref :app.ig/env}
                            :app.ig/keycloak           {:env #ig/ref :app.ig/env}
                            :app.ig/calendar           {:env #ig/ref :app.ig/env}
