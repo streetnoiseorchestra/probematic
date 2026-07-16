@@ -166,7 +166,6 @@
              :days-left              "Days Left"}
  :poll.type {:multiple-hint "People can choose multiple options."}
 
- :ledger                   {:add-transaction "Add Transaction"}
  :money-input-format-error "Enter currency amount like 42,05"
  :team                     {:add-member            "Add Member"
                             :choose-remove-members "Choose members to remove"}

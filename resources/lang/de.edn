@@ -10,8 +10,6 @@
   :retry-guidance "Starte den Login-Vorgang neu. Wenn diese Seite wieder erscheint, kontaktiere eine Administratorin oder einen Administrator und gib die oben angezeigte E-Mail-Adresse an.",
   :restart-login "Login neu starten",
   :log-out "Abmelden"},
- :ledger
- {:add-transaction "Zahlung hinzufügen"},
  :email
  {:gig-edit-type "BEARBEITET",
   :gig-info-page "Bring mich zur Gig-Info-Seite",
