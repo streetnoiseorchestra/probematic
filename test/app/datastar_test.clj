@@ -1,10 +1,11 @@
 (ns app.datastar-test
   (:require
-   [app.datastar]
+   [app.datastar :as datastar]
    [clojure.test :refer [deftest is testing]]
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
    [starfederation.datastar.clojure.adapter.test :as d*test]
-   [starfederation.datastar.clojure.api :as d*]))
+   [starfederation.datastar.clojure.api :as d*]
+   [tick.core :as t]))
 
 (def request
   {:protocol "HTTP/1.1"})
@@ -22,6 +23,15 @@
          (cond-> response
            (volatile? (:body response)) (update :body deref))))
      ::missing-respond-sse)))
+
+(deftest stale-page-state-uses-the-latest-activity-instant
+  (let [created      (t/instant "2026-07-10T12:00:00Z")
+        at-threshold (t/>> created (t/new-duration 1 :hours))
+        after        (t/>> at-threshold (t/new-duration 1 :seconds))
+        modified     (t/>> created (t/new-duration 30 :minutes))]
+    (is (not (datastar/stale? at-threshold created nil)))
+    (is (datastar/stale? after created nil))
+    (is (not (datastar/stale? after created modified)))))
 
 (deftest respond-sse-emits-events-in-declared-order-test
   (testing "one finite response emits ordered signal, element, script, and redirect events"

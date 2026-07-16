@@ -14,8 +14,6 @@
    [java.net URLDecoder URLEncoder]
    [java.security SecureRandom]
    [java.text NumberFormat ParsePosition]
-   [java.time LocalDate]
-   [java.time.format DateTimeFormatter DateTimeFormatterBuilder ResolverStyle]
    [java.util Locale]))
 
 (defn url-encode [^String v]

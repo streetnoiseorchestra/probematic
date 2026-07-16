@@ -4,7 +4,8 @@
    [babashka.fs :as fs]
    [babashka.process :as process :refer [shell]]
    [clojure.edn :as edn]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [tick.core :as t]))
 
 (def script-version "dev-slots-1")
 (def ^:private datastar-inspector-filename "datastar-inspector@1.1.4.js")
@@ -290,7 +291,7 @@
       "unknown"))
 
 (defn- now-iso []
-  (str (java.time.Instant/now)))
+  (str (t/instant)))
 
 (defn- read-claim-file [claim-file]
   (when (fs/regular-file? claim-file)

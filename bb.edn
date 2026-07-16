@@ -1,6 +1,7 @@
 {:deps  {outskirtslabs/bb-tasks
          {:git/url "https://github.com/outskirtslabs/bb-tasks"
-          :git/sha "e868e28b18a0496ec4d39878f0307cb1df17da22"}}
+          :git/sha "e868e28b18a0496ec4d39878f0307cb1df17da22"}
+         tick/tick {:mvn/version "1.0.1"}}
  :paths ["scripts"]
  :tasks {:requires
          ([babashka.fs :as fs]

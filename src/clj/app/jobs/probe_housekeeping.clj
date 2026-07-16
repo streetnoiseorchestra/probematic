@@ -10,15 +10,7 @@
    [com.yetanalytics.squuid :as sq]
    [app.datomic.shim :as datomic]
    [ol.jobs-util :as jobs]
-   [tick.core :as t])
-  (:import
-   [java.time
-    DayOfWeek
-    Instant
-    LocalTime
-    Period
-    ZoneId
-    ZonedDateTime]))
+   [tick.core :as t]))
 
 (def minimum-gigs 4)
 (def maximum-create 4)
@@ -101,14 +93,15 @@
 
 (defn- start-rehearsal-leader-notify!
   [system]
-  (let [zone-id (ZoneId/of "Europe/Berlin")
-        ^ZonedDateTime first-run (.adjustInto (LocalTime/of 22 0 0)
-                                              (ZonedDateTime/now zone-id))
-        next-wednesdays-at-10-pm (->> (chime/periodic-seq (.toInstant first-run)
-                                                          (Period/ofDays 1))
-                                      (map #(.atZone ^Instant % zone-id))
-                                      (filter (comp #{DayOfWeek/WEDNESDAY}
-                                                    #(.getDayOfWeek ^ZonedDateTime %))))]
+  (let [zone-id (t/zone "Europe/Berlin")
+        first-run (-> (t/instant)
+                      (t/in zone-id)
+                      t/date
+                      (t/at (t/time "22:00"))
+                      (t/in zone-id))
+        next-wednesdays-at-10-pm
+        (->> (iterate #(t/>> % (t/new-period 1 :days)) first-run)
+             (filter (comp #{t/WEDNESDAY} t/day-of-week)))]
     (chime/chime-at next-wednesdays-at-10-pm
                     (fn [_] (notify-rehearsal-leader! system)))))
 

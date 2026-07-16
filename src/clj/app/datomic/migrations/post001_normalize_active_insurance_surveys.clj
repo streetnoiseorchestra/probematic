@@ -22,7 +22,8 @@
   UUID string, and Datomic entity ID, then Stork atomically records the marker
   with the returned closing datoms."
   (:require
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [tick.core :as t]))
 
 (defn- created-at-order
   "Compares surveys newest first, placing missing creation times last."
@@ -75,7 +76,7 @@
   "Returns transactions that retain only the newest active insurance survey."
   [conn]
   (let [db     (d/db conn)
-        now    (java.util.Date.)
+        now    (t/inst)
         active (->> (d/q '[:find [?survey ...]
                            :in $ ?now
                            :where

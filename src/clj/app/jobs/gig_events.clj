@@ -9,9 +9,8 @@
    [app.errors :as errors]
    [chime.core :as chime]
    [clojure.data]
-   [app.datomic.shim :as datomic])
-  (:import
-   (java.time Instant)))
+   [app.datomic.shim :as datomic]
+   [tick.core :as t]))
 
 (defn update-system
   [{:keys [system]}]
@@ -53,7 +52,7 @@
 
 (defn exec-later
   [fn-name & args]
-  (chime/chime-at [(.plusSeconds (Instant/now) 1)]
+  (chime/chime-at [(t/>> (t/instant) (t/new-duration 1 :seconds))]
                   (fn [_]
                     (try
                       (apply fn-name args)

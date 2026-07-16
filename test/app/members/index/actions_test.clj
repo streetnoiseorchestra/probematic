@@ -1,7 +1,8 @@
 (ns app.members.index.actions-test
   (:require
    [app.members.index.actions :as actions]
-   [clojure.test :refer [deftest is testing]]))
+   [clojure.test :refer [deftest is testing]]
+   [tick.core :as t]))
 
 (deftest set-search-phrase-action-test
   (is (= [[:app.datastar/assoc-state [:members-index :search] "Alice"]]
@@ -63,7 +64,7 @@
                              :sort-request-field "wat"}})))))
 
 (deftest resend-invitation-action-test
-  (let [now (java.util.Date.)]
+  (let [now (t/inst)]
     (is (= [[:app.members.index/resend-invitation "invite-123"]
             [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
             [:app.datastar/respond-sse
@@ -76,7 +77,7 @@
             {:invite {:code "invite-123"}})))))
 
 (deftest delete-invitation-action-test
-  (let [now (java.util.Date.)]
+  (let [now (t/inst)]
     (is (= [[:app.members.index/delete-invitation "invite-123"]
             [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
             [:app.datastar/respond-sse

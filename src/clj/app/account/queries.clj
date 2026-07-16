@@ -1,9 +1,8 @@
 (ns app.account.queries
   (:require
-   [app.queries :as queries])
-  (:import
-   [java.time Instant LocalDate ZoneId]
-   [java.util Date]))
+   [app.queries :as queries]
+   [cljc.java-time.zone-id :as jt.zone-id]
+   [tick.core :as t]))
 
 (def default-preferences
   {:time-zone "Europe/Berlin"
@@ -132,33 +131,33 @@
            :_saved? false})]
     (merge-notifications persisted (:account-notifications page-state))))
 
-(defn- ->instant ^Instant [value]
+(defn- ->instant [value]
   (cond
-    (instance? Instant value) value
-    (instance? Date value)    (.toInstant ^Date value)
-    :else                     (Instant/now)))
+    (t/instant? value) value
+    (inst? value)       (t/instant value)
+    :else               (t/instant)))
 
-(defn- today ^LocalDate [now timezone]
+(defn- today [now timezone]
   (-> (->instant now)
-      (.atZone (ZoneId/of timezone))
-      .toLocalDate))
+      (t/in timezone)
+      t/date))
 
-(defn- parse-date ^LocalDate [value]
+(defn- parse-date [value]
   (when (seq value)
-    (LocalDate/parse value)))
+    (t/date value)))
 
 (defn- break-status [today start-date end-date]
   (let [start (parse-date start-date)
         end (parse-date end-date)]
     (cond
       (nil? start) "available"
-      (and end (.isBefore end today)) "ended"
-      (.isAfter start today) "scheduled"
+      (and end (t/< end today)) "ended"
+      (t/> start today) "scheduled"
       :else "away")))
 
 (defn break-page-state
   ([db member-id page-state]
-   (break-page-state db member-id page-state (Date.)))
+   (break-page-state db member-id page-state (t/instant)))
   ([db member-id page-state now]
    (let [member (queries/retrieve-member db member-id)
          timezone (or (:member/timezone member) (:time-zone default-break))
@@ -180,12 +179,13 @@
 
 (defn time-zone-options
   ([]
-   (time-zone-options (Date.)))
+   (time-zone-options (t/instant)))
   ([now]
-   (let [^Instant instant (->instant now)]
+   (let [instant (->instant now)]
      (mapv (fn [id]
-             (let [^ZoneId zone (ZoneId/of id)
-                   offset (.getOffset (.getRules zone) instant)]
+             (let [offset (-> instant
+                              (t/in id)
+                              t/zone-offset)]
                {:value id
                 :label (format "UTC%s — %s" offset id)}))
-           (sort (ZoneId/getAvailableZoneIds))))))
+           (sort (jt.zone-id/get-available-zone-ids))))))

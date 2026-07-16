@@ -150,8 +150,8 @@
 
 (defn- recent-reminder? [sent-at]
   (when sent-at
-    (< (- (System/currentTimeMillis) (inst-ms sent-at))
-       (* 24 60 60 1000))))
+    (t/< (t/instant)
+         (t/>> (t/instant sent-at) (t/new-duration 24 :hours)))))
 
 (defn- remind-all-menu-item [{:keys [page-state] :as req}]
   (let [sent-at       (get-in page-state actions/remind-all-sent-at-path)

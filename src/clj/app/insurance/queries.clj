@@ -192,7 +192,7 @@
 
 (defn survey-data
   ([db policy-id member-id]
-   (survey-data db policy-id member-id (java.util.Date.)))
+   (survey-data db policy-id member-id (t/inst)))
   ([db policy-id member-id now]
    (let [policy   (when policy-id (q/retrieve-policy db policy-id))
          member   (when member-id (q/retrieve-member db member-id))
@@ -220,7 +220,7 @@
 
 (defn pending-responses-for-member
   ([db member]
-   (pending-responses-for-member db member (java.util.Date.)))
+   (pending-responses-for-member db member (t/inst)))
   ([db member now]
    (->> (q/policies db)
         (keep #(open-policy-response db % (:member/member-id member) now))
@@ -312,7 +312,7 @@
   ([db policy-id]
    (policy-dashboard db policy-id {}))
   ([db policy-id {:keys [current-member-id now]
-                  :or   {now (java.util.Date.)}}]
+                  :or   {now (t/inst)}}]
    (let [policy            (q/retrieve-policy db policy-id)
          coverages         (enriched-coverages policy)
          band-coverages    (filterv (complement :instrument.coverage/private?) coverages)
@@ -804,7 +804,7 @@
 
 (defn policy-surveys
   ([db policy-id current-member-id]
-   (policy-surveys db policy-id current-member-id (java.util.Date.)))
+   (policy-surveys db policy-id current-member-id (t/inst)))
   ([db policy-id current-member-id now]
    (let [policy  (q/retrieve-policy db policy-id)
          member  (when current-member-id

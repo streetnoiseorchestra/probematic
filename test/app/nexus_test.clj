@@ -546,5 +546,5 @@
     (is (uuid? (:named-a tx)))
     (is (= (:named-a tx) (:named-b tx)))
     (is (not= (:named-a tx) (:named-c tx)))
-    (is (instance? java.util.Date (:now-a tx)))
+    (is (inst? (:now-a tx)))
     (is (= (:now-a tx) (:now-b tx)))))

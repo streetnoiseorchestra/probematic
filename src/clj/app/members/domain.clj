@@ -2,9 +2,11 @@
   (:require
    [clojure.string :as str]
    [app.schemas :as s]
-   [app.members.phone-number :as phone-number]))
+   [app.members.phone-number :as phone-number]
+   [tick.core :as t]))
 
-(defn revision [] (.format java.time.format.DateTimeFormatter/ISO_INSTANT (java.time.ZonedDateTime/now (java.time.ZoneId/of "UTC"))))
+(defn revision []
+  (t/format :iso-instant (t/instant)))
 
 (defn generate-vcard [{:member/keys [name email nick phone member-id section]}]
   (format "BEGIN:VCARD

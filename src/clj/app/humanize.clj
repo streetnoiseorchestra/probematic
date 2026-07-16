@@ -1,22 +1,21 @@
 (ns app.humanize
-  (:import [java.time.temporal Temporal ChronoUnit])
   (:require [tick.core :as t]))
 
 (defn from
   "Returns a Fluent translation node describing the time from `then-t` to
   `:now-t`, which defaults to the current local date and time."
-  [^Temporal then-t & {:keys [now-t]
-                       :or {now-t (t/date-time)}}]
+  [then-t & {:keys [now-t]
+             :or {now-t (t/date-time)}}]
   (let [then-t (if (t/date? then-t)
                  (t/at then-t (t/midnight))
                  then-t)
-        years (.between ChronoUnit/YEARS then-t now-t)
-        months (.between ChronoUnit/MONTHS then-t now-t)
-        weeks (.between ChronoUnit/WEEKS then-t now-t)
-        days (.between ChronoUnit/DAYS then-t now-t)
-        hours (.between ChronoUnit/HOURS then-t now-t)
-        minutes (.between ChronoUnit/MINUTES then-t now-t)
-        seconds (.between ChronoUnit/SECONDS then-t now-t)]
+        years (t/between then-t now-t :years)
+        months (t/between then-t now-t :months)
+        weeks (t/between then-t now-t :weeks)
+        days (t/between then-t now-t :days)
+        hours (t/between then-t now-t :hours)
+        minutes (t/between then-t now-t :minutes)
+        seconds (t/between then-t now-t :seconds)]
     (cond
       (> years 0) [:i18n/tr :relative-time-years-ago {:count years}]
       (> months 0) [:i18n/tr :relative-time-months-ago {:count months}]

@@ -8,10 +8,11 @@
   these should be in the `ignore-attributes
   "
   (:require
+   [app.datomic.shim :as datomic]
    [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.set :as set]
-   [app.datomic.shim :as datomic]))
+   [tick.core :as t]))
 
 (defn progress-fn
   "Return a function to be called during iteration. It will log progress
@@ -119,12 +120,13 @@
     (out! {:ref-attrs        ref-attrs
            :tuple-attrs      tuple-attrs
            :tuple-ref-attrs  tuple-ref-attrs
-           :backup-timestamp (java.util.Date.)})
+           :backup-timestamp (t/inst)})
     (doseq [tx    (all-transactions backup-start conn)
             :let  [tx-map (output-tx (delay (datomic/as-of db (:t tx))) attr-ident-cache tx
                                      ignore-attributes)]
             :when (and (seq (:data tx-map))
-                       (.after (get-in tx-map [:tx :db/txInstant]) backup-start))]
+                       (t/> (t/instant (get-in tx-map [:tx :db/txInstant]))
+                            (t/instant backup-start)))]
       (out! tx-map)
       (progress!))))
 
@@ -224,8 +226,8 @@
                                     :cognitect.anomalies/busy})
 (defn with-retry
   ([func]
-   (with-retry (+ (System/currentTimeMillis)
-                  retry-timeout-ms)
+   (with-retry (t/>> (t/instant)
+                     (t/new-duration retry-timeout-ms :millis))
      func))
   ([give-up-at func]
    (loop []
@@ -237,7 +239,7 @@
        (if (nil? e)
          res
          (cond
-           (> (System/currentTimeMillis) give-up-at)
+           (t/> (t/instant) give-up-at)
            (throw (ex-info "Giving up after retry timed out" {:exception e}))
 
            (some-> e ex-data

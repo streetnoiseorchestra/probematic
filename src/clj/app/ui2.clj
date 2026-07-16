@@ -7,15 +7,15 @@
    [app.ui2.button :as button]
    [app.ui2.divider :as divider]
    [app.ui2.icon :as ico]
+   [cljc.java-time.format.date-time-formatter :as jt.formatter]
+   [cljc.java-time.format.date-time-formatter-builder :as jt.formatter-builder]
    [clojure.string :as str]
    [dev.onionpancakes.chassis.compiler :as cc]
    [starfederation.datastar.clojure.expressions :refer [->expr]]
    [tick.core :as t])
   (:import
    [java.text NumberFormat]
-   [java.time LocalDate]
-   [java.time.chrono IsoChronology]
-   [java.time.format DateTimeFormatter DateTimeFormatterBuilder FormatStyle]
+   [java.time.format FormatStyle]
    [java.util Locale]))
 
 (defn safe-dom-id
@@ -240,16 +240,19 @@
   (some-> value temporal-value t/date))
 
 (defn- localized-formatter [locale formatter]
-  (.withLocale ^DateTimeFormatter formatter locale))
+  (jt.formatter/with-locale formatter locale))
 
 (def ^:private month-day-pattern
   (memoize
    (fn [^Locale locale]
-     (let [short-pattern (DateTimeFormatterBuilder/getLocalizedDateTimePattern
-                          FormatStyle/SHORT
-                          nil
-                          IsoChronology/INSTANCE
-                          locale)
+     (let [short-date-formatter (jt.formatter/of-localized-date
+                                 FormatStyle/SHORT)
+           ^String short-pattern
+           (jt.formatter-builder/get-localized-date-time-pattern
+            FormatStyle/SHORT
+            nil
+            (jt.formatter/get-chronology short-date-formatter)
+            locale)
            month-idx     (.indexOf short-pattern "M")
            day-idx       (.indexOf short-pattern "d")]
        (if (and (not= -1 month-idx)
@@ -267,19 +270,20 @@
       locale
       (case style
         :month-day
-        (DateTimeFormatter/ofPattern (month-day-pattern locale))
+        (t/formatter (month-day-pattern locale) locale)
 
         :compact-with-weekday
-        (DateTimeFormatter/ofPattern compact-weekday-date-pattern)
+        (t/formatter compact-weekday-date-pattern locale)
 
-        (DateTimeFormatter/ofLocalizedDate (localized-format-style date-format-styles style)))))))
+        (jt.formatter/of-localized-date
+         (localized-format-style date-format-styles style)))))))
 
 (def ^:private date-time-formatter
   (memoize
    (fn [locale style]
      (localized-formatter
       locale
-      (DateTimeFormatter/ofLocalizedDateTime
+      (jt.formatter/of-localized-date-time
        (localized-format-style date-time-format-styles style)
        FormatStyle/SHORT)))))
 
@@ -288,23 +292,24 @@
    (fn [locale style]
      (localized-formatter
       locale
-      (DateTimeFormatter/ofLocalizedTime (localized-format-style time-format-styles style))))))
+      (jt.formatter/of-localized-time
+       (localized-format-style time-format-styles style))))))
 
 (def ^:private compact-date-range-formatters
   (memoize
    (fn [locale]
-     {:same-month-start (localized-formatter locale (DateTimeFormatter/ofPattern "E dd"))
-      :same-month-end   (localized-formatter locale (DateTimeFormatter/ofPattern compact-weekday-date-pattern))
-      :same-year-start  (localized-formatter locale (DateTimeFormatter/ofPattern "E dd MMM"))
-      :same-year-end    (localized-formatter locale (DateTimeFormatter/ofPattern compact-weekday-date-pattern))
-      :full             (localized-formatter locale (DateTimeFormatter/ofPattern compact-weekday-date-pattern))})))
+     {:same-month-start (t/formatter "E dd" locale)
+      :same-month-end   (t/formatter compact-weekday-date-pattern locale)
+      :same-year-start  (t/formatter "E dd MMM" locale)
+      :same-year-end    (t/formatter compact-weekday-date-pattern locale)
+      :full             (t/formatter compact-weekday-date-pattern locale)})))
 
-(defn- same-year? [^LocalDate start-date ^LocalDate end-date]
-  (= (.getYear start-date) (.getYear end-date)))
+(defn- same-year? [start-date end-date]
+  (= (t/year start-date) (t/year end-date)))
 
-(defn- same-month? [^LocalDate start-date ^LocalDate end-date]
+(defn- same-month? [start-date end-date]
   (and (same-year? start-date end-date)
-       (= (.getMonthValue start-date) (.getMonthValue end-date))))
+       (= (t/month start-date) (t/month end-date))))
 
 (defn- format-with [formatter date]
   (t/format formatter date))
@@ -401,13 +406,13 @@
   "Formats `value` as an HTML date input value."
   [value]
   (when-let [date (date-temporal value)]
-    (t/format (DateTimeFormatter/ofPattern "yyyy-MM-dd") date)))
+    (t/format "yyyy-MM-dd" date)))
 
 (defn time-input-value
   "Formats `value` as an HTML time input value."
   [value]
   (when-let [time (temporal-value value)]
-    (t/format (DateTimeFormatter/ofPattern "HH:mm") time)))
+    (t/format "HH:mm" time)))
 
 (defn relative-time-value
   "Returns a Fluent translation node for `value` relative to the current time."

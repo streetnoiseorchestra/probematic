@@ -107,7 +107,7 @@
                           (t/new-period 1 :days))
                     {:gig-detail
                      {:attendance
-                      {:remind-all-sent-at (java.util.Date.)}}})
+                      {:remind-all-sent-at (t/inst)}}})
           toolbar  (l/select-one page-toolbar/PageToolbar view)
           overflow (::page-toolbar/overflow-items (l/attrs toolbar))]
       (is (= [:gigs/log-plays :gigs/remind-all :gigs/reminded-all-at]

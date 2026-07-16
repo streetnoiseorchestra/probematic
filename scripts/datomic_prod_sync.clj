@@ -41,7 +41,8 @@
    [babashka.fs :as fs]
    [babashka.process :as p]
    [clojure.java.io :as io]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [tick.core :as t]))
 
 (def default-options
   {:sync-root       "data.dev/prod-sync"
@@ -84,8 +85,7 @@
        "  --help                  Show this help\n"))
 
 (defn timestamp []
-  (.format (java.time.format.DateTimeFormatter/ofPattern "yyyyMMdd-HHmmss")
-           (java.time.LocalDateTime/now)))
+  (t/format "yyyyMMdd-HHmmss" (t/date-time)))
 
 (defn parse-args [args]
   (loop [opts default-options
@@ -194,11 +194,12 @@
          cmd))
 
 (defn wait-until! [label timeout-ms pred]
-  (let [deadline (+ (System/currentTimeMillis) timeout-ms)]
+  (let [deadline (t/>> (t/instant)
+                       (t/new-duration timeout-ms :millis))]
     (loop []
       (cond
         (pred) true
-        (> (System/currentTimeMillis) deadline)
+        (t/> (t/instant) deadline)
         (throw (ex-info "Timed out while waiting" {:label label :timeout-ms timeout-ms}))
         :else
         (do
@@ -234,10 +235,12 @@
 
     (def cfg (edn/read-string (slurp (first *command-line-args*))))
 
-    (def backup-start (java.util.Date/from (java.time.Instant/parse (:backup-start cfg))))
+    (require '[tick.core :as t])
+
+    (def backup-start (t/inst (t/instant (:backup-start cfg))))
 
     (try
-      (println :export-start (java.util.Date.))
+      (println :export-start (t/inst))
       (println :storage-dir (:storage-dir cfg))
       (println :export-file (:export-file cfg))
       (d/with-datomic-mode :client
@@ -247,7 +250,7 @@
               conn   (d/connect client {:db-name (:db-name cfg)})]
           (with-open [out (io/writer (:export-file cfg))]
             ((var backup/output-all-tx) backup-start conn out))))
-      (println :export-finished (java.util.Date.))
+      (println :export-finished (t/inst))
       (shutdown-agents)
       (System/exit 0)
       (catch Throwable t
@@ -264,20 +267,22 @@
 
     (def cfg (edn/read-string (slurp (first *command-line-args*))))
 
+    (require '[tick.core :as t])
+
     (defn write-edn! [path value]
       (spit path (with-out-str (prn value))))
 
     (try
-      (println :restore-start (java.util.Date.))
+      (println :restore-start (t/inst))
       (println :uri (:staging-db-uri cfg))
       (println :export-file (:export-file cfg))
       (let [created?   (d-peer/create-database (:staging-db-uri cfg))
             conn       (d-peer/connect (:staging-db-uri cfg))
-            started-at (java.util.Date.)
+            started-at (t/inst)
             result     (shim/with-datomic-mode :peer
                          (with-open [rdr (io/reader (:export-file cfg))]
                            (backup/restore-tx-file conn (java.io.PushbackReader. rdr))))
-            finished-at (java.util.Date.)
+            finished-at (t/inst)
             summary    {:created?         created?
                         :started-at       started-at
                         :finished-at      finished-at
@@ -293,7 +298,7 @@
         (shutdown-agents)
         (System/exit 0))
       (catch Throwable t
-        (let [failure {:failed-at (java.util.Date.)
+        (let [failure {:failed-at (t/inst)
                        :class     (str (class t))
                        :message   (ex-message t)
                        :data      (ex-data t)}]

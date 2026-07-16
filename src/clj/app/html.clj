@@ -1,5 +1,6 @@
 (ns app.html
   (:require
+   [cljc.java-time.instant :as jt.instant]
    [app.i18n :as i18n]
    [backtick         :refer [template]]
    [buddy.core.codecs :as codecs]
@@ -7,7 +8,8 @@
    [clojure.java.io :as io]
    [dev.onionpancakes.chassis.core :as chassis]
    [ring.util.response :as ring-response]
-   [squint.compiler :as squint])
+   [squint.compiler :as squint]
+   [tick.core :as t])
   (:import
    (java.io OutputStream)))
 
@@ -72,8 +74,9 @@
 (defn resource-last-modified [resource]
   (some-> resource
           (ring-response/resource-data)
-          ^java.util.Date (:last-modified)
-          (.getTime)))
+          (:last-modified)
+          t/instant
+          jt.instant/to-epoch-milli))
 
 (defn asset-meta [path]
   (let [resource      (io/resource (asset-path path))

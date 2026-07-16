@@ -10,7 +10,8 @@
    [app.ui2.icon :as ico]
    [app.urls :as urls]
    [clojure.string :as str]
-   [medley.core :as m]))
+   [medley.core :as m]
+   [tick.core :as t]))
 
 (def todo-metric-order
   [:needs-review :changed :new :removed])
@@ -367,11 +368,11 @@
 (defn instant-value
   [value]
   (cond
-    (instance? java.time.Instant value)
+    (t/instant? value)
     (str value)
 
-    (instance? java.util.Date value)
-    (str (.toInstant ^java.util.Date value))
+    (inst? value)
+    (str (t/instant value))
 
     :else
     (str value)))

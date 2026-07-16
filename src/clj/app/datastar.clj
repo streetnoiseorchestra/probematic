@@ -36,9 +36,9 @@
    [jsonista.core :as j]
    [starfederation.datastar.clojure.adapter.common :as d*com]
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
-   [starfederation.datastar.clojure.api :as d*])
+   [starfederation.datastar.clojure.api :as d*]
+   [tick.core :as t])
   (:import
-   [java.time Duration Instant]
    [java.util.concurrent BlockingQueue]))
 
 (defn ->signals [m]
@@ -83,11 +83,11 @@
     (swap! !page-state update tab-id (fn [state]
                                        (-> state
                                            (f)
-                                           (assoc ::modified (System/currentTimeMillis)))))
+                                           (assoc ::modified (t/instant)))))
     (throw (ex-info "No tab-id in request" {}))))
 
 (defn init-tab-state! [<ch tab-id]
-  (swap! !page-state assoc tab-id {::created (System/currentTimeMillis)})
+  (swap! !page-state assoc tab-id {::created (t/instant)})
   (add-watch !page-state tab-id (fn [watch-key _ _ _]
                                   (when-not (a/>!! <ch [])
                                     (remove-watch !page-state watch-key)))))
@@ -97,15 +97,15 @@
   (swap! !page-state dissoc tab-id)
   (remove-watch !page-state tab-id))
 
-(def STALE-THRESHOLD-HOURS 1)
+(def stale-threshold (t/new-duration 1 :hours))
 
 (defn stale? [now created modified]
-  (> (- now (or modified created)) (* STALE-THRESHOLD-HOURS 3600000)))
+  (t/> (t/between (or modified created) now) stale-threshold))
 
 (defn clean-stale-page-state
   "Removes tab-ids that are stale, where stale is defined as not having been modified or created in the last 24 hours."
   [page-state]
-  (let [now (System/currentTimeMillis)]
+  (let [now (t/instant)]
     (reduce-kv (fn [acc tab-id {:keys [::created ::modified]}]
                  (if (stale? now created modified)
                    (dissoc acc tab-id)
@@ -124,7 +124,8 @@
 (defn start-clean-page-state-job
   "Starts a job that cleans stale page state every 10 seconds."
   []
-  (chime/chime-at (chime/periodic-seq (Instant/now) (Duration/ofSeconds 60))
+  (chime/chime-at (chime/periodic-seq (t/instant)
+                                      (t/new-duration 60 :seconds))
                   (fn [_]
                     (swap! !page-state clean-stale-page-state)
                     (clean-stale-watches!))))

@@ -1,11 +1,10 @@
 (ns app.schema-helpers
   (:require
+   [cljc.java-time.duration :as jt.duration]
    [clojure.string :as string]
    [malli.core :as m]
    [malli.transform :as mt]
-   [tick.core :as t])
-  (:import
-   (java.time Duration)))
+   [tick.core :as t]))
 
 (def EmailAddress (m/-simple-schema {:type            :email-address
                                      :pred            #(and (string? %)
@@ -21,9 +20,9 @@
 (def DurationSchema (m/-simple-schema {:type            :duration
                                        :pred            t/duration?
                                        :type-properties {:error/message      "should be a valid duration"
-                                                         :decode/string      #(Duration/parse %)
+                                                         :decode/string      #(jt.duration/parse %)
                                                          :encode/string      #(when % (str %))
-                                                         :decode/json        #(Duration/parse %)
+                                                         :decode/json        #(jt.duration/parse %)
                                                          :encode/json        #(when % (str %))
                                                          :json-schema/type   "string"
                                                          :json-schema/format "duration"
@@ -217,10 +216,9 @@
 
   (t/date-time)
   (t/new-duration 3600000 :millis)
-  (t/duration? (Duration/parse "PT1H"))
+  (t/duration? (jt.duration/parse "PT1H"))
 
-  (import [java.time Duration])
-  (Duration/parse (str (t/new-duration 3600000 :millis)))
+  (jt.duration/parse (str (t/new-duration 3600000 :millis)))
 
   (t/duration "PT1H")
 

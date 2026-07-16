@@ -4,11 +4,10 @@
    [app.members.domain :as members.domain]
    [app.nexus.actions :as support]
    [app.account.queries :as account.queries]
+   [cljc.java-time.local-time :as jt.local-time]
    [clojure.string :as str]
-   [datomic.api :as d])
-  (:import
-   [java.time DateTimeException Instant LocalDate LocalTime ZoneId]
-   [java.util Date]))
+   [datomic.api :as d]
+   [tick.core :as t]))
 
 (def max-avatar-size (* 5 1024 1024))
 
@@ -48,7 +47,7 @@
             (try
               (form/date-value date-of-birth)
               true
-              (catch DateTimeException _exception
+              (catch Exception _exception
                 false)))]
     (cond-> {}
       (str/blank? name)
@@ -223,9 +222,9 @@
   (boolean
    (and (seq value)
         (try
-          (ZoneId/of value)
+          (t/zone value)
           true
-          (catch DateTimeException _exception
+          (catch Exception _exception
             false)))))
 
 (defn- persisted-effects [member-id tx-data path transient-state feedback]
@@ -302,9 +301,9 @@
   (boolean
    (and (string? value)
         (try
-          (LocalTime/parse value)
+          (jt.local-time/parse value)
           true
-          (catch DateTimeException _exception
+          (catch Exception _exception
             false)))))
 
 (defn- notification-errors
@@ -408,19 +407,19 @@
   [{:keys [current-member-id]} {:keys [account-notifications]}]
   (persist-notifications current-member-id account-notifications))
 
-(defn- ->instant ^Instant [value]
+(defn- ->instant [value]
   (cond
-    (instance? Instant value) value
-    (instance? Date value)    (.toInstant ^Date value)
+    (t/instant? value) value
+    (inst? value)       (t/instant value)
     :else
     (throw (ex-info "Account break actions require an injected :now instant"
                     {:now value}))))
 
-(defn- parse-date ^LocalDate [value]
+(defn- parse-date [value]
   (when (seq value)
     (try
-      (LocalDate/parse value)
-      (catch DateTimeException _exception
+      (t/date value)
+      (catch Exception _exception
         nil))))
 
 (defn- normalize-break [break-state]
@@ -431,8 +430,8 @@
 
 (defn- break-errors
   [{:keys [active start-choice end-date]} effective-start-date]
-  (let [^LocalDate start (parse-date effective-start-date)
-        ^LocalDate end   (parse-date end-date)]
+  (let [start (parse-date effective-start-date)
+        end   (parse-date end-date)]
     (cond-> {}
       (not (boolean? active))
       (assoc :active
@@ -452,7 +451,7 @@
       (assoc :end-date
              {:error [:i18n/tr :account-settings/error-date-invalid]})
 
-      (and start end (.isBefore end start))
+      (and start end (t/< end start))
       (assoc :end-date
              {:error [:i18n/tr :account-settings/error-break-date-order]}))))
 
@@ -465,8 +464,8 @@
   (when active
     (if (= "now" start-choice)
       (-> (->instant now)
-          (.atZone (ZoneId/of timezone))
-          .toLocalDate
+          (t/in timezone)
+          t/date
           str)
       start-date)))
 

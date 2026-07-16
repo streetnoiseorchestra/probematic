@@ -494,7 +494,7 @@
             ledger (q/retrieve-ledger db member-id)]
         [[:db/transact
           (support/with-audit
-            (append-ledger-entry-tx ledger member-id (ledger-entry-tx form amount (or now (java.util.Date.))) amount)
+            (append-ledger-entry-tx ledger member-id (ledger-entry-tx form amount (or now (t/inst))) amount)
             current-member-id)
           {:transact-w-nils? false}]
          support/clear-loading

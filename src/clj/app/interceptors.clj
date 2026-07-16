@@ -20,7 +20,8 @@
    [reitit.http.interceptors.multipart :as multipart]
    [reitit.http.interceptors.muuntaja :as muuntaja]
    [reitit.http.interceptors.parameters :as parameters]
-   [ring.middleware.keyword-params :as keyword-params]))
+   [ring.middleware.keyword-params :as keyword-params]
+   [tick.core :as t]))
 
 (defn- matching-session-member [db {:session/keys [email keycloak-id]}]
   (let [member-by-keycloak-id (when (seq keycloak-id)
@@ -140,12 +141,12 @@
   "Logs all http requests with response time."
   {:name ::log-request
    :enter (fn [ctx]
-            (assoc-in ctx [:request :start-time] (System/currentTimeMillis)))
+            (assoc-in ctx [:request :start-time] (t/instant)))
    :leave (fn [ctx]
             (let [{:keys [uri start-time request-method query-string human-id] :as req} (:request ctx)
                   user-email (auth/get-current-email req)
-                  finish (System/currentTimeMillis)
-                  total (- finish start-time)]
+                  finish (t/instant)
+                  total (t/between start-time finish :millis)]
               (μ/log :http/request :msg "request completed"
                      :request-method request-method
                      :uri uri

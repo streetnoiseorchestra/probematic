@@ -4,7 +4,8 @@
    [app.datomic.system :as datomic.system]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]
-   [dev.gethop.stork :as stork]))
+   [dev.gethop.stork :as stork]
+   [tick.core :as t]))
 
 (def ^:dynamic *test-connections* nil)
 
@@ -308,9 +309,9 @@
                    :insurance.survey/closes-at
                    #inst "2099-01-01T00:00:00.000-00:00"
                    :insurance.survey/closed-at existing-close}])
-    (let [before (java.util.Date.)]
+    (let [before (t/inst)]
       (datomic.system/prepare-database! conn)
-      (let [after                  (java.util.Date.)
+      (let [after                  (t/inst)
             db                     (d/db conn)
             older-closed-at        (survey-closed-at db older-id)
             missing-created-closed (survey-closed-at

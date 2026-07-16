@@ -21,7 +21,8 @@
    [datomic.api :as d]
    [medley.core :as m]
    [nexus.core :as nexus]
-   [nexus.strategies :as strategies]))
+   [nexus.strategies :as strategies]
+   [tick.core :as t]))
 
 (def unique-attrs
   #{:user-account/id
@@ -73,7 +74,7 @@
     txes)))
 
 (defn generated-value-replacer []
-  (let [now             (java.util.Date.)
+  (let [now             (t/inst)
         named-squuid->v (atom {})]
     (fn [x]
       (cond
@@ -129,7 +130,7 @@
 
 (defn system->state
   [{:keys [system request]}]
-  (cond-> {:now                (java.util.Date.)
+  (cond-> {:now                (t/inst)
            :tr                 (:tr request)
            :db                 (d/db (-> system :datomic :conn))
            :page-state         (request-page-state request)

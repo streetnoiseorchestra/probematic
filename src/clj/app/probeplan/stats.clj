@@ -1,5 +1,4 @@
 (ns app.probeplan.stats
-  (:import [java.time Instant])
   (:require
    [app.probeplan.domain :as domain]
    [app.datomic :as d]
@@ -50,7 +49,7 @@
                           (calc-stats (datomic/db conn))}))
 
 (defn calc-play-stats-in-bg! [conn]
-  (chime/chime-at [(.plusSeconds (Instant/now) 5)]
+  (chime/chime-at [(t/>> (t/instant) (t/new-duration 5 :seconds))]
                   (fn [_]
                     (calc-and-save-play-stats! conn)))
   nil)
