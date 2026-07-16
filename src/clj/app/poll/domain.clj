@@ -8,11 +8,28 @@
                  :poll.type/multiple])
 (def str->poll-type (zipmap (map name poll-types) poll-types))
 
+(def poll-type-label-key
+  {:poll.type/single   :polls/single-choice
+   :poll.type/multiple :polls/multiple-choice})
+
 (def poll-statuses [:poll.status/draft
                     :poll.status/open
                     :poll.status/closed])
 
 (def str->status (zipmap (map name poll-statuses) poll-statuses))
+
+(def status-label-key
+  {:poll.status/draft  :polls/draft-status
+   :poll.status/open   :polls/open-status
+   :poll.status/closed :polls/closed-status})
+
+(def validation-field-label-key
+  {:title       :polls/poll-title-label
+   :description :polls/description-label
+   :closes-at   :polls/closes-at-label
+   :min-choice  :polls/min-choices-label
+   :max-choice  :polls/max-choices-label
+   :options     :polls/options})
 
 (def poll-chart-types [:poll.chart.type/pie
                        :poll.chart.type/bar])

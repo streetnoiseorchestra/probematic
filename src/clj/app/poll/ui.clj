@@ -1,6 +1,7 @@
 (ns app.poll.ui
   (:require
    [app.datastar :as d*]
+   [app.poll.domain :as domain]
    [app.ui2 :as ui2]
    [app.ui2.card :as card]
    [app.urls :as urls]
@@ -9,31 +10,17 @@
    [nextjournal.markdown.transform :as md.transform]
    [tick.core :as t]))
 
-(defn poll-type-label-key [poll-type]
-  (case poll-type
-    :poll.type/single :polls/single-choice
-    :poll.type/multiple :polls/multiple-choice))
-
-(defn poll-type-label [tr poll-type]
-  (tr [(poll-type-label-key poll-type)]))
-
-(defn- status-label-key [status]
-  (case status
-    :poll.status/draft :polls/draft-status
-    :poll.status/open :polls/open-status
-    :poll.status/closed :polls/closed-status))
-
 (defn status-badge
-  ([tr status]
-   (status-badge tr status nil))
-  ([tr status attrs]
+  ([status]
+   (status-badge status nil))
+  ([status attrs]
    [:wa-badge (merge attrs
                      (cond-> {:appearance "outlined"
                               :pill       true}
                        (= :poll.status/draft status)  (assoc :variant "neutral")
                        (= :poll.status/open status)   (assoc :variant "success")
                        (= :poll.status/closed status) (assoc :variant "brand")))
-    (tr [(status-label-key status)])]))
+    [:i18n/tr (domain/status-label-key status)]]))
 
 (defn date-time-input-value [value]
   (when value
@@ -52,7 +39,7 @@
    [:span label]
    [:strong value]])
 
-(defn poll-row [{:keys [tr] :as req} {:poll/keys [title poll-status closes-at] :as poll}]
+(defn poll-row [req {:poll/keys [title poll-status closes-at] :as poll}]
   [:div {:class "polls-row"}
    [:a {:class "polls-row-title"
         :href  (urls/link-poll poll)}
@@ -61,12 +48,12 @@
         :href        (urls/link-poll poll)
         :aria-hidden "true"
         :tabindex    "-1"}]
-   (status-badge tr poll-status {:class "polls-row-status"})
-   (poll-index-stat (tr [:polls/total-voters])
+   (status-badge poll-status {:class "polls-row-status"})
+   (poll-index-stat [:i18n/tr :polls/total-voters]
                     (or (:poll/voter-count poll) 0))
-   (poll-index-stat (tr [:polls/total-votes])
+   (poll-index-stat [:i18n/tr :polls/total-votes]
                     (or (:poll/votes-count poll) 0))
-   (poll-index-stat (tr [:polls/closes])
+   (poll-index-stat [:i18n/tr :polls/closes]
                     (ui2/date-display req :short closes-at))])
 
 (defn poll-section [req {:keys [empty-message polls title]}]

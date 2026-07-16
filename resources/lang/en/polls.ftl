@@ -36,6 +36,8 @@ description-label = Poll Description
 type-label = Poll Type
 choices-title = Choices
 options = Options
+# $number (Number) - One-based position of the poll option in the editor.
+option-number = Options { $number }
 add-option = Add Option
 options-read-only-hint = Once a poll has been opened, its choices cannot be changed.
 min-choices-label = Min Choices

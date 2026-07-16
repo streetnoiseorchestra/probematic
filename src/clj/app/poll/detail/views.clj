@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.form :as form]
+   [app.poll.domain :as domain]
    [app.poll.detail.actions :as actions]
    [app.poll.queries :as queries]
    [app.poll.ui :as poll.ui]
@@ -94,28 +95,28 @@
                                ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
                                :aria-label                    [:i18n/tr :polls/detail-toolbar-label]}]))
 
-(defn- page-header [{:keys [tr]} poll]
+(defn- page-header [poll]
   [page-header/PageHeader
    {:title    [:span {:class "wa-cluster wa-gap-xs wa-align-items-center"}
                (:poll/title poll)
-               (poll.ui/status-badge tr (:poll/poll-status poll))]
-    :subtitle (poll.ui/poll-type-label tr (:poll/poll-type poll))}])
+               (poll.ui/status-badge (:poll/poll-status poll))]
+    :subtitle [:i18n/tr (domain/poll-type-label-key (:poll/poll-type poll))]}])
 
-(defn- metadata-section [{:keys [tr] :as req} poll]
+(defn- metadata-section [req poll]
   (ui2/section-card
-   {:title (tr [:polls/details-title])}
+   {:title [:i18n/tr :polls/details-title]}
    [:dl {:class "poll-detail-meta"}
     [:div
-     [:dt (tr [:polls/type-label])]
-     [:dd (poll.ui/poll-type-label tr (:poll/poll-type poll))]]
+     [:dt [:i18n/tr :polls/type-label]]
+     [:dd [:i18n/tr (domain/poll-type-label-key (:poll/poll-type poll))]]]
     (when (= :poll.type/multiple (:poll/poll-type poll))
       [:div
-       [:dt (tr [:polls/select-num-choices]
-                {:min (:poll/min-choice poll)
-                 :max (:poll/max-choice poll)})]
+       [:dt [:i18n/tr :polls/select-num-choices
+             {:min (:poll/min-choice poll)
+              :max (:poll/max-choice poll)}]]
        [:dd (str (:poll/min-choice poll) " / " (:poll/max-choice poll))]])
     [:div
-     [:dt (tr [:polls/closes-at-label])]
+     [:dt [:i18n/tr :polls/closes-at-label]]
      [:dd (ui2/format-date-time req :medium (:poll/closes-at poll))]]]
    (poll.ui/description-markdown (:poll/description poll))))
 
@@ -145,7 +146,7 @@
                       :data-bind "poll-vote.selected-option"))]
      [:span (:poll.option/value option)]]))
 
-(defn- vote-form [{:keys [tr] :as req} poll member-votes]
+(defn- vote-form [req poll member-votes]
   (let [form-state (vote-form-state req poll member-votes)
         multiple?  (= :poll.type/multiple (:poll/poll-type poll))]
     [:form {:id             "poll-vote-form"
@@ -156,11 +157,11 @@
             :data-signals   (d*/->signals {:poll-vote form-state})}
      (if multiple?
        [:p {:class "wa-caption-m wa-color-text-quiet"}
-        (tr [:polls/select-num-choices]
-            {:min (:poll/min-choice poll)
-             :max (:poll/max-choice poll)})]
+        [:i18n/tr :polls/select-num-choices
+         {:min (:poll/min-choice poll)
+          :max (:poll/max-choice poll)}]]
        [:p {:class "wa-caption-m wa-color-text-quiet"}
-        (tr [:polls/single-choice-hint])])
+        [:i18n/tr :polls/single-choice-hint]])
      (into [:div {:class "poll-choice-list"}]
            (map (partial choice-input (:poll/poll-type poll) form-state)
                 (sort-by :poll.option/position (:poll/options poll))))
@@ -173,23 +174,23 @@
                             :form       "poll-vote-form"}
                            (poll.ui/loading-attrs "poll-vote"))
       (if (seq member-votes)
-        (tr [:polls/change-vote])
-        (tr [:polls/vote]))]]))
+        [:i18n/tr :polls/change-vote]
+        [:i18n/tr :polls/vote])]]))
 
-(defn- voting-section [{:keys [tr] :as req} poll member-votes]
+(defn- voting-section [req poll member-votes]
   (ui2/section-card
-   {:title (tr [:polls/vote-now])}
+   {:title [:i18n/tr :polls/vote-now]}
    (case (:poll/poll-status poll)
      :poll.status/draft
      [:wa-callout {:appearance "outlined" :variant "neutral"}
-      (tr [:polls/open-hint])]
+      [:i18n/tr :polls/open-hint]]
 
      :poll.status/open
      (vote-form req poll member-votes)
 
      :poll.status/closed
      [:wa-callout {:appearance "outlined" :variant "neutral"}
-      (tr [:polls/error-not-open])]
+      [:i18n/tr :polls/error-not-open]]
 
      nil)))
 
@@ -198,13 +199,14 @@
    [:dt label]
    [:dd value]])
 
-(defn results-section [{:keys [tr] :as req} poll]
+(defn results-section [req poll]
   (ui2/section-card
-   {:title (tr [:polls/results])}
+   {:title [:i18n/tr :polls/results]}
    [:dl {:class "poll-result-stats"}
-    (result-stat (tr [:polls/total-voters]) (poll.ui/total-voters poll))
-    (result-stat (tr [:polls/total-votes]) (poll.ui/total-votes poll))
-    (result-stat (tr [:polls/closes-at-label]) (ui2/format-date-time req :medium (:poll/closes-at poll)))]
+    (result-stat [:i18n/tr :polls/total-voters] (poll.ui/total-voters poll))
+    (result-stat [:i18n/tr :polls/total-votes] (poll.ui/total-votes poll))
+    (result-stat [:i18n/tr :polls/closes-at-label]
+                 (ui2/format-date-time req :medium (:poll/closes-at poll)))]
    (poll.ui/result-bars poll)))
 
 (defn page [{:keys [db current-member-id] :as req}]
@@ -215,7 +217,7 @@
         {::page-surface/width   :standard
          ::page-surface/toolbar (page-toolbar poll)}
         [:div {:class "wa-stack wa-gap-2xl poll-detail-page"}
-         (page-header req poll)
+         (page-header poll)
          (metadata-section req poll)
          (voting-section req poll member-votes)
          (when (or has-voted? (= :poll.status/closed (:poll/poll-status poll)))

@@ -56,10 +56,14 @@
 
 (defn- textarea [label name value attrs]
   (let [error         (:hint attrs)
+        required?     (:required attrs)
         wrapper-attrs (:wrapper-attrs attrs)
         attrs         (dissoc attrs :hint :wrapper-attrs)]
     [:div (merge {:class "poll-edit-textarea-field"} wrapper-attrs)
-     [:label {:for name} label]
+     [:label {:for name}
+      label
+      (when required?
+        [:span {:aria-hidden "true"} " *"])]
      [:textarea (merge {:id             name
                         :name           name
                         :class          "poll-edit-textarea"
@@ -71,10 +75,10 @@
        [:span {:class "wa-caption-s text-danger"}
         error])]))
 
-(defn- poll-type-select [{:keys [tr] :as req} form-state attrs]
+(defn- poll-type-select [req form-state attrs]
   (let [selected (:poll-type form-state)]
     (into
-     [:wa-select (merge {:label      (tr [:polls/type-label])
+     [:wa-select (merge {:label      [:i18n/tr :polls/type-label]
                          :name       "poll-type"
                          :value      selected
                          :required   true
@@ -82,12 +86,15 @@
                         attrs
                         (validate-select-attrs req form-state :poll-type))]
      (for [poll-type domain/poll-types]
-       (option (name poll-type) (poll.ui/poll-type-label tr poll-type) selected)))))
+       (option (name poll-type)
+               [:i18n/tr (domain/poll-type-label-key poll-type)]
+               selected)))))
 
-(defn- option-field [{:keys [tr] :as req} form-state idx option-state read-only?]
+(defn- option-field [req form-state idx option-state read-only?]
   (let [error (form/field-error form-state :options)]
     [:div {:class "poll-option-row"}
-     [:wa-input (merge {:label      (str (tr [:polls/options]) " " (inc idx))
+     [:wa-input (merge {:label      [:i18n/tr :polls/option-number
+                                     {:number (inc idx)}]
                         :value      (form/text-value (:value option-state))
                         :appearance "outlined"
                         :disabled   read-only?
@@ -101,20 +108,20 @@
        [button/Button (merge {:appearance "plain"
                               :variant    "danger"}
                              (poll.ui/action-button-attrs req ::actions/remove-option (str idx)))
-        (tr [:action/remove])])]))
+        [:i18n/tr :action/remove]])]))
 
-(defn- options-editor [{:keys [tr] :as req} form-state read-only?]
+(defn- options-editor [req form-state read-only?]
   [:div {:class "wa-stack wa-gap-s"}
    [:div {:class "poll-options-header"}
     [:h2 {:class "wa-heading-l"}
-     (tr [:polls/choices-title])]
+     [:i18n/tr :polls/choices-title]]
     (when-not read-only?
       [button/Button (merge {:appearance "outlined"}
                             (poll.ui/action-button-attrs req ::actions/add-option "poll-edit-add-option"))
-       (tr [:polls/add-option])])]
+       [:i18n/tr :polls/add-option]])]
    (when read-only?
      [:wa-callout {:appearance "outlined" :variant "neutral"}
-      (tr [:polls/options-read-only-hint])])
+      [:i18n/tr :polls/options-read-only-hint]])
    (into [:div {:class "poll-options-list"}]
          (map-indexed (fn [idx option-state]
                         (option-field req form-state idx option-state read-only?))
@@ -184,42 +191,57 @@
 (defn- create-header []
   [page-header/PageHeader {:title [:i18n/tr :polls/new-poll]}])
 
-(defn- edit-header [{:keys [tr]} poll]
+(defn- edit-header [poll]
   [page-header/PageHeader
    {:title    [:span {:class "wa-cluster wa-gap-xs wa-align-items-center"}
                (:poll/title poll)
-               (poll.ui/status-badge tr (:poll/poll-status poll))]
-    :subtitle (poll.ui/poll-type-label tr (:poll/poll-type poll))}])
+               (poll.ui/status-badge (:poll/poll-status poll))]
+    :subtitle [:i18n/tr (domain/poll-type-label-key (:poll/poll-type poll))]}])
 
-(defn- main-fields [{:keys [tr] :as req} form-state closed? choice-read-only?]
+(defn- main-fields [req form-state closed? choice-read-only?]
   (let [multiple? (= "multiple" (:poll-type form-state))
         field     (fn [field disabled?]
                     (merge {:disabled disabled?}
                            (validate-field-attrs req form-state field)))]
     [:div {:class "poll-edit-form-grid"}
-     (input (tr [:polls/poll-title-label]) "title" (:title form-state) (merge {:required true} (field :title closed?)))
-     (textarea (tr [:polls/description-label]) "description" (:description form-state) (merge {:required true
-                                                                                               :class    "poll-edit-wide"}
-                                                                                              (field :description closed?)))
+     (input [:i18n/tr :polls/poll-title-label]
+            "title"
+            (:title form-state)
+            (merge {:required true} (field :title closed?)))
+     (textarea [:i18n/tr :polls/description-label]
+               "description"
+               (:description form-state)
+               (merge {:required true
+                       :class    "poll-edit-wide"}
+                      (field :description closed?)))
      (poll-type-select req form-state {:disabled choice-read-only?})
      (when multiple?
        (list
-        (input (tr [:polls/min-choices-label]) "min-choice" (:min-choice form-state) (merge {:type     "number"
-                                                                                             :min      1
-                                                                                             :required true}
-                                                                                            (field :min-choice choice-read-only?)))
-        (input (tr [:polls/max-choices-label]) "max-choice" (:max-choice form-state) (merge {:type     "number"
-                                                                                             :min      1
-                                                                                             :required true}
-                                                                                            (field :max-choice choice-read-only?)))))
-     (input (tr [:polls/closes-at-label]) "closes-at" (:closes-at form-state) (merge {:type     "datetime-local"
-                                                                                      :required true}
-                                                                                     (field :closes-at closed?)))
+        (input [:i18n/tr :polls/min-choices-label]
+               "min-choice"
+               (:min-choice form-state)
+               (merge {:type     "number"
+                       :min      1
+                       :required true}
+                      (field :min-choice choice-read-only?)))
+        (input [:i18n/tr :polls/max-choices-label]
+               "max-choice"
+               (:max-choice form-state)
+               (merge {:type     "number"
+                       :min      1
+                       :required true}
+                      (field :max-choice choice-read-only?)))))
+     (input [:i18n/tr :polls/closes-at-label]
+            "closes-at"
+            (:closes-at form-state)
+            (merge {:type     "datetime-local"
+                    :required true}
+                   (field :closes-at closed?)))
      [:input {:type      "hidden"
               :value     (str (:autoremind? form-state))
               :data-bind "poll-edit.autoremind?"}]]))
 
-(defn- poll-form [{:keys [tr] :as req} action form-state poll]
+(defn- poll-form [req action form-state poll]
   (let [open?      (= :poll.status/open (:poll/poll-status poll))
         closed?    (= :poll.status/closed (:poll/poll-status poll))
         read-only? (or open? closed?)]
@@ -235,7 +257,7 @@
                 :data-bind "poll-edit.poll-id"}])
      (when closed?
        [:wa-callout {:appearance "outlined" :variant "danger"}
-        (tr [:polls/error-edit-closed])])
+        [:i18n/tr :polls/error-edit-closed]])
      (main-fields req form-state closed? read-only?)
      (options-editor req form-state read-only?)
      (when-let [top-error (form/field-error form-state :_top)]
@@ -261,7 +283,7 @@
         {::page-surface/width   :standard
          ::page-surface/toolbar (edit-toolbar poll)}
         [:div {:class "wa-stack wa-gap-2xl poll-edit-page"}
-         (edit-header req poll)
+         (edit-header poll)
          (poll-form req ::actions/update-poll form-state poll)]]
        (delete-dialog req poll)))
     (throw (ex-info "Poll not found" {:app/error-type :app.error.type/not-found

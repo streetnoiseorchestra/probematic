@@ -58,18 +58,12 @@
        (mapv normalize-option)
        (filterv (comp not str/blank? :value))))
 
-(defn- label [tr field]
-  (case field
-    :title (tr [:polls/poll-title-label])
-    :description (tr [:polls/description-label])
-    :closes-at (tr [:polls/closes-at-label])
-    :min-choice (tr [:polls/min-choices-label])
-    :max-choice (tr [:polls/max-choices-label])
-    :options (tr [:polls/options])
-    (name field)))
-
 (defn- required-error [tr field]
-  {:error (tr [:error/is-required] {:field (label tr field)})})
+  {:error
+   (tr [:error/is-required]
+       {:field (if-let [label-key (domain/validation-field-label-key field)]
+                 (tr [label-key])
+                 (name field))})})
 
 (defn- top-error [message]
   {:_top {:error message}})

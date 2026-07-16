@@ -156,16 +156,6 @@
              :one-day                  "1 Day"
              :three-days               "3 Days"
              :one-week                 "1 Week"}
- :poll      {:closes-at-hint         "A date and time when the poll will stop accepting responses."
-             :max-choice-hint        "The maximum number of choices a person can make."
-             :min-choice-hint        "The minimum number of choices a person can make."
-             :description-hint       "Tell people what this poll is about. Markdown is allowed."
-             :autoremind-hint        "Remind people who haven't responded yet every couple of days."
-             :autoremind?            "Auto remind?"
-             :closed-on              "Closed On"
-             :days-left              "Days Left"}
- :poll.type {:multiple-hint "People can choose multiple options."}
-
  :money-input-format-error "Enter currency amount like 42,05"
  :team                     {:add-member            "Add Member"
                             :choose-remove-members "Choose members to remove"}

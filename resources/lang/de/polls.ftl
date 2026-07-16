@@ -36,6 +36,8 @@ description-label = Beschreibung der Umfrage
 type-label = Umfragetyp
 choices-title = Auswahlmöglichkeiten
 options = Optionen
+# $number (Number) - Einsbasierte Position der Umfrageoption im Editor.
+option-number = Optionen { $number }
 add-option = Option hinzufügen
 options-read-only-hint = Sobald eine Umfrage geöffnet wurde, können ihre Auswahlmöglichkeiten nicht mehr geändert werden.
 min-choices-label = Min. Auswahl

@@ -46,8 +46,8 @@
                          :overflow    [{:label       :action/delete
                                         :data-dialog (str "open poll-remove-" poll-id)
                                         :variant     "danger"}]}
-              :heading  "Existing Poll draft"
-              :subtitle "single"
+              :heading  :polls/draft-status
+              :subtitle [:i18n/tr :polls/single-choice]
               :form-id  "poll-edit-form"
               :last-tag :wa-dialog
               :last-id  (str "poll-remove-" poll-id)}
@@ -67,7 +67,7 @@
                    support/request
                    views/page)
           node (l/select-one 'h2 view)]
-      (is (= {:text    "choices-title"
+      (is (= {:text    :polls/choices-title
               :classes #{"wa-heading-l"}}
-             {:text    (l/text node)
+             {:text    (page-shell/translation-key node)
               :classes (:class (l/attrs node))})))))

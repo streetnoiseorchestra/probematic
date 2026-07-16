@@ -23,7 +23,7 @@
                                [:i18n/tr :polls/new-poll]]]
                              :aria-label [:i18n/tr :polls/index-toolbar-label]}])
 
-(defn page [{:keys [db tr] :as req}]
+(defn page [{:keys [db] :as req}]
   (let [{:keys [running-polls past-polls]} (queries/index-page-data db)]
     (ui2/datastar-page*
      [page-surface/PageSurface
@@ -32,9 +32,9 @@
       [:div {:class "wa-stack wa-gap-l"}
        [page-header/PageHeader {:title [:i18n/tr :polls/title]}]
        [:div {:class "wa-grid wa-gap-m polls-index-columns"}
-        (poll.ui/poll-section req {:title         (tr [:polls/running])
-                                   :empty-message (tr [:polls/no-running])
+        (poll.ui/poll-section req {:title         [:i18n/tr :polls/running]
+                                   :empty-message [:i18n/tr :polls/no-running]
                                    :polls         running-polls})
-        (poll.ui/poll-section req {:title         (tr [:polls/past])
-                                   :empty-message (tr [:polls/no-past])
+        (poll.ui/poll-section req {:title         [:i18n/tr :polls/past]
+                                   :empty-message [:i18n/tr :polls/no-past]
                                    :polls         past-polls})]]])))

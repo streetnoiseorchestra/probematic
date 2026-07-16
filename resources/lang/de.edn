@@ -63,20 +63,6 @@
   :unanswered "Zukünftige Termine: Sag Bescheid!",
   :polls-open "Wir haben offene Umfragen!"},
  :my-profile "Mein Profil",
- :poll
- {:min-choice-hint
-  "Die Mindestanzahl an Entscheidungen, die eine Person treffen kann.",
-  :closes-at-hint
-  "Ein Datum und eine Uhrzeit, wann die Umfrage keine Antworten mehr annimmt.",
-  :autoremind-hint
-  "Erinnern die Personen, die noch nicht geantwortet haben, alle paar Tage daran.",
-  :days-left "Tage übrig",
-  :autoremind? "Automatische Erinnerung?",
-  :description-hint
-  "Erzählen Sie den Leuten, worum es in dieser Umfrage geht. Abschriften sind zulässig.",
-  :closed-on "Geschlossen am",
-  :max-choice-hint
-  "Die maximale Anzahl an Entscheidungen, die eine Person treffen kann."},
  :account
  {:password "Passwort",
   :password-instructions "Muss mindestens 8 Zeichen lang sein",
@@ -95,8 +81,6 @@
  :team
  {:add-member            "Mitglied hinzufügen",
   :choose-remove-members "Wähle Mitglieder zum Entfernen aus"},
- :poll.type
- {:multiple-hint "Menschen können mehrere Optionen wählen."},
  :updating "Aktualisierung…",
  :action
  {:remove "Entfernen",

@@ -28,8 +28,8 @@
                                         :data-dialog (str "open poll-open-" poll-id)}]
                          :overflow    [{:label :action/edit
                                         :value (str "/poll/" poll-id "/edit")}]}
-              :heading  "Existing Poll draft"
-              :subtitle "single"
+              :heading  :polls/draft-status
+              :subtitle [:i18n/tr :polls/single-choice]
               :form-id  nil
               :last-tag :wa-dialog
               :last-id  (str "poll-close-" poll-id)}
@@ -47,8 +47,8 @@
                          :overflow    [{:label       :polls/close-early
                                         :data-dialog (str "open poll-close-" poll-id)
                                         :variant     "danger"}]}
-              :heading  "Existing Poll open"
-              :subtitle "single"
+              :heading  :polls/open-status
+              :subtitle [:i18n/tr :polls/single-choice]
               :form-id  nil
               :last-tag :wa-dialog
               :last-id  (str "poll-close-" poll-id)}
@@ -62,8 +62,8 @@
                          :mobile      {:label :polls/title :href "/polls"}
                          :actions     []
                          :overflow    []}
-              :heading  "Existing Poll closed"
-              :subtitle "single"
+              :heading  :polls/closed-status
+              :subtitle [:i18n/tr :polls/single-choice]
               :form-id  nil
               :last-tag :wa-dialog
               :last-id  (str "poll-close-" poll-id)}
