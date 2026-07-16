@@ -410,7 +410,7 @@
     (t/format (DateTimeFormatter/ofPattern "HH:mm") time)))
 
 (defn relative-time-value
-  "Formats `value` as a relative time such as `2 days ago`."
+  "Returns a Fluent translation node for `value` relative to the current time."
   [value]
   (when value
     (humanize/from (if (inst? value) (t/date-time value) value))))
