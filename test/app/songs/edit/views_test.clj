@@ -109,7 +109,7 @@
                :overflow    [{:label       :action/delete
                               :data-dialog (str "open song-remove-" song-id)
                               :variant     "danger"}]}
-              :heading  "Watermelon Man Active"
+              :heading  :status-active
               :subtitle nil
               :form-id  "song-edit-form"
               :last-tag :wa-dialog

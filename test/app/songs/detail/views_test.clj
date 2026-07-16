@@ -126,13 +126,16 @@
                       :song/total-plays         22
                       :song/total-performances  7
                       :song/total-rehearsals    15}
-          summary    (views/song-summary request song)
+          summary    (views/song-summary song)
           summary    (l/attrs summary)
           background (views/background-section request song)
           stats      (views/play-stats-section request song)]
       (testing "The header identifies the active song and its place in the repertoire."
-        (is (= "Watermelon Man Active"
-               (l/text (:title summary)))))
+        (let [title (:title summary)]
+          (is (= {:title  "Watermelon Man"
+                  :status :status-active}
+                 {:title  (nth title 2)
+                  :status (page-shell/translation-key title)}))))
       (testing "The background section shows the song's credits, notes, and lyrics."
         (is (= {"# Solos"          "Alto"
                 "Composition By"   "Herbie Hancock"
@@ -224,10 +227,10 @@
           add-button  (l/select-one '.songs-detail-sheet-add view)
           empty-state (l/select-one '.songs-detail-sheet-empty-state view)]
       (testing "The section header and empty state both offer the sheet-music picker."
-        (is (= {:labels  ["Add" "Add"]
+        (is (= {:labels  [:action/add :action/add]
                 :actions [:app.file-browser.actions/open-picker
                           :app.file-browser.actions/open-picker]}
-               {:labels  [(l/text add-button) (l/text empty-state)]
+               {:labels  (mapv page-shell/translation-key [add-button empty-state])
                 :actions (mapv #(-> (l/attrs %) :data-on:click action-keyword)
                                [add-button empty-state])}))))))
 

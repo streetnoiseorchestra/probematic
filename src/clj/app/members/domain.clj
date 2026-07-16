@@ -43,10 +43,25 @@ END:VCARD"
   ;;
   )
 (def username-regex #"^(?=[a-zA-Z0-9_.@\-]{3,20}$)(?!.*[_.]{2})[^_.].*[^_.]$")
+
+(def member-attribute-label-key
+  {:member/active?     :members/active-label
+   :member/email       :members/email
+   :member/keycloak-id :members/sno-uuid
+   :member/name        :members/name
+   :member/nick        :members/nickname
+   :member/phone       :members/phone
+   :member/section     :members/section
+   :member/username    :members/username})
+
+(def sno-id-status-label-key
+  {true  :members/sno-id-enabled
+   false :members/sno-id-disabled})
+
 (defn validate-username [{:keys [tr]} username]
   (if (re-matches username-regex username)
     username
-    (throw (ex-info "Validation error" {:validation/error (tr [:member/username-validation])}))))
+    (throw (ex-info "Validation error" {:validation/error (tr [:error/member-username-validation])}))))
 
 (defn clean-email [email]
   (str/trim (str/lower-case email)))

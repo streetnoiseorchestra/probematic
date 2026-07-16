@@ -19,6 +19,7 @@ show-hidden-breadcrumb-items =
     }
 next = Weiter
 remove = Entfernen
+resend-invite = Einladung erneut senden
 reorder = Neu anordnen
 respond = Antworten
 save = Speichern

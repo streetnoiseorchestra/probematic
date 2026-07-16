@@ -50,11 +50,11 @@
                  (markdown/render markdown-text)
                  {:class "songs-detail-wide"})))
 
-(defn song-summary [{:keys [tr]} {:song/keys [active? title]}]
+(defn song-summary [{:song/keys [active? title]}]
   [page-header/PageHeader
    {:title [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-detail-title"}
             title
-            (ui2/active-badge tr active?)]}])
+            (ui2/active-badge active?)]}])
 
 (defn- detail-toolbar [{:song/keys [title] :as song}]
   [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
@@ -206,7 +206,7 @@
        :class         "songs-detail-sheet-add"
        :data-on:click (open-sheet-music-picker-action req song-id name root-dir current-dir)}
    [ico/Icon {::ico/library :snoico ::ico/name :circle-plus-solid}]
-   ((:tr req) [:action/add])])
+   [:i18n/tr :action/add]])
 
 (defn- sheet-section [req song-id root-dir current-dir section]
   (let [tr (:tr req)]
@@ -225,7 +225,7 @@
              :class         "songs-detail-sheet-empty-state"
              :data-on:click (open-sheet-music-picker-action req song-id (:section/name section) root-dir current-dir)}
          [ico/Icon {::ico/library :snoico ::ico/name :circle-plus-solid}]
-         [:span ((:tr req) [:action/add])]])]]))
+         [:span [:i18n/tr :action/add]]])]]))
 
 (defn sheet-music-content
   ([req song-id root-dir current-dir sections picker]
@@ -310,7 +310,7 @@ window.DiscourseEmbed = %s;
       (ui2/datastar-page*
        [page-surface/PageSurface {::page-surface/toolbar (detail-toolbar song)}
         [:div {:class "wa-stack wa-gap-2xl"}
-         (song-summary req song)
+         (song-summary song)
          (background-section req song)
          (play-stats-section req song)
          (sheet-music-section req song)

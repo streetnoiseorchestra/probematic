@@ -12,5 +12,13 @@ gig-rehearsal-leaders-same = Probeleitung 2 must be different from Probeleitung 
 gig-set-time-before-call-time = Set time must be at or after call time.
 # $field (String) - Localized label of the required field.
 is-required = { $field } is required.
+member-phone-format = should start with + and the country code
+member-section-invalid = Please choose a valid section.
+member-unique-email = A member already has that email address
+member-unique-nick = A member already has that nick
+member-unique-phone = A member already has that phone number
+member-unique-username = A member already has that username
+member-username-format = should have only letters, numbers and _.@-'
+member-username-validation = Username can only have A-Z, 0-9 _, ., -, or @. No spaces.
 not-allowed = You are not allowed to do that.
 not-found-title = Not found

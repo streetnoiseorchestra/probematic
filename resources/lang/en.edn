@@ -4,10 +4,6 @@
  :total               "Total"
  :actions             "Actions"
  :Contact-Information "Contact Information"
- :Email               "E-Mail"
- :Phone               "Phone"
- :Active              "Active"
- :Inactive            "Inactive"
  :my-profile          "My Profile"
  :identity-mismatch   {:page-title      "SNOrga account mismatch"
                        :eyebrow         "Account mismatch"
@@ -23,45 +19,14 @@
                        :upcoming       "All Upcoming Gigs"
                        :polls-open     "We have open polls!"
                        :you-owe        "You owe the band some money!"}
- :member              {:name                           "Name"
-                       :nick                           "Nickname"
-                       :username                       "Username"
-                       :member                         "Member"
-                       :phone                          "Phone"
-                       :keycloak-id                    "SNO UUID"
-                       :email                          "E-Mail"
-                       :active?                        "Active?"
-                       :gigs-attended                  "Gigs Attended"
-                       :probes-attended                "Proben Attended"
-                       :new-member                     "New Member"
-                       :phone-validation               "Phone number starting with +country code. Only spaces, dashes, and numbers"
-                       :username-validation            "Username can only have A-Z, 0-9 _, ., -, or @. No spaces."
-                       :create-sno-id                  "Create SNO ID"
-                       :create-sno-id-description      "An invitation to set their password will be e-mailed to the person."
-                       :open-invitations               "Open Invitations"
-                       :open-invitations-subtitle      "Pending invitations can be resent or deleted."
-                       :sno-id-enabled-disabled        "SNO ID Enabled/Disabled"
-                       :sno-id-enable-disabled-tooltip "When disabled the user cannot login to any SNO systems."
-                       :sno-id-enabled                 "Enabled"
-                       :sno-id-disabled                "Disabled"
-                       :filter-all                     "All Members"
-                       :filter-active                  "Active Members"
-                       :filter-inactive                "Inactive Members"
-                       :filter-sno-id-disabled         "SNO ID Disabled"
-                       :browse-members                 "Browse Members"
-                       :browse-empty                   "No members found."
-                       :browse-empty-subtitle          "Try a different search phrase or filter."}
+ :member              {:member                 "Member"
+                       :gigs-attended          "Gigs Attended"
+                       :probes-attended        "Proben Attended"
+                       :new-member             "New Member"
+                       :phone-validation       "Phone number starting with +country code. Only spaces, dashes, and numbers"
+                       :filter-sno-id-disabled "SNO ID Disabled"
+                       :browse-members         "Browse Members"}
 
- :travel-discounts {:discount-type-name "Discount Type"
-                    :expiry-date        "Expires On"
-                    :expires            "Expires:"
-                    :title              "Travel Discounts"
-                    :subtitle           "Add your ÖBB travel discounts"
-                    :none               "No travel discounts"
-                    :add-discount       "Add a ÖBB discount"}
- :oebb-discount    "ÖBB Discount"
-
- :sno-id     "SNO ID"
  :play-log {:diagram-legend "Legend"}
 
  :gig              {:comment-placeholder "Say your piece!"
@@ -90,20 +55,13 @@
                                   :band-settings "Band Settings"
                                   :notifications "Notifications"
                                   :logout        "Logout"}
- :outstanding-balance            "Outstanding Balance"
  :why                            "Why?"
- :no-transactions-yet            "No transactions yet"
- :please-pay-to-band             "Please send %1 to the band account."
- :band-owes-you                  "The band owes you %1! Please contact the treasurer."
- :or-scan-qr-code                "Or scan this QR Code with your banking app"
  :instruments                    "Instruments"
  :none                           "None"
- :section                        "Section"
  :section-none                   "No Section"
  :selected                       "selected"
  :choose-calendar-app            "Choose Your Calendar App"
- :action                         {:add                          "Add"
-                                  :add-to-calendar              "Add To Calendar"
+ :action                         {:add-to-calendar              "Add To Calendar"
                                   :ignore                       "Ignore"
                                   :confirm-delete-song          "Are you sure you want to delete the song %1?"
                                   :continue                     "Continue"
@@ -111,19 +69,15 @@
                                   :copy-link                    "Copy Link"
                                   :create                       "Create"
                                   :create-gig                   "Create Gig"
-                                  :delete                       "Delete"
                                   :done                         "Done"
                                   :mark-as                      "Mark As"
                                   :next                         "Next"
                                   :quick-edit                   "Quick Edit"
                                   :remove                       "Remove"
                                   :reset                        "Reset"
-                                  :save                         "Save"
                                   :select-all                   "Select All"
                                   :send                         "Send"
-                                  :subscribe                    "Subscribe"
-                                  :update                       "Update"
-                                  :resend-invite                "Resend Invite"}
+                                  :subscribe                    "Subscribe"}
  :song                           {:lyrics                      "Lyrics"
                                   :search                      "Search Songs"
                                   :search-empty                "No songs found"
@@ -161,14 +115,7 @@
                                   :notify                 "Click to notify Casey"
                                   :unique-unknown         "Something already has that"
                                   :unknown-form-error     "Something went wrong! It's not your fault, send Casey a screenshot of this error! error code:"
-                                  :member-username-format "should have only letters, numbers and _.@-'"
-                                  :member-phone-format    "should start with + and the country code"
-                                  :member-unique-username "A member already has that username"
-                                  :member-unique-email    "A member already has that email address"
-                                  :member-unique-nick     "A member already has that nick"
-                                  :member-unique-phone    "A member already has that phone number"
-                                  :member-section-invalid        "Please choose a valid section."
-                                  :phone-number-invalid          "Phone number is not valid"}
+                                  :phone-number-invalid   "Phone number is not valid"}
  :updating                       "Updating…"
  :email-subject                  {:gig-created      "New Gig: %1"
                                   :gig-updated      "Gig Edit: %1"
@@ -201,19 +148,13 @@
                                   :body-log-plays               "Please tell SNOrga what we played at the Probe on %1 *and* who the Probeleitungen for next week are! It only takes 1 minute."
                                   :cta-log-plays                "Click here!"}
 
- :account   {:create-sno-id-title           "Create SNO ID"
-             :create-sno-id-subtitle        "You're only a few steps away from your new SNO ID!"
-             :password-instructions         "Must be at least 8 characters"
+ :account   {:password-instructions         "Must be at least 8 characters"
              :password-confirm-instructions "Both passwords must match"
              :password                      "Password"
-             :password-confirm              "Confirm password"
-             :create-account                "Create account"
-             :account-created-title         "Your SNO ID was created!"
-             :account-created-subtitle      "Welcome :) Please login using your new SNO ID."}
+             :password-confirm              "Confirm password"}
  :password  {:commonly-used  "The password is a known hacked password. Please choose a more secure password."
              :too-short      "The password is too short. It must be at least 8 characters."
              :does-not-match "The passwords do not match."}
- :login     "Login"
  :reminders {:remind-me-in             "Remind me in"
              :reminded-all-at          "Reminded everyone at:"
              :one-day                  "1 Day"
@@ -229,16 +170,7 @@
              :days-left              "Days Left"}
  :poll.type {:multiple-hint "People can choose multiple options."}
 
- :ledger                   {:add-transaction "Add Transaction"
-                            :add-payment     "Add Payment"
-                            :add-debt        "Add Debt"}
- :ledger.entry             {:amount                   "Amount"
-                            :tx-date                  "Transaction Date"
-                            :description              "Reference"
-                            :direction-debit          "%1 owes the band"
-                            :direction-credit         "The band owes %1"
-                            :payment-direction-debit  "The band paid %1"
-                            :payment-direction-credit "%1 paid the band"}
+ :ledger                   {:add-transaction "Add Transaction"}
  :money-input-format-error "Enter currency amount like 42,05"
  :team                     {:add-member            "Add Member"
                             :choose-remove-members "Choose members to remove"}

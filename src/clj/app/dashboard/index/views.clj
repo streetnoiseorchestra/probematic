@@ -251,23 +251,23 @@
      [card/Card {:class "dashboard-ledger-card"}
       [:div {:class "dashboard-ledger-grid"}
        [:div {:class "wa-stack wa-gap-xs"}
-        [:span {:class "wa-caption-s"} (tr [:outstanding-balance])]
+        [:span {:class "wa-caption-s"} [:i18n/tr :ledger/outstanding-balance]]
         [:div {:class "dashboard-ledger-balance text-danger"}
          (currency-format balance)]
         [:a {:href (urls/link-member-money owner)}
          (tr [:why])]]
        [:div {:class "wa-stack wa-gap-s"}
-        [:p (tr [:please-pay-to-band] [(currency-format balance)])]
+        [:p [:i18n/tr :ledger/please-pay-to-band {:amount (currency-format balance)}]]
         (when (and account-name iban bic)
           [:div {:class "wa-stack wa-gap-3xs"}
            [:span "Name: " [:strong account-name]]
            [:span "IBAN: " [:strong (iban-format iban)]]
            [:span "BIC: " [:strong bic]]
-           [:span (tr [:or-scan-qr-code])]])]
+           [:span [:i18n/tr :ledger/or-scan-qr-code]]])]
        (when-let [qr-value (payment-qr-value req balance entries)]
          [:div {:class "dashboard-ledger-qr"}
           [:wa-qr-code {:value qr-value
-                        :label (tr [:or-scan-qr-code])}]])]])))
+                        :label [:i18n/tr :ledger/or-scan-qr-code]}]])]])))
 
 (def ^:private activity-fixtures
   [{:icon :calendar

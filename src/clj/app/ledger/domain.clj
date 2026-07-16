@@ -9,6 +9,17 @@
 
 (def entry-meta-types #{:ledger.entry.meta.type/insurance})
 
+(def entry-attribute-label-key
+  {:ledger.entry/amount      :ledger/amount
+   :ledger.entry/description :ledger/reference
+   :ledger.entry/tx-date     :ledger/transaction-date})
+
+(def entry-direction-label-key
+  {["debt" "credit"]    :ledger/direction-credit
+   ["debt" "debit"]     :ledger/direction-debit
+   ["payment" "credit"] :ledger/payment-direction-credit
+   ["payment" "debit"]  :ledger/payment-direction-debit})
+
 (def LedgerEntryMetadataEntity
   [:map {:name :app.entity/ledger.entry.meta}
    [:ledger.entry.meta/meta-type (s/enum-from entry-meta-types)]])

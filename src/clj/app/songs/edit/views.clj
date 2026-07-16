@@ -130,11 +130,11 @@
                                ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
                                :aria-label                    [:i18n/tr :repertoire/edit-toolbar-label]}]))
 
-(defn- edit-header [{:keys [tr]} {:song/keys [active? title]}]
+(defn- edit-header [{:song/keys [active? title]}]
   [page-header/PageHeader
    {:title [:span {:class "wa-cluster wa-gap-xs wa-align-items-center songs-edit-title"}
             title
-            (ui2/active-badge tr active?)]}])
+            (ui2/active-badge active?)]}])
 
 (defn create-header [_req]
   [page-header/PageHeader {:title [:i18n/tr :repertoire/add-song]}])
@@ -254,7 +254,7 @@
         {::page-surface/width   :standard
          ::page-surface/toolbar (edit-toolbar song)}
         [:div {:class "wa-stack wa-gap-2xl"}
-         (edit-header req song)
+         (edit-header song)
          (edit-form req song)]]
        (song-remove-dialog req song))
       (throw (ex-info "Song not found" {:app/error-type :app.error.type/not-found

@@ -59,11 +59,12 @@
 
 (defn tr [path & [args]]
   (case path
-    [:member/name] "Name"
-    [:member/nick] "Nick"
-    [:Email] "Email"
-    [:Phone] "Phone"
-    [:section] "Section"
+    [:members/name] "Name"
+    [:members/nickname] "Nick"
+    [:members/email] "Email"
+    [:members/phone] "Phone"
+    [:members/section] "Section"
+    [:members/username] "Username"
     [:error/is-required] (format "%s is required." (:field args))
     [:error/member-phone-format] "Phone format is invalid."
     [:error/member-unique-email] "A member already has that email address"

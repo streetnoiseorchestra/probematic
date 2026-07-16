@@ -340,7 +340,7 @@
      [:td]
      [:td {:align "right"} (tr [:total])]
      [:td {:align "right"} amount]]]
-   [:p (tr [:please-pay-to-band] [amount])]
+   [:p (tr [:ledger/please-pay-to-band] {:amount amount})]
    [:p [:strong (tr [:insurance/payment-email-bank-data])]]
    [:p
     account-name [:br]
@@ -398,7 +398,7 @@ Versicherungsteam StreetNoise Orchestra
                             (map (fn [{:keys [value instrument-summary cost]}]
                                    (str "- " instrument-summary " (" (tr [:insurance/value]) ": " value ")"  " - " cost))
                                  private-instruments))
-     :please-pay (tr [:please-pay-to-band] [amount])
+     :please-pay (tr [:ledger/please-pay-to-band] {:amount amount})
      :bank-data (tr [:insurance/payment-email-bank-data])
      :account-name account-name
      :iban iban

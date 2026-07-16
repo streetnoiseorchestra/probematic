@@ -1,5 +1,4 @@
-{:please-pay-to-band "Bitte überweise %1 auf das Bandkonto.",
- :unknown "unbekannt",
+{:unknown "unbekannt",
  :actions "Aktionen"
  :identity-mismatch
  {:page-title "SNOrga-Kontoproblem",
@@ -12,9 +11,7 @@
   :restart-login "Login neu starten",
   :log-out "Abmelden"},
  :ledger
- {:add-transaction "Zahlung hinzufügen",
-  :add-payment "Zahlung hinzufügen",
-  :add-debt "Schulden hinzufügen"},
+ {:add-transaction "Zahlung hinzufügen"},
  :email
  {:gig-edit-type "BEARBEITET",
   :gig-info-page "Bring mich zur Gig-Info-Seite",
@@ -58,21 +55,10 @@
   :too-short
   "Das Passwort ist zu kurz. Es muss mindestens 8 Zeichen lang sein.",
   :does-not-match "Die Passwörter stimmen nicht überein."},
- :outstanding-balance "Offener Saldo",
  :why "Warum?",
- :travel-discounts
- {:discount-type-name "Rabatttyp",
-  :expiry-date "Läuft aus am",
-  :expires "Läuft aus:",
-  :title "Reiserabatte",
-  :subtitle "Fügen Sie Ihre ÖBB-Reiserabatte hinzu",
-  :none "Keine Reiseermäßigungen",
-  :add-discount "ÖBB-Rabatt hinzufügen"},
  :money-input-format-error
  "Gib den Währungsbetrag ein, zum Beispiel 42,05",
  :section-none "Kein Register",
- :Email "E-Mail",
- :section "Register",
  :choose-calendar-app "Wählen Sie Ihre Kalender-App",
  :dashboard
  {:welcome "Willkommen %1!",
@@ -80,12 +66,7 @@
   :unanswered "Zukünftige Termine: Sag Bescheid!",
   :you-owe "Du schuldest der Band etwas Geld!",
   :polls-open "Wir haben offene Umfragen!"},
- :oebb-discount "ÖBB-Rabatt",
  :my-profile "Mein Profil",
- :or-scan-qr-code "Oder scanne diesen QR-Code mit deiner Banking-App",
- :Active "Aktiv",
- :Inactive "Inaktiv",
- :login "Anmelden",
  :poll
  {:min-choice-hint
   "Die Mindestanzahl an Entscheidungen, die eine Person treffen kann.",
@@ -100,62 +81,26 @@
   :closed-on "Geschlossen am",
   :max-choice-hint
   "Die maximale Anzahl an Entscheidungen, die eine Person treffen kann."},
- :no-transactions-yet "Noch keine Transaktionen",
  :account
- {:account-created-title "Deine SNO-ID wurde erstellt!",
-  :create-account "Konto erstellen",
-  :password "Passwort",
-  :create-sno-id-subtitle
-  "Du bist nur noch wenige Schritte von deiner neuen SNO-ID entfernt!",
+ {:password "Passwort",
   :password-instructions "Muss mindestens 8 Zeichen lang sein",
-  :create-sno-id-title "SNO ID erstellen",
   :password-confirm-instructions
   "Beide Passwörter müssen übereinstimmen",
-  :password-confirm "Kennwort bestätigen",
-  :account-created-subtitle
-  "Herzlich willkommen! :) Bitte meldest du dich mit deiner neuen SNO-ID an."},
+  :password-confirm "Kennwort bestätigen"},
  :member
- {:active? "Aktiv?",
-  :email "E-Mail",
-  :nick "Spitzname",
-  :filter-sno-id-disabled "SNO-ID deaktiviert",
-  :open-invitations "Einladungen öffnen",
-  :open-invitations-subtitle "Ausstehende Einladungen können erneut gesendet oder gelöscht werden.",
+ {:filter-sno-id-disabled "SNO-ID deaktiviert",
   :gigs-attended "Gigs besucht",
-  :phone "Telefon",
-  :name "Name",
-  :sno-id-enabled "Aktiviert",
-  :username "Nutzername",
-  :filter-inactive "Inaktive Mitglieder",
-  :filter-all "Alle Mitglieder",
-  :filter-active "Aktive Mitglieder",
-  :keycloak-id "SNO UUID",
-  :sno-id-disabled "Deaktiviert",
-  :create-sno-id "SNO ID erstellen",
-  :sno-id-enable-disabled-tooltip
-  "Wenn die Option deaktiviert ist, kann sich der Benutzer nicht bei SNO-Systemen anmelden.",
   :phone-validation
   "Telefonnummer, die mit +Landesvorwahl beginnt. Nur Leerzeichen, Bindestriche und Zahlen",
-  :username-validation
-  "Der Benutzername darf nur A–Z, 0–9 _, ., - oder @ enthalten. Kein Leerzeichen.",
-  :create-sno-id-description
-  "Eine Einladung zum Erstellen einer SNO-ID wird an die Person per E-Mail gesendet, damit sie ein Konto erstellen und auf alle SNO-Online-Systeme zugreifen kann.",
   :probes-attended "Proben besuchtaProben Attended",
-  :new-member "Neues Mitglied",
-  :browse-empty "Keine Mitglieder gefunden.",
-  :browse-empty-subtitle "Versuche einen anderen Suchbegriff oder Filter.",
-  :sno-id-enabled-disabled "SNO-ID aktiviert/deaktiviert"},
+  :new-member "Neues Mitglied"},
  :instruments "Instrumente",
  :total "Gesamt",
- :Phone "Telefon",
  :team
  {:add-member            "Mitglied hinzufügen",
   :choose-remove-members "Wähle Mitglieder zum Entfernen aus"},
  :poll.type
  {:multiple-hint "Menschen können mehrere Optionen wählen."},
- :sno-id "SNO ID",
- :band-owes-you
- "Die Band schuldet dir %1! Bitte kontaktiere den Kassier.",
  :updating "Aktualisierung…",
  :action
  {:remove "Entfernen",
@@ -164,9 +109,6 @@
   :create "Erstellen",
   :create-gig "Gig erstellen",
   :copy-link-confirm "Kopiert",
-  :update "Aktualisieren",
-  :delete "Löschen",
-  :save "Speichern",
   :copy-link "Link kopieren",
   :reset "Zurücksetzen",
   :ignore "Ignorieren",
@@ -176,7 +118,6 @@
   :next "Nächste",
   :send "Senden",
   :add-to-calendar "Zum Kalender hinzufügen",
-  :add "Hinzufügen",
   :subscribe "Abonnieren",
   :confirm-delete-song
   "Sind Sie sicher, dass Sie das Lied %1 löschen möchten?"},
@@ -187,18 +128,13 @@
   :unauthorized-message
   "Ihre Identität ist dem System unbekannt. Wahrscheinlich ist etwas schief gelaufen. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
   :unknown-title "Ein Fehler ist aufgetreten",
-  :member-unique-email "Ein Mitglied hat diese E-Mail-Adresse bereits",
-  :member-unique-nick "Ein Mitglied hat bereits diesen Spitznamen",
   :unauthorized-title "Authentifizierung fehlgeschlagen",
   :unknown-message
   "Tut mir leid! Es ist nicht deine Schuld. Bitte kontaktieren Sie Casey und teilen Sie ihm diesen Fehlercode mit:",
   :not-found-message
   "Das, wonach du gesucht hast, wurde nicht gefunden. Wenn du denkst, dass es existieren sollte, bitte kontaktiere Casey und teile ihm diesen Fehlercode mit:",
-  :member-unique-phone "Ein Mitglied hat diese Telefonnummer bereits",
-  :member-section-invalid "Bitte wähle ein gültiges Register aus.",
   :notify "Click to notify Casey",
-  :member-unique-username
-  "Ein Mitglied hat bereits diesen Benutzernamen"}
+  }
  :reminders
  {:remind-me-in "Erinnere mich in",
   :reminded-all-at "Alle erinnert um:",
@@ -206,14 +142,6 @@
   :three-days "3 Tage",
   :one-week "1 Woche"},
  :missing ":de missing text",
- :ledger.entry
- {:amount "Betrag",
-  :tx-date "Transaktionsdatum",
-  :description "Referenz",
-  :direction-debit "%1 schuldet der Band",
-  :direction-credit "Die Band schuldet %1",
-  :payment-direction-debit "Die Band hat %1 bezahlt",
-  :payment-direction-credit "%1 hat die Band bezahlt"},
  :gigs
  {:view-archive "Gig-Archiv anzeigen",
   :archive "Gig-Archiv"},

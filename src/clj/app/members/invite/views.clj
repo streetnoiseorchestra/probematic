@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.form :as form]
+   [app.members.domain :as members.domain]
    [app.members.invite.actions :as actions]
    [app.queries :as q]
    [app.ui2 :as ui2]
@@ -23,28 +24,38 @@
    :create-sno-id true
    :error         {}})
 
+(defn- required-marker []
+  [:span {:aria-hidden "true"} " *"])
+
+(defn- field-label [label required?]
+  [:span {:slot "label"}
+   label
+   (when required?
+     (required-marker))])
+
 (defn- form-input [form-state signal label attrs]
   (let [field (form/signal-field signal)
         error (form/field-error form-state :error field)]
-    [:wa-input (merge {:label        label
-                       :appearance   "outlined"
+    [:wa-input (merge {:appearance   "outlined"
                        :size         "m"
                        :value        (get form-state field "")
                        :hint         error
                        :data-invalid (when error "true")
                        :data-bind    signal}
-                      attrs)]))
+                      attrs)
+     (field-label label (:required attrs))]))
 
-(defn- section-select [{:keys [tr]} form-state sections]
+(defn- section-select [form-state sections]
   (let [error (form/field-error form-state :error :section-name)]
     (into
-     [:wa-select {:label          (tr [:section])
-                  :appearance     "outlined"
+     [:wa-select {:appearance     "outlined"
                   :size           "m"
                   :value          (:section-name form-state)
+                  :required       true
                   :hint           error
                   :data-invalid   (when error "true")
                   :data-bind      "member-invite.section-name"}
+      (field-label [:i18n/tr (members.domain/member-attribute-label-key :member/section)] true)
       [:wa-option {:value ""} " - "]]
      (for [{:section/keys [name]} sections]
        [:wa-option {:value name} name]))))
@@ -59,7 +70,7 @@
    (when description
      [:span {:class "wa-caption-s"} description])])
 
-(defn- invite-form [{:keys [tr] :as req} form-state sections]
+(defn- invite-form [req form-state sections]
   [:form {:id             "member-invite-form"
           :data-id        "member-invite"
           :data-action    (d*/act req ::actions/submit-member-invite)
@@ -68,18 +79,18 @@
     (when-let [top-error (form/field-error form-state :error :_top)]
       [:wa-callout {:appearance "outlined" :variant "danger"}
        top-error])
-    (form-input form-state "member-invite.name" (tr [:member/name]) {:required true :autofocus true})
-    (form-input form-state "member-invite.nick" (tr [:member/nick]) {})
-    (form-input form-state "member-invite.email" (tr [:Email]) {:type "email" :required true})
-    (form-input form-state "member-invite.username" (tr [:member/username]) {:required true})
-    (form-input form-state "member-invite.phone" (tr [:Phone]) {:type "tel" :required true})
-    (section-select req form-state sections)
+    (form-input form-state "member-invite.name" [:i18n/tr (members.domain/member-attribute-label-key :member/name)] {:required true :autofocus true})
+    (form-input form-state "member-invite.nick" [:i18n/tr (members.domain/member-attribute-label-key :member/nick)] {})
+    (form-input form-state "member-invite.email" [:i18n/tr (members.domain/member-attribute-label-key :member/email)] {:type "email" :required true})
+    (form-input form-state "member-invite.username" [:i18n/tr (members.domain/member-attribute-label-key :member/username)] {:required true})
+    (form-input form-state "member-invite.phone" [:i18n/tr (members.domain/member-attribute-label-key :member/phone)] {:type "tel" :required true})
+    (section-select form-state sections)
     (toggle-field "member-invite.create-sno-id"
-                  (tr [:member/create-sno-id])
-                  (tr [:member/create-sno-id-description])
+                  [:i18n/tr :members/create-sno-id]
+                  [:i18n/tr :members/create-sno-id-description]
                   (:create-sno-id form-state))
     (toggle-field "member-invite.active"
-                  (tr [:Active])
+                  [:i18n/tr :status-active]
                   nil
                   (:active form-state))]])
 

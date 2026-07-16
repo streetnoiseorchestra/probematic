@@ -20,9 +20,9 @@
    (when (some? value)
      [:span {:class "songs-index-stat-value"} value])])
 
-(defn- song-status-badge [req active? class]
+(defn- song-status-badge [active? class]
   [:span {:class class}
-   (ui2/active-badge (:tr req) active?)])
+   (ui2/active-badge active?)])
 
 (defn song-row [{:keys [tr] :as req} {:song/keys [active? last-played-on score title total-plays]
                                       :as        song}]
@@ -32,7 +32,7 @@
      [:a {:href  (urls/link-song song)
           :class "songs-index-song-title"}
       [:span title]]
-     (song-status-badge req active? "songs-index-status songs-index-status--mobile")]
+     (song-status-badge active? "songs-index-status songs-index-status--mobile")]
     [:div {:class "songs-index-row-meta"}
      (song-stat {:icon  "hash"
                  :label (tr [:song/total-plays])
@@ -40,7 +40,7 @@
      (song-stat {:icon  "star"
                  :label (tr [:song/score])
                  :value score})
-     (song-status-badge req active? "songs-index-status songs-index-status--desktop")]]
+     (song-status-badge active? "songs-index-status songs-index-status--desktop")]]
    [:a {:class       "wa-link-plain"
         :href        (urls/link-song song)
         :aria-hidden "true"

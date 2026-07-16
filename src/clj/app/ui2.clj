@@ -34,24 +34,13 @@
   (str prefix "-remove-" (safe-dom-id ent-id)))
 
 (defn active-badge
-  "Renders an active or inactive badge.
-
-  The one-arity form returns translation data for later resolution.
-  The two-arity form keeps legacy direct translation during migration."
-  ([active?]
-   [:wa-badge (cond-> {:appearance "outlined"
-                       :pill       true}
-                active?       (assoc :variant "success")
-                (not active?) (assoc :variant "neutral"))
-    [:i18n/tr (if active? :status-active :status-inactive)]])
-  ([tr active?]
-   [:wa-badge (cond-> {:appearance "outlined"
-                       :pill       true}
-                active?       (assoc :variant "success")
-                (not active?) (assoc :variant "neutral"))
-    (if active?
-      (tr [:status-active :Active])
-      (tr [:status-inactive :Inactive]))]))
+  "Renders an active or inactive badge for `active?`."
+  [active?]
+  [:wa-badge (cond-> {:appearance "outlined"
+                      :pill       true}
+               active?       (assoc :variant "success")
+               (not active?) (assoc :variant "neutral"))
+   [:i18n/tr (if active? :status-active :status-inactive)]])
 
 (defn cs
   "Joins truthy class names with spaces.

@@ -80,7 +80,7 @@
 (defn- phone-error [tr phone]
   (cond
     (str/blank? phone)
-    (required-error tr (tr [:Phone]))
+    (required-error tr (tr [(members.domain/member-attribute-label-key :member/phone)]))
 
     (not (members.domain/phone-valid? phone))
     {:error (tr [:error/member-phone-format])}))
@@ -89,7 +89,7 @@
   (when admin?
     (merge
      (when (str/blank? username)
-       {:username (required-error tr (tr [:member/username]))})
+       {:username (required-error tr (tr [(members.domain/member-attribute-label-key :member/username)]))})
      (when (and (seq username)
                 (not (re-matches members.domain/username-regex username)))
        {:username {:error (tr [:error/member-username-format])}})
@@ -103,15 +103,15 @@
 (defn- validation-errors [{:keys [db tr member-ref admin?] :as ctx} {:keys [name nick email phone section-name] :as contact}]
   (merge
    (when (str/blank? name)
-     {:name (required-error tr (tr [:member/name]))})
+     {:name (required-error tr (tr [(members.domain/member-attribute-label-key :member/name)]))})
    (when (str/blank? nick)
-     {:nick (required-error tr (tr [:member/nick]))})
+     {:nick (required-error tr (tr [(members.domain/member-attribute-label-key :member/nick)]))})
    (when (str/blank? email)
-     {:email (required-error tr (tr [:Email]))})
+     {:email (required-error tr (tr [(members.domain/member-attribute-label-key :member/email)]))})
    (when-let [error (phone-error tr phone)]
      {:phone error})
    (when (str/blank? section-name)
-     {:section-name (required-error tr (tr [:section]))})
+     {:section-name (required-error tr (tr [(members.domain/member-attribute-label-key :member/section)]))})
    (when (and (seq section-name) (not (section-exists? db section-name)))
      {:section-name {:error (tr [:error/member-section-invalid])}})
    (duplicate-errors db tr member-ref contact)

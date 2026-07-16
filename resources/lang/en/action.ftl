@@ -19,6 +19,7 @@ show-hidden-breadcrumb-items =
     }
 next = Next
 remove = Remove
+resend-invite = Resend Invite
 reorder = Reorder
 respond = Respond
 save = Save

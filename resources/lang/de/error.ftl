@@ -12,5 +12,13 @@ gig-rehearsal-leaders-same = Probeleitung 2 muss sich von Probeleitung 1 untersc
 gig-set-time-before-call-time = Die Auftrittszeit muss gleich oder nach dem Beginn sein.
 # $field (String) - Lokalisierte Bezeichnung des erforderlichen Feldes.
 is-required = { $field } ist erforderlich.
+member-phone-format = Beginne mit + und der Ländervorwahl.
+member-section-invalid = Bitte wähle ein gültiges Register aus.
+member-unique-email = Ein Mitglied hat diese E-Mail-Adresse bereits
+member-unique-nick = Ein Mitglied hat bereits diesen Spitznamen
+member-unique-phone = Ein Mitglied hat diese Telefonnummer bereits
+member-unique-username = Ein Mitglied hat bereits diesen Benutzernamen
+member-username-format = Verwende nur Buchstaben, Zahlen und _ . @ - '.
+member-username-validation = Der Benutzername darf nur A–Z, 0–9 _, ., - oder @ enthalten. Kein Leerzeichen.
 not-allowed = Du darfst das nicht tun.
 not-found-title = Nicht gefunden

@@ -1,6 +1,7 @@
 (ns app.members.index.views
   (:require
    [app.datastar :as d*]
+   [app.members.domain :as members.domain]
    [app.members.index.actions :as actions]
    [app.members.queries :as queries]
    [app.members.ui :as members.ui]
@@ -22,21 +23,12 @@
 (defn- member-section-name [{:member/keys [section]}]
   (or (:section/name section) "—"))
 
-(defn- status-badge [{:keys [tr]} active?]
-  [:wa-badge (cond-> {:appearance "outlined"
-                      :pill       true}
-               active?       (assoc :variant "success")
-               (not active?) (assoc :variant "neutral"))
-   (if active?
-     (tr [:Active])
-     (tr [:Inactive]))])
-
-(defn- travel-discount-tags [{:keys [tr]} member id-suffix]
+(defn- travel-discount-tags [member id-suffix]
   (let [discounts (:member/travel-discounts member)]
     (if (seq discounts)
       [:span {:class "members-index-discounts"}
        (for [discount discounts]
-         (members.ui/travel-discount-badge tr discount (members.ui/travel-discount-name discount) id-suffix))]
+         (members.ui/travel-discount-badge discount (members.ui/travel-discount-name discount) id-suffix))]
       [:span {:class "members-index-muted"} "—"])))
 
 (defn- sort-indicator [{:keys [sort-field sort-order]} field]
@@ -66,16 +58,16 @@
               :data-on:input__debounce.250ms
               (str "@post('" (d*/act req ::actions/set-search-phrase) "')")}])
 
-(defn- filter-control [{:keys [tr] :as req} {:keys [filter-preset]}]
-  [:wa-select {:label          (tr [:action/filter])
+(defn- filter-control [req {:keys [filter-preset]}]
+  [:wa-select {:label          [:i18n/tr :action/filter]
                :appearance     "outlined"
                :size           "m"
                :value          filter-preset
                :data-bind      "members-index.filter-preset"
                :data-on:change (str "@post('" (d*/act req ::actions/set-filter-preset) "')")}
-   [:wa-option {:value "active"} (tr [:member/filter-active])]
-   [:wa-option {:value "inactive"} (tr [:member/filter-inactive])]
-   [:wa-option {:value "all"} (tr [:member/filter-all])]])
+   [:wa-option {:value "active"} [:i18n/tr :members/filter-active]]
+   [:wa-option {:value "inactive"} [:i18n/tr :members/filter-inactive]]
+   [:wa-option {:value "all"} [:i18n/tr :members/filter-all]]])
 
 (defn- invite-loading? [invite-code action]
   (format "$invite.inflight && $invite.code === %s && $invite.action === %s"
@@ -95,18 +87,18 @@
                                        (@post ~(d*/act req action-key)))}
    label])
 
-(defn- open-invitations-panel [{:keys [tr] :as req} open-invitations]
+(defn- open-invitations-panel [req open-invitations]
   (when (seq open-invitations)
     [:section {:class "wa-stack wa-gap-s"}
      (ui2/title-block {:level    2
-                       :title    (tr [:member/open-invitations])
-                       :subtitle (tr [:member/open-invitations-subtitle])})
+                       :title    [:i18n/tr :members/open-invitations]
+                       :subtitle [:i18n/tr :members/open-invitations-subtitle]})
      [:div {:class "table-shell"}
       [:table {:class "members-index-table"}
        [:thead
         [:tr
-         [:th (tr [:member/name])]
-         [:th (tr [:Email])]
+         [:th [:i18n/tr (members.domain/member-attribute-label-key :member/name)]]
+         [:th [:i18n/tr (members.domain/member-attribute-label-key :member/email)]]
          [:th {:class "members-index-actions-header"}]]]
        [:tbody
         (for [{:member/keys [name email invite-code]} open-invitations]
@@ -117,20 +109,20 @@
             [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
              (invite-action-button req {:invite-code invite-code
                                         :action      "resend"
-                                        :label       (tr [:action/resend-invite])
+                                        :label       [:i18n/tr :action/resend-invite]
                                         :variant     "brand"
                                         :action-key  ::actions/resend-invitation})
              (invite-action-button req {:invite-code invite-code
                                         :action      "delete"
-                                        :label       (tr [:action/delete])
+                                        :label       [:i18n/tr :action/delete]
                                         :variant     "danger"
                                         :action-key  ::actions/delete-invitation})]]])]]]]))
 
-(defn- member-row [req member]
+(defn- member-row [member]
   (let [{:member/keys [email phone active?]} member
         section-name       (member-section-name member)
-        mobile-discounts   (travel-discount-tags req member "mobile")
-        desktop-discounts  (travel-discount-tags req member "desktop")]
+        mobile-discounts   (travel-discount-tags member "mobile")
+        desktop-discounts  (travel-discount-tags member "desktop")]
     [:tr
      [:td
       [:div {:class "wa-stack wa-gap-3xs"}
@@ -143,37 +135,37 @@
         (when (seq phone)
           [:span {:class "members-index-row-meta__phone"} phone])
         [:span {:class "members-index-row-meta__status"}
-         (status-badge req active?)]]]]
+         (ui2/active-badge active?)]]]]
      [:td {:class "members-index-col members-index-col--discount"} desktop-discounts]
      [:td {:class "members-index-col members-index-col--md"} email]
      [:td {:class "members-index-col members-index-col--lg"} (or phone "—")]
      [:td {:class "members-index-col members-index-col--sm"} section-name]
      [:td {:class "members-index-col members-index-col--sm"}
-      (status-badge req active?)]]))
+      (ui2/active-badge active?)]]))
 
-(defn- members-table [{:keys [tr] :as req} page-state members]
+(defn- members-table [req page-state members]
   (if (seq members)
     [:div {:class "table-shell"}
      [:table {:class "members-index-table"}
       [:thead
        [:tr
-        [:th (sort-button req page-state "name" (tr [:member/name]))]
+        [:th (sort-button req page-state "name" [:i18n/tr (members.domain/member-attribute-label-key :member/name)])]
         [:th {:class "members-index-col members-index-col--discount"}
-         (sort-button req page-state "travel-discount" (tr [:oebb-discount]))]
+         (sort-button req page-state "travel-discount" [:i18n/tr :members/oebb-discount])]
         [:th {:class "members-index-col members-index-col--md"}
-         (sort-button req page-state "email" (tr [:Email]))]
+         (sort-button req page-state "email" [:i18n/tr (members.domain/member-attribute-label-key :member/email)])]
         [:th {:class "members-index-col members-index-col--lg"}
-         (sort-button req page-state "phone" (tr [:Phone]))]
+         (sort-button req page-state "phone" [:i18n/tr (members.domain/member-attribute-label-key :member/phone)])]
         [:th {:class "members-index-col members-index-col--sm"}
-         (sort-button req page-state "section" (tr [:section]))]
+         (sort-button req page-state "section" [:i18n/tr (members.domain/member-attribute-label-key :member/section)])]
         [:th {:class "members-index-col members-index-col--sm"}
-         (sort-button req page-state "active" (tr [:Active]))]]]
+         (sort-button req page-state "active" [:i18n/tr :status-active])]]]
       [:tbody
        (for [member members]
-         (member-row req member))]]]
+         (member-row member))]]]
     (ui2/empty-state
-     (tr [:member/browse-empty])
-     (tr [:member/browse-empty-subtitle]))))
+     [:i18n/tr :members/browse-empty]
+     [:i18n/tr :members/browse-empty-subtitle])))
 
 (defn page [{:keys [db page-state] :as req}]
   (let [page-state       (queries/normalize-page-state (:members-index page-state))

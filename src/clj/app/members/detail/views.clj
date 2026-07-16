@@ -6,7 +6,9 @@
    [app.datastar :as d*]
    [app.insurance.ui :as insurance.ui]
    [app.keycloak :as keycloak]
+   [app.ledger.domain :as ledger.domain]
    [app.members.detail.actions :as actions]
+   [app.members.domain :as members.domain]
    [app.members.ui :as members.ui]
    [app.qrcode :as qr]
    [app.queries :as q]
@@ -42,15 +44,6 @@
     (muted email)
     [:a {:href (str "mailto:" email)} email]))
 
-(defn- status-badge [tr active?]
-  [:wa-badge (cond-> {:appearance "outlined"
-                      :pill       true}
-               active?       (assoc :variant "success")
-               (not active?) (assoc :variant "neutral"))
-   (if active?
-     (tr [:Active])
-     (tr [:Inactive]))])
-
 (defn- keycloak-enabled? [{:keys [system]} keycloak-id]
   (when (seq keycloak-id)
     (try
@@ -58,14 +51,12 @@
       (catch Throwable _
         false))))
 
-(defn- sno-id-enabled-badge [tr enabled?]
+(defn- sno-id-enabled-badge [enabled?]
   [:wa-badge (cond-> {:appearance "outlined"
                       :pill       true}
                enabled? (assoc :variant "success")
                (not enabled?) (assoc :variant "danger"))
-   (if enabled?
-     (tr [:member/sno-id-enabled])
-     (tr [:member/sno-id-disabled]))])
+   [:i18n/tr (members.domain/sno-id-status-label-key enabled?)]])
 
 (defn- sno-id-badge [keycloak-id]
   [:wa-badge (cond-> {:appearance "outlined"
@@ -81,17 +72,26 @@
    [:dt label]
    [:dd value]])
 
+(defn- required-marker []
+  [:span {:aria-hidden "true"} " *"])
+
+(defn- field-label [label required?]
+  [:span {:slot "label"}
+   label
+   (when required?
+     (required-marker))])
+
 (defn- form-input [form-state signal label attrs]
   (let [field (form/signal-field signal)
         error (form/field-error form-state field)]
-    [:wa-input (merge {:label        label
-                       :appearance   "outlined"
+    [:wa-input (merge {:appearance   "outlined"
                        :size         "m"
                        :value        (get form-state field "")
                        :hint         error
                        :data-invalid (when error "true")
                        :data-bind    signal}
-                      attrs)]))
+                      attrs)
+     (field-label label (:required attrs))]))
 
 (defn- validate-field-action [req field]
   (str "$member-detail.contact.validate-field = '"
@@ -106,48 +106,48 @@
 (defn- validate-field-on-keydown [req field]
   {:data-on:keydown__debounce.500ms (validate-field-action req field)})
 
-(defn- section-select [{:keys [tr] :as req} form-state sections]
+(defn- section-select [req form-state sections]
   (let [error (form/field-error form-state :section-name)]
     (into
-     [:wa-select {:label        (tr [:section])
-                  :appearance   "outlined"
+     [:wa-select {:appearance   "outlined"
                   :size         "m"
                   :value        (:section-name form-state)
+                  :required     true
                   :hint         error
                   :data-invalid (when error "true")
                   :data-bind    "member-detail.contact.section-name"
                   :data-on:blur (:data-on:blur (validate-field-on-blur req :section-name))}
+      (field-label [:i18n/tr (members.domain/member-attribute-label-key :member/section)] true)
       [:wa-option {:value ""} " - "]]
      (for [{:section/keys [name]} sections]
        [:wa-option {:value name} name]))))
 
-(defn- sno-id-admin-fields [{:keys [tr] :as req} form-state]
+(defn- sno-id-admin-fields [req form-state]
   [:div {:class "member-detail-sno-id-admin-fields wa-stack wa-gap-m"}
    [divider/Divider]
    [:div {:class "wa-stack wa-gap-2xs"}
-    [:strong (tr [:sno-id])]
+    [:strong [:i18n/tr :members/sno-id]]
     [:span {:class "wa-caption-s"}
-     (tr [:member/sno-id-enable-disabled-tooltip])]]
+     [:i18n/tr :members/sno-id-disabled-tooltip]]]
    [:div {:class "wa-grid wa-gap-m"}
     (form-input form-state
                 "member-detail.contact.username"
-                (tr [:member/username])
-                (validate-field-on-keydown req :username))
+                [:i18n/tr (members.domain/member-attribute-label-key :member/username)]
+                (merge {:required true}
+                       (validate-field-on-keydown req :username)))
     (form-input form-state
                 "member-detail.contact.keycloak-id"
-                (tr [:member/keycloak-id])
+                [:i18n/tr (members.domain/member-attribute-label-key :member/keycloak-id)]
                 (validate-field-on-keydown req :keycloak-id))
     [:div {:class "wa-stack wa-gap-2xs"}
-     [:span {:class "wa-caption-s"} (tr [:member/sno-id-enabled-disabled])]
+     [:span {:class "wa-caption-s"} [:i18n/tr :members/sno-id-status-label]]
      [:wa-switch {:size           "m"
                   :checked        (:sno-id-enabled form-state)
                   :data-bind      "member-detail.contact.sno-id-enabled"
                   :data-on:change "$member-detail.contact.sno-id-enabled = !$member-detail.contact.sno-id-enabled"}
-      (if (:sno-id-enabled form-state)
-        (tr [:member/sno-id-enabled])
-        (tr [:member/sno-id-disabled]))]]]])
+      [:i18n/tr (members.domain/sno-id-status-label-key (:sno-id-enabled form-state))]]]]])
 
-(defn- contact-form [{:keys [tr] :as req} form-state sections]
+(defn- contact-form [req form-state sections]
   (let [validate-on-keydown #(validate-field-on-keydown req %)]
     [:form {:id             "member-contact-form"
             :data-id        "member-contact"
@@ -161,28 +161,28 @@
       [:div {:class "wa-grid wa-gap-m"}
        (form-input form-state
                    "member-detail.contact.name"
-                   (tr [:member/name])
+                   [:i18n/tr (members.domain/member-attribute-label-key :member/name)]
                    (merge {:required true :autofocus true} (validate-on-keydown :name)))
        (form-input form-state
                    "member-detail.contact.nick"
-                   (tr [:member/nick])
+                   [:i18n/tr (members.domain/member-attribute-label-key :member/nick)]
                    (merge {:required true} (validate-on-keydown :nick)))
        (form-input form-state
                    "member-detail.contact.email"
-                   (tr [:Email])
+                   [:i18n/tr (members.domain/member-attribute-label-key :member/email)]
                    (merge {:type "email" :required true} (validate-on-keydown :email)))
        (form-input form-state
                    "member-detail.contact.phone"
-                   (tr [:Phone])
+                   [:i18n/tr (members.domain/member-attribute-label-key :member/phone)]
                    (merge {:type "tel" :required true} (validate-on-keydown :phone)))
        (section-select req form-state sections)
        [:div {:class "wa-stack wa-gap-2xs"}
-        [:span {:class "wa-caption-s"} (tr [:member/active?])]
+        [:span {:class "wa-caption-s"} [:i18n/tr (members.domain/member-attribute-label-key :member/active?)]]
         [:wa-switch {:size           "m"
                      :checked        (:active form-state)
                      :data-bind      "member-detail.contact.active"
                      :data-on:change "$member-detail.contact.active = !$member-detail.contact.active"}
-         (tr [:Active])]]]
+         [:i18n/tr :status-active]]]]
       (when (auth/current-user-admin? req)
         (sno-id-admin-fields req form-state))]]))
 
@@ -191,47 +191,48 @@
     [:a {:href (keycloak/link-user-edit (:env system) keycloak-id)} keycloak-id]
     (muted nil)))
 
-(defn- profile-details [{:keys [tr] :as req} member]
+(defn- profile-details [req member]
   (let [{:member/keys [email phone username keycloak-id active? nick]} member
         section-name (get-in member [:member/section :section/name])
         current-user-admin? (auth/current-user-admin? req)
         enabled?     (when current-user-admin? (keycloak-enabled? req keycloak-id))]
     [:dl {:class "particulars"}
-     (detail-item (tr [:section]) (muted section-name))
-     (detail-item (tr [:member/nick]) (muted nick))
-     (detail-item (tr [:member/email]) (email-link email))
-     (detail-item (tr [:member/phone]) (phone-link phone))
-     (detail-item (tr [:member/active?]) (status-badge tr active?))
-     (detail-item (tr [:member/username]) (muted username))
-     (detail-item (tr [:member/keycloak-id]) (keycloak-link req keycloak-id))
-     (detail-item (tr [:sno-id]) (if (and current-user-admin? keycloak-id)
-                                   (sno-id-enabled-badge tr enabled?)
-                                   (sno-id-badge keycloak-id)))]))
+     (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/section)] (muted section-name))
+     (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/nick)] (muted nick))
+     (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/email)] (email-link email))
+     (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/phone)] (phone-link phone))
+     (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/active?)] (ui2/active-badge active?))
+     (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/username)] (muted username))
+     (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/keycloak-id)] (keycloak-link req keycloak-id))
+     (detail-item [:i18n/tr :members/sno-id] (if (and current-user-admin? keycloak-id)
+                                               (sno-id-enabled-badge enabled?)
+                                               (sno-id-badge keycloak-id)))]))
 
 (defn- form-state->signals [form-state]
   (if (map? form-state)
     (dissoc form-state :_error)
     form-state))
 
-(defn- expiry-badge [{:keys [tr]} discount]
-  (members.ui/travel-discount-badge tr discount (form/date-value (:travel.discount/expiry-date discount))))
+(defn- expiry-badge [discount]
+  (members.ui/travel-discount-badge discount (form/date-value (:travel.discount/expiry-date discount))))
 
-(defn- discount-type-select [{:keys [tr]} form-state discount-types]
+(defn- discount-type-select [form-state discount-types]
   (let [error (form/field-error form-state :discount-type-id)]
     (into
-     [:wa-select {:label             (tr [:travel-discounts/discount-type-name])
-                  :appearance        "outlined"
+     [:wa-select {:appearance        "outlined"
                   :size              "m"
                   :value             (:discount-type-id form-state)
+                  :required          true
                   :hint              error
                   :data-invalid      (when error "true")
                   :data-bind         "member-detail.travel-discount-create.discount-type-id"
                   :data-on:wa-change "$member-detail.travel-discount-create.discount-type-id = evt.target.value"}
+      (field-label [:i18n/tr :members/travel-discount-type] true)
       [:wa-option {:value ""} " - "]]
      (for [{:travel.discount.type/keys [discount-type-id discount-type-name]} discount-types]
        [:wa-option {:value (str discount-type-id)} discount-type-name]))))
 
-(defn- travel-discount-create-form [{:keys [tr] :as req} form-state discount-types]
+(defn- travel-discount-create-form [req form-state discount-types]
   (when form-state
     [:form {:id             "member-travel-discount-create-form"
             :data-id        "member-travel-discount-create"
@@ -245,11 +246,12 @@
                :value     (:member-id form-state)
                :data-bind "member-detail.travel-discount-create.member-id"}]
       [:div {:class "wa-grid wa-gap-m"}
-       (discount-type-select req form-state discount-types)
+       (discount-type-select form-state discount-types)
        (form-input form-state
                    "member-detail.travel-discount-create.expiry-date"
-                   (tr [:travel-discounts/expiry-date])
+                   [:i18n/tr :members/travel-discount-expiry-date]
                    {:type             "date"
+                    :required         true
                     :data-on:wa-input "$member-detail.travel-discount-create.expiry-date = evt.target.value"})]
       (ui2/action-bar
        {}
@@ -262,9 +264,9 @@
                         :type               "submit"
                         :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount-create'"
                         :data-attr:loading  "$loading === 'member-travel-discount-create'"}
-         (tr [:action/add])]])]]))
+         [:i18n/tr :action/add]]])]]))
 
-(defn- travel-discount-edit-form [{:keys [tr] :as req} form-state]
+(defn- travel-discount-edit-form [req form-state]
   [:form {:id             (str "member-travel-discount-edit-" (:discount-id form-state))
           :data-id        "member-travel-discount"
           :data-action    (d*/act req ::actions/update-travel-discount)
@@ -278,8 +280,9 @@
              :data-bind "member-detail.travel-discount.discount-id"}]
     (form-input form-state
                 "member-detail.travel-discount.expiry-date"
-                (tr [:travel-discounts/expiry-date])
+                [:i18n/tr :members/travel-discount-expiry-date]
                 {:type             "date"
+                 :required         true
                  :data-on:wa-input "$member-detail.travel-discount.expiry-date = evt.target.value"})
     [button/Button {:appearance  "outlined"
                     :data-id     "member-travel-discount-cancel"
@@ -290,9 +293,9 @@
                     :type               "submit"
                     :data-attr:disabled "!!$loading && $loading !== 'member-travel-discount'"
                     :data-attr:loading  "$loading === 'member-travel-discount'"}
-     (tr [:action/save])]]])
+     [:i18n/tr :action/save]]]])
 
-(defn- travel-discount-remove-dialog [{:keys [tr] :as req} {:travel.discount/keys [discount-id discount-type]}]
+(defn- travel-discount-remove-dialog [req {:travel.discount/keys [discount-id discount-type]}]
   (ui2/remove-dialog
    {:id            (ui2/remove-dialog-id "travel-discount" discount-id)
     :label         [:i18n/tr :action/confirm-generic]
@@ -300,9 +303,10 @@
     :confirm-label [:i18n/tr :action/confirm-delete]
     :confirm-attrs {:data-id     discount-id
                     :data-action (d*/act req ::actions/delete-travel-discount)}}
-   [:p (str (tr [:action/delete]) " " (:travel.discount.type/discount-type-name discount-type) "?")]))
+   [:p [:i18n/tr :members/confirm-delete-travel-discount
+        {:discount-type (:travel.discount.type/discount-type-name discount-type)}]]))
 
-(defn- travel-discount-row [{:keys [tr] :as req} edit-state {:travel.discount/keys [discount-id discount-type] :as discount}]
+(defn- travel-discount-row [req edit-state {:travel.discount/keys [discount-id discount-type] :as discount}]
   (let [editing? (= discount-id (:discount-id edit-state))]
     [:tr
      [:td {:class "align-middle"}
@@ -310,7 +314,7 @@
      [:td {:class "align-middle"}
       (if editing?
         (travel-discount-edit-form req edit-state)
-        (expiry-badge req discount))]
+        (expiry-badge discount))]
      [:td {:class "align-middle text-right"}
       (when-not editing?
         [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
@@ -319,43 +323,43 @@
                          :size        "s"
                          :data-id     discount-id
                          :data-action (d*/act req ::actions/open-travel-discount-edit)}
-          (tr [:action/update])]
+          [:i18n/tr :action/update]]
          [button/Button {:appearance  "outlined"
                          :variant     "danger"
                          :size        "s"
                          :data-dialog (format "open %s" (ui2/remove-dialog-id "travel-discount" discount-id))}
-          (tr [:action/delete])]])]]))
+          [:i18n/tr :action/delete]]])]]))
 
-(defn- travel-discounts-table [{:keys [tr] :as req} edit-state discounts]
+(defn- travel-discounts-table [req edit-state discounts]
   (if (seq discounts)
     (ui2/table-shell
      [:table
       [:thead
        [:tr
-        [:th (tr [:travel-discounts/discount-type-name])]
-        [:th (tr [:travel-discounts/expiry-date])]
+        [:th [:i18n/tr :members/travel-discount-type]]
+        [:th [:i18n/tr :members/travel-discount-expiry-date]]
         [:th]]]
       [:tbody
        (for [discount discounts]
          (travel-discount-row req edit-state discount))]])
     (ui2/empty-state
-     (tr [:travel-discounts/none])
-     (tr [:travel-discounts/subtitle]))))
+     [:i18n/tr :members/travel-discounts-empty]
+     [:i18n/tr :members/travel-discounts-subtitle])))
 
-(defn- travel-discounts-panel [{:keys [db page-state tr] :as req} member]
+(defn- travel-discounts-panel [{:keys [db page-state] :as req} member]
   (let [create-state   (get-in page-state [:member-detail :travel-discount-create])
         edit-state     (get-in page-state [:member-detail :travel-discount])
         discount-types (q/retrieve-all-discount-types db)
         discounts      (q/member-travel-discounts member)]
     [:div {:class "wa-stack wa-gap-l"}
      (ui2/section-card
-      {:subtitle (tr [:travel-discounts/subtitle])
+      {:subtitle [:i18n/tr :members/travel-discounts-subtitle]
        :actions  (when-not create-state
                    [[button/Button {:appearance  "outlined"
                                     :variant     "brand"
                                     :data-id     (:member/member-id member)
                                     :data-action (d*/act req ::actions/open-travel-discount-create)}
-                     (tr [:travel-discounts/add-discount])]])}
+                     [:i18n/tr :members/travel-discount-add]]])}
       (when create-state
         [:div {:class "wa-stack wa-gap-s"}
          (travel-discount-create-form req create-state discount-types)
@@ -416,45 +420,49 @@
                              :amount                 (/ balance 100.0)
                              :unstructured-reference (maybe-transfer-reference balance entries)}))))
 
-(defn- ledger-balance-status [{:keys [tr system] :as req} balance entries]
+(defn- ledger-balance-status [{:keys [system] :as req} balance entries]
   (let [member-owes-band? (pos? balance)
         band-owes-member? (neg? balance)
         {:keys [iban bic account-name]} (config/band-bank-info (-> system :env))]
     (cond
       band-owes-member?
-      (tr [:band-owes-you] [(currency-format (abs balance))])
+      [:i18n/tr :ledger/band-owes-you {:amount (currency-format (abs balance))}]
       member-owes-band?
       [:div {:class "wa-grid wa-gap-m"}
        [:div {:class "wa-justify-content-center"}
         (when-let [qr-value (payment-qr-value req balance entries)]
           [:wa-qr-code {:value qr-value :label "Scan this code with your banking app to start a transfer"}])]
        [:div {:class "wa-flank:end content-percentage-70"}
-        [:p (tr [:please-pay-to-band] [(currency-format balance)])]
+        [:p [:i18n/tr :ledger/please-pay-to-band {:amount (currency-format balance)}]]
         (when (and account-name iban bic)
           [:div {:class "wa-stack wa-gap-3xs"}
            [:span "Name: " [:strong account-name]]
            [:span "IBAN: " [:strong (iban-format iban)]]
            [:span "BIC: " [:strong bic]]
-           [:span (tr [:or-scan-qr-code])]])]])))
+           [:span [:i18n/tr :ledger/or-scan-qr-code]]])]])))
 
-(defn- ledger-balance-card [{:keys [tr] :as req} member ledger]
+(defn- ledger-balance-card [req member ledger]
   (let [balance (or (:ledger/balance ledger) 0)
         entries (:ledger/entries ledger)]
     [:div {:class ""}
      [:div {:class "wa-stack wa-gap-xs"}
-      [:span {:class "wa-caption-s"} (tr [:outstanding-balance])]
+      [:span {:class "wa-caption-s"} [:i18n/tr :ledger/outstanding-balance]]
       [:div {:class (str "wa-heading-xl " (ledger-amount-color-class balance))}
        (currency-format balance)]
       [:a {:href (urls/link-member-money member)} "Why?"]]
      (ledger-balance-status req balance entries)]))
 
-(defn- ledger-entry-direction-options [{:keys [tr]} member kind]
-  (let [name (:member/name member)]
-    (if (= kind "payment")
-      [{:value "credit" :label (tr [:ledger.entry/payment-direction-credit] [name])}
-       {:value "debit" :label (tr [:ledger.entry/payment-direction-debit] [name])}]
-      [{:value "debit" :label (tr [:ledger.entry/direction-debit] [name])}
-       {:value "credit" :label (tr [:ledger.entry/direction-credit] [name])}])))
+(defn- ledger-entry-direction-options [member kind]
+  (let [member-name (:member/name member)
+        directions  (if (= kind "payment")
+                      ["credit" "debit"]
+                      ["debit" "credit"])]
+    (mapv (fn [direction]
+            {:value direction
+             :label [:i18n/tr
+                     (ledger.domain/entry-direction-label-key [kind direction])
+                     {:member-name member-name}]})
+          directions)))
 
 (defn- ledger-direction-button [value label]
   [button/Button {:appearance    "outlined"
@@ -463,7 +471,7 @@
                                       "$member-detail.ledger-entry.tx-direction = '" value "'")}
    label])
 
-(defn- ledger-direction-choice [req member form-state]
+(defn- ledger-direction-choice [member form-state]
   [:div {:class     "wa-stack wa-gap-s"
          :data-show "$_ledgerDirection === ''"}
    (when-let [error (form/field-error form-state :tx-direction)]
@@ -475,16 +483,16 @@
      "Start with the sentence that best describes this transaction."]]
    (into
     [:div {:class "wa-cluster wa-gap-s"}]
-    (for [{:keys [value label]} (ledger-entry-direction-options req member (:tx-kind form-state))]
+    (for [{:keys [value label]} (ledger-entry-direction-options member (:tx-kind form-state))]
       (ledger-direction-button value label)))])
 
-(defn- ledger-entry-create-form [{:keys [tr] :as req} member form-state]
+(defn- ledger-entry-create-form [req member form-state]
   (let [title          (if (= "payment" (:tx-kind form-state))
-                         (tr [:ledger/add-payment])
-                         (tr [:ledger/add-debt]))
+                         [:i18n/tr :ledger/add-payment]
+                         [:i18n/tr :ledger/add-debt])
         direction-text (into {}
                              (map (juxt :value :label))
-                             (ledger-entry-direction-options req member (:tx-kind form-state)))]
+                             (ledger-entry-direction-options member (:tx-kind form-state)))]
     [:form {:id             "member-ledger-entry-create-form"
             :data-id        "member-ledger-entry-create"
             :data-action    (d*/act req ::actions/add-ledger-entry)
@@ -507,7 +515,7 @@
       [:input {:type      "hidden"
                :value     (:tx-direction form-state)
                :data-bind "member-detail.ledger-entry.tx-direction"}]
-      (ledger-direction-choice req member form-state)
+      (ledger-direction-choice member form-state)
       [:div {:class     "wa-stack wa-gap-m"
              :data-show "$_ledgerDirection !== ''"}
        [:div {:class "wa-flank:end wa-align-items-center"}
@@ -523,18 +531,18 @@
        [:div {:class "wa-grid wa-gap-m"}
         (form-input form-state
                     "member-detail.ledger-entry.tx-date"
-                    (tr [:ledger.entry/tx-date])
+                    [:i18n/tr (ledger.domain/entry-attribute-label-key :ledger.entry/tx-date)]
                     {:type             "date"
                      :required         true
                      :data-on:wa-input "$member-detail.ledger-entry.tx-date = evt.target.value"})
         (form-input form-state
                     "member-detail.ledger-entry.description"
-                    (tr [:ledger.entry/description])
+                    [:i18n/tr (ledger.domain/entry-attribute-label-key :ledger.entry/description)]
                     {:required         true
                      :data-on:wa-input "$member-detail.ledger-entry.description = evt.target.value"})
         (form-input form-state
                     "member-detail.ledger-entry.amount"
-                    (tr [:ledger.entry/amount])
+                    [:i18n/tr (ledger.domain/entry-attribute-label-key :ledger.entry/amount)]
                     {:inputmode        "decimal"
                      :placeholder      "42,05"
                      :required         true
@@ -550,7 +558,7 @@
                          :type               "submit"
                          :data-attr:disabled "!!$loading && $loading !== 'member-ledger-entry-create'"
                          :data-attr:loading  "$loading === 'member-ledger-entry-create'"}
-          (tr [:action/save])]])]
+          [:i18n/tr :action/save]]])]
       (ui2/action-bar
        {:data-show "$_ledgerDirection === ''"}
        [[button/Button {:appearance  "outlined"
@@ -558,7 +566,7 @@
                         :data-action (d*/act req ::actions/close-ledger-entry-create)}
          [:i18n/tr :action/cancel]]])]]))
 
-(defn- ledger-entry-remove-dialog [{:keys [tr] :as req} {:ledger.entry/keys [entry-id description]}]
+(defn- ledger-entry-remove-dialog [req {:ledger.entry/keys [entry-id description]}]
   (ui2/remove-dialog
    {:id            (ui2/remove-dialog-id "ledger-entry" entry-id)
     :label         [:i18n/tr :action/confirm-generic]
@@ -566,9 +574,9 @@
     :confirm-label [:i18n/tr :action/confirm-delete]
     :confirm-attrs {:data-id     entry-id
                     :data-action (d*/act req ::actions/delete-ledger-entry)}}
-   [:p (str (tr [:action/delete]) " " description "?")]))
+   [:p [:i18n/tr :ledger/confirm-delete-entry {:description description}]]))
 
-(defn- ledger-entry-row [{:keys [tr]} {:ledger.entry/keys [amount description tx-date entry-id]}]
+(defn- ledger-entry-row [{:ledger.entry/keys [amount description tx-date entry-id]}]
   [:tr {:id (str "ledger-entry-" entry-id)}
    [:td {:class "align-middle"}
     [:time {:datetime (str tx-date)} (form/date-value tx-date)]]
@@ -579,27 +587,27 @@
                     :variant     "danger"
                     :size        "s"
                     :data-dialog (format "open %s" (ui2/remove-dialog-id "ledger-entry" entry-id))}
-     (tr [:action/delete])]]])
+     [:i18n/tr :action/delete]]]])
 
-(defn- ledger-entries-table [{:keys [tr] :as req} entries]
+(defn- ledger-entries-table [entries]
   (if (seq entries)
     (ui2/table-shell
      [:table {:id "member-ledger-table"}
       [:thead
        [:tr
-        [:th (tr [:ledger.entry/tx-date])]
-        [:th (tr [:ledger.entry/description])]
-        [:th {:class "text-right"} (tr [:ledger.entry/amount])]
+        [:th [:i18n/tr (ledger.domain/entry-attribute-label-key :ledger.entry/tx-date)]]
+        [:th [:i18n/tr (ledger.domain/entry-attribute-label-key :ledger.entry/description)]]
+        [:th {:class "text-right"} [:i18n/tr (ledger.domain/entry-attribute-label-key :ledger.entry/amount)]]
         [:th]]]
       [:tbody
        (for [entry entries]
-         (ledger-entry-row req entry))]])
+         (ledger-entry-row entry))]])
     [:div {:id "member-ledger-table"}
      (ui2/empty-state
-      (tr [:no-transactions-yet])
+      [:i18n/tr :ledger/no-transactions-yet]
       "Ledger entries will appear here after a debt or payment is recorded.")]))
 
-(defn- member-ledger-panel [{:keys [db page-state tr] :as req} member]
+(defn- member-ledger-panel [{:keys [db page-state] :as req} member]
   (let [create-state (get-in page-state [:member-detail :ledger-entry])
         ledger       (q/retrieve-ledger db (:member/member-id member))
         entries      (:ledger/entries ledger)]
@@ -614,19 +622,19 @@
                                     :variant     "brand"
                                     :data-id     (:member/member-id member)
                                     :data-action (d*/act req ::actions/open-ledger-debt-create)}
-                     (tr [:ledger/add-debt])]
+                     [:i18n/tr :ledger/add-debt]]
                     [button/Button {:appearance  "outlined"
                                     :variant     "brand"
                                     :data-id     (:member/member-id member)
                                     :data-action (d*/act req ::actions/open-ledger-payment-create)}
-                     (tr [:ledger/add-payment])]])}
+                     [:i18n/tr :ledger/add-payment]]])}
       (ledger-balance-card req member ledger)
       (when create-state
         [:div {:class "wa-stack wa-gap-s"}
          [divider/Divider]
          (ledger-entry-create-form req member create-state)])
       [divider/Divider]
-      (ledger-entries-table req entries)
+      (ledger-entries-table entries)
       (for [entry entries]
         (ledger-entry-remove-dialog req entry)))]))
 
@@ -770,7 +778,7 @@
         (when (= active-tab panel)
           children)))
 
-(defn page [{:keys [db page-state tr] :as req}]
+(defn page [{:keys [db page-state] :as req}]
   (let [member-id                       (http.util/path-param-uuid! req :member-id)
         member                          (q/retrieve-member db member-id)
         member-url                      (urls/link-member member)
@@ -843,7 +851,7 @@
        (when-not form-state
          [:wa-tab-group {:id     "member-detail-tabs"
                          :active active-tab}
-          (tab req active-tab "travel" (tr [:travel-discounts/title]))
+          (tab req active-tab "travel" [:i18n/tr :members/travel-discounts-title])
           (tab req active-tab "money" "Money Stuff")
           (tab req active-tab "insurance" [:i18n/tr :members/insurance-title])
 

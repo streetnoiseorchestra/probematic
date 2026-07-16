@@ -23,11 +23,11 @@
 
 (defn tr [path & [args]]
   (case path
-    [:member/name] "Name"
-    [:Email] "Email"
-    [:member/username] "Username"
-    [:Phone] "Phone"
-    [:section] "Section"
+    [:members/name] "Name"
+    [:members/email] "Email"
+    [:members/username] "Username"
+    [:members/phone] "Phone"
+    [:members/section] "Section"
     [:error/is-required] (format "%s is required." (:field args))
     [:error/member-username-format] "Username format is invalid."
     [:error/member-phone-format] "Phone format is invalid."

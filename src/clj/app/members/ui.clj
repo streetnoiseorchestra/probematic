@@ -12,11 +12,11 @@
   (get-in discount [:travel.discount/discount-type :travel.discount.type/discount-type-name]))
 
 (defn travel-discount-badge
-  ([tr discount]
-   (travel-discount-badge tr discount (travel-discount-name discount)))
-  ([tr discount label]
-   (travel-discount-badge tr discount label nil))
-  ([tr {:travel.discount/keys [discount-id expiry-date] :as discount} label id-suffix]
+  ([discount]
+   (travel-discount-badge discount (travel-discount-name discount)))
+  ([discount label]
+   (travel-discount-badge discount label nil))
+  ([{:travel.discount/keys [discount-id expiry-date] :as discount} label id-suffix]
    (let [tooltip-id (ui2/safe-dom-id (str "travel-discount-"
                                           (or discount-id (hash [label expiry-date]))
                                           (when id-suffix (str "-" id-suffix))
@@ -28,4 +28,5 @@
                   :variant    (if (current-travel-discount? discount) "success" "danger")}
        (or (some-> label str/trim not-empty) "—")]
       [:wa-tooltip {:for tooltip-id :placement "top"}
-       (str (tr [:travel-discounts/expires]) " " (form/date-value expiry-date))]])))
+       [:i18n/tr :members/travel-discount-expires
+        {:date (form/date-value expiry-date)}]]])))
