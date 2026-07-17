@@ -210,6 +210,16 @@
 (defn resend-invitation-fx [_ {req :request} invite-code]
   (members.effects/resend-invitation! req invite-code))
 
+(defn reissue-invitation-fx [_ {req :request} invite-code]
+  (members.effects/reissue-invitation! req invite-code))
+
+(defn reissue-revoked-invitation-fx
+  [_ {req :request} member-id observed-generation]
+  (members.effects/reissue-revoked-invitation!
+   req
+   member-id
+   observed-generation))
+
 (defn delete-invitation-fx [_ {req :request} invite-code]
   (members.effects/delete-invitation! req invite-code))
 
@@ -286,6 +296,8 @@
                          :app.members/update-keycloak-meta         update-keycloak-meta-fx
                          :app.members/set-keycloak-account-enabled set-keycloak-account-enabled-fx
                          :app.members.index/resend-invitation      resend-invitation-fx
+                         :app.members.index/reissue-invitation     reissue-invitation-fx
+                         :app.members.index/reissue-revoked-invitation reissue-revoked-invitation-fx
                          :app.members.index/delete-invitation      delete-invitation-fx
                          :app.poll/send-poll-opened                poll.effects/send-poll-opened-fx}
    :nexus/actions       (merge app.account.actions/actions

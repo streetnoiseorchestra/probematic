@@ -142,6 +142,9 @@
     (is (contains? (:nexus/effects nexus-config) :app.members/send-user-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members/set-keycloak-account-enabled))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
+    (is (contains? (:nexus/effects nexus-config) :app.members.index/reissue-invitation))
+    (is (contains? (:nexus/effects nexus-config)
+                   :app.members.index/reissue-revoked-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.poll/send-poll-opened))))
 

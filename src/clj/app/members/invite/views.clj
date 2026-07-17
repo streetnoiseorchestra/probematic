@@ -2,14 +2,20 @@
   (:require
    [app.datastar :as d*]
    [app.form :as form]
+   [app.i18n :as i18n]
    [app.members.invite.actions :as actions]
+   [app.members.invite.workflows :as workflows]
+   [app.members.queries :as members.queries]
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
-   [app.ui2.page-toolbar :as page-toolbar]))
+   [app.ui2.page-toolbar :as page-toolbar]
+   [app.urls :as urls]
+   [app.util :as util]
+   [tick.core :as t]))
 
 (defn- default-form-state []
   {:member-id     (str (random-uuid))
@@ -149,5 +155,101 @@
         {::page-header/title    [:i18n/tr :members/invite-member]
          ::page-header/subtitle [:i18n/tr :members/invite-description]}]
        (invite-form req form-state sections)]])))
+
+(defn- param [req k]
+  (or (get-in req [:params k])
+      (get-in req [:params (name k)])))
+
+(defn invite-code [req]
+  (param req :code))
+
+(defn form-invite-code [req]
+  (or (param req :invite-code)
+      (invite-code req)))
+
+(defn load-invite [req]
+  (let [db          (:db req)
+        invite-code (form-invite-code req)]
+    (or (some-> (members.queries/acceptance-invitation
+                 db
+                 (or (:now req) (t/inst))
+                 invite-code)
+                (select-keys [:member :invite-code]))
+        (some-> (members.queries/accepted-invitation-by-code db invite-code)
+                (select-keys [:member])
+                (assoc :invite-accepted? true)))))
+
+(defn login-link [req member]
+  (str (urls/absolute-link-login (get-in req [:system :env]))
+       "?login_hint="
+       (some-> (:member/email member) util/url-encode)))
+
+(defn- tr [req]
+  (or (:tr req)
+      (i18n/tr-from-req req)))
+
+(defn- page-shell [description & body]
+  (apply ui2/standalone-page
+         {:title       "SNOrga"
+          :description description}
+         body))
+
+(defn- invalid-page [req]
+  (let [tr (tr req)]
+    (page-shell
+     (tr [:email/invite-expired])
+     [:header {:class "danger"}
+      [:p "SNO ID"]
+      [:h1 (tr [:email/invite-expired])]])))
+
+(defn- accept-invite-form [req {:keys [member invite-code]}]
+  (let [tr (tr req)]
+    (page-shell
+     (tr [:account/create-sno-id-subtitle])
+     [:header
+      [:p "SNOrga"]
+      [:h1 (tr [:account/create-sno-id-title])]]
+     [:p (tr [:account/create-sno-id-subtitle])]
+     [:dl
+      [:dt (tr [:member/email])]
+      [:dd [:code (:member/email member)]]]
+     [:footer
+      [:form {:action "/invite-accept"
+              :method "POST"}
+       [:input {:type "hidden" :name "invite-code" :value invite-code}]
+       [:button {:type "submit"}
+        (tr [:account/create-account])]]])))
+
+(defn- success-page [req member]
+  (let [tr (tr req)]
+    (page-shell
+     (tr [:account/account-created-subtitle])
+     [:header
+      [:p "SNOrga"]
+      [:h1 (tr [:account/account-created-title])]]
+     [:p (tr [:account/account-created-subtitle])]
+     [:footer
+      [:a {:href (login-link req member)}
+       (tr [:login])]])))
+
+(defn invite-accept [req]
+  (if-let [invite-data (load-invite req)]
+    (if (:invite-accepted? invite-data)
+      (success-page req (:member invite-data))
+      (accept-invite-form req invite-data))
+    (invalid-page req)))
+
+(defn invite-accept-post [req]
+  (try
+    (success-page req (workflows/setup-account! req))
+    (catch Throwable exception
+      (case (-> exception ex-data :reason)
+        :code-expired
+        (invalid-page req)
+
+        :acceptance-retry
+        (invite-accept req)
+
+        (throw exception)))))
 
 (d*/refresh-all!)

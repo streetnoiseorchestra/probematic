@@ -14,3 +14,5 @@ directory-toolbar-label = Aktionen im Mitgliederverzeichnis
 invite-toolbar-label = Aktionen bei der Mitgliedereinladung
 detail-toolbar-label = Aktionen für das Mitglied
 edit-toolbar-label = Aktionen im Mitgliedereditor
+invitations-title = Mitgliedseinladungen
+invitations-subtitle = Aktive Einladungen können erneut gesendet werden. Abgelaufene oder widerrufene Einladungen können neu ausgestellt werden.

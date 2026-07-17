@@ -1,9 +1,10 @@
 (ns app.members.queries
   (:require
    [app.datomic :as d]
+   [app.members.invite.domain :as invite.domain]
    [app.queries :as q]
    [clojure.string :as str]
-   [taoensso.carmine :as redis]))
+   [tick.core :as t]))
 
 (defn sections [db]
   (->> (d/find-all db :section/name [:section/name])
@@ -44,17 +45,153 @@
       preset-pred (filter preset-pred)
       search      (search-members search))))
 
-(defn members-with-open-invites
-  "Return the members with open invites"
-  [req]
-  (->> (redis/wcar (-> req :system :redis) (redis/keys "invite:*"))
-       (map (fn [k]
-              {:key k
-               :member-id (redis/wcar (-> req :system :redis) (redis/get k))}))
-       (map (fn [{:keys [member-id key]}]
-              (assoc (q/retrieve-member (:db req) member-id)
-                     :member/invite-code
-                     (second (str/split key #":")))))))
+(def ^:private invitation-state-pattern
+  [:member/member-id
+   :member/invite-code
+   :member/invite-expires-at
+   {:member/invite-status [:db/ident]}
+   :member/invite-generation])
+
+(def ^:private acceptance-member-pattern
+  [:member/member-id
+   :member/name
+   :member/email
+   :member/username])
+
+(def ^:private accepted-invitation-pattern
+  [:member/member-id
+   :member/keycloak-id
+   {:member/invite-status [:db/ident]}])
+
+(def ^:private pending-invitation-pattern
+  [:member/member-id
+   :member/name
+   :member/email
+   :member/invite-code
+   :member/invite-expires-at])
+
+(def ^:private revoked-invitation-pattern
+  [:member/member-id
+   :member/name
+   :member/email
+   :member/keycloak-id
+   {:member/invite-status [:db/ident]}
+   :member/invite-generation])
+
+(def ^:private recoverable-invitation-statuses
+  #{:member.invite.status/accepting
+    :member.invite.status/creating
+    :member.invite.status/activating
+    :member.invite.status/compensating})
+
+(defn- normalize-invitation-status [invitation]
+  (update invitation :member/invite-status :db/ident))
+
+(defn- after? [candidate boundary]
+  (and candidate boundary (t/> candidate boundary)))
+
+(defn invitation-state-by-code
+  "Returns the narrow current member invitation state for `invite-code`.
+
+  This lookup does not apply expiry or lifecycle validity. Callers must enforce
+  the transition-specific policy before mutating the member."
+  [db invite-code]
+  (when-not (str/blank? invite-code)
+    (some-> (d/find-by db
+                       :member/invite-code
+                       invite-code
+                       invitation-state-pattern)
+            normalize-invitation-status)))
+
+(defn acceptance-invitation
+  "Returns the HTTP-boundary invitation projection valid at `now`.
+
+  Pending invitations require an expiry strictly after `now`. Claimed
+  accepting, creating, activating, and compensating states remain recoverable
+  after expiry. The returned `:invite-code` must be discarded before Mycelium
+  runs."
+  [db now invite-code]
+  (when-let [{:member/keys [member-id
+                            invite-expires-at
+                            invite-status
+                            invite-generation]}
+             (invitation-state-by-code db invite-code)]
+    (when (or (and (= :member.invite.status/pending invite-status)
+                   (after? invite-expires-at now))
+              (recoverable-invitation-statuses invite-status))
+      {:member (d/find-by db
+                          :member/member-id
+                          member-id
+                          acceptance-member-pattern)
+       :member-id member-id
+       :invite-code invite-code
+       :invite-status invite-status
+       :invite-generation invite-generation})))
+
+(defn accepted-invitation-by-code
+  "Returns a canonically completed invitation matching the opaque code receipt.
+
+  The raw bearer is never retained after acceptance. This lookup hashes the
+  submitted code and succeeds only for accepted state with a linked Keycloak
+  user."
+  [db invite-code]
+  (when-not (str/blank? invite-code)
+    (when-let [{:member/keys [member-id keycloak-id invite-status]}
+               (some->
+                (d/find-by
+                 db
+                 :member/invite-accepted-code-digest
+                 (invite.domain/accepted-receipt-digest invite-code)
+                 accepted-invitation-pattern)
+                normalize-invitation-status)]
+      (when (and (= :member.invite.status/accepted invite-status)
+                 (not (str/blank? keycloak-id)))
+        {:member (d/find-by db
+                            :member/member-id
+                            member-id
+                            acceptance-member-pattern)
+         :member-id member-id}))))
+
+(defn revoked-invitation-by-member-id
+  "Returns a revoked invitation for `member-id` without bearer fields."
+  [db member-id]
+  (when-let [invitation (some-> (d/find-by db
+                                           :member/member-id
+                                           member-id
+                                           revoked-invitation-pattern)
+                                normalize-invitation-status)]
+    (when (and (= :member.invite.status/revoked
+                  (:member/invite-status invitation))
+               (str/blank? (:member/keycloak-id invitation)))
+      invitation)))
+
+(defn members-with-pending-invites
+  "Returns pending member invitations and marks those expired at `now`."
+  ([db]
+   (members-with-pending-invites db (t/inst)))
+  ([db now]
+   (->> (d/find-all-by db
+                       :member/invite-status
+                       :member.invite.status/pending
+                       pending-invitation-pattern)
+        (map first)
+        (map #(assoc % :invite-expired?
+                     (not (after? (:member/invite-expires-at %) now))))
+        (sort-by :member/name)
+        vec)))
+
+(defn members-with-revoked-invites
+  "Returns revoked member invitations without bearer or expiry fields."
+  [db]
+  (->> (d/find-all-by db
+                      :member/invite-status
+                      :member.invite.status/revoked
+                      revoked-invitation-pattern)
+       (map first)
+       (map normalize-invitation-status)
+       (filter #(str/blank? (:member/keycloak-id %)))
+       (sort-by :member/name)
+       vec))
 
 (def default-page-state
   {:search                    ""

@@ -77,30 +77,46 @@
    [:wa-option {:value "inactive"} (tr [:member/filter-inactive])]
    [:wa-option {:value "all"} (tr [:member/filter-all])]])
 
-(defn- invite-loading? [invite-code action]
-  (format "$invite.inflight && $invite.code === %s && $invite.action === %s"
-          (pr-str invite-code)
-          (pr-str action)))
+(defn- invite-loading?
+  [{:keys [invite-code member-id generation]} action]
+  (if invite-code
+    (format "$invite.inflight && $invite.code === %s && $invite.action === %s"
+            (pr-str invite-code)
+            (pr-str action))
+    (format (str "$invite.inflight && $invite.member-id === %s "
+                 "&& $invite.generation === %s && $invite.action === %s")
+            (pr-str (str member-id))
+            generation
+            (pr-str action))))
 
-(defn- invite-action-button [req {:keys [invite-code action label variant action-key]}]
+(defn- invite-action-button
+  [req {:keys [invite-code member-id generation action label variant action-key]
+        :as action-options}]
   [button/Button {:appearance         "outlined"
                   :variant            variant
                   :size               "s"
-                  :data-attr:loading  (invite-loading? invite-code action)
+                  :data-attr:loading  (invite-loading? action-options action)
                   :data-attr:disabled "$invite.inflight"
-                  :data-on:click      (->expr
-                                       (set! $invite.code ~invite-code)
-                                       (set! $invite.action ~action)
-                                       (set! $invite.inflight true)
-                                       (@post ~(d*/act req action-key)))}
+                  :data-on:click      (if invite-code
+                                        (->expr
+                                         (set! $invite.code ~invite-code)
+                                         (set! $invite.action ~action)
+                                         (set! $invite.inflight true)
+                                         (@post ~(d*/act req action-key)))
+                                        (->expr
+                                         (set! $invite.member-id ~(str member-id))
+                                         (set! $invite.generation ~generation)
+                                         (set! $invite.action ~action)
+                                         (set! $invite.inflight true)
+                                         (@post ~(d*/act req action-key))))}
    label])
 
-(defn- open-invitations-panel [{:keys [tr] :as req} open-invitations]
-  (when (seq open-invitations)
+(defn- invitations-panel [{:keys [tr] :as req} invitations]
+  (when (seq invitations)
     [:section {:class "wa-stack wa-gap-s"}
      (ui2/title-block {:level    2
-                       :title    (tr [:member/open-invitations])
-                       :subtitle (tr [:member/open-invitations-subtitle])})
+                       :title    [:i18n/tr :members/invitations-title]
+                       :subtitle [:i18n/tr :members/invitations-subtitle]})
      [:div {:class "table-shell"}
       [:table {:class "members-index-table"}
        [:thead
@@ -109,22 +125,45 @@
          [:th (tr [:Email])]
          [:th {:class "members-index-actions-header"}]]]
        [:tbody
-        (for [{:member/keys [name email invite-code]} open-invitations]
-          [:tr
-           [:td name]
-           [:td email]
-           [:td {:class "members-index-row-actions"}
-            [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
-             (invite-action-button req {:invite-code invite-code
-                                        :action      "resend"
-                                        :label       (tr [:action/resend-invite])
-                                        :variant     "brand"
-                                        :action-key  ::actions/resend-invitation})
-             (invite-action-button req {:invite-code invite-code
-                                        :action      "delete"
-                                        :label       (tr [:action/delete])
-                                        :variant     "danger"
-                                        :action-key  ::actions/delete-invitation})]]])]]]]))
+        (for [{:member/keys [member-id name email invite-code
+                             invite-status invite-generation]
+               :keys        [invite-expired?]} invitations]
+          (let [revoked? (= :member.invite.status/revoked invite-status)]
+            [:tr
+             [:td name]
+             [:td email]
+             [:td {:class "members-index-row-actions"}
+              [:div {:class "wa-cluster wa-gap-2xs wa-justify-content-end"}
+               (cond
+                 revoked?
+                 (invite-action-button
+                  req
+                  {:member-id  member-id
+                   :generation invite-generation
+                   :action     "reissue-revoked"
+                   :label      [:i18n/tr :action/reissue-invitation]
+                   :variant    "brand"
+                   :action-key ::actions/reissue-revoked-invitation})
+
+                 invite-expired?
+                 (invite-action-button req {:invite-code invite-code
+                                            :action      "reissue"
+                                            :label       [:i18n/tr :action/reissue-invitation]
+                                            :variant     "brand"
+                                            :action-key  ::actions/reissue-invitation})
+
+                 :else
+                 (invite-action-button req {:invite-code invite-code
+                                            :action      "resend"
+                                            :label       [:i18n/tr :action/resend-invitation]
+                                            :variant     "brand"
+                                            :action-key  ::actions/resend-invitation}))
+               (when-not revoked?
+                 (invite-action-button req {:invite-code invite-code
+                                            :action      "delete"
+                                            :label       [:i18n/tr :action/delete]
+                                            :variant     "danger"
+                                            :action-key  ::actions/delete-invitation}))]]]))]]]]))
 
 (defn- member-row [req member]
   (let [{:member/keys [email phone active?]} member
@@ -178,7 +217,10 @@
 (defn page [{:keys [db page-state] :as req}]
   (let [page-state       (queries/normalize-page-state (:members-index page-state))
         members          (queries/members db page-state)
-        open-invitations (queries/members-with-open-invites req)]
+        invitations      (->> (concat (queries/members-with-pending-invites db)
+                                      (queries/members-with-revoked-invites db))
+                              (sort-by :member/name)
+                              vec)]
     (ui2/datastar-page*
      [page-surface/PageSurface {::page-surface/toolbar
                                 [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
@@ -196,6 +238,8 @@
              :data-signals (d*/->signals {:members-index page-state
                                           :invite        {:action nil
                                                           :code nil
+                                                          :member-id nil
+                                                          :generation nil
                                                           :inflight false}})}
        [page-header/PageHeader
         {::page-header/title    [:i18n/tr :members/title]
@@ -204,7 +248,7 @@
               :style "--min-column-size: min(100%, 16rem);"}
         (search-control req page-state)
         (filter-control req page-state)]
-       (open-invitations-panel req open-invitations)
+       (invitations-panel req invitations)
        (members-table req page-state members)]])))
 
 (d*/refresh-all!)

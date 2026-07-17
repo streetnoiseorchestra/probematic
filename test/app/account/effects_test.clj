@@ -6,7 +6,7 @@
    [app.queries :as queries]
    [app.test-common :as tc]
    [babashka.fs :as bfs]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
 
 (def jpeg-path "resources/public/img/tuba-robot-boat-1000.jpg")
@@ -254,6 +254,57 @@
               (is (not= current-id saved-id))
               (is (nil? (d/entid db [:image/image-id current-id])))
               (is (not (bfs/exists? tempfile))))))))))
+
+(deftest profile-effect-obeys-invitation-acceptance-guard
+  (let [save-profile! (support/public-fn 'app.account.effects/save-profile!)]
+    (is (fn? save-profile!))
+    (when save-profile!
+      (testing "an in-flight acceptance rejects the profile save"
+        (let [{:keys [conn member-id]}
+              (tc/new-system "profile-effect-invitation-accepting")]
+          (seed-member! conn member-id
+                        {:member/invite-status
+                         :member.invite.status/accepting
+                         :member/invite-generation 2
+                         :member/invite-status-at
+                         #inst "2026-07-16T08:05:00.000-00:00"})
+          (is (thrown? Throwable
+                       (save-profile!
+                        {:datomic {:conn conn}}
+                        {:member-id member-id
+                         :profile profile
+                         :avatar-upload nil
+                         :sync-keycloak? false})))
+          (is (= {:member/name "Ada Lovelace"
+                  :member/email "ada@example.test"
+                  :member/username "ada_l"}
+                 (d/pull (d/db conn)
+                         [:member/name :member/email :member/username]
+                         [:member/member-id member-id])))))
+
+      (testing "a pending invitation still permits a profile save"
+        (let [{:keys [conn member-id]}
+              (tc/new-system "profile-effect-invitation-pending")]
+          (seed-member! conn member-id
+                        {:member/invite-status
+                         :member.invite.status/pending
+                         :member/invite-generation 1
+                         :member/invite-status-at
+                         #inst "2026-07-16T08:00:00.000-00:00"})
+          (is (= :saved
+                 (:status
+                  (save-profile!
+                   {:datomic {:conn conn}}
+                   {:member-id member-id
+                    :profile profile
+                    :avatar-upload nil
+                    :sync-keycloak? false}))))
+          (is (= {:member/name "Ada Byron"
+                  :member/email "ada.byron@example.test"
+                  :member/username "ada_byron"}
+                 (d/pull (d/db conn)
+                         [:member/name :member/email :member/username]
+                         [:member/member-id member-id]))))))))
 
 (deftest action-and-effect-contract-carries-the-real-multipart-file
   (let [save-profile-fx (support/public-fn

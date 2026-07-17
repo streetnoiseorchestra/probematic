@@ -130,7 +130,7 @@
     (assoc :username    (:member/username member)
            :keycloak-id (:member/keycloak-id member))))
 
-(defn- contact-tx [current-user-admin? member-id {:keys [name nick email phone section-name active username keycloak-id]}]
+(defn- contact-tx [current-user-admin? member-id {:keys [name nick email phone section-name active username]}]
   (cond-> {:db/id            [:member/member-id member-id]
            :member/name      name
            :member/nick      (when (seq nick) nick)
@@ -139,8 +139,7 @@
            :member/section   [:section/name section-name]
            :member/active?   active}
     current-user-admin?
-    (assoc :member/username username
-           :member/keycloak-id keycloak-id)))
+    (assoc :member/username username)))
 
 (defn- keycloak-sync-needed? [current-user-admin? current-member contact]
   (and (or (:member/keycloak-id current-member)
@@ -205,7 +204,15 @@
         [:member-detail :contact]
         (assoc contact :_error errors)]]
       (cond-> [[:db/transact
-                (support/with-audit [(contact-tx current-user-admin? member-id contact)]
+                (support/with-audit (cond-> [[:member.invite/transact-profile-if-not-in-flight
+                                              member-id
+                                              [(contact-tx current-user-admin?
+                                                           member-id
+                                                           contact)]]]
+                                      current-user-admin?
+                                      (conj [:member/set-keycloak-id
+                                             member-id
+                                             (:keycloak-id contact)]))
                   current-member-id)
                 {:transact-w-nils? true}]]
         (keycloak-sync-needed? current-user-admin? current-member contact)

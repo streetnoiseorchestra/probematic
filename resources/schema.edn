@@ -56,6 +56,139 @@
   :db/unique      :db.unique/identity
   :db/cardinality :db.cardinality/one}
 
+ {:db/ident :member/set-keycloak-id
+  :db/doc "Changes a generic Keycloak link only when no active invitation owns the member."
+  :db/fn
+  #db/fn
+  {:lang "clojure"
+   :params [db member-id keycloak-id]
+   :requires [[datomic.api :as d]]
+   :code
+   (let [ref [:member/member-id member-id]
+         member (d/entity db ref)
+         current-id (:member/keycloak-id member)
+         status (:member/invite-status member)
+         invitation-status (if (keyword? status)
+                             status
+                             (:db/ident status))]
+     (cond
+       (nil? (:db/id member))
+       (d/cancel
+        {:cognitect.anomalies/category :cognitect.anomalies/incorrect
+         :cognitect.anomalies/message "The member does not exist."
+         :app/error-code :member.error/not-found})
+
+       (= current-id keycloak-id)
+       []
+
+       (contains? #{:member.invite.status/pending
+                    :member.invite.status/accepting
+                    :member.invite.status/creating
+                    :member.invite.status/activating
+                    :member.invite.status/compensating}
+                  invitation-status)
+       (d/cancel
+        {:cognitect.anomalies/category :cognitect.anomalies/conflict
+         :cognitect.anomalies/message "An active invitation owns the member's Keycloak link."
+         :app/error-code :member.invite.error/active})
+
+       (nil? keycloak-id)
+       [[:db/retract ref :member/keycloak-id current-id]]
+
+       :else
+       [[:db.fn/cas ref :member/keycloak-id current-id keycloak-id]]))}}
+
+ {:db/ident :member.invite/transact-if-unlinked
+  :db/doc "Runs an invitation transition only while the member has no Keycloak link."
+  :db/fn
+  #db/fn
+  {:lang "clojure"
+   :params [db member-id tx-data]
+   :requires [[datomic.api :as d]]
+   :code
+   (let [member (d/entity db [:member/member-id member-id])]
+     (if (:member/keycloak-id member)
+       (d/cancel
+        {:cognitect.anomalies/category :cognitect.anomalies/conflict
+         :cognitect.anomalies/message "The member already has a Keycloak link."
+         :app/error-code :member.invite.error/keycloak-linked})
+       tx-data))}}
+
+ {:db/ident :member.invite/transact-profile-if-not-in-flight
+  :db/doc "Runs a member profile transaction unless invitation acceptance is in flight."
+  :db/fn
+  #db/fn
+  {:lang "clojure"
+   :params [db member-id tx-data]
+   :requires [[datomic.api :as d]]
+   :code
+   (let [status (:member/invite-status
+                 (d/entity db [:member/member-id member-id]))
+         invitation-status (if (keyword? status)
+                             status
+                             (:db/ident status))]
+     (if (contains? #{:member.invite.status/accepting
+                      :member.invite.status/creating
+                      :member.invite.status/activating
+                      :member.invite.status/compensating}
+                    invitation-status)
+       (d/cancel
+        {:cognitect.anomalies/category :cognitect.anomalies/conflict
+         :cognitect.anomalies/message "Invitation acceptance owns the member's profile."
+         :app/error-code :member.invite.error/acceptance-in-flight})
+       tx-data))}}
+
+ {:db/ident       :member/invite-code
+  :db/doc         "The current bearer code for a resumable member invitation"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique      :db.unique/value
+  :db/noHistory   true}
+
+ {:db/ident       :member/invite-accepted-code-digest
+  :db/doc         "The opaque receipt for an accepted invitation bearer"
+  :db/valueType   :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique      :db.unique/value
+  :db/noHistory   true}
+
+ {:db/ident       :member/invite-expires-at
+  :db/doc         "The strict expiry boundary for beginning invitation acceptance"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one
+  :db/noHistory   true}
+
+ {:db/ident       :member/invite-status
+  :db/doc         "The current lifecycle status of the member invitation"
+  :db/valueType   :db.type/ref
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident       :member/invite-generation
+  :db/doc         "The monotonic concurrency generation of the member invitation"
+  :db/valueType   :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db/noHistory   true}
+
+ {:db/ident       :member/invite-status-at
+  :db/doc         "The time of the latest member invitation lifecycle transition"
+  :db/valueType   :db.type/instant
+  :db/cardinality :db.cardinality/one}
+
+ {:db/ident :member.invite.status/pending
+  :db/doc   "The invitation may begin a new acceptance claim"}
+ {:db/ident :member.invite.status/accepting
+  :db/doc   "An acceptance attempt is recovering before new Keycloak creation"}
+ {:db/ident :member.invite.status/creating
+  :db/doc   "One acceptance generation exclusively owns Keycloak user creation"}
+ {:db/ident :member.invite.status/activating
+  :db/doc   "The attempt-owned Keycloak user is linked and awaiting completion"}
+ {:db/ident :member.invite.status/compensating
+  :db/doc   "Compensation exclusively owns the pre-link acceptance attempt"}
+ {:db/ident :member.invite.status/accepted
+  :db/doc   "The linked Keycloak user is enabled and acceptance is complete"}
+ {:db/ident :member.invite.status/revoked
+  :db/doc   "An administrator closed the invitation before acceptance"}
+
  {:db/ident       :member/avatar-template
   :db/doc         "The url path to the member's avatar with a {size} parameter "
   :db/valueType   :db.type/string

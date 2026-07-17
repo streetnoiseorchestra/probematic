@@ -41,8 +41,6 @@
                        :username-validation            "Username can only have A-Z, 0-9 _, ., -, or @. No spaces."
                        :create-sno-id                  "Create SNO ID"
                        :create-sno-id-description      "An invitation to set their password will be e-mailed to the person."
-                       :open-invitations               "Open Invitations"
-                       :open-invitations-subtitle      "Pending invitations can be resent or deleted."
                        :sno-id-enabled-disabled        "SNO ID Enabled/Disabled"
                        :sno-id-enable-disabled-tooltip "When disabled the user cannot login to any SNO systems."
                        :sno-id-enabled                 "Enabled"
@@ -439,8 +437,7 @@
                                   :send                         "Send"
                                   :subscribe                    "Subscribe"
                                   :update                       "Update"
-                                  :view                         "View"
-                                  :resend-invite                "Resend Invite"}
+                                  :view                         "View"}
  :motivation                     {:none      "-"
                                   :very-high "Very Motivated!"
                                   :high      "Motivated"

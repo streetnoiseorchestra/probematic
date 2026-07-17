@@ -453,8 +453,6 @@
   :email "E-Mail",
   :nick "Spitzname",
   :filter-sno-id-disabled "SNO-ID deaktiviert",
-  :open-invitations "Einladungen öffnen",
-  :open-invitations-subtitle "Ausstehende Einladungen können erneut gesendet oder gelöscht werden.",
   :gigs-attended "Gigs besucht",
   :phone "Telefon",
   :name "Name",

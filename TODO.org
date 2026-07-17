@@ -89,6 +89,35 @@ Then replace the /account-settings/profile/save and other upload locations with 
 ** TODO instrument creation third step can fail and cause multiple instruments and or coverages to be created
 ** TODO introduce sqlite4clj for cache/ephemeral storage
 ** TODO use sqlite4clj for db sessions
-** TODO move new member invitation storage from redis to datomic add A minimal necessary :member/<somethings> attributes to support this, make it db/noHistory
+** TODO move new member invitation storage from Redis to Datomic and add recoverable Mycelium acceptance
+*** DONE define the direct-member invitation state machine and reusable Mycelium cell manifest
+*** DONE implement and test the Datomic invitation schema and guarded transitions
+*** DONE finish the Mycelium cell and workflow contracts
+**** DONE put explicit =app.schemas=-backed Malli =:input= and =:output= schemas on every =defcell=
+**** DONE inherit registry schemas into the manifest and reject duplicate edge targets
+**** DONE preserve original transport failures at the workflow runner boundary
+**** DONE inline cell-local schemas and handlers in each =defcell=
+*** DONE finish and test reusable Keycloak and invitation-planning cells
+*** DONE replace Redis invitation queries and effects while retaining the email queue
+*** DONE integrate and test accept-or-recover through the unauthenticated service
+*** DONE replace remaining Redis-backed invite reads in member views and tests
+*** DONE run focused workflow, service, view, and regression checks
+*** DONE verify every invitation field and lifecycle path in the browser
+*** DONE fence ambiguous Keycloak user creation with a guarded =creating= state
+**** DONE let only definite Keycloak 4xx outcomes enter compensation
+**** DONE reject stale operator reissue replays by the observed bearer code
+**** DONE atomically fence generic Keycloak links against active invitations
+**** DONE validate the complete Keycloak profile before entering =creating=
+**** DONE inline one-use workflow-manifest cell definitions
+**** DONE reconcile finalize commit/response ambiguity with a durable code receipt
+*** DONE make Keycloak invitation-marker lookup selective and pagination-safe
+*** DONE expose expired pending invitations so operators can reissue them
+*** DONE rerun automated and browser verification after safety corrections
+*** DONE obtain a second sub-agent review and resolve all findings
+**** DONE expose bearer-free revoked invitation reissue with stale replay protection
+**** DONE fence profile edits during in-flight acceptance
+**** DONE allow generic Keycloak relinking after terminal acceptance
+**** DONE use tick for invitation date and time operations
+*** DONE complete sub-agent review, commit, and request human review
 ** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
-** TODO member invite fields should validate as you type/move between the fields with server roudntrip validation like our other forms, including uniqueness checks, and they should have inline validation errors.. The code looks like it's there, but it's not working.
+** DONE member invite fields should validate as you type/move between the fields with server roudntrip validation like our other forms, including uniqueness checks, and they should have inline validation errors.. The code looks like it's there, but it's not working.
