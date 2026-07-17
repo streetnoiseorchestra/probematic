@@ -3,6 +3,7 @@
    [app.datomic.system :as datomic.system]
    [app.datomic.migrations.post002-backfill-insurance-metadata :as migrations]
    [app.insurance.test-support :as test-support]
+   [app.test-common :as tc]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]
    [dev.gethop.stork :as stork]))
@@ -21,16 +22,7 @@
     :insurance.export.mapping/role
     :insurance.export.mapping/coverage-type})
 
-(def ^:dynamic *test-connections* nil)
-
-(defn- with-released-test-connections [f]
-  (binding [*test-connections* (atom [])]
-    (try
-      (f)
-      (finally
-        (run! d/release @*test-connections*)))))
-
-(use-fixtures :each with-released-test-connections)
+(use-fixtures :each tc/with-released-test-connections)
 
 (defn- new-unmigrated-system
   ([name-prefix]
@@ -38,12 +30,11 @@
   ([name-prefix excluded-attributes]
    (let [uri (str "datomic:mem://" name-prefix "-" (random-uuid))]
      (d/create-database uri)
-     (let [conn   (d/connect uri)
+     (let [conn   (tc/register-test-connection! (d/connect uri))
            schema (into []
                         (remove #(contains? excluded-attributes
                                             (:db/ident %)))
                         (stork/read-resource "schema.edn"))]
-       (swap! *test-connections* conj conn)
        @(d/transact conn (stork/read-resource "schema-meta.edn"))
        @(d/transact conn schema)
        {:conn conn}))))

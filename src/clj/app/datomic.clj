@@ -34,9 +34,16 @@
   (try
     (d/transact conn opts)
     (catch clojure.lang.ExceptionInfo e
-      {:error (ex-data e)
+      {:error     (ex-data e)
        :exception e
-       :msg (ex-message e)})))
+       :msg       (ex-message e)})
+    (catch java.util.concurrent.ExecutionException e
+      (let [cause (ex-cause e)]
+        (if-let [error (ex-data cause)]
+          {:error     error
+           :exception cause
+           :msg       (ex-message cause)}
+          (throw e))))))
 
 (defn audit-txs [req comment]
   (filterv #(some? %)
@@ -58,11 +65,7 @@
   (:db/ident (d/pull db '[:db/ident] attr)))
 
 (defn ref? [db attr]
-  (= :db.type/ref
-     (->
-      (d/pull db '[*] attr)
-      :db/valueType
-      :db/ident)))
+  (d/attr-is-ref? db attr))
 
 (defn resolve-ref [db eid]
   (d/pull db '[*] eid))
