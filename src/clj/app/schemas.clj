@@ -1,7 +1,6 @@
 (ns app.schemas
   (:require
    [app.schema-helpers :as schemas]
-   [app.schemas.domain :as domain]
    [app.schemas.http-api :as http-api]
    [malli.core :as m]
    [malli.error :as me]
@@ -12,7 +11,6 @@
   (mr/composite-registry
    (m/default-schemas)
    app.schema-helpers/common-registry
-   domain/registry
    http-api/registry))
 
 (def malli-opts {:registry registry})
