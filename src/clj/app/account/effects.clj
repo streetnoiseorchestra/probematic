@@ -103,7 +103,7 @@
                  {:file-name (:filename effective-avatar-upload)
                   :file tempfile
                   :mime-type (:mime-type effective-avatar-upload)}))
-              tx-data
+              profile-tx-data
               (vec
                (concat
                 (profile-tx member-id profile)
@@ -116,6 +116,10 @@
                                   obsolete-file-eids)
                 [[:db/add "datomic.tx" :audit/user
                   [:member/member-id member-id]]]))
+              tx-data
+              [[:member.invite/transact-profile-if-not-in-flight
+                member-id
+                profile-tx-data]]
               tx-result @(d/transact conn tx-data)]
           (when sync-keycloak?
             (members.effects/update-keycloak-meta!

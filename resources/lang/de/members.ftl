@@ -8,11 +8,14 @@ member-count =
     }
 invite-member = Mitglied einladen
 invite-description = Erstelle ein Mitglied und sende optional eine SNO-ID-Einladung.
+error-email-invalid = Gib eine gültige E-Mail-Adresse ein.
 download-contact = Kontakt herunterladen
 directory-toolbar-label = Aktionen im Mitgliederverzeichnis
 invite-toolbar-label = Aktionen bei der Mitgliedereinladung
 detail-toolbar-label = Aktionen für das Mitglied
 edit-toolbar-label = Aktionen im Mitgliedereditor
+invitations-title = Mitgliedseinladungen
+invitations-subtitle = Aktive Einladungen können erneut gesendet werden. Abgelaufene oder widerrufene Einladungen können neu ausgestellt werden.
 insurance-title = Versicherung & Instrumente
 insurance-subtitle = Instrumente und andere Gegenstände, die zu Versicherungszwecken bei der Band angemeldet sind.
 

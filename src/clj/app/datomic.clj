@@ -34,9 +34,16 @@
   (try
     (d/transact conn opts)
     (catch clojure.lang.ExceptionInfo e
-      {:error (ex-data e)
+      {:error     (ex-data e)
        :exception e
-       :msg (ex-message e)})))
+       :msg       (ex-message e)})
+    (catch java.util.concurrent.ExecutionException e
+      (let [cause (ex-cause e)]
+        (if-let [error (ex-data cause)]
+          {:error     error
+           :exception cause
+           :msg       (ex-message cause)}
+          (throw e))))))
 
 (defn audit-txs [req comment]
   (filterv #(some? %)
@@ -58,11 +65,7 @@
   (:db/ident (d/pull db '[:db/ident] attr)))
 
 (defn ref? [db attr]
-  (= :db.type/ref
-     (->
-      (d/pull db '[*] attr)
-      :db/valueType
-      :db/ident)))
+  (d/attr-is-ref? db attr))
 
 (defn resolve-ref [db eid]
   (d/pull db '[*] eid))
@@ -197,6 +200,61 @@
 (def q d/q)
 
 (def datum-elements (juxt :e :a :v :tx :added))
+
+(defn inflate-schema
+  "inflate-schema provides an abbreviated way to write Datomic schema.
+
+   A typical condensed form of schema is [SCHEMA_NAME TYPE DOC]
+   For example, [:user-group/orga :boolean \"If this group is orga group or not\"]
+
+   Each entry in `s` is a vector `[ident type doc & flags]`.
+   Entries that are maps pass through unchanged, as an escape hatch for conventional schema.
+
+   Supported flags:
+
+   | flag         | effect |
+   |--------------|--------|
+   | `:many`      | sets cardinality to `:db.cardinality/many` |
+   | `:identity`  | sets uniqueness to `:db.unique/identity` |
+   | `:value`     | sets uniqueness to `:db.unique/value` |
+   | `:component` | sets `:db/isComponent` to `true` |
+   | `:index`     | sets `:db/index` to `true` |
+   | `:no-history` | sets `:db/noHistory` to `true` |
+
+   Example:
+
+   ```clojure
+   (def schema
+     [[:user/id :uuid \"Unique user ID\" :identity]
+      [:user/roles :keyword \"User roles\" :many]
+      [:user/profile :ref \"User profile\" :component]])
+
+   (def txes (app.datomic/inflate-schema schema))
+
+   @(d/transact conn {:tx-data txes})
+   ```
+   "
+  [s]
+  (for [entry s]
+    (if (map? entry)
+      entry
+      (let [[ident type doc & flags] entry]
+        (cond-> {:db/ident     ident
+                 :db/valueType (keyword "db.type" (name type))
+                 :db/doc       doc
+                 :db/cardinality (if (some #{:many} flags)
+                                   :db.cardinality/many
+                                   :db.cardinality/one)}
+          (some #{:identity} flags)
+          (assoc :db/unique :db.unique/identity)
+          (some #{:value} flags)
+          (assoc :db/unique :db.unique/value)
+          (some #{:component} flags)
+          (assoc :db/isComponent true)
+          (some #{:index} flags)
+          (assoc :db/index true)
+          (some #{:no-history} flags)
+          (assoc :db/noHistory true))))))
 
 (comment
   (do

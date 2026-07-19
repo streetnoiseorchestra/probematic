@@ -113,23 +113,17 @@
              second
              last
              :error)))
-  (testing "email typo checking only requires an at sign"
-    (is (nil? (-> (actions/validate-profile-field-action
-                   {}
-                   {:account-profile (assoc valid-profile
-                                            :email "ada@localhost"
-                                            :validate-field "email")})
-                  second
-                  last)))
-    (is (= [:i18n/tr :account-settings/error-email-invalid]
-           (-> (actions/validate-profile-field-action
-                {}
-                {:account-profile (assoc valid-profile
-                                         :email "ada.example.test"
-                                         :validate-field "email")})
-               second
-               last
-               :error)))))
+  (testing "email validation uses the shared EmailAddress schema"
+    (doseq [email ["ada@localhost" "ada.example.test"]]
+      (is (= [:i18n/tr :account-settings/error-email-invalid]
+             (-> (actions/validate-profile-field-action
+                  {}
+                  {:account-profile (assoc valid-profile
+                                           :email email
+                                           :validate-field "email")})
+                 second
+                 last
+                 :error))))))
 
 (deftest avatar-staging-validates-the-file-that-will-be-submitted
   (is (= [nexus-actions/clear-loading

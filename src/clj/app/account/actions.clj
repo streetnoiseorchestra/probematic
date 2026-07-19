@@ -25,9 +25,7 @@
   (let [phone (form/trim-value (:phone profile))]
     {:name           (or (form/trim-value (:name profile)) "")
      :nick           (or (form/trim-value (:nick profile)) "")
-     :email          (some-> (:email profile)
-                             form/trim-value
-                             members.domain/clean-email)
+     :email          (some-> (:email profile) members.domain/clean-email)
      :username       (some-> (:username profile)
                              form/trim-value
                              members.domain/clean-username)
@@ -58,7 +56,7 @@
       (assoc :email
              {:error [:i18n/tr :account-settings/error-email-required]})
 
-      (and (seq email) (not (str/includes? email "@")))
+      (and (seq email) (not (members.domain/email-valid? email)))
       (assoc :email
              {:error [:i18n/tr :account-settings/error-email-invalid]})
 

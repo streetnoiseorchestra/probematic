@@ -1,4 +1,6 @@
-(ns app.members.index.actions)
+(ns app.members.index.actions
+  (:require
+   [app.util :as util]))
 
 (def valid-filter-presets
   #{"all" "active" "inactive"})
@@ -56,11 +58,27 @@
    [[:app.datastar.sse/merge-signals
      {:invite {:action nil
                :code nil
+               :member-id nil
+               :generation nil
                :inflight false}}]]])
 
 (defn resend-invitation-action
   [{:keys [now]} {:keys [invite]}]
   [[:app.members.index/resend-invitation (:code invite)]
+   [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
+   clear-invite-signals])
+
+(defn reissue-invitation-action
+  [{:keys [now]} {:keys [invite]}]
+  [[:app.members.index/reissue-invitation (:code invite)]
+   [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
+   clear-invite-signals])
+
+(defn reissue-revoked-invitation-action
+  [{:keys [now]} {:keys [invite]}]
+  [[:app.members.index/reissue-revoked-invitation
+    (util/ensure-uuid! (:member-id invite))
+    (:generation invite)]
    [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
    clear-invite-signals])
 
@@ -75,4 +93,6 @@
    ::set-filter-preset   #'set-filter-preset-action
    ::set-sort            #'set-sort-action
    ::resend-invitation   #'resend-invitation-action
+   ::reissue-invitation  #'reissue-invitation-action
+   ::reissue-revoked-invitation #'reissue-revoked-invitation-action
    ::delete-invitation   #'delete-invitation-action})

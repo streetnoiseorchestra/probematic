@@ -1,13 +1,22 @@
 (ns app.members.detail.actions-test
   (:require
    [app.members.detail.actions :as actions]
+   [app.members.invite.cells]
    [app.nexus.actions :as support]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [mycelium.cell :as cell]))
 
 (defn new-system []
   (tc/new-system "members-detail-actions"))
+
+(defn- claim-invitation! [conn member-id requested-at state]
+  ((:handler (cell/get-cell! :member-invite/claim!))
+   {:datomic-conn conn :clock (constantly requested-at)}
+   {:member/member-id member-id
+    :member-invite/requested-at requested-at
+    :member-invite/state state}))
 
 (defn state-for [{:keys [conn member-id]}]
   {:db                 (d/db conn)
@@ -587,13 +596,15 @@
                           :member/phone "+431111111"
                           :member/section [:section/name "Trumpets"]
                           :member/active? false})
-      (is (= [[:db/transact [{:db/id            [:member/member-id edited-member-id]
-                              :member/name      "Alice Admin"
-                              :member/nick      "ally"
-                              :member/email     "alice@example.com"
-                              :member/phone     "+43677123456"
-                              :member/section   [:section/name "Trumpets"]
-                              :member/active?   true}
+      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
+                              edited-member-id
+                              [{:db/id            [:member/member-id edited-member-id]
+                                :member/name      "Alice Admin"
+                                :member/nick      "ally"
+                                :member/email     "alice@example.com"
+                                :member/phone     "+43677123456"
+                                :member/section   [:section/name "Trumpets"]
+                                :member/active?   true}]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? true}]
               support/clear-loading
@@ -639,13 +650,15 @@
                           :member/keycloak-id "kc-123"
                           :member/section [:section/name "Trumpets"]
                           :member/active? false})
-      (is (= [[:db/transact [{:db/id            [:member/member-id edited-member-id]
-                              :member/name      "Alice Admin"
-                              :member/nick      "ally"
-                              :member/email     "alice@example.com"
-                              :member/phone     "+43677123456"
-                              :member/section   [:section/name "Trumpets"]
-                              :member/active?   true}
+      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
+                              edited-member-id
+                              [{:db/id            [:member/member-id edited-member-id]
+                                :member/name      "Alice Admin"
+                                :member/nick      "ally"
+                                :member/email     "alice@example.com"
+                                :member/phone     "+43677123456"
+                                :member/section   [:section/name "Trumpets"]
+                                :member/active?   true}]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? true}]
               [:app.members/update-keycloak-meta edited-member-id]
@@ -668,15 +681,19 @@
                           :member/keycloak-id "kc-123"
                           :member/section [:section/name "Trumpets"]
                           :member/active? true})
-      (is (= [[:db/transact [{:db/id              [:member/member-id edited-member-id]
-                              :member/name        "Alice Admin"
-                              :member/nick        "ally"
-                              :member/email       "alice@example.com"
-                              :member/phone       "+43677123456"
-                              :member/section     [:section/name "Trumpets"]
-                              :member/active?     true
-                              :member/username    "alice.new"
-                              :member/keycloak-id "kc-456"}
+      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
+                              edited-member-id
+                              [{:db/id              [:member/member-id edited-member-id]
+                                :member/name        "Alice Admin"
+                                :member/nick        "ally"
+                                :member/email       "alice@example.com"
+                                :member/phone       "+43677123456"
+                                :member/section     [:section/name "Trumpets"]
+                                :member/active?     true
+                                :member/username    "alice.new"}]]
+                             [:member/set-keycloak-id
+                              edited-member-id
+                              "kc-456"]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? true}]
               [:app.members/update-keycloak-meta edited-member-id]
@@ -703,13 +720,15 @@
                           :member/keycloak-id "kc-123"
                           :member/section [:section/name "Trumpets"]
                           :member/active? true})
-      (is (= [[:db/transact [{:db/id            [:member/member-id edited-member-id]
-                              :member/name      "Alice Admin"
-                              :member/nick      "ally"
-                              :member/email     "alice@example.com"
-                              :member/phone     "+43677123456"
-                              :member/section   [:section/name "Trumpets"]
-                              :member/active?   true}
+      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
+                              edited-member-id
+                              [{:db/id            [:member/member-id edited-member-id]
+                                :member/name      "Alice Admin"
+                                :member/nick      "ally"
+                                :member/email     "alice@example.com"
+                                :member/phone     "+43677123456"
+                                :member/section   [:section/name "Trumpets"]
+                                :member/active?   true}]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? true}]
               [:app.members/update-keycloak-meta edited-member-id]
@@ -815,3 +834,177 @@
              (actions/update-contact-action
               (assoc (state-for system) :tr tr)
               (contact-signals edited-member-id {})))))))
+
+(deftest contact-profile-updates-obey-invitation-lifecycle
+  (testing "all in-flight invitation statuses reject the contact transaction"
+    (doseq [status [:member.invite.status/accepting
+                    :member.invite.status/creating
+                    :member.invite.status/activating
+                    :member.invite.status/compensating]]
+      (let [{:keys [conn] :as system}
+            (new-system)
+            edited-member-id (random-uuid)]
+        (seed-section! conn "Trumpets")
+        (seed-member! conn {:member/member-id edited-member-id
+                            :member/name "Alice Old"
+                            :member/nick "old"
+                            :member/email "old@example.com"
+                            :member/username "alice.old"
+                            :member/phone "+431111111"
+                            :member/section [:section/name "Trumpets"]
+                            :member/active? true
+                            :member/invite-status status
+                            :member/invite-generation 2
+                            :member/invite-status-at
+                            #inst "2026-07-16T08:05:00.000-00:00"})
+        (let [effects
+              (actions/update-contact-action
+               (assoc (admin-state-for system) :tr tr)
+               (contact-signals edited-member-id
+                                {:username "Alice.New"}))]
+          (is (thrown? Throwable
+                       @(d/transact conn (-> effects first second))))
+          (is (= {:member/name "Alice Old"
+                  :member/email "old@example.com"
+                  :member/username "alice.old"}
+                 (d/pull (d/db conn)
+                         [:member/name :member/email :member/username]
+                         [:member/member-id edited-member-id])))))))
+
+  (testing "pending, terminal, and invitation-free members may be edited"
+    (doseq [status [nil
+                    :member.invite.status/pending
+                    :member.invite.status/accepted
+                    :member.invite.status/revoked]]
+      (let [{:keys [conn] :as system}
+            (new-system)
+            edited-member-id (random-uuid)]
+        (seed-section! conn "Trumpets")
+        (seed-member!
+         conn
+         (cond-> {:member/member-id edited-member-id
+                  :member/name "Alice Old"
+                  :member/nick "old"
+                  :member/email "old@example.com"
+                  :member/username "alice.old"
+                  :member/phone "+431111111"
+                  :member/section [:section/name "Trumpets"]
+                  :member/active? true}
+           status
+           (assoc :member/invite-status status
+                  :member/invite-generation 2
+                  :member/invite-status-at
+                  #inst "2026-07-16T08:05:00.000-00:00")))
+        (let [effects
+              (actions/update-contact-action
+               (assoc (admin-state-for system) :tr tr)
+               (contact-signals edited-member-id
+                                {:username "Alice.New"}))]
+          @(d/transact conn (-> effects first second))
+          (is (= {:member/name "Alice Admin"
+                  :member/email "alice@example.com"
+                  :member/username "alice.new"}
+                 (d/pull (d/db conn)
+                         [:member/name :member/email :member/username]
+                         [:member/member-id edited-member-id]))))))))
+
+(deftest contact-profile-update-and-invitation-claim-serialize-safely
+  (let [pending    :member.invite.status/pending
+        accepting  :member.invite.status/accepting
+        issued-at  #inst "2026-07-16T08:00:00.000-00:00"
+        claimed-at #inst "2026-07-16T08:05:00.000-00:00"
+        expires-at #inst "2026-07-17T08:00:00.000-00:00"]
+    (testing "a claim serialized first rejects the stale contact transaction"
+      (let [{:keys [conn] :as system} (new-system)
+            edited-member-id          (random-uuid)]
+        (seed-section! conn "Trumpets")
+        (seed-member! conn {:member/member-id edited-member-id
+                            :member/name "Alice Old"
+                            :member/nick "old"
+                            :member/email "old@example.com"
+                            :member/username "alice.old"
+                            :member/phone "+431111111"
+                            :member/section [:section/name "Trumpets"]
+                            :member/active? true
+                            :member/invite-code "claim-first"
+                            :member/invite-expires-at expires-at
+                            :member/invite-status pending
+                            :member/invite-generation 1
+                            :member/invite-status-at issued-at})
+        (let [effects
+              (actions/update-contact-action
+               (assoc (admin-state-for system) :tr tr)
+               (contact-signals edited-member-id
+                                {:username "Alice.New"}))]
+          (is (= {:member-invite/claim-status :claimed
+                  :member-invite/attempt-generation 2
+                  :member-invite/state
+                  {:status accepting
+                   :generation 2
+                   :expires-at expires-at}}
+                 (claim-invitation!
+                  conn
+                  edited-member-id
+                  claimed-at
+                  {:status pending
+                   :generation 1
+                   :expires-at expires-at})))
+          (is (thrown? Throwable
+                       @(d/transact conn (-> effects first second))))
+          (is (= {:member/name "Alice Old"
+                  :member/email "old@example.com"
+                  :member/username "alice.old"
+                  :member/invite-status {:db/ident accepting}}
+                 (d/pull (d/db conn)
+                         [:member/name
+                          :member/email
+                          :member/username
+                          {:member/invite-status [:db/ident]}]
+                         [:member/member-id edited-member-id]))))))
+
+    (testing "a contact transaction serialized first is visible to the claim"
+      (let [{:keys [conn] :as system} (new-system)
+            edited-member-id          (random-uuid)]
+        (seed-section! conn "Trumpets")
+        (seed-member! conn {:member/member-id edited-member-id
+                            :member/name "Alice Old"
+                            :member/nick "old"
+                            :member/email "old@example.com"
+                            :member/username "alice.old"
+                            :member/phone "+431111111"
+                            :member/section [:section/name "Trumpets"]
+                            :member/active? true
+                            :member/invite-code "profile-first"
+                            :member/invite-expires-at expires-at
+                            :member/invite-status pending
+                            :member/invite-generation 1
+                            :member/invite-status-at issued-at})
+        (let [effects
+              (actions/update-contact-action
+               (assoc (admin-state-for system) :tr tr)
+               (contact-signals edited-member-id
+                                {:username "Alice.New"}))]
+          @(d/transact conn (-> effects first second))
+          (is (= {:member-invite/claim-status :claimed
+                  :member-invite/attempt-generation 2
+                  :member-invite/state
+                  {:status accepting
+                   :generation 2
+                   :expires-at expires-at}}
+                 (claim-invitation!
+                  conn
+                  edited-member-id
+                  claimed-at
+                  {:status pending
+                   :generation 1
+                   :expires-at expires-at})))
+          (is (= {:member/name "Alice Admin"
+                  :member/email "alice@example.com"
+                  :member/username "alice.new"
+                  :member/invite-status {:db/ident accepting}}
+                 (d/pull (d/db conn)
+                         [:member/name
+                          :member/email
+                          :member/username
+                          {:member/invite-status [:db/ident]}]
+                         [:member/member-id edited-member-id]))))))))

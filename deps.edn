@@ -84,6 +84,9 @@
         nano-id/nano-id                                {:mvn/version "1.1.0"}
         ;; FCIS/Effects System
         no.cjohansen/nexus                             {:mvn/version "2025.11.1"}
+        ;; Workflow orchestration
+        io.github.mycelium-clj/mycelium                {:git/url "https://github.com/mycelium-clj/mycelium"
+                                                        :git/sha "df45132fb5f70f46e6082ffe2b703efef4ce1a44"}
         ;; REPL
         nrepl/nrepl                                    {:mvn/version "1.7.0"}
         integrant/repl                                 {:mvn/version "0.5.1"}

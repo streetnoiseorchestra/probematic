@@ -68,6 +68,9 @@ END:VCARD"
 (defn clean-email [email]
   (str/trim (str/lower-case email)))
 
+(defn email-valid? [email]
+  (boolean (s/valid? ::s/email-address email)))
+
 (defn clean-username [username]
   (str/trim (str/lower-case username)))
 

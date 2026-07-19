@@ -2,28 +2,18 @@
   (:require
    [app.datomic.migrations :as migrations]
    [app.datomic.system :as datomic.system]
+   [app.test-common :as tc]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]
    [dev.gethop.stork :as stork]
    [tick.core :as t]))
 
-(def ^:dynamic *test-connections* nil)
-
-(defn- with-released-test-connections [f]
-  (binding [*test-connections* (atom [])]
-    (try
-      (f)
-      (finally
-        (run! d/release @*test-connections*)))))
-
-(use-fixtures :each with-released-test-connections)
+(use-fixtures :each tc/with-released-test-connections)
 
 (defn- fresh-connection [name-prefix]
   (let [uri (str "datomic:mem://" name-prefix "-" (random-uuid))]
     (d/create-database uri)
-    (let [conn (d/connect uri)]
-      (swap! *test-connections* conj conn)
-      conn)))
+    (tc/register-test-connection! (d/connect uri))))
 
 (defn- install-current-schema! [conn]
   @(d/transact conn (stork/read-resource "schema-meta.edn"))

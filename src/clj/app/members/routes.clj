@@ -4,7 +4,6 @@
    [app.members.detail.views :as detail.views]
    [app.members.domain :as members.domain]
    [app.members.index.views :as index.views]
-   [app.members.invite-accept.views :as invite-accept]
    [app.members.invite.views :as invite.views]
    [app.queries :as q]
    [app.routes.datastar :as ds]
@@ -53,5 +52,5 @@
 (defn unauthenticated-routes []
   [""
    ["/invite-accept" {:app.route/name :app/invite-accept
-                      :get            invite-accept/invite-accept
-                      :post           invite-accept/invite-accept-post}]])
+                      :get            invite.views/invite-accept
+                      :post           invite.views/invite-accept-post}]])

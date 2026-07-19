@@ -107,3 +107,93 @@
   (tap> 2)
 
   (first @(portal/my-taps)))
+
+(comment
+  (require '[mycelium.cell :as cell])
+  (require '[mycelium.core :as myc])
+
+  (defmethod cell/cell-spec :math/double [_]
+    {:id      :math/double
+     :handler (fn [_resources data]
+                (assoc data :result (* 2 (:x data))))
+     :schema  {:input  [:map [:x :int]]
+               :output [:map [:result :int]]}})
+
+  (defmethod cell/cell-spec :math/add-ten [_]
+    {:id      :math/add-ten
+     :handler (fn [_resources data]
+                (assoc data :result (+ 10 (:result data))))
+     :schema  {:input  [:map [:result :int]]
+               :output [:map [:result :int]]}})
+
+  (:mycelium/trace
+   (myc/run-workflow
+    {:cells      {:start :math/double
+                  :add   :math/add-ten}
+     :edges      {:start {:done :add}
+                  :add   {:done :end}}
+     :dispatches {:start [[:done (constantly true)]]
+                  :add   [[:done (constantly true)]]}}
+    {}          ;; resources
+    {:x 5})))
+
+(comment
+  ;; A nested workflow has two normal business outcomes.
+  (require '[mycelium.cell :as cell])
+  (require '[mycelium.compose :as compose])
+  (require '[mycelium.core :as myc])
+
+  (defmethod cell/cell-spec :demo.nested/decide [_]
+    {:id :demo.nested/decide
+     :handler (fn [_resources _data] {})
+     :schema {:input [:map [:approved? :boolean]]
+              :output [:map]}})
+
+  (def review-workflow
+    {:cells {:start :demo.nested/decide}
+     :edges {:start {:approved :end
+                     :rejected :end}}
+     :dispatches {:start [[:approved :approved?]
+                          [:rejected #(not (:approved? %))]]}})
+
+  ;; Vanilla composition exposes only :success and :failure to the parent.
+  (compose/register-workflow-cell!
+   :demo.nested/review
+   review-workflow
+   {:input [:map [:approved? :boolean]]
+    :output :map})
+
+  (defmethod cell/cell-spec :demo.nested/show-approved [_]
+    {:id :demo.nested/show-approved
+     :handler (fn [_resources _data] {:page :approved})
+     :schema {:input [:map] :output [:map [:page [:= :approved]]]}})
+
+  (defmethod cell/cell-spec :demo.nested/show-rejected [_]
+    {:id :demo.nested/show-rejected
+     :handler (fn [_resources _data] {:page :rejected})
+     :schema {:input [:map] :output [:map [:page [:= :rejected]]]}})
+
+  (def parent-workflow
+    {:cells {:start :demo.nested/review
+             :approved :demo.nested/show-approved
+             :rejected :demo.nested/show-rejected}
+     :edges {:start {:approved :approved
+                     :rejected :rejected
+                     :failure :error}
+             :approved :end
+             :rejected :end}})
+
+  ;; This fails to compile: the nested cell supplies no :approved/:rejected dispatches.
+  (myc/pre-compile parent-workflow)
+
+  ;; Vanilla workaround: the parent knows and repeats the child's routing logic.
+  (def coupled-parent-workflow
+    (assoc parent-workflow
+           :dispatches
+           {:start [[:failure :mycelium/error]
+                    [:approved :approved?]
+                    [:rejected #(not (:approved? %))]]}))
+
+  (mapv #(select-keys (myc/run-workflow coupled-parent-workflow {} {:approved? %})
+                      [:approved? :page])
+        [true false]))
