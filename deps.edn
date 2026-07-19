@@ -86,9 +86,8 @@
         ;; FCIS/Effects System
         no.cjohansen/nexus                             {:mvn/version "2025.11.1"}
         ;; Workflow orchestration
-        io.github.yogthos/mycelium                    {:git/url "https://github.com/yogthos/mycelium"
-                                                       :git/tag "v0.1.4"
-                                                       :git/sha "874dcff0d140c32479c9d6e31c144582af157d86"}
+        io.github.mycelium-clj/mycelium                {:git/url "https://github.com/mycelium-clj/mycelium"
+                                                        :git/sha "df45132fb5f70f46e6082ffe2b703efef4ce1a44"}
         ;; REPL
         nrepl/nrepl                                    {:mvn/version "1.7.0"}
         integrant/repl                                 {:mvn/version "0.5.1"}

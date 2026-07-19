@@ -39,17 +39,16 @@
     [:error/member-section-invalid] "Please choose a valid section."
     (str path)))
 
-(defn submit-signals [member-id overrides]
+(defn submit-signals [overrides]
   {:member-invite
-   (merge {:member-id      (str member-id)
-           :name           "Alice Admin"
-           :nick           ""
-           :email          "ALICE@example.com  "
-           :username       "Alice.Admin"
-           :phone          "+43 677 123456"
-           :section-name   "Trumpets"
-           :active         true
-           :create-sno-id  true}
+   (merge {:name          "Alice Admin"
+           :nick          ""
+           :email         "ALICE@example.com  "
+           :username      "Alice.Admin"
+           :phone         "+43 677 123456"
+           :section-name  "Trumpets"
+           :active        true
+           :create-sno-id true}
           overrides)})
 
 (defn- validate-field [state signals]
@@ -60,9 +59,8 @@
 
 (deftest validate-member-invite-field-action-test
   (let [{:keys [conn] :as system} (new-system)
-        new-member-id            (random-uuid)
-        state                    (assoc (state-for system) :tr tr)
-        raw-form                 (:member-invite (submit-signals new-member-id {}))]
+        state    (assoc (state-for system) :tr tr)
+        raw-form (:member-invite (submit-signals {}))]
     (seed-section! conn "Trumpets")
 
     (testing "validates each field independently"
@@ -165,65 +163,46 @@
                (assoc raw-form :validate-field "not-an-invite-field")}))))))
 
 (deftest submit-member-invite-action-test
-  (testing "creates a member, ledger, and invitation when create-sno-id is enabled"
-    (let [{:keys [member-id] :as system} (new-system)
-          new-member-id                 (random-uuid)]
+  (testing "delegates valid invitations to the member invitation effect"
+    (let [system (new-system)]
       (seed-section! (:conn system) "Trumpets")
-      (is (= [[:db/transact [{:db/id            "new-member"
-                              :member/member-id new-member-id
-                              :member/name      "Alice Admin"
-                              :member/email     "alice@example.com"
-                              :member/username  "alice.admin"
-                              :member/phone     "+43677123456"
-                              :member/section   [:section/name "Trumpets"]
-                              :member/active?   true}
-                             {:db/id            "new-ledger"
-                              :ledger/ledger-id :db/gen-uuid
-                              :ledger/owner     "new-member"
-                              :ledger/balance   0}
-                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? false}]
-              [:app.members/send-user-invitation new-member-id]
-              [:app.datastar/respond-sse
-               [[:app.datastar.sse/redirect (str "/member/" new-member-id)]]]]
+      (is (= [[:app.members/invite-member
+               {:name          "Alice Admin"
+                :nick          ""
+                :email         "alice@example.com"
+                :username      "alice.admin"
+                :phone         "+43677123456"
+                :section-name  "Trumpets"
+                :active        true
+                :create-sno-id true}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals new-member-id {}))))))
+              (submit-signals {}))))))
 
-  (testing "creates a member without an invitation when create-sno-id is disabled and blank nick is omitted"
-    (let [{:keys [member-id] :as system} (new-system)
-          new-member-id                 (random-uuid)]
+  (testing "delegates member creation without an invitation to the same form effect"
+    (let [system (new-system)]
       (seed-section! (:conn system) "Trumpets")
-      (is (= [[:db/transact [{:db/id            "new-member"
-                              :member/member-id new-member-id
-                              :member/name      "Alice Admin"
-                              :member/email     "alice@example.com"
-                              :member/username  "alice.admin"
-                              :member/phone     "+43677123456"
-                              :member/section   [:section/name "Trumpets"]
-                              :member/active?   false}
-                             {:db/id            "new-ledger"
-                              :ledger/ledger-id :db/gen-uuid
-                              :ledger/owner     "new-member"
-                              :ledger/balance   0}
-                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? false}]
-              [:app.datastar/respond-sse
-               [[:app.datastar.sse/redirect (str "/member/" new-member-id)]]]]
+      (is (= [[:app.members/invite-member
+               {:name          "Alice Admin"
+                :nick          ""
+                :email         "alice@example.com"
+                :username      "alice.admin"
+                :phone         "+43677123456"
+                :section-name  "Trumpets"
+                :active        false
+                :create-sno-id false}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals new-member-id {:active false
-                                             :create-sno-id false}))))))
+              (submit-signals {:active false
+                               :create-sno-id false}))))))
 
-  (testing "returns required field errors"
-    (let [{:keys [conn] :as system} (new-system)
-          new-member-id            (random-uuid)]
+  (testing "returns required field errors without restoring a client member ID"
+    (let [{:keys [conn] :as system} (new-system)]
       (seed-section! conn "Trumpets")
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-invite]
-               {:member-id     (str new-member-id)
-                :name          ""
+               {:name          ""
                 :nick          ""
                 :email         ""
                 :username      ""
@@ -238,21 +217,19 @@
                                 :section-name {:error "Section is required."}}}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals new-member-id {:name ""
-                                             :email ""
-                                             :username ""
-                                             :phone ""
-                                             :section-name ""}))))))
+              (submit-signals {:name ""
+                               :email ""
+                               :username ""
+                               :phone ""
+                               :section-name ""}))))))
 
   (testing "returns format validation errors"
-    (let [{:keys [conn] :as system} (new-system)
-          new-member-id            (random-uuid)]
+    (let [{:keys [conn] :as system} (new-system)]
       (seed-section! conn "Trumpets")
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-invite]
-               {:member-id     (str new-member-id)
-                :name          "Alice Admin"
+               {:name          "Alice Admin"
                 :nick          ""
                 :email         "not-an-email"
                 :username      "bad user"
@@ -265,13 +242,12 @@
                                 :phone    {:error "Phone format is invalid."}}}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals new-member-id {:email "not-an-email"
-                                             :username "bad user"
-                                             :phone "123"}))))))
+              (submit-signals {:email "not-an-email"
+                               :username "bad user"
+                               :phone "123"}))))))
 
   (testing "returns uniqueness errors for duplicate member attributes"
-    (let [{:keys [conn] :as system} (new-system)
-          new-member-id            (random-uuid)]
+    (let [{:keys [conn] :as system} (new-system)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id (random-uuid)
                           :member/name "Existing Member"
@@ -284,8 +260,7 @@
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-invite]
-               {:member-id     (str new-member-id)
-                :name          "Alice Admin"
+               {:name          "Alice Admin"
                 :nick          "alice"
                 :email         "alice@example.com"
                 :username      "alice.admin"
@@ -299,16 +274,14 @@
                                 :phone    {:error "A member already has that phone number"}}}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals new-member-id {:nick "alice"}))))))
+              (submit-signals {:nick "alice"}))))))
 
   (testing "returns a validation error when the section does not exist"
-    (let [system        (new-system)
-          new-member-id (random-uuid)]
+    (let [system (new-system)]
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-invite]
-               {:member-id     (str new-member-id)
-                :name          "Alice Admin"
+               {:name          "Alice Admin"
                 :nick          ""
                 :email         "alice@example.com"
                 :username      "alice.admin"
@@ -319,4 +292,4 @@
                 :error         {:section-name {:error "Please choose a valid section."}}}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals new-member-id {:section-name "Unknown"})))))))
+              (submit-signals {:section-name "Unknown"})))))))

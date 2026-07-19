@@ -1,11 +1,13 @@
 (ns app.keycloak.cells-test
   (:require
    [app.keycloak.cells]
+   [app.members.invite.domain :as invite.domain]
    [app.members.invite.workflows :as workflow]
-   [clojure.test :refer [deftest is testing use-fixtures]]
+   [clojure.test :refer [deftest is testing]]
    [malli.core :as m]
    [mycelium.cell :as cell]
-   [mycelium.dev :as myc-dev]))
+   [mycelium.dev :as myc-dev]
+   [mycelium.schema :as myc-schema]))
 
 (def ^:private member-id
   "230d7ed6-bff7-421b-969e-6b19f38fbf13")
@@ -43,14 +45,20 @@
 
 (defn- valid-malli-schema? [schema]
   (try
-    (m/schema schema)
+    (m/schema schema {:registry invite.domain/registry})
     true
     (catch Exception _exception
       false)))
 
 (defn- valid-output-contract? [output]
-  (if (map? output)
+  (cond
+    (myc-schema/per-transition? output)
+    (every? valid-malli-schema? (vals (myc-schema/transitions-map output)))
+
+    (map? output)
     (every? valid-malli-schema? (vals output))
+
+    :else
     (valid-malli-schema? output)))
 
 (defn- exact-attributes? [expected actual]
@@ -145,12 +153,13 @@
             {:outcome :not-found})))})))
 
 (defn- dispatches [cell-name]
-  (get-in workflow/validated-manifest [:dispatches cell-name]))
+  (get-in workflow/accept-or-recover [:dispatches cell-name]))
 
 (defn- test-cell [cell-id cell-name keycloak input expected-dispatch]
   (-> (myc-dev/test-cell
        cell-id
        {:input input
+        :malli/registry invite.domain/registry
         :resources {:keycloak keycloak}
         :dispatches (dispatches cell-name)
         :expected-dispatch expected-dispatch})
@@ -158,14 +167,6 @@
 
 (defn- handler [cell-id]
   (:handler (cell/get-cell! cell-id)))
-
-(defn- install-cell-contracts [f]
-  (workflow/workflow-definition)
-  (doseq [cell-id keycloak-cell-ids]
-    (cell/set-cell-schema! cell-id (:schema (cell/cell-spec cell-id))))
-  (f))
-
-(use-fixtures :once install-cell-contracts)
 
 (deftest find-users-by-attributes-cell-test
   (testing "no exact user"
@@ -175,7 +176,7 @@
             :matched-dispatch :not-found}
            (test-cell
             :keycloak/find-users-by-attributes
-            :find-provisioning-user
+            :cleanup-find-user
             (fake-keycloak {:users [(assoc alice
                                            :attributes
                                            (assoc attempt-attributes
@@ -192,7 +193,7 @@
             :matched-dispatch :found}
            (test-cell
             :keycloak/find-users-by-attributes
-            :find-provisioning-user
+            :cleanup-find-user
             (fake-keycloak {:users [alice]})
             #:keycloak{:user-attributes attempt-attributes}
             :found))))
@@ -204,7 +205,7 @@
             :matched-dispatch :ambiguous}
            (test-cell
             :keycloak/find-users-by-attributes
-            :find-provisioning-user
+            :cleanup-find-user
             (fake-keycloak {:users [alice bob]})
             #:keycloak{:user-attributes attempt-attributes}
             :ambiguous)))))
@@ -218,7 +219,7 @@
             :matched-dispatch :found}
            (test-cell
             :keycloak/get-user
-            :get-created-user
+            :activate-load-user
             (fake-keycloak {:users [alice]})
             #:keycloak{:user-id "user-alice"}
             :found))))
@@ -229,7 +230,7 @@
             :matched-dispatch :not-found}
            (test-cell
             :keycloak/get-user
-            :get-created-user
+            :activate-load-user
             (fake-keycloak)
             #:keycloak{:user-id "missing"}
             :not-found)))))
@@ -239,13 +240,13 @@
     (is (= {:pass? true
             :errors []
             :output #:keycloak{:group-lookup :not-found}
-            :matched-dispatch :unavailable}
+            :matched-dispatch :not-found}
            (test-cell
             :keycloak/find-group-by-name
-            :find-group-before-create
+            :provision-find-group
             (fake-keycloak {:groups [(assoc member-group :name "Other")]})
             #:keycloak{:group-name "Mitglieder"}
-            :unavailable))))
+            :not-found))))
   (testing "one exact group"
     (is (= {:pass? true
             :errors []
@@ -254,7 +255,7 @@
             :matched-dispatch :found}
            (test-cell
             :keycloak/find-group-by-name
-            :find-group-before-create
+            :provision-find-group
             (fake-keycloak {:groups [member-group]})
             #:keycloak{:group-name "Mitglieder"}
             :found))))
@@ -263,14 +264,14 @@
             :errors []
             :output {:keycloak/group-lookup :ambiguous
                      :keycloak/match-count 2}
-            :matched-dispatch :unavailable}
+            :matched-dispatch :ambiguous}
            (test-cell
             :keycloak/find-group-by-name
-            :find-group-before-create
+            :provision-find-group
             (fake-keycloak {:groups [member-group
                                      (assoc member-group :id "group-duplicate")]})
             #:keycloak{:group-name "Mitglieder"}
-            :unavailable)))))
+            :ambiguous)))))
 
 (deftest create-user-cell-test
   (let [keycloak (fake-keycloak)
@@ -288,7 +289,7 @@
               :matched-dispatch :created}
              (test-cell
               :keycloak/create-user
-              :create-user
+              :provision-create-user
               keycloak
               #:keycloak{:user-spec user-spec}
               :created)))
@@ -305,7 +306,7 @@
               :matched-dispatch :rejected}
              (test-cell
               :keycloak/create-user
-              :create-user
+              :provision-create-user
               (fake-keycloak {:failures {:create-user! :rejected}})
               #:keycloak{:user-spec user-spec}
               :rejected))))))
@@ -319,7 +320,7 @@
               :matched-dispatch :joined}
              (test-cell
               :keycloak/add-user-to-group
-              :add-user-to-group
+              :configure-add-user-to-group
               keycloak
               {:keycloak/user-id "user-alice"
                :keycloak/group-id "group-members"}
@@ -333,7 +334,7 @@
               :matched-dispatch :rejected}
              (test-cell
               :keycloak/add-user-to-group
-              :add-user-to-group
+              :configure-add-user-to-group
               (fake-keycloak {:users [alice]
                               :groups [member-group]
                               :failures {:add-user-to-group! :rejected}})
@@ -350,7 +351,7 @@
               :matched-dispatch :updated}
              (test-cell
               :keycloak/set-user-enabled
-              :enable-after-link
+              :activate-enable-user
               keycloak
               {:keycloak/user-id "user-alice"
                :keycloak/enabled? true}
@@ -364,7 +365,7 @@
               :matched-dispatch :rejected}
              (test-cell
               :keycloak/set-user-enabled
-              :enable-after-link
+              :activate-enable-user
               (fake-keycloak {:users [alice]
                               :failures {:set-user-enabled! :rejected}})
               {:keycloak/user-id "user-alice"
@@ -380,7 +381,7 @@
               :matched-dispatch :absent}
              (test-cell
               :keycloak/delete-user
-              :delete-user
+              :cleanup-delete-user
               keycloak
               #:keycloak{:user-id "user-alice"}
               :absent)))
@@ -392,7 +393,7 @@
             :matched-dispatch :absent}
            (test-cell
             :keycloak/delete-user
-            :delete-user
+            :cleanup-delete-user
             (fake-keycloak)
             #:keycloak{:user-id "missing"}
             :absent))))
@@ -403,7 +404,7 @@
             :matched-dispatch :rejected}
            (test-cell
             :keycloak/delete-user
-            :delete-user
+            :cleanup-delete-user
             (fake-keycloak {:users [alice]
                             :failures {:delete-user! :rejected}})
             #:keycloak{:user-id "user-alice"}
@@ -447,6 +448,7 @@
         (let [result (myc-dev/test-cell
                       cell-id
                       {:input input
+                       :malli/registry invite.domain/registry
                        :resources {:keycloak (fake-keycloak)}})]
           (is (= {:pass? false
                   :error-phases [:input]
@@ -459,6 +461,7 @@
   (let [result (myc-dev/test-cell
                 :keycloak/get-user
                 {:input #:keycloak{:user-id "user-alice"}
+                 :malli/registry invite.domain/registry
                  :resources
                  {:keycloak
                   {:get-user

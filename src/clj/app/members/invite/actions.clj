@@ -3,14 +3,12 @@
    [app.form :as form]
    [app.members.domain :as members.domain]
    [app.nexus.actions :as support]
-   [app.util :as util]
    [clojure.string :as str]
    [datomic.api :as d]))
 
 (defn- normalize-form [member-invite]
   (let [phone-raw (form/trim-value (:phone member-invite))]
-    {:member-id     (some-> (:member-id member-invite) str)
-     :name          (form/trim-value (:name member-invite))
+    {:name          (form/trim-value (:name member-invite))
      :nick          (form/trim-value (:nick member-invite))
      :email         (some-> (:email member-invite) members.domain/clean-email)
      :username      (some-> (:username member-invite) members.domain/clean-username)
@@ -62,23 +60,6 @@
      {:section-name {:error (tr [:error/member-section-invalid])}})
    (duplicate-errors db tr {:email email :username username :nick nick :phone phone})))
 
-(defn- member-tx [{:keys [member-id name nick email username phone section-name active]}]
-  (cond-> {:db/id            "new-member"
-           :member/member-id member-id
-           :member/name      name
-           :member/email     email
-           :member/username  username
-           :member/phone     phone
-           :member/section   [:section/name section-name]
-           :member/active?   active}
-    (seq nick) (assoc :member/nick nick)))
-
-(defn- ledger-tx []
-  {:db/id            "new-ledger"
-   :ledger/ledger-id :db/gen-uuid
-   :ledger/owner     "new-member"
-   :ledger/balance   0})
-
 (def ^:private validation-fields
   {"name"         :name
    "nick"         :nick
@@ -95,35 +76,19 @@
           error         (get (validation-errors {:db db :tr tr} member-invite)
                              field)]
       [[:app.datastar/assoc-state
-        [:member-invite :error field]
-        error]])
+        [:member-invite :error field] error]])
     []))
 
 (defn submit-member-invite-action
-  [{:keys [db current-member-id tr]} {:keys [member-invite]}]
+  [{:keys [db tr]} {:keys [member-invite]}]
   (let [tr            (or tr (fn [path & _] (name (last path))))
         member-invite (normalize-form member-invite)
         errors        (validation-errors {:db db :tr tr} member-invite)]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state
-        [:member-invite]
-        (assoc member-invite :error errors)]]
-      (let [member-id (util/ensure-uuid! (:member-id member-invite))
-            member-invite (assoc member-invite :member-id member-id)]
-        (cond-> [[:db/transact
-                  (support/with-audit
-                    [(member-tx member-invite)
-                     (ledger-tx)]
-                    current-member-id)
-                  {:transact-w-nils? false}]]
-          (:create-sno-id member-invite)
-          (conj [:app.members/send-user-invitation member-id])
-
-          true
-          (conj [:app.datastar/respond-sse
-                 [[:app.datastar.sse/redirect
-                   (str "/member/" member-id)]]]))))))
+        [:member-invite] (assoc member-invite :error errors)]]
+      [[:app.members/invite-member member-invite]])))
 
 (def actions
   {::validate-member-invite-field #'validate-member-invite-field-action

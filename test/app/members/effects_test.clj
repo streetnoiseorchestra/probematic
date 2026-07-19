@@ -58,24 +58,120 @@
    (fn [_email-system message]
      (swap! queued conj message))})
 
-(deftest send-user-invitation-issues-datomic-state-before-queueing-test
-  (let [{:keys [conn member-id]} (tc/new-system "member-invitation-send")
-        queued (atom [])]
-    (seed-member! conn member-id)
-    (is (= "generated-code"
-           (effects/send-user-invitation!
-            (fake-deps queued)
-            (request conn)
-            member-id)))
-    (is (= {:status pending
-            :generation 1
-            :code "generated-code"
-            :expiry expires-at}
-           (invitation conn member-id)))
-    (is (= [{:member-id member-id
-             :code "generated-code"}]
-           @queued))))
+(def member-invite-form
+  {:name "Alice Example"
+   :nick "alice"
+   :email "alice@example.com"
+   :username "alice.example"
+   :phone "+43677123456"
+   :section-name "Sopran"
+   :active true
+   :create-sno-id true})
 
+(deftest invite-member-effect-runs-the-workflow-and-preserves-the-first-invitation-test
+  (let [{:keys [conn] actor-member-id :member-id}
+        (tc/new-system "member-invitation-create-effect")
+        first-member-id (random-uuid)
+        first-ledger-id (random-uuid)
+        second-member-id (random-uuid)
+        second-ledger-id (random-uuid)
+        generated-ids_ (atom [first-member-id
+                              first-ledger-id
+                              second-member-id
+                              second-ledger-id])
+        generated-codes_ (atom ["original-code" "conflicting-code"])
+        queued_ (atom [])
+        invite-member! (ns-resolve 'app.members.effects 'invite-member!)
+        deps (assoc
+              (fake-deps queued_)
+              :random-uuid
+              (fn []
+                (let [generated-id (first @generated-ids_)]
+                  (swap! generated-ids_ subvec 1)
+                  generated-id))
+              :random-code
+              (fn []
+                (let [code (first @generated-codes_)]
+                  (swap! generated-codes_ subvec 1)
+                  code)))
+        req (assoc-in (request conn)
+                      [:session :session/member :member/member-id]
+                      actor-member-id)]
+    @(d/transact conn [{:section/name "Sopran"}])
+    (is (some? invite-member!))
+    (when invite-member!
+      (let [first-result (invite-member! deps req member-invite-form)
+            second-result (invite-member! deps req member-invite-form)
+            db (d/db conn)
+            member (d/entity db [:member/member-id first-member-id])
+            status (:member/invite-status member)]
+        (is (= {:first-status :created
+                :second-status :conflict
+                :created-member-id first-member-id
+                :member-count 1
+                :ledger-count 1
+                :invitation-code "original-code"
+                :invitation-generation 1
+                :invitation-status pending
+                :remaining-generated-ids []
+                :queued [{:member-id first-member-id
+                          :code "original-code"}]}
+               {:first-status (:member-invite/persist-status first-result)
+                :second-status (:member-invite/persist-status second-result)
+                :created-member-id
+                (get-in first-result
+                        [:member-invite/member :member/member-id])
+                :member-count
+                (d/q '[:find (count ?member) .
+                       :where [?member :member/email]]
+                     db)
+                :ledger-count
+                (d/q '[:find (count ?ledger) .
+                       :where [?ledger :ledger/ledger-id]]
+                     db)
+                :invitation-code (:member/invite-code member)
+                :invitation-generation (:member/invite-generation member)
+                :invitation-status
+                (if (keyword? status) status (:db/ident status))
+                :remaining-generated-ids @generated-ids_
+                :queued @queued_}))))))
+
+(deftest invite-member-effect-rejects-creation-without-an-invitation-test
+  (let [{:keys [conn]} (tc/new-system "member-without-invitation-effect")
+        queued_ (atom [])
+        invite-member! (ns-resolve 'app.members.effects 'invite-member!)
+        exception
+        (when invite-member!
+          (try
+            (invite-member!
+             (fake-deps queued_)
+             (request conn)
+             (assoc member-invite-form :create-sno-id false))
+            nil
+            (catch clojure.lang.ExceptionInfo exception
+              exception)))]
+    (is (some? invite-member!))
+    (when invite-member!
+      (is (= {:message "NOT YET IMPLEMENTED Member invitations require SNO ID creation"
+              :data {:create-sno-id false}
+              :member-count 0
+              :ledger-count 0
+              :queued []}
+             {:message (ex-message exception)
+              :data (ex-data exception)
+              :member-count
+              (or
+               (d/q '[:find (count ?member) .
+                      :where [?member :member/email]]
+                    (d/db conn))
+               0)
+              :ledger-count
+              (or
+               (d/q '[:find (count ?ledger) .
+                      :where [?ledger :ledger/ledger-id]]
+                    (d/db conn))
+               0)
+              :queued @queued_})))))
 (deftest resend-preserves-the-current-code-and-generation-test
   (let [{:keys [conn member-id]} (tc/new-system "member-invitation-resend")
         queued (atom [])]

@@ -139,7 +139,7 @@
     (is (contains? (:nexus/effects nexus-config) :app.gigs/recalc-play-stats))
     (is (contains? (:nexus/effects nexus-config) :app.gigs/send-reminder-to-all))
     (is (contains? (:nexus/effects nexus-config) :app.songs/trigger-sync-all-songs))
-    (is (contains? (:nexus/effects nexus-config) :app.members/send-user-invitation))
+    (is (contains? (:nexus/effects nexus-config) :app.members/invite-member))
     (is (contains? (:nexus/effects nexus-config) :app.members/set-keycloak-account-enabled))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/reissue-invitation))

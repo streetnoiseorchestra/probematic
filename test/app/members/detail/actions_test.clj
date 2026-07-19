@@ -1,14 +1,22 @@
 (ns app.members.detail.actions-test
   (:require
    [app.members.detail.actions :as actions]
-   [app.members.invite.domain :as invitation]
+   [app.members.invite.cells]
    [app.nexus.actions :as support]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [mycelium.cell :as cell]))
 
 (defn new-system []
   (tc/new-system "members-detail-actions"))
+
+(defn- claim-invitation! [conn member-id requested-at state]
+  ((:handler (cell/get-cell! :member-invite/claim!))
+   {:datomic-conn conn :clock (constantly requested-at)}
+   {:member/member-id member-id
+    :member-invite/requested-at requested-at
+    :member-invite/state state}))
 
 (defn state-for [{:keys [conn member-id]}]
   {:db                 (d/db conn)
@@ -927,14 +935,19 @@
                (assoc (admin-state-for system) :tr tr)
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
-          (is (= {:outcome :claimed :generation 2}
-                 (invitation/claim!
-                  {:datomic-conn conn :clock (constantly claimed-at)}
-                  {:member-id edited-member-id
-                   :requested-at claimed-at
-                   :state {:status pending
-                           :generation 1
-                           :expires-at expires-at}})))
+          (is (= {:member-invite/claim-status :claimed
+                  :member-invite/attempt-generation 2
+                  :member-invite/state
+                  {:status accepting
+                   :generation 2
+                   :expires-at expires-at}}
+                 (claim-invitation!
+                  conn
+                  edited-member-id
+                  claimed-at
+                  {:status pending
+                   :generation 1
+                   :expires-at expires-at})))
           (is (thrown? Throwable
                        @(d/transact conn (-> effects first second))))
           (is (= {:member/name "Alice Old"
@@ -971,14 +984,19 @@
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
           @(d/transact conn (-> effects first second))
-          (is (= {:outcome :claimed :generation 2}
-                 (invitation/claim!
-                  {:datomic-conn conn :clock (constantly claimed-at)}
-                  {:member-id edited-member-id
-                   :requested-at claimed-at
-                   :state {:status pending
-                           :generation 1
-                           :expires-at expires-at}})))
+          (is (= {:member-invite/claim-status :claimed
+                  :member-invite/attempt-generation 2
+                  :member-invite/state
+                  {:status accepting
+                   :generation 2
+                   :expires-at expires-at}}
+                 (claim-invitation!
+                  conn
+                  edited-member-id
+                  claimed-at
+                  {:status pending
+                   :generation 1
+                   :expires-at expires-at})))
           (is (= {:member/name "Alice Admin"
                   :member/email "alice@example.com"
                   :member/username "alice.new"

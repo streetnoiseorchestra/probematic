@@ -18,8 +18,7 @@
    [tick.core :as t]))
 
 (defn- default-form-state []
-  {:member-id     (str (random-uuid))
-   :name          ""
+  {:name          ""
    :nick          ""
    :email         ""
    :username      ""

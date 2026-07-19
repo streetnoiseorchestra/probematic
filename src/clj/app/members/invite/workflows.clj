@@ -1,537 +1,308 @@
 (ns app.members.invite.workflows
-  "Mycelium workflows for issuing, accepting, and recovering member invitations."
   (:require
    [app.keycloak :as keycloak]
    [app.keycloak.cells]
    [app.members.invite.cells]
-   [app.members.invite.domain :as domain]
+   [app.members.invite.domain :as invite.domain]
    [app.members.queries :as members.queries]
    [app.queries :as q]
-   [app.schemas :as schemas]
+   [app.schemas :as s]
    [clojure.string :as str]
    [datomic.api :as d]
    [mycelium.core :as myc]
-   [mycelium.manifest :as manifest]
    [tick.core :as t]))
 
-(def ^:private workflow-input-schema
-  (schemas/schema
-   [:map {:closed true}
-    [:member/member-id :uuid]
-    [:member-invite/observed-status
-     [:enum
-      :member.invite.status/pending
-      :member.invite.status/accepting
-      :member.invite.status/creating
-      :member.invite.status/activating
-      :member.invite.status/compensating
-      :member.invite.status/accepted
-      :member.invite.status/revoked]]
-    [:member-invite/observed-generation pos-int?]
-    [:member-invite/requested-at domain/inst-schema]
-    [:keycloak/group-name :app.schemas/non-blank-string]]))
-
-(defn- outcome? [k expected]
-  (fn [data]
-    (= expected (get data k))))
-
-(defn- outcome-in? [k expected]
-  (fn [data]
-    (contains? expected (get data k))))
-
-(def manifest
-  "Declares the complete accept-or-recover workflow contract."
-  {:id :member-invitation/accept-or-recover
-   :doc "Claims or resumes one member invitation acceptance attempt without carrying its bearer code."
-   :input-schema workflow-input-schema
+(def invite-member
+  {:id ::invite-member
+   :doc "Creates the member, ledger, and pending invitation, then queues the invitation email."
+   :input-schema
+   [:map
+    [:member-invite
+     [:map
+      [:name ::s/non-blank-string]
+      [:nick {:optional true} :string]
+      [:email ::s/email-address]
+      [:username ::s/non-blank-string]
+      [:phone ::s/non-blank-string]
+      [:section-name ::s/non-blank-string]
+      [:active :boolean]]]]
 
    :cells
-   {:start
-    {:id :member-invite/read-entry-state
-     :doc "Reads canonical invitation state at the safe accept-or-recover workflow boundary."
-     :schema :inherit
-     :requires [:datomic-conn]
-     :on-error nil}
-    :plan-entry
-    {:id :member-invite/plan-entry
-     :doc "Compares the resolver observation with canonical invitation state and chooses whether to claim, resume, complete, or reject stale work."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :claim
-    {:id :member/claim-invitation
-     :doc "Atomically moves a matching, unexpired pending invitation to accepting and returns its attempt generation."
-     :schema :inherit
-     :requires [:datomic-conn :clock]
-     :on-error nil}
-    :read-after-claim
-    {:id :member/read-invitation-state
-     :doc "Reads the member's narrow invitation lifecycle projection from the current Datomic database."
-     :schema :inherit
-     :requires [:datomic-conn]
-     :on-error nil}
-    :plan-progress
-    {:id :member-invite/plan-progress
-     :doc "Derives the durable recovery phase and the exact Keycloak attempt markers from canonical member state."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-
-    :find-provisioning-user
-    {:id :keycloak/find-users-by-attributes
-     :doc "Finds Keycloak users by exact custom attributes and classifies zero, one, or multiple matches."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :classify-existing-user
-    {:id :member-invite/classify-attempt-user
-     :doc "Verifies exact marker ownership and chooses the only safe next operation for the current durable phase."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :read-profile
-    {:id :member/read-keycloak-profile
-     :doc "Reads the member fields required to construct a Keycloak account specification."
-     :schema :inherit
-     :requires [:datomic-conn]
-     :on-error nil}
-    :find-group-before-create
-    {:id :keycloak/find-group-by-name
-     :doc "Finds a Keycloak group by exact name and rejects missing or ambiguous results without choosing one."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :begin-create
-    {:id :member/begin-keycloak-create
-     :doc "Atomically fences one accepting attempt before any Keycloak create can start."
-     :schema :inherit
-     :requires [:datomic-conn :clock]
-     :on-error nil}
-    :build-user-spec
-    {:id :member-invite/build-keycloak-user-spec
-     :doc "Builds a disabled, email-verified Keycloak user specification with permanent invitation-attempt markers."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :create-user
-    {:id :keycloak/create-user
-     :doc "Creates one Keycloak user from a generic user specification and classifies only definite server rejection as rejected."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :get-created-user
-    {:id :keycloak/get-user
-     :doc "Reads one Keycloak user by ID and distinguishes a missing user from a returned normalized representation."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :refind-after-create-rejection
-    {:id :keycloak/find-users-by-attributes
-     :doc "Finds Keycloak users by exact custom attributes and classifies zero, one, or multiple matches."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :classify-created-user
-    {:id :member-invite/classify-attempt-user
-     :doc "Verifies exact marker ownership and chooses the only safe next operation for the current durable phase."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :find-creating-user
-    {:id :keycloak/find-users-by-attributes
-     :doc "Finds Keycloak users by exact custom attributes and classifies zero, one, or multiple matches."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :classify-creating-user
-    {:id :member-invite/classify-attempt-user
-     :doc "Verifies exact marker ownership and chooses the only safe next operation for the current durable phase."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :flag-ambiguous-creating-user
-    {:id :member-invite/flag-ambiguous-attempt-user
-     :doc "Marks an ambiguous attempt-marker lookup for operator reconciliation."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :find-group-before-configure
-    {:id :keycloak/find-group-by-name
-     :doc "Finds a Keycloak group by exact name and rejects missing or ambiguous results without choosing one."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :add-user-to-group
-    {:id :keycloak/add-user-to-group
-     :doc "Adds a Keycloak user to a group and classifies only a definite server rejection as rejected."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :link-user
-    {:id :member/link-keycloak-user
-     :doc "Atomically links an attempt-owned user from its guarded source state and moves it to activating."
-     :schema :inherit
-     :requires [:datomic-conn :clock]
-     :on-error nil}
-    :enable-after-link
-    {:id :keycloak/set-user-enabled
-     :doc "Sets one Keycloak user's enabled flag and classifies only a definite server rejection as rejected."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-
-    :get-activating-user
-    {:id :keycloak/get-user
-     :doc "Reads one Keycloak user by ID and distinguishes a missing user from a returned normalized representation."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :classify-activating-user
-    {:id :member-invite/classify-attempt-user
-     :doc "Verifies exact marker ownership and chooses the only safe next operation for the current durable phase."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :enable-during-recovery
-    {:id :keycloak/set-user-enabled
-     :doc "Sets one Keycloak user's enabled flag and classifies only a definite server rejection as rejected."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :finalize
-    {:id :member/finalize-invitation
-     :doc "Atomically finalizes a matching activating invitation and removes its bearer code and expiry."
-     :schema :inherit
-     :requires [:datomic-conn :clock]
-     :on-error nil}
-
-    :begin-compensation
-    {:id :member/begin-invitation-compensation
-     :doc "Atomically acquires compensation from a guarded attempt source so deletion cannot race linking."
-     :schema :inherit
-     :requires [:datomic-conn :clock]
-     :on-error nil}
-    :find-compensation-user
-    {:id :keycloak/find-users-by-attributes
-     :doc "Finds Keycloak users by exact custom attributes and classifies zero, one, or multiple matches."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :classify-compensation-user
-    {:id :member-invite/classify-attempt-user
-     :doc "Verifies exact marker ownership and chooses the only safe next operation for the current durable phase."
-     :schema :inherit
-     :requires []
-     :on-error nil}
-    :delete-user
-    {:id :keycloak/delete-user
-     :doc "Deletes one Keycloak user by ID and distinguishes deleted, already absent, and definite rejection."
-     :schema :inherit
-     :requires [:keycloak]
-     :on-error nil}
-    :release
-    {:id :member/release-invitation
-     :doc "Atomically returns matching compensating state to pending after the attempt user is definitely absent."
-     :schema :inherit
-     :requires [:datomic-conn :clock]
-     :on-error nil}}
+   {:start       :member-invite/create-invited-member!
+    :queue-email :member-invite/queue-invitation-email!}
 
    :edges
-   {:start :plan-entry
-    :plan-entry {:claim :claim
-                 :resume :plan-progress
-                 :done :end}
-    :claim {:claimed :read-after-claim
+   {:start {:created  :queue-email
             :conflict :end}
-    :read-after-claim :plan-progress
-    :plan-progress {:provision :find-provisioning-user
-                    :reconcile-create :find-creating-user
-                    :activate :get-activating-user
-                    :compensate :find-compensation-user
-                    :done :end}
-
-    :find-provisioning-user {:found :classify-existing-user
-                             :not-found :read-profile
-                             :ambiguous :end}
-    :classify-existing-user {:configure :find-group-before-configure
-                             :stop :end}
-    :read-profile :find-group-before-create
-    :find-group-before-create {:found :begin-create
-                               :unavailable :begin-compensation}
-    :begin-create {:begun :build-user-spec
-                   :conflict :end}
-    :build-user-spec :create-user
-    :create-user {:created :get-created-user
-                  :rejected :refind-after-create-rejection}
-    :get-created-user {:found :classify-created-user
-                       :not-found :end}
-    :refind-after-create-rejection {:found :classify-created-user
-                                    :not-found :begin-compensation
-                                    :ambiguous :end}
-    :classify-created-user {:configure :add-user-to-group
-                            :stop :end}
-    :find-creating-user {:found :classify-creating-user
-                         :not-found :end
-                         :ambiguous :flag-ambiguous-creating-user}
-    :classify-creating-user {:configure :find-group-before-configure
-                             :stop :end}
-    :flag-ambiguous-creating-user :end
-    :find-group-before-configure {:found :add-user-to-group
-                                  :unavailable :begin-compensation}
-    :add-user-to-group {:joined :link-user
-                        :rejected :begin-compensation}
-    :link-user {:linked :enable-after-link
-                :conflict :end}
-    :enable-after-link {:updated :finalize
-                        :rejected :end}
-
-    :get-activating-user {:found :classify-activating-user
-                          :not-found :end}
-    :classify-activating-user {:enable :enable-during-recovery
-                               :finalize :finalize
-                               :stop :end}
-    :enable-during-recovery {:updated :finalize
-                             :rejected :end}
-    :finalize :end
-
-    :begin-compensation {:begun :find-compensation-user
-                         :conflict :end}
-    :find-compensation-user {:found :classify-compensation-user
-                             :not-found :release
-                             :ambiguous :end}
-    :classify-compensation-user {:delete :delete-user
-                                 :stop :end}
-    :delete-user {:absent :release
-                  :rejected :end}
-    :release :end}
+    :queue-email :end}
 
    :dispatches
-   {:plan-entry [[:claim (outcome? :member-invite/entry :claim)]
-                 [:resume (outcome? :member-invite/entry :resume)]
-                 [:done (outcome-in? :member-invite/entry
-                                     #{:complete :stale})]]
-    :claim [[:claimed (outcome? :member-invite/claim-status :claimed)]
-            [:conflict (outcome? :member-invite/claim-status :conflict)]]
-    :plan-progress [[:provision (outcome? :member-invite/progress :provision)]
-                    [:reconcile-create
-                     (outcome? :member-invite/progress :reconcile-create)]
-                    [:activate (outcome? :member-invite/progress :activate)]
-                    [:compensate (outcome? :member-invite/progress :compensate)]
-                    [:done (outcome-in? :member-invite/progress
-                                        #{:complete :stale})]]
+   {:start
+    [[:created #(= :created (:member-invite/persist-status %))]
+     [:conflict #(= :conflict (:member-invite/persist-status %))]]}})
 
-    :find-provisioning-user [[:found (outcome? :keycloak/user-lookup :found)]
-                             [:not-found (outcome? :keycloak/user-lookup :not-found)]
-                             [:ambiguous (outcome? :keycloak/user-lookup :ambiguous)]]
-    :classify-existing-user [[:configure (outcome? :member-invite/user-step :configure)]
-                             [:stop (outcome-in? :member-invite/user-step
-                                                 #{:enable :finalize :delete :unsafe})]]
-    :find-group-before-create [[:found (outcome? :keycloak/group-lookup :found)]
-                               [:unavailable (outcome-in? :keycloak/group-lookup
-                                                          #{:not-found :ambiguous})]]
-    :begin-create [[:begun (outcome? :member-invite/create-status :begun)]
-                   [:conflict (outcome? :member-invite/create-status :conflict)]]
-    :create-user [[:created (outcome? :keycloak/create-status :created)]
-                  [:rejected (outcome? :keycloak/create-status :rejected)]]
-    :get-created-user [[:found (outcome? :keycloak/user-lookup :found)]
-                       [:not-found (outcome? :keycloak/user-lookup :not-found)]]
-    :refind-after-create-rejection [[:found (outcome? :keycloak/user-lookup :found)]
-                                    [:not-found (outcome? :keycloak/user-lookup :not-found)]
-                                    [:ambiguous (outcome? :keycloak/user-lookup :ambiguous)]]
-    :classify-created-user [[:configure (outcome? :member-invite/user-step :configure)]
-                            [:stop (outcome-in? :member-invite/user-step
-                                                #{:enable :finalize :delete :unsafe})]]
-    :find-creating-user [[:found (outcome? :keycloak/user-lookup :found)]
-                         [:not-found (outcome? :keycloak/user-lookup :not-found)]
-                         [:ambiguous (outcome? :keycloak/user-lookup :ambiguous)]]
-    :classify-creating-user
-    [[:configure (outcome? :member-invite/user-step :configure)]
-     [:stop (outcome-in? :member-invite/user-step
-                         #{:enable :finalize :delete :unsafe})]]
-    :find-group-before-configure [[:found (outcome? :keycloak/group-lookup :found)]
-                                  [:unavailable (outcome-in? :keycloak/group-lookup
-                                                             #{:not-found :ambiguous})]]
-    :add-user-to-group [[:joined (outcome? :keycloak/group-membership-status :joined)]
-                        [:rejected (outcome? :keycloak/group-membership-status :rejected)]]
-    :link-user [[:linked (outcome? :member-invite/link-status :linked)]
-                [:conflict (outcome? :member-invite/link-status :conflict)]]
-    :enable-after-link [[:updated (outcome? :keycloak/update-status :updated)]
-                        [:rejected (outcome? :keycloak/update-status :rejected)]]
+(def ^:private admin-invitation-input-schema
+  [:map
+   [:member/member-id :uuid]
+   [:member-invite/resolved-generation pos-int?]])
 
-    :get-activating-user [[:found (outcome? :keycloak/user-lookup :found)]
-                          [:not-found (outcome? :keycloak/user-lookup :not-found)]]
-    :classify-activating-user [[:enable (outcome? :member-invite/user-step :enable)]
-                               [:finalize (outcome? :member-invite/user-step :finalize)]
-                               [:stop (outcome-in? :member-invite/user-step
-                                                   #{:configure :delete :unsafe})]]
-    :enable-during-recovery [[:updated (outcome? :keycloak/update-status :updated)]
-                             [:rejected (outcome? :keycloak/update-status :rejected)]]
-    :begin-compensation [[:begun (outcome? :member-invite/compensation-status :begun)]
-                         [:conflict (outcome? :member-invite/compensation-status :conflict)]]
-    :find-compensation-user [[:found (outcome? :keycloak/user-lookup :found)]
-                             [:not-found (outcome? :keycloak/user-lookup :not-found)]
-                             [:ambiguous (outcome? :keycloak/user-lookup :ambiguous)]]
-    :classify-compensation-user [[:delete (outcome? :member-invite/user-step :delete)]
-                                 [:stop (outcome-in? :member-invite/user-step
-                                                     #{:configure :enable :finalize :unsafe})]]
-    :delete-user [[:absent (outcome-in? :keycloak/delete-status
-                                        #{:deleted :not-found})]
-                  [:rejected (outcome? :keycloak/delete-status :rejected)]]}
+(def reissue-invitation
+  {:id ::reissue-invitation
+   :doc "Creates a new code and expiration date for a pending or revoked invitation, then queues a new email."
+   :input-schema admin-invitation-input-schema
 
-   :regions
-   {:entry [:start :plan-entry :claim :read-after-claim :plan-progress]
-    :provisioning [:find-provisioning-user
-                   :classify-existing-user
-                   :read-profile
-                   :find-group-before-create
-                   :begin-create
-                   :build-user-spec
-                   :create-user
-                   :get-created-user
-                   :refind-after-create-rejection
-                   :classify-created-user
-                   :find-creating-user
-                   :classify-creating-user
-                   :flag-ambiguous-creating-user
-                   :find-group-before-configure
-                   :add-user-to-group
-                   :link-user
-                   :enable-after-link]
-    :activation [:get-activating-user
-                 :classify-activating-user
-                 :enable-during-recovery
-                 :finalize]
-    :compensation [:begin-compensation
-                   :find-compensation-user
-                   :classify-compensation-user
-                   :delete-user
-                   :release]}
+   :cells
+   {:start       :member-invite/read-admin-state
+    :check       :member-invite/check-reissue
+    :persist     :member-invite/reissue!
+    :queue-email :member-invite/queue-invitation-email!}
 
-   :constraints
-   [{:type :must-precede
-     :cell :add-user-to-group
-     :before :link-user}
-    {:type :must-precede
-     :cell :begin-create
-     :before :create-user}
-    {:type :never-together
-     :cells [:finalize :release]}
-    {:type :never-together
-     :cells [:delete-user :enable-after-link]}
-    {:type :never-together
-     :cells [:delete-user :enable-during-recovery]}]})
+   :edges
+   {:start :check
+    :check {:reissue :persist
+            :stale   :end}
+    :persist {:reissued :queue-email
+              :conflict :end}
+    :queue-email :end}
 
-(def validated-manifest
-  "Contains the strict, normalized workflow manifest."
-  (manifest/validate-manifest manifest))
+   :dispatches
+   {:check
+    [[:reissue #(= :reissue (:member-invite/reissue-step %))]
+     [:stale #(= :stale (:member-invite/reissue-step %))]]
 
-(defn workflow-definition
-  "Builds the Mycelium workflow definition and preserves manifest path constraints."
-  []
-  (assoc (manifest/manifest->workflow validated-manifest)
-         :constraints (:constraints validated-manifest)
-         :input-schema workflow-input-schema))
+    :persist
+    [[:reissued #(= :reissued (:member-invite/reissue-status %))]
+     [:conflict #(= :conflict (:member-invite/reissue-status %))]]}
 
-(defn pre-compile
-  "Pre-compiles the validated workflow after all registry cells are loaded."
-  []
-  (myc/pre-compile (workflow-definition)))
+   :transforms
+   {:start
+    {:output
+     {:fn identity
+      :schema {:input admin-invitation-input-schema
+               :output admin-invitation-input-schema}}}}})
 
-(def ^:private input-keys
-  #{:member/member-id
-    :member-invite/observed-status
-    :member-invite/observed-generation
-    :member-invite/requested-at
-    :keycloak/group-name})
+(def revoke-invitation
+  {:id ::revoke-invitation
+   :doc "Cancels a pending invitation so its code can no longer be used."
+   :input-schema admin-invitation-input-schema
 
-(defn- original-error [error]
-  (loop [error error]
-    (if-let [nested-error (some-> error ex-data :error)]
-      (recur nested-error)
-      error)))
+   :cells
+   {:start  :member-invite/read-admin-state
+    :check  :member-invite/check-revoke
+    :revoke :member-invite/revoke!}
 
-(defn- on-workflow-error [_resources fsm]
-  (if-let [error (:error fsm)]
-    (throw (original-error error))
-    (:data fsm)))
+   :edges
+   {:start :check
+    :check {:revoke :revoke
+            :stale  :end}
+    :revoke :end}
 
-(def ^:private compiled-workflow
-  (delay
-    (myc/pre-compile
-     (workflow-definition)
-     {:on-error on-workflow-error})))
+   :dispatches
+   {:check
+    [[:revoke #(= :revoke (:member-invite/revoke-step %))]
+     [:stale #(= :stale (:member-invite/revoke-step %))]]}
 
-(defn- workflow-error! [data]
-  (when (myc/error? data)
-    (let [error (myc/workflow-error data)]
-      (throw
-       (ex-info
-        "Member invitation workflow failed"
-        (select-keys error
-                     [:error-type :cell-id :cell-name :message]))))))
+   :transforms
+   {:start
+    {:output
+     {:fn identity
+      :schema {:input admin-invitation-input-schema
+               :output admin-invitation-input-schema}}}}})
 
-(defn- terminal-result [data]
-  (or (:member-invite/result data)
-      (cond
-        (= :ambiguous (:keycloak/user-lookup data))
-        :operator-required
+(def ^:private accept-or-recover-input-schema
+  [:map
+   [:member/member-id :uuid]
+   [:member-invite/resolved-generation pos-int?]
+   [:member-invite/requested-at ::s/inst]
+   [:keycloak/group-name ::s/non-blank-string]])
 
-        (= :rejected (:keycloak/update-status data))
-        :operator-required
+(def accept-or-recover
+  {:id           ::accept-or-recover
+   :doc
+   "Runs or resumes invitation account setup, compensating only when the unfinished
+   Keycloak account can be identified safely."
+   :input-schema accept-or-recover-input-schema
 
-        (= :rejected (:keycloak/delete-status data))
-        :operator-required
+   :cells
+   {:start                       :member-invite/read-acceptance-state
+    :claim                       :member-invite/claim!
+    :provision-read-profile      :member-invite/read-keycloak-profile
+    :provision-find-group        :keycloak/find-group-by-name
+    :provision-begin-create      :member-invite/begin-create!
+    :provision-create-user       :keycloak/create-user
+    :configure-find-user         :keycloak/find-users-by-attributes
+    :configure-check-user        :member-invite/check-creating-user
+    :configure-find-group        :keycloak/find-group-by-name
+    :configure-add-user-to-group :keycloak/add-user-to-group
+    :configure-link-user         :member-invite/link-keycloak-user!
+    :activate-load-user          :keycloak/get-user
+    :activate-check-user         :member-invite/check-activating-user
+    :activate-enable-user        :keycloak/set-user-enabled
+    :activate-finalize           :member-invite/finalize!
+    :begin-compensation          :member-invite/begin-compensation!
+    :cleanup-find-user           :keycloak/find-users-by-attributes
+    :cleanup-check-user          :member-invite/check-compensation-user
+    :cleanup-delete-user         :keycloak/delete-user
+    :cleanup-release             :member-invite/release!
+    :accepted                    :member-invite/accepted-result
+    :pending                     :member-invite/pending-result
+    :retry                       :member-invite/retry-result
+    :stale                       :member-invite/stale-result
+    :operator-required           :member-invite/operator-required-result}
 
-        (and (= :not-found (:keycloak/user-lookup data))
-             (= :provision (:member-invite/progress data))
-             (= :created (:keycloak/create-status data)))
-        :retry
+   :edges
+   {:start                       {:claim     :claim
+                                  :provision :provision-read-profile
+                                  :configure :configure-find-user
+                                  :activate  :activate-load-user
+                                  :cleanup   :cleanup-find-user
+                                  :accepted  :accepted
+                                  :default   :stale}
+    :claim                       {:claimed  :provision-read-profile
+                                  :conflict :retry}
+    :provision-read-profile      :provision-find-group
+    :provision-find-group        {:found     :provision-begin-create
+                                  :not-found :retry
+                                  :ambiguous :operator-required}
+    :provision-begin-create      {:begun    :provision-create-user
+                                  :conflict :retry}
+    :provision-create-user       {:created  :configure-find-user
+                                  :rejected :begin-compensation}
+    :configure-find-user         {:found     :configure-check-user
+                                  :not-found :retry
+                                  :ambiguous :operator-required}
+    :configure-check-user        {:configure :configure-find-group
+                                  :unsafe    :operator-required}
+    :configure-find-group        {:found       :configure-add-user-to-group
+                                  :unavailable :begin-compensation}
+    :configure-add-user-to-group {:joined   :configure-link-user
+                                  :rejected :begin-compensation}
+    :configure-link-user         {:linked   :activate-load-user
+                                  :conflict :retry}
+    :activate-load-user          {:found     :activate-check-user
+                                  :not-found :operator-required}
+    :activate-check-user         {:enable   :activate-enable-user
+                                  :finalize :activate-finalize
+                                  :unsafe   :operator-required}
+    :activate-enable-user        {:updated  :activate-finalize
+                                  :rejected :operator-required}
+    :activate-finalize           {:finalized :accepted
+                                  :conflict  :retry}
+    :begin-compensation          {:begun    :cleanup-find-user
+                                  :conflict :retry}
+    :cleanup-find-user           {:found     :cleanup-check-user
+                                  :not-found :cleanup-release
+                                  :ambiguous :operator-required}
+    :cleanup-check-user          {:delete :cleanup-delete-user
+                                  :unsafe :operator-required}
+    :cleanup-delete-user         {:absent   :cleanup-release
+                                  :rejected :operator-required}
+    :cleanup-release             {:released :pending
+                                  :conflict :retry}
+    :accepted                    :end
+    :pending                     :end
+    :retry                       :end
+    :stale                       :end
+    :operator-required           :end}
 
-        (and (= :not-found (:keycloak/user-lookup data))
-             (= :reconcile-create (:member-invite/progress data)))
-        :retry
+   :dispatches
+   {:start                       [[:claim invite.domain/claimable-invitation?]
+                                  [:provision invite.domain/invitation-ready-for-provisioning?]
+                                  [:configure invite.domain/invitation-ready-for-configuration?]
+                                  [:activate invite.domain/invitation-ready-for-activation?]
+                                  [:cleanup invite.domain/invitation-ready-for-cleanup?]
+                                  [:accepted invite.domain/accepted-invitation?]]
+    :claim                       [[:claimed #(= :claimed (:member-invite/claim-status %))]
+                                  [:conflict #(= :conflict (:member-invite/claim-status %))]]
+    :provision-find-group        [[:found #(= :found (:keycloak/group-lookup %))]
+                                  [:not-found #(= :not-found (:keycloak/group-lookup %))]
+                                  [:ambiguous #(= :ambiguous (:keycloak/group-lookup %))]]
+    :provision-begin-create      [[:begun #(= :begun (:member-invite/create-status %))]
+                                  [:conflict #(= :conflict (:member-invite/create-status %))]]
+    :provision-create-user       [[:created #(= :created (:keycloak/create-status %))]
+                                  [:rejected #(= :rejected (:keycloak/create-status %))]]
+    :configure-find-user         [[:found #(= :found (:keycloak/user-lookup %))]
+                                  [:not-found #(= :not-found (:keycloak/user-lookup %))]
+                                  [:ambiguous #(= :ambiguous (:keycloak/user-lookup %))]]
+    :configure-check-user        [[:configure #(= :configure (:member-invite/user-step %))]
+                                  [:unsafe #(= :unsafe (:member-invite/user-step %))]]
+    :configure-find-group        [[:found #(= :found (:keycloak/group-lookup %))]
+                                  [:unavailable #(contains? #{:not-found :ambiguous}
+                                                            (:keycloak/group-lookup %))]]
+    :configure-add-user-to-group [[:joined #(= :joined (:keycloak/group-membership-status %))]
+                                  [:rejected #(= :rejected (:keycloak/group-membership-status %))]]
+    :configure-link-user         [[:linked #(= :linked (:member-invite/link-status %))]
+                                  [:conflict #(= :conflict (:member-invite/link-status %))]]
+    :activate-load-user          [[:found #(= :found (:keycloak/user-lookup %))]
+                                  [:not-found #(= :not-found (:keycloak/user-lookup %))]]
+    :activate-check-user         [[:enable #(= :enable (:member-invite/user-step %))]
+                                  [:finalize #(= :finalize (:member-invite/user-step %))]
+                                  [:unsafe #(= :unsafe (:member-invite/user-step %))]]
+    :activate-enable-user        [[:updated #(= :updated (:keycloak/update-status %))]
+                                  [:rejected #(= :rejected (:keycloak/update-status %))]]
+    :activate-finalize           [[:finalized #(= :finalized (:member-invite/finalize-status %))]
+                                  [:conflict #(= :conflict (:member-invite/finalize-status %))]]
+    :begin-compensation          [[:begun #(= :begun (:member-invite/compensation-status %))]
+                                  [:conflict #(= :conflict (:member-invite/compensation-status %))]]
+    :cleanup-find-user           [[:found #(= :found (:keycloak/user-lookup %))]
+                                  [:not-found #(= :not-found (:keycloak/user-lookup %))]
+                                  [:ambiguous #(= :ambiguous (:keycloak/user-lookup %))]]
+    :cleanup-check-user          [[:delete #(= :delete (:member-invite/user-step %))]
+                                  [:unsafe #(= :unsafe (:member-invite/user-step %))]]
+    :cleanup-delete-user         [[:absent #(contains? #{:deleted :not-found}
+                                                       (:keycloak/delete-status %))]
+                                  [:rejected #(= :rejected (:keycloak/delete-status %))]]
+    :cleanup-release             [[:released #(= :released (:member-invite/release-status %))]
+                                  [:conflict #(= :conflict (:member-invite/release-status %))]]}})
 
-        (and (= :not-found (:keycloak/user-lookup data))
-             (= :activate (:member-invite/progress data)))
-        :operator-required)))
+(def ^:private workflow-options
+  {:malli/registry invite.domain/registry})
+
+(def invite-member-wf
+  (myc/pre-compile invite-member workflow-options))
+
+(def reissue-invitation-wf
+  (myc/pre-compile reissue-invitation workflow-options))
+
+(def revoke-invitation-wf
+  (myc/pre-compile revoke-invitation workflow-options))
+
+(def accept-or-recover-wf
+  (myc/pre-compile accept-or-recover workflow-options))
 
 (defn accept-or-recover!
-  "Runs one finite acceptance or recovery attempt and returns its safe result."
+  "Runs the precompiled account-setup workflow with the supplied resources and safe input."
   [resources input]
-  (when-not (= input-keys (set (keys input)))
-    (throw (ex-info "Invalid member invitation workflow input"
-                    {:expected-keys input-keys
-                     :actual-keys   (set (keys input))})))
-  (let [data (myc/run-compiled @compiled-workflow resources input)]
-    (workflow-error! data)
-    (if-let [result (terminal-result data)]
-      {:member/member-id (:member/member-id input)
-       :member-invite/result result}
-      (throw (ex-info "Member invitation workflow ended without a result"
-                      {:member-id (:member/member-id input)
-                       :progress  (:member-invite/progress data)})))))
+  (myc/run-compiled accept-or-recover-wf resources input))
 
-(def default-deps
+(def default-acceptance-deps
   {:now t/inst
    :accept-or-recover! accept-or-recover!})
 
-(def ^:private result->reason
+(def ^:private outcome->reason
   {:pending :acceptance-retry
    :retry :acceptance-retry
    :stale :code-expired
    :operator-required :operator-required})
 
-(defn- accepted-member [db member-id]
-  (let [{:keys [status keycloak-id]} (domain/state db member-id)]
+(defn- accepted-member
+  [db member-id]
+  (let [{:keys [status keycloak-id]}
+        (invite.domain/invitation-state db member-id)]
     (when (and (= :member.invite.status/accepted status)
                (not (str/blank? keycloak-id)))
       (q/retrieve-member db member-id))))
 
 (defn setup-account!
+  "Runs or resumes account setup for the submitted invitation bearer.
+
+  A completed receipt returns the canonical member without rerunning the workflow.
+  Retryable, stale, and unsafe outcomes are exposed as stable `:reason` values."
   ([req]
-   (setup-account! default-deps req))
+   (setup-account! default-acceptance-deps req))
   ([deps {:keys [db datomic-conn] :as req}]
-   (let [{:keys [now accept-or-recover!]} (merge default-deps deps)
+   (let [{:keys [now accept-or-recover!]} (merge default-acceptance-deps deps)
+         db (or db (d/db datomic-conn))
          requested-at (now)
          invite-code (or (get-in req [:params :invite-code])
                          (get-in req [:params "invite-code"])
@@ -539,7 +310,7 @@
                          (get-in req [:params "code"]))
          accepted-invitation
          (members.queries/accepted-invitation-by-code db invite-code)
-         {:keys [member-id invite-status invite-generation]}
+         {:keys [member-id invite-generation]}
          (members.queries/acceptance-invitation db requested-at invite-code)]
      (if accepted-invitation
        (:member accepted-invitation)
@@ -548,27 +319,29 @@
            (throw (ex-info "Invite code expired during setup"
                            {:reason :code-expired})))
          (try
-           (let [{result-member-id :member/member-id
-                  result :member-invite/result}
+           (let [result
                  (accept-or-recover!
                   {:datomic-conn datomic-conn
                    :clock now
                    :keycloak (keycloak/kc-from-req req)}
                   {:member/member-id member-id
-                   :member-invite/observed-status invite-status
-                   :member-invite/observed-generation invite-generation
+                   :member-invite/resolved-generation invite-generation
                    :member-invite/requested-at requested-at
-                   :keycloak/group-name keycloak/member-group-name})]
-             (if (= :accepted result)
-               (or (and (= member-id result-member-id)
+                   :keycloak/group-name keycloak/member-group-name})
+                 outcome (:member-invite/result result)]
+             (when (myc/error? result)
+               (throw (ex-info "Member invitation acceptance workflow failed"
+                               (myc/workflow-error result))))
+             (if (= :accepted outcome)
+               (or (and (= member-id (:member/member-id result))
                         (accepted-member (d/db datomic-conn) member-id))
                    (throw
                     (ex-info "Accepted invitation state could not be verified"
                              {:reason :operator-required})))
                (throw
                 (ex-info "Member invitation acceptance did not complete"
-                         {:reason (get result->reason
-                                       result
+                         {:reason (get outcome->reason
+                                       outcome
                                        :operator-required)}))))
            (catch Throwable exception
              (or (accepted-member (d/db datomic-conn) member-id)
