@@ -3,6 +3,7 @@
    [app.members.invite.views :as views]
    [app.members.invite.workflows :as workflows]
    [app.test-common :as tc]
+   [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
    [app.ui2.page-header :as page-header]
@@ -33,7 +34,10 @@
                 (l/text parent))}))
 
 (deftest retryable-acceptance-renders-the-current-invitation-again-test
-  (with-redefs [workflows/setup-account!
+  (with-redefs [ui2/standalone-page
+                (fn [_opts & body]
+                  (into [:body] body))
+                workflows/setup-account!
                 (fn [_req]
                   (throw (ex-info "Retry acceptance"
                                   {:reason :acceptance-retry})))
@@ -41,20 +45,23 @@
                 (fn [_req]
                   {:member {:member/email "alice@example.com"}
                    :invite-code "retry-code"})]
-    (let [{:keys [status body]} (views/invite-accept-post request)]
-      (is (= 200 status))
-      (is (str/includes?
-           body
-           "<form action=\"/invite-accept\" method=\"POST\">"))
-      (is (str/includes?
-           body
-           (str "<input type=\"hidden\" name=\"invite-code\" "
-                "value=\"retry-code\">")))
-      (is (= {:password-input? false
-              :password-confirm-input? false}
-             {:password-input? (str/includes? body "type=\"password\"")
-              :password-confirm-input?
-              (str/includes? body "name=\"password-confirm\"")})))))
+    (let [view        (views/invite-accept-post request)
+          form        (l/select-one "form" view)
+          invite-code (l/select-one "input[type=hidden]" form)]
+      (is (= {:form {:action "/invite-accept"
+                     :method "POST"}
+              :invite-code {:type "hidden"
+                            :name "invite-code"
+                            :value "retry-code"}
+              :password-input-count 0
+              :password-confirm-input-count 0}
+             {:form (select-keys (l/attrs form) [:action :method])
+              :invite-code (select-keys (l/attrs invite-code)
+                                        [:type :name :value])
+              :password-input-count
+              (count (l/select "input[type=password]" form))
+              :password-confirm-input-count
+              (count (l/select "input[name=password-confirm]" form))})))))
 
 (deftest accepted-receipt-renders-success-without-another-create-form-test
   (with-redefs [views/load-invite
