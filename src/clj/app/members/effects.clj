@@ -9,14 +9,14 @@
    [app.members.invite.workflows :as invite.workflows]
    [app.members.queries :as members.queries]
    [app.queries :as q]
-   [app.secret-box :as secret-box]
+   [app.util.crypto :as crypto]
    [com.brunobonacci.mulog :as μ]
    [mycelium.core :as myc]
    [tick.core :as t]))
 
 (def default-invitation-deps
   {:now                   t/inst
-   :random-code           #(secret-box/random-str 32)
+   :random-code           #(crypto/rand-string 32)
    :random-uuid           random-uuid
    :build-new-user-invite email/build-new-user-invite
    :queue-email!          email/queue-email!})

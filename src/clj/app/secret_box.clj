@@ -1,9 +1,6 @@
 (ns app.secret-box
   (:require
-   [app.util :as util]
    [buddy.core.codecs :as codecs]
-   [buddy.core.hash :as digest]
-   [clojure.java.io :as io]
    [taoensso.nippy :as nippy]))
 
 (defn encrypt-bytes
@@ -26,18 +23,6 @@
   (when (and ciphertext password)
     (decrypt-bytes (codecs/b64->bytes ciphertext true) password)))
 
-(defn random-str [len]
-  (codecs/bytes->b64-str (util/random-bytes len) true))
-
-(defn sha384-resource [path]
-  (if-let [resource (io/resource path)]
-    (str "sha384-"
-         (-> resource
-             io/input-stream
-             digest/sha384
-             (codecs/bytes->b64-str true)))
-    (throw (ex-info "Cannot load resource %s from classpath" {:path path}))))
-
 (comment
   ;; Usage
 
@@ -54,7 +39,4 @@
        :uuid (sq/generate-squuid)}
       (encrypt "hunter2")
       (decrypt "hunter2")) ;; rcf
-
-  (sha384-resource "public/css/main2.css") ;; rcf
-  ;;
   )

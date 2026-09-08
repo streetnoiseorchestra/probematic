@@ -1,7 +1,7 @@
 (ns app.auth
   (:require
    [app.config :as config]
-   [app.crypto :as crypto]
+   [app.util.crypto :as crypto]
    [app.errors :as errors]
    [app.html :as html]
    [app.interceptors.session :as session]

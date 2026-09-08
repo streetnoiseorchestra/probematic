@@ -5,7 +5,7 @@
    [app.html :as html]
    [app.icons :as icon]
    [app.queries :as queries]
-   [app.secret-box :as secret-box]
+   [app.util.crypto :as crypto]
    [app.ui2.button :as button]
    [app.ui2.footer-tray :as footer-tray]
    [app.ui2.icon :as ico]
@@ -65,12 +65,12 @@
    (map footer-tray-sheet)
    (conj footer-tray-shortcuts footer-tray-notification)))
 
-(def ^:private memoed-sha384-resource (memoize secret-box/sha384-resource))
+(def ^:private memoed-sha384-resource (memoize crypto/sri-sha384-resource))
 
 (defn- sha384-resource [{:keys [system]} path]
   (if (config/prod-mode? (:env system))
     (memoed-sha384-resource path)
-    (secret-box/sha384-resource path)))
+    (crypto/sri-sha384-resource path)))
 
 (defn- cache-buster [req public-path]
   (let [hash (sha384-resource req public-path)]

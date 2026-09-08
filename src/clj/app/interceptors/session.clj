@@ -3,7 +3,7 @@
 ;; SPDX-License-Identifier: EUPL-1.2
 (ns app.interceptors.session
   (:require
-   [app.crypto :as crypto]
+   [app.util.crypto :as crypto]
    [app.interceptors.options :as options]
    [app.interceptors.util :as int]
    [app.session :as session]

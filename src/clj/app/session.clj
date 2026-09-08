@@ -1,6 +1,6 @@
 (ns app.session
   (:require
-   [app.crypto :as crypto]
+   [app.util.crypto :as crypto]
    [cljc.java-time.instant :as instant]
    [sqlite4clj.core :as sql]
    [tick.core :as t]))
