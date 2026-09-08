@@ -15,6 +15,7 @@ invite-toolbar-label = Member invitation controls
 detail-toolbar-label = Member controls
 edit-toolbar-label = Member editor controls
 invitations-title = Member invitations
+copy-invite = Copy Invite Link
 invitations-subtitle = Active invitations can be resent. Expired or revoked invitations can be reissued.
 insurance-title = Insurance & instruments
 insurance-subtitle = Instruments and other items registered with the band for insurance purposes.

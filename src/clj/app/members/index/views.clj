@@ -84,7 +84,7 @@
 (defn- invite-action-button
   [req {:keys [invite-code member-id generation action label variant action-key]
         :as action-options}]
-  [button/Button {:appearance         "outlined"
+  [button/Button {:appearance         (if (= "resend" action) "plain" "outlined")
                   :variant            variant
                   :size               "s"
                   :data-attr:loading  (invite-loading? action-options action)
@@ -150,6 +150,12 @@
                                             :label       [:i18n/tr :action/resend-invitation]
                                             :variant     "brand"
                                             :action-key  ::actions/resend-invitation}))
+               (when-not (or revoked? invite-expired?)
+                 [:wa-copy-button {:value (urls/absolute-link-new-user-invite
+                                           (get-in req [:system :env]) invite-code)
+                                   :tooltip "copy"}
+                  [button/Button {:appearance "plain" :variant "brand" :size "s"}
+                   [:i18n/tr :members/copy-invite]]])
                (when-not revoked?
                  (invite-action-button req {:invite-code invite-code
                                             :action      "delete"
@@ -240,7 +246,7 @@
               :style "--min-column-size: min(100%, 16rem);"}
         (search-control req page-state)
         (filter-control req page-state)]
-       (invitations-panel req invitations)
-       (members-table req page-state members)]])))
+       (members-table req page-state members)
+       (invitations-panel req invitations)]])))
 
 (d*/refresh-all!)

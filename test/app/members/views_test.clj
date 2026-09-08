@@ -71,9 +71,30 @@
                                     :db             (d/db conn)
                                     :page-state     {}
                                     :session        {:session/roles #{}}
-                                    :system         {:env {}}
+                                    :system         {:env {:app-base-url "https://members.example.test"}}
                                     :tr             tr}
         member-url                 (str "/member/" member-id)]
+    (testing "only usable invitations can be copied, with plain copy and resend controls"
+      (let [view (index.views/page request)
+            copies (l/select :wa-copy-button view)
+            copy (first copies)
+            resend (->> (l/select button/Button view)
+                        (filter #(= :action/resend-invitation
+                                    (some-> (l/select-one :i18n/tr %) l/first-child)))
+                        first)]
+        (is (= {:copy-count 1
+                :url "https://members.example.test/invite-accept?code=pending-code"
+                :copy-appearance "plain"
+                :resend-appearance "plain"}
+               {:copy-count (count copies)
+                :url (:value (l/attrs copy))
+                :copy-appearance (:appearance (l/attrs (l/select-one button/Button copy)))
+                :resend-appearance (:appearance (l/attrs resend))}))))
+    (testing "the member header, filters and table precede the invitations section"
+      (let [view (index.views/page request)
+            content (l/select-one "[data-signals]" view)]
+        (is (= [page-header/PageHeader :div :div :section]
+               (mapv first (drop 2 content))))))
     (testing "the directory uses a standard Members surface"
       (let [view          (index.views/page request)
             surface       (l/select-one page-surface/PageSurface view)
