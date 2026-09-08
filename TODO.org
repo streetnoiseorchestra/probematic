@@ -39,7 +39,7 @@
 ** DONE members vcard download
 ** DONE dashboard gigs need attention/upcoming
 ** DONE dashboard add to calendar
-** TODO dashboard gig snoozing (reminder)
+** TODO dashboard gig snoozing (aka the reminder feature, no one really uses this)
 ** DONE dashboard insurance survey banana
 ** DONE dashboard insurance todos for insurance team
 ** DONE dashboard payment required
@@ -59,24 +59,31 @@
 ** DONE insurance - policy survey admin
 ** DONE insurance - member survey wizard
 ** DONE insurance - send changes
-** TODO insurance - payment reminders
+** DONE insurance - payment reminders
 ** DONE polls
 ** DONE dashboard poll
 * 2026 cleanups and slimming down
 ** DONE investigate insurance query slowness and speed it up
 ** DONE remove active field from member invite form, just default to true
 ** DONE remove Create SNO ID field from member invite form, just default to true
-** DONE member invite acceptance - > remove password creation
 ** DONE member profile edit fields should validate as you type/move between the fields
-** TODO aria-current='page' on nav items
+** DONE member invite acceptance - > remove password creation
+** TODO Members: add Copy Invite button to the member invitation table, it should put the member invite url into the clipboard. Use wa-copy-button. Resend and Copy Invite should be appearance="plain". When doing this also move the "Member Invitatios" header + table section so it doesnt appear inserted between the member table info+searchfilter bar, thats a confusing ui. the table search/filter should be adjacent.
+** TODO Members table: add pagination (20, 50, 100), just like the insurance-policy workbench table
+** TODO introduce sqlite4clj for cache/ephemeral storage
+** TODO use sqlite4clj for db sessions
+** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
+** TODO migrate email sending to lettermint api and use idempotency
 ** TODO create admin team
 ** TODO member profile -> show SNO UUID related things only to "admin" team
 ** TODO on gig detail page add a "travel mode" feature which switches view to those attending and shows their travel discount details
+* 2026 UI Makeover
+** TODO Jump Menu: make current-page aware (with aria)
 * 2026 post d* cool new features
-** View transitions to animated in gig attendance/gig details in dashboard and gig detail page
-** Ledger bookkeping view for finanz team members
-** User page presence avatars
-** Two-step upload with an opaque token
+** TODO View transitions to animated in gig attendance/gig details in dashboard and gig detail page
+** TODO Ledger bookkeping view for finanz team members
+** TODO User page presence avatars
+** TODO Two-step upload with an opaque token
 
      Upload the file first, receive a temporary authorized token, then send that token through the
      normal JSON /act request.
@@ -89,8 +96,6 @@ Then replace the /account-settings/profile/save and other upload locations with 
 ** DONE step circles on instrument create page has horizontal scroll on mobile
 ** DONE instrument creation third step can fail and cause multiple instruments and or coverages to be created
 ** DONE migrate Tempura to Fluent and use translation nodes in views
-** TODO introduce sqlite4clj for cache/ephemeral storage
-** TODO use sqlite4clj for db sessions
 ** DONE move new member invitation storage from Redis to Datomic and add recoverable Mycelium acceptance
 *** DONE define the direct-member invitation state machine and reusable Mycelium cell manifest
 *** DONE implement and test the Datomic invitation schema and guarded transitions
@@ -121,5 +126,4 @@ Then replace the /account-settings/profile/save and other upload locations with 
 **** DONE allow generic Keycloak relinking after terminal acceptance
 **** DONE use tick for invitation date and time operations
 *** DONE complete sub-agent review, commit, and request human review
-** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
 ** DONE member invite fields should validate as you type/move between the fields with server roudntrip validation like our other forms, including uniqueness checks, and they should have inline validation errors.. The code looks like it's there, but it's not working.
