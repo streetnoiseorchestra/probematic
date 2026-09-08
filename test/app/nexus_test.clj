@@ -36,7 +36,7 @@
     (is (contains? (:nexus/actions nexus-config)
                    :app.settings.sections.actions/create-section))
     (is (contains? (:nexus/actions nexus-config)
-                   :app.members.index.actions/set-search-phrase))
+                   :app.members.index.actions/resend-invitation))
     (is (contains? (:nexus/actions nexus-config)
                    :app.songs.index.actions/set-search-phrase))
     (is (contains? (:nexus/actions nexus-config)

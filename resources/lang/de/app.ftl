@@ -119,3 +119,7 @@ footer-tray-bookmarks = Lesezeichen
 footer-tray-notes = Notizen
 footer-tray-notifications = Benachrichtigungen
 footer-tray-placeholder = Hallo Welt
+
+pagination = Seitennavigation
+rows-per-page = Zeilen pro Seite
+pagination-summary = { $range-start }–{ $range-end } von { $total-results } Ergebnissen

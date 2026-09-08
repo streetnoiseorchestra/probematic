@@ -119,3 +119,7 @@ footer-tray-bookmarks = Bookmarks
 footer-tray-notes = Notes
 footer-tray-notifications = Notifications
 footer-tray-placeholder = Hello world
+
+pagination = Pagination
+rows-per-page = Rows per page
+pagination-summary = { $range-start }–{ $range-end } of { $total-results } results

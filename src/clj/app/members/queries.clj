@@ -193,12 +193,39 @@
        (sort-by :member/name)
        vec))
 
+(def page-size-options [10 30 50 100])
+
+(defn normalize-page [page]
+  (max 1 (or (parse-long (str page)) 1)))
+
+(defn normalize-page-size [page-size]
+  (let [page-size (parse-long (str page-size))]
+    (if (some #{page-size} page-size-options) page-size 30)))
+
+(defn paginate-members [page-state members]
+  (let [members (vec members)
+        total-results (count members)
+        page-size (normalize-page-size (:page-size page-state))
+        total-pages (max 1 (quot (+ total-results (dec page-size)) page-size))
+        page (min (normalize-page (:page page-state)) total-pages)
+        offset (* (dec page) page-size)
+        range-end (min total-results (+ offset page-size))]
+    {:members (subvec members offset range-end)
+     :page page
+     :page-size page-size
+     :total-results total-results
+     :range-start (if (pos? total-results) (inc offset) 0)
+     :range-end range-end
+     :has-prev? (> page 1)
+     :has-next? (< page total-pages)}))
+
 (def default-page-state
   {:search                    ""
    :filter-preset             "active"
    :sort-field                "name"
    :sort-order                "asc"
-   :last-invitation-action-at nil})
+   :page                      1
+   :page-size                 30})
 
 (def valid-filter-presets
   #{"all" "active" "inactive"})
@@ -220,16 +247,18 @@
    "active"          :member/active?})
 
 (defn normalize-page-state [page-state]
-  (-> default-page-state
-      (merge page-state)
-      (update :search #(or % ""))
+  (-> (into {} (for [[k default] default-page-state]
+                 [k (get page-state k (get page-state (name k) default))]))
+      (update :search #(if (string? %) % ""))
       (update :filter-preset #(if (valid-filter-presets %)
                                 %
                                 (:filter-preset default-page-state)))
       (update :sort-field #(if (contains? sort-field->fn %)
                              %
                              (:sort-field default-page-state)))
-      (update :sort-order #(if (= % "desc") % "asc"))))
+      (update :sort-order #(if (= % "desc") % "asc"))
+      (update :page normalize-page)
+      (update :page-size normalize-page-size)))
 
 (defn filter-spec [page-state]
   (let [{:keys [search filter-preset]} (normalize-page-state page-state)

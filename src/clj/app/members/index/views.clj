@@ -8,6 +8,8 @@
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.button :as button]
+   [app.ui2.divider :as divider]
+   [app.ui2.icon :as ico]
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
@@ -37,37 +39,46 @@
       " ↓"
       " ↑")))
 
-(defn- sort-button [req page-state field label]
-  [:a {:href          "#"
-       :class         "wa-link-plain wa-font-weight-bold"
-       :data-on:click (->expr
-                       (evt.preventDefault)
-                       (set! $members-index.sort-request-field ~field)
-                       (@post ~(d*/act req ::actions/set-sort)))}
+(defn- table-url [page-state overrides]
+  (str "/members?" (urls/params->query-string (merge page-state overrides))))
+
+(defn- sort-button [page-state field label]
+  [:a {:href (table-url page-state
+                        {:sort-field field
+                         :sort-order (if (and (= field (:sort-field page-state))
+                                              (= "asc" (:sort-order page-state)))
+                                       "desc" "asc")
+                         :page 1})
+       :class "wa-link-plain wa-font-weight-bold"}
    label
    [:span {:aria-hidden true} (or (sort-indicator page-state field) "")]])
 
-(defn- search-control [req {:keys [search]}]
-  [:wa-input {:label                        [:i18n/tr :action/search]
-              :placeholder                  [:i18n/tr :action/search]
-              :appearance                   "outlined"
-              :size                         "m"
-              :value                        search
-              :with-clear                   true
-              :data-bind                    "members-index.search"
-              :data-on:input__debounce.250ms
-              (str "@post('" (d*/act req ::actions/set-search-phrase) "')")}])
+(defn- search-control [{:keys [search] :as page-state}]
+  [:form {:method "get" :action "/members"}
+   (for [[k v] (assoc (dissoc page-state :search) :page 1)]
+     [:input {:type "hidden" :name (name k) :value v}])
+   [:wa-input {:name "search"
+               :label [:i18n/tr :action/search]
+               :placeholder [:i18n/tr :action/search]
+               :appearance "outlined"
+               :size "m"
+               :value search
+               :with-clear true
+               :data-on:input__debounce.250ms "evt.target.closest('form').requestSubmit()"}]])
 
-(defn- filter-control [req {:keys [filter-preset]}]
-  [:wa-select {:label          [:i18n/tr :action/filter]
-               :appearance     "outlined"
-               :size           "m"
-               :value          filter-preset
-               :data-bind      "members-index.filter-preset"
-               :data-on:change (str "@post('" (d*/act req ::actions/set-filter-preset) "')")}
-   [:wa-option {:value "active"} [:i18n/tr :members/filter-active]]
-   [:wa-option {:value "inactive"} [:i18n/tr :members/filter-inactive]]
-   [:wa-option {:value "all"} [:i18n/tr :members/filter-all]]])
+(defn- filter-control [{:keys [filter-preset] :as page-state}]
+  [:form {:method "get" :action "/members"}
+   (for [[k v] (assoc (dissoc page-state :filter-preset) :page 1)]
+     [:input {:type "hidden" :name (name k) :value v}])
+   [:wa-select {:name "filter-preset"
+                :label [:i18n/tr :action/filter]
+                :appearance "outlined"
+                :size "m"
+                :value filter-preset
+                :data-on:change "evt.target.closest('form').requestSubmit()"}
+    [:wa-option {:value "active"} [:i18n/tr :members/filter-active]]
+    [:wa-option {:value "inactive"} [:i18n/tr :members/filter-inactive]]
+    [:wa-option {:value "all"} [:i18n/tr :members/filter-all]]]])
 
 (defn- invite-loading?
   [{:keys [invite-code member-id generation]} action]
@@ -188,23 +199,23 @@
      [:td {:class "members-index-col members-index-col--sm"}
       (ui2/active-badge active?)]]))
 
-(defn- members-table [req page-state members]
+(defn- members-table [page-state members]
   (if (seq members)
     [:div {:class "table-shell"}
      [:table {:class "members-index-table"}
       [:thead
        [:tr
-        [:th (sort-button req page-state "name" [:i18n/tr (members.domain/member-attribute-label-key :member/name)])]
+        [:th (sort-button page-state "name" [:i18n/tr (members.domain/member-attribute-label-key :member/name)])]
         [:th {:class "members-index-col members-index-col--discount"}
-         (sort-button req page-state "travel-discount" [:i18n/tr :members/oebb-discount])]
+         (sort-button page-state "travel-discount" [:i18n/tr :members/oebb-discount])]
         [:th {:class "members-index-col members-index-col--md"}
-         (sort-button req page-state "email" [:i18n/tr (members.domain/member-attribute-label-key :member/email)])]
+         (sort-button page-state "email" [:i18n/tr (members.domain/member-attribute-label-key :member/email)])]
         [:th {:class "members-index-col members-index-col--lg"}
-         (sort-button req page-state "phone" [:i18n/tr (members.domain/member-attribute-label-key :member/phone)])]
+         (sort-button page-state "phone" [:i18n/tr (members.domain/member-attribute-label-key :member/phone)])]
         [:th {:class "members-index-col members-index-col--sm"}
-         (sort-button req page-state "section" [:i18n/tr (members.domain/member-attribute-label-key :member/section)])]
+         (sort-button page-state "section" [:i18n/tr (members.domain/member-attribute-label-key :member/section)])]
         [:th {:class "members-index-col members-index-col--sm"}
-         (sort-button req page-state "active" [:i18n/tr :status-active])]]]
+         (sort-button page-state "active" [:i18n/tr :status-active])]]]
       [:tbody
        (for [member members]
          (member-row member))]]]
@@ -212,9 +223,41 @@
      [:i18n/tr :members/browse-empty]
      [:i18n/tr :members/browse-empty-subtitle])))
 
-(defn page [{:keys [db page-state] :as req}]
-  (let [page-state       (queries/normalize-page-state (:members-index page-state))
-        members          (queries/members db page-state)
+(defn- pagination-controls [page-state {:keys [page page-size has-prev? has-next?] :as pagination}]
+  [:div {:class "wa-stack wa-gap-xs"}
+   [divider/Divider]
+   [:nav {:class "wa-cluster wa-gap-2xs wa-justify-content-end"
+          :aria-label [:i18n/tr :pagination]}
+    [button/Button (cond-> {:appearance "plain" :size "s"
+                            :aria-label [:i18n/tr :action/previous]}
+                     has-prev? (assoc :href (table-url page-state {:page (dec page)}))
+                     (not has-prev?) (assoc :disabled true))
+     [ico/Icon {::ico/library :phosphor ::ico/name :caret-left}]]
+    [:wa-dropdown {:data-on:wa-select
+                   (str "const urls = "
+                        (d*/->signals (into {} (for [size queries/page-size-options]
+                                                 [(str size) (table-url page-state {:page 1 :page-size size})])))
+                        "; window.location.href = urls[evt.detail.item.value]")}
+     [button/Button {:slot "trigger" :appearance "plain" :size "s"}
+      [:i18n/tr :pagination-summary
+       (select-keys pagination [:range-start :range-end :total-results])]]
+     [:h3 [:i18n/tr :rows-per-page]]
+     (for [size queries/page-size-options]
+       [:wa-dropdown-item {:value (str size)}
+        [ico/Icon (cond-> {::ico/library :phosphor ::ico/name :check :slot "icon"}
+                    (not= size page-size) (assoc :style "visibility: hidden;"))]
+        size])]
+    [button/Button (cond-> {:appearance "plain" :size "s"
+                            :aria-label [:i18n/tr :action/next]}
+                     has-next? (assoc :href (table-url page-state {:page (inc page)}))
+                     (not has-next?) (assoc :disabled true))
+     [ico/Icon {::ico/library :phosphor ::ico/name :caret-right}]]]])
+
+(defn page [{:keys [db] :as req}]
+  (let [params           (or (get-in req [:parameters :query]) (:query-params req))
+        page-state       (queries/normalize-page-state params)
+        pagination       (queries/paginate-members page-state (queries/members db page-state))
+        members          (:members pagination)
         invitations      (->> (concat (queries/members-with-pending-invites db)
                                       (queries/members-with-revoked-invites db))
                               (sort-by :member/name)
@@ -233,20 +276,20 @@
                                                              [:i18n/tr :members/invite-member]]]
                                                            :aria-label [:i18n/tr :members/directory-toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"
-             :data-signals (d*/->signals {:members-index page-state
-                                          :invite        {:action nil
-                                                          :code nil
-                                                          :member-id nil
-                                                          :generation nil
-                                                          :inflight false}})}
+             :data-signals (d*/->signals {:invite {:action nil
+                                                   :code nil
+                                                   :member-id nil
+                                                   :generation nil
+                                                   :inflight false}})}
        [page-header/PageHeader
         {::page-header/title    [:i18n/tr :members/title]
-         ::page-header/subtitle [:i18n/tr :members/member-count {:count (count members)}]}]
+         ::page-header/subtitle [:i18n/tr :members/member-count {:count (:total-results pagination)}]}]
        [:div {:class "wa-grid wa-gap-s"
               :style "--min-column-size: min(100%, 16rem);"}
-        (search-control req page-state)
-        (filter-control req page-state)]
-       (members-table req page-state members)
+        (search-control page-state)
+        (filter-control page-state)]
+       (members-table page-state members)
+       (pagination-controls page-state pagination)
        (invitations-panel req invitations)]])))
 
 (d*/refresh-all!)

@@ -56,11 +56,11 @@
    [:insurance/workbench-ownership-all] "All"
    [:insurance/workbench-ownership-band] "Band"
    [:insurance/workbench-ownership-private] "Private"
-   [:insurance/workbench-pagination] "Pagination"
-   [:insurance/workbench-pagination-summary]
+   [:pagination] "Pagination"
+   [:pagination-summary]
    "%range-start–%range-end of %total-results results"
    [:insurance/workbench-photos] "Photos"
-   [:insurance/workbench-rows-per-page] "Rows per page"
+   [:rows-per-page] "Rows per page"
    [:insurance/workbench-search] "Search"
    [:insurance/workbench-select-row] "Select row"
    [:insurance/workbench-selected] "selected"

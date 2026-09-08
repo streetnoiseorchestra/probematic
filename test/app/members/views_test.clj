@@ -8,11 +8,13 @@
    [app.ui2.page-header :as page-header]
    [app.ui2.page-surface :as page-surface]
    [app.ui2.page-toolbar :as page-toolbar]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [jsonista.core :as j]
    [lookup.core :as l]
-   [reitit.core :as r]))
+   [reitit.core :as r]
+   [ring.util.codec :as codec]))
 
 (defn- breadcrumb-parent-context [breadcrumb]
   (let [items  (vec (l/select breadcrumb/BreadcrumbItem breadcrumb))
@@ -93,8 +95,54 @@
     (testing "the member header, filters and table precede the invitations section"
       (let [view (index.views/page request)
             content (l/select-one "[data-signals]" view)]
-        (is (= [page-header/PageHeader :div :div :section]
+        (is (= [page-header/PageHeader :div :div :div :section]
                (mapv first (drop 2 content))))))
+    (testing "pagination offers the supported sizes and disables navigation for a single page"
+      (let [view (index.views/page request)
+            nav (->> (l/select :nav view)
+                     (filter #(= [:i18n/tr :pagination] (:aria-label (l/attrs %))))
+                     first)
+            buttons (l/select button/Button nav)]
+        (is (= {:sizes ["10" "30" "50" "100"]
+                :disabled [true true]
+                :summary {:range-start 1 :range-end 1 :total-results 1}}
+               {:sizes (mapv #(-> % l/attrs :value) (l/select :wa-dropdown-item nav))
+                :disabled (mapv #(-> % l/attrs :disabled) [(first buttons) (last buttons)])
+                :summary (->> (l/select :i18n/tr nav)
+                              (filter #(= :pagination-summary (second %)))
+                              first
+                              last)}))))
+    (testing "the URL overrides stale page state and table navigation preserves its filters"
+      (let [view (index.views/page
+                  (assoc request
+                         :query-params {"search" "Casey" "filter-preset" "active"
+                                        "sort-field" "name" "sort-order" "asc"
+                                        "page" "2" "page-size" "10"}
+                         :page-state {:members-index {:search "no match" :filter-preset "inactive"}}))
+            forms (l/select :form view)
+            search-form (first forms)
+            filter-form (second forms)
+            hidden-fields (fn [form]
+                            (into {} (map (fn [input]
+                                            (let [{:keys [name value]} (l/attrs input)]
+                                              [name (str value)]))
+                                          (l/select "input[type=hidden]" form))))
+            sort-url (:href (l/attrs (l/select-one "a.wa-link-plain" view)))]
+        (is (= {:search "Casey" :filter "active"
+                :search-hidden {"filter-preset" "active" "sort-field" "name"
+                                "sort-order" "asc" "page" "1" "page-size" "10"}
+                :filter-hidden {"search" "Casey" "sort-field" "name"
+                                "sort-order" "asc" "page" "1" "page-size" "10"}
+                :sort-query {"search" "Casey" "filter-preset" "active"
+                             "sort-field" "name" "sort-order" "desc"
+                             "page" "1" "page-size" "10"}
+                :form-methods ["get" "get"]}
+               {:search (:value (l/attrs (l/select-one :wa-input search-form)))
+                :filter (:value (l/attrs (l/select-one :wa-select filter-form)))
+                :search-hidden (hidden-fields search-form)
+                :filter-hidden (hidden-fields filter-form)
+                :sort-query (codec/form-decode (second (str/split sort-url #"\?" 2)))
+                :form-methods (mapv #(-> % l/attrs :method) forms)}))))
     (testing "the directory uses a standard Members surface"
       (let [view          (index.views/page request)
             surface       (l/select-one page-surface/PageSurface view)

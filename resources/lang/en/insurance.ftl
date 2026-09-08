@@ -308,12 +308,9 @@ workbench-value-equal-to = is equal to
 workbench-value-between = is between
 workbench-value-min = Minimum
 workbench-value-max = Maximum
-workbench-pagination = Pagination
 # $range-start (Number) - First result on the page.
 # $range-end (Number) - Last result on the page.
 # $total-results (Number) - Total matching results.
-workbench-pagination-summary = { $range-start }–{ $range-end } of { $total-results } results
-workbench-rows-per-page = Rows per page
 workbench-and = and
 workbench-select-row = Select coverage
 workbench-expand-all = Expand all

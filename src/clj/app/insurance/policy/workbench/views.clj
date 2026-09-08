@@ -1632,7 +1632,7 @@
 
 (defn- pagination-summary
   [{:keys [range-end range-start total-results]}]
-  [:i18n/tr :insurance/workbench-pagination-summary
+  [:i18n/tr :pagination-summary
    {:range-start   range-start
     :range-end     range-end
     :total-results total-results}])
@@ -1688,7 +1688,7 @@
                    :appearance "plain"
                    :size       "s"}
     (pagination-summary pagination)]
-   [:h3 [:i18n/tr :insurance/workbench-rows-per-page]]
+   [:h3 [:i18n/tr :rows-per-page]]
    (for [page-size (:page-sizes pagination)]
      (page-size-item (:page-size pagination) page-size))])
 
@@ -1703,7 +1703,7 @@
      [:div {:class "wa-stack wa-gap-xs insurance-workbench-pagination__inner"}
       [divider/Divider]
       [:nav {:class      "wa-cluster wa-gap-2xs wa-align-items-center wa-justify-content-end"
-             :aria-label [:i18n/tr :insurance/workbench-pagination]}
+             :aria-label [:i18n/tr :pagination]}
        (pagination-nav-button :action/previous :caret-left prev-url)
        (page-size-dropdown workbench)
        (pagination-nav-button :action/next :caret-right next-url)]]]))

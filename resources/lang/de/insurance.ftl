@@ -308,12 +308,9 @@ workbench-value-equal-to = ist gleich
 workbench-value-between = liegt zwischen
 workbench-value-min = Minimum
 workbench-value-max = Maximum
-workbench-pagination = Seitennavigation
 # $range-start (Number) - Erstes Ergebnis auf der Seite.
 # $range-end (Number) - Letztes Ergebnis auf der Seite.
 # $total-results (Number) - Gesamtzahl der passenden Ergebnisse.
-workbench-pagination-summary = { $range-start }–{ $range-end } von { $total-results } Ergebnissen
-workbench-rows-per-page = Zeilen pro Seite
 workbench-and = und
 workbench-select-row = Versicherung auswählen
 workbench-expand-all = Alle aufklappen

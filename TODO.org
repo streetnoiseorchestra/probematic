@@ -69,7 +69,7 @@
 ** DONE member profile edit fields should validate as you type/move between the fields
 ** DONE member invite acceptance - > remove password creation
 ** DONE Members: add Copy Invite button to the member invitation table, it should put the member invite url into the clipboard. Use wa-copy-button. Resend and Copy Invite should be appearance="plain". When doing this also move the "Member Invitatios" header + table section so it doesnt appear inserted between the member table info+searchfilter bar, thats a confusing ui. the table search/filter should be adjacent.
-** TODO Members table: add pagination (20, 50, 100), just like the insurance-policy workbench table
+** DONE Members table: add pagination (10, 30, 50, 100), just like the insurance-policy workbench table
 ** TODO introduce sqlite4clj for cache/ephemeral storage
 ** TODO use sqlite4clj for db sessions
 ** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely

@@ -8,6 +8,36 @@
    [java.time Instant]
    [java.util Date]))
 
+(deftest table-query-parameters-test
+  (is (= {:search "Casey & Co" :filter-preset "all" :sort-field "email"
+          :sort-order "desc" :page 2 :page-size 10}
+         (app.members.queries/normalize-page-state
+          {"search" "Casey & Co" "filter-preset" "all" "sort-field" "email"
+           "sort-order" "desc" "page" "2" "page-size" "10" "unrelated" "ignored"})))
+  (is (= app.members.queries/default-page-state
+         (app.members.queries/normalize-page-state
+          {:search ["invalid"] :filter-preset "bad" :sort-field "bad"
+           :sort-order "bad" :page "-1" :page-size "20"})))
+  (doseq [size [10 30 50 100]]
+    (is (= size (:page-size (app.members.queries/normalize-page-state {"page-size" (str size)}))))))
+
+(deftest member-pagination-test
+  (testing "each page size preserves row order across page boundaries"
+    (doseq [size [10 30 50 100]]
+      (let [rows (vec (range (inc size)))]
+        (is (= {:members (subvec rows 0 size) :page 1 :page-size size
+                :total-results (inc size) :range-start 1 :range-end size
+                :has-prev? false :has-next? true}
+               (app.members.queries/paginate-members {:page-size size} rows)))
+        (is (= {:members [size] :page 2 :page-size size
+                :total-results (inc size) :range-start (inc size) :range-end (inc size)
+                :has-prev? true :has-next? false}
+               (app.members.queries/paginate-members {:page-size size :page 999} rows))))))
+  (testing "empty results and invalid parameters are safe"
+    (is (= {:members [] :page 1 :page-size 30 :total-results 0
+            :range-start 0 :range-end 0 :has-prev? false :has-next? false}
+           (app.members.queries/paginate-members {:page -1 :page-size "bad"} [])))))
+
 (def pending :member.invite.status/pending)
 (def accepting :member.invite.status/accepting)
 (def creating :member.invite.status/creating)
