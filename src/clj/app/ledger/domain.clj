@@ -4,7 +4,6 @@
    [app.schemas :as s]
    [app.util :as util]
    [medley.core :as m]
-   [taoensso.nippy :as nippy]
    [tick.core :as t]))
 
 (def entry-meta-types #{:ledger.entry.meta.type/insurance})
@@ -43,8 +42,7 @@
 (defn entry->db [entry]
   (-> entry
       (update :ledger.entry/posting-date #(t/inst (t/in % (t/zone "Europe/Vienna"))))
-      (update :ledger.entry/tx-date str)
-      (m/update-existing :ledger.entry/data nippy/freeze)))
+      (update :ledger.entry/tx-date str)))
 
 (defn db->entry
   [entry]
