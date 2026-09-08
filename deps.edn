@@ -56,6 +56,9 @@
         com.datomic/local                              {:mvn/version "1.0.291"}
         com.datomic/peer                               {:mvn/version "1.0.7622"}
         org.xerial/sqlite-jdbc                         {:mvn/version "3.53.1.0"}
+        com.s-exp/drip                                {:git/url "https://github.com/outskirtslabs/dollop"
+                                                       :git/sha "966f166e8f53f3904edb4b4e3e197cba306107e3"
+                                                       :deps/root "modules/drip"}
         andersmurphy/sqlite4clj                        {:git/url "https://github.com/andersmurphy/sqlite4clj"
                                                         :git/sha "f1224bbe701533605f30c9ffbe0e2a6a0b7c085a"}
         ;; dep of  andersmurphy/sqlite4clj that we patched

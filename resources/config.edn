@@ -117,6 +117,11 @@
                                                                                             :demo #envf ["%s/datomic.demo.data" PWD]}]}
                                                        :peer   {:db-uri #or [#env DATOMIC_URI
                                                                              #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]}}
+                           :app.ig/job-queue          {:filename #or [#env PROBEMATIC_JOB_QUEUE
+                                                                      #profile {:dev  #envf ["%s/data.dev/jobs.sqlite" PWD]
+                                                                                :test #envf ["%s/data.test/jobs.sqlite" PWD]
+                                                                                :demo #envf ["%s/data.demo/jobs.sqlite" PWD]
+                                                                                :prod "/data/jobs.sqlite"}]}
                            :app.ig/sqlite-sessions          {:filename #or [#env PROBEMATIC_SQLITE_SESSIONS
                                                                             #profile {:dev  #envf ["%s/data.dev/sessions.sqlite" PWD]
                                                                                       :test #envf ["%s/data.dev/test-sessions.sqlite" PWD]

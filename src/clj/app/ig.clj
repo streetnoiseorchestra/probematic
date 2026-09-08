@@ -12,6 +12,7 @@
             [app.filestore :as filestore]
             [app.icons]
             [app.i18n :as i18n]
+            [app.job-queue :as job-queue]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
             [app.nexus :as app-nexus]
@@ -88,6 +89,14 @@
   [_ config]
   (μ/log ::halt-sqlite-sessions)
   (sqlite/stop config))
+
+(defmethod ig/init-key ::job-queue
+  [_ config]
+  (job-queue/start! config))
+
+(defmethod ig/halt-key! ::job-queue
+  [_ queue]
+  (job-queue/stop! queue))
 
 (defmethod ig/init-key ::i18n-langs
   [_ _]
