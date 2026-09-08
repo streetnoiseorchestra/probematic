@@ -98,6 +98,9 @@
   (let [config (:ig/system (system/config {:profile :test}))]
     (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
       (is (= (ig/ref :app.ig/job-queue) (get-in config [component :job-queue]))))
+    (is (= {:datomic (ig/ref :app.ig/datomic-db)
+            :i18n-langs (ig/ref :app.ig/i18n-langs)}
+           (select-keys (:app.ig/email-worker config) [:datomic :i18n-langs])))
     (is (not (contains? config :app.ig/redis)))
     (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
       (is (not (contains? (get config component) :redis))))))

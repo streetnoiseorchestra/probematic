@@ -11,10 +11,10 @@
 
 (defn trigger-gig-details-edited-fx
   [{:keys [dispatch-data]} {:keys [request]} gig-id notify? takeover-topic?]
-  (let [{:keys [db-before db-after]} (:tx-result dispatch-data)
-        result {:gig        (q/retrieve-gig db-after gig-id)
-                :gig-before (q/retrieve-gig db-before gig-id)
-                :db-after   db-after}]
+  (let [{:keys [db-before db-after] :as tx-result} (:tx-result dispatch-data)
+        result (assoc tx-result
+                      :gig (q/retrieve-gig db-after gig-id)
+                      :gig-before (q/retrieve-gig db-before gig-id))]
     (gig.events/trigger-gig-details-edited request notify? takeover-topic? result))
   nil)
 

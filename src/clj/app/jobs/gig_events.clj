@@ -17,12 +17,9 @@
   (assoc system :db (datomic/db (-> system :datomic :conn))))
 
 (defn handle-gig-details-edited
-  [req notify? takeover-topic? gig-id {:keys [gig-before gig _db-after]}]
+  [req takeover-topic? gig-id]
   (let [new-system (update-system req)]
     (when (config/prod-mode? (:env new-system))
-      (when notify?
-        (email/send-gig-updated! req gig-id
-                                 (keys (second (clojure.data/diff gig-before gig)))))
       (discourse/update-topic-for-gig! new-system gig-id takeover-topic?)
       (caldav/update-gig-event! new-system gig-id))))
 
@@ -61,8 +58,12 @@
                         (errors/report-error! e))))))
 
 (defn trigger-gig-details-edited
-  [req notify? takeover-topic? transact-result]
-  (exec-later handle-gig-details-edited req notify? takeover-topic? (-> transact-result :gig :gig/gig-id) transact-result))
+  [req notify? takeover-topic? {:keys [gig-before gig] :as transact-result}]
+  (let [gig-id (:gig/gig-id gig)]
+    (when (and notify? (config/prod-mode? (-> req :system :env)))
+      (email/send-gig-updated! req transact-result gig-id
+                               (keys (apply merge (take 2 (clojure.data/diff gig-before gig))))))
+    (exec-later handle-gig-details-edited req takeover-topic? gig-id)))
 
 (defn trigger-gig-edited
   [req gig-id edit-type]

@@ -133,6 +133,8 @@
                            :app.ig/i18n-langs         {}
                            :app.ig/lettermint         {:env #ig/ref :app.ig/env}
                            :app.ig/email-worker       {:env        #ig/ref :app.ig/env
+                                                       :datomic    #ig/ref :app.ig/datomic-db
+                                                       :i18n-langs #ig/ref :app.ig/i18n-langs
                                                        :job-queue  #ig/ref :app.ig/job-queue
                                                        :lettermint #ig/ref :app.ig/lettermint}
                            :app.ig/webdav-sardine     {:env #ig/ref :app.ig/env}

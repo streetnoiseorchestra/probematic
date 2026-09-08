@@ -73,13 +73,6 @@
               (tmpl/gig-created-email-plain sys gig member false)))
            members))))
 
-(defn build-gig-updated-email [{:keys [tr] :as sys} gig members edited-attrs]
-  (build-batch-emails
-   (mapv :member/email members)
-   (tr [:email-subject/gig-updated] {:gig-title (:gig/title gig)})
-   (tmpl/gig-updated-email-html sys gig edited-attrs)
-   (tmpl/gig-updated-email-plain sys gig edited-attrs)))
-
 (defn build-gig-reminder-email [{:keys [tr] :as sys} gig members]
   (assert tr)
   (let [subject (tr [:email-subject/gig-reminder]
@@ -150,13 +143,18 @@
     (send-gig-reminder-to! (sys-from-req req) gig-id members)
     :done))
 
-(defn send-gig-updated! [req gig-id edited-attrs]
-  (when (>  (count edited-attrs) 0)
-    (let [db (datomic/db (:datomic-conn req))
-          gig (q/retrieve-gig  db gig-id)
-          members (q/active-members db)
-          sys (sys-from-req req)]
-      (queue-email! sys  (build-gig-updated-email sys gig members edited-attrs)))))
+(defn send-gig-updated!
+  "Queues a gig-update notification from the successful transaction report."
+  [req tx-result gig-id edited-attrs]
+  (when (seq edited-attrs)
+    (email-worker/queue-mailer!
+     (assoc (sys-from-req req) :current-locale (:current-locale req))
+     tx-result
+     "gig-updated"
+     {:gig-id (str (util/ensure-uuid! gig-id))
+      :member-ids (mapv (comp str :member/member-id)
+                        (sort-by :member/member-id (q/active-members (:db-after tx-result))))
+      :edited-attrs (mapv #(subs (str %) 1) (sort edited-attrs))})))
 
 (defn send-poll-opened! [req poll-id]
   (let [db (datomic/db (:datomic-conn req))
@@ -302,7 +300,6 @@
          (tmpl/gig-updated-email-plain sys gig2 [:gig/status])))
 
   (:email/messages (build-gig-created-email sys gig [member]))
-  (build-gig-updated-email sys gig [member member2] [:gig/status])
 
   (tmpl/payload-for-attendance env (:gig/gig-id gig) (:member/member-id
                                                       (q/member-by-email db "CHANGEME")) :plan/definitely)

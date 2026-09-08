@@ -2,6 +2,7 @@
   (:require
    [app.email :as email]
    [app.email.domain :as email.domain]
+   [app.email.mailers :as mailers]
    [app.schemas :as s]
    [app.secret-box :as secret-box]
    [clojure.string :as str]
@@ -122,10 +123,10 @@
 (deftest shared-batch-bodies-become-complete-per-recipient-messages
   (testing "gig-updated email"
     (assert-shared-body-batch
-     (email/build-gig-updated-email test-system
-                                    gig
-                                    members
-                                    [:gig/location])))
+     (mailers/build-gig-updated-email (assoc test-system :email-id (random-uuid))
+                                      gig
+                                      members
+                                      [:gig/location])))
 
   (testing "poll-opened email"
     (assert-shared-body-batch

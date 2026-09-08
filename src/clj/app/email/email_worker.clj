@@ -3,6 +3,7 @@
    [app.config :as config]
    [app.email.domain :refer [QueuedEmailMessage]]
    [app.email.lettermint :as lettermint]
+   [app.email.mailers :as mailers]
    [app.schemas :as s]
    [com.brunobonacci.mulog :as μ]
    [s-exp.drip :as drip]
@@ -120,9 +121,26 @@
       (track-email-error! message attempt nil e)
       {:status :error})))
 
+(defn- prepare-job-email [sys args]
+  (if (= #{:payload} (set (keys args)))
+    (nippy/thaw (.decode (Base64/getDecoder) ^String (:payload args)))
+    (mailers/prepare! sys args)))
+
 (defn job-handler [sys client {:keys [id args attempt]}]
-  (let [message (nippy/thaw (.decode (Base64/getDecoder) ^String (:payload args)))
-        result (handler sys message attempt)]
+  (let [prepared (try
+                   {:message (prepare-job-email sys args)}
+                   (catch Exception e
+                     (let [permanent? (:email/permanent? (ex-data e))]
+                       (μ/log ::email-preparation-failed
+                              :job-id id :attempt attempt
+                              :permanent? (boolean permanent?)
+                              :reason (or (:email/reason (ex-data e)) :preparation-failed))
+                       (if permanent?
+                         {:status :error}
+                         (throw (ex-info "Retryable email preparation failure" {:job-id id}))))))
+        result (if (:status prepared)
+                 prepared
+                 (handler sys (:message prepared) attempt))]
     (case (:status result)
       :success (drip/complete-job client id)
       :error (drip/discard-job client id)
@@ -152,3 +170,20 @@
                    {:payload (.encodeToString (Base64/getEncoder) (nippy/freeze email))}
                    :queue email-queue-name
                    :max-attempts 25))
+
+(defn queue-mailer!
+  "Queues a named mailer from a successful transaction report without rendering.
+
+  `sys` supplies `:job-queue`, `:datomic-conn`, and `:current-locale`.
+  `arguments` must satisfy the registered mailer's JSON-compatible contract."
+  [{:keys [job-queue datomic-conn current-locale]} tx-result mailer arguments]
+  (let [invocation {:version 1
+                    :mailer mailer
+                    :arguments arguments
+                    :source-t (mailers/source-t datomic-conn tx-result)
+                    :email-id (str (random-uuid))
+                    :locale (name (or current-locale :en))}]
+    (mailers/validate! invocation)
+    (drip/insert-job (:client job-queue) "send-email" invocation
+                     :queue email-queue-name
+                     :max-attempts 25)))
