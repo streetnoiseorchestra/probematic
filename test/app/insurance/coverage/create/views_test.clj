@@ -143,7 +143,7 @@
       (seed-insurance-team! conn member-id))
     (assoc (request instrument)
            :db (d/db conn)
-           :session {:session/member {:member/member-id member-id}})))
+           :app/session {:session/member {:member/member-id member-id}})))
 
 (defn described-text
   [control view]
@@ -166,7 +166,7 @@
                         :instrument.category/code        "1"}])
     (let [req (assoc (request nil)
                      :db (d/db conn)
-                     :session {:session/member {:member/member-id member-id}}
+                     :app/session {:session/member {:member/member-id member-id}}
                      :path-params {:policy-id policy-id})]
       (resolve-view
        (sut/instrument-page-content req policy nil "/return")))))

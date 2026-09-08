@@ -62,7 +62,7 @@
              {:request {:uri "/"
                         :query-string nil
                         :tr test-tr
-                        :session {:session/email "new@example.com"}}})]
+                        :app/session {:session/email "new@example.com"}}})]
     (is (= {:status 403}
            (select-keys (:response ctx) [:status])))
     (is (re-find #"new@example.com" (get-in ctx [:response :body])))))
@@ -111,7 +111,7 @@
   (let [body (:body
               (auth/identity-mismatch-response
                {:tr test-tr
-                :session {:session/email "new@example.com"}}))]
+                :app/session {:session/email "new@example.com"}}))]
     (is (= {:forms [{:method "post"
                      :action "/login/restart"}
                     {:method "post"

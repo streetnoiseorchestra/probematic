@@ -85,7 +85,7 @@
                         :current-locale :en
                         :db             (d/db conn)
                         :page-state     {}
-                        :session        {:session/roles #{}}
+                        :app/session        {:session/roles #{}}
                         :system         {:env {}}
                         :tr             tr}
         view           (views/page request)

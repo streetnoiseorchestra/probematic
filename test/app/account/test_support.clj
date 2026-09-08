@@ -33,7 +33,7 @@
      (merge {:tr         settings-support/legacy-tr
              :system     {:env {:name "Test Instance"}}
              :db         (d/db conn)
-             :session    {:session/member {:member/member-id member-id}}
+             :app/session    {:session/member {:member/member-id member-id}}
              :page-state {}
              ::r/router  router}
             overrides))))

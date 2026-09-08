@@ -30,8 +30,8 @@
   ["" {:coercion     (interceptors/default-coercion)
        :muuntaja     interceptors/formats-instance
        :interceptors (into [] (concat (interceptors/default-reitit-interceptors system)
-                                      [(auth/session-interceptor system)
-                                       (interceptors/system-interceptor system)
+                                      (auth/session-interceptors system)
+                                      [(interceptors/system-interceptor system)
                                        (interceptors/datomic-interceptor system)
                                        (interceptors/filestore-interceptor system)
                                        (interceptors/current-user-interceptor system)

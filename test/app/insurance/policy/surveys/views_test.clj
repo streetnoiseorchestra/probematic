@@ -32,7 +32,7 @@
                         :db             (d/db conn)
                         :path-params    {:policy-id (:policy-id ids)}
                         :policy         (q/retrieve-policy (d/db conn) (:policy-id ids))
-                        :session        {:session/member {:member/member-id member-id}}
+                        :app/session        {:session/member {:member/member-id member-id}}
                         :tr             tr
                         ::r/router      router}})))
 
@@ -182,8 +182,8 @@
             :policy-id    policy-id})
         surface (-> request
                     (assoc :db (d/db conn)
-                           :session {:session/member
-                                     {:member/member-id outsider-id}})
+                           :app/session {:session/member
+                                         {:member/member-id outsider-id}})
                     sut/page
                     (l/select-one page-surface/PageSurface))]
     (is (empty? (l/select :wa-dialog surface)))

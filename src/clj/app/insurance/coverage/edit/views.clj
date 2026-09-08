@@ -246,7 +246,7 @@
         {:instrument-name (get-in coverage [:instrument.coverage/instrument :instrument/name])}]]))
 
 (defn- insurance-team-member? [{:keys [db] :as req}]
-  (q/insurance-team-member? db (get-in req [:session :session/member])))
+  (q/insurance-team-member? db (get-in req [:app/session :session/member])))
 
 (defn- edit-form [req coverage policy]
   (let [form-state (form-state req coverage policy)]

@@ -36,16 +36,16 @@
 
 (defn current-user-interceptor
   "Fetches the current user from the request (see app.auth/auth-interceptor),
-   looks up the member and attaches the member info to the request under :session :session/member.
+   looks up the member and attaches the member info to the request under :app/session :session/member.
   If there is no authed member, then does nothing."
   [system]
   (assert system)
   {:name  ::current-user-interceptor
    :enter (fn [ctx]
-            (let [session (-> ctx :request :session)]
+            (let [session (-> ctx :request :app/session)]
               (if (:session/email session)
                 (if-let [member (matching-session-member (d/db (-> system :datomic :conn)) session)]
-                  (assoc-in ctx [:request :session :session/member] member)
+                  (assoc-in ctx [:request :app/session :session/member] member)
                   ctx)
                 ctx)))})
 

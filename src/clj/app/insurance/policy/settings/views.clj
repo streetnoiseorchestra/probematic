@@ -1113,7 +1113,7 @@
   (let [settings (queries/policy-settings
                   db
                   (util/ensure-uuid! (get-in req [:path-params :policy-id]))
-                  {:current-member-id (get-in req [:session :session/member :member/member-id])})]
+                  {:current-member-id (get-in req [:app/session :session/member :member/member-id])})]
     (ui2/datastar-page*
      [page-surface/PageSurface {::page-surface/width :wide
                                 ::page-surface/toolbar

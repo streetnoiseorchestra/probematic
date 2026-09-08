@@ -36,7 +36,7 @@
 (defn request-for-section [section-name]
   (cond-> request
     section-name
-    (assoc-in [:session :session/member :member/section :section/name]
+    (assoc-in [:app/session :session/member :member/section :section/name]
               section-name)))
 
 (defn details-by-label [view]

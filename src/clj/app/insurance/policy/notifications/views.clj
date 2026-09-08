@@ -80,7 +80,7 @@
   [{:keys [db policy] :as req}]
   (let [policy-id       (:insurance.policy/policy-id policy)
         current-member-id
-        (get-in req [:session :session/member :member/member-id])
+        (get-in req [:app/session :session/member :member/member-id])
         {:keys [authorized? members-data sender-name time-range]}
         (queries/notification-data db policy-id current-member-id)
         available-members-data (filterv :private-costs-available? members-data)

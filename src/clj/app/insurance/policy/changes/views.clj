@@ -91,7 +91,7 @@
         policy-name (:insurance.policy/name policy)
         {:keys [policy-number recipient-email recipient-name recipient-title]}
         (config/external-insurance-policy (-> req :system :env))
-        sender       (get-in req [:session :session/member :member/name])
+        sender       (get-in req [:app/session :session/member :member/name])
         today        (t/format (t/formatter "yyyy-M-d") (t/today))
         defaults     (assoc (actions/default-form
                              (:tr req)

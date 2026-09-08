@@ -108,7 +108,7 @@
 
 (deftest application-shell-header-contains-only-the-jump-menu
   (let [app-shell-body (some-> (requiring-resolve 'app.layout2/app-shell-body) deref)
-        view           (app-shell-body {:session {:session/member member}
+        view           (app-shell-body {:app/session {:session/member member}
                                         :tr      (fn
                                                    ([resource-ids]
                                                     (name (last resource-ids)))

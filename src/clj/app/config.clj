@@ -34,7 +34,7 @@
   [env]
   (let [{:keys [session-ttl-s] :as sc}  (:session-config env)]
     (-> sc
-        (assoc-in [:cookie-attrs :max-age] (* 1000 session-ttl-s))
+        (assoc-in [:cookie-attrs :max-age] session-ttl-s)
         (assoc-in [:cookie-attrs :secure] (not (dev-mode? env))))))
 
 (defn oauth2-certificate-filename

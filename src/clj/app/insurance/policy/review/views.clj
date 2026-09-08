@@ -138,7 +138,7 @@
 
 (defn- insurance-team-member?
   [{:keys [db] :as req}]
-  (q/insurance-team-member? db (get-in req [:session :session/member])))
+  (q/insurance-team-member? db (get-in req [:app/session :session/member])))
 
 (defn- policy-editable?
   [policy]

@@ -89,7 +89,7 @@
                       :db             (d/db conn)
                       :path-params    {:policy-id policy-id}
                       :policy         (q/retrieve-policy (d/db conn) policy-id)
-                      :session        {:session/member {:member/member-id member-id}}
+                      :app/session        {:session/member {:member/member-id member-id}}
                       :system         {:env {:app-base-url "https://example.test"}}
                       :tr             tr
                       ::r/router      router}})))

@@ -36,7 +36,7 @@
    :db           (d/db conn)
    :filestore    filestore
    :system       {:env {:app-base-url "https://example.test"}}
-   :session      {:session/member {:member/member-id member-id}}
+   :app/session      {:session/member {:member/member-id member-id}}
    :parameters   {:path      {:instrument-id instrument-id}
                   :multipart {:file {:filename     "test upload.jpg"
                                      :tempfile     tempfile

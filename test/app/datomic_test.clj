@@ -28,7 +28,7 @@
 
 (defn- authenticated-request [conn member-id]
   {:datomic-conn conn
-   :session      {:session/member {:member/member-id member-id}}})
+   :app/session      {:session/member {:member/member-id member-id}}})
 
 (deftest transact-test
   (let [{:keys [conn]} (tc/new-system "datomic-transact")

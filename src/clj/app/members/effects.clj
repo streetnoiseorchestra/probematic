@@ -45,7 +45,7 @@
    ((:build-new-user-invite deps) (email-sys req) member invite-code)))
 
 (defn- current-member-id [req]
-  (get-in req [:session :session/member :member/member-id]))
+  (get-in req [:app/session :session/member :member/member-id]))
 
 (defn- invitation-workflow-resources [deps req]
   (let [email-system (email-sys req)]

@@ -95,7 +95,7 @@
                   (swap! generated-codes_ subvec 1)
                   code)))
         req (assoc-in (request conn)
-                      [:session :session/member :member/member-id]
+                      [:app/session :session/member :member/member-id]
                       actor-member-id)]
     @(d/transact conn [{:section/name "Sopran"}])
     (is (some? invite-member!))

@@ -72,7 +72,7 @@
                                     :current-locale :en
                                     :db             (d/db conn)
                                     :page-state     {}
-                                    :session        {:session/roles #{}}
+                                    :app/session        {:session/roles #{}}
                                     :system         {:env {:app-base-url "https://members.example.test"}}
                                     :tr             tr}
         member-url                 (str "/member/" member-id)]

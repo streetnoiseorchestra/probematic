@@ -16,13 +16,13 @@
                                   :member/keycloak-id "kc-123"})
     (let [interceptor (interceptors/current-user-interceptor {:datomic {:conn conn}})
           result ((:enter interceptor)
-                  {:request {:session {:session/email "new@example.com"
-                                       :session/keycloak-id "kc-123"}}})]
+                  {:request {:app/session {:session/email "new@example.com"
+                                           :session/keycloak-id "kc-123"}}})]
       (is (= #:member{:member-id member-id
                       :email "old@example.com"
                       :username "casey"
                       :keycloak-id "kc-123"}
-             (select-keys (get-in result [:request :session :session/member])
+             (select-keys (get-in result [:request :app/session :session/member])
                           [:member/member-id
                            :member/email
                            :member/username
@@ -34,11 +34,11 @@
                                   :member/username "casey"})
     (let [interceptor (interceptors/current-user-interceptor {:datomic {:conn conn}})
           result ((:enter interceptor)
-                  {:request {:session {:session/email "casey@example.com"}}})]
+                  {:request {:app/session {:session/email "casey@example.com"}}})]
       (is (= #:member{:member-id member-id
                       :email "casey@example.com"
                       :username "casey"}
-             (select-keys (get-in result [:request :session :session/member])
+             (select-keys (get-in result [:request :app/session :session/member])
                           [:member/member-id
                            :member/email
                            :member/username]))))))
@@ -50,21 +50,21 @@
                                   :member/keycloak-id "different-kc"})
     (let [interceptor (interceptors/current-user-interceptor {:datomic {:conn conn}})
           result ((:enter interceptor)
-                  {:request {:session {:session/email "casey@example.com"
-                                       :session/keycloak-id "kc-123"}}})]
+                  {:request {:app/session {:session/email "casey@example.com"
+                                           :session/keycloak-id "kc-123"}}})]
       (is (= {:session/email "casey@example.com"
               :session/keycloak-id "kc-123"}
-             (get-in result [:request :session]))))))
+             (get-in result [:request :app/session]))))))
 
 (deftest current-user-interceptor-leaves-session-without-member-unchanged
   (let [{:keys [conn]} (tc/new-system "current-user-missing")
         interceptor (interceptors/current-user-interceptor {:datomic {:conn conn}})
         result ((:enter interceptor)
-                {:request {:session {:session/email "missing@example.com"
-                                     :session/keycloak-id "missing-kc"}}})]
+                {:request {:app/session {:session/email "missing@example.com"
+                                         :session/keycloak-id "missing-kc"}}})]
     (is (= {:session/email "missing@example.com"
             :session/keycloak-id "missing-kc"}
-           (get-in result [:request :session])))))
+           (get-in result [:request :app/session])))))
 
 (defn- apply-cache-control [ctx]
   ((:leave interceptors/cache-control-interceptor) ctx))

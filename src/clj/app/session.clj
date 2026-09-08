@@ -2,33 +2,37 @@
   (:require
    [app.crypto :as crypto]
    [cljc.java-time.instant :as instant]
-   [ring.middleware.session.store :refer [SessionStore]]
    [sqlite4clj.core :as sql]
    [tick.core :as t]))
 
-(deftype SQLiteStore [db expire-secs]
-  SessionStore
-  (read-session [_ session-key]
-    (when session-key
-      (first (sql/q (:reader db)
-                    ["SELECT data FROM http_sessions WHERE session_key = ? AND expires_at > ?"
-                     session-key (instant/get-epoch-second (t/instant))]))))
-  (write-session [_ old-session-key data]
-    (let [session-key (or old-session-key (crypto/new-uid))
-          now         (instant/get-epoch-second (t/instant))]
-      (sql/with-write-tx [conn (:writer db)]
-        (sql/q conn ["DELETE FROM http_sessions WHERE expires_at <= ?" now])
-        (sql/q conn ["INSERT INTO http_sessions (session_key, data, expires_at) VALUES (?, ?, ?)
-                       ON CONFLICT (session_key) DO UPDATE SET data = excluded.data, expires_at = excluded.expires_at"
-                     session-key data (+ now expire-secs)]))
-      session-key))
-  (delete-session [_ session-key]
-    (when session-key
-      (sql/q (:writer db) ["DELETE FROM http_sessions WHERE session_key = ?" session-key]))
-    nil))
+(defn read-session [db sid]
+  (when sid
+    (first (sql/q (:reader db)
+                  ["SELECT data FROM http_sessions WHERE session_key = ? AND expires_at > ?"
+                   sid (instant/get-epoch-second (t/instant))]))))
 
-(defn sqlite-store
-  "Creates a Ring session store and its table in `db`.
+(defn delete-session! [db sid]
+  (when sid
+    (sql/q (:writer db) ["DELETE FROM http_sessions WHERE session_key = ?" sid]))
+  nil)
+
+(defn write-session!
+  "Saves `data` and refreshes expiry. A different `sid` atomically replaces `old-sid`."
+  ([db old-sid data]
+   (write-session! db old-sid (or old-sid (crypto/new-uid)) data))
+  ([db old-sid sid data]
+   (let [now (instant/get-epoch-second (t/instant))]
+     (sql/with-write-tx [conn (:writer db)]
+       (sql/q conn ["DELETE FROM http_sessions WHERE expires_at <= ?" now])
+       (when (and old-sid (not= old-sid sid))
+         (sql/q conn ["DELETE FROM http_sessions WHERE session_key = ?" old-sid]))
+       (sql/q conn ["INSERT INTO http_sessions (session_key, data, expires_at) VALUES (?, ?, ?)
+                      ON CONFLICT (session_key) DO UPDATE SET data = excluded.data, expires_at = excluded.expires_at"
+                    sid data (+ now (:expire-secs db))]))
+     sid)))
+
+(defn init!
+  "Initializes the session table and returns `db` with its expiry configuration.
 
   | Option | Description |
   |--------|-------------|
@@ -46,4 +50,4 @@
     (sql/q conn ["CREATE INDEX IF NOT EXISTS http_sessions_expiry ON http_sessions (expires_at)"])
     (sql/q conn ["DELETE FROM http_sessions WHERE expires_at <= ?"
                  (instant/get-epoch-second (t/instant))]))
-  (SQLiteStore. db expire-secs))
+  (assoc db :expire-secs expire-secs))

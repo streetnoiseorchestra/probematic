@@ -70,7 +70,7 @@
 
 (defn notify-admin [req]
   (let [human-id (notify-human-id req)
-        member (-> req :session :session/member)]
+        member (-> req :app/session :session/member)]
     (email/send-admin-email! req member human-id)
     (ui2/standalone-page
      {:status 200

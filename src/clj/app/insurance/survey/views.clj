@@ -595,7 +595,7 @@
         dev?              (or (:dev? req)
                               (config/dev-mode? (-> req :system :env)))
         req               (assoc req :dev? dev?)
-        current-member-id (get-in req [:session :session/member :member/member-id])
+        current-member-id (get-in req [:app/session :session/member :member/member-id])
         data              (queries/survey-data db policy-id current-member-id)
         page-state        (actions/page-state req data)
         transition-kind   (name (or (:transition-kind page-state) :none))

@@ -46,9 +46,9 @@
             :request
             {:db             (d/db conn)
              :current-locale "en"
-             :session        {:session/member {:member/member-id member-id
-                                               :member/name      "Ada"
-                                               :member/email     "ada@example.test"}}
+             :app/session        {:session/member {:member/member-id member-id
+                                                   :member/name      "Ada"
+                                                   :member/email     "ada@example.test"}}
              :system         {:env {:app-base-url "https://example.test"}}
              :tr             tr
              ::r/router      router}})))
@@ -248,7 +248,7 @@
 
 (deftest open-policy-survey-is-prominent-on-the-dashboard
   (let [{:keys [conn coverage-id outsider-id request policy-id]} (fixture)
-        member-id   (get-in request [:session :session/member :member/member-id])
+        member-id   (get-in request [:app/session :session/member :member/member-id])
         surveys-url (urls/link-policy-surveys policy-id)
         _           @(d/transact
                       conn
@@ -456,8 +456,8 @@
         contract (-> request
                      (assoc :db active-db
                             :path-params {:policy-id policy-id}
-                            :session {:session/member
-                                      {:member/member-id outsider-id}})
+                            :app/session {:session/member
+                                          {:member/member-id outsider-id}})
                      dashboard.views/page
                      page-shell/page-contract)]
     (is (= [{:label      :insurance/add-coverage
@@ -619,8 +619,8 @@
         view (-> request
                  (assoc :path-params {:policy-id policy-id}
                         :policy policy
-                        :session {:session/member
-                                  {:member/member-id outsider-id}})
+                        :app/session {:session/member
+                                      {:member/member-id outsider-id}})
                  policy-notifications.views/page)]
     (is (empty? (:actions (page-shell/page-contract view))))
     (is (nil? (l/select-one "#insurance-payment-notifications-form" view)))))
@@ -645,7 +645,7 @@
 
 (deftest member-instrument-check-uses-a-compact-context-only-surface
   (let [{:keys [conn request policy-id coverage-id]} (fixture)
-        member-id (get-in request [:session :session/member :member/member-id])
+        member-id (get-in request [:app/session :session/member :member/member-id])
         _ (insurance-test/seed-member-survey!
            conn
            {:coverage-ids [coverage-id]
@@ -756,7 +756,7 @@
     (testing "Delete is absent when the current member is outside the insurance team."
       (is (= []
              (-> edit-request
-                 (assoc-in [:session :session/member :member/member-id] outsider-id)
+                 (assoc-in [:app/session :session/member :member/member-id] outsider-id)
                  coverage-edit.views/page
                  page-shell/page-contract
                  :overflow))))))

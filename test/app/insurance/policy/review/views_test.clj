@@ -73,7 +73,7 @@
   {::r/router  router
    :db         (d/db conn)
    :tr         tr
-   :session    {:session/member {:member/member-id member-id}}
+   :app/session    {:session/member {:member/member-id member-id}}
    :page-state {}})
 
 (defn workflow-actions-view

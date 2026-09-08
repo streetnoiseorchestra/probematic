@@ -119,10 +119,10 @@
           (vec)))))
 
 (defn current-member-id [request]
-  (get-in request [:session :session/member :member/member-id]))
+  (get-in request [:app/session :session/member :member/member-id]))
 
 (defn current-user-roles [request]
-  (get-in request [:session :session/roles] #{}))
+  (get-in request [:app/session :session/roles] #{}))
 
 (defn- request-page-state [request]
   (when-let [tab-id (datastar/request-tab-id request)]

@@ -1,12 +1,12 @@
 (ns app.auth
   (:require
    [app.config :as config]
+   [app.crypto :as crypto]
    [app.errors :as errors]
    [app.html :as html]
    [app.interceptors.session :as session]
    [app.interceptors.util :as int]
    [app.secret-box :as secret-box]
-   [app.session :refer [sqlite-store]]
    [app.ui2 :as ui2]
    [app.util :as util]
    [buddy.core.codecs :as codecs]
@@ -87,12 +87,12 @@
    Docs:
      * spec:  https://openid.net/specs/openid-connect-rpinitiated-1_0.html"
   [env {:keys [openid-config client-id _callback-uri]} request]
-  (let [id-token (-> request :session :session/id-token)
+  (let [id-token (-> request :app/session :session/id-token)
         idp-logout-uri (str (:end_session_endpoint openid-config)
                             "?post_logout_redirect_uri=" (util/url-encode (str (config/app-base-url env)))
                             "&client_id=" client-id
                             "&id_token_hint=" id-token)]
-    {:status 302 :headers {"Location" idp-logout-uri} :body "" :session nil}))
+    {:status 302 :headers {"Location" idp-logout-uri} :body "" :app/session nil}))
 
 (defn code->token [{:keys [client-id client-secret openid-config]} code original-redirect-uri]
   (some->
@@ -106,7 +106,7 @@
    (j/read-value j/keyword-keys-object-mapper)))
 
 (defn build-oauth2-session
-  "Given response from the IDP's token_endpoint, this function verified the token and returns a :session map containing:
+  "Given response from the IDP's token_endpoint, this function verified the token and returns a :app/session map containing:
 
     :session/username - the preferred username of the authenticated user
     :session/email - the email of the user
@@ -147,7 +147,7 @@
   {:status 302 :headers {"location" "/login"} :body "" :cookies {"oauth2" (expire-oauth2-cookie env)}})
 
 (defn restart-login-handler [env]
-  (assoc (restart-login env) :session nil))
+  (assoc (restart-login env) :app/session nil))
 
 (defn identity-mismatch-response [{:keys [tr] :as  req}]
   (ui2/standalone-page
@@ -162,9 +162,9 @@
    [:p [:i18n/tr :identity-mismatch/body]]
    (into [:dl
           [:dt [:i18n/tr :identity-mismatch/signed-in-email]]
-          [:dd [:code (or (get-in req [:session :session/email])
+          [:dd [:code (or (get-in req [:app/session :session/email])
                           [:i18n/tr :unknown])]]]
-         (when-let [keycloak-id (get-in req [:session :session/keycloak-id])]
+         (when-let [keycloak-id (get-in req [:app/session :session/keycloak-id])]
            [[:dt [:i18n/tr :identity-mismatch/sno-id-subject]]
             [:dd [:code keycloak-id]]]))
    [:p [:i18n/tr :identity-mismatch/retry-guidance]]
@@ -192,7 +192,8 @@
   [session cookies relative-uri]
   {:status  200
    :headers {"Content-Type" "text/html"}
-   :session session
+   :app/session session
+   :app/sid (crypto/new-uid)
    :cookies cookies
    :body    (html/->str
              [html/doctype-html5
@@ -250,15 +251,15 @@
     (config/dev-mode? (:env system))
     (conj ["/dev/identity-mismatch" {:handler (fn [req] (identity-mismatch-preview-handler (:env system) req))}])))
 
-(defn session-interceptor
+(defn session-interceptors
   [{:keys [env sqlite-sessions]}]
   (let [{:keys [session-ttl-s cookie-attrs]} (config/session-config env)]
-    (session/session-interceptor {:cookie-attrs cookie-attrs
-                                  :store        (sqlite-store sqlite-sessions {:expire-secs session-ttl-s})})))
+    [(session/session-cookie-interceptor {:cookie-attrs cookie-attrs})
+     (session/session-data-interceptor sqlite-sessions {:expire-secs session-ttl-s})]))
 
 (def roles-authorization-interceptor
   "Reitit route interceptor that mounts itself if route has `:app.auth/roles` data. Expects `:app.auth/roles`
-  to be a set of keyword and the context to have `[:session :app.auth/identity :app.auth/roles]` with user roles.
+  to be a set of keyword and the context to have `[:app/session :app.auth/identity :app.auth/roles]` with user roles.
   responds with HTTP 403 if user doesn't have the roles defined, otherwise no-op."
   {:name    ::auth
    :compile (fn [{::keys [roles]} _]
@@ -268,7 +269,7 @@
                  :context-spec {:user {::roles #{keyword}}}
                  :enter        (fn [{:keys [request] :as ctx}]
                                  (if (not (set/subset? roles
-                                                       (get-in request [:session :session/roles])))
+                                                       (get-in request [:app/session :session/roles])))
                                    (throw-unauthorized "Current user lacks required roles" {:permitted-roles roles})
                                    ctx)
                                  ctx)}))})
@@ -276,29 +277,29 @@
   "Given a role set and a request, returns true if the current user has all the roles."
   [roles req]
   (set/subset? roles
-               (get-in req [:session :session/roles])))
+               (get-in req [:app/session :session/roles])))
 
 (defn get-session
   "Fetch the user's session info from the request map"
   [req]
-  (:session req))
+  (:app/session req))
 
 (defn get-current-member
   "Fetch the user's member record from the request map"
   [req]
-  (-> req :session :session/member))
+  (-> req :app/session :session/member))
 
 (defn get-current-email
   "Fetch the logged in user's email address from the request map"
   [req]
-  (-> req :session :session/email))
+  (-> req :app/session :session/email))
 
 (defn admin? [roles]
   (contains? roles :admin))
 
 (defn current-user-admin?
   [req]
-  (admin? (get-in req [:session :session/roles])))
+  (admin? (get-in req [:app/session :session/roles])))
 
 (defn- login-location [{:keys [uri query-string]}]
   (str "/login?next=" (util/url-encode (str uri "?" query-string))))
@@ -335,10 +336,10 @@
 
 (def demo-auth-interceptor
   {:name  ::demo-auth-interceptor
-   :enter #(-> % (assoc-in [:request :session] {:session/username "admin"
-                                                :session/email    "admin@example.com"
-                                                :session/groups   #{"/Mitglieder" "/admin"}
-                                                :session/roles    #{:Mitglieder :admin}}))})
+   :enter #(-> % (assoc-in [:request :app/session] {:session/username "admin"
+                                                    :session/email    "admin@example.com"
+                                                    :session/groups   #{"/Mitglieder" "/admin"}
+                                                    :session/roles    #{:Mitglieder :admin}}))})
 (defn dev-auth-interceptor [dev-session]
   {:name ::dev-auth-interceptor
-   :enter #(-> % (assoc-in [:request :session] dev-session))})
+   :enter #(-> % (assoc-in [:request :app/session] dev-session))})

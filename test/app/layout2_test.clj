@@ -59,7 +59,7 @@
 
 (deftest application-shell-owns-one-empty-logout-form
   (let [body (layout2/app-shell-body
-              {:session {:session/member {}}}
+              {:app/session {:session/member {}}}
               [:main "Page content"])
         forms (filter #(= "logout-form" (:id (l/attrs %)))
                       (l/select 'form body))

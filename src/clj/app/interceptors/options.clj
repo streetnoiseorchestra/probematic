@@ -1,13 +1,11 @@
 (ns app.interceptors.options
   (:require
-   [malli.transform :as mt]
-   [ring.middleware.cookies :as ring-cookies]
-   [malli.core :as m]
    [clojure.string :as str]
+   [malli.core :as m]
    [malli.error :as me]
+   [malli.transform :as mt]
    [malli.util :as mu]
-   [ring.middleware.session.store])
-  (:import  ring.middleware.session.store.SessionStore))
+   [ring.middleware.cookies :as ring-cookies]))
 
 (defn coerce [schema v]
   (m/decode schema v (mt/default-value-transformer {::mt/add-optional-keys true})))
@@ -102,17 +100,9 @@
    [:map [:render-fn {:doc "An arity 1 function free of side-effects that produces an HTML string"}
           [:function [:=> [:cat :any] :string]]]]))
 
-(def SessionStoreInstance
-  [:fn {:error/message "implementation of ring.middleware.session.store.SesionStore"}
-   #(instance? SessionStore %)])
-
-(def SessionInterceptorOptions
+(def SessionCookieInterceptorOptions
   (m/schema
    [:map
-    [:store {:optional true :doc "Implementation of SessionStore protocol for session storage. Defaults to in-memory storage."}
-     SessionStoreInstance]
-    [:root {:default "/" :doc "Root path of the session. Any path above this will not see the session. Sets cookie's path attribute."} UriPath]
-    [:cookie-name {:default "ring-session" :doc "Name of the cookie holding the session key."} NonBlankString]
-    [:cookie-attrs {:default {:same-site :lax :http-only true}
-                    :doc     "Map of attributes for the session cookie."} CookieAttrsOption]
-    [:set-cookies? {:default true :doc "If true, automatically includes cookie handling"} :boolean]]))
+    [:cookie-name {:default "sid" :doc "Name of the opaque session ID cookie."} NonBlankString]
+    [:cookie-attrs {:default {:path "/" :same-site :lax :http-only true}
+                    :doc "Ring cookie attributes."} CookieAttrsOption]]))

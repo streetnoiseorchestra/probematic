@@ -492,7 +492,7 @@
                      (:instrument/model instrument))]))
 
 (defn- insurance-team-member? [{:keys [db] :as req}]
-  (q/insurance-team-member? db (get-in req [:session :session/member])))
+  (q/insurance-team-member? db (get-in req [:app/session :session/member])))
 
 (defn- coverage-section [req policy form-state]
   (ui2/section-card

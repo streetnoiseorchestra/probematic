@@ -31,8 +31,8 @@
 (def test-req
   {:system  {:env {:ig/system {:app.ig/profile :test}}}
    :tr      tr
-   :session {:session/member {:member/name "Test Member"
-                              :member/nick "Tester"}}})
+   :app/session {:session/member {:member/name "Test Member"
+                                  :member/nick "Tester"}}})
 
 (defn page [_req]
   [:section {:id "datastar-toggle-fixture"}

@@ -430,8 +430,8 @@
         state          (app-nexus/system->state
                         {:system  {:datomic {:conn conn}
                                    :env     env}
-                         :request {:session {:session/member {:member/member-id member-id}
-                                             :session/roles  #{:admin}}}})]
+                         :request {:app/session {:session/member {:member/member-id member-id}
+                                                 :session/roles  #{:admin}}}})]
     (is (= member-id (:current-member-id state)))
     (is (= #{:admin} (:current-user-roles state)))
     (is (= env (:env state)))))

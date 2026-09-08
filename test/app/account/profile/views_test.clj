@@ -45,7 +45,7 @@
                       :keycloak {:auth-server-url
                                  "https://identity.example.test/"
                                  :realm "test-realm"}}}
-       :session {:session/member {:member/member-id member-id}}}))))
+       :app/session {:session/member {:member/member-id member-id}}}))))
 
 (defn control [id view]
   (some-> (support/element-by-id id view) support/attrs))

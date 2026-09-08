@@ -23,7 +23,10 @@
     :client-secret
     :oauth2
     :secrets
-    :session
+    :app/session
+    :app/sid
+    :app.interceptors.session/cookie-sid
+    :app.interceptors.session/stored-session
     :access_token
     :id_token
     :refresh_token
@@ -37,8 +40,8 @@
 (def redact-keys #{:password :pass "x-forwarded-access-token" "cookie"})
 
 (defn sanitize [v]
-  (let [user-email (get-in v [:session :session/email])
-        member-id (get-in v [:session :session/member :member/member-id])
+  (let [user-email (get-in v [:app/session :session/email])
+        member-id (get-in v [:app/session :session/member :member/member-id])
         v (->> v
                (util/remove-deep dangerous-keys)
                (util/replace-deep redact-keys "<REDACTED>"))]

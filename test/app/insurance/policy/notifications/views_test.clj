@@ -32,9 +32,9 @@
              :db             (d/db conn)
              :path-params    {:policy-id policy-id}
              :policy         (q/retrieve-policy (d/db conn) policy-id)
-             :session        {:session/member {:member/member-id member-id
-                                               :member/name      "Ada"
-                                               :member/email     "ada@example.test"}}
+             :app/session        {:session/member {:member/member-id member-id
+                                                   :member/name      "Ada"
+                                                   :member/email     "ada@example.test"}}
              :system         {:env {:app-base-url "https://example.test"}}
              :tr             tr
              ::r/router      router}})))

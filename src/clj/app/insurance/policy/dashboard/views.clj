@@ -577,7 +577,7 @@
   (let [dashboard (queries/policy-dashboard
                    db
                    (policy-id req)
-                   {:current-member-id (get-in req [:session :session/member :member/member-id])})
+                   {:current-member-id (get-in req [:app/session :session/member :member/member-id])})
         policy    (:policy dashboard)]
     (ui2/datastar-page*
      [:script {:type "module"}

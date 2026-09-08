@@ -114,7 +114,7 @@
            footer-tray-translator
            (app-shell-body
             {:db (d/db conn)
-             :session
+             :app/session
              {:session/member {:member/member-id member-id
                                :member/name "Stale Ada"
                                :member/nick "Ada"}}
@@ -222,7 +222,7 @@
   (let [app-shell-body (some-> (requiring-resolve 'app.layout2/app-shell-body) deref)
         rendered (html/->str
                   translator
-                  (app-shell-body {:session {:session/member member}
+                  (app-shell-body {:app/session {:session/member member}
                                    :tr translator}
                                   [:main "Page content"]))
         shell-position (str/index-of rendered "<app-shell>")
@@ -261,7 +261,7 @@
   (let [app-shell-body (some-> (requiring-resolve 'app.layout2/app-shell-body) deref)
         rendered (html/->str
                   translator
-                  (app-shell-body {:session {:session/member member}
+                  (app-shell-body {:app/session {:session/member member}
                                    :tr translator}
                                   [:main "Page content"]))]
     (is (every? #(str/includes? rendered %)

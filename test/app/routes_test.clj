@@ -70,14 +70,16 @@
            :reitit.http.interceptors.parameters/parameters
            :reitit.http.interceptors.muuntaja/format-request
            :reitit.http.interceptors.multipart/multipart
-           :app.interceptors.session/session}
+           :app.interceptors.session/session-cookie
+           :app.interceptors.session/session-data}
          names)]
     (is (= [:app.interceptors/log-request
             csrf-interceptor-name
             :reitit.http.interceptors.parameters/parameters
             :reitit.http.interceptors.muuntaja/format-request
             :reitit.http.interceptors.multipart/multipart
-            :app.interceptors.session/session]
+            :app.interceptors.session/session-cookie
+            :app.interceptors.session/session-data]
            relevant-names))))
 
 (deftest every-unsafe-route-inherits-fetch-metadata-protection
