@@ -50,6 +50,12 @@
    ["" {:interceptors [auth/require-authenticated-user
                        (interceptors/webdav-interceptor system)]}
 
+    ["/admin/jobs" {:app.auth/roles #{:admin}
+                    :interceptors [auth/roles-authorization-interceptor]
+                    :handler (get-in system [:job-queue :ui-handler])}
+     [""]
+     ["/*path"]]
+
     (datastar-routes/act-route system)
     (account/routes system)
     (dashboard/routes)

@@ -2,11 +2,15 @@
   (:require
    [app.datastar :as datastar]
    [app.i18n :as i18n]
+   [app.job-queue :as job-queue]
    [app.routes :as routes]
+   [app.session :as session]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is use-fixtures]]
+   [datomic.api :as d]
    [reitit.core :as r]
-   [reitit.http :as http]))
+   [reitit.http :as http]
+   [s-exp.drip :as drip]))
 
 (use-fixtures :each tc/with-sqlite-db)
 
@@ -170,3 +174,44 @@
             :trace 404
             :connect 200}
            statuses))))
+
+(deftest jobs-dashboard-requires-admin-and-protects-mutations
+  (let [queue (job-queue/start! {:filename ":memory:"})
+        system (assoc (test-system) :job-queue queue)
+        handler (routes/default-handler system)
+        sessions (session/init! tc/*sqlite-db* {:expire-secs 3600})
+        request (fn [sid method uri site]
+                  (handler {:uri uri :request-method method
+                            :headers {"cookie" (str "sid=" sid)
+                                      "sec-fetch-site" site}}))]
+    (try
+      @(d/transact (get-in system [:datomic :conn])
+                   [{:member/member-id (random-uuid) :member/email "jobs-test@example.com"}])
+      (doseq [[sid roles] [["admin" #{:admin}] ["member" #{:Mitglieder}]]]
+        (session/write-session! sessions sid {:session/email "jobs-test@example.com"
+                                              :session/roles roles}))
+      (is (= [[303 303 200 200 200 404]
+              [401 401 401 401 401 401]
+              [302 302 302 302 302 302]]
+             (mapv (fn [sid]
+                     (mapv #(:status (request sid :get % "same-origin"))
+                           ["/admin/jobs" "/admin/jobs/" "/admin/jobs/queues"
+                            "/admin/jobs/jobs" "/admin/jobs/public/style.css"
+                            "/admin/jobs/missing"]))
+                   ["admin" "member" "anonymous"])))
+      (is (= "/admin/jobs/queues"
+             (get-in (request "admin" :get "/admin/jobs" "same-origin")
+                     [:headers "location"])))
+      (drip/upsert-queue (:client queue) "test" {})
+      (doseq [[sid site expected-status] [["admin" "cross-site" 403]
+                                          ["admin" nil 403]
+                                          ["member" "same-origin" 401]
+                                          ["anonymous" "same-origin" 302]]]
+        (is (= {:status expected-status :paused? false}
+               {:status (:status (request sid :post "/admin/jobs/queues/test/pause" site))
+                :paused? (some? (:paused-at (first (drip/list-queues (:client queue)))))})))
+      (is (= {:status 303 :paused? true}
+             {:status (:status (request "admin" :post "/admin/jobs/queues/test/pause" "same-origin"))
+              :paused? (some? (:paused-at (first (drip/list-queues (:client queue)))))}))
+      (is (= 404 (:status (request "admin" :get "/admin/jobs-other" "same-origin"))))
+      (finally (job-queue/stop! queue)))))
