@@ -6,7 +6,7 @@
    [app.interceptors.session :as session]
    [app.interceptors.util :as int]
    [app.secret-box :as secret-box]
-   [app.session :refer [redis-store]]
+   [app.session :refer [sqlite-store]]
    [app.ui2 :as ui2]
    [app.util :as util]
    [buddy.core.codecs :as codecs]
@@ -251,10 +251,10 @@
     (conj ["/dev/identity-mismatch" {:handler (fn [req] (identity-mismatch-preview-handler (:env system) req))}])))
 
 (defn session-interceptor
-  [{:keys [env redis]}]
+  [{:keys [env sqlite-sessions]}]
   (let [{:keys [session-ttl-s cookie-attrs]} (config/session-config env)]
     (session/session-interceptor {:cookie-attrs cookie-attrs
-                                  :store        (redis-store redis {:expire-secs session-ttl-s})})))
+                                  :store        (sqlite-store sqlite-sessions {:expire-secs session-ttl-s})})))
 
 (def roles-authorization-interceptor
   "Reitit route interceptor that mounts itself if route has `:app.auth/roles` data. Expects `:app.auth/roles`

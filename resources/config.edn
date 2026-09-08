@@ -93,6 +93,7 @@
                                                        :webdav                #ig/ref :app.ig/webdav-sardine
                                                        :keycloak              #ig/ref :app.ig/keycloak
                                                        :redis                 #ig/ref          :app.ig/redis
+                                                       :sqlite-sessions       #ig/ref :app.ig/sqlite-sessions
                                                        :calendar              #ig/ref :app.ig/calendar
                                                        :filestore             #ig/ref :app.ig/filestore
                                                        :nexus                 #ig/ref :app.ig/nexus
@@ -114,10 +115,19 @@
                                                                                             :dev  #envf ["%s/datomic.data.restored" PWD]
                                                                                             :test #envf ["%s/datomic.test.data" PWD]
                                                                                             :demo #envf ["%s/datomic.demo.data" PWD]}]}
-                                                       :peer   {:db-uri     #or [#env DATOMIC_URI
-                                                                                 #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]}}
+                                                       :peer   {:db-uri #or [#env DATOMIC_URI
+                                                                             #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]}}
+                           :app.ig/sqlite-sessions          {:filename #or [#env PROBEMATIC_SQLITE_SESSIONS
+                                                                            #profile {:dev  #envf ["%s/data.dev/sessions.sqlite" PWD]
+                                                                                      :test #envf ["%s/data.dev/test-sessions.sqlite" PWD]
+                                                                                      :demo #envf ["%s/data.dev/demo-sessions.sqlite" PWD]
+                                                                                      :prod "/data/sessions.sqlite"}]
+                                                             :config   {:pragma {:foreign_keys true
+                                                                                 :cache_size -8192}
+                                                                        :writer-pragma {:cache_size -32768}}}
+
                            :app.ig/i18n-langs         {}
-                           :app.ig/lettermint          {:env #ig/ref :app.ig/env}
+                           :app.ig/lettermint         {:env #ig/ref :app.ig/env}
                            :app.ig/redis              {:env #ig/ref :app.ig/env}
                            :app.ig/email-worker       {:env        #ig/ref :app.ig/env
                                                        :redis      #ig/ref :app.ig/redis

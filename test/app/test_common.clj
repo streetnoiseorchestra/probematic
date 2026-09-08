@@ -3,7 +3,17 @@
    [lookup.core :as l]
    [app.datomic.system :as datomic.system]
    [app.nexus :as app-nexus]
+   [app.sqlite :as sqlite]
    [datomic.api :as d]))
+
+(def ^:dynamic *sqlite-db* nil)
+
+(defn with-sqlite-db [f]
+  (let [db (sqlite/start {:filename ":memory:"})]
+    (try
+      (binding [*sqlite-db* db]
+        (f))
+      (finally (sqlite/stop db)))))
 
 (def ^:dynamic *test-connections* nil)
 

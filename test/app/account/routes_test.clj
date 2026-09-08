@@ -7,7 +7,7 @@
    [app.routes :as app-routes]
    [app.test-common :as tc]
    [app.urls]
-   [clojure.test :refer [deftest is testing]]
+   [clojure.test :refer [deftest is testing use-fixtures]]
    [reitit.core :as r]
    [reitit.http :as http]))
 
@@ -44,6 +44,8 @@
                       (:interceptors (second node))))
        node))
    (tree-seq coll? seq route-tree)))
+
+(use-fixtures :each tc/with-sqlite-db)
 
 (deftest account-routes-expose-five-stable-pages
   (let [routes-fn (support/public-fn 'app.account.routes/routes)]
@@ -145,6 +147,7 @@
                     :datomic {:conn conn}
                     :filestore {}
                     :redis {}
+                    :sqlite-sessions tc/*sqlite-db*
                     :datastar-refresh-mult
                     {::datastar/refresh-mult ::refresh-mult}}))
           paths  (into #{}

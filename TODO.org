@@ -71,8 +71,8 @@
 ** DONE Members: add Copy Invite button to the member invitation table, it should put the member invite url into the clipboard. Use wa-copy-button. Resend and Copy Invite should be appearance="plain". When doing this also move the "Member Invitatios" header + table section so it doesnt appear inserted between the member table info+searchfilter bar, thats a confusing ui. the table search/filter should be adjacent.
 ** DONE Members table: add pagination (10, 30, 50, 100), just like the insurance-policy workbench table
 ** DONE migrate email sending to lettermint api and use idempotency
+** DONE sqlite: introduce sqlite4clj and store ring/http sessions there (rewrite src/clj/app/session.clj)
 ** TODO sqlite: introduce sqlite4clj for cache/ephemeral storage
-** TODO sqlite: use sqlite for db sessions
 ** TODO sqlite: move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
 ** TODO create admin team
 ** TODO member profile -> show SNO UUID related things only to "admin" team

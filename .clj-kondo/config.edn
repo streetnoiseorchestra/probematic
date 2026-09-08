@@ -34,6 +34,8 @@
 
                  :unresolved-var {:exclude [taoensso.carmine
                                             org.httpkit.client
+                                            sqlite4clj.impl.api/finalize
+                                            sqlite4clj.impl.api/close
                                             backtick/template
                                             ol.app.dev.dev-extras
                                             starfederation.datastar.clojure.adapter.http-kit/on-close

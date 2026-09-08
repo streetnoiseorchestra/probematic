@@ -4,9 +4,11 @@
    [app.i18n :as i18n]
    [app.routes :as routes]
    [app.test-common :as tc]
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is use-fixtures]]
    [reitit.core :as r]
    [reitit.http :as http]))
+
+(use-fixtures :each tc/with-sqlite-db)
 
 (def csrf-interceptor-name
   :app.interceptors.csrf/fetch-metadata)
@@ -24,6 +26,7 @@
      :datomic {:conn conn}
      :webdav {}
      :redis {}
+     :sqlite-sessions tc/*sqlite-db*
      :filestore {}
      :nexus {:nexus/actions {}}
      :datastar-refresh-mult

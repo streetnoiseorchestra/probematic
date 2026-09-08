@@ -1,52 +1,49 @@
-;; From https://github.com/clojusc/ring-redis-session/commit/7bd934794066924d06447c090a9800ad881fd98b
-;; Copyright © 2013 Zhe Wu wu@madk.org
-;; Copyright © 2016-2018 Clojure-Aided Enrichment Center
-;; Distributed under the Eclipse Public License, the same as Clojure.
-(ns app.session (:require
-                 [ring.middleware.session.store :refer [SessionStore]]
-                 [taoensso.carmine :as redis])
-    (:import
-     [java.util UUID]))
+(ns app.session
+  (:require
+   [app.crypto :as crypto]
+   [cljc.java-time.instant :as instant]
+   [ring.middleware.session.store :refer [SessionStore]]
+   [sqlite4clj.core :as sql]
+   [tick.core :as t]))
 
-(defn new-session-key [prefix]
-  (str prefix ":" (UUID/randomUUID)))
-
-(deftype RedisStore [redis-conn prefix expiration reset-on-read read-handler write-handler]
+(deftype SQLiteStore [db expire-secs]
   SessionStore
-
   (read-session [_ session-key]
     (when session-key
-      (when-let [data (redis/wcar redis-conn (redis/get session-key))]
-        (let [read-handler read-handler]
-          (when (and expiration reset-on-read)
-            (redis/wcar redis-conn (redis/expire session-key expiration)))
-          (read-handler data)))))
-
-  (write-session
-    [_ old-session-key data]
-    (let [session-key (or old-session-key (new-session-key prefix))]
-      (let [write-handler write-handler]
-        (if expiration
-          (redis/wcar redis-conn (redis/setex session-key expiration (write-handler data)))
-          (redis/wcar redis-conn (redis/set session-key (write-handler data)))))
+      (first (sql/q (:reader db)
+                    ["SELECT data FROM http_sessions WHERE session_key = ? AND expires_at > ?"
+                     session-key (instant/get-epoch-second (t/instant))]))))
+  (write-session [_ old-session-key data]
+    (let [session-key (or old-session-key (crypto/new-uid))
+          now         (instant/get-epoch-second (t/instant))]
+      (sql/with-write-tx [conn (:writer db)]
+        (sql/q conn ["DELETE FROM http_sessions WHERE expires_at <= ?" now])
+        (sql/q conn ["INSERT INTO http_sessions (session_key, data, expires_at) VALUES (?, ?, ?)
+                       ON CONFLICT (session_key) DO UPDATE SET data = excluded.data, expires_at = excluded.expires_at"
+                     session-key data (+ now expire-secs)]))
       session-key))
-
-  (delete-session
-    [_ session-key]
-    (redis/wcar redis-conn (redis/del session-key))
+  (delete-session [_ session-key]
+    (when session-key
+      (sql/q (:writer db) ["DELETE FROM http_sessions WHERE session_key = ?" session-key]))
     nil))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;   Constructor   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn sqlite-store
+  "Creates a Ring session store and its table in `db`.
 
-(defn redis-store
-  "Creates a redis-backed session storage engine."
-  ([redis-conn]
-   (redis-store redis-conn {}))
-  ([redis-conn {:keys [prefix expire-secs reset-on-read read-handler write-handler]
-                :or   {prefix        "session"
-                       read-handler  identity
-                       write-handler identity
-                       reset-on-read false}}]
-   (RedisStore. redis-conn prefix expire-secs reset-on-read read-handler write-handler)))
+  | Option | Description |
+  |--------|-------------|
+  | `:expire-secs` | Required positive session lifetime in seconds. |
+
+  Writes refresh expiry; reads do not. Expired rows are removed at startup and
+  on writes. The caller owns the database lifecycle."
+  [db {:keys [expire-secs]}]
+  {:pre [(pos-int? expire-secs)]}
+  (sql/with-write-tx [conn (:writer db)]
+    (sql/q conn ["CREATE TABLE IF NOT EXISTS http_sessions (
+                   session_key TEXT PRIMARY KEY NOT NULL,
+                   data BLOB NOT NULL,
+                   expires_at INTEGER NOT NULL)"])
+    (sql/q conn ["CREATE INDEX IF NOT EXISTS http_sessions_expiry ON http_sessions (expires_at)"])
+    (sql/q conn ["DELETE FROM http_sessions WHERE expires_at <= ?"
+                 (instant/get-epoch-second (t/instant))]))
+  (SQLiteStore. db expire-secs))

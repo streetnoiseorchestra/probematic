@@ -5,6 +5,7 @@
             [app.server]
             [app.config :as config]
             [app.datomic.system :as datomic]
+            [app.sqlite :as sqlite]
             [app.email.email-worker :as email-worker]
             [app.email.lettermint :as lettermint]
             [app.errors :as error]
@@ -77,6 +78,16 @@
   [_ config]
   (μ/log ::halt-datomic)
   (datomic/stop config))
+
+(defmethod ig/init-key ::sqlite-sessions
+  [_ config]
+  (μ/log ::init-sqlite-sessions)
+  (sqlite/start config))
+
+(defmethod ig/halt-key! ::sqlite-sessions
+  [_ config]
+  (μ/log ::halt-sqlite-sessions)
+  (sqlite/stop config))
 
 (defmethod ig/init-key ::i18n-langs
   [_ _]
