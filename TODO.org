@@ -70,15 +70,16 @@
 ** DONE member invite acceptance - > remove password creation
 ** DONE Members: add Copy Invite button to the member invitation table, it should put the member invite url into the clipboard. Use wa-copy-button. Resend and Copy Invite should be appearance="plain". When doing this also move the "Member Invitatios" header + table section so it doesnt appear inserted between the member table info+searchfilter bar, thats a confusing ui. the table search/filter should be adjacent.
 ** DONE Members table: add pagination (10, 30, 50, 100), just like the insurance-policy workbench table
-** TODO introduce sqlite4clj for cache/ephemeral storage
-** TODO use sqlite4clj for db sessions
-** TODO move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
-** TODO migrate email sending to lettermint api and use idempotency
+** DONE migrate email sending to lettermint api and use idempotency
+** TODO sqlite: introduce sqlite4clj for cache/ephemeral storage
+** TODO sqlite: use sqlite for db sessions
+** TODO sqlite: move email queue from redis to a simple sqlite queue, drop carmine and the redis dep entirely
 ** TODO create admin team
 ** TODO member profile -> show SNO UUID related things only to "admin" team
 ** TODO on gig detail page add a "travel mode" feature which switches view to those attending and shows their travel discount details
 * 2026 UI Makeover
 ** TODO Jump Menu: make current-page aware (with aria)
+** TODO Recently visited: store recently visited pages in sqlite4clj
 * 2026 post d* cool new features
 ** TODO View transitions to animated in gig attendance/gig details in dashboard and gig detail page
 ** TODO Ledger bookkeping view for finanz team members
