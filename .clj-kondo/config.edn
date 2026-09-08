@@ -32,8 +32,7 @@
                                                        com.fulcrologic.guardrails.malli.core [>def >defn >fdef => | <- ?]
                                                        clojure.test                          [deftest is are run-tests testing]}}
 
-                 :unresolved-var {:exclude [taoensso.carmine
-                                            org.httpkit.client
+                 :unresolved-var {:exclude [org.httpkit.client
                                             sqlite4clj.impl.api/finalize
                                             sqlite4clj.impl.api/close
                                             backtick/template

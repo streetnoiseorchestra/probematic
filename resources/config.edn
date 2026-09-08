@@ -44,7 +44,6 @@
                                                                       :dev  true
                                                                       :demo true
                                                                       :test true}}]
- :redis                   {:conn-spec #ref [:secrets :redis :conn-spec]}
  :max-header-size         12000
  :content-security-policy {:img-src     "https://*.streetnoise.at 'self' data:"
                            :object-src  "'none'"
@@ -92,7 +91,6 @@
                                                        :datomic               #ig/ref :app.ig/datomic-db
                                                        :webdav                #ig/ref :app.ig/webdav-sardine
                                                        :keycloak              #ig/ref :app.ig/keycloak
-                                                       :redis                 #ig/ref          :app.ig/redis
                                                        :job-queue             #ig/ref :app.ig/job-queue
                                                        :sqlite-sessions       #ig/ref :app.ig/sqlite-sessions
                                                        :calendar              #ig/ref :app.ig/calendar
@@ -134,7 +132,6 @@
 
                            :app.ig/i18n-langs         {}
                            :app.ig/lettermint         {:env #ig/ref :app.ig/env}
-                           :app.ig/redis              {:env #ig/ref :app.ig/env}
                            :app.ig/email-worker       {:env        #ig/ref :app.ig/env
                                                        :job-queue  #ig/ref :app.ig/job-queue
                                                        :lettermint #ig/ref :app.ig/lettermint}

@@ -24,8 +24,7 @@
             [nrepl.server :as nrepl]
             [ol.jobs.ig]
             [app.system :as system]
-            [app.datastar]
-            [taoensso.carmine :as car]))
+            [app.datastar]))
 (defmethod ig/init-key ::profile [_ profile]
   profile)
 
@@ -119,11 +118,6 @@
                      lettermint/RuntimeConfig
                      (dissoc runtime-config :project-api-token)))
     runtime-config))
-
-(defmethod ig/init-key ::redis
-  [_ {:keys [env]}]
-  {:pool (car/connection-pool {})
-   :spec (-> env :redis :conn-spec)})
 
 (defmethod ig/init-key ::email-worker
   [_ sys]

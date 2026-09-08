@@ -98,4 +98,6 @@
   (let [config (:ig/system (system/config {:profile :test}))]
     (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
       (is (= (ig/ref :app.ig/job-queue) (get-in config [component :job-queue]))))
-    (is (not (contains? (:app.ig/email-worker config) :redis)))))
+    (is (not (contains? config :app.ig/redis)))
+    (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
+      (is (not (contains? (get config component) :redis))))))

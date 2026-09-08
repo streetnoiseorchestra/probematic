@@ -3,35 +3,18 @@ version: '3.8'
 secrets:
   app_secrets:
     file: ./secrets/app_secrets
-  redis_pass:
-    file: ./secrets/redis_pass
 services:
-  redis:
-    image: docker.io/library/redis:7
-    restart: always
-    command: [bash, -c, 'docker-entrypoint.sh --appendonly yes --save 60 1 --notify-keyspace-events AKE --requirepass "$$(cat $$REDIS_PASS_FILE)"']
-    environment:
-      REDIS_PASS_FILE: /run/secrets/redis_pass
-    volumes:
-      - "/srv/probematic/redis:/data:z"
-    labels:
-      io.containers.autoupdate: registry
-    secrets:
-      - redis_pass
   app:
     image: ghcr.io/ramblurr/probematic:latest
     restart: always
-    depends_on:
-      - redis
     environment:
-      REDIS_PASS_FILE: /run/secrets/redis_pass
       APP_SECRETS_FILE: /run/secrets/app_secrets
       DATOMIC_DB_STORAGE_DIR: /data/datomic
       HTTP_BIND_HOST: 0.0.0.0
       HTTP_PORT: 6160
       APP_ENVIRONMENT: prod
     volumes:
-      - "/srv/probematic/app/datomic:/data/datomic:z"
+      - "/srv/probematic/app:/data:z"
     secrets:
       - app_secrets
 ...

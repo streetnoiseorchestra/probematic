@@ -39,7 +39,7 @@
          :gigo       (:app.ig/gigo-client main/system)
          :datomic    (:app.ig/datomic-db main/system)
          :i18n-langs (:app.ig/i18n-langs main/system)
-         :redis      (:app.ig/redis main/system)}]
+         :job-queue  (:app.ig/job-queue main/system)}]
     ;; (tap> (q/active-reminders-by-type db))
     (reminders/send-reminders! sys nil)
     ;;

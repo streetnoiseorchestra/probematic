@@ -25,7 +25,6 @@
      :oauth2 {}
      :datomic {:conn conn}
      :webdav {}
-     :redis {}
      :sqlite-sessions tc/*sqlite-db*
      :filestore {}
      :nexus {:nexus/actions {}}

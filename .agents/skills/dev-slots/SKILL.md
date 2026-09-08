@@ -1,6 +1,6 @@
 ---
 name: dev-slots
-description: Use the project parallel dev slot workflow for host-based agents in Git worktrees with isolated Datomic, Redis, smtp4dev, HTTP, and nREPL runtime state, plus one canonical main-checkout `prompts/` directory. Use when working in, starting, stopping, checking, reattaching, hydrating, or repairing an agent worktree tied to `bb dev-slot`.
+description: Use the project parallel dev slot workflow for host-based agents in Git worktrees with isolated Datomic, smtp4dev, HTTP, and nREPL runtime state, plus one canonical main-checkout `prompts/` directory. Use when working in, starting, stopping, checking, reattaching, hydrating, or repairing an agent worktree tied to `bb dev-slot`.
 ---
 
 # Parallel dev slots

@@ -146,7 +146,6 @@
                     :i18n-langs (i18n/read-langs)
                     :datomic {:conn conn}
                     :filestore {}
-                    :redis {}
                     :sqlite-sessions tc/*sqlite-db*
                     :datastar-refresh-mult
                     {::datastar/refresh-mult ::refresh-mult}}))

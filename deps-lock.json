@@ -1074,12 +1074,6 @@
     "com/sun/xml/dtd-parser/dtd-parser/1.5.0/dtd-parser-1.5.0.pom": {
       "sha256": "1d80c367abe6e29b7163e4fa656d309cef79150ee62a41b09564a015a100f321"
     },
-    "com/taoensso/carmine/3.5.0/carmine-3.5.0.jar": {
-      "sha256": "b6a5547f1c3cf92b9bfbf6b0ec98cc454b4fedd856b5827fc2c7fe7ed1fb6000"
-    },
-    "com/taoensso/carmine/3.5.0/carmine-3.5.0.pom": {
-      "sha256": "f1d3236457e7580c615b43e096cbeb8fc61e8663d46667b518c7bdc9ae4b765b"
-    },
     "com/taoensso/encore/3.158.0/encore-3.158.0.pom": {
       "sha256": "4d3a1f6cf12b0d933ef293f60bbf1ec41a91ca69454eb428e7ba13ece957f2c1"
     },

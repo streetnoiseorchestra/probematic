@@ -43,7 +43,7 @@
 (defn request [conn]
   {:datomic-conn conn
    :system {:datomic {:conn conn}
-            :redis :fake-redis
+            :job-queue :fake-job-queue
             :env {}
             :i18n-langs {}}})
 

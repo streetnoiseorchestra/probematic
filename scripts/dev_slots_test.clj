@@ -11,7 +11,6 @@
   [{:slot :agent-1
     :http-port 6171
     :nrepl-port 7011
-    :redis-port 6381
     :datomic-port 4434
     :datomic-console-port 8181
     :smtp4dev-http-port 5102
@@ -20,7 +19,6 @@
    {:slot :agent-2
     :http-port 6172
     :nrepl-port 7012
-    :redis-port 6382
     :datomic-port 4534
     :datomic-console-port 8281
     :smtp4dev-http-port 5202
@@ -29,7 +27,6 @@
    {:slot :agent-3
     :http-port 6173
     :nrepl-port 7013
-    :redis-port 6383
     :datomic-port 4634
     :datomic-console-port 8381
     :smtp4dev-http-port 5302
@@ -62,14 +59,14 @@
          #"Duplicate port"
          (slots/validate-registry
           [(first valid-registry)
-           (assoc (second valid-registry) :redis-port 6381)]))))
+           (assoc (second valid-registry) :datomic-port 4434)]))))
 
   (testing "rejects ports used by the default dev stack"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo
          #"default dev stack"
          (slots/validate-registry
-          [(assoc (first valid-registry) :redis-port 6379)]))))
+          [(assoc (first valid-registry) :datomic-port 4334)]))))
 
   (testing "rejects missing required port keys"
     (is (thrown-with-msg?
@@ -141,7 +138,7 @@
           text (slots/render-compose-env main-root agent-1)]
       (testing "renders Docker Compose interpolation values for the selected slot"
         (is (str/includes? text "COMPOSE_PROJECT_NAME=probematic-agent-1"))
-        (is (str/includes? text "PROBEMATIC_DEV_REDIS_PORT_MAPPING=127.0.0.1:6381:6379"))
+        (is (not (str/includes? text "REDIS")))
         (is (str/includes? text "PROBEMATIC_DEV_SMTP4DEV_WEB_PORT_MAPPING=127.0.0.1:5102:80"))
         (is (str/includes? text "PROBEMATIC_DEV_SMTP4DEV_SMTP_PORT_MAPPING=127.0.0.1:2601:25"))
         (is (str/includes? text "PROBEMATIC_DEV_SMTP4DEV_IMAP_PORT_MAPPING=127.0.0.1:1531:143"))
@@ -156,11 +153,17 @@
   [& args]
   (:out (apply shell {:out :string :err :string} "docker" "compose" args)))
 
+(deftest docker-compose-prod-storage-test
+  (let [out (compose-config "-f" "docker-compose.prod.yml" "config")]
+    (is (not (str/includes? (str/lower-case out) "redis")))
+    (is (str/includes? out "source: /srv/probematic/app\n"))
+    (is (str/includes? out "target: /data\n"))))
+
 (deftest docker-compose-dev-parameterization-test
   (testing "the default compose config keeps the current project-root dev ports and volumes"
     (let [repo-root (str (fs/normalize (fs/absolutize ".")))
           out (compose-config "-f" "docker-compose.dev.yml" "config")]
-      (is (str/includes? out "published: \"6379\""))
+      (is (not (str/includes? out "redis")))
       (is (str/includes? out "published: \"5002\""))
       (is (str/includes? out "published: \"2500\""))
       (is (str/includes? out "published: \"1430\""))
@@ -179,7 +182,7 @@
                                 "--env-file" compose-env-file
                                 "-f" "docker-compose.dev.yml"
                                 "config")]
-        (is (str/includes? out "published: \"6381\""))
+        (is (not (str/includes? out "redis")))
         (is (str/includes? out "published: \"5102\""))
         (is (str/includes? out "published: \"2601\""))
         (is (str/includes? out "published: \"1531\""))
@@ -318,23 +321,16 @@
 
 (def base-secrets
   {:app-base-url "https://example.com"
-   :redis {:conn-spec {:host "localhost"
-                       :port 6379
-                       :password "base-password"
-                       :ssl? true}}
    :lettermint {:project-api-token "test-token"}
    :untouched {:nested true}})
 
 (def expected-agent-1-secrets
   {:app-base-url "http://agent-1.probematic.localhost:6171"
-   :redis {:conn-spec {:host "127.0.0.1"
-                       :port 6381
-                       :password "devpassword123"}}
    :lettermint {:project-api-token "test-token"}
    :untouched {:nested true}})
 
 (deftest slot-secrets-test
-  (testing "merges only slot-specific app URL and Redis connection overrides into the base secrets"
+  (testing "overrides only the slot-specific app URL in the base secrets"
     (is (= expected-agent-1-secrets
            (slots/merge-slot-secrets base-secrets agent-1))))
 
@@ -362,7 +358,7 @@
         (fs/create-dirs (fs/path main-root "dev" "datomic"))
         (spit (str (fs/path main-root "dev" "datomic" "logback.xml")) "<configuration/>\n")
         (spit (str registry-file) (pr-str valid-registry))
-        (spit (str secrets-file) "{:app-base-url \"https://example.com\" :redis {:conn-spec {:host \"localhost\" :port 6379 :password \"p\"}} :external #ref [:foo]}\n")
+        (spit (str secrets-file) "{:app-base-url \"https://example.com\" :external #ref [:foo]}\n")
         (let [{:keys [exit out err]} (shell {:out :string :err :string :continue true}
                                             "bb" "scripts/dev_slots.clj"
                                             "--main-root" main-root

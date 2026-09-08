@@ -15,7 +15,6 @@
 (def slot-port-keys
   [:http-port
    :nrepl-port
-   :redis-port
    :datomic-port
    :datomic-console-port
    :smtp4dev-http-port
@@ -26,7 +25,7 @@
   (into [:slot] slot-port-keys))
 
 (def default-dev-ports
-  #{6161 6162 6379 5002 2500 1430 8081 4334})
+  #{6161 6162 5002 2500 1430 8081 4334})
 
 (defn- duplicate-values [xs]
   (->> xs
@@ -240,7 +239,6 @@
     (str/join
      "\n"
      [(str "COMPOSE_PROJECT_NAME=" project-name)
-      (str "PROBEMATIC_DEV_REDIS_PORT_MAPPING=127.0.0.1:" (:redis-port slot) ":6379")
       (str "PROBEMATIC_DEV_SMTP4DEV_WEB_PORT_MAPPING=127.0.0.1:" (:smtp4dev-http-port slot) ":80")
       (str "PROBEMATIC_DEV_SMTP4DEV_SMTP_PORT_MAPPING=127.0.0.1:" (:smtp4dev-smtp-port slot) ":25")
       (str "PROBEMATIC_DEV_SMTP4DEV_IMAP_PORT_MAPPING=127.0.0.1:" (:smtp4dev-imap-port slot) ":143")
@@ -252,16 +250,9 @@
       (str "PROBEMATIC_DEV_DATOMIC_CONFIG_DIR=" datomic-config-dir)
       ""])))
 
-(def redis-password "devpassword123")
-
 (defn merge-slot-secrets
   [base-secrets slot]
-  (-> base-secrets
-      (assoc :app-base-url (slot-http-url slot :http-port))
-      (assoc-in [:redis :conn-spec]
-                {:host "127.0.0.1"
-                 :port (:redis-port slot)
-                 :password redis-password})))
+  (assoc base-secrets :app-base-url (slot-http-url slot :http-port)))
 
 (defn write-slot-secrets!
   [main-root slot base-secrets]

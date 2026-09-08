@@ -1,16 +1,5 @@
 ---
 services:
-  redis:
-    image: docker.io/valkey/valkey:8
-    restart: always
-    command:
-      - bash
-      - "-c"
-      - "docker-entrypoint.sh  --notify-keyspace-events AKE --requirepass devpassword123"
-    ports:
-      - "${PROBEMATIC_DEV_REDIS_PORT_MAPPING:-6379:6379}"
-    labels:
-      io.containers.autoupdate: registry
   smtp4dev:
     image: docker.io/rnwood/smtp4dev:v3
     ports:
