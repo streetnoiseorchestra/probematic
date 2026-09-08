@@ -25,7 +25,7 @@
      :oauth2 {}
      :datomic {:conn conn}
      :webdav {}
-     :sqlite-sessions tc/*sqlite-db*
+     :auxiliary tc/*sqlite-db*
      :filestore {}
      :nexus {:nexus/actions {}}
      :datastar-refresh-mult

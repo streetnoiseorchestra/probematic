@@ -79,14 +79,14 @@
   (μ/log ::halt-datomic)
   (datomic/stop config))
 
-(defmethod ig/init-key ::sqlite-sessions
+(defmethod ig/init-key ::auxiliary
   [_ config]
-  (μ/log ::init-sqlite-sessions)
+  (μ/log ::init-auxiliary)
   (sqlite/start config))
 
-(defmethod ig/halt-key! ::sqlite-sessions
+(defmethod ig/halt-key! ::auxiliary
   [_ config]
-  (μ/log ::halt-sqlite-sessions)
+  (μ/log ::halt-auxiliary)
   (sqlite/stop config))
 
 (defmethod ig/init-key ::job-queue

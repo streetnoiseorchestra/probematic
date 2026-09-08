@@ -92,7 +92,7 @@
                                                        :webdav                #ig/ref :app.ig/webdav-sardine
                                                        :keycloak              #ig/ref :app.ig/keycloak
                                                        :job-queue             #ig/ref :app.ig/job-queue
-                                                       :sqlite-sessions       #ig/ref :app.ig/sqlite-sessions
+                                                       :auxiliary             #ig/ref :app.ig/auxiliary
                                                        :calendar              #ig/ref :app.ig/calendar
                                                        :filestore             #ig/ref :app.ig/filestore
                                                        :nexus                 #ig/ref :app.ig/nexus
@@ -121,11 +121,11 @@
                                                                                 :test #envf ["%s/data.test/jobs.sqlite" PWD]
                                                                                 :demo #envf ["%s/data.demo/jobs.sqlite" PWD]
                                                                                 :prod "/data/jobs.sqlite"}]}
-                           :app.ig/sqlite-sessions          {:filename #or [#env PROBEMATIC_SQLITE_SESSIONS
-                                                                            #profile {:dev  #envf ["%s/data.dev/sessions.sqlite" PWD]
-                                                                                      :test #envf ["%s/data.dev/test-sessions.sqlite" PWD]
-                                                                                      :demo #envf ["%s/data.dev/demo-sessions.sqlite" PWD]
-                                                                                      :prod "/data/sessions.sqlite"}]
+                           :app.ig/auxiliary                {:filename #or [#env PROBEMATIC_SQLITE_AUXILIARY
+                                                                            #profile {:dev  #envf ["%s/data.dev/auxiliary.sqlite" PWD]
+                                                                                      :test #envf ["%s/data.dev/test-auxiliary.sqlite" PWD]
+                                                                                      :demo #envf ["%s/data.dev/demo-auxiliary.sqlite" PWD]
+                                                                                      :prod "/data/auxiliary.sqlite"}]
                                                              :config   {:pragma {:foreign_keys true
                                                                                  :cache_size -8192}
                                                                         :writer-pragma {:cache_size -32768}}}

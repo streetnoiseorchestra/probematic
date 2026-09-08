@@ -11,7 +11,7 @@
 
 (defn- with-filename [f]
   (let [directory (.toFile (Files/createTempDirectory "probematic-sessions-" (make-array FileAttribute 0)))
-        filename  (str (io/file directory "nested" "sessions.sqlite"))]
+        filename  (str (io/file directory "nested" "auxiliary.sqlite"))]
     (try
       (f filename)
       (finally

@@ -252,10 +252,10 @@
     (conj ["/dev/identity-mismatch" {:handler (fn [req] (identity-mismatch-preview-handler (:env system) req))}])))
 
 (defn session-interceptors
-  [{:keys [env sqlite-sessions]}]
+  [{:keys [env auxiliary]}]
   (let [{:keys [session-ttl-s cookie-attrs]} (config/session-config env)]
     [(session/session-cookie-interceptor {:cookie-attrs cookie-attrs})
-     (session/session-data-interceptor sqlite-sessions {:expire-secs session-ttl-s})]))
+     (session/session-data-interceptor auxiliary {:expire-secs session-ttl-s})]))
 
 (def roles-authorization-interceptor
   "Reitit route interceptor that mounts itself if route has `:app.auth/roles` data. Expects `:app.auth/roles`

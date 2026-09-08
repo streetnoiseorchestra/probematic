@@ -146,7 +146,7 @@
                     :i18n-langs (i18n/read-langs)
                     :datomic {:conn conn}
                     :filestore {}
-                    :sqlite-sessions tc/*sqlite-db*
+                    :auxiliary tc/*sqlite-db*
                     :datastar-refresh-mult
                     {::datastar/refresh-mult ::refresh-mult}}))
           paths  (into #{}

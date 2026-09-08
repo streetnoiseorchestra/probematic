@@ -96,7 +96,7 @@
   (with-db
     (fn [db]
       (let [interceptors (auth/session-interceptors
-                          {:sqlite-sessions db
+                          {:auxiliary db
                            :env {:ig/system {:app.ig/profile :prod}
                                  :session-config {:session-ttl-s 60
                                                   :cookie-attrs {:same-site :strict :http-only true :path "/"}}}})
