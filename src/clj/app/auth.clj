@@ -342,25 +342,3 @@
 (defn dev-auth-interceptor [dev-session]
   {:name ::dev-auth-interceptor
    :enter #(-> % (assoc-in [:request :session] dev-session))})
-
-(defn is-password-pwned? [password]
-  (let [sha1sum ^String (secret-box/sha1-str password)
-        r ^String (:body @(http/get (str "https://api.pwnedpasswords.com/range/" (.substring sha1sum 0 5))
-                                    {:keepalive -1
-                                     :headers   {"user-agent" "probematic: https://github.com/Ramblurr/probematic"}}))
-        lines (when r (.split r "(?m)\n"))]
-    (some #(-> (.toLowerCase ^String %)
-               (.split ":")
-               (first)
-               (= (.substring sha1sum 5)))
-          lines)))
-
-(defn validate-password
-  "Returns :password/valid if the password is valid.
-  Other return options are :password/does-not-match :password/too-short, :password/commonly-used"
-  [password password-confirm]
-  (cond
-    (not= password password-confirm) :password/does-not-match
-    (< (count password) 8)           :password/too-short
-    (is-password-pwned? password)    :password/commonly-used
-    :else                            :password/valid))

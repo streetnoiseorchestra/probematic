@@ -29,9 +29,6 @@
 (defn random-str [len]
   (codecs/bytes->b64-str (util/random-bytes len) true))
 
-(defn sha1-str [in]
-  (codecs/bytes->hex (digest/sha1 in)))
-
 (defn sha384-resource [path]
   (if-let [resource (io/resource path)]
     (str "sha384-"

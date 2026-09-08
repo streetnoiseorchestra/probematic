@@ -49,7 +49,12 @@
       (is (str/includes?
            body
            (str "<input type=\"hidden\" name=\"invite-code\" "
-                "value=\"retry-code\">"))))))
+                "value=\"retry-code\">")))
+      (is (= {:password-input? false
+              :password-confirm-input? false}
+             {:password-input? (str/includes? body "type=\"password\"")
+              :password-confirm-input?
+              (str/includes? body "name=\"password-confirm\"")})))))
 
 (deftest accepted-receipt-renders-success-without-another-create-form-test
   (with-redefs [views/load-invite

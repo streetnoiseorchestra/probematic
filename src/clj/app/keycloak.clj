@@ -5,7 +5,6 @@
    [app.util :as util]
    [clojure.string :as str]
    [app.datomic.shim :as datomic]
-   [jsonista.core :as j]
    [keycloak.admin :as admin]
    [keycloak.deployment :as keycloak]
    [keycloak.user :as user]
@@ -371,49 +370,6 @@
    :delete-user!
    (fn [user-id]
      (delete-keycloak-user! kc user-id))})
-
-(defn- maybe-parse-json [s]
-  (if (or (nil? s) (str/blank? s))
-    s
-    (j/read-value s j/keyword-keys-object-mapper)))
-
-(defn- parse-response [^jakarta.ws.rs.core.Response resp]
-  (when resp
-    (let [r {:status (.getStatus resp)
-             :headers (.getStringHeaders resp)
-             :body (-> resp (.readEntity java.lang.String) maybe-parse-json)}]
-      (.close resp)
-      r)))
-
-(defn- extract-id [resp]
-  (let [loc (first (get-in resp [:headers "Location"]))]
-    (subs (str loc) (+ (str/last-index-of (str loc) "/") 1))))
-
-(defn- create-user! [{:keys [client realm] :as kc} person]
-  (let [resp (-> ^Keycloak client (.realm realm) (.users) (.create (user/user-for-update person)) parse-response)]
-    (if-not (= 201 (:status resp))
-      (throw (ex-info "Create Keycloak User Failed" {:response (:body resp)}))
-      (let [group-id (admin/get-group-id client realm (:group person))
-            user-id (extract-id resp)]
-        (admin/add-user-to-group! client realm group-id user-id)
-        (update-user kc user-id {:enabled (:enabled person) :email-verified true})))))
-
-(defn create-new-member!
-  ([kc member can-login?]
-   (create-new-member! kc member nil can-login?))
-  ([kc {:member/keys [email username name]} password can-login?]
-   (assert (not (str/blank? email)))
-   (assert (not (str/blank? username)))
-   (assert (not (str/blank? name)))
-   (let [new-user (create-user! kc
-                                (cond-> {:username username
-                                         :email email
-                                         :enabled can-login?
-                                         :group member-group-name
-                                         :first-name name}
-                                  (not (str/blank? password))
-                                  (assoc :password password)))]
-     new-user)))
 
 (defn kc-from-req [req]
   (-> req :system :keycloak))
