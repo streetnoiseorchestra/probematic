@@ -182,17 +182,14 @@
          body))
 
 (defn- invalid-page [req]
-  (page-shell
-   req
-   [:i18n/tr :invitation-expired]
-   [:header {:class "danger"}
-    [:p "SNO ID"]
-    [:h1 [:i18n/tr :invitation-expired]]]))
+  (page-shell req
+              [:i18n/tr :invitation-expired]
+              [:header {:class "danger"}
+               [:p "SNO ID"]
+               [:h1 [:i18n/tr :invitation-expired]]]))
 
-(defn- accept-invite-form [req {:keys [member invite-code]}]
-  (page-shell
-   req
-   [:i18n/tr :members/invite-accept-create-subtitle]
+(defn accept-invite-form [{:keys [member invite-code]}]
+  (list
    [:header
     [:p "SNOrga"]
     [:h1 [:i18n/tr :members/invite-accept-create-title]]]
@@ -208,22 +205,23 @@
       [:i18n/tr :members/invite-accept-create-account]]]]))
 
 (defn- success-page [req member]
-  (page-shell
-   req
-   [:i18n/tr :members/invite-accept-created-subtitle]
-   [:header
-    [:p "SNOrga"]
-    [:h1 [:i18n/tr :members/invite-accept-created-title]]]
-   [:p [:i18n/tr :members/invite-accept-created-subtitle]]
-   [:footer
-    [:a {:href (login-link req member)}
-     [:i18n/tr :login]]]))
+  (page-shell req
+              [:i18n/tr :members/invite-accept-created-subtitle]
+              [:header
+               [:p "SNOrga"]
+               [:h1 [:i18n/tr :members/invite-accept-created-title]]]
+              [:p [:i18n/tr :members/invite-accept-created-subtitle]]
+              [:footer
+               [:a {:href (login-link req member)}
+                [:i18n/tr :login]]]))
 
 (defn invite-accept [req]
   (if-let [invite-data (load-invite req)]
     (if (:invite-accepted? invite-data)
       (success-page req (:member invite-data))
-      (accept-invite-form req invite-data))
+      (page-shell req
+                  [:i18n/tr :members/invite-accept-create-subtitle]
+                  (accept-invite-form invite-data)))
     (invalid-page req)))
 
 (defn invite-accept-post [req]
