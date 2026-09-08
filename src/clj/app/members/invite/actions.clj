@@ -17,8 +17,8 @@
                       (and (seq phone-raw) (members.domain/phone-valid? phone-raw))
                       members.domain/clean-phone-number)
      :section-name  (form/trim-value (:section-name member-invite))
-     :active        (form/normalize-bool (:active member-invite) true)
-     :create-sno-id (form/normalize-bool (:create-sno-id member-invite) true)}))
+     :active        true
+     :create-sno-id true}))
 
 (defn- existing-entity? [db lookup-ref]
   (boolean

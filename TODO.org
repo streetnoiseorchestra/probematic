@@ -64,8 +64,8 @@
 ** DONE dashboard poll
 * 2026 cleanups and slimming down
 ** DONE investigate insurance query slowness and speed it up
-** TODO remove active field from member invite form, just default to true
-** TODO remove Create SNO ID field from member invite form, just default to true
+** DONE remove active field from member invite form, just default to true
+** DONE remove Create SNO ID field from member invite form, just default to true
 ** TODO member invite acceptance - > remove password creation
 ** DONE member profile edit fields should validate as you type/move between the fields
 ** TODO aria-current='page' on nav items

@@ -34,8 +34,6 @@ sno-id-status-label = SNO ID Enabled/Disabled
 sno-id-disabled-tooltip = When disabled the user cannot login to any SNO systems.
 sno-id-enabled = Enabled
 sno-id-disabled = Disabled
-create-sno-id = Create SNO ID
-create-sno-id-description = An invitation to set their password will be e-mailed to the person.
 
 ### Directory filters and invitations
 

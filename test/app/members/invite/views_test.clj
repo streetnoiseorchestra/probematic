@@ -135,6 +135,7 @@
     (is (= "member-invite-form" (some-> form l/attrs :id)))
     (is (= "data-signals" (:data-preserve-attr signals-attrs)))
     (is (not (str/includes? (:data-signals signals-attrs) "member-id")))
+    (is (empty? (l/select "wa-switch" form)))
     (is (every? #(= "value" (:data-preserve-attr (l/attrs %)))
                 (l/select "wa-input" form)))
     (is (= :members/invite-member

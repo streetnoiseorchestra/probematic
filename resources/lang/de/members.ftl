@@ -34,8 +34,6 @@ sno-id-status-label = SNO-ID aktiviert/deaktiviert
 sno-id-disabled-tooltip = Wenn die Option deaktiviert ist, kann sich der Benutzer nicht bei SNO-Systemen anmelden.
 sno-id-enabled = Aktiviert
 sno-id-disabled = Deaktiviert
-create-sno-id = SNO ID erstellen
-create-sno-id-description = Eine Einladung zum Erstellen einer SNO-ID wird an die Person per E-Mail gesendet, damit sie ein Konto erstellen und auf alle SNO-Online-Systeme zugreifen kann.
 
 ### Verzeichnisfilter und Einladungen
 

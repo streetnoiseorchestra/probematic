@@ -23,9 +23,7 @@
    :email         ""
    :username      ""
    :phone         ""
-   :section-name  ""
-   :active        true
-   :create-sno-id true
+   :section-name ""
    :error         {}})
 
 (defn- required-marker []
@@ -80,16 +78,6 @@
      (for [{:section/keys [name]} sections]
        [:wa-option {:value name} name]))))
 
-(defn- toggle-field [signal label description checked?]
-  [:div {:class "wa-stack wa-gap-2xs"}
-   [:wa-switch {:size           "m"
-                :checked        checked?
-                :data-bind      signal
-                :data-on:change (str "$" signal " = !$" signal)}
-    label]
-   (when description
-     [:span {:class "wa-caption-s"} description])])
-
 (defn- invite-form [req form-state sections]
   [:form {:id             "member-invite-form"
           :data-id        "member-invite"
@@ -123,15 +111,7 @@
                 [:i18n/tr (members.domain/member-attribute-label-key :member/phone)]
                 (merge {:type "tel" :required true}
                        (validate-input-attrs req :phone)))
-    (section-select req form-state sections)
-    (toggle-field "member-invite.create-sno-id"
-                  [:i18n/tr :members/create-sno-id]
-                  [:i18n/tr :members/create-sno-id-description]
-                  (:create-sno-id form-state))
-    (toggle-field "member-invite.active"
-                  [:i18n/tr :status-active]
-                  nil
-                  (:active form-state))]])
+    (section-select req form-state sections)]])
 
 (defn page [{:keys [db page-state] :as req}]
   (let [form-state (merge (default-form-state) (:member-invite page-state))

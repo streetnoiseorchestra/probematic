@@ -46,9 +46,7 @@
            :email         "ALICE@example.com  "
            :username      "Alice.Admin"
            :phone         "+43 677 123456"
-           :section-name  "Trumpets"
-           :active        true
-           :create-sno-id true}
+           :section-name "Trumpets"}
           overrides)})
 
 (defn- validate-field [state signals]
@@ -179,7 +177,7 @@
               (assoc (state-for system) :tr tr)
               (submit-signals {}))))))
 
-  (testing "delegates member creation without an invitation to the same form effect"
+  (testing "defaults hidden invitation options even when the client submits false"
     (let [system (new-system)]
       (seed-section! (:conn system) "Trumpets")
       (is (= [[:app.members/invite-member
@@ -189,8 +187,8 @@
                 :username      "alice.admin"
                 :phone         "+43677123456"
                 :section-name  "Trumpets"
-                :active        false
-                :create-sno-id false}]]
+                :active        true
+                :create-sno-id true}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
               (submit-signals {:active false
