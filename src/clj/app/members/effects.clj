@@ -36,7 +36,7 @@
   {:tr           (tr-from-req req)
    :env          (get-in req [:system :env])
    :i18n-langs   (get-in req [:system :i18n-langs])
-   :redis        (get-in req [:system :redis])
+   :job-queue    (get-in req [:system :job-queue])
    :datomic-conn (conn-from-req req)})
 
 (defn- queue-invitation! [deps req member invite-code]

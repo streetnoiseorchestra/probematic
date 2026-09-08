@@ -5,9 +5,10 @@
    [app.email.lettermint :as lettermint]
    [app.schemas :as s]
    [com.brunobonacci.mulog :as μ]
-   [taoensso.carmine :as car]
-   [taoensso.carmine.message-queue :as car-mq]
-   [tarayo.core :as tarayo]))
+   [s-exp.drip :as drip]
+   [taoensso.nippy :as nippy]
+   [tarayo.core :as tarayo])
+  (:import [java.util Base64]))
 
 (def email-queue-name "email-send-queue")
 
@@ -95,7 +96,6 @@
                                           (format-attachments (:email/attachments message))))})))
 
 (defn handler
-  "Has strict return contract with carmine. See http://ptaoussanis.github.io/carmine/taoensso.carmine.message-queue.html#var-worker"
   [sys message attempt]
   (tap> {:email-worker/received message :email-worker/attempt attempt})
   (try
@@ -120,52 +120,35 @@
       (track-email-error! message attempt nil e)
       {:status :error})))
 
-(defn start! [{:keys [redis] :as sys}]
-  (μ/log ::email-worker-starting)
-  (car-mq/worker redis email-queue-name
-                 {:handler (fn [{:keys [message attempt]}] (handler sys message attempt))
-                  :eoq-backoff-ms 50
-                  :throttle-ms 50}))
-(defn stop! [worker]
-  (car-mq/stop worker))
+(defn job-handler [sys client {:keys [id args attempt]}]
+  (let [message (nippy/thaw (.decode (Base64/getDecoder) ^String (:payload args)))
+        result (handler sys message attempt)]
+    (case (:status result)
+      :success (drip/complete-job client id)
+      :error (drip/discard-job client id)
+      :retry (throw (ex-info "Retryable email delivery failure" {:job-id id})))))
 
-(defn queue-mail! [redis-opts email]
+(defn start! [{:keys [job-queue] :as sys}]
+  (μ/log ::email-worker-starting)
+  (drip/start-worker!
+   {:client (:client job-queue)
+    :registry {"send-email" (partial job-handler sys)}
+    :queues [email-queue-name]
+    :concurrency 1
+    :retry-policies {"send-email" (drip/constant-retry-policy 5000)}}))
+
+(defn stop! [worker]
+  (when-not (drip/stop-worker! worker :drain true)
+    (throw (ex-info "Email worker did not stop" {}))))
+
+(defn queue-mail! [{:keys [client]} email]
   (when-not (s/valid? QueuedEmailMessage email)
     (s/throw-error "Invalid queued email message."
                    nil
                    QueuedEmailMessage
                    email))
-  (car/wcar redis-opts
-            (car-mq/enqueue email-queue-name email)))
-
-(comment
-  (do
-    (require '[integrant.repl.state :as state])
-    (require '[hiccup2.core :refer [html]])
-
-    (def recipient1 "foo@example.com")
-    (def recipient2 "foo+test@example.com") ;; rcf
-    (def redis-opts (-> state/system :app.ig/redis))) ;; rcf
-
-  (queue-mail! redis-opts
-               {:email/batch? true
-                :email/email-id (random-uuid)
-                :email/messages
-                [{:to [recipient1]
-                  :subject "Hello from Probematic"
-                  :text "Hello world."
-                  :html (str
-                         (html [:div
-                                [:h1 "Hello world!"]
-                                [:p "Things and stuff!"]]))}
-                 {:to [recipient2]
-                  :subject "Hello from Probematic"
-                  :text "Hello world."
-                  :html (str
-                         (html [:div
-                                [:h1 "Hello world!"]
-                                [:p "Things and stuff!"]]))}]
-                :email/sender :lettermint})
-
-  ;;
-  )
+  ;; JSON alone loses namespaced keys, UUIDs, instants, and attachment bytes.
+  (drip/insert-job client "send-email"
+                   {:payload (.encodeToString (Base64/getEncoder) (nippy/freeze email))}
+                   :queue email-queue-name
+                   :max-attempts 25))

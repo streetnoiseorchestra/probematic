@@ -16,7 +16,7 @@
   (ui2/format-date-range {:current-locale :de} :compact-with-weekday date end-date))
 
 (defn queue-email! [sys email]
-  (email-worker/queue-mail! (:redis sys) email))
+  (email-worker/queue-mail! (:job-queue sys) email))
 
 (defn- lettermint-message [to subject body-html body-plain]
   {:to [to]
@@ -118,7 +118,7 @@
   {:tr (:tr req)
    :env (-> req :system :env)
    :i18n-langs (-> req :system :i18n-langs)
-   :redis (-> req :system :redis)
+   :job-queue (-> req :system :job-queue)
    :datomic-conn (-> req :datomic-conn)})
 
 (defn send-gig-created! [req gig-id]
@@ -128,15 +128,15 @@
         sys (sys-from-req req)]
     (queue-email! sys  (build-gig-created-email sys gig members))))
 
-(defn send-gig-reminder-to! [{:keys [datomic-conn i18n-langs env redis]} gig-id members]
+(defn send-gig-reminder-to! [{:keys [datomic-conn i18n-langs env job-queue]} gig-id members]
   (assert datomic-conn)
   (assert env)
-  (assert redis)
+  (assert job-queue)
   ;; (tap> {:i18n i18n-langs :k (keys sys)})
   (assert i18n-langs)
   (let [db (datomic/db datomic-conn)
         tr (i18n/tr-with i18n-langs [:de])
-        sys {:tr tr :env env :redis redis}
+        sys {:tr tr :env env :job-queue job-queue}
         gig (q/retrieve-gig db gig-id)]
     (queue-email! sys (build-gig-reminder-email sys gig members))))
 
@@ -180,11 +180,11 @@
                                        (format "There was a SNOrga error that needs attention from %s with human-id %s" member-name req-human-id)
                                        nil
                                        nil))))
-(defn send-rehearsal-leader-email! [{:keys [i18n-langs env redis]} gig leader-member]
+(defn send-rehearsal-leader-email! [{:keys [i18n-langs env job-queue]} gig leader-member]
   (assert gig)
   (assert leader-member)
   (let [tr (i18n/tr-with i18n-langs [:de])
-        sys {:tr tr :env  env :redis redis}]
+        sys {:tr tr :env env :job-queue job-queue}]
     (queue-email! sys
                   (build-generic-email sys
                                        (:member/email leader-member)
@@ -273,7 +273,6 @@
     (def member2 {:member/email "me+test@example.com"
                   :member/member-id "ag1zfmdpZy1vLW1hdGljchMLEgZNZW1iZXIYgICA2NP7ggoM"})
 
-    (def redis-opts (-> state/system :app.ig/redis))
     (def env (-> state/system :app.ig/env))
 
     (def poll (poll.queries/retrieve-poll db #uuid "018b60ab-32f5-8c78-9c67-28da6b48ec4c"))
@@ -304,9 +303,6 @@
 
   (:email/messages (build-gig-created-email sys gig [member]))
   (build-gig-updated-email sys gig [member member2] [:gig/status])
-
-  (queue-email! {:redis redis-opts} (debug/xxx (build-gig-created-email sys gig2 [member2])))
-  (queue-email! {:redis redis-opts} (debug/xxx (build-gig-updated-email sys gig2 [member2] [:gig/status :gig/location])))
 
   (tmpl/payload-for-attendance env (:gig/gig-id gig) (:member/member-id
                                                       (q/member-by-email db "CHANGEME")) :plan/definitely)

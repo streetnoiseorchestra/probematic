@@ -80,6 +80,8 @@
 * 2026 UI Makeover
 ** TODO Jump Menu: make current-page aware (with aria)
 ** TODO Recently visited: store recently visited pages in sqlite4clj
+* 2026 Prod Launch Checklist
+** TODO ensure redis email queue is empty
 * 2026 post d* cool new features
 ** TODO View transitions to animated in gig attendance/gig details in dashboard and gig detail page
 ** TODO Ledger bookkeping view for finanz team members

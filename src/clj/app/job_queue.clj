@@ -9,7 +9,7 @@
         (drip/migrate! client)
         {:db db
          :client client
-         :maintenance (drip/start-maintenance-worker! {:client client})})
+         :maintenance (drip/start-maintenance-worker! {:client client :queues []})})
       (catch Throwable e
         (sqlite/stop db)
         (throw e)))))
