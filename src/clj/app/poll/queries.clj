@@ -127,6 +127,10 @@
     (d/find-all-by db :poll/poll-status :poll.status/open pattern)
     (load-polls))))
 
+(defn expired-open-polls [db now]
+  (filterv #(t/< (domain/closes-at-instant (:poll/closes-at %)) now)
+           (find-open-polls db)))
+
 (defn unanswered-open-polls
   [db member]
   (->> (find-open-polls db)

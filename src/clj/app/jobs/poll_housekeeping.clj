@@ -1,38 +1,36 @@
 (ns app.jobs.poll-housekeeping
   (:require
-   [com.brunobonacci.mulog :as μ]
-   [app.datomic :as d]
-   [app.errors :as errors]
-   [app.poll.queries :as poll.queries]
    [app.datomic.shim :as datomic]
-   [app.poll.domain :as domain]
+   [app.errors :as errors]
+   [app.poll.queries :as queries]
+   [app.write-runner :as writer]
+   [com.brunobonacci.mulog :as μ]
    [ol.jobs-util :as jobs]
    [tick.core :as t]))
 
-(defn- poll-housekeeping-job
-  [{:keys [datomic]} _]
-  (try
-    (let [conn                (:conn datomic)
-          open-polls          (poll.queries/find-open-polls (datomic/db conn))
-          now                 (t/instant)
-          polls-to-close      (filter (fn [{:poll/keys [closes-at]}]
-                                        (let [closes-at (domain/closes-at-instant closes-at)]
-                                          (t/< closes-at now))) open-polls)
-          polls-to-close-txns (mapcat #(into [] %)
-                                      (map (fn [poll]
-                                             (μ/log ::closing-poll
-                                                    :poll-id (:poll/poll-id poll)
-                                                    :poll-title (:poll/title poll)
-                                                    :poll-closes-at (:poll/closes-at poll)
-                                                    :poll-closes-at-inst (domain/closes-at-instant (:poll/closes-at poll))
-                                                    :now now)
-                                             [[:db/add (d/ref poll) :poll/poll-status :poll.status/closed]
-                                              [:db/add (d/ref poll) :poll/closes-at (domain/closes-at-inst (t/date-time))]]) polls-to-close))]
+(defn close-expired-polls! [{:keys [datomic frame-loop]} now]
+  (let [conn   (:conn datomic)
+        close! (fn []
+                 (let [tx-data (mapcat
+                                (fn [{:poll/keys [poll-id]}]
+                                  (μ/log ::closing-poll :poll-id poll-id :now now)
+                                  [[:db/add [:poll/poll-id poll-id] :poll/poll-status :poll.status/closed]
+                                   [:db/add [:poll/poll-id poll-id] :poll/closes-at (t/inst now)]])
+                                (queries/expired-open-polls (datomic/db conn) now))]
+                   (when (seq tx-data)
+                     (datomic/transact conn {:tx-data (conj (vec tx-data)
+                                                            {:db/id        "datomic.tx"
+                                                             :audit/action ::close-expired-polls
+                                                             :audit/origin :app.origin/job})}))))]
+    (if-let [control (:write-runner frame-loop)]
+      (writer/call! control close!)
+      (close!))))
 
-      (datomic/transact conn  {:tx-data polls-to-close-txns})
-      :done)
+(defn- poll-housekeeping-job [system _]
+  (try
+    (close-expired-polls! system (t/instant))
+    :done
     (catch Throwable e
-      (tap> e)
       (errors/report-error! e))))
 
 (defn make-poll-housekeeping-job
