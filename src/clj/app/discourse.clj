@@ -6,6 +6,7 @@
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.urls :as url]
+   [app.write-runner :as writer]
    [clojure.set :as set]
    [clojure.string :as str]
    [app.datomic.shim :as datomic]
@@ -298,18 +299,25 @@ GO TO SNORGA!!
                  :extra    (when (= :probeplan.emphasis/intensive emphasis) " (intensive)")})
               (q/planned-songs-for-gig db (:gig/gig-id gig)))))
 (defn create-topic-for-gig!
-  "Creates a new topic for the gig, returns the topic id."
+  "Ensures a topic exists and records its id, returning the transaction report.
+
+  An external-id lookup recovers a prior accepted creation before retrying the
+  local write. Remote requests remain outside the application writer."
   [{:keys [env db] :as sys} gig-id]
-  (let [gig (-> (q/retrieve-gig db gig-id)
-                (summarize-attendance sys)
-                (planned-songs sys))
+  (let [gig      (-> (q/retrieve-gig db gig-id)
+                     (summarize-attendance sys)
+                     (planned-songs sys))
         topic-id
-        (str (:topic_id (request! env
-                                  {:method      :post
-                                   :url         "/posts.json"
-                                   :form-params (form-params-for-gig env gig)})))]
-    (datomic/transact (-> sys :datomic :conn) {:tx-data [[:db/add (d/ref gig)
-                                                          :forum.topic/topic-id topic-id]]})))
+        (str (or (:id (topic-for-gig sys gig-id))
+                 (:topic_id (request! env
+                                      {:method      :post
+                                       :url         "/posts.json"
+                                       :form-params (form-params-for-gig env gig)}))))
+        persist! #(datomic/transact (-> sys :datomic :conn)
+                                    {:tx-data [[:db/add (d/ref gig) :forum.topic/topic-id topic-id]]})]
+    (if-let [control (get-in sys [:frame-loop :write-runner])]
+      (writer/call! control persist!)
+      (persist!))))
 
 (defn we-own-topic? [our-username topic]
   (= (-> topic :details :created_by :username) our-username))
