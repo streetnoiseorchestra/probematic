@@ -6,6 +6,7 @@
    [app.gigs.domain :as domain]
    [app.probeplan :as probeplan]
    [app.queries :as q]
+   [app.write-runner :as writer]
    [chime.core :as chime]
    [com.yetanalytics.squuid :as sq]
    [app.datomic.shim :as datomic]
@@ -60,15 +61,18 @@
       (datomic/transact conn {:tx-data [[:db/add (d/ref next-probe) :gig/rehearsal-leader1 (d/ref last-leader2)]]}))))
 
 (defn- probe-housekeeping-job
-  [{:keys [datomic] :as _system} _]
+  [{:keys [datomic] :as system} _]
   (try
-    (let [conn       (:conn datomic)
-          probes     (q/next-probes (datomic/db conn) q/gig-detail-pattern)
-          num-probes (count probes)]
-      (when (< num-probes minimum-gigs)
-        (create-probes! conn probes))
-      (assign-rehearsal-leaders! conn)
-      :done)
+    (let [maintain! (fn []
+                      (let [conn   (:conn datomic)
+                            probes (q/next-probes (datomic/db conn) q/gig-detail-pattern)]
+                        (when (< (count probes) minimum-gigs)
+                          (create-probes! conn probes))
+                        (assign-rehearsal-leaders! conn)
+                        :done))]
+      (if-let [control (get-in system [:frame-loop :write-runner])]
+        (writer/call! control maintain!)
+        (maintain!)))
     (catch Throwable e
       (tap> e)
       (errors/report-error! e))))
