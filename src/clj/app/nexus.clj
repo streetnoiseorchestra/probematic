@@ -5,6 +5,7 @@
    [app.datastar :as datastar]
    [app.errors :as errors]
    [app.game-loop :as game]
+   [app.jobs.log-dispatch :as log-dispatch]
    [app.file-browser.actions]
    [app.gigs.actions]
    [app.gigs.effects :as gigs.effects]
@@ -105,20 +106,24 @@
 
   - :db/now becomes one Instant shared by the batch
   - :db/gen-uuid becomes a fresh squuid at each occurrence
-  - [:db/gen-uuid k] becomes one stable squuid per k within the batch"
+  - [:db/gen-uuid k] becomes one stable squuid per k within the batch.
+
+  Transaction options may include `:jobs`, a vector of Dollop job specifications.
+  Their intent is stored in the same Datomic transaction. Named UUID markers
+  are shared between the business data and job arguments."
   ([transact-actions] (batch-transactions transact-actions unique-attrs))
   ([transact-actions unique-attrs]
-   (let [generated-value-replacer (generated-value-replacer)]
-     (->> (reduce (fn [acc [txs opts]]
-                    (let [txs (walk/prewalk generated-value-replacer txs)
-                          txs (if (:transact-w-nils? opts)
-                                (prepare-tx-with-retractions txs unique-attrs)
-                                txs)]
-                      (into acc txs)))
-                  []
-                  transact-actions)
-          (distinct)
-          (vec)))))
+   (let [replace-value (generated-value-replacer)
+         [tx-data jobs]
+         (reduce (fn [[tx-data jobs] [txs opts]]
+                   (let [[txs new-jobs] (walk/prewalk replace-value [txs (:jobs opts)])
+                         txs            (if (:transact-w-nils? opts)
+                                          (prepare-tx-with-retractions txs unique-attrs)
+                                          txs)]
+                     [(into tx-data txs) (into jobs new-jobs)]))
+                 [[] []]
+                 transact-actions)]
+     (into (vec (distinct tx-data)) (log-dispatch/intent-tx jobs)))))
 
 (defn current-member-id [request]
   (get-in request [:app/session :session/member :member/member-id]))

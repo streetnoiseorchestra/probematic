@@ -1078,6 +1078,15 @@
  {:db/ident       :audit/notify?
   :db/cardinality :db.cardinality/one
   :db/valueType   :db.type/boolean}
+ {:db/ident       :audit/jobs
+  :db/doc         "Versioned EDN job intent committed with the business change."
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/string}
+ {:db/ident       :app.log/source-id
+  :db/doc         "Persistent database identity for the Datomic log consumer."
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/uuid}
+ {:db/ident :app.log/source}
 
 ;;;; Reminder Schema
  {:db/ident       :reminder/reminder-id

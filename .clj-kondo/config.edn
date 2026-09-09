@@ -4,6 +4,7 @@
                  com.fulcrologic.guardrails.core/>defn             clojure.core/defn
                  com.fulcrologic.guardrails.malli.core/>def        clojure.spec.alpha/def
                  com.fulcrologic.guardrails.malli.core/>defn       clojure.core/defn
+                 s-exp.drip/with-tx                               clojure.core/with-open
                  starfederation.datastar.clojure.utils/transient-> clojure.core/->
                  starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
  :linters       {;; :unused-value        {:level :off}
