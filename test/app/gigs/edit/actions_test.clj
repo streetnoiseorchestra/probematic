@@ -3,6 +3,7 @@
    [app.gigs.domain :as domain]
    [app.gigs.edit.actions :as actions]
    [app.email.mailers :as mailers]
+   [app.jobs.integrations :as integrations]
    [app.test-common :as tc]
    [app.urls :as urls]
    [clojure.test :refer [deftest is testing use-fixtures]]
@@ -67,15 +68,30 @@
     (let [state (assoc (action-state conn) :durable-jobs? true :current-locale :de
                        :env {:ig/system {:app.ig/profile :prod}})
           opts  (get-in (actions/update-gig-action state (valid-signals gig-id)) [0 2])]
-      (is (= [(mailers/job state ::mailers/gig-committed-update
+      (is (= [(integrations/gig-job gig-id {:operation :updated :takeover-topic? false})
+              (mailers/job state ::mailers/gig-committed-update
                            {:gig-id gig-id :member-ids [member-id]})]
              (:jobs opts)))
-      (is (= [[:app.gigs/trigger-gig-details-edited gig-id false false]] (:on-success opts)))
-      (is (nil? (get-in (actions/update-gig-action state (assoc (valid-signals gig-id) :notify? "false"))
-                        [0 2 :jobs])))
+      (is (nil? (:on-success opts)))
+      (is (= [(integrations/gig-job gig-id {:operation :updated :takeover-topic? false})]
+             (get-in (actions/update-gig-action state (assoc (valid-signals gig-id) :notify? "false"))
+                     [0 2 :jobs])))
       (is (nil? (get-in (actions/update-gig-action (assoc state :env {:ig/system {:app.ig/profile :dev}})
                                                    (valid-signals gig-id))
                         [0 2 :jobs]))))))
+
+(deftest durable-gig-creation-and-deletion-retain-integration-choices
+  (let [{:keys [conn]} (tc/new-system "gig-integration-intents")
+        gig-id         (random-uuid)]
+    (seed-gig! conn gig-id (t/date "2026-05-01"))
+    (let [state (assoc (action-state conn) :durable-jobs? true :env {:ig/system {:app.ig/profile :prod}})]
+      (doseq [thread? [true false]]
+        (let [[[_ [tx] opts]] (actions/create-gig-action state (assoc (valid-signals gig-id) :notify? false :thread? thread?))]
+          (is (= [(integrations/gig-job (:gig/gig-id tx) {:operation :created :thread? thread?})] (:jobs opts)))
+          (is (nil? (:on-success opts)))))
+      (let [opts (get-in (actions/delete-gig-action state {:gig-id (str gig-id)}) [0 2])]
+        (is (= [(integrations/gig-job gig-id {:operation :deleted})] (:jobs opts)))
+        (is (nil? (:on-success opts)))))))
 
 (deftest update-gig-action-test
   (testing "returns a Datomic transaction effect and redirects to the gig detail page"
