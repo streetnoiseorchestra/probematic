@@ -3,11 +3,14 @@
 
   Profile validation remains in [[app.account.actions]].
   This namespace owns uploaded file preparation, the atomic Datomic write, and
-  the optional identity-provider synchronization performed after a successful
-  transaction."
+  the optional identity-provider synchronization. With durable jobs enabled, its
+  intent commits with the profile; otherwise synchronization runs after commit."
   (:require
    [app.filestore.controller :as filestore.controller]
    [app.members.effects :as members.effects]
+   [app.jobs.identity :as identity-jobs]
+   [app.jobs.log-dispatch :as log-dispatch]
+   [app.write-runner :as writer]
    [babashka.fs :as bfs]
    [datomic.api :as d]))
 
@@ -66,6 +69,28 @@
           current-avatar-eid
           (conj [:db/retractEntity current-avatar-eid]))))))
 
+(defn- save-tx
+  [db {:keys [member-id profile avatar-upload sync-keycloak?] :as params} stored-avatar durable?]
+  (let [member             (d/entity db [:member/member-id member-id])
+        current-avatar-eid (some-> member :member/avatar :db/id)
+        keycloak-id        (:member/keycloak-id member)
+        profile-data       (vec (concat
+                                 (profile-tx member-id profile)
+                                 (:tx-data stored-avatar)
+                                 (avatar-change-tx member-id current-avatar-eid
+                                                   (when-not (:avatar-removed? profile) avatar-upload)
+                                                   (:avatar-removed? profile) stored-avatar
+                                                   (avatar-file-eids db current-avatar-eid))
+                                 [[:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]))]
+    (into [[:member.invite/transact-profile-if-not-in-flight member-id profile-data]]
+          (when durable?
+            (concat
+             [{:db/id        "datomic.tx"        :audit/action :app.account.actions/save-profile
+               :audit/origin :app.origin/browser}]
+             (when (and sync-keycloak? keycloak-id)
+               (log-dispatch/intent-tx
+                [(identity-jobs/job params member-id keycloak-id {:metadata? true})])))))))
+
 (defn save-profile!
   "Persists one validated profile and optional avatar upload atomically.
 
@@ -82,54 +107,30 @@
   | `:member-id`          | Authenticated member UUID
   | `:profile`            | Validated normalized profile map
   | `:avatar-upload`      | Optional multipart file metadata and tempfile
-  | `:sync-keycloak?`     | Synchronize identity metadata after commit"
-  [system {:keys [member-id profile avatar-upload sync-keycloak?]}]
-  (let [conn (-> system :datomic :conn)]
+  | `:sync-keycloak?`     | Request identity synchronization; durable mode queues it atomically with the profile |"
+  [system {:keys [member-id profile avatar-upload sync-keycloak?] :as params}]
+  (let [conn     (-> system :datomic :conn)
+        tempfile (:tempfile avatar-upload)
+        durable? (get-in system [:frame-loop :durable-jobs?])]
     (assert conn "profile persistence requires a Datomic connection")
-    (let [tempfile                (:tempfile avatar-upload)
-          avatar-removed?         (:avatar-removed? profile)
-          effective-avatar-upload (when-not avatar-removed? avatar-upload)
-          db                      (d/db conn)
-          current-avatar-eid
-          (some-> (d/entity db [:member/member-id member-id])
-                  :member/avatar
-                  :db/id)
-          obsolete-file-eids      (avatar-file-eids db current-avatar-eid)]
-      (try
-        (let [stored-avatar
-              (when effective-avatar-upload
-                (filestore.controller/store-avatar!
-                 {:filestore (:filestore system)}
-                 {:file-name (:filename effective-avatar-upload)
-                  :file      tempfile
-                  :mime-type (:mime-type effective-avatar-upload)}))
-              profile-tx-data
-              (vec
-               (concat
-                (profile-tx member-id profile)
-                (:tx-data stored-avatar)
-                (avatar-change-tx member-id
-                                  current-avatar-eid
-                                  effective-avatar-upload
-                                  avatar-removed?
-                                  stored-avatar
-                                  obsolete-file-eids)
-                [[:db/add "datomic.tx" :audit/user
-                  [:member/member-id member-id]]]))
-              tx-data
-              [[:member.invite/transact-profile-if-not-in-flight
-                member-id
-                profile-tx-data]]
-              tx-result     @(d/transact conn tx-data)]
-          (when sync-keycloak?
-            (members.effects/update-keycloak-meta!
-             {:system system :datomic-conn conn}
-             member-id))
-          {:status    :saved
-           :tx-result tx-result})
-        (finally
-          (when tempfile
-            (bfs/delete-if-exists tempfile)))))))
+    (try
+      (let [stored-avatar (when (and avatar-upload (not (:avatar-removed? profile)))
+                            (filestore.controller/store-avatar!
+                             {:filestore (:filestore system)}
+                             {:file-name (:filename avatar-upload)
+                              :file      tempfile
+                              :mime-type (:mime-type avatar-upload)}))
+            persist!      (fn [] @(d/transact conn (save-tx (d/db conn) params stored-avatar durable?)))
+            tx-result     (if-let [control (get-in system [:frame-loop :write-runner])]
+                            (writer/call! control persist!)
+                            (persist!))]
+        (when (and sync-keycloak? (not durable?))
+          (members.effects/update-keycloak-meta!
+           {:system system :datomic-conn conn} member-id))
+        {:status :saved :tx-result tx-result})
+      (finally
+        (when tempfile
+          (bfs/delete-if-exists tempfile))))))
 
 (defn discard-upload-fx
   "Deletes a rejected multipart upload tempfile, if present."

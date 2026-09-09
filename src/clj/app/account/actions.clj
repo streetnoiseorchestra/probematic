@@ -184,7 +184,7 @@
    :_feedback       [:i18n/tr :account-settings/profile-saved-feedback]})
 
 (defn save-profile-action
-  [{:keys [db current-member-id]}
+  [{:keys [db current-member-id job-origin]}
    {:keys [account-profile avatar-upload]}]
   (let [profile       (normalize-profile account-profile)
         avatar-upload (normalize-avatar-upload avatar-upload)
@@ -203,10 +203,11 @@
         (if (seq errors)
           (discard-upload (profile-error-effects profile errors) avatar-upload)
           [[:app.account/save-profile
-            {:member-id      current-member-id
-             :profile        profile
-             :avatar-upload  avatar-upload
-             :sync-keycloak? (keycloak-sync-required? member)}]
+            (cond-> {:member-id      current-member-id
+                     :profile        profile
+                     :avatar-upload  avatar-upload
+                     :sync-keycloak? (keycloak-sync-required? member)}
+              job-origin (assoc :job-origin job-origin))]
            [:app.datastar/assoc-state
             [:account-profile]
             saved-profile-state]
