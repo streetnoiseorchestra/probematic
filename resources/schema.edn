@@ -1087,6 +1087,10 @@
   :db/cardinality :db.cardinality/one
   :db/valueType   :db.type/uuid}
  {:db/ident :app.log/source}
+ {:db/ident       :member/keycloak-enabled-request
+  :db/doc         "Most recently requested Keycloak enabled state; not a claim about remote completion."
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/boolean}
 
 ;;;; Reminder Schema
  {:db/ident       :reminder/reminder-id

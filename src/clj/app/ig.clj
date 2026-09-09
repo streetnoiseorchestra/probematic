@@ -18,6 +18,7 @@
             [app.game-loop :as frame-loop]
             [app.game-loop.storage :as frame-storage]
             [app.jobs.log-dispatch :as log-dispatch]
+            [app.jobs.identity :as identity-jobs]
             [app.write-runner :as writer]
             [s-exp.drip :as drip]
             [app.nexus :as app-nexus]
@@ -152,6 +153,12 @@
 
 (defmethod ig/init-key ::job-maintenance [_ {:keys [job-queue]}]
   (drip/start-maintenance-worker! {:client (:client job-queue) :queues []}))
+
+(defmethod ig/init-key ::identity-worker [_ {:keys [frame-loop] :as system}]
+  (when (:durable-jobs? frame-loop) (identity-jobs/start! system)))
+
+(defmethod ig/halt-key! ::identity-worker [_ worker]
+  (when worker (identity-jobs/stop! worker)))
 
 (defmethod ig/halt-key! ::job-maintenance [_ maintenance]
   (when-not (drip/stop-maintenance-worker! maintenance)
