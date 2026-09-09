@@ -2,6 +2,7 @@
   "Sequential cutover from Discourse avatar templates to managed avatars."
   (:require
    [app.filestore.controller :as filestore.controller]
+   [app.write-runner :as writer]
    [babashka.fs :as bfs]
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -89,14 +90,18 @@
              {:filestore (:filestore system)}
              {:file-name (:filename upload)
               :file      (:tempfile upload)
-              :mime-type (:mime-type upload)})]
-        @(d/transact
-          conn
-          (into (vec tx-data)
-                [[:db.fn/cas [:member/member-id member-id]
-                  :member/avatar-template template template]
-                 [:db.fn/cas [:member/member-id member-id]
-                  :member/avatar nil image-tempid]])))
+              :mime-type (:mime-type upload)})
+            persist!                       (fn []
+                                             @(d/transact
+                                               conn
+                                               (into (vec tx-data)
+                                                     [[:db.fn/cas [:member/member-id member-id]
+                                                       :member/avatar-template template template]
+                                                      [:db.fn/cas [:member/member-id member-id]
+                                                       :member/avatar nil image-tempid]])))]
+        (if-let [control (get-in system [:frame-loop :write-runner])]
+          (writer/call! control persist!)
+          (persist!)))
       (finally
         (bfs/delete-if-exists (:tempfile upload))))))
 
