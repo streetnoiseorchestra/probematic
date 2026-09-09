@@ -1,10 +1,13 @@
 (ns app.jobs.reminders
   (:require
-   [app.email :as email]
-   [app.gigs.domain :as domain]
-   [app.errors :as errors]
-   [app.queries :as q]
    [app.datomic.shim :as datomic]
+   [app.email :as email]
+   [app.email.mailers :as mailers]
+   [app.errors :as errors]
+   [app.gigs.domain :as domain]
+   [app.nexus :as nexus]
+   [app.queries :as q]
+   [app.write-runner :as writer]
    [ol.jobs-util :as jobs]
    [tick.core :as t]))
 
@@ -55,25 +58,51 @@
      (map (fn [reminder-id]
             [:db/add [:reminder/reminder-id reminder-id] :reminder/reminder-status :reminder-status/cancelled]) to-cancel)
      (map (fn [reminder-id]
-            [:db/add [:reminder/reminder-id (first reminder-id)] :reminder/reminder-status :reminder-status/sent]) sent-reminder-ids))))
+            [:db/add [:reminder/reminder-id reminder-id] :reminder/reminder-status :reminder-status/sent])
+          (mapcat identity sent-reminder-ids)))))
+
+(defn- queue-due-reminders! [system as-of]
+  (writer/call!
+   (get-in system [:frame-loop :write-runner])
+   (fn []
+     (let [conn    (get-in system [:datomic :conn])
+           db      (datomic/db conn)
+           {:keys [to-send to-cancel]}
+           (process-reminders db (:reminder-type/gig-attendance (q/overdue-reminders-by-type db as-of)) as-of)
+           tx-data (concat
+                    (for [id to-cancel]
+                      [:db/add [:reminder/reminder-id id] :reminder/reminder-status :reminder-status/cancelled])
+                    (for [group (vals to-send) {:keys [reminder-id]} group]
+                      [:db/add [:reminder/reminder-id reminder-id] :reminder/reminder-status :reminder-status/queued]))
+           intents (mapv (fn [[gig-id group]]
+                           (mailers/job {:current-locale :de} ::mailers/gig-reminder
+                                        {:gig-id     gig-id
+                                         :member-ids (vec (distinct (map #(get-in % [:member :member/member-id]) group)))}))
+                         to-send)]
+       (when (seq tx-data)
+         (datomic/transact conn
+                           {:tx-data (conj (nexus/batch-transactions [[tx-data {:jobs intents}]])
+                                           {:db/id        "datomic.tx"    :audit/action ::queue-due-reminders
+                                            :audit/origin :app.origin/job})}))))))
 
 (defn send-reminders!
   ([system _]
    (send-reminders! system (t/instant) _))
   ([{:keys [datomic] :as system} as-of _]
    (try
-     (let [datomic-conn (:conn datomic)
-           _            (assert datomic-conn)
-           db           (datomic/db datomic-conn)
-           reminders    (q/overdue-reminders-by-type db as-of)
-           tx-data      (send-gig-reminders!
-                         (assoc system :db db :datomic-conn datomic-conn)
-                         (:reminder-type/gig-attendance reminders)
-                         as-of)]
-       ;; (tap> {:send-reminder-result tx-data})
-       (when (seq tx-data)
-         (datomic/transact datomic-conn {:tx-data tx-data}))
-       :done)
+     (if (get-in system [:frame-loop :durable-jobs?])
+       (queue-due-reminders! system as-of)
+       (let [datomic-conn (:conn datomic)
+             _            (assert datomic-conn)
+             db           (datomic/db datomic-conn)
+             reminders    (q/overdue-reminders-by-type db as-of)
+             tx-data      (send-gig-reminders!
+                           (assoc system :db db :datomic-conn datomic-conn)
+                           (:reminder-type/gig-attendance reminders)
+                           as-of)]
+         (when (seq tx-data)
+           (datomic/transact datomic-conn {:tx-data tx-data}))))
+     :done
      (catch Throwable e
        (tap> e)
        (errors/report-error! e)))))
