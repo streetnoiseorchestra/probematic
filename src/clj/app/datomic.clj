@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [ref])
   (:require
    [app.auth :as auth]
+   [app.write-runner :as writer]
    [com.yetanalytics.squuid :as sq]
    [app.datomic.shim :as d]
    [medley.core :as m])
@@ -56,7 +57,10 @@
   ([{:keys [datomic-conn] :as req} opts comment]
    (assert datomic-conn "datomic-conn is required")
    (assert (map? opts) "opts must be a map")
-   (d/transact datomic-conn (update opts :tx-data concat (audit-txs req comment)))))
+   (let [transact! #(d/transact datomic-conn (update opts :tx-data concat (audit-txs req comment)))]
+     (if-let [control (get-in req [:system :frame-loop :write-runner])]
+       (writer/call! control transact!)
+       (transact!)))))
 
 (defn expand-audit-user [db {:audit/keys [user] :as audit}]
   (assoc-in audit [:audit/member] (d/pull db [:member/member-id :member/username :member/name :member/nick] (:db/id user))))
