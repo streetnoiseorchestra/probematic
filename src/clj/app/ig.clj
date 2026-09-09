@@ -17,6 +17,9 @@
             [app.keycloak :as keycloak]
             [app.game-loop :as frame-loop]
             [app.game-loop.storage :as frame-storage]
+            [app.jobs.log-dispatch :as log-dispatch]
+            [app.write-runner :as writer]
+            [s-exp.drip :as drip]
             [app.nexus :as app-nexus]
             [app.routes :as routes]
             [app.sardine :as sardine]
@@ -45,24 +48,44 @@
   [_ _config]
   (app-nexus/nexus))
 
-(defmethod ig/init-key ::frame-loop [_ {:keys [profile enabled?] :as system}]
+(defmethod ig/init-key ::write-runner [_ {:keys [profile enabled?]}]
+  (when (and enabled? (= :dev profile)) (writer/create)))
+
+(defmethod ig/halt-key! ::write-runner [_ control]
+  (when control (writer/close! control)))
+
+(defmethod ig/init-key ::frame-loop [_ {:keys [profile enabled? write-runner job-queue cutover-t] :as system}]
   (when (and enabled? (= :dev profile))
-    (let [hooks   (frame-storage/render-hooks (get-in system [:datomic :conn]) {})
+    (when (and job-queue (nil? write-runner))
+      (throw (ex-info "Frame loop requires the job queue's write runner" {})))
+    (let [control (or write-runner (writer/create))
+          hooks   (frame-storage/render-hooks (get-in system [:datomic :conn]) {})
           clients (atom {})
           pool    (frame-loop/start-render-pool {:pool-size 2})]
       (try
-        (frame-loop/start-batch-loop!
-         {::frame-loop/conns       (java.util.concurrent.ConcurrentHashMap.)
-          ::frame-loop/render-pool pool
-          :clients                 clients                                   :stopped? (atom false)}
-         (assoc (merge hooks (select-keys system [:queue-capacity :batch-size :batch-tick-ms]))
-                :capture-frame (fn [ctx]
-                                 (locking clients
-                                   (assoc ((:capture-frame hooks) ctx)
-                                          :clients @clients :page-state @app.datastar/!page-state)))
-                :process-batch! (fn [runtime batch]
-                                  (doseq [action batch]
-                                    (app-nexus/process-queued! (:nexus system) system runtime action)))))
+        (when job-queue
+          (log-dispatch/initialize! (get-in system [:datomic :conn]) (:client job-queue) cutover-t))
+        (writer/start!
+         control
+         #(frame-loop/start-batch-loop!
+           {::frame-loop/conns       (java.util.concurrent.ConcurrentHashMap.)
+            ::frame-loop/render-pool pool
+            :write-runner            control
+            :durable-jobs?           (boolean job-queue)
+            :clients                 clients                                   :stopped? (atom false)}
+           (assoc (merge hooks (select-keys system [:queue-capacity :batch-size :batch-tick-ms]))
+                  :capture-frame (fn [ctx]
+                                   (locking clients
+                                     (assoc ((:capture-frame hooks) ctx)
+                                            :clients @clients :page-state @app.datastar/!page-state)))
+                  :process-batch! (fn [runtime batch]
+                                    (doseq [action batch]
+                                      (if (::writer/work action)
+                                        (writer/execute! action)
+                                        (app-nexus/process-queued! (:nexus system) system runtime action)))
+                                    (when job-queue
+                                      (log-dispatch/dispatch-pending!
+                                       (get-in system [:datomic :conn]) (:client job-queue) 128))))))
         (catch Exception e
           (.close ^java.util.concurrent.ExecutorService pool)
           (throw e))))))
@@ -71,6 +94,7 @@
   (when runtime
     (let [clients (:clients runtime)]
       (locking clients (reset! (:stopped? runtime) true)))
+    (writer/close! (:write-runner runtime))
     ((::frame-loop/stop! runtime))
     (try
       (doseq [client (vals @(:clients runtime))] ((:close! client)))
@@ -125,6 +149,13 @@
 (defmethod ig/init-key ::job-queue
   [_ config]
   (job-queue/start! config))
+
+(defmethod ig/init-key ::job-maintenance [_ {:keys [job-queue]}]
+  (drip/start-maintenance-worker! {:client (:client job-queue) :queues []}))
+
+(defmethod ig/halt-key! ::job-maintenance [_ maintenance]
+  (when-not (drip/stop-maintenance-worker! maintenance)
+    (throw (ex-info "Job queue maintenance did not stop" {}))))
 
 (defmethod ig/halt-key! ::job-queue
   [_ queue]
