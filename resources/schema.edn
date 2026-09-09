@@ -1069,6 +1069,12 @@
   :db/cardinality :db.cardinality/one
   :db/valueType   :db.type/string}
 
+ {:db/ident       :app.external-effect/id
+  :db/doc         "Receipt for a completed external operation and its committed application follow-up; delivery before the receipt may still be retried after a crash."
+  :db/cardinality :db.cardinality/one
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid}
+
  {:db/ident       :audit/action
   :db/cardinality :db.cardinality/one
   :db/valueType   :db.type/keyword}

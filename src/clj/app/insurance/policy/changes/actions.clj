@@ -11,6 +11,8 @@
 
 (def form-key :insurance-policy-changes)
 
+(def email-job-kind "send-policy-changes")
+
 (defn default-form
   [tr {:keys [policy-id policy-number recipient-email recipient-name recipient-title sender-name today]}]
   {:policy-id                   (str policy-id)
@@ -109,21 +111,28 @@
       [(confirmation-transaction current-member-id (:policy context))])))
 
 (defn send-and-confirm-changes-action
-  [{:keys [db tr]} signals]
+  [{:keys [db tr durable-jobs? job-origin]} signals]
   (let [params  (normalize-form signals)
         context (policy-context db (:policy-id params))
         errors  (delivery-errors tr (:policy context) params)]
     (if (seq errors)
       (failure-effects params errors)
-      [[:app.insurance/send-policy-changes
-        (-> params
-            (dissoc :preview-type)
-            (assoc :policy-id  (:policy-id context)
-                   :on-success [[::confirm-sent
-                                 {form-key {:policy-id (str (:policy-id context))}}]
-                                [:app.datastar/respond-sse
-                                 [[:app.datastar.sse/redirect
-                                   (urls/link-policy (:policy-id context))]]]]))]])))
+      (if durable-jobs?
+        [[:app.datastar/assoc-state [form-key] params]
+         [:db/transact []
+          {:jobs [[email-job-kind
+                   {:effect-id :db/gen-uuid                                                          :origin job-origin
+                    :mail      (assoc (dissoc params :preview-type) :policy-id (:policy-id context))}
+                   {:queue "policy-mail" :max-attempts 25}]]}]]
+        [[:app.insurance/send-policy-changes
+          (-> params
+              (dissoc :preview-type)
+              (assoc :policy-id (:policy-id context)
+                     :on-success [[::confirm-sent
+                                   {form-key {:policy-id (str (:policy-id context))}}]
+                                  [:app.datastar/respond-sse
+                                   [[:app.datastar.sse/redirect
+                                     (urls/link-policy (:policy-id context))]]]]))]]))))
 
 (defn preview-attachment-action
   [{:keys [db tr]} signals]

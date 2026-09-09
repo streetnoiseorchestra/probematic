@@ -102,6 +102,21 @@
                                                (urls/link-policy policy-id)]]]]}
              payload)))))
 
+(deftest durable-send-does-not-confirm-or-redirect-on-enqueue
+  (let [{:keys [policy-id state]} (fixture)
+        origin                    {:tab-id "policy-tab" :token (random-uuid) :member-id (:current-member-id state)}
+        effects                   (actions/send-and-confirm-changes-action
+                                   (assoc state :durable-jobs? true :job-origin origin)
+                                   (signals policy-id))
+        [kind args opts]          (first (get-in effects [1 2 :jobs]))]
+    (is (= [:app.datastar/assoc-state :db/transact] (mapv first effects)))
+    (is (= [] (get-in effects [1 1])))
+    (is (= actions/email-job-kind kind))
+    (is (= {:effect-id :db/gen-uuid                                                                 :origin origin
+            :mail      (assoc (:insurance-policy-changes (signals policy-id)) :policy-id policy-id)}
+           args))
+    (is (= {:queue "policy-mail" :max-attempts 25} opts))))
+
 (deftest exporter-configuration-guards-delivery-actions-test
   (testing "send and preview reject absent, unknown, and incomplete exporters"
     (is (= [{:status  :not-configured
