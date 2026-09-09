@@ -30,10 +30,10 @@
 
 (defmethod ig/init-key ::env [_ profile]
   (let [env (system/config profile)]
-    (μ/set-global-context! {:app-name (:name env)
-                            :git-hash (:git-hash env)
-                            :build-date  (:build-date env)
-                            :stage (-> env :ig/system :app.ig/profile)})
+    (μ/set-global-context! {:app-name   (:name env)
+                            :git-hash   (:git-hash env)
+                            :build-date (:build-date env)
+                            :stage      (-> env :ig/system :app.ig/profile)})
     env))
 
 (defmethod ig/init-key ::handler [_ system]
@@ -173,8 +173,8 @@
 (defmethod ig/init-key ::console-logging
   [_ {:keys [pretty?]}]
   (μ/start-publisher!
-   {:type :console
-    :pretty? pretty?
+   {:type      :console
+    :pretty?   pretty?
     :transform error/redact-mulog-events}))
 
 (defmethod ig/halt-key! ::console-logging
@@ -190,12 +190,12 @@
     (assert password "password is required")
     (assert data-stream "data-stream is required")
     (μ/start-publisher!
-     {:type :elasticsearch
-      :url url
+     {:type        :elasticsearch
+      :url         url
       :els-version :v7.x
       :data-stream data-stream
-      :http-opts {:basic-auth [user password]}
-      :transform error/redact-mulog-events})))
+      :http-opts   {:basic-auth [user password]}
+      :transform   error/redact-mulog-events})))
 
 (defmethod ig/halt-key! ::openobserve
   [_ stop-pub]

@@ -52,8 +52,8 @@
        (for [{:keys [count-private member private-cost-total
                      private-costs-available?]}
              members-data
-             :let [member-id (str (:member/member-id member))
-                   unavailable-id (str "payment-cost-unavailable-" member-id)]]
+             :let                                            [member-id (str (:member/member-id member))
+                                                              unavailable-id (str "payment-cost-unavailable-" member-id)]]
          [:tr
           [:td
            [:input (cond-> {:type       "checkbox"
@@ -78,7 +78,7 @@
 
 (defn page
   [{:keys [db policy] :as req}]
-  (let [policy-id       (:insurance.policy/policy-id policy)
+  (let [policy-id              (:insurance.policy/policy-id policy)
         current-member-id
         (get-in req [:app/session :session/member :member/member-id])
         {:keys [authorized? members-data sender-name time-range]}
@@ -124,8 +124,8 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
                                                              (:insurance.policy/name policy)]
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/request-payments-title]]]
-                                                           ::page-toolbar/actions toolbar-actions
-                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                                           ::page-toolbar/actions    toolbar-actions
+                                                           :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       [:div (cond-> {:class "wa-stack wa-gap-xl"}
               authorized?
               (assoc :data-preserve-attr "data-signals"

@@ -26,8 +26,8 @@
 (defn- matching-session-member [db {:session/keys [email keycloak-id]}]
   (let [member-by-keycloak-id (when (seq keycloak-id)
                                 (q/member-by-keycloak-id db keycloak-id))
-        member-by-email (when (and email (nil? member-by-keycloak-id))
-                          (q/member-by-email db email))]
+        member-by-email       (when (and email (nil? member-by-keycloak-id))
+                                (q/member-by-email db email))]
     (or member-by-keycloak-id
         (when (or (nil? keycloak-id)
                   (nil? (:member/keycloak-id member-by-email))
@@ -51,7 +51,7 @@
 
 (def keyword-params-interceptor
   "Keywordizes request parameter keys. CTMX expects this."
-  {:name ::keyword-params
+  {:name  ::keyword-params
    :enter (fn [ctx]
             (let [request (:request ctx)]
               (assoc ctx :request
@@ -62,7 +62,7 @@
   [system]
   (assert system)
   (assert (-> system :datomic :conn))
-  {:name ::datomic--interceptor
+  {:name  ::datomic--interceptor
    :enter (fn [ctx]
             (let [conn (-> system :datomic :conn)]
               (-> ctx
@@ -99,7 +99,7 @@
                      {:app/error-type [:= :app.error.type/authentication-failure]}
                      errors/unauthorized-error
 
-                     :app.interceptors.errors/default errors/unknown-error}}))
+                     :app.interceptors.errors/default                                    errors/unknown-error}}))
 
 (defn system-interceptor
   "Install the integrant system map into the request under the :system key"
@@ -117,18 +117,18 @@
 
 (def human-id-interceptor
   "Add a human readable id for the request"
-  {:name ::human-id-interceptor
+  {:name  ::human-id-interceptor
    :enter (fn [ctx]
             (assoc-in ctx [:request :human-id] (human-id/human-id)))})
 (defn webdav-interceptor
   "Add webdav service to request map"
   [system]
-  {:name ::webdav-interceptor
+  {:name  ::webdav-interceptor
    :enter (fn [ctx]
             (assoc-in ctx [:request :webdav] (:webdav system)))})
 
 (def tap-interceptor
-  {:name :tap-interceptor
+  {:name  :tap-interceptor
    :enter (fn [ctx]
             ;; (tap> (-> req :request))
             (tap> {:tap-inter (-> ctx :request :headers)})
@@ -139,14 +139,14 @@
 
 (def log-request-interceptor
   "Logs all http requests with response time."
-  {:name ::log-request
+  {:name  ::log-request
    :enter (fn [ctx]
             (assoc-in ctx [:request :start-time] (t/instant)))
    :leave (fn [ctx]
             (let [{:keys [uri start-time request-method query-string human-id] :as req} (:request ctx)
-                  user-email (auth/get-current-email req)
-                  finish (t/instant)
-                  total (t/between start-time finish :millis)]
+                  user-email                                                            (auth/get-current-email req)
+                  finish                                                                (t/instant)
+                  total                                                                 (t/between start-time finish :millis)]
               (μ/log :http/request :msg "request completed"
                      :request-method request-method
                      :uri uri
@@ -309,8 +309,8 @@
 
 #_(defn unhash-path [path]
     (let [components (str/split path  #"/")
-          root-dir (second components)
-          file-name (last components)]
+          root-dir   (second components)
+          file-name  (last components)]
       (if (and
            root-dir
            file-name

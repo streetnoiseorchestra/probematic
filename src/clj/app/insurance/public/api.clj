@@ -12,7 +12,7 @@
 (defn build-image-uri [{:keys [system]} {:instrument/keys [instrument-id]} {:image/keys [image-id]}]
   (when image-id
     {:thumbnail (urls/absolute-link-instrument-image-thumbnail (:env system) instrument-id image-id)
-     :full (urls/absolute-link-instrument-image-full (:env system) instrument-id image-id)}))
+     :full      (urls/absolute-link-instrument-image-full (:env system) instrument-id image-id)}))
 
 (defn build-image-uris [req {:instrument/keys [images] :as instrument}]
   (map #(build-image-uri req instrument %) images))

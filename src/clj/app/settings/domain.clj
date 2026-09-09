@@ -25,9 +25,9 @@
   (when-not (s/valid? TravelDiscountEntity travel-discount)
     (throw
      (ex-info "Travel Discount  not valid" {:travel.discount.type travel-discount
-                                            :schema TravelDiscountEntity
-                                            :error (s/explain TravelDiscountEntity travel-discount)
-                                            :human (s/explain-human TravelDiscountEntity travel-discount)})))
+                                            :schema               TravelDiscountEntity
+                                            :error                (s/explain TravelDiscountEntity travel-discount)
+                                            :human                (s/explain-human TravelDiscountEntity travel-discount)})))
   (s/encode-datomic TravelDiscountEntity travel-discount))
 
 (defn db->discount [ent]

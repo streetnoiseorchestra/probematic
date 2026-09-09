@@ -80,7 +80,7 @@
   ^InputStream [content-fn]
   (let [pos (PipedOutputStream.)
         ;; Use 16 MB pipe buffer
-        is (PipedInputStream. pos 16777216)
+        is  (PipedInputStream. pos 16777216)
         zip (ZipOutputStream. pos StandardCharsets/UTF_8)]
     (future
       ;; This runs in a separate thread so that the input stream can be returned immediately
@@ -102,9 +102,9 @@
 
 (comment
 
-  (let [attachments [{:content (fn [] (io/input-stream "/home/ramblurr/downloads/Bela1(1).JPG"))
+  (let [attachments [{:content   (fn [] (io/input-stream "/home/ramblurr/downloads/Bela1(1).JPG"))
                       :file-name "Bela1(1).JPG"}
-                     {:content (fn [] (io/input-stream "/home/ramblurr/downloads/Bela2(2).JPG"))
+                     {:content   (fn [] (io/input-stream "/home/ramblurr/downloads/Bela2(2).JPG"))
                       :file-name "Bela2(2).JPG"}]]
     (io/copy
      (piped-zip-input-stream
@@ -113,7 +113,7 @@
      (io/output-stream "/home/ramblurr/downloads/test-zip-r/test-zip.zip")))
 
   #_(let [out-f "/home/ramblurr/downloads/test-zip-r/test-zip.zip"
-          zip (ZipOutputStream. (io/output-stream out-f))]
+          zip   (ZipOutputStream. (io/output-stream out-f))]
       (pack-folder! zip "/home/ramblurr/downloads/test-zip")
       (.finish zip)
       (.flush zip)

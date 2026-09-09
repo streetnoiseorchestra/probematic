@@ -51,10 +51,10 @@
   (let [new-set     (set new-song-tuples)
         current-set (set current-song-tuples)
         add-tx      (for [song-tuple new-song-tuples
-                          :when (not (current-set song-tuple))]
+                          :when      (not (current-set song-tuple))]
                       [:db/add eid :setlist.v1/ordered-songs song-tuple])
         remove-tx   (for [song-tuple current-song-tuples
-                          :when (not (new-set song-tuple))]
+                          :when      (not (new-set song-tuple))]
                       [:db/retract eid :setlist.v1/ordered-songs song-tuple])]
     (vec (concat add-tx remove-tx))))
 
@@ -73,11 +73,11 @@
 
 (defn toggle-setlist-song-action [{:keys [db]} {:keys [gig-setlist]}]
   (let [{:keys [gig-id song-id selected]} gig-setlist
-        gig-id         (util/ensure-uuid! gig-id)
-        song-id        (str (util/ensure-uuid! song-id))
-        selected?      (form/normalize-bool selected)
-        songs          (db-songs db gig-id)
-        selected-song? (some #(= song-id (:song-id %)) songs)]
+        gig-id                            (util/ensure-uuid! gig-id)
+        song-id                           (str (util/ensure-uuid! song-id))
+        selected?                         (form/normalize-bool selected)
+        songs                             (db-songs db gig-id)
+        selected-song?                    (some #(= song-id (:song-id %)) songs)]
     (cond
       (and selected? selected-song?)
       [(persist-setlist-effect db gig-id songs)]
@@ -98,17 +98,17 @@
 
 (defn reorder-setlist-songs-action [{:keys [db]} {:keys [gig-setlist]}]
   (let [{:keys [gig-id order]} gig-setlist
-        gig-id      (util/ensure-uuid! gig-id)
-        songs       (db-songs db gig-id)
-        by-id       (into {} (map (juxt :song-id identity)) songs)
-        ordered     (->> order
-                         (map str)
-                         (keep by-id))
-        ordered-ids (set (map :song-id ordered))
-        missing     (remove #(ordered-ids (:song-id %)) songs)]
+        gig-id                 (util/ensure-uuid! gig-id)
+        songs                  (db-songs db gig-id)
+        by-id                  (into {} (map (juxt :song-id identity)) songs)
+        ordered                (->> order
+                                    (map str)
+                                    (keep by-id))
+        ordered-ids            (set (map :song-id ordered))
+        missing                (remove #(ordered-ids (:song-id %)) songs)]
     [(persist-setlist-effect db gig-id (concat ordered missing))]))
 
 (def actions
-  {::set-repertoire-filter   #'set-repertoire-filter-action
-   ::toggle-setlist-song     #'toggle-setlist-song-action
-   ::reorder-setlist-songs   #'reorder-setlist-songs-action})
+  {::set-repertoire-filter #'set-repertoire-filter-action
+   ::toggle-setlist-song   #'toggle-setlist-song-action
+   ::reorder-setlist-songs #'reorder-setlist-songs-action})

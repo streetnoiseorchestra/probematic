@@ -5,15 +5,15 @@
   "Returns a Fluent translation node describing the time from `then-t` to
   `:now-t`, which defaults to the current local date and time."
   [then-t & {:keys [now-t]
-             :or {now-t (t/date-time)}}]
-  (let [then-t (if (t/date? then-t)
-                 (t/at then-t (t/midnight))
-                 then-t)
-        years (t/between then-t now-t :years)
-        months (t/between then-t now-t :months)
-        weeks (t/between then-t now-t :weeks)
-        days (t/between then-t now-t :days)
-        hours (t/between then-t now-t :hours)
+             :or   {now-t (t/date-time)}}]
+  (let [then-t  (if (t/date? then-t)
+                  (t/at then-t (t/midnight))
+                  then-t)
+        years   (t/between then-t now-t :years)
+        months  (t/between then-t now-t :months)
+        weeks   (t/between then-t now-t :weeks)
+        days    (t/between then-t now-t :days)
+        hours   (t/between then-t now-t :hours)
         minutes (t/between then-t now-t :minutes)
         seconds (t/between then-t now-t :seconds)]
     (cond
@@ -47,38 +47,38 @@
    https://github.com/trhura/clojure-humanize
    https://github.com/trhura/clojure-humanize/blob/master/LICENSE"
   [bytes & {:keys [binary fmt]
-            :or {binary false
-                 fmt "%.1f"}}]
+            :or   {binary false
+                   fmt    "%.1f"}}]
 
   (if (zero? bytes)
     ;; special case for zero
     "0"
 
-    (let [decimal-sizes  [:B, :KB, :MB, :GB, :TB,
-                          :PB, :EB, :ZB, :YB]
-          binary-sizes [:B, :KiB, :MiB, :GiB, :TiB,
-                        :PiB, :EiB, :ZiB, :YiB]
+    (let [decimal-sizes [:B, :KB, :MB, :GB, :TB,
+                         :PB, :EB, :ZB, :YB]
+          binary-sizes  [:B, :KiB, :MiB, :GiB, :TiB,
+                         :PiB, :EiB, :ZiB, :YiB]
 
-          units (if binary binary-sizes decimal-sizes)
-          base  (if binary 1024 1000)
+          units         (if binary binary-sizes decimal-sizes)
+          base          (if binary 1024 1000)
 
-          base-pow  (int (Math/floor (logn bytes base)))
+          base-pow      (int (Math/floor (logn bytes base)))
           ;; if base power shouldn't be larger than biggest unit
-          base-pow  (if (< base-pow (count units))
-                      base-pow
-                      (dec (count units)))
-          suffix (name (get units base-pow))
-          value (float (/ bytes (Math/pow base base-pow)))]
+          base-pow      (if (< base-pow (count units))
+                          base-pow
+                          (dec (count units)))
+          suffix        (name (get units base-pow))
+          value         (float (/ bytes (Math/pow base base-pow)))]
 
       (str (format fmt value) suffix))))
 
 (comment
   (let [then-t (t/<< (t/date-time) (t/new-duration 5 :days))
-        now-t (t/date-time)]
+        now-t  (t/date-time)]
     (from then-t :now-t now-t))
 
   (let [then-t (t/<< (t/date-time) (t/new-duration 100 :days))
-        now-t (t/date-time)]
+        now-t  (t/date-time)]
     (from then-t :now-t now-t))
 
   (from (t/date-time) :now-t (t/date-time))

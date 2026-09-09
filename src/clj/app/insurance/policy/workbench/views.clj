@@ -58,7 +58,7 @@
 (defn- value-filter-query-params
   [value-filter]
   (let [{:keys [operator value min max]} value-filter
-        operator (when operator (domain/normalize-value-filter-operator operator))]
+        operator                         (when operator (domain/normalize-value-filter-operator operator))]
     (case operator
       :between {:value-operator operator
                 :value          nil
@@ -183,13 +183,13 @@
   ([table id]
    (table-column-visible? :all table id))
   ([view table id]
-   (let [view             (or view :all)
-         view-columns     (or (get-in table [:columns-by-view view])
-                              (get-in table [:columns-by-view (name view)])
-                              (get-in table [:columnsByView view])
-                              (get-in table [:columnsByView (name view)]))
-         view-override    (column-visibility-override view-columns id)
-         legacy-override  (column-visibility-override (:columns table) id)]
+   (let [view            (or view :all)
+         view-columns    (or (get-in table [:columns-by-view view])
+                             (get-in table [:columns-by-view (name view)])
+                             (get-in table [:columnsByView view])
+                             (get-in table [:columnsByView (name view)]))
+         view-override   (column-visibility-override view-columns id)
+         legacy-override (column-visibility-override (:columns table) id)]
      (cond
        (some? view-override) (visible-column-setting? view-override)
        (some? legacy-override) (visible-column-setting? legacy-override)
@@ -312,9 +312,9 @@
                             :href                (urls/link-policy-workbench
                                                   policy
                                                   (pagination-query-state
-                                                   {:filters filters
+                                                   {:filters    filters
                                                     :pagination pagination
-                                                    :view view}
+                                                    :view       view}
                                                    {:view view-option
                                                     :page 1}))
                             :data-workbench-view (name view-option)}
@@ -370,13 +370,13 @@
                                         ["workflow-status" (workflow-status-query-values filters)]
                                         ["change-status" (change-status-query-values filters)]]
                                        (value-filter-hidden-fields filters)))
-                [[:wa-input {:name                         "member-q"
-                             :aria-label                   [:i18n/tr :insurance/workbench-search]
-                             :placeholder                  [:i18n/tr :insurance/workbench-member-search-placeholder]
-                             :value                        (or (:member-q filters) "")
-                             :appearance                   "outlined"
-                             :with-clear                   true
-                             :data-bind                    "insuranceWorkbench.memberQ"
+                [[:wa-input {:name        "member-q"
+                             :aria-label  [:i18n/tr :insurance/workbench-search]
+                             :placeholder [:i18n/tr :insurance/workbench-member-search-placeholder]
+                             :value       (or (:member-q filters) "")
+                             :appearance  "outlined"
+                             :with-clear  true
+                             :data-bind   "insuranceWorkbench.memberQ"
                              :data-on:input__debounce.250ms
                              (str "@post('" (d*/act req ::actions/set-member-search-phrase) "')")}]])))
 
@@ -398,7 +398,7 @@
                              "padding-block: var(--wa-space-2xs); "
                              "scrollbar-gutter: stable;")}]
           (for [{:keys [id label]} items
-                :let [id (str id)]]
+                :let               [id (str id)]]
             [:label {:class "wa-cluster wa-gap-xs wa-align-items-center"
                      :style "cursor: pointer;"}
              [:input (cond-> {:type      "checkbox"
@@ -628,8 +628,8 @@
 (defn- filter-popover
   [req {:keys [available-categories filters policy]}]
   [:wa-popover {:id              filter-popover-id
-                :data-attr:open "$insuranceWorkbench.filterPopover.open"
-                :data-effect    "el.anchor = document.getElementById($insuranceWorkbench.filterPopover.anchor)"
+                :data-attr:open  "$insuranceWorkbench.filterPopover.open"
+                :data-effect     "el.anchor = document.getElementById($insuranceWorkbench.filterPopover.anchor)"
                 :data-on:wa-hide "if (evt.target === el) { $insuranceWorkbench.filterPopover.open = false }"
                 :placement       "bottom-start"
                 :without-arrow   true
@@ -677,7 +677,7 @@
 
 (defn- category-filter-value
   [available-categories category-ids]
-  (let [category-ids  (set category-ids)
+  (let [category-ids   (set category-ids)
         known-labels   (->> available-categories
                             (filter #(contains? category-ids (:category-id %)))
                             (map :category-name))
@@ -777,7 +777,7 @@
 (defn- active-filter-pill
   [req {:keys [field label value]}]
   (let [chip-id (filter-chip-id field)]
-    [:wa-tag {:with-remove       true :size "m"
+    [:wa-tag {:with-remove       true                               :size "m"
               :data-on:wa-remove (remove-filter-js req field)
               :class             "cursor-pointer"
               :style             "transition: opacity 1s ease-out;"}
@@ -848,13 +848,13 @@
                   :aria-label [:i18n/tr :insurance/workbench-table-settings]}
    [ico/Icon {::ico/library :phosphor
               ::ico/name    :sliders-horizontal
-              :style      "font-size: var(--wa-font-size-l);"}]])
+              :style        "font-size: var(--wa-font-size-l);"}]])
 
 (defn workbench-toolbar
   [req workbench]
   [:div {:class "wa-stack wa-gap-s"}
    (view-button-row workbench)
-   [:div {:class                     "wa-flank:end wa-gap-2xs"}
+   [:div {:class "wa-flank:end wa-gap-2xs"}
     (search-form req workbench)
     [:div {:class "wa-cluster wa-gap-2xs"}
      (filter-button)
@@ -950,8 +950,8 @@
   [coverage-ids]
   {:aria-label                [:i18n/tr :action/select-all]
    :data-workbench-select-all "true"
-   :data-on:change           (select-all-change-js coverage-ids)
-   :data-effect              (select-all-effect-js coverage-ids)})
+   :data-on:change            (select-all-change-js coverage-ids)
+   :data-effect               (select-all-effect-js coverage-ids)})
 
 (defn- row-selection-effect-js
   [coverage-id]
@@ -1075,9 +1075,9 @@
 
 (defn- bulk-action-sentinel
   []
-  [:div {:class                  "insurance-workbench-bulk-action-sentinel"
-         :aria-hidden            "true"
-         :data-on-intersect      "$insuranceWorkbench.bulkActionStuck = false"
+  [:div {:class                   "insurance-workbench-bulk-action-sentinel"
+         :aria-hidden             "true"
+         :data-on-intersect       "$insuranceWorkbench.bulkActionStuck = false"
          :data-on-intersect__exit bulk-action-sentinel-exit-js}])
 
 (defn- bulk-actions
@@ -1101,7 +1101,7 @@
   [req {:keys [editable? filters rows]}]
   (list
    (bulk-action-sentinel)
-   [:section {:class                              "insurance-workbench-bulk-action-bar"
+   [:section {:class                                                  "insurance-workbench-bulk-action-bar"
               :data-class:insurance-workbench-bulk-action-bar--sticky (str selected-count-js " > 0")
               :data-class:insurance-workbench-bulk-action-bar--stuck  (str selected-count-js " > 0 && $insuranceWorkbench.bulkActionStuck")}
     (bulk-actions req editable?)
@@ -1192,10 +1192,10 @@
   [:div {:class "wa-flank wa-gap-xs wa-align-items-center"
          :style "--flank-size: 1.75rem;"}
    [avatar/Avatar (cond-> {::avatar/member member-avatar
-                           ::avatar/name member-label
-                           :shape "rounded"
-                           :style "--size: 1.75rem"
-                           :loading "lazy"}
+                           ::avatar/name   member-label
+                           :shape          "rounded"
+                           :style          "--size: 1.75rem"
+                           :loading        "lazy"}
                     member-id (assoc ::avatar/href (urls/link-member member-id)))]
    (if member-id
      [:a {:href (urls/link-member member-id)} member-label]
@@ -1282,7 +1282,7 @@
        [ico/Icon {::ico/library :snoico
                   ::ico/name    :ellipsis
                   ;; line it up with the row-action-dropdown-trigger
-                  :style "margin-bottom: 3px;"}]]
+                  :style        "margin-bottom: 3px;"}]]
       [:wa-button-group {:class       "insurance-workbench-row-action-group"
                          :label       actions-label
                          :orientation "horizontal"}
@@ -1347,7 +1347,7 @@
 
 (defn- row-status-icons
   [{:keys [change-status coverage-id workflow-status]}]
-  (into [:span {:class                         "wa-cluster wa-gap-2xs wa-align-items-center"
+  (into [:span {:class                       "wa-cluster wa-gap-2xs wa-align-items-center"
                 :data-workbench-status-icons "true"}]
         (mapcat identity)
         [(row-status-icon coverage-id
@@ -1383,10 +1383,10 @@
 (defn row-cell-content
   [currency row column-id]
   (let [{:keys [category-name coverage-id coverage-type-names coverage-types harmonia-id instrument-name
-                missing-insurer-id? missing-photo? photo-count private? insured-value cost]} row
-        coverage-types (or (seq coverage-types)
-                           (map (fn [name] {:insurance.coverage.type/name name})
-                                coverage-type-names))]
+                missing-insurer-id? missing-photo? photo-count private? insured-value cost]}             row
+        coverage-types                                                                                   (or (seq coverage-types)
+                                                                                                             (map (fn [name] {:insurance.coverage.type/name name})
+                                                                                                                  coverage-type-names))]
     (case column-id
       :selection
       [:wa-checkbox (merge {:aria-label [:i18n/tr :insurance/workbench-select-row]}
@@ -1655,7 +1655,7 @@
   (let [urls (into {}
                    (for [page-size (:page-sizes pagination)]
                      [page-size (pagination-url workbench
-                                                {:page 1
+                                                {:page      1
                                                  :page-size page-size})]))]
     (str "const urls = " (js-object-literal urls) "; "
          "window.location.href = urls[evt.detail.item.value]")))
@@ -1683,7 +1683,7 @@
 (defn- page-size-dropdown
   [{:keys [pagination] :as workbench}]
   [:wa-dropdown {:data-workbench-page-size "true"
-                 :data-on:wa-select       (page-size-select-js workbench)}
+                 :data-on:wa-select        (page-size-select-js workbench)}
    [button/Button {:slot       "trigger"
                    :appearance "plain"
                    :size       "s"}
@@ -1735,7 +1735,7 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
                                                              (:insurance.policy/name policy)]
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/workbench]]]
-                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                                           :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class              "insurance-workbench wa-stack wa-gap-xl"
              :data-preserve-attr "data-signals"
              :data-signals       (d*/->signals (selection-signals policy (:filters workbench) table (:view workbench)))}

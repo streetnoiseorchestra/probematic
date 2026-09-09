@@ -63,8 +63,8 @@
               [:app.datastar/merge-state
                [:discount-type-create]
                {:discount-type-name "Klimaticket"
-                :error {:discount-type-name
-                        {:error "Discount type named 'Klimaticket' already exists."}}}]]
+                :error              {:discount-type-name
+                                     {:error "Discount type named 'Klimaticket' already exists."}}}]]
              (discount-actions/create-discount-type-action
               (state-for system)
               {:discount-type-create {:discount-type-name "Klimaticket"}})))))
@@ -101,8 +101,8 @@
               [:app.datastar/merge-state
                [:discount-type]
                {:discount-type-name "Taken"
-                :error {:discount-type-name
-                        {:error "Discount type named 'Taken' already exists."}}}]]
+                :error              {:discount-type-name
+                                     {:error "Discount type named 'Taken' already exists."}}}]]
              (discount-actions/update-discount-type-action
               (state-for system)
               {:discount-type {:discount-type-id      (str discount-type-id)
@@ -144,7 +144,7 @@
   (testing "opens the discount type create form"
     (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:discount-type-create]
-             {:open true
+             {:open               true
               :discount-type-name ""}]]
            (discount-actions/open-discount-type-create-action {} {}))))
 
@@ -182,8 +182,8 @@
               [:app.datastar/merge-state
                [:team-create]
                {:team-name "Booking"
-                :error {:team-name
-                        {:error "Team named 'Booking' already exists."}}}]]
+                :error     {:team-name
+                            {:error "Team named 'Booking' already exists."}}}]]
              (team-actions/create-team-action
               (state-for system)
               {:team-create {:team-name "Booking"}})))))
@@ -218,8 +218,8 @@
               [:app.datastar/merge-state
                [:team]
                {:team-name "Taken"
-                :error {:team-name
-                        {:error "Team named 'Taken' already exists."}}}]]
+                :error     {:team-name
+                            {:error "Team named 'Taken' already exists."}}}]]
              (team-actions/update-team-action
               (state-for system)
               {:team {:team-id   (str team-id)
@@ -291,7 +291,7 @@
   (testing "opens the team create form"
     (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:team-create]
-             {:open true
+             {:open      true
               :team-name ""}]]
            (team-actions/open-team-create-action {} {}))))
 
@@ -329,8 +329,8 @@
               [:app.datastar/merge-state
                [:section-create]
                {:section-name "Trumpets"
-                :error {:section-name
-                        {:error "Section named 'Trumpets' already exists."}}}]]
+                :error        {:section-name
+                               {:error "Section named 'Trumpets' already exists."}}}]]
              (section-actions/create-section-action
               (state-for system)
               {:section-create {:section-name "Trumpets"}})))))
@@ -361,8 +361,8 @@
               [:app.datastar/merge-state
                [:section]
                {:section-name "Taken"
-                :error {:section-name
-                        {:error "Section named 'Taken' already exists."}}}]]
+                :error        {:section-name
+                               {:error "Section named 'Taken' already exists."}}}]]
              (section-actions/update-section-action
               (state-for system)
               {:section {:section-id      "Old Section"
@@ -401,7 +401,7 @@
   (testing "opens the section create form"
     (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:section-create]
-             {:open true
+             {:open         true
               :section-name ""}]]
            (section-actions/open-section-create-action {} {}))))
 

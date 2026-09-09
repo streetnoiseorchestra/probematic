@@ -18,7 +18,7 @@
   (let [{:keys [conn member-id]} (tc/new-system "insurance-payment-notifications")
         {:keys [coverage-id] :as ids}
         (insurance-test/seed-page-shell-fixture! conn member-id)
-        ledger-id (random-uuid)]
+        ledger-id                (random-uuid)]
     @(d/transact conn [[:db/add
                         [:instrument.coverage/coverage-id coverage-id]
                         :instrument.coverage/private?
@@ -33,10 +33,10 @@
 
 (deftest payment-notification-data-and-action-test
   (let [{:keys [conn member-id policy-id]} (fixture)
-        state {:current-member-id member-id
-               :db                (d/db conn)
-               :tr                tr}
-        data  (queries/notification-data (:db state) policy-id member-id)]
+        state                              {:current-member-id member-id
+                                            :db                (d/db conn)
+                                            :tr                tr}
+        data                               (queries/notification-data (:db state) policy-id member-id)]
     (testing "the read model groups payable private instruments by owner"
       (is (= {:member-id       member-id
               :member-name     "Ada"
@@ -59,13 +59,13 @@
                                {:insurancePayments
                                 {:policyId  (str policy-id)
                                  :memberIds [(str member-id)]}})
-            [_ payload] effect]
+            [_ payload]       effect]
         (is (= :app.insurance/send-payment-notifications (first effect)))
-        (is (= {:member-ids   [member-id]
-                :sender-name  "Ada"
-                :time-range   "2026 - 2026"
-                :success      {:status :sent :count-sent 1}
-                :result-path  [:insurance-payments :result]}
+        (is (= {:member-ids  [member-id]
+                :sender-name "Ada"
+                :time-range  "2026 - 2026"
+                :success     {:status :sent :count-sent 1}
+                :result-path [:insurance-payments :result]}
                {:member-ids  (mapv #(get-in % [:member :member/member-id])
                                    (:members-data payload))
                 :sender-name (:sender-name payload)
@@ -79,13 +79,13 @@
 
   (testing "a non-insurance-team member cannot send payment notifications"
     (let [{:keys [conn member-id outsider-id policy-id]} (fixture)
-          effects (actions/send-notifications-action
-                   {:current-member-id outsider-id
-                    :db                (d/db conn)
-                    :tr                tr}
-                   {:insurancePayments
-                    {:policyId  (str policy-id)
-                     :memberIds [(str member-id)]}})]
+          effects                                        (actions/send-notifications-action
+                                                          {:current-member-id outsider-id
+                                                           :db                (d/db conn)
+                                                           :tr                tr}
+                                                          {:insurancePayments
+                                                           {:policyId  (str policy-id)
+                                                            :memberIds [(str member-id)]}})]
       (is (= support/clear-loading (first effects)))
       (is (= :error (get-in effects [1 2 :status])))
       (is (not-any? #(= :app.insurance/send-payment-notifications (first %))

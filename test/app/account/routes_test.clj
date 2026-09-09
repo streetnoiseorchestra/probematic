@@ -12,15 +12,15 @@
    [reitit.http :as http]))
 
 (def expected-routes
-  [{:path "/account-settings"
+  [{:path      "/account-settings"
     :page-name :app.account.routes/index}
-   {:path "/account-settings/profile"
+   {:path      "/account-settings/profile"
     :page-name :app.account.routes/profile}
-   {:path "/account-settings/preferences"
+   {:path      "/account-settings/preferences"
     :page-name :app.account.routes/preferences}
-   {:path "/account-settings/notifications"
+   {:path      "/account-settings/notifications"
     :page-name :app.account.routes/notifications}
-   {:path "/account-settings/on-a-break"
+   {:path      "/account-settings/on-a-break"
     :page-name :app.account.routes/on-a-break}])
 
 (def expected-links
@@ -31,8 +31,8 @@
    'app.urls/link-account-break         "/account-settings/on-a-break"})
 
 (def test-system
-  {:nexus {:nexus/actions {}}
-   :datomic {:conn ::conn}
+  {:nexus     {:nexus/actions {}}
+   :datomic   {:conn ::conn}
    :filestore ::filestore})
 
 (defn authenticated-branch [route-tree]
@@ -82,41 +82,41 @@
                        [:data :name])))))))
 
 (deftest multipart-profile-route-adapts-form-data-to-the-qualified-action
-  (let [handler (support/public-fn
-                 'app.account.routes/profile-save-handler)
+  (let [handler  (support/public-fn
+                  'app.account.routes/profile-save-handler)
         tempfile (java.io.File. "/tmp/account-route-avatar.png")]
     (is (fn? handler) "app.account.routes/profile-save-handler should exist")
     (when handler
       (is (= [[:app.account.actions/save-profile
                {:account-profile
-                {:name "Ada Byron"
-                 :nick "Countess"
-                 :email "ada@example.test"
-                 :username "ada_byron"
-                 :phone "+436601234567"
-                 :current-status "Rehearsing"
-                 :date-of-birth "1815-12-10"
+                {:name            "Ada Byron"
+                 :nick            "Countess"
+                 :email           "ada@example.test"
+                 :username        "ada_byron"
+                 :phone           "+436601234567"
+                 :current-status  "Rehearsing"
+                 :date-of-birth   "1815-12-10"
                  :avatar-removed? true}
                 :avatar-upload
-                {:filename "avatar.png"
+                {:filename  "avatar.png"
                  :mime-type "image/png"
-                 :size 2048
-                 :tempfile tempfile}}]]
+                 :size      2048
+                 :tempfile  tempfile}}]]
              (handler
               {:parameters
                {:multipart
-                {:name "Ada Byron"
-                 :nick "Countess"
-                 :email "ada@example.test"
-                 :username "ada_byron"
-                 :phone "+436601234567"
-                 :current-status "Rehearsing"
-                 :date-of-birth "1815-12-10"
+                {:name            "Ada Byron"
+                 :nick            "Countess"
+                 :email           "ada@example.test"
+                 :username        "ada_byron"
+                 :phone           "+436601234567"
+                 :current-status  "Rehearsing"
+                 :date-of-birth   "1815-12-10"
                  :avatar-removed? "true"
-                 :avatar {:filename "avatar.png"
-                          :content-type "image/png"
-                          :size 2048
-                          :tempfile tempfile}}}})))
+                 :avatar          {:filename     "avatar.png"
+                                   :content-type "image/png"
+                                   :size         2048
+                                   :tempfile     tempfile}}}})))
       (testing "only the form's true string marks the avatar for removal"
         (is (false?
              (get-in
@@ -138,20 +138,20 @@
 (deftest account-routes-are-mounted-inside-the-authenticated-branch
   (testing "The Account slice inherits authentication without adding a role gate."
     (let [{:keys [conn]} (tc/new-system "account-authenticated-routes")
-          branch (authenticated-branch
-                  (app-routes/routes
-                   {:env {:ig/system {:app.ig/profile :test}
-                          :session-config {:session-ttl-s 3600
-                                           :cookie-attrs {}}}
-                    :i18n-langs (i18n/read-langs)
-                    :datomic {:conn conn}
-                    :filestore {}
-                    :auxiliary tc/*sqlite-db*
-                    :datastar-refresh-mult
-                    {::datastar/refresh-mult ::refresh-mult}}))
-          paths  (into #{}
-                       (keep #(when (and (vector? %) (string? (first %)))
-                                (first %)))
-                       (tree-seq coll? seq branch))]
+          branch         (authenticated-branch
+                          (app-routes/routes
+                           {:env        {:ig/system      {:app.ig/profile :test}
+                                         :session-config {:session-ttl-s 3600
+                                                          :cookie-attrs  {}}}
+                            :i18n-langs (i18n/read-langs)
+                            :datomic    {:conn conn}
+                            :filestore  {}
+                            :auxiliary  tc/*sqlite-db*
+                            :datastar-refresh-mult
+                            {::datastar/refresh-mult ::refresh-mult}}))
+          paths          (into #{}
+                               (keep #(when (and (vector? %) (string? (first %)))
+                                        (first %)))
+                               (tree-seq coll? seq branch))]
       (is (some? branch))
       (is (every? paths (map :path expected-routes))))))

@@ -127,8 +127,8 @@
   (try
     @(d/transact
       conn
-      [{:db/id                            [:insurance.policy/policy-id policy-id]
-        :insurance.policy/exporter-id     :insurance/exporter-harmonia-v1
+      [{:db/id                        [:insurance.policy/policy-id policy-id]
+        :insurance.policy/exporter-id :insurance/exporter-harmonia-v1
         :insurance.policy/export-mappings
         (mapv (fn [[role coverage-type-id]]
                 {:insurance.export.mapping/role role
@@ -218,17 +218,17 @@
           result                   (queries/policy-settings (d/db conn)
                                                             policy-id
                                                             {:current-member-id member-id})]
-      (is (= {:coverage-type-rows [{:name "Basic" :usage-count 2 :current-cost 2.0M}
-                                   {:name "Extended" :usage-count 2 :current-cost 1.5M}
-                                   {:name "Unused" :usage-count 0 :current-cost 0M}]
+      (is (= {:coverage-type-rows   [{:name "Basic" :usage-count 2 :current-cost 2.0M}
+                                     {:name "Extended" :usage-count 2 :current-cost 1.5M}
+                                     {:name "Unused" :usage-count 0 :current-cost 0M}]
               :category-factor-rows [{:category-name "Brass" :usage-count 2 :current-cost 3.5M}]
-              :unused-categories ["Percussion" "Woodwind"]
-              :current-totals    {:total-instruments   3
-                                  :total-insured-value 7000M
-                                  :total-cost          3.5M}
-              :warnings          [{:type           :missing-category-factors
-                                   :category-ids   [woodwind-id]
-                                   :category-names ["Woodwind"]}]}
+              :unused-categories    ["Percussion" "Woodwind"]
+              :current-totals       {:total-instruments   3
+                                     :total-insured-value 7000M
+                                     :total-cost          3.5M}
+              :warnings             [{:type           :missing-category-factors
+                                      :category-ids   [woodwind-id]
+                                      :category-names ["Woodwind"]}]}
              {:coverage-type-rows   (coverage-type-summary result)
               :category-factor-rows (category-factor-summary result)
               :unused-categories    (category-names (:unused-categories result))
@@ -249,22 +249,22 @@
     (let [{:keys [conn]} (tc/new-system "insurance-settings-query-impact")
           policy-id      (random-uuid)]
       (seed-settings-policy! conn policy-id {})
-      (is (= {:coverage-counts {:total 3
+      (is (= {:coverage-counts {:total   3
                                 :private 1
-                                :band 2}
+                                :band    2}
               :coverage-type-rows
-              [{:name "Basic"
-                :missing-coverage-counts {:total 1
+              [{:name                    "Basic"
+                :missing-coverage-counts {:total   1
                                           :private 1
-                                          :band 0}}
-               {:name "Extended"
-                :missing-coverage-counts {:total 1
+                                          :band    0}}
+               {:name                    "Extended"
+                :missing-coverage-counts {:total   1
                                           :private 0
-                                          :band 1}}
-               {:name "Unused"
-                :missing-coverage-counts {:total 3
+                                          :band    1}}
+               {:name                    "Unused"
+                :missing-coverage-counts {:total   3
                                           :private 1
-                                          :band 2}}]}
+                                          :band    2}}]}
              (coverage-impact-summary
               (queries/policy-settings (d/db conn) policy-id)))))))
 
@@ -329,15 +329,15 @@
                   :insurance.exporter.harmonia-v1/overnight-vehicle
                   :label-key
                   :insurance/exporter-role-overnight-vehicle
-                  :required?        true
-                  :coverage-type-id extended-id
+                  :required?          true
+                  :coverage-type-id   extended-id
                   :coverage-type-name "Extended"}
                  {:role
                   :insurance.exporter.harmonia-v1/unattended-building
                   :label-key
                   :insurance/exporter-role-unattended-building
-                  :required?        true
-                  :coverage-type-id basic-type-id
+                  :required?          true
+                  :coverage-type-id   basic-type-id
                   :coverage-type-name "Basic"}]}}}
              {:seed-status seed-status
               :read-model  (when (= :accepted seed-status)

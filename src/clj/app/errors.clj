@@ -41,10 +41,10 @@
 
 (defn sanitize [v]
   (let [user-email (get-in v [:app/session :session/email])
-        member-id (get-in v [:app/session :session/member :member/member-id])
-        v (->> v
-               (util/remove-deep dangerous-keys)
-               (util/replace-deep redact-keys "<REDACTED>"))]
+        member-id  (get-in v [:app/session :session/member :member/member-id])
+        v          (->> v
+                        (util/remove-deep dangerous-keys)
+                        (util/replace-deep redact-keys "<REDACTED>"))]
     (if (map? v)
       (-> v
           (m/assoc-some :user-email user-email)
@@ -80,8 +80,8 @@
   ([req ex]
    (send-event! (or (ex-message ex) "no message") req ex))
   ([msg req ex]
-   (let [event-data {:msg msg
-                     :extra {:human-id (:human-id req)}
+   (let [event-data {:msg     msg
+                     :extra   {:human-id (:human-id req)}
                      :request (prepare-req req)}]
      (μ/with-context event-data
        (μ/log ::error :ex (unwrap-ex ex))))))

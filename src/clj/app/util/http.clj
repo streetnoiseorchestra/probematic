@@ -54,7 +54,7 @@
   (= "on" v))
 
 (defn order-invert [o]
-  (get {:asc :desc
+  (get {:asc  :desc
         :desc :asc} o))
 
 (defn serialize-sort-param [query-param-field-mapping {:keys [field order]}]
@@ -69,10 +69,10 @@
 
 (defn parse-sort-param [query-param-field-mapping v]
   (let [[param order] (str/split v #":")
-        order (if (= "desc" order) :desc :asc)
-        field (get query-param-field-mapping param nil)]
+        order         (if (= "desc" order) :desc :asc)
+        field         (get query-param-field-mapping param nil)]
     (when field
-      {:field  field
+      {:field field
        :order order})))
 
 (defn sort-param [{:keys [query-params]} query-param-field-mapping]
@@ -84,13 +84,13 @@
 
 (defn sort-by-spec [sorting coll]
   #_(tap> {:sorting sorting
-           :fields (mapv :field sorting)
-           :dir (if (= :asc (-> sorting first :order)) :asc :desc)})
+           :fields  (mapv :field sorting)
+           :dir     (if (= :asc (-> sorting first :order)) :asc :desc)})
   (let [asc? (= :asc (-> sorting first :order))
-        r (sort-by (fn [v]
-                     (mapv (fn [s]
-                             (if (string? s)
-                               (str/lower-case s)
-                               s))
-                           ((apply juxt (map :field sorting)) v))) coll)]
+        r    (sort-by (fn [v]
+                        (mapv (fn [s]
+                                (if (string? s)
+                                  (str/lower-case s)
+                                  s))
+                              ((apply juxt (map :field sorting)) v))) coll)]
     (if asc? r (reverse r))))

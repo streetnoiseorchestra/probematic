@@ -94,10 +94,10 @@
    (let [poll (update poll :poll/closes-at closes-at-inst)]
      (when-not (s/valid? schema poll)
        (throw
-        (ex-info "Poll not valid" {:poll poll
+        (ex-info "Poll not valid" {:poll   poll
                                    :schema schema
-                                   :error (s/explain schema poll)
-                                   :human (s/explain-human schema poll)})))
+                                   :error  (s/explain schema poll)
+                                   :human  (s/explain-human schema poll)})))
      (s/encode-datomic schema poll))))
 
 (defn ->date-time [kw comment]

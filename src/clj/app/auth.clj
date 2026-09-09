@@ -45,25 +45,25 @@
 
 (defn build-oauth2-config [env]
   (let [{:keys [callback-path well-known-uri client-id client-secret]} (:oauth2 env)
-        config (validate-openid-config (load-openid-config well-known-uri))]
-    {:callback-uri (str (config/app-base-url env) callback-path)
-     :client-id client-id
+        config                                                         (validate-openid-config (load-openid-config well-known-uri))]
+    {:callback-uri  (str (config/app-base-url env) callback-path)
+     :client-id     client-id
      :client-secret client-secret
      :openid-config config}))
 
 (defn oauth2-cookie [env value]
   {:http-only true
-   :secure (not (config/dev-mode? env))
+   :secure    (not (config/dev-mode? env))
    :same-site :lax
-   :max-age (* 10 #_minutes 60)
-   :value (secret-box/encrypt value (config/app-secret-key env))})
+   :max-age   (* 10 #_minutes 60)
+   :value     (secret-box/encrypt value (config/app-secret-key env))})
 
 (defn expire-oauth2-cookie [env]
   {:http-only true
-   :secure (not (config/dev-mode? env))
+   :secure    (not (config/dev-mode? env))
    :same-site :lax
-   :max-age 0
-   :value "kill"})
+   :max-age   0
+   :value     "kill"})
 
 (defn login-page-handler [env {:keys [openid-config client-id callback-uri]} request]
   (let [next          (get-in request [:params :next] false)
@@ -78,7 +78,7 @@
                            "&scope=" scope
                            (when login_hint
                              (str "&login_hint=" (util/url-encode login_hint))))]
-    {:status 302 :headers {"Location" authorize-uri} :body ""
+    {:status  302                                                                                                            :headers {"Location" authorize-uri} :body ""
      :cookies {"oauth2" (oauth2-cookie env
                                        {:oauth2/state state :oauth2/redirect-uri callback-uri :oauth2/post-login-uri next})}}))
 
@@ -87,7 +87,7 @@
    Docs:
      * spec:  https://openid.net/specs/openid-connect-rpinitiated-1_0.html"
   [env {:keys [openid-config client-id _callback-uri]} request]
-  (let [id-token (-> request :app/session :session/id-token)
+  (let [id-token       (-> request :app/session :session/id-token)
         idp-logout-uri (str (:end_session_endpoint openid-config)
                             "?post_logout_redirect_uri=" (util/url-encode (str (config/app-base-url env)))
                             "&client_id=" client-id
@@ -97,10 +97,10 @@
 (defn code->token [{:keys [client-id client-secret openid-config]} code original-redirect-uri]
   (some->
    @(http/post  (:token_endpoint openid-config)
-                {:form-params {:grant_type "authorization_code"
-                               :code code
-                               :redirect_uri original-redirect-uri
-                               :client_id client-id
+                {:form-params {:grant_type    "authorization_code"
+                               :code          code
+                               :redirect_uri  original-redirect-uri
+                               :client_id     client-id
                                :client_secret client-secret}})
    :body
    (j/read-value j/keyword-keys-object-mapper)))
@@ -127,20 +127,20 @@
     (let [access-token-claims (jwt/unsign (:access_token token) certificate {:alg :rs256})]
       ;; also verify the id token
       (jwt/unsign (:id_token token) certificate {:alg :rs256})
-      {:session/username (:preferred_username access-token-claims)
-       :session/email (:email access-token-claims)
-       :session/keycloak-id (:sub access-token-claims)
-       :session/access-token (:access_token token)
+      {:session/username      (:preferred_username access-token-claims)
+       :session/email         (:email access-token-claims)
+       :session/keycloak-id   (:sub access-token-claims)
+       :session/access-token  (:access_token token)
        :session/refresh-token (:refresh_token token)
-       :session/id-token (:id_token token)
-       :session/groups (set (:groups access-token-claims))
-       :session/roles (set (->> (get-in access-token-claims [:realm_access :roles])
-                                (map keyword)
-                                (filter #(contains? known-roles  %))))})
+       :session/id-token      (:id_token token)
+       :session/groups        (set (:groups access-token-claims))
+       :session/roles         (set (->> (get-in access-token-claims [:realm_access :roles])
+                                        (map keyword)
+                                        (filter #(contains? known-roles  %))))})
 
     (catch Exception e
       (throw-unauthorized "Authentication Token Validation Failed" e
-                          {:token token
+                          {:token       token
                            :buddy-cause (-> (ex-data e) :cause)}))))
 
 (defn restart-login [env]
@@ -149,7 +149,7 @@
 (defn restart-login-handler [env]
   (assoc (restart-login env) :app/session nil))
 
-(defn identity-mismatch-response [{:keys [tr] :as  req}]
+(defn identity-mismatch-response [{:keys [tr] :as req}]
   (ui2/standalone-page
    {:status      403
     :lang        (some-> req :current-locale name)
@@ -190,30 +190,30 @@
 
   This avoids losing the `SameSite=strict` session cookie after OAuth2 login."
   [session cookies relative-uri]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
+  {:status      200
+   :headers     {"Content-Type" "text/html"}
    :app/session session
-   :app/sid (crypto/new-uid)
-   :cookies cookies
-   :body    (html/->str
-             [html/doctype-html5
-              [:html
-               [:head
-                [:title "Probematic"]
-                [:style
-                 (html/raw (-> (io/resource "public/css/login-interstitial.css") slurp))]
-                [:meta {:http-equiv "refresh"
-                        :content    (str "0;URL='" relative-uri "'")}]]
-               [:body
-                [:div {:class "container"}
-                 [:div {:class "content"}
-                  [:noscript
-                   [:p [:a {:href relative-uri} "Continue"]]]
-                  [:div {:class "spinner"}
-                   [:div]
-                   [:div]
-                   [:div]]
-                  [:p "Logging in..."]]]]]])})
+   :app/sid     (crypto/new-uid)
+   :cookies     cookies
+   :body        (html/->str
+                 [html/doctype-html5
+                  [:html
+                   [:head
+                    [:title "Probematic"]
+                    [:style
+                     (html/raw (-> (io/resource "public/css/login-interstitial.css") slurp))]
+                    [:meta {:http-equiv "refresh"
+                            :content    (str "0;URL='" relative-uri "'")}]]
+                   [:body
+                    [:div {:class "container"}
+                     [:div {:class "content"}
+                      [:noscript
+                       [:p [:a {:href relative-uri} "Continue"]]]
+                      [:div {:class "spinner"}
+                       [:div]
+                       [:div]
+                       [:div]]
+                      [:p "Logging in..."]]]]]])})
 
 (defn identity-mismatch-preview-handler [env req]
   (if (config/dev-mode? env)
@@ -223,13 +223,13 @@
 (defn oauth2-callback-handler [env oauth2 {:keys [_session params] :as request}]
   (try
     (let [{:keys [state code]} params
-          oauth2-cookie (secret-box/decrypt (get-in request [:cookies "oauth2" :value]) (config/app-secret-key env))
-          expected-state (:oauth2/state oauth2-cookie)]
+          oauth2-cookie        (secret-box/decrypt (get-in request [:cookies "oauth2" :value]) (config/app-secret-key env))
+          expected-state       (:oauth2/state oauth2-cookie)]
       (if-not (= expected-state state)
         (restart-login env)
         (let [original-redirect-uri (:oauth2/redirect-uri oauth2-cookie)
-              post-login-uri (or  (:oauth2/post-login-uri oauth2-cookie) "/")
-              token (code->token oauth2 code original-redirect-uri)]
+              post-login-uri        (or  (:oauth2/post-login-uri oauth2-cookie) "/")
+              token                 (code->token oauth2 code original-redirect-uri)]
           (if (or (nil? token) (:error token))
             (restart-login env)
             (post-login-client-side-redirect
@@ -309,12 +309,12 @@
 
 (defn- authentication-required-response [request]
   (if (datastar-request? request)
-    {:status 401
+    {:status  401
      :headers {"Cache-Control" "no-store"}
-     :body ""}
-    {:status 302
+     :body    ""}
+    {:status  302
      :headers {"location" (login-location request)}
-     :body ""}))
+     :body    ""}))
 
 (def require-authenticated-user
   "Requires an authenticated application user.
@@ -341,5 +341,5 @@
                                                     :session/groups   #{"/Mitglieder" "/admin"}
                                                     :session/roles    #{:Mitglieder :admin}}))})
 (defn dev-auth-interceptor [dev-session]
-  {:name ::dev-auth-interceptor
+  {:name  ::dev-auth-interceptor
    :enter #(-> % (assoc-in [:request :app/session] dev-session))})

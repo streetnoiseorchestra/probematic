@@ -32,8 +32,8 @@
        [:app.datastar/merge-state
         [:team-create]
         {:team-name team-name
-         :error {:team-name
-                 {:error (format "Team named '%s' already exists." team-name)}}}]]
+         :error     {:team-name
+                     {:error (format "Team named '%s' already exists." team-name)}}}]]
 
       :else
       (let [tx-data (support/with-audit [{:team/team-id :db/gen-uuid
@@ -62,8 +62,8 @@
        [:app.datastar/merge-state
         [:team]
         {:team-name team-name
-         :error {:team-name
-                 {:error (format "Team named '%s' already exists." team-name)}}}]]
+         :error     {:team-name
+                     {:error (format "Team named '%s' already exists." team-name)}}}]]
 
       :else
       (let [tx-data (support/with-audit
@@ -136,7 +136,7 @@
   [_ _]
   [support/clear-loading
    [:app.datastar/assoc-state [:team-create]
-    {:open true
+    {:open      true
      :team-name ""}]])
 
 (defn close-team-create-action [_state _signals]

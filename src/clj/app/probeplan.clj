@@ -18,43 +18,43 @@
    (t/end (t/>> (t/date) (t/new-period 999 :months)))
    (t/new-period 7 :days)))
 
-{:db/ident :probeplan/gig
- :db/doc "The gig this probeplan belongs to"
- :db/valueType :db.type/ref
- :db/unique :db.unique/unique
+{:db/ident       :probeplan/gig
+ :db/doc         "The gig this probeplan belongs to"
+ :db/valueType   :db.type/ref
+ :db/unique      :db.unique/unique
  :db/cardinality :db.cardinality/one}
 
-{:db/ident :probeplan/format
- :db/doc "The format of the probeplan"
- :db/valueType :db.type/keyword
+{:db/ident       :probeplan/format
+ :db/doc         "The format of the probeplan"
+ :db/valueType   :db.type/keyword
  :db/cardinality :db.cardinality/one}
 
-{:db/ident :probeplan.classic/intensive1
- :db/doc "The first intensive song"
- :db/valueType :db.type/ref
+{:db/ident       :probeplan.classic/intensive1
+ :db/doc         "The first intensive song"
+ :db/valueType   :db.type/ref
  :db/cardinality :db.cardinality/one}
 
-{:db/ident :probeplan.classic/intensive2
- :db/doc "The second intensive song"
- :db/valueType :db.type/ref
+{:db/ident       :probeplan.classic/intensive2
+ :db/doc         "The second intensive song"
+ :db/valueType   :db.type/ref
  :db/cardinality :db.cardinality/one}
 
-{:db/ident :probeplan.classic/others
- :db/doc "The other songs to be 'durchgespielt'"
- :db/valueType :db.type/ref
+{:db/ident       :probeplan.classic/others
+ :db/doc         "The other songs to be 'durchgespielt'"
+ :db/valueType   :db.type/ref
  :db/cardinality :db.cardinality/many}
 
-{:db/ident :probeplan.setlist/ordered-songs
- :db/doc "The other songs to be 'durchgespielt'"
- :db/valueType :db.type/ref
+{:db/ident       :probeplan.setlist/ordered-songs
+ :db/doc         "The other songs to be 'durchgespielt'"
+ :db/valueType   :db.type/ref
  :db/cardinality :db.cardinality/many}
 
 (defn gen-plan-for-gig [_db gig]
-  (let [_tx-data [{:probeplan/gig (d/ref gig)
-                   :probeplan/format :classic
+  (let [_tx-data [{:probeplan/gig                (d/ref gig)
+                   :probeplan/format             :classic
                    :probeplan.classic/intensive1 nil
                    :probeplan.classic/intensive2 nil
-                   :probeplan.classic/others []}]]))
+                   :probeplan.classic/others     []}]]))
 
 (def classic-num-intensive 2)
 (def classic-num-durchspielen 5)
@@ -62,16 +62,16 @@
 (defn gen-classic-from-last
   [_song-cycle {_intensive1 :probeplan.classic/intensive1
                 _intensive2 :probeplan.classic/intensive2
-                _others :probeplan.classic/others}])
+                _others     :probeplan.classic/others}])
 (defn gen-classic-fresh [song-cycle]
   (let [num-to-take (+ classic-num-durchspielen classic-num-durchspielen)
-        songs (take num-to-take song-cycle)
-        intensive1 (first songs)
-        intensive2 (second songs)
-        others (take classic-num-durchspielen (nthrest songs 2))]
+        songs       (take num-to-take song-cycle)
+        intensive1  (first songs)
+        intensive2  (second songs)
+        others      (take classic-num-durchspielen (nthrest songs 2))]
     {:probeplan.classic/intensive1 intensive1
      :probeplan.classic/intensive2 intensive2
-     :probeplan.classic/others others}))
+     :probeplan.classic/others     others}))
 
 (defn gen-classic [song-cycle last-plan]
   (if last-plan

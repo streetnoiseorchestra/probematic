@@ -28,27 +28,27 @@
    [:i18n/tr label]])
 
 (defn- appearance-section []
-  [:section {:id "account-appearance"
+  [:section {:id    "account-appearance"
              :class "preferences-section wa-stack wa-gap-l"}
    (section-heading :account-settings/appearance-title)
    (into
-    [:fieldset {:id "account-appearance-controller"
-                :class "appearance-choices"
+    [:fieldset {:id        "account-appearance-controller"
+                :class     "appearance-choices"
                 :data-init "window.StreetnoiseAppearance.sync()"}
      [:legend {:class "wa-visually-hidden"}
       [:i18n/tr :account-settings/appearance-title]]]
     (for [{:keys [value label icon]} appearance-options]
-      [:label {:for (str "account-appearance-" value)
+      [:label {:for   (str "account-appearance-" value)
                :class "appearance-choice"}
-       [:input {:id (str "account-appearance-" value)
-                :class "wa-visually-hidden"
-                :type "radio"
-                :name "appearance"
-                :value value
+       [:input {:id             (str "account-appearance-" value)
+                :class          "wa-visually-hidden"
+                :type           "radio"
+                :name           "appearance"
+                :value          value
                 :data-on:change "window.StreetnoiseAppearance.set(evt.target.value)"}]
        [ico/Icon {::ico/library :phosphor
-                  ::ico/name icon
-                  :aria-hidden "true"}]
+                  ::ico/name    icon
+                  :aria-hidden  "true"}]
        [:span [:i18n/tr label]]]))])
 
 (defn- preference-select
@@ -57,15 +57,15 @@
     [:div {:class "account-field wa-stack wa-gap-2xs"}
      [:label {:for id :class "wa-caption-s"}
       [:i18n/tr label]]
-     [:p {:id description-id
+     [:p {:id    description-id
           :class "preference-hint wa-caption-s wa-color-text-quiet"}
       (if (keyword? description) [:i18n/tr description] description)]
      (into
-      [:select (merge {:id id
-                       :name (name field)
-                       :form form-id
+      [:select (merge {:id               id
+                       :name             (name field)
+                       :form             form-id
                        :aria-describedby description-id
-                       :data-bind (str "account-preferences." (name field))}
+                       :data-bind        (str "account-preferences." (name field))}
                       attrs)]
       (for [{:keys [value label]} options]
         [:option {:value value :selected (= value (get state field))}
@@ -79,12 +79,12 @@
     req
     :account-settings/time-zone-description-before-profile)
    " "
-   [:a {:href (urls/link-account-profile)
+   [:a {:href  (urls/link-account-profile)
         :class "sno-no-visited"}
     [:i18n/tr :account-settings/time-zone-profile-link]]
    [:i18n/tr :account-settings/time-zone-description-before-notifications]
    " "
-   [:a {:href (urls/link-account-notifications)
+   [:a {:href  (urls/link-account-notifications)
         :class "sno-no-visited"}
     [:i18n/tr :account-settings/time-zone-notifications-link]]
    "."])
@@ -128,9 +128,9 @@
                (support/current-member-id req)
                page-state)]
     (support/standard-page
-     {:title title
+     {:title   title
       :actions []}
-     [:div {:class "account-preferences wa-stack wa-gap-xl"
+     [:div {:class        "account-preferences wa-stack wa-gap-xl"
             :data-signals (d*/->signals {:account-preferences state})}
       (appearance-section)
       [:form {:id             form-id
@@ -139,12 +139,12 @@
               :data-action    (d*/act req ::actions/save-date-time-preferences)
               :data-on:submit "evt.preventDefault();"}
        (date-time-section req state)
-       [button/Button {:id "account-preferences-save"
-                       :class "preferences-save"
+       [button/Button {:id         "account-preferences-save"
+                       :class      "preferences-save"
                        :appearance "filled"
-                       :variant "brand"
-                       :type "submit"
-                       :form form-id}
+                       :variant    "brand"
+                       :type       "submit"
+                       :form       form-id}
         [:i18n/tr :account-settings/preferences-save]]]])))
 
 (d*/refresh-all!)

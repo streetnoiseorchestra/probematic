@@ -91,7 +91,7 @@
 
 (defn confirm-changes-action
   [{:keys [current-member-id db tr]} signals]
-  (let [params (normalize-form signals)
+  (let [params  (normalize-form signals)
         context (policy-context db (:policy-id params))]
     (if-not context
       (failure-effects params {:_top {:error (tr [:error/not-found-title])}})

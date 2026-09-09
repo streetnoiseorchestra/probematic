@@ -42,16 +42,16 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "stored-avatar")
-                upload (bfs/create-temp-file
-                        {:prefix "probematic.avatar-upload."
-                         :suffix ".jpg"})]
+                upload                   (bfs/create-temp-file
+                                          {:prefix "probematic.avatar-upload."
+                                           :suffix ".jpg"})]
             (try
               (bfs/copy jpeg-path upload {:replace-existing true})
               (let [{:keys [image-id image-tempid renditions tx-data]}
                     (store-avatar!
                      {:filestore store}
                      {:file-name "portrait.jpg"
-                      :file (bfs/file upload)
+                      :file      (bfs/file upload)
                       :mime-type "image/jpeg"})]
                 (is (uuid? image-id))
                 (is (= #{40 80 160 320}
@@ -64,7 +64,7 @@
                 @(d/transact
                   conn
                   (conj (vec tx-data)
-                        {:db/id [:member/member-id member-id]
+                        {:db/id         [:member/member-id member-id]
                          :member/avatar image-tempid}))
                 (let [avatar (d/pull
                               (d/db conn)

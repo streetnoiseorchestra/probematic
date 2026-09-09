@@ -43,8 +43,8 @@
   ([cell-id resources input dispatches expected-dispatch]
    (myc.dev/test-cell
     cell-id
-    (cond-> {:resources resources
-             :input input
+    (cond-> {:resources      resources
+             :input          input
              :malli/registry domain/registry}
       dispatches
       (assoc :dispatches dispatches
@@ -56,19 +56,19 @@
 
 (defn resources [conn]
   {:datomic-conn conn
-   :clock (constantly transitioned-at)})
+   :clock        (constantly transitioned-at)})
 
 (defn seed-invitation!
   [conn member-id {:keys [status generation code expiry keycloak-id]}]
   @(d/transact
     conn
-    [(cond-> {:member/member-id member-id
-              :member/name "Alice Example"
-              :member/email "alice@example.com"
-              :member/username "alice.example"
-              :member/invite-status status
+    [(cond-> {:member/member-id         member-id
+              :member/name              "Alice Example"
+              :member/email             "alice@example.com"
+              :member/username          "alice.example"
+              :member/invite-status     status
               :member/invite-generation generation
-              :member/invite-status-at issued-at}
+              :member/invite-status-at  issued-at}
        code (assoc :member/invite-code code)
        expiry (assoc :member/invite-expires-at expiry)
        keycloak-id (assoc :member/keycloak-id keycloak-id))]))
@@ -76,7 +76,7 @@
 (deftest workflow-invite-cells-are-registered-with-local-registry-schemas-test
   (doseq [cell-id (invite-cell-ids)]
     (testing cell-id
-      (let [spec (cell/get-cell cell-id)
+      (let [spec     (cell/get-cell cell-id)
             compiled (myc.schema/compile-cell-schemas
                       spec
                       {:malli/registry domain/registry})]
@@ -118,37 +118,37 @@
                 (run-cell
                  :member-invite/read-acceptance-state
                  {:datomic-conn conn}
-                 {:member/member-id member-id
+                 {:member/member-id                  member-id
                   :member-invite/resolved-generation resolved-generation
-                  :member-invite/requested-at requested-at
-                  :keycloak/group-name "Mitglieder"}))}))]
+                  :member-invite/requested-at        requested-at
+                  :keycloak/group-name               "Mitglieder"}))}))]
     (let [configure (read-context
                      "invite-cell-read-configure"
                      {:status creating :generation 3}
                      3)
-          activate (read-context
-                    "invite-cell-read-activate"
-                    {:status activating
-                     :generation 4
-                     :keycloak-id "linked-user"}
-                    4)
-          cleanup (read-context
-                   "invite-cell-read-cleanup"
-                   {:status compensating :generation 4}
-                   4)
-          stale (read-context
-                 "invite-cell-read-stale"
-                 {:status creating :generation 3}
-                 2)]
+          activate  (read-context
+                     "invite-cell-read-activate"
+                     {:status      activating
+                      :generation  4
+                      :keycloak-id "linked-user"}
+                     4)
+          cleanup   (read-context
+                     "invite-cell-read-cleanup"
+                     {:status compensating :generation 4}
+                     4)
+          stale     (read-context
+                     "invite-cell-read-stale"
+                     {:status creating :generation 3}
+                     2)]
       (is (= {:configure
               {:member-invite/state {:status creating :generation 3}
                :keycloak/user-attributes
                (domain/attempt-markers (:member-id configure) 3)}
               :activate
-              {:member-invite/state {:status activating
-                                     :generation 4
+              {:member-invite/state {:status      activating
+                                     :generation  4
                                      :keycloak-id "linked-user"}
-               :keycloak/user-id "linked-user"}
+               :keycloak/user-id    "linked-user"}
               :cleanup
               {:member-invite/state {:status compensating :generation 4}
                :keycloak/user-attributes
@@ -156,29 +156,29 @@
               :stale
               {:member-invite/state {:status creating :generation 3}}}
              {:configure (:output configure)
-              :activate (:output activate)
-              :cleanup (:output cleanup)
-              :stale (:output stale)})))))
+              :activate  (:output activate)
+              :cleanup   (:output cleanup)
+              :stale     (:output stale)})))))
 
 (deftest create-invited-member-cell-generates-values-and-writes-one-transaction-test
   (let [{:keys [conn]} (tc/new-system "invite-cell-create-member")
-        member-id (random-uuid)
-        ledger-id (random-uuid)
-        generated-ids (atom [member-id ledger-id])
-        member-invite {:name "Alice Example"
-                       :nick "alice"
-                       :email "alice@example.com"
-                       :username "alice.example"
-                       :phone "+43677123456"
-                       :section-name "Sopran"
-                       :active true}]
+        member-id      (random-uuid)
+        ledger-id      (random-uuid)
+        generated-ids  (atom [member-id ledger-id])
+        member-invite  {:name         "Alice Example"
+                        :nick         "alice"
+                        :email        "alice@example.com"
+                        :username     "alice.example"
+                        :phone        "+43677123456"
+                        :section-name "Sopran"
+                        :active       true}]
     @(d/transact conn [{:section/name "Sopran"}])
     (let [result
           (run-cell
            :member-invite/create-invited-member!
            {:datomic-conn conn
-            :clock (constantly issued-at)
-            :random-code (constantly "new-code")
+            :clock        (constantly issued-at)
+            :random-code  (constantly "new-code")
             :random-uuid
             (fn []
               (let [generated-id (first @generated-ids)]
@@ -189,14 +189,14 @@
             [:conflict #(= :conflict (:member-invite/persist-status %))]]
            :created)]
       (is (= {:member-invite/persist-status :created
-              :member-invite/code "new-code"
+              :member-invite/code           "new-code"
               :member-invite/member
               {:member/member-id member-id
-               :member/name "Alice Example"
-               :member/email "alice@example.com"
-               :member/username "alice.example"}
+               :member/name      "Alice Example"
+               :member/email     "alice@example.com"
+               :member/username  "alice.example"}
               :member-invite/state
-              {:status pending
+              {:status     pending
                :generation 1
                :expires-at expires-at}}
              (output result))))
@@ -209,22 +209,22 @@
                :member/member-id)))))
 
 (deftest queue-invitation-email-cell-builds-and-queues-the-message-test
-  (let [queued (atom [])
+  (let [queued    (atom [])
         member-id (random-uuid)
-        data {:member-invite/code "email-code"
-              :member-invite/member
-              {:member/member-id member-id
-               :member/name "Alice Example"
-               :member/email "alice@example.com"
-               :member/username "alice.example"}}
+        data      {:member-invite/code "email-code"
+                   :member-invite/member
+                   {:member/member-id member-id
+                    :member/name      "Alice Example"
+                    :member/email     "alice@example.com"
+                    :member/username  "alice.example"}}
         result
         (run-cell
          :member-invite/queue-invitation-email!
          {:build-invitation-email
           (fn [member code]
-            {:to (:member/email member)
+            {:to   (:member/email member)
              :code code})
-          :queue-email! #(swap! queued conj %)}
+          :queue-email!           #(swap! queued conj %)}
          data)]
     (is (= {:member-invite/email-queued? true}
            (output result)))
@@ -247,30 +247,30 @@
              :member-invite/check-revoke
              {}
              {:member-invite/resolved-generation 3
-              :member-invite/state state}))))))
+              :member-invite/state               state}))))))
 
 (deftest transition-cells-move-one-invitation-through-acceptance-test
   (let [{:keys [conn member-id]} (tc/new-system "invite-cell-acceptance")]
     (seed-invitation!
      conn
      member-id
-     {:status pending
+     {:status     pending
       :generation 1
-      :code "accept-code"
-      :expiry expires-at})
-    (let [profile {:username "alice.example"
-                   :email "alice@example.com"
-                   :first-name "Alice Example"}
+      :code       "accept-code"
+      :expiry     expires-at})
+    (let [profile      {:username   "alice.example"
+                        :email      "alice@example.com"
+                        :first-name "Alice Example"}
           claim-output
           (output
            (run-cell
             :member-invite/claim!
             (resources conn)
-            {:member/member-id member-id
+            {:member/member-id           member-id
              :member-invite/requested-at requested-at
              :member-invite/state
              (domain/invitation-state (d/db conn) member-id)}))
-          create-input (merge {:member/member-id member-id
+          create-input (merge {:member/member-id               member-id
                                :member-invite/keycloak-profile profile}
                               claim-output)
           create-output
@@ -301,46 +301,46 @@
             (merge {:member/member-id member-id
                     :keycloak/user-id "keycloak-user"}
                    link-output)))]
-      (is (= {:member-invite/claim-status :claimed
+      (is (= {:member-invite/claim-status       :claimed
               :member-invite/attempt-generation 2
               :member-invite/state
-              {:status accepting
+              {:status     accepting
                :generation 2
                :expires-at expires-at}}
              claim-output))
-      (is (= {:member-invite/create-status :begun
-              :member-invite/attempt-generation 3
-              :member-invite/expected-status creating
+      (is (= {:member-invite/create-status       :begun
+              :member-invite/attempt-generation  3
+              :member-invite/expected-status     creating
               :member-invite/expected-generation 3
               :member-invite/state
-              {:status creating
+              {:status     creating
                :generation 3
                :expires-at expires-at}
               :keycloak/user-attributes
               (domain/attempt-markers member-id 3)
               :keycloak/user-spec
-              {:username "alice.example"
-               :email "alice@example.com"
-               :first-name "Alice Example"
-               :enabled? false
+              {:username        "alice.example"
+               :email           "alice@example.com"
+               :first-name      "Alice Example"
+               :enabled?        false
                :email-verified? true
-               :attributes (domain/attempt-markers member-id 3)}}
+               :attributes      (domain/attempt-markers member-id 3)}}
              create-output))
       (is (= {:member-invite/create-status :conflict}
              create-conflict-output))
-      (is (= {:member-invite/link-status :linked
+      (is (= {:member-invite/link-status           :linked
               :member-invite/activation-generation 4
               :member-invite/state
-              {:status activating
-               :generation 4
-               :expires-at expires-at
+              {:status      activating
+               :generation  4
+               :expires-at  expires-at
                :keycloak-id "keycloak-user"}
-              :keycloak/enabled? true}
+              :keycloak/enabled?                   true}
              link-output))
       (is (= {:member-invite/finalize-status :finalized
               :member-invite/state
-              {:status accepted
-               :generation 5
+              {:status      accepted
+               :generation  5
                :keycloak-id "keycloak-user"}}
              finalize-output)))))
 
@@ -349,10 +349,10 @@
     (seed-invitation!
      conn
      member-id
-     {:status creating
+     {:status     creating
       :generation 3
-      :code "cleanup-code"
-      :expiry expires-at})
+      :code       "cleanup-code"
+      :expiry     expires-at})
     (let [compensation-output
           (output
            (run-cell
@@ -368,16 +368,16 @@
             (resources conn)
             (merge {:member/member-id member-id}
                    compensation-output)))]
-      (is (= {:member-invite/compensation-status :begun
+      (is (= {:member-invite/compensation-status     :begun
               :member-invite/compensation-generation 4
               :member-invite/state
-              {:status compensating
+              {:status     compensating
                :generation 4
                :expires-at expires-at}}
              compensation-output))
       (is (= {:member-invite/release-status :released
               :member-invite/state
-              {:status pending
+              {:status     pending
                :generation 5
                :expires-at expires-at}}
              release-output)))))
@@ -387,17 +387,17 @@
     (seed-invitation!
      conn
      member-id
-     {:status pending
+     {:status     pending
       :generation 1
-      :code "old-code"
-      :expiry expires-at})
+      :code       "old-code"
+      :expiry     expires-at})
     (let [reissue-output
           (output
            (run-cell
             :member-invite/reissue!
             {:datomic-conn conn
-             :clock (constantly issued-at)
-             :random-code (constantly "new-code")}
+             :clock        (constantly issued-at)
+             :random-code  (constantly "new-code")}
             {:member/member-id member-id
              :member-invite/state
              (domain/invitation-state (d/db conn) member-id)}))]
@@ -420,35 +420,35 @@
              revoke-output)))))
 
 (deftest keycloak-check-cells-return-domain-decisions-test
-  (let [member-id (random-uuid)
-        attributes (domain/attempt-markers member-id 3)
-        disabled-user {:id "user-1"
-                       :username "alice.example"
-                       :email "alice@example.com"
-                       :enabled? false
+  (let [member-id     (random-uuid)
+        attributes    (domain/attempt-markers member-id 3)
+        disabled-user {:id         "user-1"
+                       :username   "alice.example"
+                       :email      "alice@example.com"
+                       :enabled?   false
                        :attributes attributes}]
     (is (= {:member-invite/user-step :configure}
            (output
             (run-cell
              :member-invite/check-creating-user
              {}
-             {:member/member-id member-id
+             {:member/member-id    member-id
               :member-invite/state {:status creating :generation 3}
-              :keycloak/user disabled-user}))))
+              :keycloak/user       disabled-user}))))
     (is (= {:member-invite/user-step :enable
-            :keycloak/enabled? true}
+            :keycloak/enabled?       true}
            (output
             (run-cell
              :member-invite/check-activating-user
              {}
-             {:member/member-id member-id
+             {:member/member-id    member-id
               :member-invite/state {:status activating :generation 4}
-              :keycloak/user disabled-user}))))
+              :keycloak/user       disabled-user}))))
     (is (= {:member-invite/user-step :delete}
            (output
             (run-cell
              :member-invite/check-compensation-user
              {}
-             {:member/member-id member-id
+             {:member/member-id    member-id
               :member-invite/state {:status compensating :generation 4}
-              :keycloak/user disabled-user}))))))
+              :keycloak/user       disabled-user}))))))

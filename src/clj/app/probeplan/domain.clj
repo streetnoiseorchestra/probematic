@@ -63,25 +63,25 @@
         num-fixed         4
         probe-dates       (mapv t/date (take num-probes (drop num-fixed (pp/wednesday-sequence (t/date)))))
         songs             (partition num-songs-p-probe (take num-songs-needed (cycle all-songs)))
-        fixed-probes (->> (take num-fixed future-probes)
-                          (map-indexed (fn [idx gig]
-                                         (-> gig
-                                             (set/rename-keys {:gig/date   :date
-                                                               :gig/gig-id :gig-id})
-                                             (select-keys [:date :gig-id :songs])
-                                             (assoc :fixed? true)
-                                             (assoc :idx idx)
-                                             (assoc :num-gigs 0)
-                                             (assoc :last-fixed? (= (inc idx)  num-fixed))))))
-        future-probes (map (fn [idx songs date] {:songs       songs
-                                                 :date        date
-                                                 :idx         (+ num-fixed idx)
-                                                 :last-fixed? false
-                                                 :num-gigs    (rand-int 3)
-                                                 :fixed?      false})
-                           (range) songs probe-dates)
+        fixed-probes      (->> (take num-fixed future-probes)
+                               (map-indexed (fn [idx gig]
+                                              (-> gig
+                                                  (set/rename-keys {:gig/date   :date
+                                                                    :gig/gig-id :gig-id})
+                                                  (select-keys [:date :gig-id :songs])
+                                                  (assoc :fixed? true)
+                                                  (assoc :idx idx)
+                                                  (assoc :num-gigs 0)
+                                                  (assoc :last-fixed? (= (inc idx)  num-fixed))))))
+        future-probes     (map (fn [idx songs date] {:songs       songs
+                                                     :date        date
+                                                     :idx         (+ num-fixed idx)
+                                                     :last-fixed? false
+                                                     :num-gigs    (rand-int 3)
+                                                     :fixed?      false})
+                               (range) songs probe-dates)
 
-        all-probes (concat fixed-probes future-probes)]
+        all-probes        (concat fixed-probes future-probes)]
     (assert (every? (partial s/valid? ProbeplanTableRow) all-probes))
     all-probes))
 
@@ -119,14 +119,14 @@
     (:days-since play)))
 
 (defn calc-play-stat [window-cutoff {:keys [plays] :as p}]
-  (let [last-play (first plays)
-        reversed (reverse plays)
-        is-gig? #(= :gig.type/gig (:gig/gig-type %))
-        is-probe? #(#{:gig.type/probe :gig.type/extra-probe} (:gig/gig-type %))
-        is-intensive? #(= :play-emphasis/intensiv (:played/emphasis %))
-        is-good? #(= :play-rating/good (:played/rating %))
-        is-bad? #(= :play-rating/bad (:played/rating %))
-        is-ok? #(= :play-rating/ok (:played/rating %))
+  (let [last-play      (first plays)
+        reversed       (reverse plays)
+        is-gig?        #(= :gig.type/gig (:gig/gig-type %))
+        is-probe?      #(#{:gig.type/probe :gig.type/extra-probe} (:gig/gig-type %))
+        is-intensive?  #(= :play-emphasis/intensiv (:played/emphasis %))
+        is-good?       #(= :play-rating/good (:played/rating %))
+        is-bad?        #(= :play-rating/bad (:played/rating %))
+        is-ok?         #(= :play-rating/ok (:played/rating %))
         windowed-plays (filter #(t/>= (:gig/date %) window-cutoff) plays)]
     (-> p
         (assoc :last-performance (:gig/gig-id (m/find-first is-gig? plays)))

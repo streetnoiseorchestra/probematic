@@ -93,7 +93,7 @@
 
                                  [])
                                ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-                               :aria-label                    [:i18n/tr :polls/detail-toolbar-label]}]))
+                               :aria-label                   [:i18n/tr :polls/detail-toolbar-label]}]))
 
 (defn- page-header [poll]
   [page-header/PageHeader

@@ -9,9 +9,9 @@
 (deftest index-page-data-test
   (testing "groups running and past polls and enriches them with counts"
     (let [{:keys [conn member-id]} (tc/new-system "poll-index-query")
-          open                    (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/open})
-          draft                   (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})
-          closed                  (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/closed})]
+          open                     (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/open})
+          draft                    (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})
+          closed                   (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/closed})]
       (pts/seed-vote! conn (:poll-id open) member-id (first (:option-ids open)))
       (let [{:keys [running-polls past-polls]} (queries/index-page-data (d/db conn))]
         (is (= {:running-statuses [:poll.status/open :poll.status/draft]
@@ -33,25 +33,25 @@
 (deftest retrieve-poll-time-zone-test
   (testing "returns close times as Europe/Vienna local datetimes"
     (let [{:keys [conn member-id]} (tc/new-system "poll-retrieve-query")
-          seeded                  (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})
-          poll                    (queries/retrieve-poll (d/db conn) (:poll-id seeded))]
+          seeded                   (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})
+          poll                     (queries/retrieve-poll (d/db conn) (:poll-id seeded))]
       (is (= pts/default-closes-at
              (:poll/closes-at poll))))))
 
 (deftest unanswered-open-polls-test
   (let [{:keys [conn member-id]} (tc/new-system "poll-unanswered-open")
-        answered                  (pts/seed-poll!
-                                   conn member-id
-                                   {:poll/poll-status :poll.status/open
-                                    :poll/title       "Already answered"})
-        unanswered                (pts/seed-poll!
-                                   conn member-id
-                                   {:poll/poll-status :poll.status/open
-                                    :poll/title       "Needs an answer"})
-        _draft                    (pts/seed-poll!
-                                   conn member-id
-                                   {:poll/poll-status :poll.status/draft
-                                    :poll/title       "Not open"})]
+        answered                 (pts/seed-poll!
+                                  conn member-id
+                                  {:poll/poll-status :poll.status/open
+                                   :poll/title       "Already answered"})
+        unanswered               (pts/seed-poll!
+                                  conn member-id
+                                  {:poll/poll-status :poll.status/open
+                                   :poll/title       "Needs an answer"})
+        _draft                   (pts/seed-poll!
+                                  conn member-id
+                                  {:poll/poll-status :poll.status/draft
+                                   :poll/title       "Not open"})]
     (pts/seed-vote! conn
                     (:poll-id answered)
                     member-id

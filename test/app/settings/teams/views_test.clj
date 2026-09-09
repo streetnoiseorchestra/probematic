@@ -54,7 +54,7 @@
       (is (= {:width             :standard
               :toolbar-label     :band-settings/toolbar-label
               :breadcrumbs       [:band-settings/title :band-settings/team-title]
-              :mobile            {:href "/band-settings"
+              :mobile            {:href  "/band-settings"
                                   :label :band-settings/title}
               :actions           []
               :overflow          []

@@ -9,15 +9,15 @@
    [java.util Date]))
 
 (deftest table-query-parameters-test
-  (is (= {:search "Casey & Co" :filter-preset "all" :sort-field "email"
-          :sort-order "desc" :page 2 :page-size 10}
+  (is (= {:search     "Casey & Co" :filter-preset "all" :sort-field "email"
+          :sort-order "desc"       :page          2     :page-size  10}
          (app.members.queries/normalize-page-state
-          {"search" "Casey & Co" "filter-preset" "all" "sort-field" "email"
-           "sort-order" "desc" "page" "2" "page-size" "10" "unrelated" "ignored"})))
+          {"search"     "Casey & Co" "filter-preset" "all" "sort-field" "email"
+           "sort-order" "desc"       "page"          "2"   "page-size"  "10"    "unrelated" "ignored"})))
   (is (= app.members.queries/default-page-state
          (app.members.queries/normalize-page-state
-          {:search ["invalid"] :filter-preset "bad" :sort-field "bad"
-           :sort-order "bad" :page "-1" :page-size "20"})))
+          {:search     ["invalid"] :filter-preset "bad" :sort-field "bad"
+           :sort-order "bad"       :page          "-1"  :page-size  "20"})))
   (doseq [size [10 30 50 100]]
     (is (= size (:page-size (app.members.queries/normalize-page-state {"page-size" (str size)}))))))
 
@@ -25,17 +25,17 @@
   (testing "each page size preserves row order across page boundaries"
     (doseq [size [10 30 50 100]]
       (let [rows (vec (range (inc size)))]
-        (is (= {:members (subvec rows 0 size) :page 1 :page-size size
-                :total-results (inc size) :range-start 1 :range-end size
-                :has-prev? false :has-next? true}
+        (is (= {:members       (subvec rows 0 size) :page        1    :page-size size
+                :total-results (inc size)           :range-start 1    :range-end size
+                :has-prev?     false                :has-next?   true}
                (app.members.queries/paginate-members {:page-size size} rows)))
-        (is (= {:members [size] :page 2 :page-size size
+        (is (= {:members       [size]     :page        2          :page-size size
                 :total-results (inc size) :range-start (inc size) :range-end (inc size)
-                :has-prev? true :has-next? false}
+                :has-prev?     true       :has-next?   false}
                (app.members.queries/paginate-members {:page-size size :page 999} rows))))))
   (testing "empty results and invalid parameters are safe"
-    (is (= {:members [] :page 1 :page-size 30 :total-results 0
-            :range-start 0 :range-end 0 :has-prev? false :has-next? false}
+    (is (= {:members     [] :page      1 :page-size 30    :total-results 0
+            :range-start 0  :range-end 0 :has-prev? false :has-next?     false}
            (app.members.queries/paginate-members {:page -1 :page-size "bad"} [])))))
 
 (def pending :member.invite.status/pending)
@@ -60,31 +60,31 @@
   [conn {:keys [member-id name code expires-at status generation keycloak-id]}]
   @(d/transact
     conn
-    [(cond-> {:member/member-id member-id
-              :member/name name
-              :member/email (str member-id "@example.test")
-              :member/username (str "user-" member-id)
-              :member/invite-code code
+    [(cond-> {:member/member-id         member-id
+              :member/name              name
+              :member/email             (str member-id "@example.test")
+              :member/username          (str "user-" member-id)
+              :member/invite-code       code
               :member/invite-expires-at expires-at
-              :member/invite-status status
+              :member/invite-status     status
               :member/invite-generation generation
-              :member/invite-status-at before-now}
+              :member/invite-status-at  before-now}
        keycloak-id (assoc :member/keycloak-id keycloak-id))]))
 
 (deftest invitation-state-by-code-test
   (if-let [invitation-state-by-code (query-fn 'invitation-state-by-code)]
     (let [{:keys [conn]} (tc/new-system "invitation-state-by-code")
-          member-id (random-uuid)]
-      (seed-invitation! conn {:member-id member-id
-                              :name "Alice"
-                              :code "state-code"
+          member-id      (random-uuid)]
+      (seed-invitation! conn {:member-id  member-id
+                              :name       "Alice"
+                              :code       "state-code"
                               :expires-at before-now
-                              :status pending
+                              :status     pending
                               :generation 7})
-      (is (= {:member/member-id member-id
-              :member/invite-code "state-code"
+      (is (= {:member/member-id         member-id
+              :member/invite-code       "state-code"
               :member/invite-expires-at before-now
-              :member/invite-status pending
+              :member/invite-status     pending
               :member/invite-generation 7}
              (invitation-state-by-code (d/db conn) "state-code")))
       (is (nil? (invitation-state-by-code (d/db conn) "missing")))
@@ -94,63 +94,63 @@
 
 (deftest acceptance-invitation-test
   (if-let [acceptance-invitation (query-fn 'acceptance-invitation)]
-    (let [{:keys [conn]} (tc/new-system "acceptance-invitation")
-          pending-id (random-uuid)
-          equal-id (random-uuid)
-          expired-id (random-uuid)
-          accepting-id (random-uuid)
-          creating-id (random-uuid)
-          activating-id (random-uuid)
+    (let [{:keys [conn]}  (tc/new-system "acceptance-invitation")
+          pending-id      (random-uuid)
+          equal-id        (random-uuid)
+          expired-id      (random-uuid)
+          accepting-id    (random-uuid)
+          creating-id     (random-uuid)
+          activating-id   (random-uuid)
           compensating-id (random-uuid)]
-      (doseq [invitation [{:member-id pending-id
-                           :name "Pending"
-                           :code "pending"
+      (doseq [invitation [{:member-id  pending-id
+                           :name       "Pending"
+                           :code       "pending"
                            :expires-at after-now
-                           :status pending
+                           :status     pending
                            :generation 3}
-                          {:member-id equal-id
-                           :name "Equal"
-                           :code "equal"
+                          {:member-id  equal-id
+                           :name       "Equal"
+                           :code       "equal"
                            :expires-at now
-                           :status pending
+                           :status     pending
                            :generation 4}
-                          {:member-id expired-id
-                           :name "Expired"
-                           :code "expired"
+                          {:member-id  expired-id
+                           :name       "Expired"
+                           :code       "expired"
                            :expires-at before-now
-                           :status pending
+                           :status     pending
                            :generation 5}
-                          {:member-id accepting-id
-                           :name "Accepting"
-                           :code "accepting"
+                          {:member-id  accepting-id
+                           :name       "Accepting"
+                           :code       "accepting"
                            :expires-at before-now
-                           :status accepting
+                           :status     accepting
                            :generation 6}
-                          {:member-id creating-id
-                           :name "Creating"
-                           :code "creating"
+                          {:member-id  creating-id
+                           :name       "Creating"
+                           :code       "creating"
                            :expires-at before-now
-                           :status creating
+                           :status     creating
                            :generation 7}
-                          {:member-id activating-id
-                           :name "Activating"
-                           :code "activating"
-                           :expires-at before-now
-                           :status activating
-                           :generation 8
+                          {:member-id   activating-id
+                           :name        "Activating"
+                           :code        "activating"
+                           :expires-at  before-now
+                           :status      activating
+                           :generation  8
                            :keycloak-id "kc-activating"}
-                          {:member-id compensating-id
-                           :name "Compensating"
-                           :code "compensating"
+                          {:member-id  compensating-id
+                           :name       "Compensating"
+                           :code       "compensating"
                            :expires-at before-now
-                           :status compensating
+                           :status     compensating
                            :generation 9}]]
         (seed-invitation! conn invitation))
 
       (testing "a pending invitation must be strictly unexpired"
-        (is (= {:member-id pending-id
-                :invite-code "pending"
-                :invite-status pending
+        (is (= {:member-id         pending-id
+                :invite-code       "pending"
+                :invite-status     pending
                 :invite-generation 3}
                (-> (acceptance-invitation (d/db conn) now "pending")
                    (select-keys [:member-id
@@ -176,9 +176,9 @@
 
       (testing "the HTTP projection contains only the member fields account setup needs"
         (is (= {:member/member-id pending-id
-                :member/name "Pending"
-                :member/email (str pending-id "@example.test")
-                :member/username (str "user-" pending-id)}
+                :member/name      "Pending"
+                :member/email     (str pending-id "@example.test")
+                :member/username  (str "user-" pending-id)}
                (:member (acceptance-invitation (d/db conn) now "pending")))))
 
       (is (nil? (acceptance-invitation (d/db conn) now "")))
@@ -191,11 +191,11 @@
       (doseq [[status code]
               [[accepted "accepted-inconsistent-code"]
                [revoked "revoked-inconsistent-code"]]]
-        (seed-invitation! conn {:member-id (random-uuid)
-                                :name (name status)
-                                :code code
+        (seed-invitation! conn {:member-id  (random-uuid)
+                                :name       (name status)
+                                :code       code
                                 :expires-at after-now
-                                :status status
+                                :status     status
                                 :generation 9}))
       (is (nil? (acceptance-invitation (d/db conn) now "accepted-inconsistent-code")))
       (is (nil? (acceptance-invitation (d/db conn) now "revoked-inconsistent-code"))))
@@ -206,37 +206,37 @@
            (some-> (query-fn 'members-with-pending-invites)
                    (#(when (supports-arity? % 2) %)))]
     (let [{:keys [conn]} (tc/new-system "members-with-pending-invites")
-          open-id    (random-uuid)
-          expired-id (random-uuid)]
-      (doseq [invitation [{:member-id open-id
-                           :name "Open"
-                           :code "open"
+          open-id        (random-uuid)
+          expired-id     (random-uuid)]
+      (doseq [invitation [{:member-id  open-id
+                           :name       "Open"
+                           :code       "open"
                            :expires-at after-now
-                           :status pending
+                           :status     pending
                            :generation 1}
-                          {:member-id expired-id
-                           :name "Expired"
-                           :code "expired-list"
+                          {:member-id  expired-id
+                           :name       "Expired"
+                           :code       "expired-list"
                            :expires-at before-now
-                           :status pending
+                           :status     pending
                            :generation 1}
-                          {:member-id (random-uuid)
-                           :name "Accepting"
-                           :code "accepting-list"
+                          {:member-id  (random-uuid)
+                           :name       "Accepting"
+                           :code       "accepting-list"
                            :expires-at after-now
-                           :status accepting
+                           :status     accepting
                            :generation 2}]]
         (seed-invitation! conn invitation))
-      (is (= [{:member/member-id expired-id
-               :member/name "Expired"
-               :member/email (str expired-id "@example.test")
+      (is (= [{:member/member-id   expired-id
+               :member/name        "Expired"
+               :member/email       (str expired-id "@example.test")
                :member/invite-code "expired-list"
-               :invite-expired? true}
-              {:member/member-id open-id
-               :member/name "Open"
-               :member/email (str open-id "@example.test")
+               :invite-expired?    true}
+              {:member/member-id   open-id
+               :member/name        "Open"
+               :member/email       (str open-id "@example.test")
                :member/invite-code "open"
-               :invite-expired? false}]
+               :invite-expired?    false}]
              (mapv #(select-keys % [:member/member-id
                                     :member/name
                                     :member/email
@@ -246,17 +246,17 @@
     (is false "app.members.queries/members-with-pending-invites has no Datomic arity")))
 
 (deftest revoked-invitation-queries-do-not-expose-a-bearer-test
-  (let [{:keys [conn]} (tc/new-system "revoked-invitation-queries")
-        revoked-id     (random-uuid)
+  (let [{:keys [conn]}    (tc/new-system "revoked-invitation-queries")
+        revoked-id        (random-uuid)
         linked-revoked-id (random-uuid)
-        pending-id     (random-uuid)
-        revoked-row    {:member/member-id         revoked-id
-                        :member/name              "Revoked"
-                        :member/email             "revoked@example.test"
-                        :member/username          "revoked"
-                        :member/invite-status     revoked
-                        :member/invite-generation 5
-                        :member/invite-status-at  before-now}
+        pending-id        (random-uuid)
+        revoked-row       {:member/member-id         revoked-id
+                           :member/name              "Revoked"
+                           :member/email             "revoked@example.test"
+                           :member/username          "revoked"
+                           :member/invite-status     revoked
+                           :member/invite-generation 5
+                           :member/invite-status-at  before-now}
         linked-revoked-row
         {:member/member-id         linked-revoked-id
          :member/name              "Linked revoked"
@@ -266,15 +266,15 @@
          :member/invite-status     revoked
          :member/invite-generation 7
          :member/invite-status-at  before-now}
-        pending-row    {:member/member-id         pending-id
-                        :member/name              "Pending"
-                        :member/email             "pending@example.test"
-                        :member/username          "pending"
-                        :member/invite-code       "pending-code"
-                        :member/invite-expires-at after-now
-                        :member/invite-status     pending
-                        :member/invite-generation 3
-                        :member/invite-status-at  before-now}]
+        pending-row       {:member/member-id         pending-id
+                           :member/name              "Pending"
+                           :member/email             "pending@example.test"
+                           :member/username          "pending"
+                           :member/invite-code       "pending-code"
+                           :member/invite-expires-at after-now
+                           :member/invite-status     pending
+                           :member/invite-generation 3
+                           :member/invite-status-at  before-now}]
     @(d/transact conn [revoked-row linked-revoked-row pending-row])
     (if-let [revoked-invitation-by-member-id
              (query-fn 'revoked-invitation-by-member-id)]

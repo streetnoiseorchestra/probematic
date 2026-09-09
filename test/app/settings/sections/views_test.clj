@@ -67,7 +67,7 @@
               :toolbar-label     :band-settings/toolbar-label
               :breadcrumbs       [:band-settings/title
                                   :band-settings/section-title]
-              :mobile            {:href "/band-settings"
+              :mobile            {:href  "/band-settings"
                                   :label :band-settings/title}
               :actions           []
               :overflow          []

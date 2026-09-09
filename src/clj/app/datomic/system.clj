@@ -33,7 +33,7 @@
       (throw
        (ex-info
         "Timed out waiting for Datomic schema synchronization"
-        {:phase phase
+        {:phase      phase
          :timeout-ms schema-sync-timeout-ms})))
     result))
 

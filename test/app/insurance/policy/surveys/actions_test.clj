@@ -38,13 +38,13 @@
 
 (deftest start-survey-action-snapshots-current-members
   (let [{:keys [conn policy-id state]} (fixture)
-        start-action (some-> (get actions/actions ::actions/start-survey) deref)]
+        start-action                   (some-> (get actions/actions ::actions/start-survey) deref)]
     (is (fn? start-action))
     (when start-action
-      (let [effects (start-action
-                     state
-                     (survey-signals policy-id
-                                     {:closesAt "2026-04-20T20:00"}))
+      (let [effects     (start-action
+                         state
+                         (survey-signals policy-id
+                                         {:closesAt "2026-04-20T20:00"}))
             [_ tx-data] (first effects)]
         (is (= {:effect             :db/transact
                 :response-count     2
@@ -68,10 +68,10 @@
         (let [survey (first (q/surveys-for-policy
                              (d/db conn)
                              (q/retrieve-policy (d/db conn) policy-id)))]
-          (is (= {:name-present? false
+          (is (= {:name-present?  false
                   :response-count 2
                   :report-counts  [0 1]}
-                 {:name-present? (contains? survey :insurance.survey/survey-name)
+                 {:name-present?  (contains? survey :insurance.survey/survey-name)
                   :response-count (count (:insurance.survey/responses survey))
                   :report-counts  (sort
                                    (map
@@ -81,16 +81,16 @@
 
 (deftest active-survey-on-another-policy-blocks-start
   (let [{:keys [conn coverage-id member-id policy-id state]} (fixture)
-        other-policy-id (insurance-test/seed-policy! conn (random-uuid))
-        _ (insurance-test/seed-member-survey!
-           conn
-           {:coverage-ids [coverage-id]
-            :member-id    member-id
-            :policy-id    policy-id})
-        effects (actions/start-survey-action
-                 (assoc state :db (d/db conn))
-                 (survey-signals other-policy-id
-                                 {:closesAt "2026-04-20T20:00"}))]
+        other-policy-id                                      (insurance-test/seed-policy! conn (random-uuid))
+        _                                                    (insurance-test/seed-member-survey!
+                                                              conn
+                                                              {:coverage-ids [coverage-id]
+                                                               :member-id    member-id
+                                                               :policy-id    policy-id})
+        effects                                              (actions/start-survey-action
+                                                              (assoc state :db (d/db conn))
+                                                              (survey-signals other-policy-id
+                                                                              {:closesAt "2026-04-20T20:00"}))]
     (is (not-any? #(= :db/transact (first %)) effects))
     (is (= "survey-error-open-exists"
            (get-in effects [1 2 :form :_error :_top :error])))))
@@ -103,33 +103,33 @@
                                  #inst "2026-03-19T12:00:00.000-00:00"}]]]
     (testing description
       (let [{:keys [conn coverage-id member-id policy-id state]} (fixture)
-            other-policy-id (insurance-test/seed-policy! conn (random-uuid))
-            _ (insurance-test/seed-member-survey!
-               conn
-               (merge {:coverage-ids [coverage-id]
-                       :member-id    member-id
-                       :policy-id    policy-id}
-                      survey-state))
-            effects (actions/start-survey-action
-                     (assoc state :db (d/db conn))
-                     (survey-signals other-policy-id
-                                     {:closesAt "2026-04-20T20:00"}))]
+            other-policy-id                                      (insurance-test/seed-policy! conn (random-uuid))
+            _                                                    (insurance-test/seed-member-survey!
+                                                                  conn
+                                                                  (merge {:coverage-ids [coverage-id]
+                                                                          :member-id    member-id
+                                                                          :policy-id    policy-id}
+                                                                         survey-state))
+            effects                                              (actions/start-survey-action
+                                                                  (assoc state :db (d/db conn))
+                                                                  (survey-signals other-policy-id
+                                                                                  {:closesAt "2026-04-20T20:00"}))]
         (is (= :db/transact (ffirst effects)))))))
 
 (deftest transaction-guard-closes-the-stale-start-race
   (let [{:keys [conn policy-id state]} (fixture)
-        other-policy-id (insurance-test/seed-policy! conn (random-uuid))
-        stale-state (assoc state :db (d/db conn))
-        first-effects (actions/start-survey-action
-                       stale-state
-                       (survey-signals policy-id
-                                       {:closesAt "2026-04-20T20:00"}))
-        second-effects (actions/start-survey-action
-                        stale-state
-                        (survey-signals other-policy-id
-                                        {:closesAt "2026-04-20T20:00"}))
-        [_ first-tx first-opts] (first first-effects)
-        [_ second-tx second-opts] (first second-effects)]
+        other-policy-id                (insurance-test/seed-policy! conn (random-uuid))
+        stale-state                    (assoc state :db (d/db conn))
+        first-effects                  (actions/start-survey-action
+                                        stale-state
+                                        (survey-signals policy-id
+                                                        {:closesAt "2026-04-20T20:00"}))
+        second-effects                 (actions/start-survey-action
+                                        stale-state
+                                        (survey-signals other-policy-id
+                                                        {:closesAt "2026-04-20T20:00"}))
+        [_ first-tx first-opts]        (first first-effects)
+        [_ second-tx second-opts]      (first second-effects)]
     @(d/transact conn (nexus/batch-transactions [[first-tx first-opts]]))
     (let [error (try
                   @(d/transact
@@ -140,7 +140,7 @@
                     (ex-cause e)))]
       (is (= {:cognitect.anomalies/category :cognitect.anomalies/conflict
               :insurance.survey/error       :insurance.survey.error/active-exists
-              :datomic/cancelled             true}
+              :datomic/cancelled            true}
              (select-keys
               (ex-data error)
               [:cognitect.anomalies/category
@@ -162,19 +162,19 @@
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        _ @(d/transact conn [[:db/add
-                              [:insurance.survey/survey-id survey-id]
-                              :insurance.survey/survey-name
-                              "Legacy survey name"]])
-        update-action (some-> (get actions/actions ::actions/update-closes-at)
-                              deref)]
+        _                                                    @(d/transact conn [[:db/add
+                                                                                 [:insurance.survey/survey-id survey-id]
+                                                                                 :insurance.survey/survey-name
+                                                                                 "Legacy survey name"]])
+        update-action                                        (some-> (get actions/actions ::actions/update-closes-at)
+                                                                     deref)]
     (is (fn? update-action))
     (when update-action
-      (let [effects (update-action
-                     (assoc state :db (d/db conn))
-                     (survey-signals policy-id
-                                     {:surveyId (str survey-id)
-                                      :closesAt "2026-04-25T19:30"}))
+      (let [effects          (update-action
+                              (assoc state :db (d/db conn))
+                              (survey-signals policy-id
+                                              {:surveyId (str survey-id)
+                                               :closesAt "2026-04-25T19:30"}))
             [_ tx-data opts] (first effects)]
         (is (= :db/transact (ffirst effects)))
         (is (= :insurance.survey/activate (ffirst tx-data)))
@@ -192,8 +192,8 @@
                          :closes-at "2026-04-25T19:30"}}]
                 [:app.datastar/respond-sse
                  [[:app.datastar.sse/merge-signals
-                   {:loading            false
-                    :targetid           false
+                   {:loading           false
+                    :targetid          false
                     actions/signal-key {:saveStatus "saved"}}]]]]
                (:on-success opts)))
         (is (= "survey-error-open-exists"
@@ -204,23 +204,23 @@
 
 (deftest another-active-survey-blocks-deadline-update
   (let [{:keys [conn coverage-id member-id policy-id state]} (fixture)
-        other-policy-id (insurance-test/seed-policy! conn (random-uuid))
+        other-policy-id                                      (insurance-test/seed-policy! conn (random-uuid))
         {survey-id :survey-id}
         (insurance-test/seed-member-survey!
          conn
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        _ (insurance-test/seed-member-survey!
-           conn
-           {:coverage-ids []
-            :member-id    member-id
-            :policy-id    other-policy-id})
-        effects (actions/update-closes-at-action
-                 (assoc state :db (d/db conn))
-                 (survey-signals policy-id
-                                 {:surveyId (str survey-id)
-                                  :closesAt "2026-04-25T19:30"}))]
+        _                                                    (insurance-test/seed-member-survey!
+                                                              conn
+                                                              {:coverage-ids []
+                                                               :member-id    member-id
+                                                               :policy-id    other-policy-id})
+        effects                                              (actions/update-closes-at-action
+                                                              (assoc state :db (d/db conn))
+                                                              (survey-signals policy-id
+                                                                              {:surveyId (str survey-id)
+                                                                               :closesAt "2026-04-25T19:30"}))]
     (is (not-any? #(= :db/transact (first %)) effects))
     (is (= "survey-error-open-exists"
            (get-in effects [1 2 :form :_error :_top :error])))
@@ -271,12 +271,12 @@
              {:coverage-ids [coverage-id]
               :member-id    member-id
               :policy-id    policy-id})
-            effects (actions/send-reminders-action
-                     (assoc state
-                            :db (d/db conn)
-                            :now #inst "2027-01-01T00:00:00.000-00:00")
-                     (assoc (survey-signals policy-id {})
-                            :targetid (str survey-id)))]
+            effects             (actions/send-reminders-action
+                                 (assoc state
+                                        :db (d/db conn)
+                                        :now #inst "2027-01-01T00:00:00.000-00:00")
+                                 (assoc (survey-signals policy-id {})
+                                        :targetid (str survey-id)))]
         (is (= support/clear-loading (first effects)))
         (is (= :error (get-in effects [1 2 :status])))
         (is (not-any? #(= :app.insurance/send-survey-notifications (first %))
@@ -284,10 +284,10 @@
 
 (deftest update-closes-at-rejects-invalid-survey-state
   (let [{:keys [conn coverage-id member-id policy-id state]} (fixture)
-        update-action (some-> (get actions/actions ::actions/update-closes-at)
-                              deref)
-        other-policy-id (random-uuid)
-        _ (insurance-test/seed-policy! conn other-policy-id)
+        update-action                                        (some-> (get actions/actions ::actions/update-closes-at)
+                                                                     deref)
+        other-policy-id                                      (random-uuid)
+        _                                                    (insurance-test/seed-policy! conn other-policy-id)
         {survey-id :survey-id}
         (insurance-test/seed-member-survey!
          conn
@@ -305,8 +305,8 @@
           (is (= {:transacts? false
                   :signal-effects
                   [[:app.datastar.sse/merge-signals
-                    {:loading            false
-                     :targetid           false
+                    {:loading           false
+                     :targetid          false
                      actions/signal-key {:saveStatus "error"}}]]}
                  {:transacts? (boolean
                                (some #(= :db/transact (first %)) effects))
@@ -333,11 +333,11 @@
                 :member-id        member-id
                 :policy-id        policy-id
                 :survey-closes-at #inst "2026-03-01T12:00:00.000-00:00"})
-              effects (update-action
-                       (assoc state :db (d/db conn))
-                       (survey-signals policy-id
-                                       {:surveyId (str expired-survey-id)
-                                        :closesAt "2026-04-25T19:30"}))]
+              effects                        (update-action
+                                              (assoc state :db (d/db conn))
+                                              (survey-signals policy-id
+                                                              {:surveyId (str expired-survey-id)
+                                                               :closesAt "2026-04-25T19:30"}))]
           (is (not-any? #(= :db/transact (first %)) effects)))))))
 
 (deftest close-and-toggle-response-actions
@@ -348,12 +348,12 @@
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        state (assoc state :db (d/db conn))]
+        state                                                (assoc state :db (d/db conn))]
     (testing "an insurance-team member can mark a response complete"
-      (let [effects (actions/toggle-response-action
-                     state
-                     (assoc (survey-signals policy-id {})
-                            :targetid (str response-id)))
+      (let [effects     (actions/toggle-response-action
+                         state
+                         (assoc (survey-signals policy-id {})
+                                :targetid (str response-id)))
             [_ tx-data] (first effects)]
         (is (= :db/transact (ffirst effects)))
         @(d/transact conn tx-data)
@@ -361,10 +361,10 @@
                     (q/retrieve-survey-response (d/db conn) response-id))))))
 
     (testing "an insurance-team member can close the active survey"
-      (let [effects (actions/close-survey-action
-                     (assoc state :db (d/db conn))
-                     (assoc (survey-signals policy-id {})
-                            :targetid (str survey-id)))
+      (let [effects     (actions/close-survey-action
+                         (assoc state :db (d/db conn))
+                         (assoc (survey-signals policy-id {})
+                                :targetid (str survey-id)))
             [_ tx-data] (first effects)]
         (is (= :db/transact (ffirst effects)))
         @(d/transact conn tx-data)
@@ -379,11 +379,11 @@
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        [effect response] (actions/send-reminders-action
-                           (assoc state :db (d/db conn))
-                           (assoc (survey-signals policy-id {})
-                                  :targetid (str survey-id)))
-        [_ payload] effect]
+        [effect response]                                    (actions/send-reminders-action
+                                                              (assoc state :db (d/db conn))
+                                                              (assoc (survey-signals policy-id {})
+                                                                     :targetid (str survey-id)))
+        [_ payload]                                          effect]
     (is (= :app.insurance/send-survey-notifications (first effect)))
     (is (= [member-id]
            (mapv :member/member-id (:members payload))))

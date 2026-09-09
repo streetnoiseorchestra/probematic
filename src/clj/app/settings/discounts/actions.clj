@@ -31,8 +31,8 @@
        [:app.datastar/merge-state
         [:discount-type-create]
         {:discount-type-name discount-type-name
-         :error {:discount-type-name
-                 {:error (format "Discount type named '%s' already exists." discount-type-name)}}}]]
+         :error              {:discount-type-name
+                              {:error (format "Discount type named '%s' already exists." discount-type-name)}}}]]
 
       :else
       (let [tx-data (support/with-audit [{:travel.discount.type/discount-type-id   :db/gen-uuid
@@ -46,7 +46,7 @@
 (defn update-discount-type-action
   [{:keys [db current-member-id]} {:keys [discount-type]}]
   (let [{:keys [discount-type-name discount-type-enabled]} discount-type
-        discount-type-id (util/ensure-uuid! (:discount-type-id discount-type))]
+        discount-type-id                                   (util/ensure-uuid! (:discount-type-id discount-type))]
     (cond
       (str/blank? discount-type-name)
       [support/clear-loading
@@ -61,8 +61,8 @@
        [:app.datastar/merge-state
         [:discount-type]
         {:discount-type-name discount-type-name
-         :error {:discount-type-name
-                 {:error (format "Discount type named '%s' already exists." discount-type-name)}}}]]
+         :error              {:discount-type-name
+                              {:error (format "Discount type named '%s' already exists." discount-type-name)}}}]]
 
       :else
       [[:db/transact
@@ -102,7 +102,7 @@
   [_ _]
   [support/clear-loading
    [:app.datastar/assoc-state [:discount-type-create]
-    {:open true
+    {:open               true
      :discount-type-name ""}]])
 
 (defn close-discount-type-create-action [_state _signals]

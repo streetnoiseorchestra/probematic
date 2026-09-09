@@ -71,11 +71,11 @@
 
 (defn toggle-intensive-action [{:keys [db]} {:keys [gig-log-plays]}]
   (let [{:keys [gig-id song-id rating emphasis]} gig-log-plays
-        rating    (normalize-rating rating)
-        current   (normalize-emphasis emphasis)
-        emphasis* (if (= intensive-emphasis current)
-                    default-emphasis
-                    intensive-emphasis)]
+        rating                                   (normalize-rating rating)
+        current                                  (normalize-emphasis emphasis)
+        emphasis*                                (if (= intensive-emphasis current)
+                                                   default-emphasis
+                                                   intensive-emphasis)]
     [(persist-play-effect db gig-id song-id rating emphasis*)]))
 
 (defn set-repertoire-filter-action [_state {:keys [gig-log-plays]}]

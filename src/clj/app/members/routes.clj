@@ -20,15 +20,15 @@
                "Content-Type"        "text/x-vcard"}
      :body    vcard}))
 
-(def members-interceptors [{:name ::members--interceptor
+(def members-interceptors [{:name  ::members--interceptor
                             :enter (fn [ctx]
-                                     (let [conn (-> ctx :request :datomic-conn)
-                                           db (d/db conn)
+                                     (let [conn      (-> ctx :request :datomic-conn)
+                                           db        (d/db conn)
                                            member-id (http.util/path-param-uuid! (:request ctx) :member-id)
-                                           member (q/retrieve-member db member-id)]
+                                           member    (q/retrieve-member db member-id)]
                                        (if member
                                          (assoc-in ctx [:request :member] member)
-                                         (throw (ex-info "Member not found" {:app/error-type :app.error.type/not-found
+                                         (throw (ex-info "Member not found" {:app/error-type   :app.error.type/not-found
                                                                              :member/member-id member-id})))))}])
 
 (defn routes []

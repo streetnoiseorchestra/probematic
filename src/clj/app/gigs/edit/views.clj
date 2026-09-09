@@ -131,11 +131,11 @@
 
 (defn- markdown-textarea [label name value attrs]
   (let [ref (element-ref name "markdown_editor")]
-    (textarea label name value (merge {:class          "gigs-edit-textarea markdown-editor hidden"
-                                       :data-auto-size         "true"
-                                       :data-ref               ref
-                                       :data-init__delay.10ms  (str "MarkdownEditor($" ref ")")
-                                       :wrapper-attrs          {:data-ignore-morph ""}}
+    (textarea label name value (merge {:class                 "gigs-edit-textarea markdown-editor hidden"
+                                       :data-auto-size        "true"
+                                       :data-ref              ref
+                                       :data-init__delay.10ms (str "MarkdownEditor($" ref ")")
+                                       :wrapper-attrs         {:data-ignore-morph ""}}
                                       attrs))))
 
 (defn- gig-remove-dialog-id [{:gig/keys [gig-id]}]
@@ -171,7 +171,7 @@
                                               :href       (urls/link-gigs-home)}
                                [:i18n/tr :action/cancel]]
                               (save-button)]
-                             :aria-label [:i18n/tr :gigs/edit-toolbar-label]}])
+                             :aria-label               [:i18n/tr :gigs/edit-toolbar-label]}])
 
 (defn- edit-toolbar [req gig]
   (let [gig-url (urls/link-gig gig)]
@@ -191,7 +191,7 @@
                                                     :data-dialog (str "open " (gig-remove-dialog-id gig))}
                                  [:i18n/tr :action/delete]]]
                                ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-                               :aria-label                    [:i18n/tr :gigs/edit-toolbar-label]}]))
+                               :aria-label                   [:i18n/tr :gigs/edit-toolbar-label]}]))
 
 (defn- edit-header [{:keys [tr]} {:gig/keys [title gig-type status]}]
   (let [title-equals-type? (edit.queries/title-equals-gig-type? tr title gig-type)]

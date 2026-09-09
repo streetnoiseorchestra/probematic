@@ -208,7 +208,7 @@
     :account-settings/break-explanation-avatar-description})
 
 (deftest account-copy-interpolates-the-configured-instance-name
-  (doseq [locale [:en :de]
+  (doseq [locale     [:en :de]
           message-id instance-name-message-ids]
     (let [translated (fluent/translate (fluent/new-locale locale)
                                        message-id

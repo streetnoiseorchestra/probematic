@@ -34,17 +34,17 @@
    (songs-list-routes)
    (songs-new-routes)
    ["/song-media/{song-id}"
-    {:post {:summary "Upload media for an song"
+    {:post {:summary    "Upload media for an song"
             :parameters {:multipart [:map [:file reitit.ring.malli/temp-file-part]]
-                         :path [:map [:song-id :uuid]]}
-            :handler (fn [req] (edit.api/image-upload-handler req))}}]])
+                         :path      [:map [:song-id :uuid]]}
+            :handler    (fn [req] (edit.api/image-upload-handler req))}}]])
 
 (defn unauthenticated-routes []
   [""
    ["/song-media/{song-id}/{filename}"
-    {:get {:summary "Get song media"
+    {:get {:summary    "Get song media"
            :parameters {:path [:map
                                [:song-id :uuid]
                                [:filename :string]]}
-           :handler (fn [req]
-                      (edit.api/image-fetch-handler req))}}]])
+           :handler    (fn [req]
+                         (edit.api/image-fetch-handler req))}}]])

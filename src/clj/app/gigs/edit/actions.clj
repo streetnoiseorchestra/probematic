@@ -73,27 +73,27 @@
 
 (defn- gig-update-map
   [{:keys [gig-id title date end-date status gig-type location contact call-time set-time end-time leader rehearsal-leader1 rehearsal-leader2 pay-deal outfit more-details setlist description post-gig-plans topic-id]}]
-  {:gig/gig-id             (util/ensure-uuid! gig-id)
-   :gig/title              title
-   :gig/status             (str->status status)
-   :gig/date               (form/parse-date date)
-   :gig/end-date           (form/parse-date end-date)
-   :gig/gig-type           (str->gig-type gig-type)
-   :gig/location           location
-   :gig/contact            (member-ref contact)
-   :gig/call-time          (form/parse-time call-time)
-   :gig/set-time           (form/parse-time set-time)
-   :gig/end-time           (form/parse-time end-time)
-   :gig/leader             (form/optional-text leader)
-   :gig/rehearsal-leader1  (member-ref rehearsal-leader1)
-   :gig/rehearsal-leader2  (member-ref rehearsal-leader2)
-   :gig/pay-deal           (form/optional-text pay-deal)
-   :gig/outfit             (form/optional-text outfit)
-   :gig/more-details       (form/optional-text more-details)
-   :gig/setlist            (form/optional-text setlist)
-   :gig/description        (form/optional-text description)
-   :gig/post-gig-plans     (form/optional-text post-gig-plans)
-   :forum.topic/topic-id   (some-> topic-id form/optional-text discourse/parse-topic-id)})
+  {:gig/gig-id            (util/ensure-uuid! gig-id)
+   :gig/title             title
+   :gig/status            (str->status status)
+   :gig/date              (form/parse-date date)
+   :gig/end-date          (form/parse-date end-date)
+   :gig/gig-type          (str->gig-type gig-type)
+   :gig/location          location
+   :gig/contact           (member-ref contact)
+   :gig/call-time         (form/parse-time call-time)
+   :gig/set-time          (form/parse-time set-time)
+   :gig/end-time          (form/parse-time end-time)
+   :gig/leader            (form/optional-text leader)
+   :gig/rehearsal-leader1 (member-ref rehearsal-leader1)
+   :gig/rehearsal-leader2 (member-ref rehearsal-leader2)
+   :gig/pay-deal          (form/optional-text pay-deal)
+   :gig/outfit            (form/optional-text outfit)
+   :gig/more-details      (form/optional-text more-details)
+   :gig/setlist           (form/optional-text setlist)
+   :gig/description       (form/optional-text description)
+   :gig/post-gig-plans    (form/optional-text post-gig-plans)
+   :forum.topic/topic-id  (some-> topic-id form/optional-text discourse/parse-topic-id)})
 
 (def retractable-attrs
   [:gig/end-date

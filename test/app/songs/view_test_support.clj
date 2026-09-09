@@ -20,7 +20,7 @@
   ([conn]
    (request conn {}))
   ([conn extra]
-   (merge {::r/router       router
+   (merge {::r/router      router
            :current-locale :en
            :db             (d/db conn)
            :page-state     {}

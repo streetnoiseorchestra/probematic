@@ -17,16 +17,16 @@
                         "')")})
 
 (defn- visibility-attrs [visible? expression]
-  (cond-> {:data-show expression
+  (cond-> {:data-show        expression
            :data-attr:hidden (str "!(" expression ")")}
     (not visible?) (assoc :hidden true)))
 
 (defn- availability-control [req state]
   [:div {:class "account-break-toggle wa-cluster wa-align-items-center wa-justify-content-center"}
    [:wa-switch (cond-> (merge
-                        {:id "account-break-active"
-                         :name "break-active"
-                         :size "l"
+                        {:id                                    "account-break-active"
+                         :name                                  "break-active"
+                         :size                                  "l"
                          :data-bind__prop.checked__event.change "account-break.active"}
                         (update-on-change req))
                  (:active state) (assoc :checked true))
@@ -40,54 +40,54 @@
      [:i18n/tr :account-settings/break-away-label]]]])
 
 (defn- avatar-preview [member state]
-  [:div {:id "account-break-avatar-frame"
-         :class (str "break-avatar-frame" (when (:active state) " paused"))
+  [:div {:id                "account-break-avatar-frame"
+         :class             (str "break-avatar-frame" (when (:active state) " paused"))
          :data-class:paused "$account-break.active"}
-   [avatar/Avatar {::avatar/member member
-                   ::avatar/link? false
-                   ::avatar/icon :user
+   [avatar/Avatar {::avatar/member     member
+                   ::avatar/link?      false
+                   ::avatar/icon       :user
                    ::avatar/image-size 160
-                   :class "break-avatar"}]
-   [:span {:id "account-break-pause-overlay"
-           :class "pause-overlay"
+                   :class              "break-avatar"}]
+   [:span {:id          "account-break-pause-overlay"
+           :class       "pause-overlay"
            :aria-hidden "true"}
     [:i18n/tr :account-settings/break-pause-overlay]]])
 
 (defn- date-field [req state field id label]
   (support/field
    {:state state
-    :root "account-break"
+    :root  "account-break"
     :field field
-    :id id
+    :id    id
     :label [:i18n/tr label]
     :attrs (merge {:type "date" :form form-id}
                   (update-on-change req))}))
 
 (defn- schedule-fields [req state]
-  [:div (merge {:id "account-break-status-fields"
+  [:div (merge {:id    "account-break-status-fields"
                 :class "break-fields wa-stack wa-gap-l"}
                (visibility-attrs (:active state) "$account-break.active"))
    [:fieldset {:class "wa-stack wa-gap-xs"}
     [:legend {:class "break-schedule-title wa-heading-xl"}
      [:i18n/tr :account-settings/break-start-title]]
     (support/radio-option
-     {:id "account-break-start-now"
-      :name "break-start-choice"
-      :value "now"
-      :signal "account-break.start-choice"
+     {:id       "account-break-start-now"
+      :name     "break-start-choice"
+      :value    "now"
+      :signal   "account-break.start-choice"
       :checked? (= "now" (:start-choice state))
-      :label [:i18n/tr :account-settings/break-start-now]
-      :form form-id
-      :attrs (update-on-change req)})
+      :label    [:i18n/tr :account-settings/break-start-now]
+      :form     form-id
+      :attrs    (update-on-change req)})
     (support/radio-option
-     {:id "account-break-start-date-choice"
-      :name "break-start-choice"
-      :value "date"
-      :signal "account-break.start-choice"
+     {:id       "account-break-start-date-choice"
+      :name     "break-start-choice"
+      :value    "date"
+      :signal   "account-break.start-choice"
       :checked? (= "date" (:start-choice state))
-      :label [:i18n/tr :account-settings/break-start-date]
-      :form form-id
-      :attrs (update-on-change req)})]
+      :label    [:i18n/tr :account-settings/break-start-date]
+      :form     form-id
+      :attrs    (update-on-change req)})]
    [:div {:class "account-field-grid wa-grid wa-gap-m"}
     [:div (merge {:id "account-break-start-date-row"}
                  (visibility-attrs
@@ -100,12 +100,12 @@
                 :account-settings/break-end-date)]])
 
 (defn- status-copy [state]
-  (let [status (:status state)
-        shown? (and (:active state) (contains? #{"scheduled" "ended"} status))
+  (let [status     (:status state)
+        shown?     (and (:active state) (contains? #{"scheduled" "ended"} status))
         expression (str "$account-break.active && "
                         "($account-break.status === 'scheduled' || "
                         "$account-break.status === 'ended')")]
-    [:div (merge {:id "account-break-status-copy"
+    [:div (merge {:id    "account-break-status-copy"
                   :class "break-status-copy"}
                  (visibility-attrs shown? expression))
      [:p (merge {:id "account-break-status-scheduled"}
@@ -121,7 +121,7 @@
 
 (defn- status-card [req member state]
   [card/Card {:class "break-status-card wa-brand-purple" :appearance "plain"}
-   [:div {:id "account-break-card-content"
+   [:div {:id    "account-break-card-content"
           :class "wa-stack wa-gap-l"}
     [:div {:class "break-summary wa-stack wa-gap-m wa-align-items-center wa-text-center"}
      (avatar-preview member state)
@@ -135,10 +135,10 @@
        (support/feedback state)])]
    [:div {:slot "footer-actions" :class "wa-cluster wa-gap-xs"}
     [button/Button (merge
-                    {:id "account-break-end-early"
-                     :appearance "filled"
-                     :variant "neutral"
-                     :class "break-end-button"
+                    {:id          "account-break-end-early"
+                     :appearance  "filled"
+                     :variant     "neutral"
+                     :class       "break-end-button"
                      :data-dialog "open account-break-end-dialog"}
                     (visibility-attrs
                      (and (:active state)
@@ -181,20 +181,20 @@
     [:p [:i18n/tr :account-settings/break-auto-responder-description]]]])
 
 (defn- end-dialog [req]
-  [:wa-dialog {:id "account-break-end-dialog"
-               :label [:i18n/tr :account-settings/break-end-dialog-title]
-               :with-footer true
+  [:wa-dialog {:id                 "account-break-end-dialog"
+               :label              [:i18n/tr :account-settings/break-end-dialog-title]
+               :with-footer        true
                :data-preserve-attr "open"}
    [:p [:i18n/tr :account-settings/break-end-dialog-description]]
-   [button/Button {:slot "footer"
-                   :appearance "outlined"
+   [button/Button {:slot        "footer"
+                   :appearance  "outlined"
                    :data-dialog "close"}
     [:i18n/tr :action/cancel]]
-   [button/Button {:slot "footer"
-                   :appearance "filled"
-                   :variant "danger"
+   [button/Button {:slot        "footer"
+                   :appearance  "filled"
+                   :variant     "danger"
                    :data-dialog "close"
-                   :data-id "account-break-end"
+                   :data-id     "account-break-end"
                    :data-action (d*/act req ::actions/end-break)}
     [:i18n/tr :account-settings/break-end-dialog-confirm]]])
 
@@ -204,13 +204,13 @@
         state             (queries/break-page-state db current-member-id page-state)
         member            (app.queries/retrieve-member db current-member-id)]
     (support/standard-page
-     {:title title
+     {:title    title
       :subtitle [:i18n/tr :account-settings/break-subtitle]
-      :actions []
-      :after [(end-dialog req)]}
-     [:form {:id form-id
-             :data-id "account-break"
-             :data-signals (d*/->signals {:account-break state})
+      :actions  []
+      :after    [(end-dialog req)]}
+     [:form {:id             form-id
+             :data-id        "account-break"
+             :data-signals   (d*/->signals {:account-break state})
              :data-on:submit "evt.preventDefault();"}
       (status-card req member state)]
      (explanation req))))

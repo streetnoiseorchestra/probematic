@@ -28,11 +28,11 @@
 
 (defn- song-choice-pop-effect-js [song-id]
   (->expr
-   (let [selected (if (.isArray Array $gig-setlist.songs)
-                    (.some $gig-setlist.songs
-                           (fn [song]
-                             (=== (aget song "song-id") ~(str song-id))))
-                    false)
+   (let [selected       (if (.isArray Array $gig-setlist.songs)
+                          (.some $gig-setlist.songs
+                                 (fn [song]
+                                   (=== (aget song "song-id") ~(str song-id))))
+                          false)
          selected-value (if selected "true" "false")]
      (when (and el.dataset.lastSelected
                 (!== el.dataset.lastSelected selected-value))
@@ -72,8 +72,8 @@
     :choice            (partial song-choice req gig-id)}))
 
 (defn- selected-song-row [{:song/keys [song-id title]}]
-  [:li {:id             (str "gig-setlist-selected-" (ui2/safe-dom-id song-id))
-        :data-song-id   (str song-id)}
+  [:li {:id           (str "gig-setlist-selected-" (ui2/safe-dom-id song-id))
+        :data-song-id (str song-id)}
    (plan.views/drag-zone title)])
 
 (defn- selected-songs-list [req gig-id selected-songs]

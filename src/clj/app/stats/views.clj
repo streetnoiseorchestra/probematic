@@ -201,10 +201,10 @@
 
 (defn- member-avatar [member]
   [avatar/Avatar {::avatar/member member
-                  ::avatar/icon :user
-                  ::avatar/link? false
-                  :shape "rounded"
-                  :style "--size: 2rem; flex: none;"}])
+                  ::avatar/icon   :user
+                  ::avatar/link?  false
+                  :shape          "rounded"
+                  :style          "--size: 2rem; flex: none;"}])
 
 (defn- member-row [req {:keys [member gigs-attended probes-attended last-seen gig-rate probe-rate gig-title]}]
   [:tr
@@ -254,7 +254,7 @@
 
 (defn page [{:keys [db] :as req}]
   (let [{:keys [from to]} (state/selected-range req)
-        stats            (stats/stats-for db from to (state/sort-spec req))]
+        stats             (stats/stats-for db from to (state/sort-spec req))]
     (ui2/datastar-page*
      [:script {:type "module"}
       (html/raw "import 'wa/components/chart/chart.js';")]
@@ -264,7 +264,7 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (url/link-dashboard)}
                                                              [:i18n/tr :home]]
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :statistics/title]]]
-                                                           :aria-label [:i18n/tr :statistics/toolbar-label]}]}
+                                                           :aria-label               [:i18n/tr :statistics/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-xl"}
        [page-header/PageHeader
         {::page-header/title    [:i18n/tr :statistics/title]

@@ -36,7 +36,7 @@
 
 (defn- gig-row [req {:gig/keys [gig-id title status call-time date end-date] :as gig}]
   (let [{:attendance/keys [plan motivation comment member]} (:attendance gig)
-        member-id (:member/member-id member)]
+        member-id                                           (:member/member-id member)]
     (dashboard-row
      :div
      {}
@@ -141,8 +141,8 @@
        [:div {:class "meta wa-cluster wa-gap-xs"}
         [:span
          [:i18n/tr :insurance/review-dashboard-progress
-          {:count  todo-count
-           :total  total-count}]]
+          {:count todo-count
+           :total total-count}]]
         [:span
          [:i18n/tr :insurance/review-dashboard-due]
          " "
@@ -270,18 +270,18 @@
                         :label [:i18n/tr :ledger/or-scan-qr-code]}]])]])))
 
 (def ^:private activity-fixtures
-  [{:icon :calendar
-    :title :activity/rehearsal-updated-title
+  [{:icon   :calendar
+    :title  :activity/rehearsal-updated-title
     :detail :activity/rehearsal-updated-detail
-    :when :activity/rehearsal-updated-when}
-   {:icon :question
-    :title :activity/poll-created-title
+    :when   :activity/rehearsal-updated-when}
+   {:icon   :question
+    :title  :activity/poll-created-title
     :detail :activity/poll-created-detail
-    :when :activity/poll-created-when}
-   {:icon :music-note-outline
-    :title :activity/repertoire-updated-title
+    :when   :activity/poll-created-when}
+   {:icon   :music-note-outline
+    :title  :activity/repertoire-updated-title
     :detail :activity/repertoire-updated-detail
-    :when :activity/repertoire-updated-when}])
+    :when   :activity/repertoire-updated-when}])
 
 (defn- greeting [member]
   [:i18n/tr

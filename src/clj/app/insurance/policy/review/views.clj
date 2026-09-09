@@ -74,9 +74,9 @@
 (defn- action-attrs
   [req coverage-id action]
   (let [target (str coverage-id)]
-    {:data-on:click       (str "$targetid = '" target "'; "
-                               "$loading = '" target "'; "
-                               "@post('" (d*/act req action) "')")
+    {:data-on:click      (str "$targetid = '" target "'; "
+                              "$loading = '" target "'; "
+                              "@post('" (d*/act req action) "')")
      :data-attr:disabled (str "!!$loading && $loading !== '" target "'")
      :data-attr:loading  (str "$loading === '" target "'")}))
 
@@ -106,11 +106,11 @@
   (let [coverage-id (:instrument.coverage/coverage-id coverage)
         target      (str coverage-id)
         input-id    (insurer-id-input-id coverage)]
-    {:data-on:click       (str "$insuranceReview = {...$insuranceReview, insurerId: "
-                               "document.getElementById('" input-id "').value}; "
-                               "$targetid = '" target "'; "
-                               "$loading = '" target "'; "
-                               "@post('" (d*/act req ::actions/update-insurer-id) "')")
+    {:data-on:click      (str "$insuranceReview = {...$insuranceReview, insurerId: "
+                              "document.getElementById('" input-id "').value}; "
+                              "$targetid = '" target "'; "
+                              "$loading = '" target "'; "
+                              "@post('" (d*/act req ::actions/update-insurer-id) "')")
      :data-attr:disabled (str "!!$loading && $loading !== '" target "'")
      :data-attr:loading  (str "$loading === '" target "'")}))
 
@@ -119,13 +119,13 @@
   [:div {:style (str "display: flex; flex-wrap: nowrap; gap: var(--wa-space-xs); "
                      "align-items: end; min-inline-size: min(100%, 24rem); "
                      "margin-inline-start: auto;")}
-   [:wa-input {:id           (insurer-id-input-id coverage)
-               :label        [:i18n/tr :insurance/insurer-id]
-               :appearance   "outlined"
-               :size         "s"
-               :value        (or (:instrument.coverage/insurer-id coverage) "")
-               :data-bind    "insuranceReview.insurerId"
-               :style        "inline-size: 12rem; flex: 1 1 12rem; min-inline-size: 0;"}]
+   [:wa-input {:id         (insurer-id-input-id coverage)
+               :label      [:i18n/tr :insurance/insurer-id]
+               :appearance "outlined"
+               :size       "s"
+               :value      (or (:instrument.coverage/insurer-id coverage) "")
+               :data-bind  "insuranceReview.insurerId"
+               :style      "inline-size: 12rem; flex: 1 1 12rem; min-inline-size: 0;"}]
    [button/Button (merge {:appearance "filled"
                           :variant    "brand"
                           :size       "s"
@@ -300,7 +300,7 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
                                                              (:insurance.policy/name policy)]
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/review]]]
-                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                                           :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-xl"}
        [page-header/PageHeader
         {:title    [:i18n/tr :insurance/review-queue-title]

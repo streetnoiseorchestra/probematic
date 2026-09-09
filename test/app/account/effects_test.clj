@@ -25,45 +25,45 @@
 (defn seed-member! [conn member-id overrides]
   @(d/transact
     conn
-    [(merge {:db/id [:member/member-id member-id]
-             :member/name "Ada Lovelace"
-             :member/nick "ada"
-             :member/email "ada@example.test"
+    [(merge {:db/id           [:member/member-id member-id]
+             :member/name     "Ada Lovelace"
+             :member/nick     "ada"
+             :member/email    "ada@example.test"
              :member/username "ada_l"
-             :member/phone "+436601111111"
-             :member/active? true}
+             :member/phone    "+436601111111"
+             :member/active?  true}
             overrides)]))
 
 (def profile
-  {:name "Ada Byron"
-   :nick "Countess"
-   :email "ada.byron@example.test"
-   :username "ada_byron"
-   :phone "+436601234567"
-   :current-status "Rehearsing tonight"
-   :date-of-birth "1815-12-10"
+  {:name            "Ada Byron"
+   :nick            "Countess"
+   :email           "ada.byron@example.test"
+   :username        "ada_byron"
+   :phone           "+436601234567"
+   :current-status  "Rehearsing tonight"
+   :date-of-birth   "1815-12-10"
    :avatar-removed? false
-   :avatar nil})
+   :avatar          nil})
 
 (defn avatar-upload [prefix]
   (let [tempfile (bfs/create-temp-file
                   {:prefix (str "probematic." prefix ".")
                    :suffix ".jpg"})]
     (bfs/copy jpeg-path tempfile {:replace-existing true})
-    {:filename (str prefix ".jpg")
+    {:filename  (str prefix ".jpg")
      :mime-type "image/jpeg"
-     :size (bfs/size tempfile)
-     :tempfile (bfs/file tempfile)}))
+     :size      (bfs/size tempfile)
+     :tempfile  (bfs/file tempfile)}))
 
 (defn avatar-metadata-ids [db member-id]
   (let [avatar (:member/avatar (queries/retrieve-member db member-id))
         images (when avatar (cons avatar (:image/renditions avatar)))]
     {:avatar-id (:image/image-id avatar)
      :image-ids (into #{} (keep :image/image-id) images)
-     :file-ids (into #{}
-                     (keep #(get-in % [:image/source-file
-                                       :filestore.file/file-id]))
-                     images)}))
+     :file-ids  (into #{}
+                      (keep #(get-in % [:image/source-file
+                                        :filestore.file/file-id]))
+                      images)}))
 
 (defn metadata-retracted? [db {:keys [image-ids file-ids]}]
   (and (every? #(nil? (d/entid db [:image/image-id %])) image-ids)
@@ -76,21 +76,21 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "profile-effect-upload")
-                tempfile (bfs/create-temp-file
-                          {:prefix "probematic.profile-upload."
-                           :suffix ".jpg"})]
+                tempfile                 (bfs/create-temp-file
+                                          {:prefix "probematic.profile-upload."
+                                           :suffix ".jpg"})]
             (seed-member! conn member-id {})
             (bfs/copy jpeg-path tempfile {:replace-existing true})
             (let [result
                   (save-profile!
-                   {:datomic {:conn conn}
+                   {:datomic   {:conn conn}
                     :filestore store}
-                   {:member-id member-id
-                    :profile profile
-                    :avatar-upload {:filename "portrait.jpg"
-                                    :mime-type "image/jpeg"
-                                    :size (bfs/size tempfile)
-                                    :tempfile (bfs/file tempfile)}
+                   {:member-id      member-id
+                    :profile        profile
+                    :avatar-upload  {:filename  "portrait.jpg"
+                                     :mime-type "image/jpeg"
+                                     :size      (bfs/size tempfile)
+                                     :tempfile  (bfs/file tempfile)}
                     :sync-keycloak? false})
                   member (queries/retrieve-member (d/db conn) member-id)]
               (is (= :saved (:status result)))
@@ -119,24 +119,24 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "profile-effect-remove")
-                old-avatar-id (random-uuid)]
+                old-avatar-id            (random-uuid)]
             (seed-member!
              conn
              member-id
              {:member/avatar-template "/user_avatar/ada/{size}/1.png"
-              :member/avatar {:image/image-id old-avatar-id
-                              :image/width 160
-                              :image/height 160}})
+              :member/avatar          {:image/image-id old-avatar-id
+                                       :image/width    160
+                                       :image/height   160}})
             (let [result
                   (save-profile!
-                   {:datomic {:conn conn}
+                   {:datomic   {:conn conn}
                     :filestore store}
-                   {:member-id member-id
-                    :profile (assoc profile
-                                    :avatar-removed? true
-                                    :current-status ""
-                                    :date-of-birth "")
-                    :avatar-upload nil
+                   {:member-id      member-id
+                    :profile        (assoc profile
+                                           :avatar-removed? true
+                                           :current-status ""
+                                           :date-of-birth "")
+                    :avatar-upload  nil
                     :sync-keycloak? false})
                   member (queries/retrieve-member (d/db conn) member-id)]
               (is (= :saved (:status result)))
@@ -154,22 +154,22 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "profile-effect-cleanup")
-                system {:datomic {:conn conn} :filestore store}]
+                system                   {:datomic {:conn conn} :filestore store}]
             (seed-member! conn member-id {})
             (save-profile! system
-                           {:member-id member-id
-                            :profile profile
-                            :avatar-upload (avatar-upload "old-avatar")
+                           {:member-id      member-id
+                            :profile        profile
+                            :avatar-upload  (avatar-upload "old-avatar")
                             :sync-keycloak? false})
             (let [old-metadata (avatar-metadata-ids (d/db conn) member-id)]
               (is (= 5 (count (:image-ids old-metadata))))
               (is (= 5 (count (:file-ids old-metadata))))
               (save-profile! system
-                             {:member-id member-id
-                              :profile profile
-                              :avatar-upload (avatar-upload "new-avatar")
+                             {:member-id      member-id
+                              :profile        profile
+                              :avatar-upload  (avatar-upload "new-avatar")
                               :sync-keycloak? false})
-              (let [db (d/db conn)
+              (let [db           (d/db conn)
                     new-metadata (avatar-metadata-ids db member-id)]
                 (is (not= (:avatar-id old-metadata)
                           (:avatar-id new-metadata)))
@@ -177,9 +177,9 @@
                 (is (= 5 (count (:image-ids new-metadata))))
                 (is (= 5 (count (:file-ids new-metadata))))
                 (save-profile! system
-                               {:member-id member-id
-                                :profile (assoc profile :avatar-removed? true)
-                                :avatar-upload nil
+                               {:member-id      member-id
+                                :profile        (assoc profile :avatar-removed? true)
+                                :avatar-upload  nil
                                 :sync-keycloak? false})
                 (let [db (d/db conn)]
                   (is (nil? (:member/avatar
@@ -193,20 +193,20 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "profile-effect-remove-wins")
-                system {:datomic {:conn conn} :filestore store}]
+                system                   {:datomic {:conn conn} :filestore store}]
             (seed-member! conn member-id {})
             (save-profile! system
-                           {:member-id member-id
-                            :profile profile
-                            :avatar-upload (avatar-upload "existing-avatar")
+                           {:member-id      member-id
+                            :profile        profile
+                            :avatar-upload  (avatar-upload "existing-avatar")
                             :sync-keycloak? false})
-            (let [old-metadata (avatar-metadata-ids (d/db conn) member-id)
+            (let [old-metadata     (avatar-metadata-ids (d/db conn) member-id)
                   submitted-upload (avatar-upload "discarded-avatar")
-                  tempfile (:tempfile submitted-upload)]
+                  tempfile         (:tempfile submitted-upload)]
               (save-profile! system
-                             {:member-id member-id
-                              :profile (assoc profile :avatar-removed? true)
-                              :avatar-upload submitted-upload
+                             {:member-id      member-id
+                              :profile        (assoc profile :avatar-removed? true)
+                              :avatar-upload  submitted-upload
                               :sync-keycloak? false})
               (let [db (d/db conn)]
                 (is (nil? (:member/avatar
@@ -225,27 +225,27 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "profile-effect-last-write")
-                current-id (random-uuid)
-                tempfile (bfs/create-temp-file
-                          {:prefix "probematic.last-profile-upload."
-                           :suffix ".jpg"})]
+                current-id               (random-uuid)
+                tempfile                 (bfs/create-temp-file
+                                          {:prefix "probematic.last-profile-upload."
+                                           :suffix ".jpg"})]
             (seed-member! conn member-id
                           {:member/avatar {:image/image-id current-id
-                                           :image/width 160
-                                           :image/height 160}})
+                                           :image/width    160
+                                           :image/height   160}})
             (bfs/copy jpeg-path tempfile {:replace-existing true})
             (let [result
                   (save-profile!
-                   {:datomic {:conn conn}
+                   {:datomic   {:conn conn}
                     :filestore store}
-                   {:member-id member-id
-                    :profile profile
-                    :avatar-upload {:filename "last-write.jpg"
-                                    :mime-type "image/jpeg"
-                                    :size (bfs/size tempfile)
-                                    :tempfile (bfs/file tempfile)}
+                   {:member-id      member-id
+                    :profile        profile
+                    :avatar-upload  {:filename  "last-write.jpg"
+                                     :mime-type "image/jpeg"
+                                     :size      (bfs/size tempfile)
+                                     :tempfile  (bfs/file tempfile)}
                     :sync-keycloak? false})
-                  db (d/db conn)
+                  db     (d/db conn)
                   saved-id
                   (get-in (queries/retrieve-member db member-id)
                           [:member/avatar :image/image-id])]
@@ -271,12 +271,12 @@
           (is (thrown? Throwable
                        (save-profile!
                         {:datomic {:conn conn}}
-                        {:member-id member-id
-                         :profile profile
-                         :avatar-upload nil
+                        {:member-id      member-id
+                         :profile        profile
+                         :avatar-upload  nil
                          :sync-keycloak? false})))
-          (is (= {:member/name "Ada Lovelace"
-                  :member/email "ada@example.test"
+          (is (= {:member/name     "Ada Lovelace"
+                  :member/email    "ada@example.test"
                   :member/username "ada_l"}
                  (d/pull (d/db conn)
                          [:member/name :member/email :member/username]
@@ -295,32 +295,32 @@
                  (:status
                   (save-profile!
                    {:datomic {:conn conn}}
-                   {:member-id member-id
-                    :profile profile
-                    :avatar-upload nil
+                   {:member-id      member-id
+                    :profile        profile
+                    :avatar-upload  nil
                     :sync-keycloak? false}))))
-          (is (= {:member/name "Ada Byron"
-                  :member/email "ada.byron@example.test"
+          (is (= {:member/name     "Ada Byron"
+                  :member/email    "ada.byron@example.test"
                   :member/username "ada_byron"}
                  (d/pull (d/db conn)
                          [:member/name :member/email :member/username]
                          [:member/member-id member-id]))))))))
 
 (deftest action-and-effect-contract-carries-the-real-multipart-file
-  (let [save-profile-fx (support/public-fn
-                         'app.account.effects/save-profile-fx)
+  (let [save-profile-fx          (support/public-fn
+                                  'app.account.effects/save-profile-fx)
         {:keys [conn member-id]} (tc/new-system "profile-effect-contract")
-        tempfile (java.io.File. "/tmp/account-avatar-contract.jpg")]
+        tempfile                 (java.io.File. "/tmp/account-avatar-contract.jpg")]
     (is (fn? save-profile-fx) "app.account.effects/save-profile-fx should exist")
     (seed-member! conn member-id {})
     (let [effects
           (actions/save-profile-action
-           {:db (d/db conn)
+           {:db                (d/db conn)
             :current-member-id member-id}
            {:account-profile profile
-            :avatar-upload {:filename "portrait.jpg"
-                            :mime-type "image/jpeg"
-                            :size 1024
-                            :tempfile tempfile}})]
+            :avatar-upload   {:filename  "portrait.jpg"
+                              :mime-type "image/jpeg"
+                              :size      1024
+                              :tempfile  tempfile}})]
       (is (= tempfile (get-in effects [0 1 :avatar-upload :tempfile])))
       (is (= member-id (get-in effects [0 1 :member-id]))))))

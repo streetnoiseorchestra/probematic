@@ -12,12 +12,12 @@
 (defn- poll-housekeeping-job
   [{:keys [datomic]} _]
   (try
-    (let [conn (:conn datomic)
-          open-polls (poll.queries/find-open-polls (datomic/db conn))
-          now (t/instant)
-          polls-to-close (filter (fn [{:poll/keys [closes-at]}]
-                                   (let [closes-at (domain/closes-at-instant closes-at)]
-                                     (t/< closes-at now))) open-polls)
+    (let [conn                (:conn datomic)
+          open-polls          (poll.queries/find-open-polls (datomic/db conn))
+          now                 (t/instant)
+          polls-to-close      (filter (fn [{:poll/keys [closes-at]}]
+                                        (let [closes-at (domain/closes-at-instant closes-at)]
+                                          (t/< closes-at now))) open-polls)
           polls-to-close-txns (mapcat #(into [] %)
                                       (map (fn [poll]
                                              (μ/log ::closing-poll
@@ -45,9 +45,9 @@
     (require '[integrant.repl.state :as state])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def db  (datomic/db conn))
-    (def system {:datomic {:conn conn}
+    (def system {:datomic    {:conn conn}
                  :i18n-langs (-> state/system :app.ig/i18n-langs)
-                 :env (-> state/system :app.ig/env)}))
+                 :env        (-> state/system :app.ig/env)}))
 
   (poll-housekeeping-job system nil) ;; rcf
 

@@ -172,5 +172,5 @@
             [:app.datastar/assoc-state [:probeplan :editing] false]]
            (save-probeplans-action
             (state conn)
-            {:probeplan {:rows {"not-a-row" "ignored"
+            {:probeplan {:rows {"not-a-row"   "ignored"
                                 "missing-gig" {:songs {"s0" {:position 0}}}}}})))))

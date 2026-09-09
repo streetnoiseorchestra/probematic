@@ -61,7 +61,7 @@
 (defn- supported-type?
   [resp]
   (let [{:keys [headers body]
-         :or   {headers {}}} resp]
+         :or   {headers {}}}  resp]
     (or (string? body)
         (seq? body)
         (instance? InputStream body)

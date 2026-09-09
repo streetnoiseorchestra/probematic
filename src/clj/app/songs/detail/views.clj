@@ -66,7 +66,7 @@
                              [[button/Button {:appearance "filled"
                                               :href       (urls/link-song-edit song)}
                                [:i18n/tr :action/edit]]]
-                             :aria-label [:i18n/tr :repertoire/detail-toolbar-label]}])
+                             :aria-label               [:i18n/tr :repertoire/detail-toolbar-label]}])
 
 (defn background-section
   [{:song/keys [arrangement-credits arrangement-notes composition-credits lyrics origin solo-info]}]
@@ -203,7 +203,7 @@
    (set! $file-browser.picker-id ~(name actions/sheet-music-picker-id))
    (set! $file-browser.root-dir ~root-dir)
    (set! $file-browser.current-dir ~current-dir)
-   (set! $file-browser.target {"song-id" ~(str song-id)
+   (set! $file-browser.target {"song-id"      ~(str song-id)
                                "section-name" ~section-name})
    (@post ~(d*/act req ::file-browser.actions/open-picker))))
 

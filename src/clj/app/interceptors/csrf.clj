@@ -48,7 +48,7 @@
   [request]
   (let [allowed? (or (safe-request? request)
                      (= "same-origin" (fetch-site request)))]
-    {:allowed? allowed?
+    {:allowed?        allowed?
      :security-event? (and (not allowed?)
                            (security-event? request))}))
 
@@ -95,9 +95,9 @@
 
 (defn- rejection-response []
   (vary-fetch-site
-   {:status 403
+   {:status  403
     :headers {"Cache-Control" "no-store"}
-    :body ""}))
+    :body    ""}))
 
 (defn- log-security-event [{:keys [human-id request-method uri] :as request}]
   (μ/log ::blocked-request

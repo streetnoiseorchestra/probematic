@@ -63,14 +63,14 @@
                                         :search            "cocek"}))))))))
 
 (deftest normalize-page-state-test
-  (is (= {:search ""
+  (is (= {:search            ""
           :repertoire-filter "current"}
          (select-keys (queries/normalize-page-state nil)
                       [:search :repertoire-filter])))
 
-  (is (= {:search "Water"
+  (is (= {:search            "Water"
           :repertoire-filter "all"}
-         (select-keys (queries/normalize-page-state {:search "Water"
+         (select-keys (queries/normalize-page-state {:search            "Water"
                                                      :repertoire-filter "all"})
                       [:search :repertoire-filter])))
 

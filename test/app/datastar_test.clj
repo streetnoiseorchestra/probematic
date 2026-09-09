@@ -36,9 +36,9 @@
 (deftest respond-sse-emits-events-in-declared-order-test
   (testing "one finite response emits ordered signal, element, script, and redirect events"
     (is (=
-         {:status 200
+         {:status  200
           :headers {"Cache-Control" "no-cache"
-                    "Content-Type" "text/event-stream"}
+                    "Content-Type"  "text/event-stream"}
           :body
           ["event: datastar-patch-signals\nid: remove-1\ndata: signals {\"profile\":{\"secret\":null}}\n\n"
            (str "event: datastar-patch-elements\n"
@@ -61,7 +61,7 @@
             {d*/id "remove-1"}]
            [:app.datastar.sse/patch-elements
             "<div id=\"result\">Saved</div>"
-            {d*/selector "#main"
+            {d*/selector            "#main"
              d*/use-view-transition true}]
            [:app.datastar.sse/merge-signals
             {:loading false}
@@ -83,10 +83,10 @@
 
 (deftest respond-sse-allows-an-empty-event-vector-test
   (testing "a finite response can close without emitting an event"
-    (is (= {:status 200
+    (is (= {:status  200
             :headers {"Cache-Control" "no-cache"
-                      "Content-Type" "text/event-stream"}
-            :body []}
+                      "Content-Type"  "text/event-stream"}
+            :body    []}
            (invoke-respond-sse [])))))
 
 (deftest respond-sse-validates-before-opening-the-channel-test

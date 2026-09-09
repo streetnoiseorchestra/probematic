@@ -14,9 +14,9 @@
 (defn- claim-invitation! [conn member-id requested-at state]
   ((:handler (cell/get-cell! :member-invite/claim!))
    {:datomic-conn conn :clock (constantly requested-at)}
-   {:member/member-id member-id
+   {:member/member-id           member-id
     :member-invite/requested-at requested-at
-    :member-invite/state state}))
+    :member-invite/state        state}))
 
 (defn state-for [{:keys [conn member-id]}]
   {:db                 (d/db conn)
@@ -27,8 +27,8 @@
   (assoc (state-for system) :current-user-roles #{:admin}))
 
 (defn seed-section! [conn section-name]
-  @(d/transact conn [{:section/name section-name
-                      :section/active? true
+  @(d/transact conn [{:section/name     section-name
+                      :section/active?  true
                       :section/position 0}]))
 
 (defn seed-member! [conn member]
@@ -102,12 +102,12 @@
           member-id                 (random-uuid)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id member-id
-                          :member/name "Alice Admin"
-                          :member/nick "ally"
-                          :member/email "alice@example.com"
-                          :member/phone "+43677123456"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? true})
+                          :member/name      "Alice Admin"
+                          :member/nick      "ally"
+                          :member/email     "alice@example.com"
+                          :member/phone     "+43677123456"
+                          :member/section   [:section/name "Trumpets"]
+                          :member/active?   true})
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-detail :contact]
@@ -163,8 +163,8 @@
                {:error "Phone format is invalid."}]]
              (actions/validate-contact-field-action
               (assoc (state-for system) :tr tr)
-              (contact-signals member-id {:email "alice@example.com"
-                                          :phone "123"
+              (contact-signals member-id {:email          "alice@example.com"
+                                          :phone          "123"
                                           :validate-field "phone"}))))))
 
   (testing "clears an existing error for the blurred field"
@@ -185,10 +185,10 @@
                nil]]
              (actions/validate-contact-field-action
               (assoc (state-for system) :tr tr)
-              (contact-signals member-id {:email "alice@example.com"
-                                          :phone "+43 677 123456"
+              (contact-signals member-id {:email          "alice@example.com"
+                                          :phone          "+43 677 123456"
                                           :validate-field "phone"
-                                          :_error {:phone {:error "Phone format is invalid."}}}))))))
+                                          :_error         {:phone {:error "Phone format is invalid."}}}))))))
 
   (testing "ignores stale error signals while validating the current field"
     (let [{:keys [conn] :as system} (new-system)
@@ -208,11 +208,11 @@
                {:error "Name is required."}]]
              (actions/validate-contact-field-action
               (assoc (state-for system) :tr tr)
-              (contact-signals member-id {:name ""
-                                          :email "alice@example.com"
-                                          :phone "123"
+              (contact-signals member-id {:name           ""
+                                          :email          "alice@example.com"
+                                          :phone          "123"
                                           :validate-field "name"
-                                          :_error {:phone {:error "Previous phone error"}}}))))))
+                                          :_error         {:phone {:error "Previous phone error"}}}))))))
 
   (testing "requires nick on blur"
     (let [{:keys [conn] :as system} (new-system)
@@ -232,9 +232,9 @@
                {:error "Nick is required."}]]
              (actions/validate-contact-field-action
               (assoc (state-for system) :tr tr)
-              (contact-signals member-id {:nick ""
-                                          :email "alice@example.com"
-                                          :phone "+43 677 123456"
+              (contact-signals member-id {:nick           ""
+                                          :email          "alice@example.com"
+                                          :phone          "+43 677 123456"
                                           :validate-field "nick"})))))))
 
 (deftest set-active-tab-action-test
@@ -264,10 +264,10 @@
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-detail :travel-discount-create]
-               {:member-id         (str member-id)
-                :discount-type-id  ""
-                :expiry-date       ""
-                :_error            {}}]]
+               {:member-id        (str member-id)
+                :discount-type-id ""
+                :expiry-date      ""
+                :_error           {}}]]
              (actions/open-travel-discount-create-action
               (state-for system)
               {:targetid (str member-id)}))))
@@ -535,7 +535,7 @@
 
   (testing "returns validation errors"
     (let [{:keys [_conn] :as system} (new-system)
-          edited-member-id          (random-uuid)]
+          edited-member-id           (random-uuid)]
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-detail :ledger-entry]
@@ -569,12 +569,12 @@
       (seed-ledger! conn {:member-id edited-member-id
                           :ledger-id ledger-id
                           :balance   5205})
-      (seed-ledger-entry! conn {:ledger-id     ledger-id
-                                :entry-id      entry-id
-                                :amount        4205
-                                :tx-date       "2026-04-20"
-                                :posting-date  #inst "2026-04-20T12:00:00.000-00:00"
-                                :description   "Monthly dues"})
+      (seed-ledger-entry! conn {:ledger-id    ledger-id
+                                :entry-id     entry-id
+                                :amount       4205
+                                :tx-date      "2026-04-20"
+                                :posting-date #inst "2026-04-20T12:00:00.000-00:00"
+                                :description  "Monthly dues"})
       (is (= [[:db/transact [[:db/retractEntity [:ledger.entry/entry-id entry-id]]
                              [:db/add [:ledger/ledger-id ledger-id] :ledger/balance 1000]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
@@ -590,21 +590,21 @@
           edited-member-id                    (random-uuid)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id edited-member-id
-                          :member/name "Alice Old"
-                          :member/nick "old"
-                          :member/email "old@example.com"
-                          :member/phone "+431111111"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? false})
+                          :member/name      "Alice Old"
+                          :member/nick      "old"
+                          :member/email     "old@example.com"
+                          :member/phone     "+431111111"
+                          :member/section   [:section/name "Trumpets"]
+                          :member/active?   false})
       (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
                               edited-member-id
-                              [{:db/id            [:member/member-id edited-member-id]
-                                :member/name      "Alice Admin"
-                                :member/nick      "ally"
-                                :member/email     "alice@example.com"
-                                :member/phone     "+43677123456"
-                                :member/section   [:section/name "Trumpets"]
-                                :member/active?   true}]]
+                              [{:db/id          [:member/member-id edited-member-id]
+                                :member/name    "Alice Admin"
+                                :member/nick    "ally"
+                                :member/email   "alice@example.com"
+                                :member/phone   "+43677123456"
+                                :member/section [:section/name "Trumpets"]
+                                :member/active? true}]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? true}]
               support/clear-loading
@@ -618,12 +618,12 @@
           edited-member-id          (random-uuid)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id edited-member-id
-                          :member/name "Alice Old"
-                          :member/nick "old"
-                          :member/email "old@example.com"
-                          :member/phone "+431111111"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? true})
+                          :member/name      "Alice Old"
+                          :member/nick      "old"
+                          :member/email     "old@example.com"
+                          :member/phone     "+431111111"
+                          :member/section   [:section/name "Trumpets"]
+                          :member/active?   true})
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-detail :contact]
@@ -643,22 +643,22 @@
     (let [{:keys [conn member-id] :as system} (new-system)
           edited-member-id                    (random-uuid)]
       (seed-section! conn "Trumpets")
-      (seed-member! conn {:member/member-id edited-member-id
-                          :member/name "Alice Old"
-                          :member/email "old@example.com"
-                          :member/phone "+431111111"
+      (seed-member! conn {:member/member-id   edited-member-id
+                          :member/name        "Alice Old"
+                          :member/email       "old@example.com"
+                          :member/phone       "+431111111"
                           :member/keycloak-id "kc-123"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? false})
+                          :member/section     [:section/name "Trumpets"]
+                          :member/active?     false})
       (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
                               edited-member-id
-                              [{:db/id            [:member/member-id edited-member-id]
-                                :member/name      "Alice Admin"
-                                :member/nick      "ally"
-                                :member/email     "alice@example.com"
-                                :member/phone     "+43677123456"
-                                :member/section   [:section/name "Trumpets"]
-                                :member/active?   true}]]
+                              [{:db/id          [:member/member-id edited-member-id]
+                                :member/name    "Alice Admin"
+                                :member/nick    "ally"
+                                :member/email   "alice@example.com"
+                                :member/phone   "+43677123456"
+                                :member/section [:section/name "Trumpets"]
+                                :member/active? true}]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? true}]
               [:app.members/update-keycloak-meta edited-member-id]
@@ -672,25 +672,25 @@
     (let [{:keys [conn member-id] :as system} (new-system)
           edited-member-id                    (random-uuid)]
       (seed-section! conn "Trumpets")
-      (seed-member! conn {:member/member-id edited-member-id
-                          :member/name "Alice Old"
-                          :member/nick "old"
-                          :member/email "old@example.com"
-                          :member/phone "+431111111"
-                          :member/username "alice.old"
+      (seed-member! conn {:member/member-id   edited-member-id
+                          :member/name        "Alice Old"
+                          :member/nick        "old"
+                          :member/email       "old@example.com"
+                          :member/phone       "+431111111"
+                          :member/username    "alice.old"
                           :member/keycloak-id "kc-123"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? true})
+                          :member/section     [:section/name "Trumpets"]
+                          :member/active?     true})
       (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
                               edited-member-id
-                              [{:db/id              [:member/member-id edited-member-id]
-                                :member/name        "Alice Admin"
-                                :member/nick        "ally"
-                                :member/email       "alice@example.com"
-                                :member/phone       "+43677123456"
-                                :member/section     [:section/name "Trumpets"]
-                                :member/active?     true
-                                :member/username    "alice.new"}]]
+                              [{:db/id           [:member/member-id edited-member-id]
+                                :member/name     "Alice Admin"
+                                :member/nick     "ally"
+                                :member/email    "alice@example.com"
+                                :member/phone    "+43677123456"
+                                :member/section  [:section/name "Trumpets"]
+                                :member/active?  true
+                                :member/username "alice.new"}]]
                              [:member/set-keycloak-id
                               edited-member-id
                               "kc-456"]
@@ -702,33 +702,33 @@
               [:app.datastar/assoc-state [:member-detail :contact] false]]
              (actions/update-contact-action
               (assoc (admin-state-for system) :tr tr)
-              (contact-signals edited-member-id {:username "Alice.New  "
-                                                 :keycloak-id "kc-456"
-                                                 :sno-id-enabled false
+              (contact-signals edited-member-id {:username                "Alice.New  "
+                                                 :keycloak-id             "kc-456"
+                                                 :sno-id-enabled          false
                                                  :sno-id-enabled-original true}))))))
 
   (testing "non-admin contact updates ignore submitted SNO ID fields"
     (let [{:keys [conn member-id] :as system} (new-system)
           edited-member-id                    (random-uuid)]
       (seed-section! conn "Trumpets")
-      (seed-member! conn {:member/member-id edited-member-id
-                          :member/name "Alice Old"
-                          :member/nick "old"
-                          :member/email "old@example.com"
-                          :member/phone "+431111111"
-                          :member/username "alice.old"
+      (seed-member! conn {:member/member-id   edited-member-id
+                          :member/name        "Alice Old"
+                          :member/nick        "old"
+                          :member/email       "old@example.com"
+                          :member/phone       "+431111111"
+                          :member/username    "alice.old"
                           :member/keycloak-id "kc-123"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? true})
+                          :member/section     [:section/name "Trumpets"]
+                          :member/active?     true})
       (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
                               edited-member-id
-                              [{:db/id            [:member/member-id edited-member-id]
-                                :member/name      "Alice Admin"
-                                :member/nick      "ally"
-                                :member/email     "alice@example.com"
-                                :member/phone     "+43677123456"
-                                :member/section   [:section/name "Trumpets"]
-                                :member/active?   true}]]
+                              [{:db/id          [:member/member-id edited-member-id]
+                                :member/name    "Alice Admin"
+                                :member/nick    "ally"
+                                :member/email   "alice@example.com"
+                                :member/phone   "+43677123456"
+                                :member/section [:section/name "Trumpets"]
+                                :member/active? true}]]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
                {:transact-w-nils? true}]
               [:app.members/update-keycloak-meta edited-member-id]
@@ -736,9 +736,9 @@
               [:app.datastar/assoc-state [:member-detail :contact] false]]
              (actions/update-contact-action
               (assoc (state-for system) :tr tr)
-              (contact-signals edited-member-id {:username "malicious"
-                                                 :keycloak-id "kc-456"
-                                                 :sno-id-enabled false
+              (contact-signals edited-member-id {:username                "malicious"
+                                                 :keycloak-id             "kc-456"
+                                                 :sno-id-enabled          false
                                                  :sno-id-enabled-original true}))))))
 
   (testing "admin contact updates validate duplicate usernames"
@@ -746,17 +746,17 @@
           edited-member-id          (random-uuid)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id edited-member-id
-                          :member/email "old@example.com"
-                          :member/phone "+431111111"
-                          :member/username "alice.old"})
+                          :member/email     "old@example.com"
+                          :member/phone     "+431111111"
+                          :member/username  "alice.old"})
       (seed-member! conn {:member/member-id (random-uuid)
-                          :member/name "Existing Member"
-                          :member/nick "taken-nick"
-                          :member/email "taken@example.com"
-                          :member/phone "+43999999999"
-                          :member/username "taken"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? true})
+                          :member/name      "Existing Member"
+                          :member/nick      "taken-nick"
+                          :member/email     "taken@example.com"
+                          :member/phone     "+43999999999"
+                          :member/username  "taken"
+                          :member/section   [:section/name "Trumpets"]
+                          :member/active?   true})
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-detail :contact]
@@ -798,10 +798,10 @@
                                :section-name {:error "Please choose a valid section."}}}]]
              (actions/update-contact-action
               (assoc (state-for system) :tr tr)
-              (contact-signals edited-member-id {:name ""
-                                                 :nick ""
-                                                 :email ""
-                                                 :phone "123"
+              (contact-signals edited-member-id {:name         ""
+                                                 :nick         ""
+                                                 :email        ""
+                                                 :phone        "123"
                                                  :section-name "Unknown"}))))))
 
   (testing "returns uniqueness errors for other members"
@@ -809,15 +809,15 @@
           edited-member-id          (random-uuid)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id edited-member-id
-                          :member/email "old@example.com"
-                          :member/phone "+431111111"})
+                          :member/email     "old@example.com"
+                          :member/phone     "+431111111"})
       (seed-member! conn {:member/member-id (random-uuid)
-                          :member/name "Existing Member"
-                          :member/nick "ally"
-                          :member/email "alice@example.com"
-                          :member/phone "+43677123456"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? true})
+                          :member/name      "Existing Member"
+                          :member/nick      "ally"
+                          :member/email     "alice@example.com"
+                          :member/phone     "+43677123456"
+                          :member/section   [:section/name "Trumpets"]
+                          :member/active?   true})
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-detail :contact]
@@ -843,17 +843,17 @@
                     :member.invite.status/compensating]]
       (let [{:keys [conn] :as system}
             (new-system)
-            edited-member-id (random-uuid)]
+            edited-member-id          (random-uuid)]
         (seed-section! conn "Trumpets")
-        (seed-member! conn {:member/member-id edited-member-id
-                            :member/name "Alice Old"
-                            :member/nick "old"
-                            :member/email "old@example.com"
-                            :member/username "alice.old"
-                            :member/phone "+431111111"
-                            :member/section [:section/name "Trumpets"]
-                            :member/active? true
-                            :member/invite-status status
+        (seed-member! conn {:member/member-id         edited-member-id
+                            :member/name              "Alice Old"
+                            :member/nick              "old"
+                            :member/email             "old@example.com"
+                            :member/username          "alice.old"
+                            :member/phone             "+431111111"
+                            :member/section           [:section/name "Trumpets"]
+                            :member/active?           true
+                            :member/invite-status     status
                             :member/invite-generation 2
                             :member/invite-status-at
                             #inst "2026-07-16T08:05:00.000-00:00"})
@@ -864,8 +864,8 @@
                                 {:username "Alice.New"}))]
           (is (thrown? Throwable
                        @(d/transact conn (-> effects first second))))
-          (is (= {:member/name "Alice Old"
-                  :member/email "old@example.com"
+          (is (= {:member/name     "Alice Old"
+                  :member/email    "old@example.com"
                   :member/username "alice.old"}
                  (d/pull (d/db conn)
                          [:member/name :member/email :member/username]
@@ -878,18 +878,18 @@
                     :member.invite.status/revoked]]
       (let [{:keys [conn] :as system}
             (new-system)
-            edited-member-id (random-uuid)]
+            edited-member-id          (random-uuid)]
         (seed-section! conn "Trumpets")
         (seed-member!
          conn
          (cond-> {:member/member-id edited-member-id
-                  :member/name "Alice Old"
-                  :member/nick "old"
-                  :member/email "old@example.com"
-                  :member/username "alice.old"
-                  :member/phone "+431111111"
-                  :member/section [:section/name "Trumpets"]
-                  :member/active? true}
+                  :member/name      "Alice Old"
+                  :member/nick      "old"
+                  :member/email     "old@example.com"
+                  :member/username  "alice.old"
+                  :member/phone     "+431111111"
+                  :member/section   [:section/name "Trumpets"]
+                  :member/active?   true}
            status
            (assoc :member/invite-status status
                   :member/invite-generation 2
@@ -901,8 +901,8 @@
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
           @(d/transact conn (-> effects first second))
-          (is (= {:member/name "Alice Admin"
-                  :member/email "alice@example.com"
+          (is (= {:member/name     "Alice Admin"
+                  :member/email    "alice@example.com"
                   :member/username "alice.new"}
                  (d/pull (d/db conn)
                          [:member/name :member/email :member/username]
@@ -918,42 +918,42 @@
       (let [{:keys [conn] :as system} (new-system)
             edited-member-id          (random-uuid)]
         (seed-section! conn "Trumpets")
-        (seed-member! conn {:member/member-id edited-member-id
-                            :member/name "Alice Old"
-                            :member/nick "old"
-                            :member/email "old@example.com"
-                            :member/username "alice.old"
-                            :member/phone "+431111111"
-                            :member/section [:section/name "Trumpets"]
-                            :member/active? true
-                            :member/invite-code "claim-first"
+        (seed-member! conn {:member/member-id         edited-member-id
+                            :member/name              "Alice Old"
+                            :member/nick              "old"
+                            :member/email             "old@example.com"
+                            :member/username          "alice.old"
+                            :member/phone             "+431111111"
+                            :member/section           [:section/name "Trumpets"]
+                            :member/active?           true
+                            :member/invite-code       "claim-first"
                             :member/invite-expires-at expires-at
-                            :member/invite-status pending
+                            :member/invite-status     pending
                             :member/invite-generation 1
-                            :member/invite-status-at issued-at})
+                            :member/invite-status-at  issued-at})
         (let [effects
               (actions/update-contact-action
                (assoc (admin-state-for system) :tr tr)
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
-          (is (= {:member-invite/claim-status :claimed
+          (is (= {:member-invite/claim-status       :claimed
                   :member-invite/attempt-generation 2
                   :member-invite/state
-                  {:status accepting
+                  {:status     accepting
                    :generation 2
                    :expires-at expires-at}}
                  (claim-invitation!
                   conn
                   edited-member-id
                   claimed-at
-                  {:status pending
+                  {:status     pending
                    :generation 1
                    :expires-at expires-at})))
           (is (thrown? Throwable
                        @(d/transact conn (-> effects first second))))
-          (is (= {:member/name "Alice Old"
-                  :member/email "old@example.com"
-                  :member/username "alice.old"
+          (is (= {:member/name          "Alice Old"
+                  :member/email         "old@example.com"
+                  :member/username      "alice.old"
                   :member/invite-status {:db/ident accepting}}
                  (d/pull (d/db conn)
                          [:member/name
@@ -966,41 +966,41 @@
       (let [{:keys [conn] :as system} (new-system)
             edited-member-id          (random-uuid)]
         (seed-section! conn "Trumpets")
-        (seed-member! conn {:member/member-id edited-member-id
-                            :member/name "Alice Old"
-                            :member/nick "old"
-                            :member/email "old@example.com"
-                            :member/username "alice.old"
-                            :member/phone "+431111111"
-                            :member/section [:section/name "Trumpets"]
-                            :member/active? true
-                            :member/invite-code "profile-first"
+        (seed-member! conn {:member/member-id         edited-member-id
+                            :member/name              "Alice Old"
+                            :member/nick              "old"
+                            :member/email             "old@example.com"
+                            :member/username          "alice.old"
+                            :member/phone             "+431111111"
+                            :member/section           [:section/name "Trumpets"]
+                            :member/active?           true
+                            :member/invite-code       "profile-first"
                             :member/invite-expires-at expires-at
-                            :member/invite-status pending
+                            :member/invite-status     pending
                             :member/invite-generation 1
-                            :member/invite-status-at issued-at})
+                            :member/invite-status-at  issued-at})
         (let [effects
               (actions/update-contact-action
                (assoc (admin-state-for system) :tr tr)
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
           @(d/transact conn (-> effects first second))
-          (is (= {:member-invite/claim-status :claimed
+          (is (= {:member-invite/claim-status       :claimed
                   :member-invite/attempt-generation 2
                   :member-invite/state
-                  {:status accepting
+                  {:status     accepting
                    :generation 2
                    :expires-at expires-at}}
                  (claim-invitation!
                   conn
                   edited-member-id
                   claimed-at
-                  {:status pending
+                  {:status     pending
                    :generation 1
                    :expires-at expires-at})))
-          (is (= {:member/name "Alice Admin"
-                  :member/email "alice@example.com"
-                  :member/username "alice.new"
+          (is (= {:member/name          "Alice Admin"
+                  :member/email         "alice@example.com"
+                  :member/username      "alice.new"
                   :member/invite-status {:db/ident accepting}}
                  (d/pull (d/db conn)
                          [:member/name

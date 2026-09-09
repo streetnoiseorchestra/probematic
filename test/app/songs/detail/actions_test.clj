@@ -32,10 +32,10 @@
           "Noten - Scores/Bella Ciao/Bella Ciao Trumpet.pdf"))))
 
 (deftest selected-path-test
-  (is (= {"/foo/bar"        "foo/bar"
-          "/foo//bar"       "foo//bar"
-          "/../foo"         "foo"
-          "/foo/../../bar"  "bar"}
+  (is (= {"/foo/bar"       "foo/bar"
+          "/foo//bar"      "foo//bar"
+          "/../foo"        "foo"
+          "/foo/../../bar" "bar"}
          (into {}
                (map (fn [path]
                       [path (@#'actions/selected-path {:file-browser {:selected-path path}})]))
@@ -62,7 +62,7 @@
               [:app.datastar/respond-sse
                [[:app.datastar.sse/merge-signals
                  {:file-browser {:selected-path nil
-                                 :target-dir nil}}]]]]
+                                 :target-dir    nil}}]]]]
              (actions/add-sheet-music-action
               (state-for system page-state)
               {:file-browser {:picker-id     "song-sheet-music"
@@ -72,7 +72,7 @@
     (is (= [[:app.datastar/respond-sse
              [[:app.datastar.sse/merge-signals
                {:file-browser {:selected-path nil
-                               :target-dir nil}}]]]]
+                               :target-dir    nil}}]]]]
            (actions/add-sheet-music-action
             (state-for (new-system)
                        {:file-browser {:song-sheet-music {:target {:song-id      (str (random-uuid))

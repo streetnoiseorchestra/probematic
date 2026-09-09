@@ -32,7 +32,7 @@
 
 (defn session-config
   [env]
-  (let [{:keys [session-ttl-s] :as sc}  (:session-config env)]
+  (let [{:keys [session-ttl-s] :as sc} (:session-config env)]
     (-> sc
         (assoc-in [:cookie-attrs :max-age] session-ttl-s)
         (assoc-in [:cookie-attrs :secure] (not (dev-mode? env))))))

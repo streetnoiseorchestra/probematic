@@ -51,8 +51,8 @@
                        (interceptors/webdav-interceptor system)]}
 
     ["/admin/jobs" {:app.auth/roles #{:admin}
-                    :interceptors [auth/roles-authorization-interceptor]
-                    :handler (get-in system [:job-queue :ui-handler])}
+                    :interceptors   [auth/roles-authorization-interceptor]
+                    :handler        (get-in system [:job-queue :ui-handler])}
      [""]
      ["/*path"]]
 
@@ -82,7 +82,7 @@
 
 (defn- resource-handler-options
   [system]
-  {:path "/"
+  {:path            "/"
    :allow-symlinks? (config/dev-mode? (:env system))})
 
 (defn default-handler [system]

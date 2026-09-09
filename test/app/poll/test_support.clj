@@ -50,11 +50,11 @@
                              :poll/description "Existing description"
                              :poll/poll-type   poll-type
                              :poll/poll-status poll-status
-                             :poll/chart-type   :poll.chart.type/bar
-                             :poll/author       [:member/member-id member-id]
-                             :poll/closes-at    default-closes-at
-                             :poll/created-at   created-at
-                             :poll/autoremind?  false}
+                             :poll/chart-type  :poll.chart.type/bar
+                             :poll/author      [:member/member-id member-id]
+                             :poll/closes-at   default-closes-at
+                             :poll/created-at  created-at
+                             :poll/autoremind? false}
                             (when (= :poll.type/multiple poll-type)
                               {:poll/min-choice 1
                                :poll/max-choice (min 2 (count option-values))})
@@ -71,7 +71,7 @@
                              option-ids
                              option-values)]
      @(d/transact conn (vec (concat [poll-tx] option-txs)))
-     {:poll-id poll-id
+     {:poll-id    poll-id
       :option-ids option-ids})))
 
 (defn seed-vote! [conn poll-id member-id option-id]
@@ -85,22 +85,22 @@
     vote-id))
 
 (defn action-state [conn member-id]
-  {:tr tr
-   :db (d/db conn)
+  {:tr                tr
+   :db                (d/db conn)
    :current-member-id member-id
-   :now #inst "2026-06-17T18:00:00.000-00:00"})
+   :now               #inst "2026-06-17T18:00:00.000-00:00"})
 
 (defn valid-edit-form [poll-id]
-  {:poll-id      (str poll-id)
-   :title        "Pizza Poll"
-   :description  "Choose dinner"
-   :poll-type    "single"
-   :min-choice   ""
-   :max-choice   ""
-   :closes-at    "2026-06-17T19:00"
-   :autoremind?  false
-   :options      [{:value "Pizza"}
-                  {:value "Tacos"}]})
+  {:poll-id     (str poll-id)
+   :title       "Pizza Poll"
+   :description "Choose dinner"
+   :poll-type   "single"
+   :min-choice  ""
+   :max-choice  ""
+   :closes-at   "2026-06-17T19:00"
+   :autoremind? false
+   :options     [{:value "Pizza"}
+                 {:value "Tacos"}]})
 
 (defn multiple-edit-form [poll-id]
   (assoc (valid-edit-form poll-id)
@@ -115,5 +115,5 @@
   {:poll-detail {:poll-id (str poll-id)}})
 
 (defn vote-signals [poll-id option-ids]
-  {:poll-vote {:poll-id (str poll-id)
+  {:poll-vote {:poll-id          (str poll-id)
                :selected-options (mapv str option-ids)}})

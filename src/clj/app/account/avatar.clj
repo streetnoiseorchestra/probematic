@@ -38,14 +38,14 @@
   | `:parameters/path` | Coerced `:member-id` and `:size` values"
   [{:keys [db filestore] :as request}]
   (let [{:keys [member-id size]} (get-in request [:parameters :path])
-        size (requested-size size)
-        member-id (try
-                    (util/ensure-uuid! member-id)
-                    (catch Exception _exception
-                      nil))
-        member (when (and db member-id (allowed-sizes size))
-                 (queries/retrieve-member db member-id))
-        image (rendition member size)]
+        size                     (requested-size size)
+        member-id                (try
+                                   (util/ensure-uuid! member-id)
+                                   (catch Exception _exception
+                                     nil))
+        member                   (when (and db member-id (allowed-sizes size))
+                                   (queries/retrieve-member db member-id))
+        image                    (rendition member size)]
     (if-not image
       {:status 404 :headers {} :body ""}
       (let [{:keys [mime-type etag last-modified size content-thunk]}
@@ -53,11 +53,11 @@
         (not-modified/not-modified-response
          {:status 200
           :headers
-          (cond-> {"Content-Type" mime-type
-                   "Cache-Control" "private, max-age=3600"
-                   "ETag" etag
+          (cond-> {"Content-Type"   mime-type
+                   "Cache-Control"  "private, max-age=3600"
+                   "ETag"           etag
                    "Content-Length" (str size)}
             last-modified
             (assoc "Last-Modified" (ring-time/format-date last-modified)))
-          :body (content-thunk)}
+          :body   (content-thunk)}
          request)))))

@@ -17,18 +17,18 @@
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def translations
-  {[:insurance/category-factors] "Category factors"
-   [:insurance/coverage-types] "Coverage types"
-   [:insurance/dashboard-policy-details] "Policy details"
-   [:insurance/policy-settings-add-category-factor] "Add category factor"
+  {[:insurance/category-factors]                                        "Category factors"
+   [:insurance/coverage-types]                                          "Coverage types"
+   [:insurance/dashboard-policy-details]                                "Policy details"
+   [:insurance/policy-settings-add-category-factor]                     "Add category factor"
    [:insurance/policy-settings-category-factor-create-disabled-tooltip] "Every instrument category already has a category factor."
-   [:insurance/policy-settings-current-totals] "Current totals"
-   [:insurance/policy-settings-error-not-allowed] "You are not allowed to change policy settings."
-   [:insurance/exporter] "Exporter"
-   [:insurance/coverage-type-impact-confirmation] "This will add the coverage type to %count instruments."
-   [:insurance/coverage-type-confirmation-count] "Type %count to confirm"
-   [:insurance/coverage-type-confirmation-count-hint] "Enter the current number of affected instruments."
-   [:insurance/policy-settings-read-only-title] "Settings are read-only"})
+   [:insurance/policy-settings-current-totals]                          "Current totals"
+   [:insurance/policy-settings-error-not-allowed]                       "You are not allowed to change policy settings."
+   [:insurance/exporter]                                                "Exporter"
+   [:insurance/coverage-type-impact-confirmation]                       "This will add the coverage type to %count instruments."
+   [:insurance/coverage-type-confirmation-count]                        "Type %count to confirm"
+   [:insurance/coverage-type-confirmation-count-hint]                   "Enter the current number of affected instruments."
+   [:insurance/policy-settings-read-only-title]                         "Settings are read-only"})
 
 (defn tr
   ([path]
@@ -114,15 +114,15 @@
                    :insurance.exporter.harmonia-v1/overnight-vehicle
                    :label-key
                    :insurance/exporter-role-overnight-vehicle
-                   :required?        true
-                   :coverage-type-id coverage-type-id
+                   :required?          true
+                   :coverage-type-id   coverage-type-id
                    :coverage-type-name "Basic"}
                   {:role
                    :insurance.exporter.harmonia-v1/unattended-building
                    :label-key
                    :insurance/exporter-role-unattended-building
-                   :required?        true
-                   :coverage-type-id coverage-type-id
+                   :required?          true
+                   :coverage-type-id   coverage-type-id
                    :coverage-type-name "Basic"}]}
    :current-totals         {}
    :warnings               []})
@@ -190,17 +190,17 @@
                     {:open      true
                      :policy-id policy-id
                      :icon      :phosphor/shield})
-          configured (initial-signals
-                      (settings-view request-with-icon
-                                     editable-draft-settings))
+          configured        (initial-signals
+                             (settings-view request-with-icon
+                                            editable-draft-settings))
           unconfigured-settings
           (assoc editable-draft-settings
                  :exporter-configuration
                  {:exporter-id nil
                   :status      :not-configured
                   :role-rows   []})
-          unconfigured (initial-signals
-                        (settings-view unconfigured-settings))]
+          unconfigured      (initial-signals
+                             (settings-view unconfigured-settings))]
       (is (= {:configured
               {:icon        "phosphor/shield"
                :exporter-id "insurance/exporter-harmonia-v1"
@@ -212,15 +212,15 @@
               :unconfigured
               {:icon "" :exporter-id "" :roles []}}
              {:configured
-              {:icon (get-in configured ["coverageType" "icon"])
+              {:icon        (get-in configured ["coverageType" "icon"])
                :exporter-id (get-in configured ["exporter" "exporterId"])
-               :roles (mapv #(get % "role")
-                            (get-in configured ["exporter" "mappings"]))
+               :roles       (mapv #(get % "role")
+                                  (get-in configured ["exporter" "mappings"]))
                :coverage-type-ids
                (mapv #(get % "coverageTypeId")
                      (get-in configured ["exporter" "mappings"]))}
               :unconfigured
-              {:icon (get-in unconfigured ["coverageType" "icon"])
+              {:icon  (get-in unconfigured ["coverageType" "icon"])
                :exporter-id
                (get-in unconfigured ["exporter" "exporterId"])
                :roles (mapv #(get % "role")
@@ -383,15 +383,15 @@
 
 (deftest validation-errors
   (testing "Policy detail validation failed after the member submitted edited values."
-    (let [submitted-policy   {:name            ""
-                              :effective-at    "2027-02-01"
-                              :effective-until "2027-01-01"
-                              :premium-factor  "bad"
-                              :currency        "USD"
-                              :_error          {:_top           {:error "Fix the form."}
-                                                :name           {:error "Name is required."}
-                                                :effective-at   {:error "Invalid date."}
-                                                :premium-factor {:error "Invalid factor."}}}
+    (let [submitted-policy    {:name            ""
+                               :effective-at    "2027-02-01"
+                               :effective-until "2027-01-01"
+                               :premium-factor  "bad"
+                               :currency        "USD"
+                               :_error          {:_top           {:error "Fix the form."}
+                                                 :name           {:error "Name is required."}
+                                                 :effective-at   {:error "Invalid date."}
+                                                 :premium-factor {:error "Invalid factor."}}}
           request-with-errors (assoc-in req
                                         [:page-state :insurance-policy-settings :policy]
                                         submitted-policy)
@@ -421,12 +421,12 @@
     (let [request-with-dialogs
           (assoc req :page-state
                  {:insurance-policy-settings
-                  {:coverage-type-create {:open      true
-                                          :policy-id policy-id
-                                          :name      "New type"}
-                   :coverage-type        {:policy-id policy-id
-                                          :type-id   coverage-type-id
-                                          :name      "Basic"}
+                  {:coverage-type-create   {:open      true
+                                            :policy-id policy-id
+                                            :name      "New type"}
+                   :coverage-type          {:policy-id policy-id
+                                            :type-id   coverage-type-id
+                                            :name      "Basic"}
                    :category-factor-create {:open        true
                                             :policy-id   policy-id
                                             :category-id percussion-category-id}
@@ -434,12 +434,12 @@
                                             :category-factor-id category-factor-id
                                             :category-id        brass-category-id
                                             :category-name      "Brass"}}})
-          view            (settings-view request-with-dialogs
-                                         editable-draft-settings)
-          coverage-create (l/select-one "#coverage-type-create-dialog" view)
-          coverage-edit   (l/select-one "#coverage-type-edit-dialog" view)
-          category-create (l/select-one "#category-factor-create-dialog" view)
-          category-edit   (l/select-one "#category-factor-edit-dialog" view)]
+          view                 (settings-view request-with-dialogs
+                                              editable-draft-settings)
+          coverage-create      (l/select-one "#coverage-type-create-dialog" view)
+          coverage-edit        (l/select-one "#coverage-type-edit-dialog" view)
+          category-create      (l/select-one "#category-factor-create-dialog" view)
+          category-edit        (l/select-one "#category-factor-edit-dialog" view)]
       (testing "Each dialog submits to its matching action."
         (is (= [#{:create-coverage-type}
                 #{:update-coverage-type}
@@ -476,11 +476,11 @@
                      :premium-factor "0.25"
                      :icon           :phosphor/shield
                      :required?      false})
-          view     (settings-view request-with-dialog editable-draft-settings)
-          combobox (l/select-one "#coverage-type-create-icon" view)
-          options  (l/select 'wa-option combobox)
-          shield   (option-by-value "phosphor/shield" combobox)
-          outlined (option-by-value "snoico/circle-check-outline" combobox)
+          view                (settings-view request-with-dialog editable-draft-settings)
+          combobox            (l/select-one "#coverage-type-create-icon" view)
+          options             (l/select 'wa-option combobox)
+          shield              (option-by-value "phosphor/shield" combobox)
+          outlined            (option-by-value "snoico/circle-check-outline" combobox)
           edit-request
           (assoc-in req
                     [:page-state
@@ -492,47 +492,47 @@
                      :description    "Base coverage"
                      :premium-factor "1.0"
                      :icon           :snoico/home})
-          edit-view     (settings-view edit-request editable-draft-settings)
-          edit-combobox (l/select-one "#coverage-type-edit-icon" edit-view)
-          current-icon  (combobox-current-icon combobox)
-          edit-current-icon (combobox-current-icon edit-combobox)]
+          edit-view           (settings-view edit-request editable-draft-settings)
+          edit-combobox       (l/select-one "#coverage-type-edit-icon" edit-view)
+          current-icon        (combobox-current-icon combobox)
+          edit-current-icon   (combobox-current-icon edit-combobox)]
       (is (= {:control
-              {:required?          true
-               :multiple?          false
+              {:required?           true
+               :multiple?           false
                :allow-custom-value? false
-               :allow-create?      false
+               :allow-create?       false
                :data-bind
                "insurancePolicySettings.coverageType.icon"}
-              :option-count (count (registered-icon-values))
-              :option-values (registered-icon-values)
-              :selected-values ["phosphor/shield"]
+              :option-count         (count (registered-icon-values))
+              :option-values        (registered-icon-values)
+              :selected-values      ["phosphor/shield"]
               :edit-selected-values ["snoico/home"]
-              :labels {:shield "Shield"
-                       :outlined "Circle Check Outline"}
+              :labels               {:shield   "Shield"
+                                     :outlined "Circle Check Outline"}
               :previews
-              {:shield {::ico/library :phosphor
-                        ::ico/name    :shield
-                        :slot         "start"}
+              {:shield   {::ico/library :phosphor
+                          ::ico/name    :shield
+                          :slot         "start"}
                :outlined {::ico/library :snoico
                           ::ico/name    :circle-check-outline
                           :slot         "start"}}
               :current-icons
-              {:create {::ico/library :phosphor
-                        ::ico/name    :shield
-                        :slot         "start"}
-               :edit   {::ico/library :snoico
-                        ::ico/name    :home
-                        :slot         "start"}
+              {:create    {::ico/library :phosphor
+                           ::ico/name    :shield
+                           :slot         "start"}
+               :edit      {::ico/library :snoico
+                           ::ico/name    :home
+                           :slot         "start"}
                :reactive? true}
-              :wa-icons 0}
+              :wa-icons             0}
              {:control
               (let [attrs (l/attrs combobox)]
-                {:required?          (= true (:required attrs))
-                 :multiple?          (contains? attrs :multiple)
+                {:required?           (= true (:required attrs))
+                 :multiple?           (contains? attrs :multiple)
                  :allow-custom-value? (contains? attrs :allow-custom-value)
-                 :allow-create?      (contains? attrs :allow-create)
-                 :data-bind          (:data-bind attrs)})
-              :option-count (count options)
+                 :allow-create?       (contains? attrs :allow-create)
+                 :data-bind           (:data-bind attrs)})
+              :option-count  (count options)
               :option-values (into #{} (map (comp :value l/attrs)) options)
               :selected-values
               (mapv (comp :value l/attrs)
@@ -541,12 +541,12 @@
               (mapv (comp :value l/attrs)
                     (filter #(= true (:selected (l/attrs %)))
                             (l/select 'wa-option edit-combobox)))
-              :labels {:shield   (l/text shield)
-                       :outlined (l/text outlined)}
+              :labels        {:shield   (l/text shield)
+                              :outlined (l/text outlined)}
               :previews
-              {:shield (select-keys
-                        (l/attrs (l/select-one ico/Icon shield))
-                        [::ico/library ::ico/name :slot])
+              {:shield   (select-keys
+                          (l/attrs (l/select-one ico/Icon shield))
+                          [::ico/library ::ico/name :slot])
                :outlined (select-keys
                           (l/attrs (l/select-one ico/Icon outlined))
                           [::ico/library ::ico/name :slot])}
@@ -571,7 +571,7 @@
                          (= "$insurancePolicySettings.coverageType.icon ? 'start' : null"
                             (:data-attr:slot attrs)))))
                 [current-icon edit-current-icon])}
-              :wa-icons (count (l/select 'wa-icon combobox))})))))
+              :wa-icons      (count (l/select 'wa-icon combobox))})))))
 
 (deftest coverage-type-required-and-impact-controls
   (testing "Create and edit forms expose required state and exact-count confirmation."
@@ -580,16 +580,16 @@
                     [:page-state
                      :insurance-policy-settings
                      :coverage-type-create]
-                    {:open                    true
-                     :policy-id               policy-id
-                     :name                    "New type"
-                     :description             "Description"
-                     :premium-factor          "0.25"
-                     :icon                    :phosphor/shield
-                     :required?               true
+                    {:open                     true
+                     :policy-id                policy-id
+                     :name                     "New type"
+                     :description              "Description"
+                     :premium-factor           "0.25"
+                     :icon                     :phosphor/shield
+                     :required?                true
                      :add-to-band-instruments? false
-                     :impact-count            3
-                     :confirmation-count      "2"
+                     :impact-count             3
+                     :confirmation-count       "2"
                      :_error
                      {:confirmation-count {:error "Type 3 to confirm."}}})
           edit-request
@@ -606,8 +606,8 @@
                      :required?          true
                      :impact-count       2
                      :confirmation-count ""})
-          create-view (settings-view create-request editable-draft-settings)
-          edit-view   (settings-view edit-request editable-draft-settings)]
+          create-view    (settings-view create-request editable-draft-settings)
+          edit-view      (settings-view edit-request editable-draft-settings)]
       (is (= {:create
               {:required
                {:checked true
@@ -618,10 +618,10 @@
                 :data-attr:checked
                 "$insurancePolicySettings.coverageType.addToBandInstruments"}
                :confirmation
-               {:type      "number"
-                :value     "2"
-                :min       "0"
-                :required  true
+               {:type     "number"
+                :value    "2"
+                :min      "0"
+                :required true
                 :data-bind
                 "insurancePolicySettings.coverageType.confirmationCount"}
                :impact-message
@@ -633,10 +633,10 @@
                 :data-attr:checked
                 "$insurancePolicySettings.coverageType.required"}
                :confirmation
-               {:type      "number"
-                :value     ""
-                :min       "0"
-                :required  true
+               {:type     "number"
+                :value    ""
+                :min      "0"
+                :required true
                 :data-bind
                 "insurancePolicySettings.coverageType.confirmationCount"}
                :impact-message
@@ -696,7 +696,7 @@
                [["" "exporter-none"]
                 ["insurance/exporter-harmonia-v1"
                  "exporter-harmonia-v1"]]
-               :selected ["insurance/exporter-harmonia-v1"]}
+               :selected  ["insurance/exporter-harmonia-v1"]}
               :roles
               [{:role
                 "insurance.exporter.harmonia-v1/overnight-vehicle"
@@ -708,7 +708,7 @@
                 :data-bind
                 "insurancePolicySettings.exporter.mappings.1.coverageTypeId"
                 :selected [(str coverage-type-id)]}]
-              :action #{:save-exporter}}
+              :action  #{:save-exporter}}
              {:version
               (let [select (l/select-one
                             "#insurance-policy-settings-exporter-id"
@@ -728,30 +728,30 @@
                        (mapv (comp :value l/attrs)
                              (l/select "option[selected]" select))})
                     role-selects)
-              :action (action-keywords exporter-form)})))))
+              :action  (action-keywords exporter-form)})))))
 
 (deftest unconfigured-exporter-settings-fields
   (testing "Choosing a version prepares that version's role mappings."
-    (let [settings (assoc editable-draft-settings
-                          :exporter-configuration
-                          {:exporter-id nil
-                           :status      :not-configured
-                           :role-rows   []})
-          view     (settings-view settings)
-          version  (l/select-one "#insurance-policy-settings-exporter-id" view)
-          role-set (some #(when (= "insurance/exporter-harmonia-v1"
-                                   (:data-exporter-id (l/attrs %)))
-                            %)
-                         (l/select 'div view))
+    (let [settings  (assoc editable-draft-settings
+                           :exporter-configuration
+                           {:exporter-id nil
+                            :status      :not-configured
+                            :role-rows   []})
+          view      (settings-view settings)
+          version   (l/select-one "#insurance-policy-settings-exporter-id" view)
+          role-set  (some #(when (= "insurance/exporter-harmonia-v1"
+                                    (:data-exporter-id (l/attrs %)))
+                             %)
+                          (l/select 'div view))
           on-change (:data-on:change (l/attrs version))]
-      (is (= {:selected [""]
+      (is (= {:selected          [""]
               :show
               "$insurancePolicySettings.exporter.exporterId === 'insurance/exporter-harmonia-v1'"
               :prepares-version? true
               :prepares-roles?   true}
              {:selected (mapv (comp :value l/attrs)
                               (l/select "option[selected]" version))
-              :show (:data-show (l/attrs role-set))
+              :show     (:data-show (l/attrs role-set))
               :prepares-version?
               (str/includes? on-change
                              "insurance/exporter-harmonia-v1")

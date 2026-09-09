@@ -36,12 +36,12 @@
 
 (defn- download-avatar! [url]
   (let [{:keys [status headers body error]}
-        @(http/request {:method :get
-                        :url url
-                        :as :byte-array
+        @(http/request {:method           :get
+                        :url              url
+                        :as               :byte-array
                         :follow-redirects true
-                        :timeout 20000})
-        mime-type (content-type headers)]
+                        :timeout          20000})
+        mime-type                           (content-type headers)]
     (when error
       (throw (ex-info "Unable to download Discourse avatar"
                       {:url url}
@@ -60,10 +60,10 @@
                      :suffix (suffix-for mime-type)})]
       (with-open [out (io/output-stream (bfs/file tempfile))]
         (.write out ^bytes body))
-      {:filename (str "discourse-avatar" (suffix-for mime-type))
+      {:filename  (str "discourse-avatar" (suffix-for mime-type))
        :mime-type mime-type
-       :size (alength ^bytes body)
-       :tempfile (bfs/file tempfile)})))
+       :size      (alength ^bytes body)
+       :tempfile  (bfs/file tempfile)})))
 
 (defn- cas-failure? [exception]
   (some #(= :db.error/cas-failed (:db/error (ex-data %)))
@@ -79,16 +79,16 @@
        (sort-by (comp str first))))
 
 (defn- migrate-member! [system member-id template]
-  (let [conn (-> system :datomic :conn)
-        url (absolute-avatar-url (get-in system [:env :discourse :forum-url])
-                                 template)
+  (let [conn   (-> system :datomic :conn)
+        url    (absolute-avatar-url (get-in system [:env :discourse :forum-url])
+                                    template)
         upload (download-avatar! url)]
     (try
       (let [{:keys [image-tempid tx-data]}
             (filestore.controller/store-avatar!
              {:filestore (:filestore system)}
              {:file-name (:filename upload)
-              :file (:tempfile upload)
+              :file      (:tempfile upload)
               :mime-type (:mime-type upload)})]
         @(d/transact
           conn
@@ -115,7 +115,7 @@
   | `:filestore`           | Managed file block store
   | `[:env :discourse]`    | Discourse `:forum-url` configuration"
   [system]
-  (let [conn (-> system :datomic :conn)
+  (let [conn       (-> system :datomic :conn)
         candidates (candidate-members (d/db conn))]
     (reduce
      (fn [result [member-id template]]
@@ -132,9 +132,9 @@
                       :member-id member-id
                       :exception exception)
                (update result :failed inc))))))
-     {:processed (count candidates)
-      :migrated 0
-      :failed 0
+     {:processed  (count candidates)
+      :migrated   0
+      :failed     0
       :conflicted 0}
      candidates)))
 

@@ -114,7 +114,7 @@
   (str (format-percent percentage) " (" votes ")"))
 
 (defn- result-bar [total-voters idx {:keys [label votes]}]
-  (let [percentage (rounded-percent (vote-percent votes total-voters))
+  (let [percentage    (rounded-percent (vote-percent votes total-voters))
         percent-value (format-percent-value percentage)
         summary       (result-summary percentage votes)]
     [:li {:class "poll-result-row"}
@@ -122,7 +122,7 @@
       [:span {:class "poll-result-label"} label]
       [:span {:class "poll-result-value"} summary]]
      [:wa-progress-bar {:label (str label " " summary)
-                        :style {"--indicator-color" (result-color idx)
+                        :style {"--indicator-color"            (result-color idx)
                                 "--poll-result-progress-value" (str percent-value "%")}
                         :value percent-value}]]))
 

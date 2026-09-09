@@ -7,29 +7,29 @@
   (:import [java.util.concurrent ExecutorService Executors RejectedExecutionException]))
 
 (defn start! [config]
-  (let [db (sqlite/start config)
+  (let [db              (sqlite/start config)
         stream-executor (Executors/newVirtualThreadPerTaskExecutor)]
     (try
       (let [client (drip/make-client db)]
         (drip/migrate! client)
-        {:db db
-         :client client
+        {:db              db
+         :client          client
          :stream-executor stream-executor
-         :ui-handler (drip-ui/handler
-                      db {:base-path "/admin/jobs"
-                          :->sse-response
-                          (fn [request opts]
-                            (hk-gen/->sse-response
-                             request
-                             (update opts :d*.sse/on-open
-                                     (fn [on-open]
-                                       (fn [sse]
-                                         (try
-                                           (.execute stream-executor #(on-open sse))
-                                           (catch RejectedExecutionException e
-                                             (d*/close-sse! sse)
-                                             (throw e))))))))})
-         :maintenance (drip/start-maintenance-worker! {:client client :queues []})})
+         :ui-handler      (drip-ui/handler
+                           db {:base-path "/admin/jobs"
+                               :->sse-response
+                               (fn [request opts]
+                                 (hk-gen/->sse-response
+                                  request
+                                  (update opts :d*.sse/on-open
+                                          (fn [on-open]
+                                            (fn [sse]
+                                              (try
+                                                (.execute stream-executor #(on-open sse))
+                                                (catch RejectedExecutionException e
+                                                  (d*/close-sse! sse)
+                                                  (throw e))))))))})
+         :maintenance     (drip/start-maintenance-worker! {:client client :queues []})})
       (catch Throwable e
         (.close stream-executor)
         (sqlite/stop db)

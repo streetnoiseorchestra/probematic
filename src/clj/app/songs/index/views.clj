@@ -60,13 +60,13 @@
      [:i18n/tr :repertoire/search-empty-body])))
 
 (defn- search-control [req {:keys [search]}]
-  [:wa-input {:label                        [:i18n/tr :action/search]
-              :placeholder                  [:i18n/tr :repertoire/search-placeholder]
-              :appearance                   "outlined"
-              :size                         "m"
-              :value                        search
-              :with-clear                   true
-              :data-bind                    "songs-index.search"
+  [:wa-input {:label       [:i18n/tr :action/search]
+              :placeholder [:i18n/tr :repertoire/search-placeholder]
+              :appearance  "outlined"
+              :size        "m"
+              :value       search
+              :with-clear  true
+              :data-bind   "songs-index.search"
               :data-on:input__debounce.250ms
               (str "@post('" (d*/act req ::actions/set-search-phrase) "')")}
    [ico/Icon {::ico/library :phosphor
@@ -108,7 +108,7 @@
                                [:i18n/tr :repertoire/add-song]]]
                              ::page-toolbar/overflow-items [(sync-menu-item req)]
                              ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-                             :aria-label                    [:i18n/tr :repertoire/index-toolbar-label]}])
+                             :aria-label                   [:i18n/tr :repertoire/index-toolbar-label]}])
 
 (defn- collection-controls [req page-state]
   [:div {:class "songs-index-toolbar-controls"}

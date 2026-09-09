@@ -27,12 +27,12 @@
                         :member/nick      (str "flute-" member-id)
                         :member/active?   true
                         :member/section   [:section/name "flute"]}
-                       (domain/gig->db {:gig/gig-id   gig-id
-                                        :gig/title    "Attendance Gig"
-                                        :gig/status   :gig.status/confirmed
-                                        :gig/gig-type :gig.type/gig
-                                        :gig/date     (t/date "2026-05-01")
-                                        :gig/location "Somewhere"
+                       (domain/gig->db {:gig/gig-id    gig-id
+                                        :gig/title     "Attendance Gig"
+                                        :gig/status    :gig.status/confirmed
+                                        :gig/gig-type  :gig.type/gig
+                                        :gig/date      (t/date "2026-05-01")
+                                        :gig/location  "Somewhere"
                                         :gig/call-time (t/time "18:00")})])
     {:gig-id gig-id :member-id member-id}))
 
@@ -69,7 +69,7 @@
 
 (deftest update-attendance-plan-action-test
   (testing "creates an attendance entity when the member has no attendance yet"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-plan-create")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-plan-create")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (is (= [[:db/transact
                [(assoc (create-base gig-id member-id)
@@ -80,7 +80,7 @@
               (signals gig-id member-id {:plan "definitely"}))))))
 
   (testing "updates an existing attendance plan and touches the row"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-plan-update")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-plan-update")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (seed-attendance! conn gig-id member-id {:attendance/plan :plan/unknown})
       (is (= [[:db/transact
@@ -92,7 +92,7 @@
               (signals gig-id member-id {:plan "definitely-not"}))))))
 
   (testing "invalid plan values do not transact"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-plan-invalid")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-plan-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
@@ -104,7 +104,7 @@
 
 (deftest update-attendance-motivation-action-test
   (testing "creates an attendance entity when the member has no attendance yet"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-motivation-create")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-motivation-create")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (is (= [[:db/transact
                [(assoc (create-base gig-id member-id)
@@ -115,7 +115,7 @@
               (signals gig-id member-id {:motivation "high"}))))))
 
   (testing "updates an existing attendance motivation and touches the row"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-motivation-update")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-motivation-update")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (seed-attendance! conn gig-id member-id {:attendance/motivation :motivation/none})
       (is (= [[:db/transact
@@ -127,7 +127,7 @@
               (signals gig-id member-id {:motivation "very-high"}))))))
 
   (testing "invalid motivation values do not transact"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-motivation-invalid")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-motivation-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
@@ -153,7 +153,7 @@
 
 (deftest update-attendance-comment-action-test
   (testing "creates an attendance entity for a nonblank comment when none exists"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-comment-create")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-create")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (is (= [[:db/transact
                [(assoc (create-base gig-id member-id)
@@ -167,7 +167,7 @@
               (signals gig-id member-id {:comment "I will be late"}))))))
 
   (testing "updates an existing nonblank comment"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-comment-update")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-update")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (seed-attendance! conn gig-id member-id {:attendance/comment "old"})
       (is (= [[:db/transact
@@ -182,7 +182,7 @@
               (signals gig-id member-id {:comment "new"}))))))
 
   (testing "retracts an existing comment when the submitted comment is blank"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-comment-retract")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-retract")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (seed-attendance! conn gig-id member-id {:attendance/comment "old"})
       (is (= [[:db/transact
@@ -197,7 +197,7 @@
               (signals gig-id member-id {:comment "  "}))))))
 
   (testing "does not create an attendance entity for a blank comment"
-    (let [{:keys [conn]}         (tc/new-system "gig-attendance-comment-nop")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-nop")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
       (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/assoc-state
@@ -209,9 +209,9 @@
 
 (deftest switch-attendance-comment-action-test
   (testing "saves the current draft and opens the requested row in one action"
-    (let [{:keys [conn]} (tc/new-system "gig-attendance-comment-switch")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-switch")
           {:keys [gig-id member-id]} (seed-gig-member! conn)
-          next-member-id (random-uuid)]
+          next-member-id             (random-uuid)]
       @(d/transact conn [{:member/member-id next-member-id
                           :member/name      "Next Player"
                           :member/nick      (str "next-" next-member-id)
@@ -238,9 +238,9 @@
                                 :next-comment      "next"}})))))
 
   (testing "opens the requested row when the current blank draft has no attendance"
-    (let [{:keys [conn]} (tc/new-system "gig-attendance-comment-switch-noop")
+    (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-switch-noop")
           {:keys [gig-id member-id]} (seed-gig-member! conn)
-          next-member-id (random-uuid)]
+          next-member-id             (random-uuid)]
       @(d/transact conn [{:member/member-id next-member-id
                           :member/name      "Next Player"
                           :member/nick      (str "next-" next-member-id)

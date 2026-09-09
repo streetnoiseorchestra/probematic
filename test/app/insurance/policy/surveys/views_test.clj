@@ -32,7 +32,7 @@
                         :db             (d/db conn)
                         :path-params    {:policy-id (:policy-id ids)}
                         :policy         (q/retrieve-policy (d/db conn) (:policy-id ids))
-                        :app/session        {:session/member {:member/member-id member-id}}
+                        :app/session    {:session/member {:member/member-id member-id}}
                         :tr             tr
                         ::r/router      router}})))
 
@@ -62,50 +62,50 @@
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        completed-response-id (random-uuid)
-        _ @(d/transact
-            conn
-            [{:db/id                                         "completed-response"
-              :insurance.survey.response/response-id          completed-response-id
-              :insurance.survey.response/member               [:member/member-id member-id]
-              :insurance.survey.response/completed-at         insurance-test/created-at}
-             [:db/add
-              [:insurance.survey/survey-id survey-id]
-              :insurance.survey/responses
-              "completed-response"]])
-        view     (sut/page
-                  (assoc request
-                         :db (d/db conn)
-                         :policy (q/retrieve-policy (d/db conn) policy-id)))
-        surface  (l/select-one page-surface/PageSurface view)
-        contract (page-shell/page-contract view)
-        table    (l/select-one "table.insurance-survey-responses" surface)
-        rows     (l/select :tr (l/select-one :tbody table))
-        row      (l/select-one (str "#insurance-survey-response-" response-id)
-                               table)
-        action   (l/select-one button/Button row)
-        completed-row (l/select-one
-                       (str "#insurance-survey-response-"
-                            completed-response-id)
-                       table)
-        mark-incomplete-action (l/select-one button/Button completed-row)
-        save-status-spans (l/select :span
-                                    (l/select-one "#insurance-survey-closes-at-status"
-                                                  surface))
-        filters  (l/select button/Button
-                           (l/select-one :wa-button-group surface))
-        close    (first (l/select :wa-dropdown-item
-                                  (-> surface
-                                      l/attrs
-                                      ::page-surface/toolbar
-                                      l/attrs
-                                      :app.ui2.page-toolbar/overflow-items)))
-        dialogs  (l/select :wa-dialog surface)]
+        completed-response-id                                  (random-uuid)
+        _                                                      @(d/transact
+                                                                 conn
+                                                                 [{:db/id                                  "completed-response"
+                                                                   :insurance.survey.response/response-id  completed-response-id
+                                                                   :insurance.survey.response/member       [:member/member-id member-id]
+                                                                   :insurance.survey.response/completed-at insurance-test/created-at}
+                                                                  [:db/add
+                                                                   [:insurance.survey/survey-id survey-id]
+                                                                   :insurance.survey/responses
+                                                                   "completed-response"]])
+        view                                                   (sut/page
+                                                                (assoc request
+                                                                       :db (d/db conn)
+                                                                       :policy (q/retrieve-policy (d/db conn) policy-id)))
+        surface                                                (l/select-one page-surface/PageSurface view)
+        contract                                               (page-shell/page-contract view)
+        table                                                  (l/select-one "table.insurance-survey-responses" surface)
+        rows                                                   (l/select :tr (l/select-one :tbody table))
+        row                                                    (l/select-one (str "#insurance-survey-response-" response-id)
+                                                                             table)
+        action                                                 (l/select-one button/Button row)
+        completed-row                                          (l/select-one
+                                                                (str "#insurance-survey-response-"
+                                                                     completed-response-id)
+                                                                table)
+        mark-incomplete-action                                 (l/select-one button/Button completed-row)
+        save-status-spans                                      (l/select :span
+                                                                         (l/select-one "#insurance-survey-closes-at-status"
+                                                                                       surface))
+        filters                                                (l/select button/Button
+                                                                         (l/select-one :wa-button-group surface))
+        close                                                  (first (l/select :wa-dropdown-item
+                                                                                (-> surface
+                                                                                    l/attrs
+                                                                                    ::page-surface/toolbar
+                                                                                    l/attrs
+                                                                                    :app.ui2.page-toolbar/overflow-items)))
+        dialogs                                                (l/select :wa-dialog surface)]
     (testing "the page toolbar has one primary action and destructive overflow"
-      (is (= [{:label      :insurance/survey-send-reminders
-               :appearance "filled"
-               :variant    "brand"
-               :disabled   false
+      (is (= [{:label       :insurance/survey-send-reminders
+               :appearance  "filled"
+               :variant     "brand"
+               :disabled    false
                :data-dialog "open insurance-survey-reminders-dialog"}]
              (:actions contract)))
       (is (= [{:label       :insurance/survey-close
@@ -156,18 +156,18 @@
 
 (deftest reminders-are-disabled-when-every-response-is-complete
   (let [{:keys [conn coverage-id member-id policy-id request]} (fixture)
-        _ (insurance-test/seed-member-survey!
-           conn
-           {:coverage-ids          [coverage-id]
-            :member-id             member-id
-            :policy-id             policy-id
-            :response-completed-at insurance-test/created-at})
-        view     (-> request
-                     (assoc :db (d/db conn))
-                     sut/page)
-        contract (page-shell/page-contract view)
-        empty-row (l/select-one "#insurance-survey-filter-empty-incomplete"
-                                view)]
+        _                                                      (insurance-test/seed-member-survey!
+                                                                conn
+                                                                {:coverage-ids          [coverage-id]
+                                                                 :member-id             member-id
+                                                                 :policy-id             policy-id
+                                                                 :response-completed-at insurance-test/created-at})
+        view                                                   (-> request
+                                                                   (assoc :db (d/db conn))
+                                                                   sut/page)
+        contract                                               (page-shell/page-contract view)
+        empty-row                                              (l/select-one "#insurance-survey-filter-empty-incomplete"
+                                                                             view)]
     (is (= true (-> contract :actions first :disabled)))
     (is (= 2 (-> empty-row l/first-child l/attrs :colspan)))
     (is (some? (:data-show (l/attrs empty-row))))))
@@ -175,16 +175,16 @@
 (deftest unauthorized-members-do-not-receive-survey-actions-or-dialogs
   (let [{:keys [conn coverage-id outsider-id member-id policy-id request]}
         (fixture)
-        _ (insurance-test/seed-member-survey!
-           conn
-           {:coverage-ids [coverage-id]
-            :member-id    member-id
-            :policy-id    policy-id})
-        surface (-> request
-                    (assoc :db (d/db conn)
-                           :app/session {:session/member
-                                         {:member/member-id outsider-id}})
-                    sut/page
-                    (l/select-one page-surface/PageSurface))]
+        _                                                                  (insurance-test/seed-member-survey!
+                                                                            conn
+                                                                            {:coverage-ids [coverage-id]
+                                                                             :member-id    member-id
+                                                                             :policy-id    policy-id})
+        surface                                                            (-> request
+                                                                               (assoc :db (d/db conn)
+                                                                                      :app/session {:session/member
+                                                                                                    {:member/member-id outsider-id}})
+                                                                               sut/page
+                                                                               (l/select-one page-surface/PageSurface))]
     (is (empty? (l/select :wa-dialog surface)))
     (is (nil? (l/select-one "#insurance-survey-admin-form" surface)))))

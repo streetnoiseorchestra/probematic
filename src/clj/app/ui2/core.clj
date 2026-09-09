@@ -37,9 +37,9 @@
 (defn bad-opt-value-callout
   [{:keys [point-of-interest-opts callout-opts]}]
   (let [{:keys [header body]} point-of-interest-opts
-        source      ((requiring-resolve 'bling.core/point-of-interest) point-of-interest-opts)
-        message     (not-empty (str/join "\n\n" (remove str/blank? [header source body])))
-        callout-opts (merge callout-opts {:padding-top 1})]
+        source                ((requiring-resolve 'bling.core/point-of-interest) point-of-interest-opts)
+        message               (not-empty (str/join "\n\n" (remove str/blank? [header source body])))
+        callout-opts          (merge callout-opts {:padding-top 1})]
     (tap> (with-meta [(str (:label callout-opts) "\n" message)] {:ansi/color true}))
     ((requiring-resolve 'bling.core/callout) callout-opts message)))
 
@@ -84,9 +84,9 @@
                                                             :value     (get-in explain [:value k])
                                                             :component component})
 
-                                   :body (warning-body {:opt   k
-                                                        :trace trace
-                                                        :msg   (str/join "; " error)})}
+                                   :body   (warning-body {:opt   k
+                                                          :trace trace
+                                                          :msg   (str/join "; " error)})}
           :callout-opts           {:type  :warning
                                    :theme :gutter
                                    :label "WARNING​ Invalid ui attribute"}})
@@ -98,7 +98,7 @@
 
 (defn- stack-frame->trace-element
   [[cls method file line]]
-  (let [cls                  (str cls)
+  (let [cls                   (str cls)
         [ns separator method] (if (str/includes? cls "/")
                                 (let [[ns method] (str/split cls #"/" 2)]
                                   [ns "/" method])

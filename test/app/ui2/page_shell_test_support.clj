@@ -52,16 +52,16 @@
         (:max-items attrs))))
 
 (defn- breadcrumb-mobile-context [breadcrumb]
-  (let [attrs  (l/attrs breadcrumb)
-        mode   (or (::breadcrumb/mobile-mode attrs)
-                   (:mobile-mode attrs)
-                   :parent)
-        items  (vec (l/select breadcrumb/BreadcrumbItem breadcrumb))
-        parent (when (< 1 (count items))
-                 (nth items (- (count items) 2)))
+  (let [attrs        (l/attrs breadcrumb)
+        mode         (or (::breadcrumb/mobile-mode attrs)
+                         (:mobile-mode attrs)
+                         :parent)
+        items        (vec (l/select breadcrumb/BreadcrumbItem breadcrumb))
+        parent       (when (< 1 (count items))
+                       (nth items (- (count items) 2)))
         parent-attrs (some-> parent l/attrs)
-        href   (or (::breadcrumb/href parent-attrs)
-                   (:href parent-attrs))]
+        href         (or (::breadcrumb/href parent-attrs)
+                         (:href parent-attrs))]
     (case mode
       :hidden nil
       :parent (when parent

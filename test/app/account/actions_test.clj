@@ -32,7 +32,7 @@
 
 (defn transact-effects! [conn effects]
   (let [transactions (for [[effect tx-data opts] effects
-                           :when (= :db/transact effect)]
+                           :when                 (= :db/transact effect)]
                        [tx-data opts])]
     (when (seq transactions)
       @(d/transact conn (app-nexus/batch-transactions transactions)))))
@@ -66,23 +66,23 @@
    :avatar          nil})
 
 (def valid-notifications
-  {:enabled? true
-   :what "everything"
-   :reminders {:attendance? true
-               :polls? false}
-   :delivery {:email? true
-              :browser? true
-              :browser-capable? true
-              :browser-permission "default"}
+  {:enabled?     true
+   :what         "everything"
+   :reminders    {:attendance? true
+                  :polls?      false}
+   :delivery     {:email?             true
+                  :browser?           true
+                  :browser-capable?   true
+                  :browser-permission "default"}
    :unread-style "numbered"
-   :when "daily-batch"
-   :batch-time "13:00"})
+   :when         "daily-batch"
+   :batch-time   "13:00"})
 
 (def valid-break
-  {:active true
+  {:active       true
    :start-choice "date"
-   :start-date "2026-07-01"
-   :end-date "2026-07-20"})
+   :start-date   "2026-07-01"
+   :end-date     "2026-07-20"})
 
 (deftest account-action-map-owns-every-public-action-keyword
   (is (= #{:app.account.actions/validate-profile-field
@@ -129,10 +129,10 @@
   (is (= [nexus-actions/clear-loading
           [:app.datastar/assoc-state
            [:account-profile :avatar]
-           {:filename "portrait.webp"
+           {:filename  "portrait.webp"
             :mime-type "image/webp"
-            :size 4096
-            :staged? true}]
+            :size      4096
+            :staged?   true}]
           [:app.datastar/assoc-state [:account-profile :avatar-removed?] false]
           [:app.datastar/assoc-state [:account-profile :_error :avatar] nil]
           [:app.datastar/assoc-state
@@ -142,9 +142,9 @@
           {}
           {:account-profile
            (assoc valid-profile
-                  :avatar {:filename "portrait.webp"
+                  :avatar {:filename  "portrait.webp"
                            :mime-type "image/webp"
-                           :size 4096})})))
+                           :size      4096})})))
   (doseq [[metadata error-key]
           [[{:filename "portrait.svg" :mime-type "image/svg+xml" :size 1024}
             :account-settings/error-avatar-type]
@@ -168,35 +168,35 @@
 
 (deftest save-profile-dispatches-one-authenticated-profile-effect
   (let [{:keys [conn member-id] :as system} (tc/new-system "account-profile-effect")
-        other-id (random-uuid)]
+        other-id                            (random-uuid)]
     (seed-member! conn member-id)
     (seed-member! conn other-id
-                  {:member/name "Other Member"
-                   :member/nick "other"
-                   :member/email "other@example.test"
+                  {:member/name     "Other Member"
+                   :member/nick     "other"
+                   :member/email    "other@example.test"
                    :member/username "other_user"
-                   :member/phone "+436602222222"})
+                   :member/phone    "+436602222222"})
     (is (= [[:app.account/save-profile
-             {:member-id member-id
-              :profile normalized-profile
-              :avatar-upload nil
+             {:member-id      member-id
+              :profile        normalized-profile
+              :avatar-upload  nil
               :sync-keycloak? true}]
             [:app.datastar/assoc-state
              [:account-profile]
-             {:avatar nil
+             {:avatar          nil
               :avatar-removed? false
-              :_error {}
-              :_saved? true
+              :_error          {}
+              :_saved?         true
               :_feedback
               [:i18n/tr :account-settings/profile-saved-feedback]}]
             [:app.datastar/respond-sse
              [[:app.datastar.sse/merge-signals
                {:account-profile
                 (merge normalized-profile
-                       {:avatar nil
+                       {:avatar          nil
                         :avatar-removed? false
-                        :_error {}
-                        :_saved? true
+                        :_error          {}
+                        :_saved?         true
                         :_feedback
                         [:i18n/tr :account-settings/profile-saved-feedback]})}]
               [:app.datastar.sse/execute-script
@@ -211,8 +211,8 @@
   (let [{:keys [conn member-id] :as system}
         (tc/new-system "account-profile-keycloak-retry")]
     (seed-member! conn member-id
-                  {:member/name "Ada Byron"
-                   :member/email "ada.byron@example.test"
+                  {:member/name     "Ada Byron"
+                   :member/email    "ada.byron@example.test"
                    :member/username "ada_byron"})
     (is (true?
          (get-in
@@ -225,25 +225,25 @@
   (let [{:keys [conn] :as system} (tc/new-system "account-profile-upload-validation")]
     (seed-member! conn (:member-id system))
     (doseq [[avatar-upload error-key]
-            [[{:filename "avatar.svg"
+            [[{:filename  "avatar.svg"
                :mime-type "image/svg+xml"
-               :size 200
-               :tempfile (java.io.File. "/tmp/unused-avatar.svg")}
+               :size      200
+               :tempfile  (java.io.File. "/tmp/unused-avatar.svg")}
               :account-settings/error-avatar-type]
-             [{:filename "avatar.png"
+             [{:filename  "avatar.png"
                :mime-type "image/png"
-               :size (inc max-avatar-size)
-               :tempfile (java.io.File. "/tmp/unused-avatar.png")}
+               :size      (inc max-avatar-size)
+               :tempfile  (java.io.File. "/tmp/unused-avatar.png")}
               :account-settings/error-avatar-size]
-             [{:filename "avatar.png"
+             [{:filename  "avatar.png"
                :mime-type "image/png"
-               :size "200"
-               :tempfile (java.io.File. "/tmp/unused-avatar.png")}
+               :size      "200"
+               :tempfile  (java.io.File. "/tmp/unused-avatar.png")}
               :account-settings/error-avatar-size]]]
       (let [effects (actions/save-profile-action
                      (action-state system)
                      {:account-profile valid-profile
-                      :avatar-upload avatar-upload})]
+                      :avatar-upload   avatar-upload})]
         (is (= nexus-actions/clear-loading (first effects)))
         (is (= [:i18n/tr error-key]
                (get-in effects [1 2 :_error :avatar :error])))
@@ -251,13 +251,13 @@
 
 (deftest save-profile-preserves-complete-input-on-validation-errors
   (let [{:keys [conn member-id] :as system} (tc/new-system "account-profile-invalid")
-        other-id (random-uuid)]
+        other-id                            (random-uuid)]
     (seed-member! conn member-id)
     (seed-member! conn other-id
-                  {:member/nick "taken"
-                   :member/email "taken@example.test"
+                  {:member/nick     "taken"
+                   :member/email    "taken@example.test"
                    :member/username "taken_user"
-                   :member/phone "+436609999999"})
+                   :member/phone    "+436609999999"})
     (let [submitted (assoc valid-profile
                            :name " "
                            :nick " taken "
@@ -265,10 +265,10 @@
                            :username " TAKEN_USER "
                            :phone "+43 660 9999999"
                            :date-of-birth "1815-02-30")
-          effects (actions/save-profile-action
-                   (action-state system)
-                   {:account-profile submitted})
-          saved (get-in effects [1 2])]
+          effects   (actions/save-profile-action
+                     (action-state system)
+                     {:account-profile submitted})
+          saved     (get-in effects [1 2])]
       (is (= nexus-actions/clear-loading (first effects)))
       (is (= #{:name :nick :email :username :phone :date-of-birth :_top}
              (set (keys (:_error saved)))))
@@ -277,12 +277,12 @@
 
 (deftest save-date-time-preferences-persists-enum-refs
   (let [{:keys [conn member-id] :as system} (tc/new-system "account-preferences")
-        submitted {:time-zone "Europe/Vienna"
-                   :week-start "sunday"
-                   :time-format "12-hour"}
-        effects (actions/save-date-time-preferences-action
-                 (action-state system)
-                 {:account-preferences submitted})]
+        submitted                           {:time-zone   "Europe/Vienna"
+                                             :week-start  "sunday"
+                                             :time-format "12-hour"}
+        effects                             (actions/save-date-time-preferences-action
+                                             (action-state system)
+                                             {:account-preferences submitted})]
     (transact-effects! conn effects)
     (let [db (d/db conn)]
       (is (= "Europe/Vienna" (entity-value db member-id :member/timezone)))
@@ -308,10 +308,10 @@
 
 (deftest notification-actions-persist-a-complete-policy
   (let [{:keys [conn member-id] :as system} (tc/new-system "account-notifications")
-        state (action-state system)
-        effects (actions/update-notification-settings-action
-                 state
-                 {:account-notifications valid-notifications})]
+        state                               (action-state system)
+        effects                             (actions/update-notification-settings-action
+                                             state
+                                             {:account-notifications valid-notifications})]
     (transact-effects! conn effects)
     (let [db (d/db conn)]
       (is (true? (entity-value db member-id :member.notify/enabled?)))
@@ -328,7 +328,7 @@
       (is (= "13:00" (entity-value db member-id :member.notify/batch-time))))
     (is (= #{:_error :_saved? :_feedback :delivery}
            (set (keys (get-in effects [2 2])))))
-    (is (= {:browser-capable? true
+    (is (= {:browser-capable?   true
             :browser-permission "default"}
            (get-in effects [2 2 :delivery])))
     (testing "master toggle also writes every policy attribute"
@@ -407,10 +407,10 @@
     (testing "right now uses today in the persisted member time zone"
       (let [effects (actions/update-break-settings-action
                      (assoc (action-state system) :db (d/db conn))
-                     {:account-break {:active true
+                     {:account-break {:active       true
                                       :start-choice "now"
-                                      :start-date ""
-                                      :end-date ""}})]
+                                      :start-date   ""
+                                      :end-date     ""}})]
         (transact-effects! conn effects)
         (is (= "2026-07-14"
                (entity-value (d/db conn)
@@ -426,10 +426,10 @@
     (testing "turning the break off retracts both attributes"
       (let [effects (actions/update-break-settings-action
                      (assoc (action-state system) :db (d/db conn))
-                     {:account-break {:active false
+                     {:account-break {:active       false
                                       :start-choice "now"
-                                      :start-date ""
-                                      :end-date ""}})]
+                                      :start-date   ""
+                                      :end-date     ""}})]
         (transact-effects! conn effects)
         (is (nil? (entity-value (d/db conn)
                                 member-id
@@ -456,16 +456,16 @@
                  (actions/update-break-settings-action
                   (dissoc (action-state system) :now)
                   {:account-break
-                   {:active true
+                   {:active       true
                     :start-choice "now"
-                    :start-date ""
-                    :end-date ""}})))))
+                    :start-date   ""
+                    :end-date     ""}})))))
 
 (deftest break-validation-and-end-early-never-use-a-break-time-zone-signal
   (let [{:keys [conn member-id] :as system} (tc/new-system "account-break-validation")]
-    (seed-member! conn member-id {:member/timezone "Pacific/Auckland"
+    (seed-member! conn member-id {:member/timezone         "Pacific/Auckland"
                                   :member.break/start-date "2026-07-01"
-                                  :member.break/end-date "2026-07-20"})
+                                  :member.break/end-date   "2026-07-20"})
     (doseq [[submitted field error-key]
             [[(assoc valid-break :active "yes")
               :active :account-settings/error-break-availability-invalid]

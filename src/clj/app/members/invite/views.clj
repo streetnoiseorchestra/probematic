@@ -18,13 +18,13 @@
    [tick.core :as t]))
 
 (defn- default-form-state []
-  {:name          ""
-   :nick          ""
-   :email         ""
-   :username      ""
-   :phone         ""
+  {:name         ""
+   :nick         ""
+   :email        ""
+   :username     ""
+   :phone        ""
    :section-name ""
-   :error         {}})
+   :error        {}})
 
 (defn- required-marker []
   [:span {:aria-hidden "true"} " *"])
@@ -136,7 +136,7 @@
                                                    :data-attr:disabled "!!$loading && $loading !== 'member-invite'"
                                                    :data-attr:loading  "$loading === 'member-invite'"}
                                     [:i18n/tr :members/invite-member]]]
-                                  :aria-label [:i18n/tr :members/invite-toolbar-label]}]}
+                                  :aria-label               [:i18n/tr :members/invite-toolbar-label]}]}
       [:div {:class              "wa-stack wa-gap-2xl"
              :data-signals       (d*/->signals {:member-invite form-state})
              :data-preserve-attr "data-signals"}

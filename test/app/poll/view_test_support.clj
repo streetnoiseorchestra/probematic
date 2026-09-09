@@ -31,13 +31,13 @@
   ([system]
    (request system {}))
   ([{:keys [conn member-id]} extra]
-   (merge {::r/router        router
-           :current-locale  :en
+   (merge {::r/router         router
+           :current-locale    :en
            :current-member-id member-id
-           :db              (d/db conn)
-           :page-state      {}
-           :system          {:env {}}
-           :tr              tr}
+           :db                (d/db conn)
+           :page-state        {}
+           :system            {:env {}}
+           :tr                tr}
           extra)))
 
 (defn seed-poll!

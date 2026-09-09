@@ -36,11 +36,11 @@
 
 (defn clean-vat-number [vat-number]
   (when vat-number
-    (let [cleaned (-> vat-number
-                      (str/upper-case)
-                      (str/replace  " " ""))
-          prefix (m/find-first (fn [prefix]
-                                 (str/starts-with? cleaned prefix)) vat-number-prefixes)
+    (let [cleaned        (-> vat-number
+                             (str/upper-case)
+                             (str/replace  " " ""))
+          prefix         (m/find-first (fn [prefix]
+                                         (str/starts-with? cleaned prefix)) vat-number-prefixes)
           without-prefix (if prefix
                            (subs cleaned (count prefix))
                            cleaned)]

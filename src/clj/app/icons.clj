@@ -144,7 +144,7 @@
   []
   (vec
    (for [{:keys [id icons]} icon-libraries
-         icon icons]
+         icon               icons]
      (keyword (name id) (name icon)))))
 
 (defn display-name
@@ -177,7 +177,7 @@
   (doseq [{:keys [id icons] :as library} libraries]
     (when-let [dups (duplicate-values (map ->id icons))]
       (throw (ex-info "Duplicate icon names in icon library"
-                      {:library id
+                      {:library    id
                        :duplicates (vec dups)})))
     (doseq [icon icons]
       (let [path (icon-resource-path library icon)]

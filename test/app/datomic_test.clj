@@ -28,16 +28,16 @@
 
 (defn- authenticated-request [conn member-id]
   {:datomic-conn conn
-   :app/session      {:session/member {:member/member-id member-id}}})
+   :app/session  {:session/member {:member/member-id member-id}}})
 
 (deftest transact-test
   (let [{:keys [conn]} (tc/new-system "datomic-transact")
-        success             (datomic/transact
-                             conn
-                             {:tx-data [{:member/nick "unique-nick"}]})
-        failure             (datomic/transact
-                             conn
-                             {:tx-data [{:member/nick "unique-nick"}]})]
+        success        (datomic/transact
+                        conn
+                        {:tx-data [{:member/nick "unique-nick"}]})
+        failure        (datomic/transact
+                        conn
+                        {:tx-data [{:member/nick "unique-nick"}]})]
     (testing "returns the transaction report on success"
       (is (contains? success :db-after))
       (is (datomic/db-ok? success)))
@@ -50,21 +50,21 @@
 
 (deftest transact-wrapper!-test
   (let [{:keys [conn member-id]} (tc/new-system "datomic-transact-wrapper")
-        req                     (authenticated-request conn member-id)
-        _                       (datomic/transact-wrapper!
-                                 req
-                                 {:tx-data [[:db/add
-                                             [:member/member-id member-id]
-                                             :member/name
-                                             "Ada"]]}
-                                 "Updated profile")
-        db                      (d/db conn)
-        audit                  (d/q '[:find (pull ?tx [:audit/comment
-                                                       {:audit/user [:member/member-id]}]) .
-                                      :in $ ?comment
-                                      :where [?tx :audit/comment ?comment]]
-                                    db
-                                    "Updated profile")]
+        req                      (authenticated-request conn member-id)
+        _                        (datomic/transact-wrapper!
+                                  req
+                                  {:tx-data [[:db/add
+                                              [:member/member-id member-id]
+                                              :member/name
+                                              "Ada"]]}
+                                  "Updated profile")
+        db                       (d/db conn)
+        audit                    (d/q '[:find (pull ?tx [:audit/comment
+                                                         {:audit/user [:member/member-id]}]) .
+                                        :in $ ?comment
+                                        :where [?tx :audit/comment ?comment]]
+                                      db
+                                      "Updated profile")]
     (testing "applies the requested transaction"
       (is (= {:member/name "Ada"}
              (d/pull db [:member/name] [:member/member-id member-id]))))
@@ -80,32 +80,32 @@
 
 (deftest entity-history-test
   (let [{:keys [conn member-id]} (tc/new-system "datomic-entity-history")
-        req                     (authenticated-request conn member-id)
-        instrument-id           (random-uuid)
-        _                       @(d/transact
-                                  conn
-                                  [{:instrument/instrument-id instrument-id
-                                    :instrument/name          "Clarinet I"}])
-        _                       (datomic/transact-wrapper!
-                                 req
-                                 {:tx-data [[:db/add
-                                             [:instrument/instrument-id instrument-id]
-                                             :instrument/name
-                                             "Clarinet II"]
-                                            [:db/add
-                                             [:instrument/instrument-id instrument-id]
-                                             :instrument/owner
-                                             [:member/member-id member-id]]]}
-                                 "Corrected instrument")
-        event                   (some #(when (= "Corrected instrument"
-                                                (get-in % [:audit :audit/comment]))
-                                         %)
-                                      (datomic/entity-history
-                                       (d/db conn)
-                                       :instrument/instrument-id
-                                       instrument-id))
-        changes                 (:changes event)
-        owner-change            (some #(when (= :instrument/owner (first %)) %) changes)]
+        req                      (authenticated-request conn member-id)
+        instrument-id            (random-uuid)
+        _                        @(d/transact
+                                   conn
+                                   [{:instrument/instrument-id instrument-id
+                                     :instrument/name          "Clarinet I"}])
+        _                        (datomic/transact-wrapper!
+                                  req
+                                  {:tx-data [[:db/add
+                                              [:instrument/instrument-id instrument-id]
+                                              :instrument/name
+                                              "Clarinet II"]
+                                             [:db/add
+                                              [:instrument/instrument-id instrument-id]
+                                              :instrument/owner
+                                              [:member/member-id member-id]]]}
+                                  "Corrected instrument")
+        event                    (some #(when (= "Corrected instrument"
+                                                 (get-in % [:audit :audit/comment]))
+                                          %)
+                                       (datomic/entity-history
+                                        (d/db conn)
+                                        :instrument/instrument-id
+                                        instrument-id))
+        changes                  (:changes event)
+        owner-change             (some #(when (= :instrument/owner (first %)) %) changes)]
     (testing "identifies the entity and audit member"
       (is (= :instrument/instrument-id (:ent-id-key event)))
       (is (= instrument-id (:ent-id-value event)))
@@ -119,12 +119,12 @@
 
 (deftest find-by-test
   (let [{:keys [conn]} (tc/new-system "datomic-find-by")
-        member-id           (random-uuid)
-        _                   @(d/transact
-                              conn
-                              [{:member/member-id member-id
-                                :member/name      "Ada"}])
-        db                  (d/db conn)]
+        member-id      (random-uuid)
+        _              @(d/transact
+                         conn
+                         [{:member/member-id member-id
+                           :member/name      "Ada"}])
+        db             (d/db conn)]
     (testing "returns the requested pull result for a matching attribute value"
       (is (= {:member/member-id member-id
               :member/name      "Ada"}

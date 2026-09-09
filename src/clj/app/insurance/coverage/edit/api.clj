@@ -39,8 +39,8 @@
   [req instrument-id {:keys [filename tempfile content-type]}]
   (let [working-file_ (volatile! nil)]
     (try
-      (let [working-file                    (upload-working-file! filename content-type tempfile)
-            _                               (vreset! working-file_ working-file)
+      (let [working-file                   (upload-working-file! filename content-type tempfile)
+            _                              (vreset! working-file_ working-file)
             {:keys [image-tempid tx-data]} (filestore/store-image! req {:file-name filename
                                                                         :file      working-file
                                                                         :mime-type content-type})

@@ -74,7 +74,7 @@
     (assoc :_top {:error (tr [:error/form-has-errors])})))
 
 (defn validation-errors [{:keys [tr]} {:keys [title description poll-type min-choice max-choice closes-at] :as params}]
-  (let [multiple? (= "multiple" poll-type)
+  (let [multiple?  (= "multiple" poll-type)
         min-choice (parse-int min-choice)
         max-choice (parse-int max-choice)
         options    (nonblank-options params)]
@@ -146,13 +146,13 @@
               :poll/description (:description params)
               :poll/poll-type   poll-type
               :poll/poll-status (or (:poll/poll-status existing-poll) :poll.status/draft)
-              :poll/chart-type   :poll.chart.type/bar
-              :poll/author       [:member/member-id current-member-id]
-              :poll/closes-at    (t/date-time (:closes-at params))
-              :poll/created-at   (or (some-> existing-poll :poll/created-at t/inst)
-                                     now
-                                     (t/inst))
-              :poll/autoremind?  (form/normalize-bool (:autoremind? params))}
+              :poll/chart-type  :poll.chart.type/bar
+              :poll/author      [:member/member-id current-member-id]
+              :poll/closes-at   (t/date-time (:closes-at params))
+              :poll/created-at  (or (some-> existing-poll :poll/created-at t/inst)
+                                    now
+                                    (t/inst))
+              :poll/autoremind? (form/normalize-bool (:autoremind? params))}
        (= :poll.type/multiple poll-type)
        (assoc :poll/min-choice (parse-int (:min-choice params))
               :poll/max-choice (parse-int (:max-choice params)))))))

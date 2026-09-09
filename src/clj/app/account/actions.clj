@@ -23,21 +23,21 @@
 
 (defn- normalize-profile [profile]
   (let [phone (form/trim-value (:phone profile))]
-    {:name           (or (form/trim-value (:name profile)) "")
-     :nick           (or (form/trim-value (:nick profile)) "")
-     :email          (some-> (:email profile) members.domain/clean-email)
-     :username       (some-> (:username profile)
-                             form/trim-value
-                             members.domain/clean-username)
-     :phone          (or (cond-> phone
-                           (and (seq phone)
-                                (members.domain/phone-valid? phone))
-                           members.domain/clean-phone-number)
-                         "")
-     :current-status (or (form/trim-value (:current-status profile)) "")
-     :date-of-birth  (or (form/trim-value (:date-of-birth profile)) "")
+    {:name            (or (form/trim-value (:name profile)) "")
+     :nick            (or (form/trim-value (:nick profile)) "")
+     :email           (some-> (:email profile) members.domain/clean-email)
+     :username        (some-> (:username profile)
+                              form/trim-value
+                              members.domain/clean-username)
+     :phone           (or (cond-> phone
+                            (and (seq phone)
+                                 (members.domain/phone-valid? phone))
+                            members.domain/clean-phone-number)
+                          "")
+     :current-status  (or (form/trim-value (:current-status profile)) "")
+     :date-of-birth   (or (form/trim-value (:date-of-birth profile)) "")
      :avatar-removed? (true? (:avatar-removed? profile))
-     :avatar         (normalize-avatar (:avatar profile))}))
+     :avatar          (normalize-avatar (:avatar profile))}))
 
 (defn- profile-format-errors [{:keys [name email username phone date-of-birth]}]
   (let [date-valid?
@@ -123,10 +123,10 @@
 
 (defn- normalize-avatar-upload [avatar]
   (when (map? avatar)
-    {:filename (or (form/trim-value (:filename avatar)) "")
+    {:filename  (or (form/trim-value (:filename avatar)) "")
      :mime-type (or (form/trim-value (:mime-type avatar)) "")
-     :size (:size avatar)
-     :tempfile (:tempfile avatar)}))
+     :size      (:size avatar)
+     :tempfile  (:tempfile avatar)}))
 
 (defn- avatar-error [{:keys [filename mime-type size]}]
   (cond
@@ -177,11 +177,11 @@
     (conj [:app.account/discard-upload (:tempfile avatar-upload)])))
 
 (def ^:private saved-profile-state
-  {:avatar nil
+  {:avatar          nil
    :avatar-removed? false
-   :_error {}
-   :_saved? true
-   :_feedback [:i18n/tr :account-settings/profile-saved-feedback]})
+   :_error          {}
+   :_saved?         true
+   :_feedback       [:i18n/tr :account-settings/profile-saved-feedback]})
 
 (defn save-profile-action
   [{:keys [db current-member-id]}
@@ -198,14 +198,14 @@
          {:error [:i18n/tr :account-settings/error-current-member-missing]}})
        avatar-upload)
       (let [avatar-error (when avatar-upload (avatar-error avatar-upload))
-            errors (cond-> (profile-errors db current-member-id profile)
-                     avatar-error (assoc :avatar avatar-error))]
+            errors       (cond-> (profile-errors db current-member-id profile)
+                           avatar-error (assoc :avatar avatar-error))]
         (if (seq errors)
           (discard-upload (profile-error-effects profile errors) avatar-upload)
           [[:app.account/save-profile
-            {:member-id current-member-id
-             :profile profile
-             :avatar-upload avatar-upload
+            {:member-id      current-member-id
+             :profile        profile
+             :avatar-upload  avatar-upload
              :sync-keycloak? (keycloak-sync-required? member)}]
            [:app.datastar/assoc-state
             [:account-profile]
@@ -272,9 +272,9 @@
         (assoc preferences :_error errors :_saved? false)]]
       (persisted-effects
        current-member-id
-       [{:db/id [:member/member-id current-member-id]
-         :member/timezone (:time-zone preferences)
-         :member/week-start (week-start-ident (:week-start preferences))
+       [{:db/id               [:member/member-id current-member-id]
+         :member/timezone     (:time-zone preferences)
+         :member/week-start   (week-start-ident (:week-start preferences))
          :member/clock-format (clock-format-ident (:time-format preferences))}]
        [:account-preferences]
        {}
@@ -285,14 +285,14 @@
 
 (def notification-scope-ident
   {"everything" :notify.scope/everything
-   "gigs" :notify.scope/gigs})
+   "gigs"       :notify.scope/gigs})
 
 (def notification-unread-ident
-  {"numbered" :notify.unread-style/numbered
+  {"numbered"   :notify.unread-style/numbered
    "unnumbered" :notify.unread-style/unnumbered})
 
 (def notification-schedule-ident
-  {"right-away" :notify.schedule/right-away
+  {"right-away"  :notify.schedule/right-away
    "daily-batch" :notify.schedule/daily-batch})
 
 (defn- local-time? [value]
@@ -337,15 +337,15 @@
                :account-settings/error-browser-permission-invalid]}))))
 
 (defn- notification-tx [member-id notifications]
-  {:db/id [:member/member-id member-id]
-   :member.notify/enabled? (boolean (:enabled? notifications))
-   :member.notify/scope (notification-scope-ident (:what notifications))
+  {:db/id                    [:member/member-id member-id]
+   :member.notify/enabled?   (boolean (:enabled? notifications))
+   :member.notify/scope      (notification-scope-ident (:what notifications))
    :member.notify/attendance-reminders?
    (boolean (get-in notifications [:reminders :attendance?]))
    :member.notify/poll-reminders?
    (boolean (get-in notifications [:reminders :polls?]))
-   :member.notify/email? (boolean (get-in notifications [:delivery :email?]))
-   :member.notify/browser? (boolean (get-in notifications [:delivery :browser?]))
+   :member.notify/email?     (boolean (get-in notifications [:delivery :email?]))
+   :member.notify/browser?   (boolean (get-in notifications [:delivery :browser?]))
    :member.notify/unread-style
    (notification-unread-ident (:unread-style notifications))
    :member.notify/schedule
@@ -362,7 +362,7 @@
   (let [notifications (select-keys notifications
                                    [:enabled? :what :reminders :delivery
                                     :unread-style :when :batch-time])
-        errors (notification-errors notifications)]
+        errors        (notification-errors notifications)]
     (if (seq errors)
       (notification-error-effects notifications errors)
       (persisted-effects
@@ -469,26 +469,26 @@
 
 (defn- break-success-effects [state break-state feedback]
   (let [{:keys [db current-member-id]} state
-        timezone (member-timezone db current-member-id)
-        start-date (effective-break-start-date state timezone break-state)
-        end-date (when (:active break-state)
-                   (not-empty (:end-date break-state)))]
+        timezone                       (member-timezone db current-member-id)
+        start-date                     (effective-break-start-date state timezone break-state)
+        end-date                       (when (:active break-state)
+                                         (not-empty (:end-date break-state)))]
     (persisted-effects
      current-member-id
-     [{:db/id [:member/member-id current-member-id]
+     [{:db/id                   [:member/member-id current-member-id]
        :member.break/start-date start-date
-       :member.break/end-date end-date}]
+       :member.break/end-date   end-date}]
      [:account-break]
      {}
      feedback)))
 
 (defn update-break-settings-action [state {:keys [account-break]}]
   (let [{:keys [db current-member-id]} state
-        break-state (normalize-break account-break)
-        timezone    (member-timezone db current-member-id)
-        errors      (break-errors
-                     break-state
-                     (effective-break-start-date state timezone break-state))]
+        break-state                    (normalize-break account-break)
+        timezone                       (member-timezone db current-member-id)
+        errors                         (break-errors
+                                        break-state
+                                        (effective-break-start-date state timezone break-state))]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state
@@ -520,10 +520,10 @@
        [:app.datastar/assoc-state
         [:account-app]
         {:platform platform
-         :_error {:platform
-                  {:error
-                   [:i18n/tr
-                    :account-settings/error-app-platform-invalid]}}}]])))
+         :_error   {:platform
+                    {:error
+                     [:i18n/tr
+                      :account-settings/error-app-platform-invalid]}}}]])))
 
 (def actions
   {::validate-profile-field       #'validate-profile-field-action

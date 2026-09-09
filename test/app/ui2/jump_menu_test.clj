@@ -5,9 +5,9 @@
    [lookup.core :as l]))
 
 (def member
-  {:member/member-id #uuid "11111111-1111-4111-8111-111111111111"
-   :member/name "Ada Lovelace"
-   :member/nick "Ada"
+  {:member/member-id       #uuid "11111111-1111-4111-8111-111111111111"
+   :member/name            "Ada Lovelace"
+   :member/nick            "Ada"
    :member/avatar-template "/user_avatar/forum.streetnoise.at/ada/{size}/1.png"})
 
 (def test-manifest
@@ -57,86 +57,86 @@
   (let [jump-menu (resolve-jump-menu)]
     (is (some? jump-menu) "JumpMenu should exist")
     (when jump-menu
-      (let [view       (jump-menu-view)
-            trigger    (l/select-one ".trigger" view)
-            popover    (l/select-one "#jump-menu-popover" view)
-            search     (l/select-one "input[type=search]" view)
-            shortcuts  (l/select ".shortcut" view)
-            recents    (l/select ".recent-item" view)
-            gigs       (l/select ".gig" view)
-            see-all    (l/select-one ".see-all" view)
+      (let [view              (jump-menu-view)
+            trigger           (l/select-one ".trigger" view)
+            popover           (l/select-one "#jump-menu-popover" view)
+            search            (l/select-one "input[type=search]" view)
+            shortcuts         (l/select ".shortcut" view)
+            recents           (l/select ".recent-item" view)
+            gigs              (l/select ".gig" view)
+            see-all           (l/select-one ".see-all" view)
             translation-nodes (l/select :i18n/tr view)]
-        (is (= {:root-attrs {:class "jump-menu"
-                             :data-class:stuck "$jumpMenuStuck"}
-                :trigger {:id "jump-menu-trigger"
-                          :appearance "plain"
-                          :with-caret true
-                          :aria-controls "jump-menu-popover"
-                          :aria-expanded "false"
-                          :aria-haspopup "dialog"
-                          :aria-label "Open jump menu"}
-                :popover {:id "jump-menu-popover"
-                          :for "jump-menu-trigger"
-                          :placement "bottom"
-                          :without-arrow true}
-                :shortcut-labels ["Gigs" "Calendar" "Repertoire" "Everything"]
-                :shortcut-hrefs ["/" "/calendar" "/songs" "/everything"]
-                :search {:type "search"
-                         :name "jump-menu-search"
-                         :aria-label "Search or jump"
-                         :placeholder "Search or jump to anything"}
-                :section-headings ["Recently visited" "Gigs"]
-                :recent-labels ["Dashboard" "Band settings" "Probeplan" "Members"]
-                :gig-labels ["Sommerfest at Kulturhof" "Streetnoise at Hafenklang"]
-                :see-all-href "/gigs"
+        (is (= {:root-attrs             {:class            "jump-menu"
+                                         :data-class:stuck "$jumpMenuStuck"}
+                :trigger                {:id            "jump-menu-trigger"
+                                         :appearance    "plain"
+                                         :with-caret    true
+                                         :aria-controls "jump-menu-popover"
+                                         :aria-expanded "false"
+                                         :aria-haspopup "dialog"
+                                         :aria-label    "Open jump menu"}
+                :popover                {:id            "jump-menu-popover"
+                                         :for           "jump-menu-trigger"
+                                         :placement     "bottom"
+                                         :without-arrow true}
+                :shortcut-labels        ["Gigs" "Calendar" "Repertoire" "Everything"]
+                :shortcut-hrefs         ["/" "/calendar" "/songs" "/everything"]
+                :search                 {:type        "search"
+                                         :name        "jump-menu-search"
+                                         :aria-label  "Search or jump"
+                                         :placeholder "Search or jump to anything"}
+                :section-headings       ["Recently visited" "Gigs"]
+                :recent-labels          ["Dashboard" "Band settings" "Probeplan" "Members"]
+                :gig-labels             ["Sommerfest at Kulturhof" "Streetnoise at Hafenklang"]
+                :see-all-href           "/gigs"
                 :translation-node-count 0}
-               {:root-attrs (l/attrs view)
-                :trigger (select-keys (l/attrs trigger)
-                                      [:id :appearance :with-caret :aria-controls
-                                       :aria-expanded :aria-haspopup :aria-label])
-                :popover (select-keys (l/attrs popover)
-                                      [:id :for :placement :without-arrow])
-                :shortcut-labels (mapv l/text shortcuts)
-                :shortcut-hrefs (mapv #(-> % l/attrs :href) shortcuts)
-                :search (select-keys (l/attrs search)
-                                     [:type :name :aria-label :placeholder])
-                :section-headings (mapv l/text (l/select 'h2 view))
-                :recent-labels (mapv l/text recents)
-                :gig-labels (mapv #(-> (l/select-one ".title" %) l/text) gigs)
-                :see-all-href (-> see-all l/attrs :href)
+               {:root-attrs             (l/attrs view)
+                :trigger                (select-keys (l/attrs trigger)
+                                                     [:id :appearance :with-caret :aria-controls
+                                                      :aria-expanded :aria-haspopup :aria-label])
+                :popover                (select-keys (l/attrs popover)
+                                                     [:id :for :placement :without-arrow])
+                :shortcut-labels        (mapv l/text shortcuts)
+                :shortcut-hrefs         (mapv #(-> % l/attrs :href) shortcuts)
+                :search                 (select-keys (l/attrs search)
+                                                     [:type :name :aria-label :placeholder])
+                :section-headings       (mapv l/text (l/select 'h2 view))
+                :recent-labels          (mapv l/text recents)
+                :gig-labels             (mapv #(-> (l/select-one ".title" %) l/text) gigs)
+                :see-all-href           (-> see-all l/attrs :href)
                 :translation-node-count (count translation-nodes)}))))))
 
 (deftest application-shell-header-contains-only-the-jump-menu
   (let [app-shell-body (some-> (requiring-resolve 'app.layout2/app-shell-body) deref)
         view           (app-shell-body {:app/session {:session/member member}
-                                        :tr      (fn
-                                                   ([resource-ids]
-                                                    (name (last resource-ids)))
-                                                   ([resource-ids _]
-                                                    (name (last resource-ids))))}
+                                        :tr          (fn
+                                                       ([resource-ids]
+                                                        (name (last resource-ids)))
+                                                       ([resource-ids _]
+                                                        (name (last resource-ids))))}
                                        [:main "Page content"])
         shell          (l/select-one 'app-shell view)
         sentinel       (l/select-one ".jump-menu-sentinel" shell)
         header         (l/select-one 'header shell)
         children       (vec (direct-children header))]
-    (is (= {:sentinel {:aria-hidden true
-                       :data-signals:jump-menu-stuck "false"
-                       :data-on-intersect "$jumpMenuStuck = false"
-                       :data-on-intersect__exit "$jumpMenuStuck = true"}
-            :header-tag :header
-            :direct-child-count 1
-            :jump-menu-count 1
-            :account-control-count 0
+    (is (= {:sentinel                {:aria-hidden                  true
+                                      :data-signals:jump-menu-stuck "false"
+                                      :data-on-intersect            "$jumpMenuStuck = false"
+                                      :data-on-intersect__exit      "$jumpMenuStuck = true"}
+            :header-tag              :header
+            :direct-child-count      1
+            :jump-menu-count         1
+            :account-control-count   0
             :navigation-toggle-count 0}
-           {:sentinel (select-keys
-                       (l/attrs sentinel)
-                       [:aria-hidden
-                        :data-signals:jump-menu-stuck
-                        :data-on-intersect
-                        :data-on-intersect__exit])
-            :header-tag (first header)
-            :direct-child-count (count children)
-            :jump-menu-count (count (l/select ".jump-menu" header))
+           {:sentinel              (select-keys
+                                    (l/attrs sentinel)
+                                    [:aria-hidden
+                                     :data-signals:jump-menu-stuck
+                                     :data-on-intersect
+                                     :data-on-intersect__exit])
+            :header-tag            (first header)
+            :direct-child-count    (count children)
+            :jump-menu-count       (count (l/select ".jump-menu" header))
             :account-control-count (count (l/select 'app-shell-user header))
             :navigation-toggle-count
             (count
@@ -145,8 +145,8 @@
                      (l/select :app.ui2.icon/icon header)))}))))
 
 (deftest stuck-jump-menu-keeps-its-glass-treatment-at-every-breakpoint
-  (let [css         (slurp "resources/public/css/ui2/jump-menu.css")
-        stuck-index (.indexOf css ":scope.stuck")
+  (let [css          (slurp "resources/public/css/ui2/jump-menu.css")
+        stuck-index  (.indexOf css ":scope.stuck")
         mobile-index (.indexOf css "@media (--sno-viewport-below-s)")]
     (is (= 1 (count (re-seq #":scope\.stuck" css))))
     (is (and (pos? stuck-index)

@@ -17,9 +17,9 @@
                                 :href       (urls/link-gig-create)}
                  [:i18n/tr :dashboard/calendar-create-gig]]]}]
     [card/Card
-     [:iframe {:class "dashboard-calendar-frame"
-               :src   "https://data.streetnoise.at/apps/calendar/embed/yRFYYPnQkasfa8nk/listMonth/now"
-               :width "100%"
+     [:iframe {:class  "dashboard-calendar-frame"
+               :src    "https://data.streetnoise.at/apps/calendar/embed/yRFYYPnQkasfa8nk/listMonth/now"
+               :width  "100%"
                :height "1000"}]]]))
 
 (d*/refresh-all!)

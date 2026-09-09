@@ -181,8 +181,8 @@
   [invite-code]
   (when (str/blank? invite-code)
     (throw (ex-info "Invitation receipt requires a non-blank code" {})))
-  (let [input (.getBytes (str accepted-receipt-domain invite-code)
-                         StandardCharsets/UTF_8)
+  (let [input  (.getBytes (str accepted-receipt-domain invite-code)
+                          StandardCharsets/UTF_8)
         digest (.digest (MessageDigest/getInstance "SHA-256") input)]
     (.formatHex (HexFormat/of) digest)))
 
@@ -199,18 +199,18 @@
 (defn attempt-markers
   "Returns the Keycloak attributes that identify one account-setup attempt."
   [member-id generation]
-  {member-id-marker [(str member-id)]
+  {member-id-marker         [(str member-id)]
    invite-generation-marker [(str generation)]})
 
 (defn keycloak-user-spec
   "Returns the disabled Keycloak account data for an invited member."
   [profile attributes]
-  {:username (:username profile)
-   :email (:email profile)
-   :first-name (:first-name profile)
-   :enabled? false
+  {:username        (:username profile)
+   :email           (:email profile)
+   :first-name      (:first-name profile)
+   :enabled?        false
    :email-verified? true
-   :attributes attributes})
+   :attributes      attributes})
 
 (defn- member-ref [member-id]
   [:member/member-id member-id])
@@ -219,7 +219,7 @@
   (let [entity (d/entity db (member-ref member-id))]
     (when-not (:db/id entity)
       (throw (ex-info "Member does not exist"
-                      {:type ::member-not-found
+                      {:type      ::member-not-found
                        :member-id member-id})))
     entity))
 
@@ -232,8 +232,8 @@
 (defn invitation-state
   "Returns the invitation state for `member-id` without its invitation code."
   [db member-id]
-  (let [member (member db member-id)
-        status (status-ident member)
+  (let [member     (member db member-id)
+        status     (status-ident member)
         generation (:member/invite-generation member)]
     (cond
       (and (nil? status) (nil? generation))
@@ -241,13 +241,13 @@
 
       (or (nil? status) (nil? generation))
       (throw (ex-info "Member has partial invitation state"
-                      {:type ::partial-state
-                       :member-id member-id
-                       :status status
+                      {:type       ::partial-state
+                       :member-id  member-id
+                       :status     status
                        :generation generation}))
 
       :else
-      (cond-> {:status status
+      (cond-> {:status     status
                :generation generation}
         (:member/invite-expires-at member)
         (assoc :expires-at (:member/invite-expires-at member))
@@ -260,20 +260,20 @@
   [db member-id]
   (let [member (member db member-id)]
     {:member/member-id (:member/member-id member)
-     :member/name (:member/name member)
-     :member/email (:member/email member)
-     :member/username (:member/username member)}))
+     :member/name      (:member/name member)
+     :member/email     (:member/email member)
+     :member/username  (:member/username member)}))
 
 (defn keycloak-profile
   "Returns the member fields needed to create a Keycloak account."
   [db member-id]
-  (let [member (member db member-id)
-        profile {:username (:member/username member)
-                 :email (:member/email member)
+  (let [member  (member db member-id)
+        profile {:username   (:member/username member)
+                 :email      (:member/email member)
                  :first-name (:member/name member)}]
     (when-not (m/validate ::keycloak-profile profile {:registry registry})
       (throw (ex-info "Member has an invalid Keycloak profile"
-                      {:type ::invalid-keycloak-profile
+                      {:type      ::invalid-keycloak-profile
                        :member-id member-id})))
     profile))
 
@@ -310,7 +310,7 @@
   "Returns true when the submitted invitation is current, pending, and unexpired."
   [data]
   (let [{:keys [expires-at]} (:member-invite/state data)
-        requested-at (:member-invite/requested-at data)]
+        requested-at         (:member-invite/requested-at data)]
     (and (current-status? pending data)
          (instance? Date expires-at)
          (instance? Date requested-at)
@@ -382,7 +382,7 @@
 
 (defn- transition-tx
   [db member-id from-status to-status generation transitioned-at]
-  (let [ref (member-ref member-id)
+  (let [ref             (member-ref member-id)
         next-generation (inc generation)]
     [[:db.fn/cas ref :member/invite-status
       (d/entid db from-status)
@@ -395,42 +395,42 @@
 
 (defn- bearer [db member-id]
   (let [member (member db member-id)]
-    {:code (:member/invite-code member)
+    {:code       (:member/invite-code member)
      :expires-at (:member/invite-expires-at member)}))
 
 (defn create-invited-member-tx
   "Returns the transaction that creates a member, ledger, and pending invitation."
   [form invitation member-id ledger-id actor-member-id]
   (let [{:keys [name nick email username phone section-name active]} form
-        {:keys [code expires-at transitioned-at]} invitation
+        {:keys [code expires-at transitioned-at]}                    invitation
         member-tx
-        (cond-> {:db/id "new-member"
-                 :member/member-id member-id
-                 :member/name name
-                 :member/email email
-                 :member/username username
-                 :member/phone phone
-                 :member/section [:section/name section-name]
-                 :member/active? active
-                 :member/invite-code code
+        (cond-> {:db/id                    "new-member"
+                 :member/member-id         member-id
+                 :member/name              name
+                 :member/email             email
+                 :member/username          username
+                 :member/phone             phone
+                 :member/section           [:section/name section-name]
+                 :member/active?           active
+                 :member/invite-code       code
                  :member/invite-expires-at expires-at
-                 :member/invite-status pending
+                 :member/invite-status     pending
                  :member/invite-generation 1
-                 :member/invite-status-at transitioned-at}
+                 :member/invite-status-at  transitioned-at}
           (seq nick) (assoc :member/nick nick))
-        ledger-tx {:db/id "new-ledger"
-                   :ledger/ledger-id ledger-id
-                   :ledger/owner "new-member"
-                   :ledger/balance 0}
-        tx-data (cond-> [member-tx ledger-tx]
-                  actor-member-id
-                  (conj [:db/add "datomic.tx"
-                         :audit/user
-                         [:member/member-id actor-member-id]]))]
+        ledger-tx                                                    {:db/id            "new-ledger"
+                                                                      :ledger/ledger-id ledger-id
+                                                                      :ledger/owner     "new-member"
+                                                                      :ledger/balance   0}
+        tx-data                                                      (cond-> [member-tx ledger-tx]
+                                                                       actor-member-id
+                                                                       (conj [:db/add "datomic.tx"
+                                                                              :audit/user
+                                                                              [:member/member-id actor-member-id]]))]
     {:tx-data tx-data
-     :state {:status pending
-             :generation 1
-             :expires-at expires-at}}))
+     :state   {:status     pending
+               :generation 1
+               :expires-at expires-at}}))
 
 (defn issue-tx
   "Returns the transaction that adds the first invitation to an existing member."
@@ -448,9 +448,9 @@
            [:db.fn/cas ref :member/invite-code nil code]
            [:db.fn/cas ref :member/invite-expires-at nil expires-at]
            [:db/add ref :member/invite-status-at transitioned-at]])
-         :state {:status pending
-                 :generation 1
-                 :expires-at expires-at}}))))
+         :state   {:status     pending
+                   :generation 1
+                   :expires-at expires-at}}))))
 
 (defn reissue-tx
   "Returns the transaction that replaces a pending or revoked invitation."
@@ -458,7 +458,7 @@
   (let [{:keys [status generation]} state]
     (when (contains? #{pending revoked} status)
       (let [{old-code :code old-expiry :expires-at} (bearer db member-id)
-            ref (member-ref member-id)
+            ref                                     (member-ref member-id)
             tx-data
             (into
              (transition-tx db
@@ -473,15 +473,15 @@
                old-expiry
                expires-at]])]
         {:tx-data (transact-if-unlinked member-id tx-data)
-         :state {:status pending
-                 :generation (inc generation)
-                 :expires-at expires-at}}))))
+         :state   {:status     pending
+                   :generation (inc generation)
+                   :expires-at expires-at}}))))
 
 (defn revoke-tx
   "Returns the transaction that revokes a pending invitation."
   [db {:keys [member-id state transitioned-at]}]
   (let [{:keys [status generation]} state
-        {:keys [code expires-at]} (bearer db member-id)]
+        {:keys [code expires-at]}   (bearer db member-id)]
     (when (and (= pending status) code expires-at)
       (let [ref (member-ref member-id)]
         {:tx-data
@@ -494,8 +494,8 @@
                          transitioned-at)
           [[:db/retract ref :member/invite-code code]
            [:db/retract ref :member/invite-expires-at expires-at]])
-         :state {:status revoked
-                 :generation (inc generation)}}))))
+         :state   {:status     revoked
+                   :generation (inc generation)}}))))
 
 (defn claim-tx
   "Returns the transaction that starts account setup for a pending invitation."
@@ -519,9 +519,9 @@
                expires-at
                expires-at]])]
         {:tx-data (transact-if-unlinked member-id tx-data)
-         :state {:status accepting
-                 :generation (inc generation)
-                 :expires-at expires-at}}))))
+         :state   {:status     accepting
+                   :generation (inc generation)
+                   :expires-at expires-at}}))))
 
 (defn begin-create-tx
   "Returns the transaction that permits one Keycloak account creation."
@@ -537,9 +537,9 @@
                        creating
                        generation
                        transitioned-at))
-       :state (cond-> {:status creating
-                       :generation (inc generation)}
-                expires-at (assoc :expires-at expires-at))})))
+       :state   (cond-> {:status     creating
+                         :generation (inc generation)}
+                  expires-at (assoc :expires-at expires-at))})))
 
 (defn link-keycloak-user-tx
   "Returns the transaction that links the created Keycloak account to the member."
@@ -556,10 +556,10 @@
                          generation
                          transitioned-at)
           [[:db.fn/cas ref :member/keycloak-id nil keycloak-user-id]])
-         :state (cond-> {:status activating
-                         :generation (inc generation)
-                         :keycloak-id keycloak-user-id}
-                  expires-at (assoc :expires-at expires-at))}))))
+         :state   (cond-> {:status      activating
+                           :generation  (inc generation)
+                           :keycloak-id keycloak-user-id}
+                    expires-at (assoc :expires-at expires-at))}))))
 
 (defn begin-compensation-tx
   "Returns the transaction that starts cleanup after account setup fails."
@@ -575,9 +575,9 @@
                        compensating
                        generation
                        transitioned-at))
-       :state (cond-> {:status compensating
-                       :generation (inc generation)}
-                expires-at (assoc :expires-at expires-at))})))
+       :state   (cond-> {:status     compensating
+                         :generation (inc generation)}
+                  expires-at (assoc :expires-at expires-at))})))
 
 (defn release-tx
   "Returns the transaction that makes a cleaned-up invitation pending again."
@@ -593,15 +593,15 @@
                        pending
                        generation
                        transitioned-at))
-       :state (cond-> {:status pending
-                       :generation (inc generation)}
-                expires-at (assoc :expires-at expires-at))})))
+       :state   (cond-> {:status     pending
+                         :generation (inc generation)}
+                  expires-at (assoc :expires-at expires-at))})))
 
 (defn finalize-tx
   "Returns the transaction that marks account setup complete and removes the code."
   [db {:keys [member-id state keycloak-user-id transitioned-at]}]
   (let [{:keys [status generation]} state
-        {:keys [code expires-at]} (bearer db member-id)]
+        {:keys [code expires-at]}   (bearer db member-id)]
     (when (and (= activating status) code expires-at)
       (let [ref (member-ref member-id)]
         {:tx-data
@@ -621,6 +621,6 @@
             (accepted-receipt-digest code)]
            [:db/retract ref :member/invite-code code]
            [:db/retract ref :member/invite-expires-at expires-at]])
-         :state {:status accepted
-                 :generation (inc generation)
-                 :keycloak-id keycloak-user-id}}))))
+         :state   {:status      accepted
+                   :generation  (inc generation)
+                   :keycloak-id keycloak-user-id}}))))

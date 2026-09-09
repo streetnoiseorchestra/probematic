@@ -37,9 +37,9 @@
 
 (deftest dashboard-card
   (testing "A dashboard card can have a title with an optional subtitle."
-    (let [title-only (sut/dashboard-card
-                      {:title "Review status"}
-                      [:p "Body content"])
+    (let [title-only    (sut/dashboard-card
+                         {:title "Review status"}
+                         [:p "Body content"])
           with-subtitle (sut/dashboard-card
                          {:title    "Health Checklist"
                           :subtitle "Required data before sending changes."}
@@ -67,13 +67,13 @@
                               :insurance.policy/premium-factor  1M
                               :insurance.policy/effective-at    nil
                               :insurance.policy/effective-until nil})
-          metric  (sut/metric-card {:icon :bank :label "Value" :value "€100"})
-          summary (sut/dashboard-card {:title "Summary"} [:p "Body"])
-          details (#'sut/policy-details-section
-                   {:tr tr}
-                   (assoc full-policy
-                          :insurance-team-member? true
-                          :policy full-policy))]
+          metric      (sut/metric-card {:icon :bank :label "Value" :value "€100"})
+          summary     (sut/dashboard-card {:title "Summary"} [:p "Body"])
+          details     (#'sut/policy-details-section
+                       {:tr tr}
+                       (assoc full-policy
+                              :insurance-team-member? true
+                              :policy full-policy))]
       (is (= [:app.ui2.card/card
               :app.ui2.card/card
               :app.ui2.card/card]
@@ -81,47 +81,47 @@
 
 (deftest dashboard-card-actions-remain-visible-when-unavailable
   (testing "Card actions preserve their position and become native disabled buttons when unavailable."
-    (let [full-policy (merge policy
-                             {:insurance.policy/name            "Orchestra"
-                              :insurance.policy/status          :insurance.policy.status/draft
-                              :insurance.policy/premium-factor  1M
-                              :insurance.policy/effective-at    nil
-                              :insurance.policy/effective-until nil})
-          policy-details (#'sut/policy-details-section
-                          {:tr tr}
-                          (assoc full-policy
-                                 :insurance-team-member? false
-                                 :policy full-policy))
+    (let [full-policy      (merge policy
+                                  {:insurance.policy/name            "Orchestra"
+                                   :insurance.policy/status          :insurance.policy.status/draft
+                                   :insurance.policy/premium-factor  1M
+                                   :insurance.policy/effective-at    nil
+                                   :insurance.policy/effective-until nil})
+          policy-details   (#'sut/policy-details-section
+                            {:tr tr}
+                            (assoc full-policy
+                                   :insurance-team-member? false
+                                   :policy full-policy))
           member-responses (sut/survey-progress-section
                             {:insurance-team-member? false
-                             :policy policy
-                             :survey-progress {:completed-count 1
-                                               :waiting-count   2
-                                               :total-count     3}})
-          review-complete (sut/review-status-section
-                           {:insurance-team-member? true
-                            :policy policy
-                            :totals {:total-instruments 3}
-                            :status-counts {:instrument.coverage.status/covered 3}})
-          health-complete (sut/health-checklist-section
-                           {:insurance-team-member? true
-                            :policy policy
-                            :totals {:missing-photo-count            0
-                                     :missing-insurer-id-count       0
-                                     :missing-category-factor-count  0}})
-          action-summary (fn [view]
-                           (let [action (l/select-one button/Button (resolve-view view))
-                                 attrs  (l/attrs action)]
-                             {:href       (:href attrs)
-                              :disabled   (:disabled attrs)
-                              :slot       (:slot attrs)
-                              :appearance (:appearance attrs)
-                              :variant    (:variant attrs)
-                              :title      (:title attrs)
-                              :aria-label (:aria-label attrs)
-                              :icon       (-> (l/select-one ico/Icon action)
-                                              l/attrs
-                                              ::ico/name)}))]
+                             :policy                 policy
+                             :survey-progress        {:completed-count 1
+                                                      :waiting-count   2
+                                                      :total-count     3}})
+          review-complete  (sut/review-status-section
+                            {:insurance-team-member? true
+                             :policy                 policy
+                             :totals                 {:total-instruments 3}
+                             :status-counts          {:instrument.coverage.status/covered 3}})
+          health-complete  (sut/health-checklist-section
+                            {:insurance-team-member? true
+                             :policy                 policy
+                             :totals                 {:missing-photo-count           0
+                                                      :missing-insurer-id-count      0
+                                                      :missing-category-factor-count 0}})
+          action-summary   (fn [view]
+                             (let [action (l/select-one button/Button (resolve-view view))
+                                   attrs  (l/attrs action)]
+                               {:href       (:href attrs)
+                                :disabled   (:disabled attrs)
+                                :slot       (:slot attrs)
+                                :appearance (:appearance attrs)
+                                :variant    (:variant attrs)
+                                :title      (:title attrs)
+                                :aria-label (:aria-label attrs)
+                                :icon       (-> (l/select-one ico/Icon action)
+                                                l/attrs
+                                                ::ico/name)}))]
       (is (= {:policy-details
               {:href       nil
                :disabled   true
@@ -158,46 +158,46 @@
                :title      "Review"
                :aria-label "Review"
                :icon       :hand-pointing}}
-             {:policy-details    (action-summary policy-details)
-              :member-responses  (action-summary member-responses)
-              :review-status     (action-summary review-complete)
-              :health-checklist  (action-summary health-complete)})))))
+             {:policy-details   (action-summary policy-details)
+              :member-responses (action-summary member-responses)
+              :review-status    (action-summary review-complete)
+              :health-checklist (action-summary health-complete)})))))
 
 (deftest dashboard-card-actions-link-only-to-meaningful-destinations
   (testing "Insurance-team members receive links only while the card action has work to perform."
-    (let [full-policy (merge policy
-                             {:insurance.policy/name            "Orchestra"
-                              :insurance.policy/status          :insurance.policy.status/draft
-                              :insurance.policy/premium-factor  1M
-                              :insurance.policy/effective-at    nil
-                              :insurance.policy/effective-until nil})
-          policy-details (#'sut/policy-details-section
-                          {:tr tr}
-                          (assoc full-policy
-                                 :insurance-team-member? true
-                                 :policy full-policy))
+    (let [full-policy      (merge policy
+                                  {:insurance.policy/name            "Orchestra"
+                                   :insurance.policy/status          :insurance.policy.status/draft
+                                   :insurance.policy/premium-factor  1M
+                                   :insurance.policy/effective-at    nil
+                                   :insurance.policy/effective-until nil})
+          policy-details   (#'sut/policy-details-section
+                            {:tr tr}
+                            (assoc full-policy
+                                   :insurance-team-member? true
+                                   :policy full-policy))
           member-responses (sut/survey-progress-section
                             {:insurance-team-member? true
-                             :policy policy
-                             :survey-progress {:completed-count 1
-                                               :waiting-count   2
-                                               :total-count     3}})
-          review-open (sut/review-status-section
-                       {:insurance-team-member? true
-                        :policy policy
-                        :totals {:total-instruments 3}
-                        :status-counts {:instrument.coverage.status/covered      2
-                                        :instrument.coverage.status/needs-review 1}})
-          health-open (sut/health-checklist-section
-                       {:insurance-team-member? true
-                        :policy policy
-                        :totals {:missing-photo-count            1
-                                 :missing-insurer-id-count       0
-                                 :missing-category-factor-count  0}})
-          action-summary (fn [view]
-                           (let [attrs (select-attrs button/Button view)]
-                             {:href     (:href attrs)
-                              :disabled (:disabled attrs)}))]
+                             :policy                 policy
+                             :survey-progress        {:completed-count 1
+                                                      :waiting-count   2
+                                                      :total-count     3}})
+          review-open      (sut/review-status-section
+                            {:insurance-team-member? true
+                             :policy                 policy
+                             :totals                 {:total-instruments 3}
+                             :status-counts          {:instrument.coverage.status/covered      2
+                                                      :instrument.coverage.status/needs-review 1}})
+          health-open      (sut/health-checklist-section
+                            {:insurance-team-member? true
+                             :policy                 policy
+                             :totals                 {:missing-photo-count           1
+                                                      :missing-insurer-id-count      0
+                                                      :missing-category-factor-count 0}})
+          action-summary   (fn [view]
+                             (let [attrs (select-attrs button/Button view)]
+                               {:href     (:href attrs)
+                                :disabled (:disabled attrs)}))]
       (is (= {:policy-details   {:href     (str "/insurance-policy/" policy-id "/settings")
                                  :disabled nil}
               :member-responses {:href     (str "/insurance-policy/" policy-id "/surveys")
@@ -213,9 +213,9 @@
 
 (deftest missing-category-factor-health-check
   (testing "The policy is missing a category factor used by one or more coverages."
-    (let [totals        {:missing-photo-count            1
-                         :missing-insurer-id-count       0
-                         :missing-category-factor-count  1}
+    (let [totals        {:missing-photo-count           1
+                         :missing-insurer-id-count      0
+                         :missing-category-factor-count 1}
           team-view     (resolve-view
                          (sut/health-checklist-section
                           {:policy                 policy

@@ -44,11 +44,11 @@
      (state-effect (assoc current :error (tr [message-key])))]))
 
 (defn- next-page-state [{:keys [current-index todo-reports total-todo]}]
-  (let [next-report       (second todo-reports)
-        next-index        (inc current-index)
-        remaining         (dec total-todo)
-        milestone?        (and next-report
-                               (queries/show-milestone? next-index remaining))]
+  (let [next-report (second todo-reports)
+        next-index  (inc current-index)
+        remaining   (dec total-todo)
+        milestone?  (and next-report
+                         (queries/show-milestone? next-index remaining))]
     {:answered-count   0
      :current-flow-key flow/start-key
      :decisions        []
@@ -81,12 +81,12 @@
       (error-effects state data :insurance/review-invalid-transition)
 
       :else
-      (let [next-step (:next transition)
+      (let [next-step      (:next transition)
             answered-count (inc (or (:answered-count page-state) 0))
-            decisions (->> (concat (:decisions page-state)
-                                   (:decisions transition))
-                           distinct
-                           vec)]
+            decisions      (->> (concat (:decisions page-state)
+                                        (:decisions transition))
+                                distinct
+                                vec)]
         (case next-step
           :complete
           [[:db/transact (complete-report-tx state data decisions []) {}]
@@ -188,6 +188,6 @@
              (state-effect (next-page-state data))]))))))
 
 (def actions
-  {::dismiss-review  #'dismiss-action
-   ::save-edit       #'save-edit-action
-   ::transition      #'transition-action})
+  {::dismiss-review #'dismiss-action
+   ::save-edit      #'save-edit-action
+   ::transition     #'transition-action})

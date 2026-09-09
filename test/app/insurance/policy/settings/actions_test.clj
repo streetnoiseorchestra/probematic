@@ -37,8 +37,8 @@
 
 (defn seed-coverage-types!
   [conn policy-id]
-  (let [used-type-id     (random-uuid)
-        unused-type-id   (random-uuid)
+  (let [used-type-id      (random-uuid)
+        unused-type-id    (random-uuid)
         foreign-policy-id (random-uuid)
         foreign-type-id   (random-uuid)
         coverage-id       (random-uuid)]
@@ -70,8 +70,8 @@
        [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/coverage-types "unused-type"]
        [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/covered-instruments "used-coverage"]
        [:db/add [:insurance.policy/policy-id foreign-policy-id] :insurance.policy/coverage-types "foreign-type"]])
-    {:used-type-id     used-type-id
-     :unused-type-id   unused-type-id
+    {:used-type-id      used-type-id
+     :unused-type-id    unused-type-id
      :foreign-policy-id foreign-policy-id
      :foreign-type-id   foreign-type-id
      :coverage-id       coverage-id}))
@@ -96,14 +96,14 @@
 (defn coverage-type-signals
   [policy-id overrides]
   {:insurancePolicySettings
-   {:coverageType (merge {:policyId      (str policy-id)
-                          :name          "Extended"
-                          :description   "Additional coverage"
-                          :premiumFactor "0.75"
-                          :icon          "phosphor/shield"
-                          :required      false
+   {:coverageType (merge {:policyId             (str policy-id)
+                          :name                 "Extended"
+                          :description          "Additional coverage"
+                          :premiumFactor        "0.75"
+                          :icon                 "phosphor/shield"
+                          :required             false
                           :addToBandInstruments false
-                          :confirmationCount ""}
+                          :confirmationCount    ""}
                          overrides)}})
 
 (defn exporter-signals
@@ -115,10 +115,10 @@
 
 (defn seed-impact-coverages!
   [conn policy-id]
-  (let [type-id             (random-uuid)
-        band-missing-id     (random-uuid)
-        band-selected-id    (random-uuid)
-        private-missing-id  (random-uuid)]
+  (let [type-id            (random-uuid)
+        band-missing-id    (random-uuid)
+        band-selected-id   (random-uuid)
+        private-missing-id (random-uuid)]
     @(d/transact
       conn
       [{:db/id                                  "impact-type"
@@ -154,22 +154,22 @@
        [:db/add [:insurance.policy/policy-id policy-id]
         :insurance.policy/covered-instruments
         "private-missing"]])
-    {:type-id            type-id
-     :all-coverage-ids   #{band-missing-id band-selected-id private-missing-id}
-     :band-coverage-ids  #{band-missing-id band-selected-id}
-     :missing-type-ids   #{band-missing-id private-missing-id}}))
+    {:type-id           type-id
+     :all-coverage-ids  #{band-missing-id band-selected-id private-missing-id}
+     :band-coverage-ids #{band-missing-id band-selected-id}
+     :missing-type-ids  #{band-missing-id private-missing-id}}))
 
 (defn seed-category-factors!
   [conn policy-id]
-  (let [used-category-id   (random-uuid)
-        unused-category-id (random-uuid)
-        new-category-id    (random-uuid)
-        foreign-policy-id  (random-uuid)
+  (let [used-category-id    (random-uuid)
+        unused-category-id  (random-uuid)
+        new-category-id     (random-uuid)
+        foreign-policy-id   (random-uuid)
         foreign-category-id (random-uuid)
-        used-factor-id     (random-uuid)
-        unused-factor-id   (random-uuid)
-        foreign-factor-id  (random-uuid)
-        coverage-id        (random-uuid)]
+        used-factor-id      (random-uuid)
+        unused-factor-id    (random-uuid)
+        foreign-factor-id   (random-uuid)
+        coverage-id         (random-uuid)]
     (seed-policy! conn foreign-policy-id :insurance.policy.status/draft)
     @(d/transact
       conn
@@ -189,18 +189,18 @@
         :instrument.category/category-id foreign-category-id
         :instrument.category/name        "Foreign"
         :instrument.category/code        (str "foreign-" policy-id)}
-       {:db/id                                                "used-factor"
-        :insurance.category.factor/category-factor-id         used-factor-id
-        :insurance.category.factor/category                   "used-category"
-        :insurance.category.factor/factor                     0.10M}
-       {:db/id                                                "unused-factor"
-        :insurance.category.factor/category-factor-id         unused-factor-id
-        :insurance.category.factor/category                   "unused-category"
-        :insurance.category.factor/factor                     0.20M}
-       {:db/id                                                "foreign-factor"
-        :insurance.category.factor/category-factor-id         foreign-factor-id
-        :insurance.category.factor/category                   "foreign-category"
-        :insurance.category.factor/factor                     0.30M}
+       {:db/id                                        "used-factor"
+        :insurance.category.factor/category-factor-id used-factor-id
+        :insurance.category.factor/category           "used-category"
+        :insurance.category.factor/factor             0.10M}
+       {:db/id                                        "unused-factor"
+        :insurance.category.factor/category-factor-id unused-factor-id
+        :insurance.category.factor/category           "unused-category"
+        :insurance.category.factor/factor             0.20M}
+       {:db/id                                        "foreign-factor"
+        :insurance.category.factor/category-factor-id foreign-factor-id
+        :insurance.category.factor/category           "foreign-category"
+        :insurance.category.factor/factor             0.30M}
        {:db/id                    "used-instrument"
         :instrument/instrument-id (random-uuid)
         :instrument/name          "Trumpet"
@@ -248,17 +248,17 @@
 
 (defn coverage-type-transaction-summary
   [effects]
-  (let [tx-data        (transaction-data effects)
-        entity-tx      (some #(when (and (map? %)
-                                         (:insurance.coverage.type/type-id %))
-                                %)
-                             tx-data)
-        type-ref       (or (:db/id entity-tx)
-                           (some #(when (and (vector? %)
-                                             (= :insurance.coverage.type/icon
-                                                (nth % 2 nil)))
-                                    (second %))
-                                 tx-data))
+  (let [tx-data   (transaction-data effects)
+        entity-tx (some #(when (and (map? %)
+                                    (:insurance.coverage.type/type-id %))
+                           %)
+                        tx-data)
+        type-ref  (or (:db/id entity-tx)
+                      (some #(when (and (vector? %)
+                                        (= :insurance.coverage.type/icon
+                                           (nth % 2 nil)))
+                               (second %))
+                            tx-data))
         attribute-value
         (fn [attribute]
           (first
@@ -270,9 +270,9 @@
                                  (= attribute (nth % 2 nil)))
                         [(nth % 3 nil)])
                      tx-data))))]
-    {:transact?   (boolean tx-data)
-     :icon        (attribute-value :insurance.coverage.type/icon)
-     :required?   (attribute-value :insurance.coverage.type/required?)
+    {:transact? (boolean tx-data)
+     :icon      (attribute-value :insurance.coverage.type/icon)
+     :required? (attribute-value :insurance.coverage.type/required?)
      :coverage-ids
      (->> tx-data
           (keep (fn [tx]
@@ -286,12 +286,12 @@
 (defn coverage-type-confirmation-summary
   [effects]
   (let [[_ path value] (assoc-state-effect effects)]
-    {:transact?         (boolean (transaction-data effects))
-     :state-path        path
-     :impact-count      (:impact-count value)
+    {:transact?          (boolean (transaction-data effects))
+     :state-path         path
+     :impact-count       (:impact-count value)
      :confirmation-count (:confirmation-count value)
-     :error-keys        (set (keys (:_error value)))
-     :top-error         (get-in value [:_error :_top :error])}))
+     :error-keys         (set (keys (:_error value)))
+     :top-error          (get-in value [:_error :_top :error])}))
 
 (defn exporter-failure-summary
   [effects]
@@ -454,8 +454,8 @@
     (let [{draft-conn :conn :as draft-system} (tc/new-system "insurance-settings-action-not-team")
           {frozen-conn :conn frozen-member-id :member-id :as frozen-system}
           (tc/new-system "insurance-settings-action-frozen")
-          draft-policy-id  (random-uuid)
-          frozen-policy-id (random-uuid)]
+          draft-policy-id                     (random-uuid)
+          frozen-policy-id                    (random-uuid)]
       (seed-policy! draft-conn draft-policy-id :insurance.policy.status/draft)
       (seed-insurance-team! frozen-conn frozen-member-id)
       (seed-policy! frozen-conn frozen-policy-id :insurance.policy.status/sent)
@@ -495,74 +495,74 @@
           policy-ref                          [:insurance.policy/policy-id policy-id]]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
-      (let [{:keys [unused-type-id used-type-id]} (seed-coverage-types! conn policy-id)
-            unused-type-ref [:insurance.coverage.type/type-id unused-type-id]
-            create-effects  (actions/create-coverage-type-action
-                             (state system)
-                             (coverage-type-signals policy-id {}))
+      (let [{:keys [unused-type-id used-type-id]}                 (seed-coverage-types! conn policy-id)
+            unused-type-ref                                       [:insurance.coverage.type/type-id unused-type-id]
+            create-effects                                        (actions/create-coverage-type-action
+                                                                   (state system)
+                                                                   (coverage-type-signals policy-id {}))
             [[_ create-tx create-opts] create-clear create-state] create-effects
-            [new-type-tx policy-add-tx create-audit-tx] create-tx]
-        (is (= {:create {:transact?      true
-                         :opts           {}
-                         :type-id?       true
-                         :type-tx        {:insurance.coverage.type/name           "Extended"
-                                          :insurance.coverage.type/description    "Additional coverage"
-                                          :insurance.coverage.type/premium-factor 0.75M
-                                          :insurance.coverage.type/icon           :phosphor/shield
-                                          :insurance.coverage.type/required?      false}
-                         :policy-add     [:db/add policy-ref :insurance.policy/coverage-types]
-                         :same-tempid?   true
-                         :audit          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
-                         :clear-loading? true
-                         :clear-state    [:app.datastar/assoc-state
-                                          [:insurance-policy-settings :coverage-type-create]
-                                          false]}
-                :update [[:db/transact
-                          (support/with-audit
-                            [[:db/add unused-type-ref :insurance.coverage.type/name "Updated"]
-                             [:db/add unused-type-ref :insurance.coverage.type/description "Updated coverage"]
-                             [:db/add unused-type-ref :insurance.coverage.type/premium-factor 0.5M]
-                             [:db/add unused-type-ref :insurance.coverage.type/icon :phosphor/shield]
-                             [:db/add unused-type-ref :insurance.coverage.type/required? false]]
-                            member-id)
-                          {}]
-                         support/clear-loading
-                         [:app.datastar/assoc-state [:insurance-policy-settings :coverage-type] false]]
-                :delete [[:db/transact
-                          (support/with-audit
-                            [[:db/retract policy-ref :insurance.policy/coverage-types unused-type-ref]
-                             [:db/retractEntity unused-type-ref]]
-                            member-id)
-                          {}]
-                         support/clear-loading
-                         [:app.datastar/assoc-state
-                          [:insurance-policy-settings :coverage-type-delete]
-                          false]]
+            [new-type-tx policy-add-tx create-audit-tx]           create-tx]
+        (is (= {:create      {:transact?      true
+                              :opts           {}
+                              :type-id?       true
+                              :type-tx        {:insurance.coverage.type/name           "Extended"
+                                               :insurance.coverage.type/description    "Additional coverage"
+                                               :insurance.coverage.type/premium-factor 0.75M
+                                               :insurance.coverage.type/icon           :phosphor/shield
+                                               :insurance.coverage.type/required?      false}
+                              :policy-add     [:db/add policy-ref :insurance.policy/coverage-types]
+                              :same-tempid?   true
+                              :audit          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
+                              :clear-loading? true
+                              :clear-state    [:app.datastar/assoc-state
+                                               [:insurance-policy-settings :coverage-type-create]
+                                               false]}
+                :update      [[:db/transact
+                               (support/with-audit
+                                 [[:db/add unused-type-ref :insurance.coverage.type/name "Updated"]
+                                  [:db/add unused-type-ref :insurance.coverage.type/description "Updated coverage"]
+                                  [:db/add unused-type-ref :insurance.coverage.type/premium-factor 0.5M]
+                                  [:db/add unused-type-ref :insurance.coverage.type/icon :phosphor/shield]
+                                  [:db/add unused-type-ref :insurance.coverage.type/required? false]]
+                                 member-id)
+                               {}]
+                              support/clear-loading
+                              [:app.datastar/assoc-state [:insurance-policy-settings :coverage-type] false]]
+                :delete      [[:db/transact
+                               (support/with-audit
+                                 [[:db/retract policy-ref :insurance.policy/coverage-types unused-type-ref]
+                                  [:db/retractEntity unused-type-ref]]
+                                 member-id)
+                               {}]
+                              support/clear-loading
+                              [:app.datastar/assoc-state
+                               [:insurance-policy-settings :coverage-type-delete]
+                               false]]
                 :delete-used {:transact?      false
                               :clear-loading? true
                               :state-path     [:insurance-policy-settings :coverage-type-delete]
                               :submitted      {:type-id used-type-id}
                               :error-keys     #{:_top}
                               :top-error      [:insurance/policy-settings-error-coverage-type-in-use]}}
-               {:create {:transact?      (boolean (some transact-effect? create-effects))
-                         :opts           create-opts
-                         :type-id?       (uuid? (:insurance.coverage.type/type-id new-type-tx))
-                         :type-tx        (dissoc new-type-tx :db/id :insurance.coverage.type/type-id)
-                         :policy-add     (subvec (vec policy-add-tx) 0 3)
-                         :same-tempid?   (= (:db/id new-type-tx) (nth policy-add-tx 3))
-                         :audit          create-audit-tx
-                         :clear-loading? (= support/clear-loading create-clear)
-                         :clear-state    create-state}
-                :update (actions/update-coverage-type-action
-                         (state system)
-                         (coverage-type-signals policy-id
-                                                {:typeId        (str unused-type-id)
-                                                 :name          "Updated"
-                                                 :description   "Updated coverage"
-                                                 :premiumFactor "0.5"}))
-                :delete (actions/delete-coverage-type-action
-                         (state system)
-                         {:targetid (str unused-type-id)})
+               {:create      {:transact?      (boolean (some transact-effect? create-effects))
+                              :opts           create-opts
+                              :type-id?       (uuid? (:insurance.coverage.type/type-id new-type-tx))
+                              :type-tx        (dissoc new-type-tx :db/id :insurance.coverage.type/type-id)
+                              :policy-add     (subvec (vec policy-add-tx) 0 3)
+                              :same-tempid?   (= (:db/id new-type-tx) (nth policy-add-tx 3))
+                              :audit          create-audit-tx
+                              :clear-loading? (= support/clear-loading create-clear)
+                              :clear-state    create-state}
+                :update      (actions/update-coverage-type-action
+                              (state system)
+                              (coverage-type-signals policy-id
+                                                     {:typeId        (str unused-type-id)
+                                                      :name          "Updated"
+                                                      :description   "Updated coverage"
+                                                      :premiumFactor "0.5"}))
+                :delete      (actions/delete-coverage-type-action
+                              (state system)
+                              {:targetid (str unused-type-id)})
                 :delete-used (coverage-type-failure-summary
                               (actions/delete-coverage-type-action
                                (state system)
@@ -572,7 +572,7 @@
   (testing "keeps a coverage type while an exporter role references it"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-delete-mapped-type")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [unused-type-id]}
@@ -608,51 +608,51 @@
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [foreign-type-id unused-type-id]} (seed-coverage-types! conn policy-id)]
-        (is (= {:invalid-create {:transact?      false
-                                 :clear-loading? true
-                                 :state-path     [:insurance-policy-settings :coverage-type-create]
-                                 :submitted      {:policy-id       policy-id
-                                                  :name            ""
-                                                  :description     "Anything"
-                                                  :premium-factor  "nope"}
-                                 :error-keys     #{:name :premium-factor :_top}
-                                 :top-error      [:error/form-has-errors]}
+        (is (= {:invalid-create   {:transact?      false
+                                   :clear-loading? true
+                                   :state-path     [:insurance-policy-settings :coverage-type-create]
+                                   :submitted      {:policy-id      policy-id
+                                                    :name           ""
+                                                    :description    "Anything"
+                                                    :premium-factor "nope"}
+                                   :error-keys     #{:name :premium-factor :_top}
+                                   :top-error      [:error/form-has-errors]}
                 :duplicate-create {:transact?      false
                                    :clear-loading? true
                                    :state-path     [:insurance-policy-settings :coverage-type-create]
-                                   :submitted      {:policy-id       policy-id
-                                                    :name            "basic"
-                                                    :description     "Duplicate"
-                                                    :premium-factor  "0.1"}
+                                   :submitted      {:policy-id      policy-id
+                                                    :name           "basic"
+                                                    :description    "Duplicate"
+                                                    :premium-factor "0.1"}
                                    :error-keys     #{:name :_top}
                                    :top-error      [:error/form-has-errors]}
                 :duplicate-update {:transact?      false
                                    :clear-loading? true
                                    :state-path     [:insurance-policy-settings :coverage-type]
-                                   :submitted      {:policy-id       policy-id
-                                                    :type-id         unused-type-id
-                                                    :name            "BASIC"
-                                                    :description     "Duplicate"
-                                                    :premium-factor  "0.1"}
+                                   :submitted      {:policy-id      policy-id
+                                                    :type-id        unused-type-id
+                                                    :name           "BASIC"
+                                                    :description    "Duplicate"
+                                                    :premium-factor "0.1"}
                                    :error-keys     #{:name :_top}
                                    :top-error      [:error/form-has-errors]}
-                :foreign-update {:transact?      false
-                                 :clear-loading? true
-                                 :state-path     [:insurance-policy-settings :coverage-type]
-                                 :submitted      {:policy-id       policy-id
-                                                  :type-id         foreign-type-id
-                                                  :name            "Foreign"
-                                                  :description     "Foreign coverage"
-                                                  :premium-factor  "0.5"}
-                                 :error-keys     #{:_top}
-                                 :top-error      [:insurance/policy-settings-error-coverage-type-not-found]}}
-               {:invalid-create (coverage-type-failure-summary
-                                 (actions/create-coverage-type-action
-                                  (state system)
-                                  (coverage-type-signals policy-id
-                                                         {:name          " "
-                                                          :description   "Anything"
-                                                          :premiumFactor "nope"})))
+                :foreign-update   {:transact?      false
+                                   :clear-loading? true
+                                   :state-path     [:insurance-policy-settings :coverage-type]
+                                   :submitted      {:policy-id      policy-id
+                                                    :type-id        foreign-type-id
+                                                    :name           "Foreign"
+                                                    :description    "Foreign coverage"
+                                                    :premium-factor "0.5"}
+                                   :error-keys     #{:_top}
+                                   :top-error      [:insurance/policy-settings-error-coverage-type-not-found]}}
+               {:invalid-create   (coverage-type-failure-summary
+                                   (actions/create-coverage-type-action
+                                    (state system)
+                                    (coverage-type-signals policy-id
+                                                           {:name          " "
+                                                            :description   "Anything"
+                                                            :premiumFactor "nope"})))
                 :duplicate-create (coverage-type-failure-summary
                                    (actions/create-coverage-type-action
                                     (state system)
@@ -668,14 +668,14 @@
                                                             :name          "BASIC"
                                                             :description   "Duplicate"
                                                             :premiumFactor "0.1"})))
-                :foreign-update (coverage-type-failure-summary
-                                 (actions/update-coverage-type-action
-                                  (state system)
-                                  (coverage-type-signals policy-id
-                                                         {:typeId        (str foreign-type-id)
-                                                          :name          "Foreign"
-                                                          :description   "Foreign coverage"
-                                                          :premiumFactor "0.5"})))}))))))
+                :foreign-update   (coverage-type-failure-summary
+                                   (actions/update-coverage-type-action
+                                    (state system)
+                                    (coverage-type-signals policy-id
+                                                           {:typeId        (str foreign-type-id)
+                                                            :name          "Foreign"
+                                                            :description   "Foreign coverage"
+                                                            :premiumFactor "0.5"})))}))))))
 
 (deftest coverage-type-create-validation-keeps-dialog-open-test
   (testing "keeps the create dialog open so validation errors are visible"
@@ -700,8 +700,8 @@
     (let [{draft-conn :conn :as draft-system} (tc/new-system "insurance-settings-coverage-type-not-team")
           {frozen-conn :conn frozen-member-id :member-id :as frozen-system}
           (tc/new-system "insurance-settings-coverage-type-frozen")
-          draft-policy-id  (random-uuid)
-          frozen-policy-id (random-uuid)]
+          draft-policy-id                     (random-uuid)
+          frozen-policy-id                    (random-uuid)]
       (seed-policy! draft-conn draft-policy-id :insurance.policy.status/draft)
       (seed-insurance-team! frozen-conn frozen-member-id)
       (seed-policy! frozen-conn frozen-policy-id :insurance.policy.status/sent)
@@ -709,44 +709,44 @@
         (is (= {:create-not-team {:transact?      false
                                   :clear-loading? true
                                   :state-path     [:insurance-policy-settings :coverage-type-create]
-                                  :submitted      {:policy-id       draft-policy-id
-                                                   :name            "Extended"
-                                                   :description     "Additional coverage"
-                                                   :premium-factor  "0.75"}
+                                  :submitted      {:policy-id      draft-policy-id
+                                                   :name           "Extended"
+                                                   :description    "Additional coverage"
+                                                   :premium-factor "0.75"}
                                   :error-keys     #{:_top}
                                   :top-error      [:insurance/policy-settings-error-not-allowed]}
-                :update-frozen {:transact?      false
-                                :clear-loading? true
-                                :state-path     [:insurance-policy-settings :coverage-type]
-                                :submitted      {:policy-id       frozen-policy-id
-                                                 :type-id         unused-type-id
-                                                 :name            "Updated"
-                                                 :description     "Updated coverage"
-                                                 :premium-factor  "0.5"}
-                                :error-keys     #{:_top}
-                                :top-error      [:insurance/policy-settings-error-frozen-policy]}
-                :delete-frozen {:transact?      false
-                                :clear-loading? true
-                                :state-path     [:insurance-policy-settings :coverage-type-delete]
-                                :submitted      {:type-id unused-type-id}
-                                :error-keys     #{:_top}
-                                :top-error      [:insurance/policy-settings-error-frozen-policy]}}
+                :update-frozen   {:transact?      false
+                                  :clear-loading? true
+                                  :state-path     [:insurance-policy-settings :coverage-type]
+                                  :submitted      {:policy-id      frozen-policy-id
+                                                   :type-id        unused-type-id
+                                                   :name           "Updated"
+                                                   :description    "Updated coverage"
+                                                   :premium-factor "0.5"}
+                                  :error-keys     #{:_top}
+                                  :top-error      [:insurance/policy-settings-error-frozen-policy]}
+                :delete-frozen   {:transact?      false
+                                  :clear-loading? true
+                                  :state-path     [:insurance-policy-settings :coverage-type-delete]
+                                  :submitted      {:type-id unused-type-id}
+                                  :error-keys     #{:_top}
+                                  :top-error      [:insurance/policy-settings-error-frozen-policy]}}
                {:create-not-team (coverage-type-failure-summary
                                   (actions/create-coverage-type-action
                                    (state draft-system)
                                    (coverage-type-signals draft-policy-id {})))
-                :update-frozen (coverage-type-failure-summary
-                                (actions/update-coverage-type-action
-                                 (state frozen-system)
-                                 (coverage-type-signals frozen-policy-id
-                                                        {:typeId        (str unused-type-id)
-                                                         :name          "Updated"
-                                                         :description   "Updated coverage"
-                                                         :premiumFactor "0.5"})))
-                :delete-frozen (coverage-type-failure-summary
-                                (actions/delete-coverage-type-action
-                                 (state frozen-system)
-                                 {:targetid (str unused-type-id)}))}))))))
+                :update-frozen   (coverage-type-failure-summary
+                                  (actions/update-coverage-type-action
+                                   (state frozen-system)
+                                   (coverage-type-signals frozen-policy-id
+                                                          {:typeId        (str unused-type-id)
+                                                           :name          "Updated"
+                                                           :description   "Updated coverage"
+                                                           :premiumFactor "0.5"})))
+                :delete-frozen   (coverage-type-failure-summary
+                                  (actions/delete-coverage-type-action
+                                   (state frozen-system)
+                                   {:targetid (str unused-type-id)}))}))))))
 
 (deftest coverage-type-dialog-actions-test
   (testing "opens and closes create and edit coverage type dialog state"
@@ -755,60 +755,60 @@
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [unused-type-id]} (seed-coverage-types! conn policy-id)]
-        (is (= {:open-create [support/clear-loading
-                              [:app.datastar/assoc-state
-                               [:insurance-policy-settings :coverage-type-create]
-                               {:open           true
-                                :policy-id      policy-id
-                                :name           ""
-                                :description    ""
-                                :premium-factor ""
-                                :required?      false
-                                :add-to-band-instruments? false
-                                :confirmation-count ""}]]
+        (is (= {:open-create  [support/clear-loading
+                               [:app.datastar/assoc-state
+                                [:insurance-policy-settings :coverage-type-create]
+                                {:open                     true
+                                 :policy-id                policy-id
+                                 :name                     ""
+                                 :description              ""
+                                 :premium-factor           ""
+                                 :required?                false
+                                 :add-to-band-instruments? false
+                                 :confirmation-count       ""}]]
                 :close-create [support/clear-loading
                                [:app.datastar/assoc-state
                                 [:insurance-policy-settings :coverage-type-create]
                                 false]]
-                :open-edit [support/clear-loading
-                            [:app.datastar/assoc-state
-                             [:insurance-policy-settings :coverage-type]
-                             {:policy-id      policy-id
-                              :type-id        unused-type-id
-                              :name           "Unused"
-                              :description    "Unused coverage"
-                              :premium-factor 0.25M
-                              :icon           :phosphor/shield
-                              :required?      false
-                              :confirmation-count ""}]]
-                :close-edit [support/clear-loading
-                             [:app.datastar/assoc-state
-                              [:insurance-policy-settings :coverage-type]
-                              false]]}
-               {:open-create (actions/open-coverage-type-create-action
-                              (state system)
-                              {:targetid (str policy-id)})
+                :open-edit    [support/clear-loading
+                               [:app.datastar/assoc-state
+                                [:insurance-policy-settings :coverage-type]
+                                {:policy-id          policy-id
+                                 :type-id            unused-type-id
+                                 :name               "Unused"
+                                 :description        "Unused coverage"
+                                 :premium-factor     0.25M
+                                 :icon               :phosphor/shield
+                                 :required?          false
+                                 :confirmation-count ""}]]
+                :close-edit   [support/clear-loading
+                               [:app.datastar/assoc-state
+                                [:insurance-policy-settings :coverage-type]
+                                false]]}
+               {:open-create  (actions/open-coverage-type-create-action
+                               (state system)
+                               {:targetid (str policy-id)})
                 :close-create (actions/close-coverage-type-create-action (state system) {})
-                :open-edit (actions/open-coverage-type-edit-action
-                            (state system)
-                            {:targetid (str unused-type-id)})
-                :close-edit (actions/close-coverage-type-edit-action (state system) {})}))))))
+                :open-edit    (actions/open-coverage-type-edit-action
+                               (state system)
+                               {:targetid (str unused-type-id)})
+                :close-edit   (actions/close-coverage-type-edit-action (state system) {})}))))))
 
 (deftest coverage-type-metadata-action-test
   (testing "persists registered icons and explicit required state"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-coverage-type-metadata")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [unused-type-id]} (seed-coverage-types! conn policy-id)]
-        (is (= {:create {:transact?   true
-                         :icon        :phosphor/shield
-                         :required?   false
+        (is (= {:create {:transact?    true
+                         :icon         :phosphor/shield
+                         :required?    false
                          :coverage-ids #{}}
-                :update {:transact?   true
-                         :icon        :phosphor/star
-                         :required?   false
+                :update {:transact?    true
+                         :icon         :phosphor/star
+                         :required?    false
                          :coverage-ids #{}}}
                {:create
                 (coverage-type-transaction-summary
@@ -828,7 +828,7 @@
   (testing "rejects icon values outside the registered sprite catalog"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-coverage-type-icon-validation")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (is (= {:transact?      false
@@ -851,29 +851,29 @@
   (testing "requires the current exact count before adding a required type"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-required-create-confirmation")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [all-coverage-ids]} (seed-impact-coverages! conn policy-id)]
-        (is (= {:prompt {:transact?          false
-                         :state-path         [:insurance-policy-settings
-                                              :coverage-type-create]
-                         :impact-count       3
-                         :confirmation-count ""
-                         :error-keys         #{}
-                         :top-error          nil}
-                :confirmed {:transact?   true
-                            :icon        :phosphor/shield
-                            :required?   true
+        (is (= {:prompt    {:transact?          false
+                            :state-path         [:insurance-policy-settings
+                                                 :coverage-type-create]
+                            :impact-count       3
+                            :confirmation-count ""
+                            :error-keys         #{}
+                            :top-error          nil}
+                :confirmed {:transact?    true
+                            :icon         :phosphor/shield
+                            :required?    true
                             :coverage-ids all-coverage-ids}
-                :stale {:transact?          false
-                        :state-path         [:insurance-policy-settings
-                                             :coverage-type-create]
-                        :impact-count       3
-                        :confirmation-count "2"
-                        :error-keys         #{:confirmation-count :_top}
-                        :top-error
-                        [:insurance/error-stale-impact-count]}}
+                :stale     {:transact?          false
+                            :state-path         [:insurance-policy-settings
+                                                 :coverage-type-create]
+                            :impact-count       3
+                            :confirmation-count "2"
+                            :error-keys         #{:confirmation-count :_top}
+                            :top-error
+                            [:insurance/error-stale-impact-count]}}
                {:prompt
                 (coverage-type-confirmation-summary
                  (actions/create-coverage-type-action
@@ -900,8 +900,8 @@
   (testing "recalculates the impact after confirmation was first shown"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-changed-impact-confirmation")
-          policy-id     (random-uuid)
-          new-coverage-id (random-uuid)]
+          policy-id                           (random-uuid)
+          new-coverage-id                     (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (seed-impact-coverages! conn policy-id)
@@ -941,20 +941,20 @@
   (testing "confirms and adds an optional type only to band instruments"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-optional-band-confirmation")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [band-coverage-ids]} (seed-impact-coverages! conn policy-id)]
-        (is (= {:prompt {:transact?          false
-                         :state-path         [:insurance-policy-settings
-                                              :coverage-type-create]
-                         :impact-count       2
-                         :confirmation-count ""
-                         :error-keys         #{}
-                         :top-error          nil}
-                :confirmed {:transact?   true
-                            :icon        :phosphor/shield
-                            :required?   false
+        (is (= {:prompt    {:transact?          false
+                            :state-path         [:insurance-policy-settings
+                                                 :coverage-type-create]
+                            :impact-count       2
+                            :confirmation-count ""
+                            :error-keys         #{}
+                            :top-error          nil}
+                :confirmed {:transact?    true
+                            :icon         :phosphor/shield
+                            :required?    false
                             :coverage-ids band-coverage-ids}}
                {:prompt
                 (coverage-type-confirmation-summary
@@ -976,21 +976,21 @@
   (testing "recounts missing coverages before making an existing type required"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-required-update-confirmation")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [missing-type-ids type-id]}
             (seed-impact-coverages! conn policy-id)]
-        (is (= {:prompt {:transact?          false
-                         :state-path         [:insurance-policy-settings
-                                              :coverage-type]
-                         :impact-count       2
-                         :confirmation-count ""
-                         :error-keys         #{}
-                         :top-error          nil}
-                :confirmed {:transact?   true
-                            :icon        :phosphor/shield
-                            :required?   true
+        (is (= {:prompt    {:transact?          false
+                            :state-path         [:insurance-policy-settings
+                                                 :coverage-type]
+                            :impact-count       2
+                            :confirmation-count ""
+                            :error-keys         #{}
+                            :top-error          nil}
+                :confirmed {:transact?    true
+                            :icon         :phosphor/shield
+                            :required?    true
                             :coverage-ids missing-type-ids}}
                {:prompt
                 (coverage-type-confirmation-summary
@@ -1006,15 +1006,15 @@
                   (state system)
                   (coverage-type-signals
                    policy-id
-                   {:typeId           (str type-id)
-                    :required         true
+                   {:typeId            (str type-id)
+                    :required          true
                     :confirmationCount "2"})))}))))))
 
 (deftest bulk-coverage-type-assignment-updates-workflow-test
   (testing "adds the type to active coverages and records an insurer-visible change"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-bulk-type-workflow")
-          policy-id (random-uuid)
+          policy-id                           (random-uuid)
           coverage-ids
           {:unchanged (random-uuid)
            :changed   (random-uuid)
@@ -1113,16 +1113,16 @@
                     :selected? false}}}
                  {:impact-count
                   (:impact-count (coverage-type-confirmation-summary prompt))
-                  :transact? (boolean tx-data)
-                  :coverages summaries})))))))
+                  :transact?    (boolean tx-data)
+                  :coverages    summaries})))))))
 
 (deftest required-to-optional-coverage-type-test
   (testing "keeps existing coverage links when a type becomes optional"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-required-to-optional")
-          policy-id  (random-uuid)
-          type-id    (random-uuid)
-          coverage-id (random-uuid)]
+          policy-id                           (random-uuid)
+          type-id                             (random-uuid)
+          coverage-id                         (random-uuid)]
       (seed-insurance-team! conn member-id)
       (let [seed-result
             (try
@@ -1162,10 +1162,10 @@
                           {:typeId   (str type-id)
                            :required false}))
                 tx-data (transaction-data effects)]
-            (is (= {:metadata {:transact?   true
-                               :icon        :phosphor/shield
-                               :required?   false
-                               :coverage-ids #{}}
+            (is (= {:metadata             {:transact?    true
+                                           :icon         :phosphor/shield
+                                           :required?    false
+                                           :coverage-ids #{}}
                     :coverage-retractions []}
                    {:metadata (coverage-type-transaction-summary effects)
                     :coverage-retractions
@@ -1180,7 +1180,7 @@
   (testing "saves a versioned exporter and policy-owned role mappings"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-save-exporter")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [unused-type-id used-type-id]}
@@ -1209,7 +1209,7 @@
   (testing "selecting no exporter removes its identifier and component mappings"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-clear-exporter")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [used-type-id]} (seed-coverage-types! conn policy-id)]
@@ -1257,13 +1257,13 @@
                   (contains? (set tx-data) [:db/retractEntity mapping-eid])
                   :new-mappings
                   (filterv :insurance.export.mapping/role tx-data)
-                  :clear-state (last effects)})))))))
+                  :clear-state       (last effects)})))))))
 
 (deftest save-exporter-validation-test
   (testing "validates exporter IDs, required roles, uniqueness, and policy ownership"
     (let [{:keys [conn member-id] :as system}
           (tc/new-system "insurance-settings-exporter-validation")
-          policy-id (random-uuid)]
+          policy-id                           (random-uuid)]
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [foreign-type-id unused-type-id used-type-id]}
@@ -1275,13 +1275,13 @@
                 (state system)
                 (exporter-signals policy-id exporter-id mappings))))]
         (is (= {:unknown
-                {:transact?      false
-                 :state-path     [:insurance-policy-settings :exporter]
-                 :error-keys     #{:exporter-id :_top}
+                {:transact?     false
+                 :state-path    [:insurance-policy-settings :exporter]
+                 :error-keys    #{:exporter-id :_top}
                  :exporter-error
                  [:insurance/error-invalid-exporter]
-                 :mapping-error  nil
-                 :top-error      [:error/form-has-errors]}
+                 :mapping-error nil
+                 :top-error     [:error/form-has-errors]}
                 :incomplete
                 {:transact?      false
                  :state-path     [:insurance-policy-settings :exporter]
@@ -1343,66 +1343,66 @@
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [new-category-id unused-category-id unused-factor-id used-factor-id]} (seed-category-factors! conn policy-id)
-            unused-factor-ref [:insurance.category.factor/category-factor-id unused-factor-id]
-            create-effects    (actions/create-category-factor-action
-                               (state system)
-                               (category-factor-signals policy-id
-                                                        {:categoryId (str new-category-id)}))
-            [[_ create-tx create-opts] create-clear create-state] create-effects
-            [new-factor-tx policy-add-tx create-audit-tx] create-tx]
-        (is (= {:create {:transact?      true
-                         :opts           {}
-                         :factor-id?     true
-                         :factor-tx      {:insurance.category.factor/category [:instrument.category/category-id new-category-id]
-                                          :insurance.category.factor/factor   0.35M}
-                         :policy-add     [:db/add policy-ref :insurance.policy/category-factors]
-                         :same-tempid?   true
-                         :audit          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
-                         :clear-loading? true
-                         :clear-state    [:app.datastar/assoc-state
-                                          [:insurance-policy-settings :category-factor-create]
-                                          false]}
-                :update [[:db/transact
-                          (support/with-audit
-                            [[:db/add unused-factor-ref :insurance.category.factor/factor 0.45M]]
-                            member-id)
-                          {}]
-                         support/clear-loading
-                         [:app.datastar/assoc-state [:insurance-policy-settings :category-factor] false]]
-                :delete [[:db/transact
-                          (support/with-audit
-                            [[:db/retract policy-ref :insurance.policy/category-factors unused-factor-ref]
-                             [:db/retractEntity unused-factor-ref]]
-                            member-id)
-                          {}]
-                         support/clear-loading
-                         [:app.datastar/assoc-state
-                          [:insurance-policy-settings :category-factor-delete]
-                          false]]
+            unused-factor-ref                                                            [:insurance.category.factor/category-factor-id unused-factor-id]
+            create-effects                                                               (actions/create-category-factor-action
+                                                                                          (state system)
+                                                                                          (category-factor-signals policy-id
+                                                                                                                   {:categoryId (str new-category-id)}))
+            [[_ create-tx create-opts] create-clear create-state]                        create-effects
+            [new-factor-tx policy-add-tx create-audit-tx]                                create-tx]
+        (is (= {:create      {:transact?      true
+                              :opts           {}
+                              :factor-id?     true
+                              :factor-tx      {:insurance.category.factor/category [:instrument.category/category-id new-category-id]
+                                               :insurance.category.factor/factor   0.35M}
+                              :policy-add     [:db/add policy-ref :insurance.policy/category-factors]
+                              :same-tempid?   true
+                              :audit          [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
+                              :clear-loading? true
+                              :clear-state    [:app.datastar/assoc-state
+                                               [:insurance-policy-settings :category-factor-create]
+                                               false]}
+                :update      [[:db/transact
+                               (support/with-audit
+                                 [[:db/add unused-factor-ref :insurance.category.factor/factor 0.45M]]
+                                 member-id)
+                               {}]
+                              support/clear-loading
+                              [:app.datastar/assoc-state [:insurance-policy-settings :category-factor] false]]
+                :delete      [[:db/transact
+                               (support/with-audit
+                                 [[:db/retract policy-ref :insurance.policy/category-factors unused-factor-ref]
+                                  [:db/retractEntity unused-factor-ref]]
+                                 member-id)
+                               {}]
+                              support/clear-loading
+                              [:app.datastar/assoc-state
+                               [:insurance-policy-settings :category-factor-delete]
+                               false]]
                 :delete-used {:transact?      false
                               :clear-loading? true
                               :state-path     [:insurance-policy-settings :category-factor-delete]
                               :submitted      {:category-factor-id used-factor-id}
                               :error-keys     #{:_top}
                               :top-error      [:insurance/policy-settings-error-category-factor-in-use]}}
-               {:create {:transact?      (boolean (some transact-effect? create-effects))
-                         :opts           create-opts
-                         :factor-id?     (uuid? (:insurance.category.factor/category-factor-id new-factor-tx))
-                         :factor-tx      (dissoc new-factor-tx :db/id :insurance.category.factor/category-factor-id)
-                         :policy-add     (subvec (vec policy-add-tx) 0 3)
-                         :same-tempid?   (= (:db/id new-factor-tx) (nth policy-add-tx 3))
-                         :audit          create-audit-tx
-                         :clear-loading? (= support/clear-loading create-clear)
-                         :clear-state    create-state}
-                :update (actions/update-category-factor-action
-                         (state system)
-                         (category-factor-signals policy-id
-                                                  {:categoryFactorId (str unused-factor-id)
-                                                   :categoryId       (str unused-category-id)
-                                                   :factor           "0.45"}))
-                :delete (actions/delete-category-factor-action
-                         (state system)
-                         {:targetid (str unused-factor-id)})
+               {:create      {:transact?      (boolean (some transact-effect? create-effects))
+                              :opts           create-opts
+                              :factor-id?     (uuid? (:insurance.category.factor/category-factor-id new-factor-tx))
+                              :factor-tx      (dissoc new-factor-tx :db/id :insurance.category.factor/category-factor-id)
+                              :policy-add     (subvec (vec policy-add-tx) 0 3)
+                              :same-tempid?   (= (:db/id new-factor-tx) (nth policy-add-tx 3))
+                              :audit          create-audit-tx
+                              :clear-loading? (= support/clear-loading create-clear)
+                              :clear-state    create-state}
+                :update      (actions/update-category-factor-action
+                              (state system)
+                              (category-factor-signals policy-id
+                                                       {:categoryFactorId (str unused-factor-id)
+                                                        :categoryId       (str unused-category-id)
+                                                        :factor           "0.45"}))
+                :delete      (actions/delete-category-factor-action
+                              (state system)
+                              {:targetid (str unused-factor-id)})
                 :delete-used (category-factor-failure-summary
                               (actions/delete-category-factor-action
                                (state system)
@@ -1415,14 +1415,14 @@
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [foreign-factor-id unused-factor-id used-category-id]} (seed-category-factors! conn policy-id)]
-        (is (= {:invalid-create {:transact?      false
-                                 :clear-loading? true
-                                 :state-path     [:insurance-policy-settings :category-factor-create]
-                                 :submitted      {:policy-id   policy-id
-                                                  :category-id nil
-                                                  :factor      "nope"}
-                                 :error-keys     #{:category-id :factor :_top}
-                                 :top-error      [:error/form-has-errors]}
+        (is (= {:invalid-create   {:transact?      false
+                                   :clear-loading? true
+                                   :state-path     [:insurance-policy-settings :category-factor-create]
+                                   :submitted      {:policy-id   policy-id
+                                                    :category-id nil
+                                                    :factor      "nope"}
+                                   :error-keys     #{:category-id :factor :_top}
+                                   :top-error      [:error/form-has-errors]}
                 :duplicate-create {:transact?      false
                                    :clear-loading? true
                                    :state-path     [:insurance-policy-settings :category-factor-create]
@@ -1431,50 +1431,50 @@
                                                     :factor      "0.1"}
                                    :error-keys     #{:category-id :_top}
                                    :top-error      [:error/form-has-errors]}
-                :invalid-update {:transact?      false
-                                 :clear-loading? true
-                                 :state-path     [:insurance-policy-settings :category-factor]
-                                 :submitted      {:policy-id           policy-id
-                                                  :category-factor-id  unused-factor-id
-                                                  :category-id         used-category-id
-                                                  :factor              "-1"}
-                                 :error-keys     #{:factor :_top}
-                                 :top-error      [:error/form-has-errors]}
-                :foreign-update {:transact?      false
-                                 :clear-loading? true
-                                 :state-path     [:insurance-policy-settings :category-factor]
-                                 :submitted      {:policy-id           policy-id
-                                                  :category-factor-id  foreign-factor-id
-                                                  :category-id         used-category-id
-                                                  :factor              "0.5"}
-                                 :error-keys     #{:_top}
-                                 :top-error      [:insurance/policy-settings-error-category-factor-not-found]}}
-               {:invalid-create (category-factor-failure-summary
-                                 (actions/create-category-factor-action
-                                  (state system)
-                                  (category-factor-signals policy-id
-                                                           {:categoryId ""
-                                                            :factor     "nope"})))
+                :invalid-update   {:transact?      false
+                                   :clear-loading? true
+                                   :state-path     [:insurance-policy-settings :category-factor]
+                                   :submitted      {:policy-id          policy-id
+                                                    :category-factor-id unused-factor-id
+                                                    :category-id        used-category-id
+                                                    :factor             "-1"}
+                                   :error-keys     #{:factor :_top}
+                                   :top-error      [:error/form-has-errors]}
+                :foreign-update   {:transact?      false
+                                   :clear-loading? true
+                                   :state-path     [:insurance-policy-settings :category-factor]
+                                   :submitted      {:policy-id          policy-id
+                                                    :category-factor-id foreign-factor-id
+                                                    :category-id        used-category-id
+                                                    :factor             "0.5"}
+                                   :error-keys     #{:_top}
+                                   :top-error      [:insurance/policy-settings-error-category-factor-not-found]}}
+               {:invalid-create   (category-factor-failure-summary
+                                   (actions/create-category-factor-action
+                                    (state system)
+                                    (category-factor-signals policy-id
+                                                             {:categoryId ""
+                                                              :factor     "nope"})))
                 :duplicate-create (category-factor-failure-summary
                                    (actions/create-category-factor-action
                                     (state system)
                                     (category-factor-signals policy-id
                                                              {:categoryId (str used-category-id)
                                                               :factor     "0.1"})))
-                :invalid-update (category-factor-failure-summary
-                                 (actions/update-category-factor-action
-                                  (state system)
-                                  (category-factor-signals policy-id
-                                                           {:categoryFactorId (str unused-factor-id)
-                                                            :categoryId       (str used-category-id)
-                                                            :factor           "-1"})))
-                :foreign-update (category-factor-failure-summary
-                                 (actions/update-category-factor-action
-                                  (state system)
-                                  (category-factor-signals policy-id
-                                                           {:categoryFactorId (str foreign-factor-id)
-                                                            :categoryId       (str used-category-id)
-                                                            :factor           "0.5"})))}))))))
+                :invalid-update   (category-factor-failure-summary
+                                   (actions/update-category-factor-action
+                                    (state system)
+                                    (category-factor-signals policy-id
+                                                             {:categoryFactorId (str unused-factor-id)
+                                                              :categoryId       (str used-category-id)
+                                                              :factor           "-1"})))
+                :foreign-update   (category-factor-failure-summary
+                                   (actions/update-category-factor-action
+                                    (state system)
+                                    (category-factor-signals policy-id
+                                                             {:categoryFactorId (str foreign-factor-id)
+                                                              :categoryId       (str used-category-id)
+                                                              :factor           "0.5"})))}))))))
 
 (deftest category-factor-create-validation-keeps-dialog-open-test
   (testing "keeps the create dialog open so validation errors are visible"
@@ -1499,12 +1499,12 @@
     (let [{draft-conn :conn :as draft-system} (tc/new-system "insurance-settings-category-factor-not-team")
           {frozen-conn :conn frozen-member-id :member-id :as frozen-system}
           (tc/new-system "insurance-settings-category-factor-frozen")
-          draft-policy-id  (random-uuid)
-          frozen-policy-id (random-uuid)]
+          draft-policy-id                     (random-uuid)
+          frozen-policy-id                    (random-uuid)]
       (seed-policy! draft-conn draft-policy-id :insurance.policy.status/draft)
       (seed-insurance-team! frozen-conn frozen-member-id)
       (seed-policy! frozen-conn frozen-policy-id :insurance.policy.status/sent)
-      (let [{draft-new-category-id :new-category-id} (seed-category-factors! draft-conn draft-policy-id)
+      (let [{draft-new-category-id :new-category-id}    (seed-category-factors! draft-conn draft-policy-id)
             {:keys [unused-factor-id used-category-id]} (seed-category-factors! frozen-conn frozen-policy-id)]
         (is (= {:create-not-team {:transact?      false
                                   :clear-loading? true
@@ -1514,37 +1514,37 @@
                                                    :factor      "0.35"}
                                   :error-keys     #{:_top}
                                   :top-error      [:insurance/policy-settings-error-not-allowed]}
-                :update-frozen {:transact?      false
-                                :clear-loading? true
-                                :state-path     [:insurance-policy-settings :category-factor]
-                                :submitted      {:policy-id           frozen-policy-id
-                                                 :category-factor-id  unused-factor-id
-                                                 :category-id         used-category-id
-                                                 :factor              "0.5"}
-                                :error-keys     #{:_top}
-                                :top-error      [:insurance/policy-settings-error-frozen-policy]}
-                :delete-frozen {:transact?      false
-                                :clear-loading? true
-                                :state-path     [:insurance-policy-settings :category-factor-delete]
-                                :submitted      {:category-factor-id unused-factor-id}
-                                :error-keys     #{:_top}
-                                :top-error      [:insurance/policy-settings-error-frozen-policy]}}
+                :update-frozen   {:transact?      false
+                                  :clear-loading? true
+                                  :state-path     [:insurance-policy-settings :category-factor]
+                                  :submitted      {:policy-id          frozen-policy-id
+                                                   :category-factor-id unused-factor-id
+                                                   :category-id        used-category-id
+                                                   :factor             "0.5"}
+                                  :error-keys     #{:_top}
+                                  :top-error      [:insurance/policy-settings-error-frozen-policy]}
+                :delete-frozen   {:transact?      false
+                                  :clear-loading? true
+                                  :state-path     [:insurance-policy-settings :category-factor-delete]
+                                  :submitted      {:category-factor-id unused-factor-id}
+                                  :error-keys     #{:_top}
+                                  :top-error      [:insurance/policy-settings-error-frozen-policy]}}
                {:create-not-team (category-factor-failure-summary
                                   (actions/create-category-factor-action
                                    (state draft-system)
                                    (category-factor-signals draft-policy-id
                                                             {:categoryId (str draft-new-category-id)})))
-                :update-frozen (category-factor-failure-summary
-                                (actions/update-category-factor-action
-                                 (state frozen-system)
-                                 (category-factor-signals frozen-policy-id
-                                                          {:categoryFactorId (str unused-factor-id)
-                                                           :categoryId       (str used-category-id)
-                                                           :factor           "0.5"})))
-                :delete-frozen (category-factor-failure-summary
-                                (actions/delete-category-factor-action
-                                 (state frozen-system)
-                                 {:targetid (str unused-factor-id)}))}))))))
+                :update-frozen   (category-factor-failure-summary
+                                  (actions/update-category-factor-action
+                                   (state frozen-system)
+                                   (category-factor-signals frozen-policy-id
+                                                            {:categoryFactorId (str unused-factor-id)
+                                                             :categoryId       (str used-category-id)
+                                                             :factor           "0.5"})))
+                :delete-frozen   (category-factor-failure-summary
+                                  (actions/delete-category-factor-action
+                                   (state frozen-system)
+                                   {:targetid (str unused-factor-id)}))}))))))
 
 (deftest category-factor-dialog-actions-test
   (testing "opens and closes create and edit category factor dialog state"
@@ -1553,37 +1553,37 @@
       (seed-insurance-team! conn member-id)
       (seed-policy! conn policy-id :insurance.policy.status/draft)
       (let [{:keys [unused-category-id unused-factor-id]} (seed-category-factors! conn policy-id)]
-        (is (= {:open-create [support/clear-loading
-                              [:app.datastar/assoc-state
-                               [:insurance-policy-settings :category-factor-create]
-                               {:open        true
-                                :policy-id   policy-id
-                                :category-id ""
-                                :factor      ""}]]
+        (is (= {:open-create  [support/clear-loading
+                               [:app.datastar/assoc-state
+                                [:insurance-policy-settings :category-factor-create]
+                                {:open        true
+                                 :policy-id   policy-id
+                                 :category-id ""
+                                 :factor      ""}]]
                 :close-create [support/clear-loading
                                [:app.datastar/assoc-state
                                 [:insurance-policy-settings :category-factor-create]
                                 false]]
-                :open-edit [support/clear-loading
-                            [:app.datastar/assoc-state
-                             [:insurance-policy-settings :category-factor]
-                             {:policy-id          policy-id
-                              :category-factor-id unused-factor-id
-                              :category-id        unused-category-id
-                              :category-name      "Woodwind"
-                              :factor             0.20M}]]
-                :close-edit [support/clear-loading
-                             [:app.datastar/assoc-state
-                              [:insurance-policy-settings :category-factor]
-                              false]]}
-               {:open-create (actions/open-category-factor-create-action
-                              (state system)
-                              {:targetid (str policy-id)})
+                :open-edit    [support/clear-loading
+                               [:app.datastar/assoc-state
+                                [:insurance-policy-settings :category-factor]
+                                {:policy-id          policy-id
+                                 :category-factor-id unused-factor-id
+                                 :category-id        unused-category-id
+                                 :category-name      "Woodwind"
+                                 :factor             0.20M}]]
+                :close-edit   [support/clear-loading
+                               [:app.datastar/assoc-state
+                                [:insurance-policy-settings :category-factor]
+                                false]]}
+               {:open-create  (actions/open-category-factor-create-action
+                               (state system)
+                               {:targetid (str policy-id)})
                 :close-create (actions/close-category-factor-create-action (state system) {})
-                :open-edit (actions/open-category-factor-edit-action
-                            (state system)
-                            {:targetid (str unused-factor-id)})
-                :close-edit (actions/close-category-factor-edit-action (state system) {})}))))))
+                :open-edit    (actions/open-category-factor-edit-action
+                               (state system)
+                               {:targetid (str unused-factor-id)})
+                :close-edit   (actions/close-category-factor-edit-action (state system) {})}))))))
 
 (deftest settings-actions-are-registered-test
   (is (every? #(contains? insurance.actions/actions %)

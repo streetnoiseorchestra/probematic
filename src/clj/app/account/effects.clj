@@ -18,9 +18,9 @@
 
 (defn- profile-tx [member-id profile]
   (let [member-ref [:member/member-id member-id]]
-    (into [{:db/id member-ref
-            :member/name (:name profile)
-            :member/email (:email profile)
+    (into [{:db/id           member-ref
+            :member/name     (:name profile)
+            :member/email    (:email profile)
             :member/username (:username profile)}]
           (concat
            (optional-attribute-tx member-ref :member/nick
@@ -52,8 +52,8 @@
   [member-id current-avatar-eid avatar-upload
    avatar-removed? stored-avatar obsolete-file-eids]
   (when (or avatar-upload avatar-removed?)
-    (let [member [:member/member-id member-id]
-          new-avatar (:image-tempid stored-avatar)
+    (let [member           [:member/member-id member-id]
+          new-avatar       (:image-tempid stored-avatar)
           file-retractions (retract-file-tx obsolete-file-eids)]
       (if avatar-upload
         (cond-> (into [[:db/add member :member/avatar new-avatar]]
@@ -86,22 +86,22 @@
   [system {:keys [member-id profile avatar-upload sync-keycloak?]}]
   (let [conn (-> system :datomic :conn)]
     (assert conn "profile persistence requires a Datomic connection")
-    (let [tempfile (:tempfile avatar-upload)
-          avatar-removed? (:avatar-removed? profile)
+    (let [tempfile                (:tempfile avatar-upload)
+          avatar-removed?         (:avatar-removed? profile)
           effective-avatar-upload (when-not avatar-removed? avatar-upload)
-          db (d/db conn)
+          db                      (d/db conn)
           current-avatar-eid
           (some-> (d/entity db [:member/member-id member-id])
                   :member/avatar
                   :db/id)
-          obsolete-file-eids (avatar-file-eids db current-avatar-eid)]
+          obsolete-file-eids      (avatar-file-eids db current-avatar-eid)]
       (try
         (let [stored-avatar
               (when effective-avatar-upload
                 (filestore.controller/store-avatar!
                  {:filestore (:filestore system)}
                  {:file-name (:filename effective-avatar-upload)
-                  :file tempfile
+                  :file      tempfile
                   :mime-type (:mime-type effective-avatar-upload)}))
               profile-tx-data
               (vec
@@ -120,12 +120,12 @@
               [[:member.invite/transact-profile-if-not-in-flight
                 member-id
                 profile-tx-data]]
-              tx-result @(d/transact conn tx-data)]
+              tx-result     @(d/transact conn tx-data)]
           (when sync-keycloak?
             (members.effects/update-keycloak-meta!
              {:system system :datomic-conn conn}
              member-id))
-          {:status :saved
+          {:status    :saved
            :tx-result tx-result})
         (finally
           (when tempfile

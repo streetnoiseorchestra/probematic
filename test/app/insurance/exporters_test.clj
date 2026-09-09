@@ -25,7 +25,7 @@
         (into {}
               (map (juxt :insurance.coverage.type/type-id identity))
               coverage-types)]
-    {:insurance.policy/exporter-id exporter-id
+    {:insurance.policy/exporter-id    exporter-id
      :insurance.policy/coverage-types coverage-types
      :insurance.policy/export-mappings
      (mapv (fn [[role type-id]]
@@ -70,7 +70,7 @@
 
 (deftest harmonia-v1-registry-test
   (testing "the current provider format is an immutable versioned descriptor"
-    (is (= [{:exporter-id harmonia-exporter-id
+    (is (= [{:exporter-id       harmonia-exporter-id
              :label-key
              :insurance/exporter-harmonia-v1
              :template-resource "insurance/exporters/harmonia-v1.xls"
@@ -102,8 +102,8 @@
         types        [(coverage-type overnight-id "Renamed worldwide cover")
                       (coverage-type building-id "Renamed storage cover")]]
     (testing "v1 roles resolve through coverage-type references"
-      (is (= {:exporter-id harmonia-exporter-id
-              :status      :complete
+      (is (= {:exporter-id   harmonia-exporter-id
+              :status        :complete
               :missing-roles []
               :role->coverage-type-id
               {overnight-role overnight-id
@@ -139,31 +139,31 @@
             incomplete   (policy harmonia-exporter-id
                                  types
                                  {overnight-role overnight-id})]
-        (is (= [{:exporter-id nil
-                 :status      :not-configured
-                 :missing-roles []
+        (is (= [{:exporter-id            nil
+                 :status                 :not-configured
+                 :missing-roles          []
                  :role->coverage-type-id {}}
-                {:exporter-id :insurance/exporter-harmonia-v2
-                 :status      :unknown
-                 :missing-roles []
+                {:exporter-id            :insurance/exporter-harmonia-v2
+                 :status                 :unknown
+                 :missing-roles          []
                  :role->coverage-type-id {}}
-                {:exporter-id harmonia-exporter-id
-                 :status      :incomplete
-                 :missing-roles [building-role]
+                {:exporter-id            harmonia-exporter-id
+                 :status                 :incomplete
+                 :missing-roles          [building-role]
                  :role->coverage-type-id {overnight-role overnight-id}}]
                (mapv configuration-summary
                      [unconfigured unknown incomplete])))
-        (is (= [{:type        :insurance.exporter/configuration-error
-                 :exporter-id nil
-                 :status      :not-configured
+        (is (= [{:type          :insurance.exporter/configuration-error
+                 :exporter-id   nil
+                 :status        :not-configured
                  :missing-roles []}
-                {:type        :insurance.exporter/configuration-error
-                 :exporter-id :insurance/exporter-harmonia-v2
-                 :status      :unknown
+                {:type          :insurance.exporter/configuration-error
+                 :exporter-id   :insurance/exporter-harmonia-v2
+                 :status        :unknown
                  :missing-roles []}
-                {:type        :insurance.exporter/configuration-error
-                 :exporter-id harmonia-exporter-id
-                 :status      :incomplete
+                {:type          :insurance.exporter/configuration-error
+                 :exporter-id   harmonia-exporter-id
+                 :status        :incomplete
                  :missing-roles [building-role]}]
                (mapv #(export-error % (coverage []))
                      [unconfigured unknown incomplete])))))))

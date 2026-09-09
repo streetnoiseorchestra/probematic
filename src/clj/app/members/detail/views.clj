@@ -193,9 +193,9 @@
 
 (defn- profile-details [req member]
   (let [{:member/keys [email phone username keycloak-id active? nick]} member
-        section-name (get-in member [:member/section :section/name])
-        current-user-admin? (auth/current-user-admin? req)
-        enabled?     (when current-user-admin? (keycloak-enabled? req keycloak-id))]
+        section-name                                                   (get-in member [:member/section :section/name])
+        current-user-admin?                                            (auth/current-user-admin? req)
+        enabled?                                                       (when current-user-admin? (keycloak-enabled? req keycloak-id))]
     [:dl {:class "particulars"}
      (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/section)] (muted section-name))
      (detail-item [:i18n/tr (members.domain/member-attribute-label-key :member/nick)] (muted nick))
@@ -421,8 +421,8 @@
                              :unstructured-reference (maybe-transfer-reference balance entries)}))))
 
 (defn- ledger-balance-status [{:keys [system] :as req} balance entries]
-  (let [member-owes-band? (pos? balance)
-        band-owes-member? (neg? balance)
+  (let [member-owes-band?               (pos? balance)
+        band-owes-member?               (neg? balance)
         {:keys [iban bic account-name]} (config/band-bank-info (-> system :env))]
     (cond
       band-owes-member?
@@ -669,11 +669,11 @@
      [:i18n/tr :none]]))
 
 (defn- insurance-coverage-row [coverage]
-  (let [{:instrument.coverage/keys [private? value]
+  (let [{:instrument.coverage/keys          [private? value]
          {:instrument/keys [name category]} :instrument.coverage/instrument}
         coverage
-        category-name (:instrument.category/name category)
-        kind-badge    (insurance-kind-badge private?)]
+        category-name                                                        (:instrument.category/name category)
+        kind-badge                                                           (insurance-kind-badge private?)]
     [:tr
      [:td {:class "align-middle"}
       [:div {:class "wa-stack wa-gap-3xs"}
@@ -762,7 +762,7 @@
             (pr-str (urls/link-member-detail-tab member default-active-tab)))))
 
 (defn- tab [req active-tab panel label]
-  [:wa-tab (cond-> {:panel panel
+  [:wa-tab (cond-> {:panel             panel
 
                     :data-on:mousedown (->expr
                                         (evt.stopPropagation)
@@ -779,16 +779,16 @@
           children)))
 
 (defn page [{:keys [db page-state] :as req}]
-  (let [member-id                       (http.util/path-param-uuid! req :member-id)
-        member                          (q/retrieve-member db member-id)
-        member-url                      (urls/link-member member)
-        form-state                      (contact-form-state req member)
-        sections                        (when form-state (q/retrieve-sections db))
-        contact-signals                 (form-state->signals form-state)
-        active-tab                      (active-tab req page-state)
-        travel-discount-create-signals  (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))
-        travel-discount-signals         (form-state->signals (get-in page-state [:member-detail :travel-discount]))
-        ledger-entry-signals            (form-state->signals (get-in page-state [:member-detail :ledger-entry]))]
+  (let [member-id                      (http.util/path-param-uuid! req :member-id)
+        member                         (q/retrieve-member db member-id)
+        member-url                     (urls/link-member member)
+        form-state                     (contact-form-state req member)
+        sections                       (when form-state (q/retrieve-sections db))
+        contact-signals                (form-state->signals form-state)
+        active-tab                     (active-tab req page-state)
+        travel-discount-create-signals (form-state->signals (get-in page-state [:member-detail :travel-discount-create]))
+        travel-discount-signals        (form-state->signals (get-in page-state [:member-detail :travel-discount]))
+        ledger-entry-signals           (form-state->signals (get-in page-state [:member-detail :ledger-entry]))]
     (ui2/datastar-page*
      [page-surface/PageSurface {::page-surface/toolbar
                                 [page-toolbar/PageToolbar {::page-toolbar/breadcrumb

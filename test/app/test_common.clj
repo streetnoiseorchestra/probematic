@@ -36,7 +36,7 @@
           member-id (random-uuid)]
       (datomic.system/prepare-database! conn)
       @(d/transact conn [{:member/member-id member-id}])
-      {:conn conn
+      {:conn      conn
        :member-id member-id})))
 
 (defn dispatch-with-nexus [handler nexus-config system req]

@@ -5,11 +5,11 @@
 (def clear-invite-signals
   [:app.datastar/respond-sse
    [[:app.datastar.sse/merge-signals
-     {:invite {:action nil
-               :code nil
-               :member-id nil
+     {:invite {:action     nil
+               :code       nil
+               :member-id  nil
                :generation nil
-               :inflight false}}]]])
+               :inflight   false}}]]])
 
 (defn resend-invitation-action
   [{:keys [now]} {:keys [invite]}]
@@ -38,7 +38,7 @@
    clear-invite-signals])
 
 (def actions
-  {::resend-invitation   #'resend-invitation-action
-   ::reissue-invitation  #'reissue-invitation-action
+  {::resend-invitation          #'resend-invitation-action
+   ::reissue-invitation         #'reissue-invitation-action
    ::reissue-revoked-invitation #'reissue-revoked-invitation-action
-   ::delete-invitation   #'delete-invitation-action})
+   ::delete-invitation          #'delete-invitation-action})

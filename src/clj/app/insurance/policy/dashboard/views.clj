@@ -57,47 +57,47 @@
 
 (defn- policy-toolbar
   [{:keys [insurance-team-member? policy status-counts survey-progress]}]
-  (let [status          (:insurance.policy/status policy)
-        draft?          (= :insurance.policy.status/draft status)
-        sent?           (= :insurance.policy.status/sent status)
-        active?         (= :insurance.policy.status/active status)
-        review-todos?   (pos? (get status-counts
-                                   :instrument.coverage.status/needs-review
-                                   0))
-        primary-action  (cond
-                          (not insurance-team-member?)                      :add-coverage
-                          (and insurance-team-member? draft? review-todos?) :review
-                          (and insurance-team-member? draft?)               :send-changes
-                          (and insurance-team-member? sent?)                :workbench
-                          (and insurance-team-member? active?)               :request-payments
-                          :else                                             :add-coverage)
+  (let [status             (:insurance.policy/status policy)
+        draft?             (= :insurance.policy.status/draft status)
+        sent?              (= :insurance.policy.status/sent status)
+        active?            (= :insurance.policy.status/active status)
+        review-todos?      (pos? (get status-counts
+                                      :instrument.coverage.status/needs-review
+                                      0))
+        primary-action     (cond
+                             (not insurance-team-member?)                      :add-coverage
+                             (and insurance-team-member? draft? review-todos?) :review
+                             (and insurance-team-member? draft?)               :send-changes
+                             (and insurance-team-member? sent?)                :workbench
+                             (and insurance-team-member? active?)               :request-payments
+                             :else                                             :add-coverage)
         survey-management? (and insurance-team-member? survey-progress)
-        action-configs  {:add-coverage    {:href  (urls/link-coverage-create
-                                                   (:insurance.policy/policy-id policy))
-                                           :icon  :plus-circle
-                                           :label [:i18n/tr :insurance/add-coverage]}
-                         :review          {:href  (urls/link-policy-review policy)
-                                           :icon  :hand-pointing
-                                           :label [:i18n/tr :insurance/review]}
-                         :send-changes     {:href  (urls/link-policy-changes policy)
-                                            :icon  :paper-plane-right
-                                            :label [:i18n/tr :insurance/send-changes]}
-                         :workbench        {:href  (urls/link-policy-workbench policy)
-                                            :icon  :table
-                                            :label [:i18n/tr :insurance/workbench]}
-                         :request-payments {:href  (urls/link-policy-send-notifications policy)
-                                            :icon  :bell-ringing
-                                            :label [:i18n/tr :insurance/request-payments-title]}}
-        primary-config  (get action-configs primary-action)
-        review-config   (:review action-configs)
-        workbench-config (:workbench action-configs)
-        review-item     [:wa-dropdown-item
-                         {:value   (:href review-config)
-                          :onclick "window.location = this.value"}
-                         [ico/Icon {::ico/library :phosphor
-                                    ::ico/name    (:icon review-config)
-                                    :slot         "icon"}]
-                         (:label review-config)]
+        action-configs     {:add-coverage     {:href  (urls/link-coverage-create
+                                                       (:insurance.policy/policy-id policy))
+                                               :icon  :plus-circle
+                                               :label [:i18n/tr :insurance/add-coverage]}
+                            :review           {:href  (urls/link-policy-review policy)
+                                               :icon  :hand-pointing
+                                               :label [:i18n/tr :insurance/review]}
+                            :send-changes     {:href  (urls/link-policy-changes policy)
+                                               :icon  :paper-plane-right
+                                               :label [:i18n/tr :insurance/send-changes]}
+                            :workbench        {:href  (urls/link-policy-workbench policy)
+                                               :icon  :table
+                                               :label [:i18n/tr :insurance/workbench]}
+                            :request-payments {:href  (urls/link-policy-send-notifications policy)
+                                               :icon  :bell-ringing
+                                               :label [:i18n/tr :insurance/request-payments-title]}}
+        primary-config     (get action-configs primary-action)
+        review-config      (:review action-configs)
+        workbench-config   (:workbench action-configs)
+        review-item        [:wa-dropdown-item
+                            {:value   (:href review-config)
+                             :onclick "window.location = this.value"}
+                            [ico/Icon {::ico/library :phosphor
+                                       ::ico/name    (:icon review-config)
+                                       :slot         "icon"}]
+                            (:label review-config)]
         primary-overflow-item
         [:wa-dropdown-item
          {:value   (:href primary-config)
@@ -106,62 +106,62 @@
                     ::ico/name    (:icon primary-config)
                     :slot         "icon"}]
          (:label primary-config)]
-        overflow-items  (vec
-                         (concat
-                          (when survey-management?
-                            [primary-overflow-item])
-                          (when (and insurance-team-member?
-                                     (not= :review primary-action))
-                            [review-item])
-                          (when (and insurance-team-member?
-                                     (not= :workbench primary-action))
-                            [[:wa-dropdown-item
-                              {:value   (:href workbench-config)
-                               :onclick "window.location = this.value"}
-                              [ico/Icon {::ico/library :phosphor
-                                         ::ico/name    (:icon workbench-config)
-                                         :slot         "icon"}]
-                              (:label workbench-config)]])
-                          (when (not= :add-coverage primary-action)
-                            [[:wa-dropdown-item
-                              {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
-                               :onclick "window.location = this.value"}
-                              [ico/Icon {::ico/library :phosphor
-                                         ::ico/name    :plus-circle
-                                         :slot         "icon"}]
-                              [:i18n/tr :insurance/add-coverage]]])
-                          (when insurance-team-member?
-                            [[:wa-dropdown-item
-                              {:value   (urls/link-policy-settings policy)
-                               :onclick "window.location = this.value"}
-                              [ico/Icon {::ico/library :phosphor
-                                         ::ico/name    :gear
-                                         :slot         "icon"}]
-                              [:i18n/tr :insurance/policy-settings]]])
-                          (when (and insurance-team-member?
-                                     (nil? survey-progress))
-                            [[:wa-dropdown-item
-                              {:value   (urls/link-policy-surveys policy)
-                               :onclick "window.location = this.value"}
-                              [ico/Icon {::ico/library :phosphor
-                                         ::ico/name    :clipboard-text
-                                         :slot         "icon"}]
-                              [:i18n/tr :insurance/manage-surveys]]])
-                          (when (and insurance-team-member? draft? review-todos?)
-                            [[:wa-dropdown-item
-                              {:disabled true
-                               :title    [:i18n/tr :insurance/send-changes-disabled-hint]}
-                              [ico/Icon {::ico/library :phosphor
-                                         ::ico/name    :paper-plane-right
-                                         :slot         "icon"}]
-                              [:i18n/tr :insurance/send-changes]]])))
-        primary-button  [button/Button {:appearance "filled"
-                                        :variant    "brand"
-                                        :href       (:href primary-config)}
-                         [ico/Icon {::ico/library :phosphor
-                                    ::ico/name    (:icon primary-config)
-                                    :slot         "start"}]
-                         (:label primary-config)]
+        overflow-items     (vec
+                            (concat
+                             (when survey-management?
+                               [primary-overflow-item])
+                             (when (and insurance-team-member?
+                                        (not= :review primary-action))
+                               [review-item])
+                             (when (and insurance-team-member?
+                                        (not= :workbench primary-action))
+                               [[:wa-dropdown-item
+                                 {:value   (:href workbench-config)
+                                  :onclick "window.location = this.value"}
+                                 [ico/Icon {::ico/library :phosphor
+                                            ::ico/name    (:icon workbench-config)
+                                            :slot         "icon"}]
+                                 (:label workbench-config)]])
+                             (when (not= :add-coverage primary-action)
+                               [[:wa-dropdown-item
+                                 {:value   (urls/link-coverage-create (:insurance.policy/policy-id policy))
+                                  :onclick "window.location = this.value"}
+                                 [ico/Icon {::ico/library :phosphor
+                                            ::ico/name    :plus-circle
+                                            :slot         "icon"}]
+                                 [:i18n/tr :insurance/add-coverage]]])
+                             (when insurance-team-member?
+                               [[:wa-dropdown-item
+                                 {:value   (urls/link-policy-settings policy)
+                                  :onclick "window.location = this.value"}
+                                 [ico/Icon {::ico/library :phosphor
+                                            ::ico/name    :gear
+                                            :slot         "icon"}]
+                                 [:i18n/tr :insurance/policy-settings]]])
+                             (when (and insurance-team-member?
+                                        (nil? survey-progress))
+                               [[:wa-dropdown-item
+                                 {:value   (urls/link-policy-surveys policy)
+                                  :onclick "window.location = this.value"}
+                                 [ico/Icon {::ico/library :phosphor
+                                            ::ico/name    :clipboard-text
+                                            :slot         "icon"}]
+                                 [:i18n/tr :insurance/manage-surveys]]])
+                             (when (and insurance-team-member? draft? review-todos?)
+                               [[:wa-dropdown-item
+                                 {:disabled true
+                                  :title    [:i18n/tr :insurance/send-changes-disabled-hint]}
+                                 [ico/Icon {::ico/library :phosphor
+                                            ::ico/name    :paper-plane-right
+                                            :slot         "icon"}]
+                                 [:i18n/tr :insurance/send-changes]]])))
+        primary-button     [button/Button {:appearance "filled"
+                                           :variant    "brand"
+                                           :href       (:href primary-config)}
+                            [ico/Icon {::ico/library :phosphor
+                                       ::ico/name    (:icon primary-config)
+                                       :slot         "start"}]
+                            (:label primary-config)]
         manage-surveys-button
         (when (and insurance-team-member? survey-progress)
           [button/Button {:appearance "outlined"
@@ -179,17 +179,17 @@
                                ::page-toolbar/actions        [(or manage-surveys-button primary-button)]
                                ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
                                ::page-toolbar/overflow-items overflow-items
-                               :aria-label                    [:i18n/tr :insurance/toolbar-label]}]))
+                               :aria-label                   [:i18n/tr :insurance/toolbar-label]}]))
 
 (defn metric-card
   [{:keys [id tooltip icon label value library]}]
   [card/Card {:style "flex: auto;"}
    [:div {:class "wa-flank wa-align-items-start"}
-    [avatar/Avatar {::avatar/icon icon
+    [avatar/Avatar {::avatar/icon         icon
                     ::avatar/icon-library (or library :phosphor)
-                    ::avatar/icon-attrs {:class "wa-font-size-xl wa-color-text-quiet"
-                                         :aria-hidden true}
-                    :shape "rounded"}]
+                    ::avatar/icon-attrs   {:class       "wa-font-size-xl wa-color-text-quiet"
+                                           :aria-hidden true}
+                    :shape                "rounded"}]
     [:div {:class "wa-stack wa-gap-2xs"}
      [:div {:class "wa-cluster wa-gap-xs"}
       [:h3 {:class "wa-caption-s"} label]
@@ -388,13 +388,13 @@
   [{:keys [insurance-team-member? policy survey-progress]}]
   (when survey-progress
     (let [{:keys [completed-count total-count waiting-count]} survey-progress
-          completion-ratio (if (pos? total-count)
-                             (/ (double completed-count) total-count)
-                             0.0)
-          progress-label   [:i18n/tr
-                            :insurance/survey-progress-summary
-                            {:completed completed-count
-                             :total     total-count}]]
+          completion-ratio                                    (if (pos? total-count)
+                                                                (/ (double completed-count) total-count)
+                                                                0.0)
+          progress-label                                      [:i18n/tr
+                                                               :insurance/survey-progress-summary
+                                                               {:completed completed-count
+                                                                :total     total-count}]]
       (apply dashboard-card
              {:class          "insurance-dashboard-survey-progress-card"
               :title          [:i18n/tr :insurance/survey-responses-title]
@@ -436,8 +436,8 @@
     :count-key :missing-photo-count}
    {:label-key :insurance/dashboard-missing-insurer-ids
     :count-key :missing-insurer-id-count}
-   {:label-key     :insurance/policy-settings-missing-category-factors-title
-    :count-key     :missing-category-factor-count
+   {:label-key      :insurance/policy-settings-missing-category-factors-title
+    :count-key      :missing-category-factor-count
     :settings-link? true}])
 
 (defn- health-check-icon

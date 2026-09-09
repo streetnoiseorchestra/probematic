@@ -41,7 +41,7 @@
     :band-settings/toolbar-label})
 
 (defn page-view [populated?]
-  (let [{:keys [conn]} (tc/new-system "settings-discount-views")
+  (let [{:keys [conn]}   (tc/new-system "settings-discount-views")
         discount-type-id (random-uuid)]
     (when populated?
       @(d/transact conn [{:travel.discount.type/discount-type-id   discount-type-id
@@ -63,7 +63,7 @@
               :toolbar-label     :band-settings/toolbar-label
               :breadcrumbs       [:band-settings/title
                                   :band-settings/travel-discount-title]
-              :mobile            {:href "/band-settings"
+              :mobile            {:href  "/band-settings"
                                   :label :band-settings/title}
               :actions           []
               :overflow          []

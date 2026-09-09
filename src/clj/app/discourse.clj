@@ -25,7 +25,7 @@
       end-time (str " - " (ui2/format-time {:current-locale :de} :short end-time)))))
 
 (defn add-authentication-header [api-key username]
-  {:name ::add-authentication-header
+  {:name  ::add-authentication-header
    :enter (fn [ctx]
             (-> ctx
                 (assoc-in [:request :headers "Content-Type"] "multipart/form-data;")
@@ -46,24 +46,24 @@
 
   Avatar templates are deliberately excluded after the managed-avatar cutover."
   [{:keys [id username] :member/keys [member-id]}]
-  {:member/member-id member-id
+  {:member/member-id    member-id
    :member/discourse-id (str id)
-   :member/nick username})
+   :member/nick         username})
 
 (defn sync-avatars! [{:keys [env conn]}]
-  (let [db (datomic/db conn)
+  (let [db                                   (datomic/db conn)
         {:keys [api-key username forum-url]} (:discourse env)
-        m (martian-http/bootstrap-openapi url-discourse-open-api {:server-url forum-url
-                                                                  :interceptors (concat martian/default-interceptors
-                                                                                        [(add-authentication-header api-key username)]
-                                                                                        [martian-http/perform-request])})
-        user-list (list-users m)
-        members (->>
-                 (d/find-all db :member/member-id [:member/name :member/email :member/member-id])
-                 (map first)
-                 (map #(update % :member/email str/lower-case)))
-        joined (set/join user-list members {:email :member/email})
-        txs (map discourse-member-tx joined)]
+        m                                    (martian-http/bootstrap-openapi url-discourse-open-api {:server-url   forum-url
+                                                                                                     :interceptors (concat martian/default-interceptors
+                                                                                                                           [(add-authentication-header api-key username)]
+                                                                                                                           [martian-http/perform-request])})
+        user-list                            (list-users m)
+        members                              (->>
+                                              (d/find-all db :member/member-id [:member/name :member/email :member/member-id])
+                                              (map first)
+                                              (map #(update % :member/email str/lower-case)))
+        joined                               (set/join user-list members {:email :member/email})
+        txs                                  (map discourse-member-tx joined)]
     (d/transact conn {:tx-data txs})))
 (defn wrap-auth [req {:keys [discourse]}]
   (-> req
@@ -180,33 +180,33 @@ GO TO SNORGA!!
       :gig.status/confirmed ":gig_confirmed:"
       :gig.status/unconfirmed ":gig_unconfirmed:"
       :gig.status/cancelled ":gig_cancelled:")
-    :probematic-link (url/absolute-link-gig env (:gig/gig-id gig))
-    :date (gig-date-plain gig)
-    :time (gig-time gig)
-    :location location
-    :details  (markdown-quote more-details)
-    :leader leader
-    :planned-songs  planned-songs
+    :probematic-link     (url/absolute-link-gig env (:gig/gig-id gig))
+    :date                (gig-date-plain gig)
+    :time                (gig-time gig)
+    :location            location
+    :details             (markdown-quote more-details)
+    :leader              leader
+    :planned-songs       planned-songs
     :planned-songs-title (if (domain/setlist-gig? gig) "Setlist" "Probeplan")
-    :counts  (->> attendance-summary
-                  (map (fn [[plan count]]
-                         (when-let [icon (get
-                                          {:plan/no-response "**—**"
-                                           :plan/definitely ":gruener_kreis:"
-                                           :plan/probably ":gruener_ringel:"
-                                           :plan/unknown ":fragezeichen:"
-                                           :plan/probably-not ":roter_quadratischer_umriss:"
-                                           :plan/definitely-not ":rotes_quadrat:"
-                                           :plan/not-interested ":schwarz_kreuz:"} plan)]
-                           {:icon icon
-                            :value (str count)})))
-                  (remove nil?))}))
+    :counts              (->> attendance-summary
+                              (map (fn [[plan count]]
+                                     (when-let [icon (get
+                                                      {:plan/no-response    "**—**"
+                                                       :plan/definitely     ":gruener_kreis:"
+                                                       :plan/probably       ":gruener_ringel:"
+                                                       :plan/unknown        ":fragezeichen:"
+                                                       :plan/probably-not   ":roter_quadratischer_umriss:"
+                                                       :plan/definitely-not ":rotes_quadrat:"
+                                                       :plan/not-interested ":schwarz_kreuz:"} plan)]
+                                       {:icon  icon
+                                        :value (str count)})))
+                              (remove nil?))}))
 
 (defn topic-for-gig [{:keys [env]} gig-id]
   (try
     (request! env
               {:method :get
-               :url (format "/t/external_id/%s.json" gig-id)})
+               :url    (format "/t/external_id/%s.json" gig-id)})
     (catch Throwable e
       (if (= 404 (-> (ex-data e) :resp :status))
         nil
@@ -221,44 +221,44 @@ GO TO SNORGA!!
 
 (defn update-post-for-gig [env gig post-id]
   (request! env
-            {:method :put
-             :url (format "/posts/%s.json" post-id)
+            {:method  :put
+             :url     (format "/posts/%s.json" post-id)
              :headers {"content-type" "application/json"}
-             :body (j/write-value-as-string
-                    {:raw (gig->markdown-post env gig)
-                     :post_type "small_action"
-                     :edit_reason "something changed in snorga"})})
+             :body    (j/write-value-as-string
+                       {:raw         (gig->markdown-post env gig)
+                        :post_type   "small_action"
+                        :edit_reason "something changed in snorga"})})
   nil)
 
 (defn reset-bump-date! [env topic-id]
   (request! env
-            {:method :put
-             :url "/topics/bulk"
-             :headers {"content-type" "application/x-www-form-urlencoded; charset=UTF-8"
-                       "accept" "application/json"}
-             :form-params {"topic_ids[]" topic-id
+            {:method      :put
+             :url         "/topics/bulk"
+             :headers     {"content-type" "application/x-www-form-urlencoded; charset=UTF-8"
+                           "accept"       "application/json"}
+             :form-params {"topic_ids[]"     topic-id
                            "operation[type]" "reset_bump_dates"}}))
 (defn delete-topic! [env topic-id]
   (request! env
-            {:method :delete
-             :url (format "/t/%s.json" topic-id)
+            {:method  :delete
+             :url     (format "/t/%s.json" topic-id)
              :headers {"content-type" "application/json"}}))
 
 (defn format-topic-title [gig]
   (str (:gig/title gig) " " (gig-date-plain gig)))
 
 (defn category-for [dev-mode? {:gig/keys [gig-type gig-id]}]
-  (if-let [[_ v] (find {:gig.type/probe 7
+  (if-let [[_ v] (find {:gig.type/probe       7
                         :gig.type/extra-probe 7
-                        :gig.type/meeting 9
-                        :gig.type/gig 6} gig-type)]
+                        :gig.type/meeting     9
+                        :gig.type/gig         6} gig-type)]
 
     (if dev-mode?
       4                                 ;; technik admin
       ;; 21; PROBEMATIC beta test
       v)
     (throw (ex-info "Unknown discourse category for gig type" {:gig-type gig-type
-                                                               :gig-id gig-id}))))
+                                                               :gig-id   gig-id}))))
 
 (defn update-topic-for-gig [env gig topic]
   (let [topic-title (format-topic-title gig)
@@ -266,18 +266,18 @@ GO TO SNORGA!!
     (when (or
            (not= category-id (:category_id topic))
            (not= topic-title (:title topic)))
-      (request! env {:method :put
-                     :url (format "/t/-/%s.json" (:id topic))
+      (request! env {:method  :put
+                     :url     (format "/t/-/%s.json" (:id topic))
                      :headers {"content-type" "application/json"}
-                     :body (j/write-value-as-string
-                            {:title topic-title
-                             :category_id category-id})}))))
+                     :body    (j/write-value-as-string
+                               {:title       topic-title
+                                :category_id category-id})}))))
 
 (defn form-params-for-gig [env {:gig/keys [gig-id] :as gig}]
-  {:title (format-topic-title gig)
-   :raw (gig->markdown-post env gig)
-   :category (category-for (config/dev-mode? env) gig)
-   :embed_url (url/absolute-link-gig env gig-id)
+  {:title       (format-topic-title gig)
+   :raw         (gig->markdown-post env gig)
+   :category    (category-for (config/dev-mode? env) gig)
+   :embed_url   (url/absolute-link-gig env gig-id)
    :external_id gig-id})
 
 (defn summarize-attendance [gig {:keys [db]}]
@@ -292,21 +292,21 @@ GO TO SNORGA!!
 (defn planned-songs [gig {:keys [env db]}]
   (assoc gig :gig/planned-songs
          (map (fn [{:song/keys [title song-id] :keys [emphasis position]}]
-                {:href (url/absolute-link-song env song-id)
-                 :label title
+                {:href     (url/absolute-link-song env song-id)
+                 :label    title
                  :position (when position (inc position))
-                 :extra (when (= :probeplan.emphasis/intensive emphasis) " (intensive)")})
+                 :extra    (when (= :probeplan.emphasis/intensive emphasis) " (intensive)")})
               (q/planned-songs-for-gig db (:gig/gig-id gig)))))
 (defn create-topic-for-gig!
   "Creates a new topic for the gig, returns the topic id."
   [{:keys [env db] :as sys} gig-id]
-  (let [gig  (-> (q/retrieve-gig db gig-id)
-                 (summarize-attendance sys)
-                 (planned-songs sys))
+  (let [gig (-> (q/retrieve-gig db gig-id)
+                (summarize-attendance sys)
+                (planned-songs sys))
         topic-id
         (str (:topic_id (request! env
-                                  {:method :post
-                                   :url "/posts.json"
+                                  {:method      :post
+                                   :url         "/posts.json"
                                    :form-params (form-params-for-gig env gig)})))]
     (datomic/transact (-> sys :datomic :conn) {:tx-data [[:db/add (d/ref gig)
                                                           :forum.topic/topic-id topic-id]]})))
@@ -319,9 +319,9 @@ GO TO SNORGA!!
   (assert db)
   (assert env)
   (assert gig-id)
-  (let [gig (-> (q/retrieve-gig db gig-id)
-                (summarize-attendance sys)
-                (planned-songs sys))
+  (let [gig   (-> (q/retrieve-gig db gig-id)
+                  (summarize-attendance sys)
+                  (planned-songs sys))
         topic (topic-for-gig {:env env} (:gig/gig-id gig))]
     (cond
       (and (not topic) takeover-topic?)
@@ -342,7 +342,7 @@ GO TO SNORGA!!
 
 (defn should-delete-topic? [our-username topic]
   (let [{:keys [highest_post_number details]} topic
-        {:keys [username]} (:created_by details)]
+        {:keys [username]}                    (:created_by details)]
     (and
      ;; we created it
      (= username our-username)
@@ -369,7 +369,7 @@ GO TO SNORGA!!
     (def env (-> state/system :app.ig/env))
     (def db  (datomic/db conn)) ;; rcf
     (let [{:keys [api-key username forum-url]} (:discourse env)]
-      (def m (martian-http/bootstrap-openapi url-discourse-open-api {:server-url "https://forum.streetnoise.at"
+      (def m (martian-http/bootstrap-openapi url-discourse-open-api {:server-url   "https://forum.streetnoise.at"
                                                                      :interceptors (concat martian/default-interceptors
                                                                                            [(add-authentication-header api-key username)]
                                                                                            [martian-http/perform-request])})))) ;; rcf

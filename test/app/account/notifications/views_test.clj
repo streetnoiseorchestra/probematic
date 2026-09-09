@@ -64,12 +64,12 @@
   (let [page (support/public-fn 'app.account.notifications.views/page)]
     (is (fn? page))
     (when page
-      (let [message [:i18n/tr
-                     :account-settings/notifications-saved-feedback]
-            view (page
-                  (support/request
-                   {:page-state
-                    {:account-notifications {:_feedback message}}}))
+      (let [message  [:i18n/tr
+                      :account-settings/notifications-saved-feedback]
+            view     (page
+                      (support/request
+                       {:page-state
+                        {:account-notifications {:_feedback message}}}))
             statuses (filter #(= "status" (:role (support/attrs %)))
                              (support/elements :p view))]
         (is (= [message] (mapv #(nth % 2) statuses)))))))
@@ -132,8 +132,8 @@
              (support/request
               {:page-state
                {:account-notifications
-                {:what "gigs"
-                 :when "daily-batch"
+                {:what     "gigs"
+                 :when     "daily-batch"
                  :delivery {:email? true :browser? true}}}}))]
         (is (= [:i18n/tr
                 :account-settings/notifications-summary-email-browser-mobile-gigs-daily]
@@ -144,12 +144,12 @@
     (is (fn? page))
     (when page
       (let [right-away (page (support/request))
-            daily (page
-                   (support/request
-                    {:page-state
-                     {:account-notifications {:when "daily-batch"}}}))
-            attrs #(support/attrs
-                    (support/element-by-id "notification-batch-times" %))]
+            daily      (page
+                        (support/request
+                         {:page-state
+                          {:account-notifications {:when "daily-batch"}}}))
+            attrs      #(support/attrs
+                         (support/element-by-id "notification-batch-times" %))]
         (is (true? (:hidden (attrs right-away))))
         (is (not (true? (:hidden (attrs daily)))))
         (is (string? (:data-attr:hidden (attrs right-away))))

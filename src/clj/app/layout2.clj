@@ -40,28 +40,28 @@
 
 (defn- footer-tray-sheet [{:keys [id label placement]}]
   (let [placement (or placement :bottom)]
-    [:dialog {:id id
-              :class (str "tray-sheet " (name placement))
-              :open true
-              :inert true
-              :tabindex "-1"
-              :aria-label label
-              :aria-hidden "true"
-              :data-class:open (->expr (=== $footerTraySheet ~id))
-              :data-attr:inert (->expr (not (=== $footerTraySheet ~id)))
+    [:dialog {:id                    id
+              :class                 (str "tray-sheet " (name placement))
+              :open                  true
+              :inert                 true
+              :tabindex              "-1"
+              :aria-label            label
+              :aria-hidden           "true"
+              :data-class:open       (->expr (=== $footerTraySheet ~id))
+              :data-attr:inert       (->expr (not (=== $footerTraySheet ~id)))
               :data-attr:aria-hidden (->expr
                                       (if (=== $footerTraySheet ~id) "false" "true"))
-              :data-effect (->expr
-                            (when (=== $footerTraySheet ~id) (.focus el)))
-              :data-on:keydown "evt.key === 'Escape' && ($footerTraySheet = '')"}
+              :data-effect           (->expr
+                                      (when (=== $footerTraySheet ~id) (.focus el)))
+              :data-on:keydown       "evt.key === 'Escape' && ($footerTraySheet = '')"}
      [:i18n/tr :footer-tray-placeholder]]))
 
 (defn- footer-tray-sheets []
   (into
-   [[:div {:class "tray-sheet-backdrop"
-           :aria-hidden "true"
+   [[:div {:class           "tray-sheet-backdrop"
+           :aria-hidden     "true"
            :data-class:open "$footerTraySheet !== ''"
-           :data-on:click "$footerTraySheet = ''"}]]
+           :data-on:click   "$footerTraySheet = ''"}]]
    (map footer-tray-sheet)
    (conj footer-tray-shortcuts footer-tray-notification)))
 
@@ -172,9 +172,9 @@
 (defn html5-response
   ([req body] (html5-response req nil body))
   ([req opts body]
-   {:status 200
+   {:status  200
     :headers {"Content-Type" "text/html"}
-    :body (html5 req opts body)}))
+    :body    (html5 req opts body)}))
 
 (def on-load-js
   ;; Quirk with browsers is that cache settings are per URL not per
@@ -219,9 +219,9 @@
         member         (or (when (and (:db req) member-id)
                              (queries/retrieve-member (:db req) member-id))
                            session-member)
-        home-page? (= :app.dashboard.routes/index
-                      (-> req :reitit.core/match :data :name))
-        body       (if (string? body) (html/raw body) body)]
+        home-page?     (= :app.dashboard.routes/index
+                          (-> req :reitit.core/match :data :name))
+        body           (if (string? body) (html/raw body) body)]
     (into
      [:div {:id "morph"}
       [:app-shell
@@ -229,7 +229,7 @@
        [:header
         (jump-menu/JumpMenu
          {::jump-menu/logotype
-          (icon/logotype {:class "logotype"
+          (icon/logotype {:class       "logotype"
                           :aria-hidden "true"})})]
        (when-not home-page?
          [button/Button {:class      "home-button wa-gap-2xs"
@@ -239,15 +239,15 @@
                          :style      "--wa-form-control-padding-inline: var(--wa-space-xs)"
                          :aria-label "Home"}
           [ico/Icon {::ico/library :snoico
-                     ::ico/name :home}]
+                     ::ico/name    :home}]
           [:span {:class "home-label"} "Home"]])
        [:app-shell-content
         body]]
       (footer-tray/FooterTray
-       {::footer-tray/member member
-        ::footer-tray/shortcuts footer-tray-shortcuts
+       {::footer-tray/member       member
+        ::footer-tray/shortcuts    footer-tray-shortcuts
         ::footer-tray/notification footer-tray-notification})
-      [:form {:id auth/logout-form-id
+      [:form {:id     auth/logout-form-id
               :method "post"
               :action "/logout"}]
       #_(when (config/dev-mode? (-> req :system :env))
@@ -272,6 +272,6 @@
   ([req body]
    (app-shell req body nil))
   ([req body opts]
-   {:status 200
+   {:status  200
     :headers {"Content-Type" "text/html"}
-    :body (app-shell-html req body opts)}))
+    :body    (app-shell-html req body opts)}))

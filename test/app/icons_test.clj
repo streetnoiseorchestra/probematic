@@ -35,7 +35,7 @@
   (testing "contains every namespaced icon key in registry order"
     (is (= (vec
             (for [{:keys [id icons]} icons/icon-libraries
-                  icon icons]
+                  icon               icons]
               (keyword (name id) (name icon))))
            (icons/catalog)))))
 

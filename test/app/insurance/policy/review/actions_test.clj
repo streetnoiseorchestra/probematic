@@ -148,9 +148,9 @@
           policy-id                           (random-uuid)
           coverage-id                         (random-uuid)]
       (seed-insurance-team! conn member-id)
-      (seed-review-coverage! conn {:policy-id      policy-id
-                                   :coverage-id    coverage-id
-                                   :policy-status  :insurance.policy.status/active})
+      (seed-review-coverage! conn {:policy-id     policy-id
+                                   :coverage-id   coverage-id
+                                   :policy-status :insurance.policy.status/active})
       (is (not (has-db-transact?
                 (actions/mark-coverage-reviewed-action
                  (state system)

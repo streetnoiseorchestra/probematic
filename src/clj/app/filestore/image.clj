@@ -63,10 +63,10 @@
 (defn- generic-process
   [{:keys [input format quality width height] :as params}]
   (let [[path input-temp] (prepare-input input)
-        _ (assert path "input path required")
-        _ (assert format "output format required")
-        ext (format->extension format)
-        tmp (bfs/file (bfs/create-temp-file {:prefix "snorga." :suffix ext}))]
+        _                 (assert path "input path required")
+        _                 (assert format "output format required")
+        ext               (format->extension format)
+        tmp               (bfs/file (bfs/create-temp-file {:prefix "snorga." :suffix ext}))]
     (try
       (with-open [^java.lang.AutoCloseable thumbnail (ops/thumbnail path
                                                                     (int width)
@@ -112,17 +112,17 @@
   (assert quality "quality required")
   (assert format "output format required")
   (let [[path input-temp] (prepare-input input)
-        ext (format->extension format)
-        output (bfs/file
-                (bfs/create-temp-file
-                 {:prefix "snorga.avatar." :suffix ext}))
-        succeeded? (volatile! false)]
+        ext               (format->extension format)
+        output            (bfs/file
+                           (bfs/create-temp-file
+                            {:prefix "snorga.avatar." :suffix ext}))
+        succeeded?        (volatile! false)]
     (try
       (with-open [^java.lang.AutoCloseable avatar (ops/thumbnail path
                                                                  (int size)
-                                                                 {:height (int size)
-                                                                  :size :both
-                                                                  :crop :centre
+                                                                 {:height      (int size)
+                                                                  :size        :both
+                                                                  :crop        :centre
                                                                   :auto-rotate true})]
         (write-thumbnail-to-file! avatar output format quality))
       (let [result (assoc params
@@ -153,13 +153,13 @@
       :else nil)))
 
 (def ext-format-overrides
-  {"jpg" :jpeg
-   "jpe" :jpeg
+  {"jpg"  :jpeg
+   "jpe"  :jpeg
    "heif" :heic})
 
 (defn- path->format [path]
   (let [[_ ext] (bfs/split-ext path)
-        ext (some-> ext str/lower-case)]
+        ext     (some-> ext str/lower-case)]
     (or (get ext-format-overrides ext)
         (when ext
           (-> (str "." ext) ext-lookup :format)))))
@@ -180,14 +180,14 @@
   handled correctly."
   [{:keys [input]}]
   (let [path (:path input)
-        _ (assert path "In place operations require a path on disk, not a stream")]
-    (with-open [^java.lang.AutoCloseable image (v/from-file path {:access :sequential})
+        _    (assert path "In place operations require a path on disk, not a stream")]
+    (with-open [^java.lang.AutoCloseable image    (v/from-file path {:access :sequential})
                 ^java.lang.AutoCloseable oriented (ops/autorot image)]
-      (let [format (image->format image path)
+      (let [format    (image->format image path)
             extension (format->extension format)]
         (when-not extension
           (throw (ex-info "Unsupported image format"
-                          {:path path
+                          {:path   path
                            :format format})))
         (let [tmp (bfs/file
                    (bfs/create-temp-file
@@ -207,9 +207,9 @@
 
 (defn- identify* [path]
   (with-open [^java.lang.AutoCloseable image (v/from-file path {:access :sequential})]
-    (let [headers (v/headers image)
+    (let [headers  (v/headers image)
           metadata (v/metadata image)
-          format (image->format image path)]
+          format   (image->format image path)]
       (assoc headers
              :format format
              :mime-type (format->mime format)
@@ -225,18 +225,18 @@
    (identify* path)))
 
 (comment
-  (process-thumbnail-down {:input {:path "resources/public/img/tuba-robot-boat-1000.jpg"}
+  (process-thumbnail-down {:input   {:path "resources/public/img/tuba-robot-boat-1000.jpg"}
                            :quality 70
-                           :width 10
-                           :height 10
-                           :format :jpeg})
+                           :width   10
+                           :height  10
+                           :format  :jpeg})
 
   (process-thumbnail {:thumbnail-mode :thumbnail-down
-                      :input {:path "resources/public/img/tuba-robot-boat-1000.jpg"}
-                      :quality 70
-                      :width 10
-                      :height 10
-                      :format :jpeg})
+                      :input          {:path "resources/public/img/tuba-robot-boat-1000.jpg"}
+                      :quality        70
+                      :width          10
+                      :height         10
+                      :format         :jpeg})
   (identify-detailed "resources/public/img/tuba-robot-boat-1000.jpg")
   (identify "/home/ramblurr/downloads/Test/IMG_3635.HEIC")
   (identify-detailed "/home/ramblurr/downloads/Test/test-stripped.heic")

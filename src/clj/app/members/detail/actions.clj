@@ -131,13 +131,13 @@
            :keycloak-id (:member/keycloak-id member))))
 
 (defn- contact-tx [current-user-admin? member-id {:keys [name nick email phone section-name active username]}]
-  (cond-> {:db/id            [:member/member-id member-id]
-           :member/name      name
-           :member/nick      (when (seq nick) nick)
-           :member/email     email
-           :member/phone     phone
-           :member/section   [:section/name section-name]
-           :member/active?   active}
+  (cond-> {:db/id          [:member/member-id member-id]
+           :member/name    name
+           :member/nick    (when (seq nick) nick)
+           :member/email   email
+           :member/phone   phone
+           :member/section [:section/name section-name]
+           :member/active? active}
     current-user-admin?
     (assoc :member/username username)))
 
@@ -177,13 +177,13 @@
 
 (defn validate-contact-field-action
   [{:keys [db tr] :as state} {:keys [member-detail]}]
-  (let [raw        (:contact member-detail)
-        field      (some-> (:validate-field raw) keyword)
+  (let [raw                 (:contact member-detail)
+        field               (some-> (:validate-field raw) keyword)
         current-user-admin? (auth/admin? (:current-user-roles state))
-        contact    (normalize-contact raw current-user-admin?)
-        member-id  (util/ensure-uuid! (:member-id contact))
-        member-ref [:member/member-id member-id]
-        error      (get (validation-errors {:db db :tr tr :member-ref member-ref :admin? current-user-admin?} contact) field)]
+        contact             (normalize-contact raw current-user-admin?)
+        member-id           (util/ensure-uuid! (:member-id contact))
+        member-ref          [:member/member-id member-id]
+        error               (get (validation-errors {:db db :tr tr :member-ref member-ref :admin? current-user-admin?} contact) field)]
     (tap> [:field field :error error :raw raw])
     (cond-> [[:app.datastar/merge-state [:member-detail :contact] contact]]
       field (conj [:app.datastar/assoc-state
@@ -193,11 +193,11 @@
 (defn update-contact-action
   [{:keys [db current-member-id tr] :as state} {:keys [member-detail]}]
   (let [current-user-admin? (auth/admin? (:current-user-roles state))
-        contact        (normalize-contact (:contact member-detail) current-user-admin?)
-        member-id      (util/ensure-uuid! (:member-id contact))
-        member-ref     [:member/member-id member-id]
-        current-member (q/retrieve-member db member-id)
-        errors         (validation-errors {:db db :tr tr :member-ref member-ref :admin? current-user-admin?} contact)]
+        contact             (normalize-contact (:contact member-detail) current-user-admin?)
+        member-id           (util/ensure-uuid! (:member-id contact))
+        member-ref          [:member/member-id member-id]
+        current-member      (q/retrieve-member db member-id)
+        errors              (validation-errors {:db db :tr tr :member-ref member-ref :admin? current-user-admin?} contact)]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state
@@ -379,13 +379,13 @@
     "debt"))
 
 (defn- ledger-entry-create-state [kind member-id now]
-  {:member-id     (str (util/ensure-uuid! member-id))
-   :tx-kind       (normalize-ledger-entry-kind kind)
-   :tx-direction  ""
-   :tx-date       (str (t/date (or now (t/now))))
-   :description   ""
-   :amount        ""
-   :_error        {}})
+  {:member-id    (str (util/ensure-uuid! member-id))
+   :tx-kind      (normalize-ledger-entry-kind kind)
+   :tx-direction ""
+   :tx-date      (str (t/date (or now (t/now))))
+   :description  ""
+   :amount       ""
+   :_error       {}})
 
 (defn open-ledger-debt-create-action
   [{:keys [now]} {:keys [targetid]}]
@@ -509,10 +509,10 @@
 
 (defn delete-ledger-entry-action
   [{:keys [db current-member-id]} {:keys [targetid]}]
-  (let [entry-id (util/ensure-uuid! targetid)
+  (let [entry-id                     (util/ensure-uuid! targetid)
         {:ledger.entry/keys [amount]
-         :as entry} (q/retrieve-ledger-entry db entry-id)
-        ledger   (first (:ledger/_entries entry))]
+         :as                entry}   (q/retrieve-ledger-entry db entry-id)
+        ledger                       (first (:ledger/_entries entry))]
     [[:db/transact
       (support/with-audit
         [[:db/retractEntity [:ledger.entry/entry-id entry-id]]
@@ -522,20 +522,20 @@
      support/clear-loading]))
 
 (def actions
-  {::open-contact-edit                 #'open-contact-edit-action
-   ::close-contact-edit                #'close-contact-edit-action
-   ::validate-contact-field            #'validate-contact-field-action
-   ::update-contact                    #'update-contact-action
-   ::set-active-tab                    #'set-active-tab-action
-   ::open-travel-discount-create       #'open-travel-discount-create-action
-   ::close-travel-discount-create      #'close-travel-discount-create-action
-   ::add-travel-discount               #'add-travel-discount-action
-   ::open-travel-discount-edit         #'open-travel-discount-edit-action
-   ::close-travel-discount-edit        #'close-travel-discount-edit-action
-   ::update-travel-discount            #'update-travel-discount-action
-   ::delete-travel-discount            #'delete-travel-discount-action
-   ::open-ledger-debt-create           #'open-ledger-debt-create-action
-   ::open-ledger-payment-create        #'open-ledger-payment-create-action
-   ::close-ledger-entry-create         #'close-ledger-entry-create-action
-   ::add-ledger-entry                  #'add-ledger-entry-action
-   ::delete-ledger-entry               #'delete-ledger-entry-action})
+  {::open-contact-edit            #'open-contact-edit-action
+   ::close-contact-edit           #'close-contact-edit-action
+   ::validate-contact-field       #'validate-contact-field-action
+   ::update-contact               #'update-contact-action
+   ::set-active-tab               #'set-active-tab-action
+   ::open-travel-discount-create  #'open-travel-discount-create-action
+   ::close-travel-discount-create #'close-travel-discount-create-action
+   ::add-travel-discount          #'add-travel-discount-action
+   ::open-travel-discount-edit    #'open-travel-discount-edit-action
+   ::close-travel-discount-edit   #'close-travel-discount-edit-action
+   ::update-travel-discount       #'update-travel-discount-action
+   ::delete-travel-discount       #'delete-travel-discount-action
+   ::open-ledger-debt-create      #'open-ledger-debt-create-action
+   ::open-ledger-payment-create   #'open-ledger-payment-create-action
+   ::close-ledger-entry-create    #'close-ledger-entry-create-action
+   ::add-ledger-entry             #'add-ledger-entry-action
+   ::delete-ledger-entry          #'delete-ledger-entry-action})

@@ -6,10 +6,10 @@
             [s-exp.drip :as drip]))
 
 (deftest persists-jobs-across-restarts
-  (let [dir (.toFile (java.nio.file.Files/createTempDirectory
-                      "probematic-jobs" (make-array java.nio.file.attribute.FileAttribute 0)))
+  (let [dir      (.toFile (java.nio.file.Files/createTempDirectory
+                           "probematic-jobs" (make-array java.nio.file.attribute.FileAttribute 0)))
         filename (str (io/file dir "jobs.sqlite"))
-        config {:app.ig/job-queue {:filename filename}}]
+        config   {:app.ig/job-queue {:filename filename}}]
     (try
       (let [system (ig/init config)]
         (try

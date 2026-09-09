@@ -25,52 +25,52 @@
   (let [page (support/public-fn 'app.account.index.views/page)]
     (is (fn? page) "app.account.index.views/page should exist")
     (when page
-      (let [view      (page (support/request))
-            directory (support/element-by-id "account-settings-directory" view)
-            rows      (filter
-                       #(contains? (support/class-tokens %)
-                                   "account-settings-row")
-                       (tree-seq coll? seq directory))
+      (let [view         (page (support/request))
+            directory    (support/element-by-id "account-settings-directory" view)
+            rows         (filter
+                          #(contains? (support/class-tokens %)
+                                      "account-settings-row")
+                          (tree-seq coll? seq directory))
             logout-attrs (support/attrs (nth rows 5))]
         (is (= :main (first view)))
         (is (contains? (support/class-tokens view) "account-settings"))
-        (is (= [{:tag :a
-                 :href "/account-settings/profile"
-                 :form nil
-                 :type nil
+        (is (= [{:tag   :a
+                 :href  "/account-settings/profile"
+                 :form  nil
+                 :type  nil
                  :title :account-settings/profile-row-title}
-                {:tag :a
-                 :href "/account-settings/notifications"
-                 :form nil
-                 :type nil
+                {:tag   :a
+                 :href  "/account-settings/notifications"
+                 :form  nil
+                 :type  nil
                  :title :account-settings/notifications-row-title}
-                {:tag :a
-                 :href "/account-settings/preferences"
-                 :form nil
-                 :type nil
+                {:tag   :a
+                 :href  "/account-settings/preferences"
+                 :form  nil
+                 :type  nil
                  :title :account-settings/preferences-row-title}
-                {:tag :a
-                 :href "/account-settings/on-a-break"
-                 :form nil
-                 :type nil
+                {:tag   :a
+                 :href  "/account-settings/on-a-break"
+                 :form  nil
+                 :type  nil
                  :title :account-settings/break-row-title}
-                {:tag :a
-                 :href "#"
-                 :form nil
-                 :type nil
+                {:tag   :a
+                 :href  "#"
+                 :form  nil
+                 :type  nil
                  :title :account-settings/help-row-title}
-                {:tag button/Button
-                 :href nil
-                 :form "logout-form"
-                 :type "submit"
+                {:tag   button/Button
+                 :href  nil
+                 :form  "logout-form"
+                 :type  "submit"
                  :title :account-settings/logout-row-title}]
                (mapv row-summary rows)))
         (is (= {:appearance "plain"
-                :style      {:border-radius  "0"
-                             :font-weight    "inherit"
-                             :height         "auto"
+                :style      {:border-radius   "0"
+                             :font-weight     "inherit"
+                             :height          "auto"
                              :justify-content "normal"
-                             :text-align     "start"}}
+                             :text-align      "start"}}
                (select-keys logout-attrs [:appearance :style])))
         (is (nil? (:href logout-attrs)))))))
 
@@ -78,11 +78,11 @@
   (let [page (support/public-fn 'app.account.index.views/page)]
     (is (fn? page) "app.account.index.views/page should exist")
     (when page
-      (let [view       (page (support/request))
-            apps       (support/element-by-id "account-settings-apps" view)
-            images     (mapv support/attrs (support/elements :img apps))
-            app-links  (filter #(= "#" (:href (support/attrs %)))
-                               (support/elements :a apps))]
+      (let [view      (page (support/request))
+            apps      (support/element-by-id "account-settings-apps" view)
+            images    (mapv support/attrs (support/elements :img apps))
+            app-links (filter #(= "#" (:href (support/attrs %)))
+                              (support/elements :a apps))]
         (is (= [{:src "/img/app-store-ios.png"
                  :alt [:i18n/tr :account-settings/app-store-ios-alt]}
                 {:src "/img/app-store-android.png"

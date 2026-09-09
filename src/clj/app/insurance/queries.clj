@@ -227,7 +227,7 @@
         (remove :insurance.survey.response/completed-at)
         (mapv (fn [{:insurance.survey.response/keys
                     [coverage-reports response-id]
-                    :keys [survey]}]
+                    :keys                           [survey]}]
                 (let [policy (:insurance.survey/policy survey)]
                   {:closes-at   (:insurance.survey/closes-at survey)
                    :policy-id   (:insurance.policy/policy-id policy)
@@ -318,23 +318,23 @@
          band-coverages    (filterv (complement :instrument.coverage/private?) coverages)
          private-coverages (filterv :instrument.coverage/private? coverages)
          total-instruments (count coverages)]
-     {:policy                  policy
-      :coverages               coverages
+     {:policy                 policy
+      :coverages              coverages
       :insurance-team-member? (insurance-team-member? db current-member-id)
-      :totals                  {:total-instruments             total-instruments
-                                :total-insured-value           (reduce + 0M (map coverage-insured-value coverages))
-                                :total-cost                    (coverage-cost-total coverages)
-                                :missing-photo-count           (count (filter missing-photo? coverages))
-                                :missing-insurer-id-count      (count (filter missing-insurer-id? coverages))
-                                :missing-category-factor-count (missing-category-factor-count coverages)
-                                :private-count                 (+ 0 (count private-coverages))
-                                :band-count                    (count band-coverages)
-                                :private-cost                  (coverage-cost-total private-coverages)
-                                :band-cost                     (coverage-cost-total band-coverages)}
-      :status-counts           (count-by domain/instrument-coverage-statuses :instrument.coverage/status coverages)
-      :change-counts           (count-by domain/instrument-coverage-changes :instrument.coverage/change coverages)
-      :survey-progress         (open-survey-progress db policy now)
-      :recent-changes          (recent-changes coverages)})))
+      :totals                 {:total-instruments             total-instruments
+                               :total-insured-value           (reduce + 0M (map coverage-insured-value coverages))
+                               :total-cost                    (coverage-cost-total coverages)
+                               :missing-photo-count           (count (filter missing-photo? coverages))
+                               :missing-insurer-id-count      (count (filter missing-insurer-id? coverages))
+                               :missing-category-factor-count (missing-category-factor-count coverages)
+                               :private-count                 (+ 0 (count private-coverages))
+                               :band-count                    (count band-coverages)
+                               :private-cost                  (coverage-cost-total private-coverages)
+                               :band-cost                     (coverage-cost-total band-coverages)}
+      :status-counts          (count-by domain/instrument-coverage-statuses :instrument.coverage/status coverages)
+      :change-counts          (count-by domain/instrument-coverage-changes :instrument.coverage/change coverages)
+      :survey-progress        (open-survey-progress db policy now)
+      :recent-changes         (recent-changes coverages)})))
 
 (defn- member-payment-data
   [{:keys [coverages] :as member}]
@@ -367,10 +367,10 @@
   [db policy-id current-member-id]
   (let [{:insurance.policy/keys [effective-at effective-until] :as policy}
         (q/retrieve-policy db policy-id)
-        current-member (when current-member-id
-                         (q/retrieve-member db current-member-id))
-        authorized? (boolean (and current-member
-                                  (q/insurance-team-member? db current-member)))]
+        current-member                                                     (when current-member-id
+                                                                             (q/retrieve-member db current-member-id))
+        authorized?                                                        (boolean (and current-member
+                                                                                         (q/insurance-team-member? db current-member)))]
     {:policy       policy
      :time-range   (format "%s - %s" (t/year effective-at) (t/year effective-until))
      :sender-name  (:member/name current-member)
@@ -542,9 +542,9 @@
                           :private
                           :band)
                         inc)))
-          {:total 0
+          {:total   0
            :private 0
-           :band 0}
+           :band    0}
           coverages))
 
 (defn- category-factor-category-id
@@ -603,21 +603,21 @@
   (let [type-id           (:insurance.coverage.type/type-id coverage-type)
         missing-coverages (remove #(contains? (coverage-type-ids %) type-id)
                                   coverages)]
-    {:type-id        type-id
-     :name           (:insurance.coverage.type/name coverage-type)
-     :description    (or (:insurance.coverage.type/description coverage-type) "")
-     :premium-factor (:insurance.coverage.type/premium-factor coverage-type)
-     :icon            (:insurance.coverage.type/icon coverage-type)
-     :required?       (boolean (:insurance.coverage.type/required? coverage-type))
+    {:type-id                 type-id
+     :name                    (:insurance.coverage.type/name coverage-type)
+     :description             (or (:insurance.coverage.type/description coverage-type) "")
+     :premium-factor          (:insurance.coverage.type/premium-factor coverage-type)
+     :icon                    (:insurance.coverage.type/icon coverage-type)
+     :required?               (boolean (:insurance.coverage.type/required? coverage-type))
      :missing-coverage-counts (coverage-counts missing-coverages)
-     :usage-count    (count (filter #(contains? (coverage-type-ids %) type-id) coverages))
-     :current-cost   (reduce +
-                             0M
-                             (for [safe-cost safe-costs
-                                   type-cost (:type-costs safe-cost)
-                                   :when (= type-id (:type-id type-cost))]
-                               (:cost type-cost)))
-     :used?          (boolean (some #(contains? (coverage-type-ids %) type-id) coverages))}))
+     :usage-count             (count (filter #(contains? (coverage-type-ids %) type-id) coverages))
+     :current-cost            (reduce +
+                                      0M
+                                      (for [safe-cost safe-costs
+                                            type-cost (:type-costs safe-cost)
+                                            :when     (= type-id (:type-id type-cost))]
+                                        (:cost type-cost)))
+     :used?                   (boolean (some #(contains? (coverage-type-ids %) type-id) coverages))}))
 
 (defn- coverage-type-rows
   [policy safe-costs coverages]
@@ -629,11 +629,11 @@
 (defn- category-factor-row
   [safe-costs coverages category-factor]
   (let [factor-category-id (category-factor-category-id category-factor)
-        used-coverages    (filter #(= factor-category-id (coverage-category-id %)) coverages)
-        current-cost      (reduce +
-                                  0M
-                                  (map :total-cost
-                                       (filter #(= factor-category-id (:category-id %)) safe-costs)))]
+        used-coverages     (filter #(= factor-category-id (coverage-category-id %)) coverages)
+        current-cost       (reduce +
+                                   0M
+                                   (map :total-cost
+                                        (filter #(= factor-category-id (:category-id %)) safe-costs)))]
     {:category-factor-id (:insurance.category.factor/category-factor-id category-factor)
      :category-id        factor-category-id
      :category-name      (category-factor-category-name category-factor)
@@ -824,7 +824,7 @@
          response-rows
          (mapv (fn [{:insurance.survey.response/keys
                      [completed-at coverage-reports member response-id]
-                     :as response}]
+                     :as                             response}]
                  (let [{:keys [completed open]}
                        (domain/summarize-member-reports coverage-reports)]
                    {:completed-count completed
@@ -835,7 +835,7 @@
                     :response-id     response-id
                     :total-count     (count coverage-reports)}))
                (:insurance.survey/responses active))]
-     {:active-survey      active
+     {:active-survey     active
       :authorized?       (boolean (and member
                                        (q/insurance-team-member? db member)))
       :closed-surveys    closed
@@ -1235,10 +1235,10 @@
   (let [page-size      (normalized-page-size params)
         total-pages    (max 1 (long (Math/ceil (/ total-results (double page-size)))))
         requested-page (normalized-page params)
-        page            (min requested-page total-pages)
-        offset          (* (dec page) page-size)
-        range-start     (if (pos? total-results) (inc offset) 0)
-        range-end       (min total-results (+ offset page-size))]
+        page           (min requested-page total-pages)
+        offset         (* (dec page) page-size)
+        range-start    (if (pos? total-results) (inc offset) 0)
+        range-end      (min total-results (+ offset page-size))]
     {:page          page
      :page-size     page-size
      :page-sizes    page-size-options
@@ -1293,7 +1293,7 @@
   (->> rows
        (keep (fn [{:keys [category-id category-name]}]
                (when category-id
-                 {:category-id category-id
+                 {:category-id   category-id
                   :category-name category-name})))
        (reduce (fn [acc {:keys [category-id] :as category}]
                  (if (contains? acc category-id)

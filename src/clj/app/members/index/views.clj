@@ -43,12 +43,12 @@
   (str "/members?" (urls/params->query-string (merge page-state overrides))))
 
 (defn- sort-button [page-state field label]
-  [:a {:href (table-url page-state
-                        {:sort-field field
-                         :sort-order (if (and (= field (:sort-field page-state))
-                                              (= "asc" (:sort-order page-state)))
-                                       "desc" "asc")
-                         :page 1})
+  [:a {:href  (table-url page-state
+                         {:sort-field field
+                          :sort-order (if (and (= field (:sort-field page-state))
+                                               (= "asc" (:sort-order page-state)))
+                                        "desc" "asc")
+                          :page       1})
        :class "wa-link-plain wa-font-weight-bold"}
    label
    [:span {:aria-hidden true} (or (sort-indicator page-state field) "")]])
@@ -57,24 +57,24 @@
   [:form {:method "get" :action "/members"}
    (for [[k v] (assoc (dissoc page-state :search) :page 1)]
      [:input {:type "hidden" :name (name k) :value v}])
-   [:wa-input {:name "search"
-               :label [:i18n/tr :action/search]
-               :placeholder [:i18n/tr :action/search]
-               :appearance "outlined"
-               :size "m"
-               :value search
-               :with-clear true
+   [:wa-input {:name                          "search"
+               :label                         [:i18n/tr :action/search]
+               :placeholder                   [:i18n/tr :action/search]
+               :appearance                    "outlined"
+               :size                          "m"
+               :value                         search
+               :with-clear                    true
                :data-on:input__debounce.250ms "evt.target.closest('form').requestSubmit()"}]])
 
 (defn- filter-control [{:keys [filter-preset] :as page-state}]
   [:form {:method "get" :action "/members"}
    (for [[k v] (assoc (dissoc page-state :filter-preset) :page 1)]
      [:input {:type "hidden" :name (name k) :value v}])
-   [:wa-select {:name "filter-preset"
-                :label [:i18n/tr :action/filter]
-                :appearance "outlined"
-                :size "m"
-                :value filter-preset
+   [:wa-select {:name           "filter-preset"
+                :label          [:i18n/tr :action/filter]
+                :appearance     "outlined"
+                :size           "m"
+                :value          filter-preset
                 :data-on:change "evt.target.closest('form').requestSubmit()"}
     [:wa-option {:value "active"} [:i18n/tr :members/filter-active]]
     [:wa-option {:value "inactive"} [:i18n/tr :members/filter-inactive]]
@@ -94,7 +94,7 @@
 
 (defn- invite-action-button
   [req {:keys [invite-code member-id generation action label variant action-key]
-        :as action-options}]
+        :as   action-options}]
   [button/Button {:appearance         (if (= "resend" action) "plain" "outlined")
                   :variant            variant
                   :size               "s"
@@ -130,7 +130,7 @@
        [:tbody
         (for [{:member/keys [member-id name email invite-code
                              invite-status invite-generation]
-               :keys        [invite-expired?]} invitations]
+               :keys        [invite-expired?]}                invitations]
           (let [revoked? (= :member.invite.status/revoked invite-status)]
             [:tr
              [:td name]
@@ -162,8 +162,8 @@
                                             :variant     "brand"
                                             :action-key  ::actions/resend-invitation}))
                (when-not (or revoked? invite-expired?)
-                 [:wa-copy-button {:value (urls/absolute-link-new-user-invite
-                                           (get-in req [:system :env]) invite-code)
+                 [:wa-copy-button {:value   (urls/absolute-link-new-user-invite
+                                             (get-in req [:system :env]) invite-code)
                                    :tooltip "copy"}
                   [button/Button {:appearance "plain" :variant "brand" :size "s"}
                    [:i18n/tr :members/copy-invite]]])
@@ -176,9 +176,9 @@
 
 (defn- member-row [member]
   (let [{:member/keys [email phone active?]} member
-        section-name       (member-section-name member)
-        mobile-discounts   (travel-discount-tags member "mobile")
-        desktop-discounts  (travel-discount-tags member "desktop")]
+        section-name                         (member-section-name member)
+        mobile-discounts                     (travel-discount-tags member "mobile")
+        desktop-discounts                    (travel-discount-tags member "desktop")]
     [:tr
      [:td
       [:div {:class "wa-stack wa-gap-3xs"}
@@ -226,9 +226,9 @@
 (defn- pagination-controls [page-state {:keys [page page-size has-prev? has-next?] :as pagination}]
   [:div {:class "wa-stack wa-gap-xs"}
    [divider/Divider]
-   [:nav {:class "wa-cluster wa-gap-2xs wa-justify-content-end"
+   [:nav {:class      "wa-cluster wa-gap-2xs wa-justify-content-end"
           :aria-label [:i18n/tr :pagination]}
-    [button/Button (cond-> {:appearance "plain" :size "s"
+    [button/Button (cond-> {:appearance "plain"                     :size "s"
                             :aria-label [:i18n/tr :action/previous]}
                      has-prev? (assoc :href (table-url page-state {:page (dec page)}))
                      (not has-prev?) (assoc :disabled true))
@@ -247,21 +247,21 @@
         [ico/Icon (cond-> {::ico/library :phosphor ::ico/name :check :slot "icon"}
                     (not= size page-size) (assoc :style "visibility: hidden;"))]
         size])]
-    [button/Button (cond-> {:appearance "plain" :size "s"
+    [button/Button (cond-> {:appearance "plain"                 :size "s"
                             :aria-label [:i18n/tr :action/next]}
                      has-next? (assoc :href (table-url page-state {:page (inc page)}))
                      (not has-next?) (assoc :disabled true))
      [ico/Icon {::ico/library :phosphor ::ico/name :caret-right}]]]])
 
 (defn page [{:keys [db] :as req}]
-  (let [params           (or (get-in req [:parameters :query]) (:query-params req))
-        page-state       (queries/normalize-page-state params)
-        pagination       (queries/paginate-members page-state (queries/members db page-state))
-        members          (:members pagination)
-        invitations      (->> (concat (queries/members-with-pending-invites db)
-                                      (queries/members-with-revoked-invites db))
-                              (sort-by :member/name)
-                              vec)]
+  (let [params      (or (get-in req [:parameters :query]) (:query-params req))
+        page-state  (queries/normalize-page-state params)
+        pagination  (queries/paginate-members page-state (queries/members db page-state))
+        members     (:members pagination)
+        invitations (->> (concat (queries/members-with-pending-invites db)
+                                 (queries/members-with-revoked-invites db))
+                         (sort-by :member/name)
+                         vec)]
     (ui2/datastar-page*
      [page-surface/PageSurface {::page-surface/toolbar
                                 [page-toolbar/PageToolbar {::page-toolbar/breadcrumb
@@ -274,13 +274,13 @@
                                                                             :variant    "brand"
                                                                             :href       "/members/invite"}
                                                              [:i18n/tr :members/invite-member]]]
-                                                           :aria-label [:i18n/tr :members/directory-toolbar-label]}]}
+                                                           :aria-label               [:i18n/tr :members/directory-toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"
-             :data-signals (d*/->signals {:invite {:action nil
-                                                   :code nil
-                                                   :member-id nil
+             :data-signals (d*/->signals {:invite {:action     nil
+                                                   :code       nil
+                                                   :member-id  nil
                                                    :generation nil
-                                                   :inflight false}})}
+                                                   :inflight   false}})}
        [page-header/PageHeader
         {::page-header/title    [:i18n/tr :members/title]
          ::page-header/subtitle [:i18n/tr :members/member-count {:count (:total-results pagination)}]}]

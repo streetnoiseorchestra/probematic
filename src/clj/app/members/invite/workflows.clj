@@ -13,7 +13,7 @@
    [tick.core :as t]))
 
 (def invite-member
-  {:id ::invite-member
+  {:id  ::invite-member
    :doc "Creates the member, ledger, and pending invitation, then queues the invitation email."
    :input-schema
    [:map
@@ -32,8 +32,8 @@
     :queue-email :member-invite/queue-invitation-email!}
 
    :edges
-   {:start {:created  :queue-email
-            :conflict :end}
+   {:start       {:created  :queue-email
+                  :conflict :end}
     :queue-email :end}
 
    :dispatches
@@ -47,8 +47,8 @@
    [:member-invite/resolved-generation pos-int?]])
 
 (def reissue-invitation
-  {:id ::reissue-invitation
-   :doc "Creates a new code and expiration date for a pending or revoked invitation, then queues a new email."
+  {:id           ::reissue-invitation
+   :doc          "Creates a new code and expiration date for a pending or revoked invitation, then queues a new email."
    :input-schema admin-invitation-input-schema
 
    :cells
@@ -58,11 +58,11 @@
     :queue-email :member-invite/queue-invitation-email!}
 
    :edges
-   {:start :check
-    :check {:reissue :persist
-            :stale   :end}
-    :persist {:reissued :queue-email
-              :conflict :end}
+   {:start       :check
+    :check       {:reissue :persist
+                  :stale   :end}
+    :persist     {:reissued :queue-email
+                  :conflict :end}
     :queue-email :end}
 
    :dispatches
@@ -77,13 +77,13 @@
    :transforms
    {:start
     {:output
-     {:fn identity
-      :schema {:input admin-invitation-input-schema
+     {:fn     identity
+      :schema {:input  admin-invitation-input-schema
                :output admin-invitation-input-schema}}}}})
 
 (def revoke-invitation
-  {:id ::revoke-invitation
-   :doc "Cancels a pending invitation so its code can no longer be used."
+  {:id           ::revoke-invitation
+   :doc          "Cancels a pending invitation so its code can no longer be used."
    :input-schema admin-invitation-input-schema
 
    :cells
@@ -92,9 +92,9 @@
     :revoke :member-invite/revoke!}
 
    :edges
-   {:start :check
-    :check {:revoke :revoke
-            :stale  :end}
+   {:start  :check
+    :check  {:revoke :revoke
+             :stale  :end}
     :revoke :end}
 
    :dispatches
@@ -105,8 +105,8 @@
    :transforms
    {:start
     {:output
-     {:fn identity
-      :schema {:input admin-invitation-input-schema
+     {:fn     identity
+      :schema {:input  admin-invitation-input-schema
                :output admin-invitation-input-schema}}}}})
 
 (def ^:private accept-or-recover-input-schema
@@ -276,13 +276,13 @@
   (myc/run-compiled accept-or-recover-wf resources input))
 
 (def default-acceptance-deps
-  {:now t/inst
+  {:now                t/inst
    :accept-or-recover! accept-or-recover!})
 
 (def ^:private outcome->reason
-  {:pending :acceptance-retry
-   :retry :acceptance-retry
-   :stale :code-expired
+  {:pending           :acceptance-retry
+   :retry             :acceptance-retry
+   :stale             :code-expired
    :operator-required :operator-required})
 
 (defn- accepted-member
@@ -302,12 +302,12 @@
    (setup-account! default-acceptance-deps req))
   ([deps {:keys [db datomic-conn] :as req}]
    (let [{:keys [now accept-or-recover!]} (merge default-acceptance-deps deps)
-         db (or db (d/db datomic-conn))
-         requested-at (now)
-         invite-code (or (get-in req [:params :invite-code])
-                         (get-in req [:params "invite-code"])
-                         (get-in req [:params :code])
-                         (get-in req [:params "code"]))
+         db                               (or db (d/db datomic-conn))
+         requested-at                     (now)
+         invite-code                      (or (get-in req [:params :invite-code])
+                                              (get-in req [:params "invite-code"])
+                                              (get-in req [:params :code])
+                                              (get-in req [:params "code"]))
          accepted-invitation
          (members.queries/accepted-invitation-by-code db invite-code)
          {:keys [member-id invite-generation]}
@@ -322,12 +322,12 @@
            (let [result
                  (accept-or-recover!
                   {:datomic-conn datomic-conn
-                   :clock now
-                   :keycloak (keycloak/kc-from-req req)}
-                  {:member/member-id member-id
+                   :clock        now
+                   :keycloak     (keycloak/kc-from-req req)}
+                  {:member/member-id                  member-id
                    :member-invite/resolved-generation invite-generation
-                   :member-invite/requested-at requested-at
-                   :keycloak/group-name keycloak/member-group-name})
+                   :member-invite/requested-at        requested-at
+                   :keycloak/group-name               keycloak/member-group-name})
                  outcome (:member-invite/result result)]
              (when (myc/error? result)
                (throw (ex-info "Member invitation acceptance workflow failed"

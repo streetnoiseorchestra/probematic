@@ -7,7 +7,7 @@
 
 (defn nop [_ _] "")
 
-(def custom-renderers {:plain  (partial md.transform/into-markup [:span])})
+(def custom-renderers {:plain (partial md.transform/into-markup [:span])})
 
 (def default-renderers (merge md.transform/default-hiccup-renderers
                               custom-renderers))

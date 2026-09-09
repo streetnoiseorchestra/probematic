@@ -36,12 +36,12 @@
                 [:label :string]]]]})
 
 (def ^:private account-menu-labels
-  {:footer [:i18n/tr :footer-tray-label]
-   :account [:i18n/tr :footer-tray-account]
-   :account-title [:i18n/tr :footer-tray-account-title]
+  {:footer           [:i18n/tr :footer-tray-label]
+   :account          [:i18n/tr :footer-tray-account]
+   :account-title    [:i18n/tr :footer-tray-account-title]
    :account-settings [:i18n/tr :footer-tray-account-settings]
-   :profile [:i18n/tr :footer-tray-profile]
-   :logout [:i18n/tr :footer-tray-logout]})
+   :profile          [:i18n/tr :footer-tray-profile]
+   :logout           [:i18n/tr :footer-tray-logout]})
 
 (def ^{:doc (uic/generate-docstring doc-footer-tray)} FooterTray
   (fn [attrs]
@@ -54,45 +54,45 @@
   {:slot "icon"})
 
 (defn- sheet-trigger-attrs [id]
-  {:aria-controls id
-   :aria-expanded "false"
-   :aria-haspopup "dialog"
-   :data-on:click (->expr
-                   (set! $footerTraySheet
-                         (if (=== $footerTraySheet ~id) "" ~id)))
+  {:aria-controls           id
+   :aria-expanded           "false"
+   :aria-haspopup           "dialog"
+   :data-on:click           (->expr
+                             (set! $footerTraySheet
+                                   (if (=== $footerTraySheet ~id) "" ~id)))
    :data-attr:aria-expanded (->expr
                              (if (=== $footerTraySheet ~id) "true" "false"))
-   :data-class:selected (->expr (=== $footerTraySheet ~id))})
+   :data-class:selected     (->expr (=== $footerTraySheet ~id))})
 
 (defn- menu-icon
   ([name]
    (menu-icon :snoico name))
   ([library name]
    [ico/Icon (merge {::ico/library library
-                     ::ico/name name}
+                     ::ico/name    name}
                     menu-icon-opts)]))
 
 (defn- account-menu [member labels]
   [:wa-dropdown {:placement "top-start"
-                 :distance 4
-                 :size "l"}
-   [button/Button {:slot "trigger"
-                   :class "tray-button account"
+                 :distance  4
+                 :size      "l"}
+   [button/Button {:slot       "trigger"
+                   :class      "tray-button account"
                    :appearance "plain"
                    :aria-label (:account labels)}
-    [avatar/Avatar {::avatar/member member
+    [avatar/Avatar {::avatar/member     member
                     ::avatar/image-size 40
-                    ::avatar/icon :user
-                    ::avatar/link? false
-                    :slot "start"}]
+                    ::avatar/icon       :user
+                    ::avatar/link?      false
+                    :slot               "start"}]
     [:span {:class "wa-visually-hidden"} (:account labels)]]
    [:header {:class "account-menu-header"}
     [:h2 {:class "wa-heading-l"} (:account-title labels)]]
-   [:wa-dropdown-item {:value (url/link-member member)
+   [:wa-dropdown-item {:value   (url/link-member member)
                        :onclick "window.location = this.value"}
     (menu-icon :user)
     (:profile labels)]
-   [:wa-dropdown-item {:value (url/link-account-settings)
+   [:wa-dropdown-item {:value   (url/link-account-settings)
                        :onclick "window.location = this.value"}
     (menu-icon :cog)
     (:account-settings labels)]
@@ -104,31 +104,31 @@
     (:logout labels)]])
 
 (defn- shortcut-button [{:keys [id label icon-library icon]}]
-  [button/Button (merge {:class "tray-button"
+  [button/Button (merge {:class      "tray-button"
                          :appearance "plain"
                          :aria-label label}
                         (sheet-trigger-attrs id))
    [ico/Icon {::ico/library (or icon-library :snoico)
-              ::ico/name icon}]
+              ::ico/name    icon}]
    [:span {:class "shortcut-label"} label]])
 
 (defn- ping-button [{:keys [id label]}]
-  [button/Button (merge {:class "tray-button ping"
+  [button/Button (merge {:class      "tray-button ping"
                          :appearance "plain"
                          :aria-label label}
                         (sheet-trigger-attrs id))
-   [:span {:slot "start"
-           :class "ping-mark"
+   [:span {:slot        "start"
+           :class       "ping-mark"
            :aria-hidden "true"}]
    [:span {:class "wa-visually-hidden"} label]])
 
 (defmethod c/resolve-alias ::footer-tray
   [_ attrs _children]
-  (let [attrs (or attrs {})
-        _ (uic/validate-opts! doc-footer-tray attrs)
-        member (::member attrs)
-        labels (::account-menu-labels attrs)
-        shortcuts (::shortcuts attrs)
+  (let [attrs        (or attrs {})
+        _            (uic/validate-opts! doc-footer-tray attrs)
+        member       (::member attrs)
+        labels       (::account-menu-labels attrs)
+        shortcuts    (::shortcuts attrs)
         notification (::notification attrs)
         footer-attrs (-> (apply dissoc attrs consumed-props)
                          (uic/merge-attrs :class "footer-tray"

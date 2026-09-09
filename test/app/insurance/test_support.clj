@@ -66,11 +66,11 @@
 (defn survey-tx
   [{:keys [member-id policy-id closed-at]}]
   (cond->
-   {:insurance.survey/survey-id (random-uuid)
+   {:insurance.survey/survey-id  (random-uuid)
     :insurance.survey/created-at created-at
-    :insurance.survey/closes-at closes-at
-    :insurance.survey/responses [{:insurance.survey.response/response-id (random-uuid)
-                                  :insurance.survey.response/member      [:member/member-id member-id]}]}
+    :insurance.survey/closes-at  closes-at
+    :insurance.survey/responses  [{:insurance.survey.response/response-id (random-uuid)
+                                   :insurance.survey.response/member      [:member/member-id member-id]}]}
     policy-id (assoc :insurance.survey/policy [:insurance.policy/policy-id policy-id])
     closed-at (assoc :insurance.survey/closed-at closed-at)))
 
@@ -85,7 +85,7 @@
         response-id (random-uuid)
         report-ids  (mapv (fn [_] (random-uuid)) coverage-ids)
         report-refs (mapv (fn [idx report-id coverage-id]
-                            (cond-> {:db/id                              (str "survey-report-" idx)
+                            (cond-> {:db/id                             (str "survey-report-" idx)
                                      :insurance.survey.report/report-id report-id
                                      :insurance.survey.report/coverage  [:instrument.coverage/coverage-id coverage-id]}
                               (< idx (or completed-report-count 0))
@@ -93,10 +93,10 @@
                           (range)
                           report-ids
                           coverage-ids)
-        response    (cond-> {:db/id                                         "survey-response"
-                             :insurance.survey.response/response-id          response-id
-                             :insurance.survey.response/member               [:member/member-id member-id]
-                             :insurance.survey.response/coverage-reports     (mapv :db/id report-refs)}
+        response    (cond-> {:db/id                                      "survey-response"
+                             :insurance.survey.response/response-id      response-id
+                             :insurance.survey.response/member           [:member/member-id member-id]
+                             :insurance.survey.response/coverage-reports (mapv :db/id report-refs)}
                       response-completed-at
                       (assoc :insurance.survey.response/completed-at response-completed-at))
         survey      (cond-> {:insurance.survey/survey-id  survey-id
@@ -130,10 +130,10 @@
         :member/name      "Grace"
         :member/email     "grace@example.test"
         :member/active?   true}
-       {:db/id                         "category"
+       {:db/id                           "category"
         :instrument.category/category-id category-id
-        :instrument.category/name      "Brass"
-        :instrument.category/code      "brass"}
+        :instrument.category/name        "Brass"
+        :instrument.category/code        "brass"}
        {:db/id                                  "base-coverage"
         :insurance.coverage.type/type-id        coverage-type-id
         :insurance.coverage.type/name           "Basic"

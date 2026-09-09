@@ -21,10 +21,10 @@ So here we provide functions to store the content and generate datoms for use in
   If the tx-data is not transacted, then the content might be garbage collected at some point."
     [{:keys [filestore] :as sys} file-name file-source mime-type]
     (let [file-block (filestore/put! filestore file-source)
-          tempid (d/tempid)
-          txs (domain/txs-new-file tempid file-name mime-type file-block)]
+          tempid     (d/tempid)
+          txs        (domain/txs-new-file tempid file-name mime-type file-block)]
       {:file-tempid tempid
-       :tx-data txs}))
+       :tx-data     txs}))
 
 (defn fix-mime-type [reported-mime actual-mime]
   (if (and (= reported-mime "application/octet-stream") (some? actual-mime))
@@ -32,7 +32,7 @@ So here we provide functions to store the content and generate datoms for use in
     (if (not= reported-mime actual-mime)
       (throw (ex-info
               "Seems like you are uploading a file whose content does not match the extension."
-              {:expected-mime-type reported-mime  :actual-mime-type actual-mime}))
+              {:expected-mime-type reported-mime :actual-mime-type actual-mime}))
       actual-mime)))
 
 (defn store-image!
@@ -46,15 +46,15 @@ So here we provide functions to store the content and generate datoms for use in
   (assert mime-type "mime-type required")
   (assert file "file required")
   (let [{:keys [size hash width height] :as prepared actual-mime-type :mime-type} (filestore/prepare-image! file)
-        image-tempid (d/tempid)
-        file-tempid (d/tempid)
-        file-txs (domain/txs-new-file file-tempid file-name (fix-mime-type mime-type actual-mime-type) size hash)
-        image-txs (domain/txs-new-image image-tempid file-tempid width height)]
+        image-tempid                                                              (d/tempid)
+        file-tempid                                                               (d/tempid)
+        file-txs                                                                  (domain/txs-new-file file-tempid file-name (fix-mime-type mime-type actual-mime-type) size hash)
+        image-txs                                                                 (domain/txs-new-image image-tempid file-tempid width height)]
 
     (filestore/put! filestore prepared)
     {:image-tempid image-tempid
-     :file-tempid file-tempid
-     :tx-data (concat file-txs image-txs)}))
+     :file-tempid  file-tempid
+     :tx-data      (concat file-txs image-txs)}))
 
 (def avatar-rendition-sizes [40 80 160 320])
 
@@ -63,26 +63,26 @@ So here we provide functions to store the content and generate datoms for use in
 (defn- store-avatar-rendition!
   [{:keys [filestore file file-name image-id parent-image]} avatar-size]
   (let [filter-spec {:thumbnail-mode :avatar-square
-                     :width avatar-size
-                     :height avatar-size
-                     :format :webp
-                     :quality 85}
-        result (img/process-avatar-square
-                {:input {:path file}
-                 :size avatar-size
-                 :format :webp
-                 :quality 85})]
+                     :width          avatar-size
+                     :height         avatar-size
+                     :format         :webp
+                     :quality        85}
+        result      (img/process-avatar-square
+                     {:input   {:path file}
+                      :size    avatar-size
+                      :format  :webp
+                      :quality 85})]
     (try
-      (let [{rendition-size :size
-             rendition-hash :hash
-             rendition-width :width
+      (let [{rendition-size   :size
+             rendition-hash   :hash
+             rendition-width  :width
              rendition-height :height
-             rendition-mime :mime-type
-             :as prepared}
+             rendition-mime   :mime-type
+             :as              prepared}
             (filestore/prepare-image! (:out-file result))
-            rendition-tempid (d/tempid)
-            rendition-file-tempid (d/tempid)
-            rendition-id (sq/generate-squuid)
+            rendition-tempid             (d/tempid)
+            rendition-file-tempid        (d/tempid)
+            rendition-id                 (sq/generate-squuid)
             rendition-filename
             (build-rendition-filename
              {:image/image-id image-id
@@ -105,11 +105,11 @@ So here we provide functions to store the content and generate datoms for use in
                                       rendition-height
                                       filter-spec)]
         (filestore/put-sync! filestore prepared)
-        {:rendition {:size avatar-size
-                     :image-id rendition-id
-                     :hash rendition-hash
+        {:rendition {:size      avatar-size
+                     :image-id  rendition-id
+                     :hash      rendition-hash
                      :mime-type rendition-mime}
-         :tx-data (into [] (concat file-txs rendition-txs))})
+         :tx-data   (into [] (concat file-txs rendition-txs))})
       (finally
         (bfs/delete-if-exists (:out-file result))))))
 
@@ -132,54 +132,54 @@ So here we provide functions to store the content and generate datoms for use in
   (assert file-name "file-name required")
   (assert mime-type "mime-type required")
   (assert file "file required")
-  (let [{original-size :size
-         original-hash :hash
-         width :width
-         height :height
+  (let [{original-size    :size
+         original-hash    :hash
+         width            :width
+         height           :height
          actual-mime-type :mime-type
-         :as original}
+         :as              original}
         (filestore/prepare-image! file)
-        image-tempid (d/tempid)
-        file-tempid (d/tempid)
-        image-id (sq/generate-squuid)
+        image-tempid                 (d/tempid)
+        file-tempid                  (d/tempid)
+        image-id                     (sq/generate-squuid)
         original-file-txs
         (domain/txs-new-file file-tempid
                              file-name
                              (fix-mime-type mime-type actual-mime-type)
                              original-size
                              original-hash)
-        image-txs [{:db/id image-tempid
-                    :image/image-id image-id
-                    :image/source-file file-tempid
-                    :image/width width
-                    :image/height height}]
-        parent-image {:db/id image-tempid
-                      :image/image-id image-id}]
+        image-txs                    [{:db/id             image-tempid
+                                       :image/image-id    image-id
+                                       :image/source-file file-tempid
+                                       :image/width       width
+                                       :image/height      height}]
+        parent-image                 {:db/id          image-tempid
+                                      :image/image-id image-id}]
     (filestore/put-sync! filestore original)
     (let [rendition-results
           (mapv #(store-avatar-rendition!
-                  {:filestore filestore
-                   :file file
-                   :file-name file-name
-                   :image-id image-id
+                  {:filestore    filestore
+                   :file         file
+                   :file-name    file-name
+                   :image-id     image-id
                    :parent-image parent-image}
                   %)
                 avatar-rendition-sizes)]
-      {:image-id image-id
+      {:image-id     image-id
        :image-tempid image-tempid
-       :file-tempid file-tempid
-       :renditions (mapv :rendition rendition-results)
-       :tx-data (into (vec (concat original-file-txs image-txs))
-                      (mapcat :tx-data rendition-results))})))
+       :file-tempid  file-tempid
+       :renditions   (mapv :rendition rendition-results)
+       :tx-data      (into (vec (concat original-file-txs image-txs))
+                           (mapcat :tx-data rendition-results))})))
 
 (defn -load-image
   [filestore {:image/keys [source-file]}]
   (let [{:filestore.file/keys [size hash mime-type file-name mtime]} source-file]
-    {:mime-type mime-type
-     :file-name file-name
-     :etag hash
+    {:mime-type     mime-type
+     :file-name     file-name
+     :etag          hash
      :last-modified mtime
-     :size size
+     :size          size
      :content-thunk (fn [] (filestore/load-as-stream filestore hash))}))
 
 (defn load-image
@@ -191,7 +191,7 @@ So here we provide functions to store the content and generate datoms for use in
     (-load-image filestore image)))
 
 (defn build-rendition-filename [{:image/keys [source-file image-id]} {:keys [width height thumbnail-mode]} ext]
-  (let [base (or (some-> (:filestore.file/file-name source-file) bfs/strip-ext str) image-id)
+  (let [base   (or (some-> (:filestore.file/file-name source-file) bfs/strip-ext str) image-id)
         suffix (format "-%s-%dx%d" (name thumbnail-mode) width height)]
     (str base suffix ext)))
 
@@ -200,14 +200,14 @@ So here we provide functions to store the content and generate datoms for use in
   (let [rendition-tempid                              (d/tempid)
         rendition-file-tempid                         (d/tempid)
         {:keys [out-file ext mime-type]}              (img/process-thumbnail (assoc filter-spec :input (-load-image filestore parent-image)))
-        _ (assert mime-type "mime-type required")
+        _                                             (assert mime-type "mime-type required")
         rendition-filename                            (build-rendition-filename parent-image filter-spec ext)
         {:keys [size hash width height] :as prepared} (filestore/prepare-image! out-file)
         file-txs                                      (domain/txs-new-file rendition-file-tempid rendition-filename mime-type size hash)
-        rendition-id (sq/generate-squuid)
+        rendition-id                                  (sq/generate-squuid)
         rendition-txs                                 (domain/txs-new-rendition rendition-id rendition-tempid rendition-file-tempid parent-image width height filter-spec)
         txs                                           (concat file-txs rendition-txs)
-        {:keys [db-after]} (datomic/transact datomic-conn {:tx-data txs})]
+        {:keys [db-after]}                            (datomic/transact datomic-conn {:tx-data txs})]
     (filestore/put-sync! filestore prepared)
     (bfs/delete-if-exists out-file)
     (q/retrieve-image db-after rendition-id)))
@@ -216,9 +216,9 @@ So here we provide functions to store the content and generate datoms for use in
   "Load the rendition matching the filter spec for the image, will create the rendition on-the-fly if it doesn't exist yet."
   [{:keys [db filestore] :as req} image-id filter-spec]
   (let [filter-spec-encoded (domain/encode-filter-spec filter-spec)
-        image-id (util/ensure-uuid! image-id)
-        renditions (q/retrieve-renditions-for db image-id filter-spec-encoded)
-        rendition (first renditions)]
+        image-id            (util/ensure-uuid! image-id)
+        renditions          (q/retrieve-renditions-for db image-id filter-spec-encoded)
+        rendition           (first renditions)]
     (if rendition
       (load-image req (:image/image-id rendition))
       (let [rendition (create-rendition! req (q/retrieve-image db image-id) filter-spec)]

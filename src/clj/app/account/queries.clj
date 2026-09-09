@@ -5,36 +5,36 @@
    [tick.core :as t]))
 
 (def default-preferences
-  {:time-zone "Europe/Berlin"
-   :week-start "monday"
+  {:time-zone   "Europe/Berlin"
+   :week-start  "monday"
    :time-format "24-hour"
-   :_error {}
-   :_saved? false})
+   :_error      {}
+   :_saved?     false})
 
 (def default-notifications
-  {:enabled? true
-   :what "everything"
-   :reminders {:attendance? true
-               :polls? true}
-   :delivery {:email? true
-              :browser? false
-              :browser-capable? nil
-              :browser-permission "default"}
+  {:enabled?     true
+   :what         "everything"
+   :reminders    {:attendance? true
+                  :polls?      true}
+   :delivery     {:email?             true
+                  :browser?           false
+                  :browser-capable?   nil
+                  :browser-permission "default"}
    :unread-style "numbered"
-   :when "right-away"
-   :batch-time "08:00"
-   :_error {}
-   :_saved? false})
+   :when         "right-away"
+   :batch-time   "08:00"
+   :_error       {}
+   :_saved?      false})
 
 (def default-break
-  {:active false
+  {:active       false
    :start-choice "now"
-   :start-date ""
-   :end-date ""
-   :time-zone "Europe/Berlin"
-   :status "available"
-   :_error {}
-   :_saved? false})
+   :start-date   ""
+   :end-date     ""
+   :time-zone    "Europe/Berlin"
+   :status       "available"
+   :_error       {}
+   :_saved?      false})
 
 (defn profile-page-state [db member-id page-state]
   (let [member (queries/retrieve-member db member-id)]
@@ -66,16 +66,16 @@
     nil))
 
 (defn preferences-page-state [db member-id page-state]
-  (let [member (queries/retrieve-member db member-id)
-        timezone (:member/timezone member)
-        persisted {:time-zone (or timezone (:time-zone default-preferences))
-                   :week-start (or (enum-name member :member/week-start)
-                                   (:week-start default-preferences))
-                   :time-format (or (clock-format-name member)
-                                    (:time-format default-preferences))
+  (let [member    (queries/retrieve-member db member-id)
+        timezone  (:member/timezone member)
+        persisted {:time-zone            (or timezone (:time-zone default-preferences))
+                   :week-start           (or (enum-name member :member/week-start)
+                                             (:week-start default-preferences))
+                   :time-format          (or (clock-format-name member)
+                                             (:time-format default-preferences))
                    :time-zone-persisted? (boolean timezone)
-                   :_error {}
-                   :_saved? false}]
+                   :_error               {}
+                   :_saved?              false}]
     (merge persisted (:account-preferences page-state))))
 
 (defn- merge-notifications [persisted transient]
@@ -90,12 +90,12 @@
         persisted
         (if-not persisted?
           default-notifications
-          {:enabled? (attribute-or-default
-                      member
-                      :member.notify/enabled?
-                      (:enabled? default-notifications))
-           :what (or (enum-name member :member.notify/scope)
-                     (:what default-notifications))
+          {:enabled?   (attribute-or-default
+                        member
+                        :member.notify/enabled?
+                        (:enabled? default-notifications))
+           :what       (or (enum-name member :member.notify/scope)
+                           (:what default-notifications))
            :reminders
            {:attendance?
             (attribute-or-default
@@ -118,17 +118,17 @@
              member
              :member.notify/browser?
              (get-in default-notifications [:delivery :browser?]))
-            :browser-capable? nil
+            :browser-capable?   nil
             :browser-permission "default"}
            :unread-style
            (or (enum-name member :member.notify/unread-style)
                (:unread-style default-notifications))
-           :when (or (enum-name member :member.notify/schedule)
-                     (:when default-notifications))
+           :when       (or (enum-name member :member.notify/schedule)
+                           (:when default-notifications))
            :batch-time (or (:member.notify/batch-time member)
                            (:batch-time default-notifications))
-           :_error {}
-           :_saved? false})]
+           :_error     {}
+           :_saved?    false})]
     (merge-notifications persisted (:account-notifications page-state))))
 
 (defn- ->instant [value]
@@ -148,7 +148,7 @@
 
 (defn- break-status [today start-date end-date]
   (let [start (parse-date start-date)
-        end (parse-date end-date)]
+        end   (parse-date end-date)]
     (cond
       (nil? start) "available"
       (and end (t/< end today)) "ended"
@@ -159,22 +159,22 @@
   ([db member-id page-state]
    (break-page-state db member-id page-state (t/instant)))
   ([db member-id page-state now]
-   (let [member (queries/retrieve-member db member-id)
-         timezone (or (:member/timezone member) (:time-zone default-break))
-         today (today now timezone)
+   (let [member     (queries/retrieve-member db member-id)
+         timezone   (or (:member/timezone member) (:time-zone default-break))
+         today      (today now timezone)
          start-date (or (:member.break/start-date member) "")
-         end-date (or (:member.break/end-date member) "")
-         persisted {:active (boolean (seq start-date))
-                    :start-choice (if (or (empty? start-date)
-                                          (= start-date (str today)))
-                                    "now"
-                                    "date")
-                    :start-date start-date
-                    :end-date end-date
-                    :time-zone timezone
-                    :status (break-status today start-date end-date)
-                    :_error {}
-                    :_saved? false}]
+         end-date   (or (:member.break/end-date member) "")
+         persisted  {:active       (boolean (seq start-date))
+                     :start-choice (if (or (empty? start-date)
+                                           (= start-date (str today)))
+                                     "now"
+                                     "date")
+                     :start-date   start-date
+                     :end-date     end-date
+                     :time-zone    timezone
+                     :status       (break-status today start-date end-date)
+                     :_error       {}
+                     :_saved?      false}]
      (merge persisted (:account-break page-state)))))
 
 (defn time-zone-options

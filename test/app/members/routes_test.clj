@@ -7,21 +7,21 @@
    [datomic.api :as d]))
 
 (defn seed-vcard-member! [conn member-id]
-  @(d/transact conn [{:db/id "section"
-                      :section/name "Trumpets"
-                      :section/active? true
+  @(d/transact conn [{:db/id            "section"
+                      :section/name     "Trumpets"
+                      :section/active?  true
                       :section/position 1}
                      {:member/member-id member-id
-                      :member/name "Casey Example"
-                      :member/nick "casey"
-                      :member/email "casey@example.com"
-                      :member/phone "+43677123456"
-                      :member/section "section"}]))
+                      :member/name      "Casey Example"
+                      :member/nick      "casey"
+                      :member/email     "casey@example.com"
+                      :member/phone     "+43677123456"
+                      :member/section   "section"}]))
 
 (deftest member-vcard-returns-vcard-download-response
   (let [{:keys [conn member-id]} (tc/new-system "member-vcard")]
     (seed-vcard-member! conn member-id)
-    (let [response (routes/member-vcard {:db (d/db conn)
+    (let [response (routes/member-vcard {:db          (d/db conn)
                                          :path-params {:member-id (str member-id)}})]
       (is (= 200 (:status response)))
       (is (= "text/x-vcard" (get-in response [:headers "Content-Type"])))

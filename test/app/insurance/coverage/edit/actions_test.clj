@@ -40,20 +40,20 @@
 
 (defn seed-coverage!
   [conn {:keys [policy-status coverage-status coverage-change private? coverage-type-tempids]
-         :or   {policy-status        :insurance.policy.status/draft
-                coverage-status      :instrument.coverage.status/reviewed
-                coverage-change      :instrument.coverage.change/none
-                private?             true
+         :or   {policy-status         :insurance.policy.status/draft
+                coverage-status       :instrument.coverage.status/reviewed
+                coverage-change       :instrument.coverage.change/none
+                private?              true
                 coverage-type-tempids ["base-type"]}}]
-  (let [owner-id      (random-uuid)
-        alt-owner-id  (random-uuid)
-        category-id   (random-uuid)
+  (let [owner-id        (random-uuid)
+        alt-owner-id    (random-uuid)
+        category-id     (random-uuid)
         alt-category-id (random-uuid)
-        instrument-id (random-uuid)
-        coverage-id   (random-uuid)
-        policy-id     (random-uuid)
-        base-type-id  (random-uuid)
-        extra-type-id (random-uuid)]
+        instrument-id   (random-uuid)
+        coverage-id     (random-uuid)
+        policy-id       (random-uuid)
+        base-type-id    (random-uuid)
+        extra-type-id   (random-uuid)]
     @(d/transact
       conn
       [{:db/id            "owner"
@@ -64,14 +64,14 @@
         :member/member-id alt-owner-id
         :member/name      "Other Owner"
         :member/active?   true}
-       {:db/id                         "category"
+       {:db/id                           "category"
         :instrument.category/category-id category-id
-        :instrument.category/name      "Brass"
-        :instrument.category/code      "1"}
-       {:db/id                         "alt-category"
+        :instrument.category/name        "Brass"
+        :instrument.category/code        "1"}
+       {:db/id                           "alt-category"
         :instrument.category/category-id alt-category-id
-        :instrument.category/name      "Woodwind"
-        :instrument.category/code      "2"}
+        :instrument.category/name        "Woodwind"
+        :instrument.category/code        "2"}
        {:db/id                                  "base-type"
         :insurance.coverage.type/type-id        base-type-id
         :insurance.coverage.type/name           "Basic"
@@ -128,22 +128,22 @@
                       :team/members   [[:member/member-id member-id]]}]))
 
 (defn signals-for [{:keys [owner-id category-id instrument-id coverage-id policy-id base-type-id extra-type-id]}]
-  {:coverage-edit {:policy-id        (str policy-id)
-                   :coverage-id      (str coverage-id)
-                   :instrument-id    (str instrument-id)
-                   :instrument-name  "New Trumpet"
-                   :owner-member-id  (str owner-id)
-                   :category-id      (str category-id)
-                   :make             "Yamaha"
-                   :model            "YTR"
-                   :serial-number    "SN-2"
-                   :build-year       "1999"
-                   :description      "Updated description"
-                   :item-count       "2"
-                   :value            "1200"
-                   :private-band     "private"
-                   :coverage-types   [(str base-type-id) (str extra-type-id)]
-                   :insurer-id       "107641"}})
+  {:coverage-edit {:policy-id       (str policy-id)
+                   :coverage-id     (str coverage-id)
+                   :instrument-id   (str instrument-id)
+                   :instrument-name "New Trumpet"
+                   :owner-member-id (str owner-id)
+                   :category-id     (str category-id)
+                   :make            "Yamaha"
+                   :model           "YTR"
+                   :serial-number   "SN-2"
+                   :build-year      "1999"
+                   :description     "Updated description"
+                   :item-count      "2"
+                   :value           "1200"
+                   :private-band    "private"
+                   :coverage-types  [(str base-type-id) (str extra-type-id)]
+                   :insurer-id      "107641"}})
 
 (defn transact-effect [effects]
   (first (filter #(= :db/transact (first %)) effects)))
@@ -187,9 +187,9 @@
                      (mapv (fn [type-id]
                              {:insurance.coverage.type/type-id type-id})
                            initial-type-ids)
-                     :instrument.coverage/private? true
-                     :instrument.coverage/value 100M
-                     :instrument.coverage/item-count 1
+                     :instrument.coverage/private?    true
+                     :instrument.coverage/value       100M
+                     :instrument.coverage/item-count  1
                      :instrument.coverage/status
                      :instrument.coverage.status/reviewed
                      :instrument.coverage/change
@@ -222,8 +222,8 @@
 (deftest update-instrument-coverage-action-test
   (testing "a valid update returns one transaction and redirects to the coverage detail page"
     (let [{:keys [conn member-id] :as system} (new-system)
-          fixture (seed-coverage! conn {})
-          effects (actions/update-instrument-coverage-action (state-for system) (signals-for fixture))]
+          fixture                             (seed-coverage! conn {})
+          effects                             (actions/update-instrument-coverage-action (state-for system) (signals-for fixture))]
       (is (= {:transact-effects 1
               :redirects        [[:app.datastar.sse/redirect (urls/link-coverage (:coverage-id fixture))]]
               :clear-loading?   true
@@ -236,22 +236,22 @@
 
   (testing "the update transaction includes instrument and coverage fields"
     (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {})
-          effects (actions/update-instrument-coverage-action (state-for system) (signals-for fixture))]
-      (is (= {:instrument {:instrument/instrument-id (:instrument-id fixture)
-                           :instrument/name          "New Trumpet"
-                           :instrument/owner         [:member/member-id (:owner-id fixture)]
-                           :instrument/category      [:instrument.category/category-id (:category-id fixture)]
-                           :instrument/make          "Yamaha"
-                           :instrument/model         "YTR"
-                           :instrument/serial-number "SN-2"
-                           :instrument/build-year    "1999"
-                           :instrument/description   "Updated description"}
+          fixture                   (seed-coverage! conn {})
+          effects                   (actions/update-instrument-coverage-action (state-for system) (signals-for fixture))]
+      (is (= {:instrument   {:instrument/instrument-id (:instrument-id fixture)
+                             :instrument/name          "New Trumpet"
+                             :instrument/owner         [:member/member-id (:owner-id fixture)]
+                             :instrument/category      [:instrument.category/category-id (:category-id fixture)]
+                             :instrument/make          "Yamaha"
+                             :instrument/model         "YTR"
+                             :instrument/serial-number "SN-2"
+                             :instrument/build-year    "1999"
+                             :instrument/description   "Updated description"}
               :coverage-txs #{[:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)] :instrument.coverage/value 1200M]
                               [:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)] :instrument.coverage/item-count 2]
                               [:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)] :instrument.coverage/private? true]
                               [:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)] :instrument.coverage/insurer-id "107641"]}}
-             {:instrument (first (filter :instrument/instrument-id (tx-data effects)))
+             {:instrument   (first (filter :instrument/instrument-id (tx-data effects)))
               :coverage-txs (set (filter #(and (vector? %)
                                                (= [:instrument.coverage/coverage-id (:coverage-id fixture)] (second %))
                                                (#{:instrument.coverage/value
@@ -261,26 +261,26 @@
                                          (tx-data effects)))}))))
 
   (testing "upstream-visible changes mark existing coverage as needing review and changed"
-    (let [cases [{:label "owner" :change-fn (fn [signals fixture]
-                                              (assoc-in signals [:coverage-edit :owner-member-id] (str (:alt-owner-id fixture))))}
-                 {:label "category" :change-fn (fn [signals fixture]
-                                                 (assoc-in signals [:coverage-edit :category-id] (str (:alt-category-id fixture))))}
-                 {:label "value" :change-fn (fn [signals _fixture]
-                                              (assoc-in signals [:coverage-edit :value] "1300"))}
-                 {:label "item count" :change-fn (fn [signals _fixture]
-                                                   (assoc-in signals [:coverage-edit :item-count] "3"))}
-                 {:label "private-band" :change-fn (fn [signals _fixture]
-                                                     (assoc-in signals [:coverage-edit :private-band] "band"))}
-                 {:label "coverage types" :change-fn (fn [signals fixture]
-                                                       (assoc-in signals [:coverage-edit :coverage-types] [(str (:base-type-id fixture))]))}]
+    (let [cases   [{:label "owner" :change-fn (fn [signals fixture]
+                                                (assoc-in signals [:coverage-edit :owner-member-id] (str (:alt-owner-id fixture))))}
+                   {:label "category" :change-fn (fn [signals fixture]
+                                                   (assoc-in signals [:coverage-edit :category-id] (str (:alt-category-id fixture))))}
+                   {:label "value" :change-fn (fn [signals _fixture]
+                                                (assoc-in signals [:coverage-edit :value] "1300"))}
+                   {:label "item count" :change-fn (fn [signals _fixture]
+                                                     (assoc-in signals [:coverage-edit :item-count] "3"))}
+                   {:label "private-band" :change-fn (fn [signals _fixture]
+                                                       (assoc-in signals [:coverage-edit :private-band] "band"))}
+                   {:label "coverage types" :change-fn (fn [signals fixture]
+                                                         (assoc-in signals [:coverage-edit :coverage-types] [(str (:base-type-id fixture))]))}]
           results (mapv (fn [{:keys [label change-fn]}]
                           (let [{:keys [conn] :as system} (new-system)
-                                fixture (seed-coverage! conn {:coverage-type-tempids ["base-type" "extra-type"]})
-                                signals (change-fn (signals-for fixture) fixture)
-                                effects (actions/update-instrument-coverage-action
-                                         (state-for system)
-                                         signals)]
-                            {:label label
+                                fixture                   (seed-coverage! conn {:coverage-type-tempids ["base-type" "extra-type"]})
+                                signals                   (change-fn (signals-for fixture) fixture)
+                                effects                   (actions/update-instrument-coverage-action
+                                                           (state-for system)
+                                                           signals)]
+                            {:label   label
                              :status? (contains? (tx-set effects)
                                                  [:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)]
                                                   :instrument.coverage/status
@@ -296,10 +296,10 @@
 
   (testing "coverage that is already new keeps the new change marker"
     (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {:coverage-change :instrument.coverage.change/new})
-          effects (actions/update-instrument-coverage-action
-                   (state-for system)
-                   (assoc-in (signals-for fixture) [:coverage-edit :value] "1300"))]
+          fixture                   (seed-coverage! conn {:coverage-change :instrument.coverage.change/new})
+          effects                   (actions/update-instrument-coverage-action
+                                     (state-for system)
+                                     (assoc-in (signals-for fixture) [:coverage-edit :value] "1300"))]
       (is (= #{[:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)]
                 :instrument.coverage/status
                 :instrument.coverage.status/needs-review]
@@ -313,10 +313,10 @@
 
   (testing "band instruments receive all policy coverage types"
     (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {:coverage-type-tempids ["base-type"]})
-          effects (actions/update-instrument-coverage-action
-                   (state-for system)
-                   (assoc-in (signals-for fixture) [:coverage-edit :private-band] "band"))]
+          fixture                   (seed-coverage! conn {:coverage-type-tempids ["base-type"]})
+          effects                   (actions/update-instrument-coverage-action
+                                     (state-for system)
+                                     (assoc-in (signals-for fixture) [:coverage-edit :private-band] "band"))]
       (is (contains? (tx-set effects)
                      [:db/add [:instrument.coverage/coverage-id (:coverage-id fixture)]
                       :instrument.coverage/types
@@ -324,8 +324,8 @@
 
   (testing "non-draft policies return a top-level form error and no transaction"
     (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {:policy-status :insurance.policy.status/active})
-          effects (actions/update-instrument-coverage-action (state-for system) (signals-for fixture))]
+          fixture                   (seed-coverage! conn {:policy-status :insurance.policy.status/active})
+          effects                   (actions/update-instrument-coverage-action (state-for system) (signals-for fixture))]
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:coverage-edit]
@@ -335,11 +335,11 @@
 
   (testing "validation errors are stored under coverage-edit and do not transact"
     (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {})
-          signals (-> (signals-for fixture)
-                      (assoc-in [:coverage-edit :instrument-name] "")
-                      (assoc-in [:coverage-edit :value] "0"))
-          effects (actions/update-instrument-coverage-action (state-for system) signals)]
+          fixture                   (seed-coverage! conn {})
+          signals                   (-> (signals-for fixture)
+                                        (assoc-in [:coverage-edit :instrument-name] "")
+                                        (assoc-in [:coverage-edit :value] "0"))
+          effects                   (actions/update-instrument-coverage-action (state-for system) signals)]
       (is (= {:transact? false
               :errors    {:instrument-name {:error "Instrument Name is required."}
                           :value           {:error "Value must be a whole number greater than zero."}
@@ -349,10 +349,10 @@
 
   (testing "validate-coverage-field-action validates one representative field"
     (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {})
-          signals (-> (signals-for fixture)
-                      (assoc-in [:coverage-edit :instrument-name] "")
-                      (assoc-in [:coverage-edit :validate-field] "instrument-name"))]
+          fixture                   (seed-coverage! conn {})
+          signals                   (-> (signals-for fixture)
+                                        (assoc-in [:coverage-edit :instrument-name] "")
+                                        (assoc-in [:coverage-edit :validate-field] "instrument-name"))]
       (is (= [[:app.datastar/merge-state [:coverage-edit]
                (dissoc (:coverage-edit signals) :validate-field)]
               [:app.datastar/assoc-state
@@ -391,7 +391,7 @@
                           :selected [optional-a-id]
                           :expected #{required-a-id required-b-id optional-a-id}}]]
       (doseq [{:keys [label orders initial selected expected]} cases
-              policy-types orders]
+              policy-types                                     orders]
         (is (= expected
                (edited-private-coverage-type-ids
                 policy-types
@@ -403,25 +403,25 @@
 (deftest delete-instrument-coverage-action-test
   (testing "delete returns no transaction for a non-insurance-team member"
     (let [{:keys [conn] :as system} (new-system)
-          fixture (seed-coverage! conn {})
-          effects (actions/delete-instrument-coverage-action
-                   (state-for system)
-                   {:targetid (str (:coverage-id fixture))})]
-      (is (= {:transact? false
+          fixture                   (seed-coverage! conn {})
+          effects                   (actions/delete-instrument-coverage-action
+                                     (state-for system)
+                                     {:targetid (str (:coverage-id fixture))})]
+      (is (= {:transact?      false
               :clear-loading? true}
              {:transact?      (boolean (transact-effect effects))
               :clear-loading? (clear-loading? effects)}))))
 
   (testing "delete returns a retract transaction and policy redirect for an insurance-team member"
     (let [{:keys [conn member-id] :as system} (new-system)
-          fixture (seed-coverage! conn {})]
+          fixture                             (seed-coverage! conn {})]
       (seed-insurance-team-member! conn member-id)
       (let [effects (actions/delete-instrument-coverage-action
                      (state-for system)
                      {:targetid (str (:coverage-id fixture))})]
-        (is (= {:tx-data [[[:db/retractEntity [:instrument.coverage/coverage-id (:coverage-id fixture)]]
-                           [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-                          {}]
+        (is (= {:tx-data   [[[:db/retractEntity [:instrument.coverage/coverage-id (:coverage-id fixture)]]
+                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+                            {}]
                 :redirects [[:app.datastar.sse/redirect (urls/link-policy (:policy-id fixture))]]}
                {:tx-data   (rest (transact-effect effects))
                 :redirects (redirects effects)}))))))

@@ -16,9 +16,9 @@
    [reitit.core :as r]))
 
 (def translations
-  {[:statistics/attendance-rate] "Attendance Rate (%)"
-   [:statistics/gig-attendance]  "Gig Attendance"
-   [:statistics/num-members]     "Members"
+  {[:statistics/attendance-rate]  "Attendance Rate (%)"
+   [:statistics/gig-attendance]   "Gig Attendance"
+   [:statistics/num-members]      "Members"
    [:statistics/probe-attendance] "Probe Attendance"})
 
 (defn tr
@@ -40,12 +40,12 @@
 
 (deftest cards-use-native-card-chassis
   (let [summary       (#'views/summary-card {})
-        chart-section (views/charts-section {:tr tr} {:gig-histogram []
+        chart-section (views/charts-section {:tr tr} {:gig-histogram   []
                                                       :probe-histogram []})
         chart         (nth chart-section 2)]
     (is (= [{:tag card/Card :class "stats-summary-card"}
             {:tag card/Card :class "stats-chart-card" :header-slot "header"}]
-           [{:tag (first summary)
+           [{:tag   (first summary)
              :class (:class (l/attrs summary))}
             {:tag         (first chart)
              :class       (:class (l/attrs chart))
@@ -97,7 +97,7 @@
 (deftest statistics-page-surface
   (testing "Statistics uses a standard read-only workspace and keeps timespan filters in its content."
     (let [{:keys [conn]} (tc/new-system "statistics-page-surface")
-          view           (views/page {::r/router       (r/router ["/act" {:name :app.routes.datastar/act}])
+          view           (views/page {::r/router      (r/router ["/act" {:name :app.routes.datastar/act}])
                                       :current-locale :en
                                       :db             (d/db conn)
                                       :query-params   {}
@@ -112,23 +112,23 @@
                               last)
           header         (l/select-one page-header/PageHeader surface)
           timespans      (l/select button/Button (l/select-one 'wa-button-group surface))]
-      (is (= {:width       :standard
-              :breadcrumbs [:home :statistics/title]
-              :mobile      {:href "/" :label :home}
+      (is (= {:width           :standard
+              :breadcrumbs     [:home :statistics/title]
+              :mobile          {:href "/" :label :home}
               :toolbar-actions nil
-              :heading     :statistics/title
-              :subtitle    :statistics/current-range
-              :timespans   [:statistics/last-three-months
-                            :statistics/last-six-months
-                            :statistics/last-year]}
-             {:width       (or (::page-surface/width surface-attrs) :standard)
-              :breadcrumbs (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
-                                 (l/select breadcrumb/BreadcrumbItem breadcrumb))
-              :mobile      {:href  (-> parent l/attrs ::breadcrumb/href)
-                            :label (some-> (l/select-one :i18n/tr parent) l/first-child)}
+              :heading         :statistics/title
+              :subtitle        :statistics/current-range
+              :timespans       [:statistics/last-three-months
+                                :statistics/last-six-months
+                                :statistics/last-year]}
+             {:width           (or (::page-surface/width surface-attrs) :standard)
+              :breadcrumbs     (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
+                                     (l/select breadcrumb/BreadcrumbItem breadcrumb))
+              :mobile          {:href  (-> parent l/attrs ::breadcrumb/href)
+                                :label (some-> (l/select-one :i18n/tr parent) l/first-child)}
               :toolbar-actions (::page-toolbar/actions toolbar-attrs)
-              :heading     (some-> header l/attrs ::page-header/title l/first-child)
-              :subtitle    (some-> header l/attrs ::page-header/subtitle l/first-child)
-              :timespans   (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
-                                 timespans)}))
+              :heading         (some-> header l/attrs ::page-header/title l/first-child)
+              :subtitle        (some-> header l/attrs ::page-header/subtitle l/first-child)
+              :timespans       (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
+                                     timespans)}))
       (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back))))))

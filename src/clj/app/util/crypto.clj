@@ -273,7 +273,7 @@
 
   Throws `ExceptionInfo` if `:length` is outside the supported range."
   ^bytes [^bytes ikm & [{:keys [^bytes salt ^bytes info length]
-                         :or {length 32}}]]
+                         :or   {length 32}}]]
   (when-not (and (integer? length) (<= 0 length (* 255 32)))
     (throw (ex-info "Invalid HKDF output length" {:length length})))
   (let [prk (hkdf-sha256-extract salt ikm)]

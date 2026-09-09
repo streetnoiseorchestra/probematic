@@ -117,29 +117,29 @@
       (seed-dashboard-insurance-team! conn member-id)
       (remove-dashboard-category-factor! conn policy-id)
       (testing "The dashboard marks unavailable coverage costs and excludes them from aggregates."
-        (let [db                         (d/db conn)
+        (let [db                 (d/db conn)
               {:keys [coverages totals] :as dashboard}
               (queries/policy-dashboard db policy-id {:current-member-id member-id})
-              ordinary-dashboard         (queries/policy-dashboard db policy-id)]
-          (is (= {:totals          {:total-instruments             3
-                                    :total-insured-value           550M
-                                    :total-cost                    0M
-                                    :private-cost                  0M
-                                    :band-cost                     0M
-                                    :missing-category-factor-count 1}
-                  :coverage-costs  #{nil}
-                  :missing-factors #{true}
-                  :team-member?    true
+              ordinary-dashboard (queries/policy-dashboard db policy-id)]
+          (is (= {:totals           {:total-instruments             3
+                                     :total-insured-value           550M
+                                     :total-cost                    0M
+                                     :private-cost                  0M
+                                     :band-cost                     0M
+                                     :missing-category-factor-count 1}
+                  :coverage-costs   #{nil}
+                  :missing-factors  #{true}
+                  :team-member?     true
                   :ordinary-member? false}
-                 {:totals          (select-keys totals [:total-instruments
-                                                        :total-insured-value
-                                                        :total-cost
-                                                        :private-cost
-                                                        :band-cost
-                                                        :missing-category-factor-count])
-                  :coverage-costs  (set (map :instrument.coverage/cost coverages))
-                  :missing-factors (set (map :instrument.coverage/missing-category-factor? coverages))
-                  :team-member?    (:insurance-team-member? dashboard)
+                 {:totals           (select-keys totals [:total-instruments
+                                                         :total-insured-value
+                                                         :total-cost
+                                                         :private-cost
+                                                         :band-cost
+                                                         :missing-category-factor-count])
+                  :coverage-costs   (set (map :instrument.coverage/cost coverages))
+                  :missing-factors  (set (map :instrument.coverage/missing-category-factor? coverages))
+                  :team-member?     (:insurance-team-member? dashboard)
                   :ordinary-member? (:insurance-team-member? ordinary-dashboard)})))))))
 
 (deftest policy-dashboard-summarizes-the-open-survey
@@ -150,10 +150,10 @@
     (seed-dashboard-policy! conn policy-id)
     @(d/transact
       conn
-      [{:insurance.survey/survey-id   survey-id
-        :insurance.survey/policy      [:insurance.policy/policy-id policy-id]
-        :insurance.survey/created-at  #inst "2026-05-01T00:00:00.000-00:00"
-        :insurance.survey/closes-at   #inst "2026-07-01T00:00:00.000-00:00"
+      [{:insurance.survey/survey-id  survey-id
+        :insurance.survey/policy     [:insurance.policy/policy-id policy-id]
+        :insurance.survey/created-at #inst "2026-05-01T00:00:00.000-00:00"
+        :insurance.survey/closes-at  #inst "2026-07-01T00:00:00.000-00:00"
         :insurance.survey/responses
         [{:insurance.survey.response/response-id  (random-uuid)
           :insurance.survey.response/member       [:member/member-id member-id]
@@ -163,16 +163,16 @@
           :insurance.survey.response/completed-at #inst "2026-05-21T00:00:00.000-00:00"}
          {:insurance.survey.response/response-id (random-uuid)
           :insurance.survey.response/member      [:member/member-id member-id]}]}])
-    (let [open-db       (d/db conn)
+    (let [open-db      (d/db conn)
           open-summary (:survey-progress
                         (queries/policy-dashboard open-db policy-id {:now now}))
-          closed-db     (:db-after
-                         @(d/transact
-                           conn
-                           [[:db/add
-                             [:insurance.survey/survey-id survey-id]
-                             :insurance.survey/closed-at
-                             #inst "2026-05-25T00:00:00.000-00:00"]]))]
+          closed-db    (:db-after
+                        @(d/transact
+                          conn
+                          [[:db/add
+                            [:insurance.survey/survey-id survey-id]
+                            :insurance.survey/closed-at
+                            #inst "2026-05-25T00:00:00.000-00:00"]]))]
       (is (= {:open   {:completed-count 2
                        :waiting-count   1
                        :total-count     3}

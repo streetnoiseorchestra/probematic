@@ -146,14 +146,14 @@
 
 (def Batch
   [:vector {:name ::batch
-            :min 1
-            :max 500}
+            :min  1
+            :max  500}
    Message])
 
 (def TestingBatch
   [:vector {:name ::testing-batch
-            :min 1
-            :max 500}
+            :min  1
+            :max  500}
    TestingMessage])
 
 (def MessageStatus
@@ -180,7 +180,7 @@
 
 (def BatchSuccessResponse
   [:vector {:name ::batch-success-response
-            :min 1}
+            :min  1}
    SuccessResponse])
 
 (def ValidationErrors
@@ -332,15 +332,15 @@
       nil)))
 
 (defn- invalid-success-result []
-  {:error :invalid-success-response
+  {:error   :invalid-success-response
    :message "Lettermint returned an invalid success response."
-   :retry? true
-   :status 202})
+   :retry?  true
+   :status  202})
 
 (defn- success-result [batch? response]
   (if batch?
     {:messages response
-     :result :emails-sent}
+     :result   :emails-sent}
     (assoc response :result :email-sent)))
 
 (defn- parsed-error [body]
@@ -377,17 +377,17 @@
 
 (defn- provider-error-result [status body]
   (let [response (parsed-error body)
-        code (normalized-error-code response)
-        message (if (and (string? (:message response))
-                         (not (str/blank? (:message response))))
-                  (:message response)
-                  (str "Lettermint request failed with HTTP "
-                       status
-                       "."))
-        details (:errors response)]
-    (cond-> {:error status
+        code     (normalized-error-code response)
+        message  (if (and (string? (:message response))
+                          (not (str/blank? (:message response))))
+                   (:message response)
+                   (str "Lettermint request failed with HTTP "
+                        status
+                        "."))
+        details  (:errors response)]
+    (cond-> {:error   status
              :message message
-             :retry? (retryable-status? status code message)}
+             :retry?  (retryable-status? status code message)}
       code
       (assoc :code code)
 
@@ -396,15 +396,15 @@
 
 (defn- response-result [batch? expected-message-count response]
   (if (:error response)
-    {:error :transport-error
+    {:error   :transport-error
      :message "Lettermint request failed."
-     :retry? true}
+     :retry?  true}
     (let [{:keys [body status]} response]
       (if (= 202 status)
         (let [success (parsed-success batch? body)
-              schema (if batch?
-                       BatchSuccessResponse
-                       SuccessResponse)]
+              schema  (if batch?
+                        BatchSuccessResponse
+                        SuccessResponse)]
           (if (and (s/valid? schema success)
                    (or (not batch?)
                        (= expected-message-count
@@ -414,7 +414,7 @@
         (provider-error-result status body)))))
 
 (defn- request-headers [project-api-token request-options]
-  (cond-> {"Content-Type" "application/json"
+  (cond-> {"Content-Type"       "application/json"
            "x-lettermint-token" project-api-token}
     (:idempotency-key request-options)
     (assoc "Idempotency-Key"
@@ -429,21 +429,21 @@
        (count payload)
        1)
      @(http-client/request
-       {:as :text
-        :body (j/write-value-as-string payload wire-mapper)
+       {:as      :text
+        :body    (j/write-value-as-string payload wire-mapper)
         :headers (request-headers (:project-api-token config)
                                   request-options)
-        :method :post
+        :method  :post
         :timeout (:timeout-ms config)
-        :url (str (str/replace (or *base-url-override*
-                                   default-base-url)
-                               #"/+$"
-                               "")
-                  endpoint)}))
+        :url     (str (str/replace (or *base-url-override*
+                                       default-base-url)
+                                   #"/+$"
+                                   "")
+                      endpoint)}))
     (catch Throwable _exception
-      {:error :transport-error
+      {:error   :transport-error
        :message "Lettermint request failed."
-       :retry? true})))
+       :retry?  true})))
 
 ;; Guardrails includes function arguments in validation-error metadata. Pass
 ;; the credential through an opaque function instead of the guarded values.

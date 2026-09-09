@@ -19,32 +19,32 @@
    (profile-request {}))
   ([options]
    (let [{:keys [conn member-id]} (tc/new-system "account-profile-view")
-         avatar-template (if (contains? options :avatar-template)
-                           (:avatar-template options)
-                           legacy-template)]
+         avatar-template          (if (contains? options :avatar-template)
+                                    (:avatar-template options)
+                                    legacy-template)]
      @(d/transact
        conn
-       [(cond-> {:db/id [:member/member-id member-id]
-                 :member/name "Ada Lovelace"
-                 :member/nick "ada"
-                 :member/email "ada@example.test"
+       [(cond-> {:db/id           [:member/member-id member-id]
+                 :member/name     "Ada Lovelace"
+                 :member/nick     "ada"
+                 :member/email    "ada@example.test"
                  :member/username "ada_l"
-                 :member/phone "+436601234567"
-                 :member/active? true}
+                 :member/phone    "+436601234567"
+                 :member/active?  true}
           avatar-template
           (assoc :member/avatar-template avatar-template)
 
           (:managed-avatar? options)
           (assoc :member/avatar
                  {:image/image-id (random-uuid)
-                  :image/width 160
-                  :image/height 160}))])
+                  :image/width    160
+                  :image/height   160}))])
      (support/request
-      {:db (d/db conn)
-       :system {:env {:name "Test Instance"
-                      :keycloak {:auth-server-url
-                                 "https://identity.example.test/"
-                                 :realm "test-realm"}}}
+      {:db          (d/db conn)
+       :system      {:env {:name     "Test Instance"
+                           :keycloak {:auth-server-url
+                                      "https://identity.example.test/"
+                                      :realm           "test-realm"}}}
        :app/session {:session/member {:member/member-id member-id}}}))))
 
 (defn control [id view]
@@ -54,27 +54,27 @@
   (let [page (support/public-fn 'app.account.profile.views/page)]
     (is (fn? page) "app.account.profile.views/page should exist")
     (when page
-      (let [view (page (profile-request))
-            contract (page-shell/page-contract view {:include-header? true})
+      (let [view       (page (profile-request))
+            contract   (page-shell/page-contract view {:include-header? true})
             form-attrs (control "account-profile-form" view)]
-        (is (= {:width :standard
+        (is (= {:width       :standard
                 :breadcrumbs [:account-settings/title
                               :account-settings/profile-title]
-                :mobile {:href "/account-settings"
-                         :label :account-settings/title}
-                :actions [{:label :action/save
-                           :form "account-profile-form"
-                           :type "submit"
-                           :appearance "filled"
-                           :variant "brand"}]
-                :overflow []
-                :heading nil
-                :subtitle nil}
+                :mobile      {:href  "/account-settings"
+                              :label :account-settings/title}
+                :actions     [{:label      :action/save
+                               :form       "account-profile-form"
+                               :type       "submit"
+                               :appearance "filled"
+                               :variant    "brand"}]
+                :overflow    []
+                :heading     nil
+                :subtitle    nil}
                (select-keys contract
                             [:width :breadcrumbs :mobile :actions :overflow
                              :heading :subtitle])))
-        (is (= {:method "post"
-                :action "/account-settings/profile/save"
+        (is (= {:method  "post"
+                :action  "/account-settings/profile/save"
                 :enctype "multipart/form-data"}
                (select-keys form-attrs [:method :action :enctype])))
         (is (re-find #"contentType: 'form'" (:data-on:submit form-attrs)))
@@ -88,31 +88,31 @@
     (when page
       (let [view (page (profile-request))]
         (is (empty? (support/elements :wa-input view)))
-        (is (= {:type "text"
-                :name "name"
-                :required true
+        (is (= {:type      "text"
+                :name      "name"
+                :required  true
                 :data-bind "account-profile.name"}
                (select-keys (control "account-profile-name" view)
                             [:type :name :required :data-bind])))
-        (is (= {:type "email"
-                :name "email"
-                :required true
+        (is (= {:type      "email"
+                :name      "email"
+                :required  true
                 :data-bind "account-profile.email"}
                (select-keys (control "account-profile-email" view)
                             [:type :name :required :data-bind])))
-        (is (= {:type "date"
-                :name "date-of-birth"
+        (is (= {:type         "date"
+                :name         "date-of-birth"
                 :autocomplete "bday"
-                :data-bind "account-profile.date-of-birth"}
+                :data-bind    "account-profile.date-of-birth"}
                (select-keys (control "account-profile-date-of-birth" view)
                             [:type :name :autocomplete :data-bind])))
-        (is (= {:type "file"
-                :name "avatar"
+        (is (= {:type   "file"
+                :name   "avatar"
                 :accept "image/png,image/jpeg,image/webp"}
                (select-keys (control "account-profile-avatar" view)
                             [:type :name :accept])))
-        (is (= {:type "hidden"
-                :name "avatar-removed?"
+        (is (= {:type      "hidden"
+                :name      "avatar-removed?"
                 :data-bind "account-profile.avatar-removed?"}
                (select-keys (control "account-profile-avatar-removed" view)
                             [:type :name :data-bind])))
@@ -128,8 +128,8 @@
   (let [page (support/public-fn 'app.account.profile.views/page)]
     (is (fn? page))
     (when page
-      (let [view (page (profile-request))
-            cards (l/select card/Card view)
+      (let [view         (page (profile-request))
+            cards        (l/select card/Card view)
             profile-card (first cards)
             security-link
             (some #(when (= keycloak-account-url
@@ -148,9 +148,9 @@
   (let [page (support/public-fn 'app.account.profile.views/page)]
     (is (fn? page))
     (when page
-      (let [legacy-view (page (profile-request))
+      (let [legacy-view  (page (profile-request))
             managed-view (page (profile-request {:managed-avatar? true}))
-            preview (control "account-profile-avatar-preview" legacy-view)
+            preview      (control "account-profile-avatar-preview" legacy-view)
             security-link
             (some #(when (= keycloak-account-url
                             (:href (support/attrs %)))

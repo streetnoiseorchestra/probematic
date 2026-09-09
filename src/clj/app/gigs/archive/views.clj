@@ -25,7 +25,7 @@
                                [:i18n/tr :gigs/archive-title]]
                               (when include-year?
                                 [breadcrumb/BreadcrumbItem selected-year])]
-                             :aria-label [:i18n/tr :gigs/archive-toolbar-label]}])
+                             :aria-label               [:i18n/tr :gigs/archive-toolbar-label]}])
 
 (defn- year-button [selected-year year]
   [button/Button (cond-> {:appearance "outlined"
@@ -37,17 +37,17 @@
 
 (defn- year-selector [selected-year years]
   (into
-   [:div {:class "wa-cluster wa-gap-2xs gigs-archive-year-selector"
+   [:div {:class      "wa-cluster wa-gap-2xs gigs-archive-year-selector"
           :aria-label "Archive years"}]
    (map (partial year-button selected-year) years)))
 
 (defn- archive-tools [req _ selected-year years]
   [:div {:class "wa-stack wa-gap-s gigs-archive-tools"}
    (year-selector selected-year years)
-   [:wa-input {:type               "search"
-               :label              [:i18n/tr :action/search]
-               :placeholder        "Search gig titles"
-               :with-clear         true
+   [:wa-input {:type        "search"
+               :label       [:i18n/tr :action/search]
+               :placeholder "Search gig titles"
+               :with-clear  true
                :data-on:input__debounce.250ms
                (str "@post(`" (d*/act req ::actions/set-search-phrase) "&q=${evt.target.value}`)")}]])
 

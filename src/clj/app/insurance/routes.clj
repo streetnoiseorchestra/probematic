@@ -47,30 +47,30 @@
        {:name    ::survey-dismiss-compat
         :handler canonical-page}]])))
 
-(def policy-interceptor {:name ::insurance-policy--interceptor
+(def policy-interceptor {:name  ::insurance-policy--interceptor
                          :enter (fn [ctx]
                                   (let [conn (-> ctx :request :datomic-conn)
-                                        db (d/db conn)]
+                                        db   (d/db conn)]
                                     (try
                                       (let [policy (q/retrieve-policy db (-> ctx :request :path-params :policy-id parse-uuid))]
                                         (assoc-in ctx [:request :policy] policy))
                                       (catch Exception e
                                         (throw (ex-info "Policy not found" {:app/error-type :app.error.type/not-found
-                                                                            :policy-id (-> ctx :request :path-params :policy-id)
-                                                                            :exception e}))))))})
+                                                                            :policy-id      (-> ctx :request :path-params :policy-id)
+                                                                            :exception      e}))))))})
 
-(def coverage-interceptor {:name ::insurance-coverage--interceptor
+(def coverage-interceptor {:name  ::insurance-coverage--interceptor
                            :enter (fn [ctx]
                                     (let [coverage-id (-> ctx :request :path-params :coverage-id)]
                                       (if-let  [coverage (q/retrieve-coverage (-> ctx :request :datomic-conn d/db) (parse-uuid coverage-id))]
                                         (assoc-in ctx  [:request :coverage] coverage)
-                                        (throw (ex-info "Instrument Coverage not found" {:app/error-type :app.error.type/not-found
+                                        (throw (ex-info "Instrument Coverage not found" {:app/error-type                  :app.error.type/not-found
                                                                                          :instrument.coverage/coverage-id coverage-id})))))})
 
-(def instrument-interceptor {:name ::instrument--interceptor
+(def instrument-interceptor {:name  ::instrument--interceptor
                              :enter (fn [ctx]
-                                      (let [conn (-> ctx :request :datomic-conn)
-                                            db (d/db conn)
+                                      (let [conn          (-> ctx :request :datomic-conn)
+                                            db            (d/db conn)
                                             instrument-id (-> ctx :request :path-params :instrument-id)]
                                         (cond-> ctx
                                           instrument-id (assoc-in  [:request :instrument] (q/retrieve-instrument db (parse-uuid instrument-id))))))})
@@ -81,10 +81,10 @@
                     :path      "/insurance"
                     :page      #'index.views/page})
    ["/instrument-image/{instrument-id}"
-    {:post {:summary "Upload an image for an instrument"
+    {:post {:summary    "Upload an image for an instrument"
             :parameters {:multipart [:map [:file reitit.ring.malli/temp-file-part]]
-                         :path [:map [:instrument-id :uuid]]}
-            :handler (fn [req] (coverage-edit.api/image-upload-handler req))}}]
+                         :path      [:map [:instrument-id :uuid]]}
+            :handler    (fn [req] (coverage-edit.api/image-upload-handler req))}}]
    ["" {:interceptors [policy-interceptor]}
     (insurance-survey)
     (ds/page-routes {:page-name ::coverage-create-instrument
@@ -128,12 +128,12 @@
         303))]
 
     ["/insurance-changes-excel-download/{policy-id}/"
-     {:get {:summary "Download the changes excel file"
+     {:get {:summary    "Download the changes excel file"
             :parameters {:query [:map
                                  [:preview-type [:enum "new" "changes"]]
                                  [:attachment-filename :string]]}
-            :handler (fn [req]
-                       (policy.changes.api/download-excel req))}}]]
+            :handler    (fn [req]
+                          (policy.changes.api/download-excel req))}}]]
 
    ["" {:interceptors [policy-interceptor instrument-interceptor]}
     (ds/page-routes {:page-name ::coverage-create-photos
@@ -144,7 +144,7 @@
                      :page      #'coverage.create.views/coverage-page})]
 
    ["" {:app.route/name :app/instrument.coverage
-        :interceptors [coverage-interceptor]}
+        :interceptors   [coverage-interceptor]}
     (ds/page-routes {:page-name ::coverage-detail
                      :path      "/insurance-coverage/{coverage-id}/"
                      :page      #'coverage.views/page})
@@ -163,17 +163,17 @@
   [""
    ["/instrument-public/{instrument-id}"
     [""
-     {:get {:summary "The public page for an instrument"
+     {:get {:summary    "The public page for an instrument"
             :parameters {:path [:map [:instrument-id :uuid]]}
-            :handler (fn [req]
-                       (public.views/instrument-public-page req (-> req :parameters :path :instrument-id)))}}]
-    ["/download-zip" {:get {:summary "Download all photos for an instrument"
+            :handler    (fn [req]
+                          (public.views/instrument-public-page req (-> req :parameters :path :instrument-id)))}}]
+    ["/download-zip" {:get {:summary    "Download all photos for an instrument"
                             :parameters {:path [:map [:instrument-id :uuid]]}
-                            :handler (fn [req]
-                                       (public.views/instrument-public-page-download-all req (-> req :parameters :path :instrument-id)))}}]]
+                            :handler    (fn [req]
+                                          (public.views/instrument-public-page-download-all req (-> req :parameters :path :instrument-id)))}}]]
    ["/instrument-image/{instrument-id}/{image-id}"
-    {:get {:summary "Get instrument images"
-           :parameters {:path [:map [:instrument-id :uuid] [:image-id :string]]
+    {:get {:summary    "Get instrument images"
+           :parameters {:path  [:map [:instrument-id :uuid] [:image-id :string]]
                         :query [:map [:mode {:optional true} [:enum "full" "thumbnail"]]]}
-           :handler (fn [req]
-                      (public.api/image-response req))}}]])
+           :handler    (fn [req]
+                         (public.api/image-response req))}}]])

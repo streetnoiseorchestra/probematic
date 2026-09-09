@@ -433,22 +433,22 @@
 (def Actions [:enum :get :put :patch :post :delete])
 
 (>defn action
-       ([method url]
-        [:keyword :string => :string]
-        (action method url nil))
-       ([method url opts]
-        [:keyword :string [:maybe ActionOptsSchema] => :string]
-        (if opts
-          (str "@" (name method) "('" url "', " (j/write-value-as-string opts camelCaseMapper) ")")
-          (str "@" (name method) "('" url "')"))))
+  ([method url]
+   [:keyword :string => :string]
+   (action method url nil))
+  ([method url opts]
+   [:keyword :string [:maybe ActionOptsSchema] => :string]
+   (if opts
+     (str "@" (name method) "('" url "', " (j/write-value-as-string opts camelCaseMapper) ")")
+     (str "@" (name method) "('" url "')"))))
 
 #_(>defn expr_DEPRECATED [& stmts]
-         [[:* [:maybe :string]] => :string]
-         (str/join "; " (filter identity stmts)))
+    [[:* [:maybe :string]] => :string]
+    (str/join "; " (filter identity stmts)))
 
 #_(>defn assign [signal-name value]
-         [:string :any => :string]
-         (format "$%s=%s" signal-name (j/write-value-as-string value)))
+    [:string :any => :string]
+    (format "$%s=%s" signal-name (j/write-value-as-string value)))
 
 (defn dispatch
   ([req cmd]

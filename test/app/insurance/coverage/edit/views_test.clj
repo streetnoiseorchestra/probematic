@@ -11,18 +11,18 @@
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def translations
-  {[:insurance/ownership] "Band or private"
-   [:insurance/ownership-band] "Band instrument"
-   [:insurance/ownership-band-description] "Played by the band."
-   [:insurance/ownership-private] "Private instrument"
+  {[:insurance/ownership]                     "Band or private"
+   [:insurance/ownership-band]                "Band instrument"
+   [:insurance/ownership-band-description]    "Played by the band."
+   [:insurance/ownership-private]             "Private instrument"
    [:insurance/ownership-private-description] "Paid for by the owner."
-   [:insurance/coverage-for] "Coverage details for %1."
-   [:insurance/coverage-types] "Coverage types"
-   [:insurance/instrument-coverage] "Instrument coverage"
-   [:insurance/insurer-id] "Harmonia ID"
-   [:insurance/insurer-id-hint] "Enter the identifier assigned by Harmonia."
-   [:insurance/item-count] "Count"
-   [:insurance/value] "Insured value"})
+   [:insurance/coverage-for]                  "Coverage details for %1."
+   [:insurance/coverage-types]                "Coverage types"
+   [:insurance/instrument-coverage]           "Instrument coverage"
+   [:insurance/insurer-id]                    "Harmonia ID"
+   [:insurance/insurer-id-hint]               "Enter the identifier assigned by Harmonia."
+   [:insurance/item-count]                    "Count"
+   [:insurance/value]                         "Insured value"})
 
 (defn tr
   ([path]
@@ -130,8 +130,8 @@
                   :expected #{(str optional-a-id)
                               (str required-b-id)}}]]
       (doseq [{:keys [label orders expected]} cases
-              coverage-types orders]
-        (is (= {:checked expected
+              coverage-types                  orders]
+        (is (= {:checked  expected
                 :disabled expected}
                (->> (assoc policy
                            :insurance.policy/coverage-types coverage-types)

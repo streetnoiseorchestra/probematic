@@ -21,11 +21,11 @@
   (let [card (card-alias)]
     (is (some? card) "Card alias should exist")
     (when card
-      (let [rendered (card-html {:id              "policy-card"
-                                 :class           "policy-summary elevated"
-                                 :aria-label      "Policy summary"
-                                 :data-on:click   "selectCard()"
-                                 :style           "--spacing: 2rem"}
+      (let [rendered (card-html {:id            "policy-card"
+                                 :class         "policy-summary elevated"
+                                 :aria-label    "Policy summary"
+                                 :data-on:click "selectCard()"
+                                 :style         "--spacing: 2rem"}
                                 "Policy details")]
         (is (str/starts-with? rendered "<div"))
         (is (not (str/includes? rendered "<wa-card")))
@@ -51,13 +51,13 @@
   (let [card (card-alias)]
     (is (some? card) "Card alias should exist")
     (when card
-      (let [rendered (card-html {}
-                                [:img {:slot "media" :src "/policy.png" :alt "Policy"}]
-                                [:h2 {:slot :header :id "card-title"} "Policy"]
-                                [:button {:slot "header-actions" :type "button"} "Edit"]
-                                [:p {:data-body true} "Policy details"]
-                                [:span {:slot "footer" :data-footer true} "Updated today"]
-                                [:a {:slot "footer-actions" :href "/policy"} "Open"])
+      (let [rendered  (card-html {}
+                                 [:img {:slot "media" :src "/policy.png" :alt "Policy"}]
+                                 [:h2 {:slot :header :id "card-title"} "Policy"]
+                                 [:button {:slot "header-actions" :type "button"} "Edit"]
+                                 [:p {:data-body true} "Policy details"]
+                                 [:span {:slot "footer" :data-footer true} "Updated today"]
+                                 [:a {:slot "footer-actions" :href "/policy"} "Open"])
             positions (mapv #(str/index-of rendered %)
                             ["class=\"media\""
                              "class=\"header has-actions\""

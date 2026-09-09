@@ -36,7 +36,7 @@
    :db           (d/db conn)
    :filestore    filestore
    :system       {:env {:app-base-url "https://example.test"}}
-   :app/session      {:session/member {:member/member-id member-id}}
+   :app/session  {:session/member {:member/member-id member-id}}
    :parameters   {:path      {:instrument-id instrument-id}
                   :multipart {:file {:filename     "test upload.jpg"
                                      :tempfile     tempfile
@@ -45,17 +45,17 @@
 (deftest image-upload-handler-test
   (testing "uploads an image, attaches it to the instrument, and removes the temporary file"
     (let [{:keys [conn member-id]} (tc/new-system "insurance-coverage-edit-api")
-          instrument-id           (seed-instrument! conn)]
+          instrument-id            (seed-instrument! conn)]
       (with-temp-filestore
         (fn [store]
-          (let [tempfile (upload-file)
-                response (api/image-upload-handler
-                          (upload-req {:conn          conn
-                                       :filestore     store
-                                       :instrument-id instrument-id
-                                       :member-id     member-id
-                                       :tempfile      tempfile}))
-                db-after (d/db conn)
+          (let [tempfile   (upload-file)
+                response   (api/image-upload-handler
+                            (upload-req {:conn          conn
+                                         :filestore     store
+                                         :instrument-id instrument-id
+                                         :member-id     member-id
+                                         :tempfile      tempfile}))
+                db-after   (d/db conn)
                 instrument (d/pull db-after
                                    '[:instrument/instrument-id
                                      :instrument/images-share-url

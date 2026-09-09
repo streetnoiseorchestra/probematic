@@ -41,11 +41,11 @@
   [& {:keys [name handler frequency start-at]
       :or   {start-at (t/now)}}]
   (let [schedule-id (nano-id)
-        schedule (chime/chime-at
-                  (chime/periodic-seq
-                   start-at
-                   frequency)
-                  (fn [time] (handler time)))]
+        schedule    (chime/chime-at
+                     (chime/periodic-seq
+                      start-at
+                      frequency)
+                     (fn [time] (handler time)))]
     (swap! schedules conj {:id         schedule-id
                            :name       name
                            :frequency  frequency
@@ -60,9 +60,9 @@
                                  @schedules))]
     (when matched-schedule
       (let [^java.lang.AutoCloseable closeable (:closeable matched-schedule)
-            updated-schedules (filter (fn [schedule]
-                                        (not (= schedule matched-schedule)))
-                                      @schedules)]
+            updated-schedules                  (filter (fn [schedule]
+                                                         (not (= schedule matched-schedule)))
+                                                       @schedules)]
         (.close closeable)
         (reset! schedules updated-schedules)))))
 
@@ -94,7 +94,7 @@
   The completed schedule removes itself from the live schedule registry."
   [handler initial-delay]
   (let [schedule-id (nano-id)
-        start-at (time-from-now (apply t/new-duration initial-delay))
+        start-at    (time-from-now (apply t/new-duration initial-delay))
         schedule
         (chime/chime-at
          [start-at]
@@ -105,10 +105,10 @@
                (swap! schedules
                       (fn [entries]
                         (remove #(= schedule-id (:id %)) entries)))))))]
-    (swap! schedules conj {:id schedule-id
-                           :name nil
+    (swap! schedules conj {:id         schedule-id
+                           :name       nil
                            :started-at start-at
-                           :closeable schedule})))
+                           :closeable  schedule})))
 
 (defn start-jobs [jobs-def jobs-config]
   (run!

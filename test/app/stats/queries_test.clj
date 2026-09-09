@@ -71,15 +71,15 @@
        (play (random-uuid) gig-one-id song-id :play-rating/good)
        (play (random-uuid) gig-one-id song-id :play-rating/not-played)
        (play (random-uuid) probe-one-id song-id :play-rating/ok)])
-    {:alice-id alice-id
-     :bob-id bob-id
-     :charlie-id charlie-id
-     :dana-id dana-id
-     :gig-one-id gig-one-id
+    {:alice-id     alice-id
+     :bob-id       bob-id
+     :charlie-id   charlie-id
+     :dana-id      dana-id
+     :gig-one-id   gig-one-id
      :probe-one-id probe-one-id
-     :gig-two-id gig-two-id
+     :gig-two-id   gig-two-id
      :draft-gig-id draft-gig-id
-     :song-id song-id}))
+     :song-id      song-id}))
 
 (defn- histogram-map [histogram]
   (into (sorted-map) (map (juxt :x :y)) histogram))
@@ -95,20 +95,20 @@
 
 (deftest stats-for-calculates-attendance-play-and-histogram-data
   (let [{:keys [conn]} (tc/new-system "stats-query")
-        _             (seed-stats-data! conn)
-        result        (stats/stats-for (d/db conn) from through-all nil)]
-    (is (= {:summary         {:probe-count                   1
-                              :gig-count                     2
-                              :total-plays                   2
-                              :attendance-rate-gigs          1/2
-                              :attendance-rate-probes        1
-                              :mean-attendance-gig           3/2
-                              :mean-attendance-probe         3
-                              :active-members-count          3
-                              :most-active-gig-count         2
-                              :least-active-gig-count        1
-                              :most-active-probe-count       3
-                              :least-active-probe-count      3}
+        _              (seed-stats-data! conn)
+        result         (stats/stats-for (d/db conn) from through-all nil)]
+    (is (= {:summary         {:probe-count              1
+                              :gig-count                2
+                              :total-plays              2
+                              :attendance-rate-gigs     1/2
+                              :attendance-rate-probes   1
+                              :mean-attendance-gig      3/2
+                              :mean-attendance-probe    3
+                              :active-members-count     3
+                              :most-active-gig-count    2
+                              :least-active-gig-count   1
+                              :most-active-probe-count  3
+                              :least-active-probe-count 3}
             :members         [{:name            "Alice"
                                :gigs-attended   2
                                :probes-attended 1
@@ -170,22 +170,22 @@
 
 (deftest stats-for-sorts-member-stats-by-requested-field
   (let [{:keys [conn]} (tc/new-system "stats-query-sort")
-        _             (seed-stats-data! conn)
-        result        (stats/stats-for (d/db conn) from through-all [{:field :gigs-attended :order :asc}])]
+        _              (seed-stats-data! conn)
+        result         (stats/stats-for (d/db conn) from through-all [{:field :gigs-attended :order :asc}])]
     (is (= ["Charlie" "Bob" "Alice"]
            (mapv (comp :member/name :member) (:per-member-stats result))))))
 
 (deftest stats-for-handles-ranges-without-probes
   (let [{:keys [conn]} (tc/new-system "stats-query-no-probes")
-        _             (seed-stats-data! conn)
-        result        (stats/stats-for (d/db conn) from through-first-gig nil)]
-    (is (= {:summary {:probe-count             0
-                      :gig-count               1
-                      :attendance-rate-gigs    2/3
-                      :attendance-rate-probes  0
-                      :mean-attendance-gig     2
-                      :mean-attendance-probe   nil
-                      :most-active-probe-count nil
+        _              (seed-stats-data! conn)
+        result         (stats/stats-for (d/db conn) from through-first-gig nil)]
+    (is (= {:summary {:probe-count              0
+                      :gig-count                1
+                      :attendance-rate-gigs     2/3
+                      :attendance-rate-probes   0
+                      :mean-attendance-gig      2
+                      :mean-attendance-probe    nil
+                      :most-active-probe-count  nil
                       :least-active-probe-count nil}
             :members [{:name            "Alice"
                        :gigs-attended   1
@@ -213,8 +213,8 @@
 
 (deftest stats-for-handles-empty-ranges
   (let [{:keys [conn]} (tc/new-system "stats-query-empty")
-        _             (seed-stats-data! conn)
-        result        (stats/stats-for (d/db conn) #inst "2099-03-01T00:00:00.000Z" #inst "2099-03-31T00:00:00.000Z" nil)]
+        _              (seed-stats-data! conn)
+        result         (stats/stats-for (d/db conn) #inst "2099-03-01T00:00:00.000Z" #inst "2099-03-31T00:00:00.000Z" nil)]
     (is (= {:summary       {:probe-count              0
                             :gig-count                0
                             :total-plays              0

@@ -33,11 +33,11 @@
 
 (defn- song-choice-pop-effect-js [song-id]
   (->expr
-   (let [selected (if (.isArray Array $gig-probeplan.songs)
-                    (.some $gig-probeplan.songs
-                           (fn [song]
-                             (=== (aget song "song-id") ~(str song-id))))
-                    false)
+   (let [selected       (if (.isArray Array $gig-probeplan.songs)
+                          (.some $gig-probeplan.songs
+                                 (fn [song]
+                                   (=== (aget song "song-id") ~(str song-id))))
+                          false)
          selected-value (if selected "true" "false")]
      (when (and el.dataset.lastSelected
                 (!== el.dataset.lastSelected selected-value))
@@ -46,11 +46,11 @@
 
 (defn- intensive-pop-effect-js [song-id]
   (->expr
-   (let [song (if (.isArray Array $gig-probeplan.songs)
-                (.find $gig-probeplan.songs
-                       (fn [song]
-                         (= (aget song "song-id") ~(str song-id))))
-                nil)
+   (let [song     (if (.isArray Array $gig-probeplan.songs)
+                    (.find $gig-probeplan.songs
+                           (fn [song]
+                             (= (aget song "song-id") ~(str song-id))))
+                    nil)
          emphasis (if song song.emphasis "none")]
      (when (and el.dataset.lastEmphasis
                 (!== el.dataset.lastEmphasis emphasis))
@@ -60,13 +60,13 @@
      (set! el.dataset.lastEmphasis emphasis))))
 
 (defn- repertoire-filter-button [req current-filter value label]
-  [button/Button {:appearance      (if (= current-filter value) "filled" "outlined")
-                  :variant         (when (= current-filter value) "brand")
-                  :size            "s"
-                  :aria-pressed    (if (= current-filter value) "true" "false")
-                  :data-on:click   (->expr
-                                    (set! $gig-probeplan.repertoire-filter ~value)
-                                    (@post ~(d*/act req ::actions/set-repertoire-filter)))}
+  [button/Button {:appearance    (if (= current-filter value) "filled" "outlined")
+                  :variant       (when (= current-filter value) "brand")
+                  :size          "s"
+                  :aria-pressed  (if (= current-filter value) "true" "false")
+                  :data-on:click (->expr
+                                  (set! $gig-probeplan.repertoire-filter ~value)
+                                  (@post ~(d*/act req ::actions/set-repertoire-filter)))}
    label])
 
 (defn- song-choice [req gig-id selected-ids {:song/keys [last-played-on song-id title]}]

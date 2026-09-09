@@ -81,10 +81,10 @@
                            (assoc :data-class:stuck "$pageToolbarStuck"))
         _              (assert (:aria-label attrs)
                                "PageToolbar requires an accessible :aria-label")]
-    [[:div {:class                                  "sno-page-toolbar-sentinel"
-            :aria-hidden                            true
-            :data-signals:page-toolbar-stuck        "false"
-            :data-on-intersect                      "$pageToolbarStuck = false"
+    [[:div {:class                           "sno-page-toolbar-sentinel"
+            :aria-hidden                     true
+            :data-signals:page-toolbar-stuck "false"
+            :data-on-intersect               "$pageToolbarStuck = false"
             :data-on-intersect__exit
             "$pageToolbarStuck = el.getBoundingClientRect().top < 0"}]
      [:header attrs

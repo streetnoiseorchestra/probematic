@@ -73,7 +73,7 @@
   [params]
   {:policy-id (safe-uuid (:policyId params))
    :survey-id (safe-uuid (:surveyId params))
-   :closes-at  (form/trim-value (:closesAt params))})
+   :closes-at (form/trim-value (:closesAt params))})
 
 (defn- survey-form-errors
   [{:keys [now tr]} {:keys [closes-at]}]
@@ -90,7 +90,7 @@
 
 (defn new-survey-tx-data
   [db policy closes-at now]
-  (let [members (queries/members-for-survey db policy)
+  (let [members          (queries/members-for-survey db policy)
         member-survey-txs
         (mapv
          (fn [member-index {:keys [coverages] :member/keys [member-id]}]
@@ -107,7 +107,7 @@
                      [:instrument.coverage/coverage-id coverage-id]})
                   (range)
                   coverages)
-                 report-tempids (mapv :db/id report-txs)
+                 report-tempids  (mapv :db/id report-txs)
                  response-tempid (str "insurance-survey-response-"
                                       member-index)
                  response-tx
@@ -130,28 +130,28 @@
        (vec (mapcat :tx-data member-survey-txs))
        [:insurance.survey/activate
         (t/inst now)
-        {:db/id "insurance-survey"
-         :insurance.survey/survey-id [:db/gen-uuid :insurance-survey]
+        {:db/id                       "insurance-survey"
+         :insurance.survey/survey-id  [:db/gen-uuid :insurance-survey]
          :insurance.survey/policy
          [:insurance.policy/policy-id
           (:insurance.policy/policy-id policy)]
          :insurance.survey/created-at (t/inst now)
-         :insurance.survey/closes-at (domain/closes-at-inst closes-at)
-         :insurance.survey/responses response-tempids}]))))
+         :insurance.survey/closes-at  (domain/closes-at-inst closes-at)
+         :insurance.survey/responses  response-tempids}]))))
 
 (defn start-survey-action
   [{:keys [current-member-id db now tr] :as state} signals]
   (let [{:keys [params policy] :as context}
         (action-context state signals)
-        form          (survey-form params)
-        context-error (context-error-key context)
-        errors        (merge
-                       (survey-form-errors state form)
-                       (when context-error
-                         {:_top {:error (tr [context-error])}})
-                       (when (and (nil? context-error)
-                                  (queries/active-survey-exists-at? db now))
-                         {:_top {:error (tr [:insurance/survey-error-open-exists])}}))]
+        form                                (survey-form params)
+        context-error                       (context-error-key context)
+        errors                              (merge
+                                             (survey-form-errors state form)
+                                             (when context-error
+                                               {:_top {:error (tr [context-error])}})
+                                             (when (and (nil? context-error)
+                                                        (queries/active-survey-exists-at? db now))
+                                               {:_top {:error (tr [:insurance/survey-error-open-exists])}}))]
     (if (seq errors)
       (form-error-effects state form errors)
       (let [tx-data (new-survey-tx-data
@@ -183,38 +183,38 @@
 (defn update-closes-at-action
   [{:keys [current-member-id db now tr] :as state} signals]
   (let [{:keys [params policy-id] :as context} (action-context state signals)
-        form          (survey-form params)
-        survey-id     (:survey-id form)
-        survey        (when survey-id
-                        (try
-                          (q/retrieve-survey db survey-id)
-                          (catch Exception _
-                            nil)))
-        context-error (context-error-key context)
-        errors        (merge
-                       (survey-form-errors state form)
-                       (when context-error
-                         {:_top {:error (tr [context-error])}})
-                       (when (or (nil? survey)
-                                 (not (queries/survey-belongs-to-policy?
-                                       survey policy-id)))
-                         {:_top {:error (tr [:insurance/survey-error-not-found])}})
-                       (when (:insurance.survey/closed-at survey)
-                         {:_top {:error (tr [:insurance/survey-error-closed])}})
-                       (when (and survey
-                                  (nil? (:insurance.survey/closed-at survey))
-                                  (not (domain/survey-open-at? now survey)))
-                         {:_top {:error (tr [:insurance/survey-error-expired])}})
-                       (when (and (nil? context-error)
-                                  survey
-                                  (queries/survey-belongs-to-policy?
-                                   survey policy-id)
-                                  (nil? (:insurance.survey/closed-at survey))
-                                  (domain/survey-open-at? now survey)
-                                  (queries/active-survey-exists-at?
-                                   db now survey-id))
-                         {:_top {:error
-                                 (tr [:insurance/survey-error-open-exists])}}))]
+        form                                   (survey-form params)
+        survey-id                              (:survey-id form)
+        survey                                 (when survey-id
+                                                 (try
+                                                   (q/retrieve-survey db survey-id)
+                                                   (catch Exception _
+                                                     nil)))
+        context-error                          (context-error-key context)
+        errors                                 (merge
+                                                (survey-form-errors state form)
+                                                (when context-error
+                                                  {:_top {:error (tr [context-error])}})
+                                                (when (or (nil? survey)
+                                                          (not (queries/survey-belongs-to-policy?
+                                                                survey policy-id)))
+                                                  {:_top {:error (tr [:insurance/survey-error-not-found])}})
+                                                (when (:insurance.survey/closed-at survey)
+                                                  {:_top {:error (tr [:insurance/survey-error-closed])}})
+                                                (when (and survey
+                                                           (nil? (:insurance.survey/closed-at survey))
+                                                           (not (domain/survey-open-at? now survey)))
+                                                  {:_top {:error (tr [:insurance/survey-error-expired])}})
+                                                (when (and (nil? context-error)
+                                                           survey
+                                                           (queries/survey-belongs-to-policy?
+                                                            survey policy-id)
+                                                           (nil? (:insurance.survey/closed-at survey))
+                                                           (domain/survey-open-at? now survey)
+                                                           (queries/active-survey-exists-at?
+                                                            db now survey-id))
+                                                  {:_top {:error
+                                                          (tr [:insurance/survey-error-open-exists])}}))]
     (if (seq errors)
       (form-error-effects state form errors
                           {signal-key {:saveStatus "error"}})
@@ -222,7 +222,7 @@
         (support/with-audit
           [[:insurance.survey/activate
             (t/inst now)
-            {:db/id [:insurance.survey/survey-id survey-id]
+            {:db/id                      [:insurance.survey/survey-id survey-id]
              :insurance.survey/survey-id survey-id
              :insurance.survey/closes-at
              (domain/closes-at-inst
@@ -232,9 +232,9 @@
          [[:app.datastar/assoc-state [form-key] {:form form}]
           [:app.datastar/respond-sse
            [[:app.datastar.sse/merge-signals
-             {:loading            false
-              :targetid           false
-              signal-key         {:saveStatus "saved"}}]]]]
+             {:loading   false
+              :targetid  false
+              signal-key {:saveStatus "saved"}}]]]]
          :on-error
          {:insurance.survey.error/active-exists
           (form-error-effects
@@ -264,13 +264,13 @@
 (defn close-survey-action
   [{:keys [current-member-id db now tr] :as state} signals]
   (let [{:keys [policy-id] :as context} (action-context state signals)
-        survey    (survey-target db signals)
-        error-key (mutation-error-key
-                   context
-                   survey
-                   (queries/survey-belongs-to-policy? survey policy-id)
-                   (:insurance.survey/closed-at survey)
-                   false)]
+        survey                          (survey-target db signals)
+        error-key                       (mutation-error-key
+                                         context
+                                         survey
+                                         (queries/survey-belongs-to-policy? survey policy-id)
+                                         (:insurance.survey/closed-at survey)
+                                         false)]
     (if error-key
       (result-effects {:status :error :message (tr [error-key])})
       [[:db/transact
@@ -290,18 +290,18 @@
 (defn toggle-response-action
   [{:keys [current-member-id db now tr] :as state} signals]
   (let [{:keys [policy-id] :as context} (action-context state signals)
-        response-id (safe-uuid (:targetid signals))
-        response    (when response-id
-                      (try
-                        (q/retrieve-survey-response db response-id)
-                        (catch Exception _
-                          nil)))
-        error-key   (mutation-error-key
-                     context
-                     response
-                     (queries/response-belongs-to-policy? response policy-id)
-                     (get-in response [:survey :insurance.survey/closed-at])
-                     (not (domain/survey-open-at? now (:survey response))))]
+        response-id                     (safe-uuid (:targetid signals))
+        response                        (when response-id
+                                          (try
+                                            (q/retrieve-survey-response db response-id)
+                                            (catch Exception _
+                                              nil)))
+        error-key                       (mutation-error-key
+                                         context
+                                         response
+                                         (queries/response-belongs-to-policy? response policy-id)
+                                         (get-in response [:survey :insurance.survey/closed-at])
+                                         (not (domain/survey-open-at? now (:survey response))))]
     (if error-key
       (result-effects {:status :error :message (tr [error-key])})
       [[:db/transact
@@ -314,16 +314,16 @@
 (defn send-reminders-action
   [{:keys [current-member-id db now tr] :as state} signals]
   (let [{:keys [policy policy-id] :as context} (action-context state signals)
-        survey    (survey-target db signals)
-        error-key (mutation-error-key
-                   context
-                   survey
-                   (queries/survey-belongs-to-policy? survey policy-id)
-                   (:insurance.survey/closed-at survey)
-                   (not (domain/survey-open-at? now survey)))]
+        survey                                 (survey-target db signals)
+        error-key                              (mutation-error-key
+                                                context
+                                                survey
+                                                (queries/survey-belongs-to-policy? survey policy-id)
+                                                (:insurance.survey/closed-at survey)
+                                                (not (domain/survey-open-at? now survey)))]
     (if error-key
       (result-effects {:status :error :message (tr [error-key])})
-      (let [responses   (:insurance.survey/responses survey)
+      (let [responses  (:insurance.survey/responses survey)
             incomplete (filterv #(nil? (:insurance.survey.response/completed-at %))
                                 responses)
             most-items (when (seq responses)
@@ -352,8 +352,8 @@
            support/clear-loading])))))
 
 (def actions
-  {::close-survey    #'close-survey-action
-   ::send-reminders  #'send-reminders-action
-   ::start-survey    #'start-survey-action
+  {::close-survey     #'close-survey-action
+   ::send-reminders   #'send-reminders-action
+   ::start-survey     #'start-survey-action
    ::update-closes-at #'update-closes-at-action
-   ::toggle-response #'toggle-response-action})
+   ::toggle-response  #'toggle-response-action})

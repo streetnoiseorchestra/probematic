@@ -18,11 +18,11 @@
      {:coverage-types
       [{:type-id overnight-id :name "Worldwide" :premium-factor 0.2M}
        {:type-id building-id :name "Locked storage" :premium-factor 0.3M}]
-      :exporter-id :insurance/exporter-harmonia-v1
+      :exporter-id    :insurance/exporter-harmonia-v1
       :export-mappings
-      [{:role :insurance.exporter.harmonia-v1/overnight-vehicle
+      [{:role             :insurance.exporter.harmonia-v1/overnight-vehicle
         :coverage-type-id overnight-id}
-       {:role :insurance.exporter.harmonia-v1/unattended-building
+       {:role             :insurance.exporter.harmonia-v1/unattended-building
         :coverage-type-id building-id}]})
     (testing "a requested changeset is returned as an Excel attachment"
       (let [response (sut/download-excel
@@ -64,7 +64,7 @@
                                   :de (str "Ordne in den Policeneinstellungen alle erforderlichen "
                                            "Exportrollen zu, bevor du Tabellen ansiehst oder sendest.")}}]]
     (doseq [{:keys [description messages policy]} cases
-            locale                              [:en :de]]
+            locale                                [:en :de]]
       (testing (str description " in " (name locale))
         (is (= {:status  409
                 :headers {"Content-Type" "text/plain; charset=utf-8"}

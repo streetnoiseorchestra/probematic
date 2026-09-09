@@ -34,7 +34,7 @@
          (let [section-name (:section/name section)
                active?      (:section/active? section)]
            [:div {:data-drag-item-id section-name
-                  :class (str  "wa-flank " (if active? "active" "inactive"))}
+                  :class             (str  "wa-flank " (if active? "active" "inactive"))}
             [:div {:class "drag-handle wa-font-weight-bold wa-color-text-quiet"}
              "≡"]
             [:div {:class "min-inline-size-0"}
@@ -64,7 +64,7 @@
       [:i18n/tr :action/done]]]))
 
 (defn section-create-form [{:keys [page-state] :as req}]
-  (let [{:keys [error]} (:section-create page-state)
+  (let [{:keys [error]}    (:section-create page-state)
         section-name-error (-> error :section-name :error)]
     (when (get-in page-state [:section-create :open])
       [:wa-dialog {:id                    "section-create-dialog"
@@ -229,7 +229,7 @@
                                    [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
                                     [:i18n/tr :band-settings/title]]
                                    [breadcrumb/BreadcrumbItem title]]
-                                  :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
+                                  :aria-label               [:i18n/tr :band-settings/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-l"}
        [page-header/PageHeader
         {:title    title

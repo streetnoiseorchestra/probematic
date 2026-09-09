@@ -8,7 +8,7 @@
   [:app.datastar/respond-sse
    [[:app.datastar.sse/merge-signals
      {:file-browser {:selected-path nil
-                     :target-dir nil}}]]])
+                     :target-dir    nil}}]]])
 
 (defn picker-key [picker-id]
   (cond
@@ -59,10 +59,10 @@
 
 (defn open-picker-state [{:keys [root-dir current-dir target]}]
   (let [root-dir (remote-path root-dir)]
-    {:open?      true
-     :root-dir   root-dir
+    {:open?       true
+     :root-dir    root-dir
      :current-dir (bounded-current-dir root-dir current-dir)
-     :target     target}))
+     :target      target}))
 
 (defn open-picker-action
   [_state {:keys [file-browser]}]

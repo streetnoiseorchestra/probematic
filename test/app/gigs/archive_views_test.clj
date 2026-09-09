@@ -18,11 +18,11 @@
 (deftest gigs-archive-year-page-surface
   (testing "An archive year uses responsive breadcrumb limits and links back to the archive."
     (let [{:keys [conn]} (support/new-system "gigs-archive-year-surface")]
-      (is (= {:width                :standard
+      (is (= {:width       :standard
               :breadcrumbs [:gigs/title :gigs/archive-title "2025"]
-              :mobile               {:label :gigs/archive-title :href "/gigs/archive"}
-              :actions              []
-              :overflow             []}
+              :mobile      {:label :gigs/archive-title :href "/gigs/archive"}
+              :actions     []
+              :overflow    []}
              (-> conn
                  (support/request {:path-params {:year "2025"}})
                  views/page

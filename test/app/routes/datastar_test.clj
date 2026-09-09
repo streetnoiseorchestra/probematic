@@ -29,8 +29,8 @@
    (tr resource-ids)))
 
 (def test-req
-  {:system  {:env {:ig/system {:app.ig/profile :test}}}
-   :tr      tr
+  {:system      {:env {:ig/system {:app.ig/profile :test}}}
+   :tr          tr
    :app/session {:session/member {:member/name "Test Member"
                                   :member/nick "Tester"}}})
 
@@ -59,15 +59,15 @@
   (binding [dsr/*use-page-shim?* false]
     (let [response (page-get-response)
           body     (response-body-string response)]
-      (is (= {:status         200
-              :content-type   "text/html"
-              :contains-page? true
-              :contains-sse?  true
+      (is (= {:status          200
+              :content-type    "text/html"
+              :contains-page?  true
+              :contains-sse?   true
               :contains-morph? true}
-             {:status         (:status response)
-              :content-type   (get-in response [:headers "Content-Type"])
-              :contains-page? (str/includes? body "Translated Datastar toggle fixture")
-              :contains-sse?  (str/includes? body "long-lived-sse")
+             {:status          (:status response)
+              :content-type    (get-in response [:headers "Content-Type"])
+              :contains-page?  (str/includes? body "Translated Datastar toggle fixture")
+              :contains-sse?   (str/includes? body "long-lived-sse")
               :contains-morph? (str/includes? body "id=\"morph\"")})))))
 
 (deftest datastar-patch-rendering-resolves-translation-data-test
@@ -94,9 +94,9 @@
 
 (defn slash-redirect-summary [router path]
   (let [response ((ring/redirect-trailing-slash-handler)
-                  {::r/router router
+                  {::r/router      router
                    :request-method :get
-                   :uri path})]
+                   :uri            path})]
     {:status   (:status response)
      :location (get-in response [:headers "Location"])}))
 
@@ -177,7 +177,7 @@
                 :body-params  {:received true}}]
     (is (= [[::ping {:received true}]]
            (dsr/act-handler req)))
-    (is (= [[::ping {:received true
+    (is (= [[::ping {:received     true
                      :query-params {"q" "Wedding"}}]]
            (dsr/act-handler
             (assoc req :query-params (assoc (datastar/action-query-params ::ping)
@@ -190,8 +190,8 @@
            @calls))))
 
 (deftest act-route-installs-nexus-as-route-interceptor
-  (let [config {:nexus/system->state identity
-                :nexus/actions       {}}
+  (let [config             {:nexus/system->state identity
+                            :nexus/actions       {}}
         [_path route-data] (dsr/act-route {:nexus config})]
     (is (= :app.routes.datastar/act (:name route-data)))
     (is (nil? (:middleware route-data)))
@@ -301,7 +301,7 @@
                                   (str notifications-path "insurance-notify-page"))))
       (is (some? (r/match-by-path router
                                   (str notifications-path "insurance-send-notifications")))))
-    (let [survey-path   (urls/link-insurance-survey-start policy-id)
+    (let [survey-path    (urls/link-insurance-survey-start policy-id)
           slashless-path (subs survey-path 0 (dec (count survey-path)))]
       (is (= :app.insurance.routes/survey
              (page-name router survey-path)))
@@ -363,12 +363,12 @@
                 category-id
                 "&ownership=private&group=none")
            (urls/link-policy-workbench {:insurance.policy/policy-id policy-id}
-                                       {:view :todo
+                                       {:view          :todo
                                         :review-filter :missing-id
-                                        :member-q "Anna"
-                                        :category-id category-id
-                                        :ownership :private
-                                        :group :none})))
+                                        :member-q      "Anna"
+                                        :category-id   category-id
+                                        :ownership     :private
+                                        :group         :none})))
     (is (= :app/insurance
            (app-route-name router (urls/link-coverage-create policy-id))))
     (assert-slashless-canonical-route router
@@ -442,9 +442,9 @@
                                       :app.songs.routes/index)
     (is (= :app.songs.routes/create
            (page-name router "/songs/new")))
-    (let [song-id      (random-uuid)
-          detail-path  (str "/song/" song-id)
-          edit-path    (str detail-path "/edit")]
+    (let [song-id     (random-uuid)
+          detail-path (str "/song/" song-id)
+          edit-path   (str detail-path "/edit")]
       (is (= :app/songs
              (app-route-name router detail-path)))
       (assert-slashless-canonical-route router

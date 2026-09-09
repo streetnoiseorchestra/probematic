@@ -33,10 +33,10 @@
                            {:db/cardinality [:db/ident]}
                            {:db/unique [:db/ident]}]
                          attribute)]
-      {:attribute attribute
+      {:attribute   attribute
        :cardinality (get-in schema [:db/cardinality :db/ident])
-       :unique (get-in schema [:db/unique :db/ident])
-       :indexed? (true? (:db/index schema))})))
+       :unique      (get-in schema [:db/unique :db/ident])
+       :indexed?    (true? (:db/index schema))})))
 
 (defn- duplicate-groups
   "Returns entity/value groups whose value occurs more than once for `attribute`."
@@ -57,18 +57,18 @@
     (throw
      (ex-info
       "Member uniqueness attribute has unexpected cardinality"
-      {:type :app.datomic.migrations/schema-mismatch
-       :attribute attribute
+      {:type                 :app.datomic.migrations/schema-mismatch
+       :attribute            attribute
        :expected-cardinality :db.cardinality/one
-       :actual-cardinality cardinality})))
+       :actual-cardinality   cardinality})))
   (let [duplicates (duplicate-groups db attribute)]
     (when (seq duplicates)
       (throw
        (ex-info
         "Member uniqueness attribute contains duplicate values"
-        {:type :app.datomic.migrations/duplicate-values
-         :attribute attribute
-         :duplicate-group-count (count duplicates)
+        {:type                   :app.datomic.migrations/duplicate-values
+         :attribute              attribute
+         :duplicate-group-count  (count duplicates)
          :conflicting-entity-ids (->> duplicates
                                       (mapcat #(map first %))
                                       sort
@@ -88,6 +88,6 @@
                                (contains? #{:db.unique/identity
                                             :db.unique/value}
                                           unique))
-                   {:db/id attribute
+                   {:db/id    attribute
                     :db/index true})))
          vec)))

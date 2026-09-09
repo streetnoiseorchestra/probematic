@@ -32,9 +32,9 @@
              :db             (d/db conn)
              :path-params    {:policy-id policy-id}
              :policy         (q/retrieve-policy (d/db conn) policy-id)
-             :app/session        {:session/member {:member/member-id member-id
-                                                   :member/name      "Ada"
-                                                   :member/email     "ada@example.test"}}
+             :app/session    {:session/member {:member/member-id member-id
+                                               :member/name      "Ada"
+                                               :member/email     "ada@example.test"}}
              :system         {:env {:app-base-url "https://example.test"}}
              :tr             tr
              ::r/router      router}})))
@@ -45,31 +45,31 @@
 
 (deftest unavailable-private-cost-cannot-be-selected
   (let [{:keys [conn coverage-id policy-id request]} (fixture)
-        policy             (q/retrieve-policy (d/db conn) policy-id)
-        category-factor-id (-> policy
-                               :insurance.policy/category-factors
-                               first
-                               :insurance.category.factor/category-factor-id)
-        _                  @(d/transact
-                             conn
-                             [[:db/add
-                               [:instrument.coverage/coverage-id coverage-id]
-                               :instrument.coverage/private?
-                               true]
-                              [:db/retract
-                               [:insurance.policy/policy-id policy-id]
-                               :insurance.policy/category-factors
-                               [:insurance.category.factor/category-factor-id
-                                category-factor-id]]])
-        db                 (d/db conn)
-        view               (page
-                            (assoc request
-                                   :db db
-                                   :policy (q/retrieve-policy db policy-id)))
-        surface            (l/select-one page-surface/PageSurface view)
-        member-checkbox    (->> (l/select "input[type=checkbox]" surface)
-                                (filter #(some? (:value (l/attrs %))))
-                                first)]
+        policy                                       (q/retrieve-policy (d/db conn) policy-id)
+        category-factor-id                           (-> policy
+                                                         :insurance.policy/category-factors
+                                                         first
+                                                         :insurance.category.factor/category-factor-id)
+        _                                            @(d/transact
+                                                       conn
+                                                       [[:db/add
+                                                         [:instrument.coverage/coverage-id coverage-id]
+                                                         :instrument.coverage/private?
+                                                         true]
+                                                        [:db/retract
+                                                         [:insurance.policy/policy-id policy-id]
+                                                         :insurance.policy/category-factors
+                                                         [:insurance.category.factor/category-factor-id
+                                                          category-factor-id]]])
+        db                                           (d/db conn)
+        view                                         (page
+                                                      (assoc request
+                                                             :db db
+                                                             :policy (q/retrieve-policy db policy-id)))
+        surface                                      (l/select-one page-surface/PageSurface view)
+        member-checkbox                              (->> (l/select "input[type=checkbox]" surface)
+                                                          (filter #(some? (:value (l/attrs %))))
+                                                          first)]
     (testing "unavailable costs disable the member and omit the email preview"
       (is (= {:disabled? true
               :cost      "cost-unavailable"
@@ -84,19 +84,19 @@
 
 (deftest payment-page-empty-state
   (let [{:keys [conn coverage-id policy-id request]} (fixture)
-        _       @(d/transact
-                  conn
-                  [[:db/retract
-                    [:insurance.policy/policy-id policy-id]
-                    :insurance.policy/covered-instruments
-                    [:instrument.coverage/coverage-id coverage-id]]])
-        db      (d/db conn)
-        surface (l/select-one
-                 page-surface/PageSurface
-                 (page
-                  (assoc request
-                         :db db
-                         :policy (q/retrieve-policy db policy-id))))]
+        _                                            @(d/transact
+                                                       conn
+                                                       [[:db/retract
+                                                         [:insurance.policy/policy-id policy-id]
+                                                         :insurance.policy/covered-instruments
+                                                         [:instrument.coverage/coverage-id coverage-id]]])
+        db                                           (d/db conn)
+        surface                                      (l/select-one
+                                                      page-surface/PageSurface
+                                                      (page
+                                                       (assoc request
+                                                              :db db
+                                                              :policy (q/retrieve-policy db policy-id))))]
     (is (= {:empty-title "no-private-payments-title"
             :table?      false}
            {:empty-title (-> (l/select-one :strong surface) l/text)

@@ -131,14 +131,14 @@
                             :premium-factor 0.25M
                             :icon           :phosphor/star
                             :required?      false}]
-                          :exporter-id harmonia-exporter-id
+                          :exporter-id    harmonia-exporter-id
                           :export-mappings
                           [{:role             :insurance.exporter.harmonia-v1/overnight-vehicle
                             :coverage-type-id optional-id}]}
           tx-result      (metadata-transaction conn policy-id opts)]
       (is (= :accepted (:status tx-result)) (:error tx-result))
       (when (= :accepted (:status tx-result))
-        (is (= {:fresh-plan {:tx-data                     []
+        (is (= {:fresh-plan {:tx-data                      []
                              :migrated-coverage-type-count 0
                              :configured-policy-count      0
                              :incomplete-policies          []}
@@ -173,7 +173,7 @@
        conn
        policy-id
        {:coverage-types coverage-types})
-      (is (= {:plan     {:tx-data                     []
+      (is (= {:plan     {:tx-data                      []
                          :migrated-coverage-type-count 0
                          :configured-policy-count      0
                          :incomplete-policies          []}
@@ -191,18 +191,18 @@
        policy-id
        ["Grundschutz" "Nachzeit im Auto" "Proberaum"])
       (let [result (apply-plan! conn)]
-        (is (= {:result   {:migrated-coverage-type-count 3
-                           :configured-policy-count      1
-                           :incomplete-policies          []}
-                :coverage {"Grundschutz"
-                           {:insurance.coverage.type/icon      :phosphor/shield
-                            :insurance.coverage.type/required? true}
-                           "Nachzeit im Auto"
-                           {:insurance.coverage.type/icon      :phosphor/car-profile
-                            :insurance.coverage.type/required? false}
-                           "Proberaum"
-                           {:insurance.coverage.type/icon      :phosphor/warehouse
-                            :insurance.coverage.type/required? false}}
+        (is (= {:result               {:migrated-coverage-type-count 3
+                                       :configured-policy-count      1
+                                       :incomplete-policies          []}
+                :coverage             {"Grundschutz"
+                                       {:insurance.coverage.type/icon      :phosphor/shield
+                                        :insurance.coverage.type/required? true}
+                                       "Nachzeit im Auto"
+                                       {:insurance.coverage.type/icon      :phosphor/car-profile
+                                        :insurance.coverage.type/required? false}
+                                       "Proberaum"
+                                       {:insurance.coverage.type/icon      :phosphor/warehouse
+                                        :insurance.coverage.type/required? false}}
                 :exporter
                 {:exporter-id harmonia-exporter-id
                  :mappings
@@ -211,9 +211,9 @@
                   :insurance.exporter.harmonia-v1/unattended-building
                   "Proberaum"}}
                 :migration-installed? true}
-               {:result   (dissoc result :tx-data)
-                :coverage (coverage-metadata-by-name (d/db conn) policy-id)
-                :exporter (exporter-summary (d/db conn) policy-id)
+               {:result               (dissoc result :tx-data)
+                :coverage             (coverage-metadata-by-name (d/db conn) policy-id)
+                :exporter             (exporter-summary (d/db conn) policy-id)
                 :migration-installed? (migration-installed? (d/db conn))}))))))
 
 (deftest legacy-required-type-migration-updates-active-coverages-test
@@ -272,7 +272,7 @@
                   (str "legacy-" (name state))])
                coverage-ids)))
       (apply-plan! conn)
-      (let [db        (d/db conn)
+      (let [db (d/db conn)
             summaries
             (into
              {}
@@ -314,8 +314,8 @@
 
 (deftest ambiguous-and-missing-legacy-mappings-test
   (testing "reports ambiguous and missing roles without guessing a mapping"
-    (let [{:keys [conn]}  (new-legacy-system
-                           "insurance-migration-incomplete")
+    (let [{:keys [conn]} (new-legacy-system
+                          "insurance-migration-incomplete")
           ambiguous-id   (random-uuid)
           missing-id     (random-uuid)]
       (seed-legacy-policy!
@@ -328,11 +328,11 @@
        ["Grundschutz" "Nachzeit im Auto" "Touring"])
       (let [result (apply-plan! conn)]
         (is (= {:incomplete
-                [{:policy-id      ambiguous-id
-                  :missing-roles  []
+                [{:policy-id     ambiguous-id
+                  :missing-roles []
                   :ambiguous-roles
                   [:insurance.exporter.harmonia-v1/overnight-vehicle]}
-                 {:policy-id      missing-id
+                 {:policy-id       missing-id
                   :missing-roles
                   [:insurance.exporter.harmonia-v1/unattended-building]
                   :ambiguous-roles []}]
@@ -370,7 +370,7 @@
         (is (= {:first-counts  {:migrated-coverage-type-count 3
                                 :configured-policy-count      1
                                 :incomplete-policies          []}
-                :second-result {:tx-data                     []
+                :second-result {:tx-data                      []
                                 :migrated-coverage-type-count 0
                                 :configured-policy-count      0
                                 :incomplete-policies          []}

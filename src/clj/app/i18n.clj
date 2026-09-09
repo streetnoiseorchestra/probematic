@@ -62,13 +62,13 @@
                                   (map
                                    #(keyword (subs % 0 2))
                                    accepted-empty-removed))
-          accept-langs-set (into #{} keyword-accepted-langs)
-          langs-set (into #{} (keys param-langs))
-          lang-intersection (set/intersection langs-set accept-langs-set)
-          lang-match (first
-                      (filter
-                       #(contains? lang-intersection %)
-                       keyword-accepted-langs))]
+          accept-langs-set       (into #{} keyword-accepted-langs)
+          langs-set              (into #{} (keys param-langs))
+          lang-intersection      (set/intersection langs-set accept-langs-set)
+          lang-match             (first
+                                  (filter
+                                   #(contains? lang-intersection %)
+                                   keyword-accepted-langs))]
       (or lang-match default-locale))
     default-locale))
 
@@ -107,7 +107,7 @@
    (when-not (or (nil? resource-data) (map? resource-data))
      (throw (ex-info "Fluent translation data must be a map"
                      {:resource-ids resource-ids
-                      :data resource-data})))
+                      :data         resource-data})))
    (fluent-translation (:dict opts)
                        locales
                        (:default-locale opts default-locale)

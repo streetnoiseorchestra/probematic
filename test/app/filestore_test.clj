@@ -15,7 +15,7 @@
   (.getBytes s StandardCharsets/UTF_8))
 
 (defn- stream->byte-vector [stream]
-  (with-open [in stream
+  (with-open [in  stream
               out (ByteArrayOutputStream.)]
     (io/copy in out)
     (vec (.toByteArray out))))
@@ -91,13 +91,13 @@
   (let [dir     (bfs/create-temp-dir {:prefix "probematic.filestore-restart-test."})
         content (utf-8-bytes "payload that survives restart")]
     (try
-      (let [hash (let [store    (filestore/start! {:store-path dir})
-                       prepared (filestore/prepare content)]
-                   (try
-                     (filestore/put-sync! store prepared)
-                     (:hash prepared)
-                     (finally
-                       (filestore/halt! store))))
+      (let [hash  (let [store    (filestore/start! {:store-path dir})
+                        prepared (filestore/prepare content)]
+                    (try
+                      (filestore/put-sync! store prepared)
+                      (:hash prepared)
+                      (finally
+                        (filestore/halt! store))))
             store (filestore/start! {:store-path dir})]
         (try
           (is (= (vec content)
@@ -120,7 +120,7 @@
   (let [copy (bfs/create-temp-file {:prefix "probematic.filestore-image-test." :suffix ".jpg"})]
     (try
       (bfs/copy jpeg-path copy {:replace-existing true})
-      (let [file (bfs/file copy)
+      (let [file                         (bfs/file copy)
             {:keys [block] :as prepared} (filestore/prepare-image! file)]
         (is (= {:hash      (mhash/hex (:id block))
                 :format    :jpeg

@@ -40,13 +40,13 @@
                                              [:gig/gig-id gig-id]
                                              attendance-pattern))
         attended-count      (count attendances)]
-    {:gig/gig-id     (:gig/gig-id gig)
-     :gig/title      (:gig/title gig)
-     :gig/date       gig-date
-     :gig/gig-type   (:gig/gig-type gig)
-     :attendences    attendances
-     :active-count   active-member-count
-     :attended-count attended-count
+    {:gig/gig-id      (:gig/gig-id gig)
+     :gig/title       (:gig/title gig)
+     :gig/date        gig-date
+     :gig/gig-type    (:gig/gig-type gig)
+     :attendences     attendances
+     :active-count    active-member-count
+     :attended-count  attended-count
      :attendance-rate (safe-div attended-count active-member-count)}))
 
 (defn aggregate-attendance-rate [data]

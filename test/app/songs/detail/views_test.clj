@@ -15,7 +15,7 @@
   (r/router ["/act" {:name :app.routes.datastar/act}]))
 
 (def request
-  {::r/router       router
+  {::r/router      router
    :current-locale :en})
 
 (def song-id

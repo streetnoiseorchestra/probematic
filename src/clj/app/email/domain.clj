@@ -57,6 +57,6 @@
 
 (def QueuedEmailMessage
   [:multi {:dispatch :email/sender
-           :name :app.entity/queued-email}
+           :name     :app.entity/queued-email}
    [:lettermint QueuedLettermintEmail]
    [:band-smtp QueuedBandSmtpEmail]])

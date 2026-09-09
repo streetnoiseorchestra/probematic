@@ -168,10 +168,10 @@
   ([schema gig]
    (when-not (s/valid? schema gig)
      (throw
-      (ex-info "Gig not valid" {:gig gig
+      (ex-info "Gig not valid" {:gig    gig
                                 :schema schema
-                                :error (s/explain schema gig)
-                                :human (s/explain-human schema gig)})))
+                                :error  (s/explain schema gig)
+                                :human  (s/explain-human schema gig)})))
    (s/encode-datomic schema gig)))
 
 (defn ->comment
@@ -266,9 +266,9 @@
   (when-not (s/valid? ReminderEntity reminder)
     (throw
      (ex-info "Reminder not valid" {:reminder reminder
-                                    :schema ReminderEntity
-                                    :error (s/explain ReminderEntity reminder)
-                                    :human (s/explain-human ReminderEntity reminder)})))
+                                    :schema   ReminderEntity
+                                    :error    (s/explain ReminderEntity reminder)
+                                    :human    (s/explain-human ReminderEntity reminder)})))
   (s/encode-datomic ReminderEntity reminder))
 
 (defn db->reminder

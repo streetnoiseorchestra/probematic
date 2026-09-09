@@ -21,7 +21,7 @@
   (app-nexus/dispatch-actions
    nexus-config
    system
-   {:request request
+   {:request  request
     :response actions}
    #(swap! errors_ conj %)))
 
@@ -165,9 +165,9 @@
     (is (=
          {:errors []
           :response
-          {:status 200
+          {:status  200
            :headers {"Cache-Control" "no-cache"
-                     "Content-Type" "text/event-stream"}
+                     "Content-Type"  "text/event-stream"}
            :body
            ["event: datastar-patch-signals\ndata: signals {\"loading\":false}\n\n"
             (str "event: datastar-patch-elements\n"
@@ -175,22 +175,22 @@
                  "data: mode append\n"
                  "data: elements <script data-effect=\"el.remove()\">"
                  "setTimeout(() => window.location.href =\"/done\")</script>\n\n")]}}
-         {:errors @errors_
+         {:errors   @errors_
           :response (realized-sse-response response)}))))
 
 (deftest dispatch-actions-preserves-an-ordinary-ring-response-test
   (let [{:keys [conn]} (tc/new-system "nexus-ring-response")
         errors_        (atom [])
-        ring-response  {:status 303
+        ring-response  {:status  303
                         :headers {"Location" "/done"}
-                        :body ""}
+                        :body    ""}
         nexus-config   (assoc-in (app-nexus/nexus)
                                  [:nexus/effects :test/ring-response]
                                  (fn [_ _]
                                    ring-response))]
-    (is (= {:errors []
+    (is (= {:errors   []
             :response ring-response}
-           {:errors @errors_
+           {:errors   @errors_
             :response (dispatch-actions
                        nexus-config
                        {:datomic {:conn conn}}
@@ -218,16 +218,16 @@
                             [[:app.datastar.sse/merge-signals {:second true}]]]]
                           errors_))
         error          (first @errors_)]
-    (is (= {:status 204
-            :opened 0
-            :error-count 1
+    (is (= {:status        204
+            :opened        0
+            :error-count   1
             :error-message "One Nexus dispatch may contain at most one response owner"
-            :error-data {:response-count 2}}
-           {:status (:status response)
-            :opened @opened_
-            :error-count (count @errors_)
+            :error-data    {:response-count 2}}
+           {:status        (:status response)
+            :opened        @opened_
+            :error-count   (count @errors_)
             :error-message (ex-message error)
-            :error-data (ex-data error)}))))
+            :error-data    (ex-data error)}))))
 
 (deftest nested-and-outer-response-owners-are-rejected-test
   (let [{:keys [conn]} (tc/new-system "nexus-nested-response-conflict")
@@ -246,7 +246,7 @@
                           request
                           [[:db/transact
                             [{:team/team-id team-id
-                              :team/name "Nested owner"}]
+                              :team/name    "Nested owner"}]
                             {:on-success
                              [[:app.datastar/respond-sse
                                [[:app.datastar.sse/merge-signals
@@ -256,19 +256,19 @@
                               {:outer true}]]]]
                           errors_))
         error          (first @errors_)]
-    (is (= {:status 204
-            :opened 0
-            :team-name "Nested owner"
-            :error-count 1
+    (is (= {:status        204
+            :opened        0
+            :team-name     "Nested owner"
+            :error-count   1
             :error-message "One Nexus dispatch may contain at most one response owner"
-            :error-data {:response-count 2}}
-           {:status (:status response)
-            :opened @opened_
-            :team-name (:team/name
-                        (d/entity (d/db conn) [:team/team-id team-id]))
-            :error-count (count @errors_)
+            :error-data    {:response-count 2}}
+           {:status        (:status response)
+            :opened        @opened_
+            :team-name     (:team/name
+                            (d/entity (d/db conn) [:team/team-id team-id]))
+            :error-count   (count @errors_)
             :error-message (ex-message error)
-            :error-data (ex-data error)}))))
+            :error-data    (ex-data error)}))))
 
 (deftest failed-server-effect-cannot-finalize-a-success-response-test
   (let [{:keys [conn]} (tc/new-system "nexus-fail-fast-response")
@@ -295,15 +295,15 @@
                            [:app.datastar/respond-sse
                             [[:app.datastar.sse/redirect "/should-not-run"]]]]
                           errors_))]
-    (is (= {:status 204
-            :ran []
-            :opened 0
-            :error-count 1
+    (is (= {:status        204
+            :ran           []
+            :opened        0
+            :error-count   1
             :error-message "server effect failed"}
-           {:status (:status response)
-            :ran @ran_
-            :opened @opened_
-            :error-count (count @errors_)
+           {:status        (:status response)
+            :ran           @ran_
+            :opened        @opened_
+            :error-count   (count @errors_)
             :error-message (some-> @errors_ first ex-message)}))))
 
 (deftest transaction-success-response-plan-reaches-the-http-boundary-test
@@ -319,18 +319,18 @@
                           request
                           [[:db/transact
                             [{:team/team-id team-id
-                              :team/name "Nested response"}]
+                              :team/name    "Nested response"}]
                             {:on-success
                              [[:app.datastar/respond-sse
                                [[:app.datastar.sse/merge-signals
                                  {:transaction "saved"}]]]]}]]
                           errors_))]
-    (is (= {:errors []
+    (is (= {:errors    []
             :team-name "Nested response"
             :response-events
             ["event: datastar-patch-signals\ndata: signals {\"transaction\":\"saved\"}\n\n"]}
-           {:errors @errors_
-            :team-name (:team/name (d/entity (d/db conn) [:team/team-id team-id]))
+           {:errors          @errors_
+            :team-name       (:team/name (d/entity (d/db conn) [:team/team-id team-id]))
             :response-events (:body (realized-sse-response response))}))))
 
 (deftest transaction-error-response-plan-reaches-the-http-boundary-test
@@ -341,12 +341,12 @@
         now            #inst "2026-03-20T12:00:00.000-00:00"
         active-id      (random-uuid)
         blocked-id     (random-uuid)
-        _ @(d/transact
-            conn
-            [{:insurance.survey/survey-id active-id
-              :insurance.survey/created-at now
-              :insurance.survey/closes-at
-              #inst "2026-04-20T12:00:00.000-00:00"}])
+        _              @(d/transact
+                         conn
+                         [{:insurance.survey/survey-id  active-id
+                           :insurance.survey/created-at now
+                           :insurance.survey/closes-at
+                           #inst "2026-04-20T12:00:00.000-00:00"}])
         response       (with-redefs [hk-gen/->sse-response d*test/->sse-response]
                          (dispatch-actions
                           (app-nexus/nexus)
@@ -355,7 +355,7 @@
                           [[:db/transact
                             [[:insurance.survey/activate
                               now
-                              {:insurance.survey/survey-id blocked-id
+                              {:insurance.survey/survey-id  blocked-id
                                :insurance.survey/created-at now
                                :insurance.survey/closes-at
                                #inst "2026-04-20T12:00:00.000-00:00"}]]
@@ -365,13 +365,13 @@
                                 [[:app.datastar.sse/merge-signals
                                   {:transaction "conflict"}]]]]}}]]
                           errors_))]
-    (is (= {:errors []
+    (is (= {:errors         []
             :blocked-survey nil
             :response-events
             ["event: datastar-patch-signals\ndata: signals {\"transaction\":\"conflict\"}\n\n"]}
-           {:errors @errors_
-            :blocked-survey (d/entid (d/db conn)
-                                     [:insurance.survey/survey-id blocked-id])
+           {:errors          @errors_
+            :blocked-survey  (d/entid (d/db conn)
+                                      [:insurance.survey/survey-id blocked-id])
             :response-events (:body (realized-sse-response response))}))))
 
 (deftest custom-effect-nested-response-plan-reaches-the-http-boundary-test
@@ -395,27 +395,27 @@
                          (dispatch-actions
                           (app-nexus/nexus)
                           {:datomic {:conn conn}
-                           :env {:smtp-sno {:from "insurance@example.test"}}}
+                           :env     {:smtp-sno {:from "insurance@example.test"}}}
                           {:protocol "HTTP/1.1"
-                           :db (d/db conn)}
+                           :db       (d/db conn)}
                           [[:app.insurance/send-policy-changes
-                            {:policy-id policy-id
-                             :recipient "recipient@example.test"
-                             :subject "Policy changes"
-                             :body "Attached"
-                             :attachment-filename-new "new.xlsx"
+                            {:policy-id                   policy-id
+                             :recipient                   "recipient@example.test"
+                             :subject                     "Policy changes"
+                             :body                        "Attached"
+                             :attachment-filename-new     "new.xlsx"
                              :attachment-filename-changes "changes.xlsx"
                              :on-success
                              [[:app.datastar/respond-sse
                                [[:app.datastar.sse/merge-signals
                                  {:delivery "sent"}]]]]}]]
                           errors_))]
-    (is (= {:errors []
+    (is (= {:errors      []
             :email-sent? true
             :response-events
             ["event: datastar-patch-signals\ndata: signals {\"delivery\":\"sent\"}\n\n"]}
-           {:errors @errors_
-            :email-sent? (some? @sent_)
+           {:errors          @errors_
+            :email-sent?     (some? @sent_)
             :response-events (:body (realized-sse-response response))}))))
 
 (deftest system-config-wires-nexus-into-the-handler-system
@@ -471,7 +471,7 @@
                    [tab-id :account-profile :_saved?])))
       (is (= :value
              (get-in (app-nexus/system->state
-                      {:system {:datomic {:conn conn}}
+                      {:system  {:datomic {:conn conn}}
                        :request request})
                      [:page-state :existing])))
       (finally
@@ -497,33 +497,33 @@
 
 (deftest db-transact-fx-dispatches-matching-on-error-actions
   (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-error")
-        now             #inst "2026-03-20T12:00:00.000-00:00"
-        active-id       (random-uuid)
-        blocked-id      (random-uuid)
-        response        {:status 200 :headers {} :body "conflict patched"}
-        dispatched_     (atom nil)
-        _ @(d/transact
-            conn
-            [{:insurance.survey/survey-id active-id
-              :insurance.survey/created-at now
-              :insurance.survey/closes-at
-              #inst "2026-04-20T12:00:00.000-00:00"}])
-        tx-data [[:insurance.survey/activate
-                  now
-                  {:insurance.survey/survey-id blocked-id
-                   :insurance.survey/created-at now
-                   :insurance.survey/closes-at
-                   #inst "2026-04-20T12:00:00.000-00:00"}]]
-        opts {:on-error
-              {:insurance.survey.error/active-exists
-               [[:test/on-error blocked-id]]}}
-        result (app-nexus/db-transact-fx
-                {:dispatch
-                 (fn [actions dispatch-data]
-                   (reset! dispatched_ [actions dispatch-data])
-                   {:results [{:res response}]})}
-                {:system {:datomic {:conn conn}}}
-                [[tx-data opts]])]
+        now            #inst "2026-03-20T12:00:00.000-00:00"
+        active-id      (random-uuid)
+        blocked-id     (random-uuid)
+        response       {:status 200 :headers {} :body "conflict patched"}
+        dispatched_    (atom nil)
+        _              @(d/transact
+                         conn
+                         [{:insurance.survey/survey-id  active-id
+                           :insurance.survey/created-at now
+                           :insurance.survey/closes-at
+                           #inst "2026-04-20T12:00:00.000-00:00"}])
+        tx-data        [[:insurance.survey/activate
+                         now
+                         {:insurance.survey/survey-id  blocked-id
+                          :insurance.survey/created-at now
+                          :insurance.survey/closes-at
+                          #inst "2026-04-20T12:00:00.000-00:00"}]]
+        opts           {:on-error
+                        {:insurance.survey.error/active-exists
+                         [[:test/on-error blocked-id]]}}
+        result         (app-nexus/db-transact-fx
+                        {:dispatch
+                         (fn [actions dispatch-data]
+                           (reset! dispatched_ [actions dispatch-data])
+                           {:results [{:res response}]})}
+                        {:system {:datomic {:conn conn}}}
+                        [[tx-data opts]])]
     (is (= response result))
     (is (= [[:test/on-error blocked-id]]
            (first @dispatched_)))

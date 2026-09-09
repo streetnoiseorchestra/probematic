@@ -74,41 +74,41 @@
 (defn- coverage-type-create-state
   [req {{:keys [policy-id]} :policy-details}]
   (let [submitted (page-state-map req :coverage-type-create)
-        details   (merge {:policy-id      policy-id
-                          :name           ""
-                          :description    ""
-                          :premium-factor ""
-                          :icon           ""
-                          :required?      false
+        details   (merge {:policy-id                policy-id
+                          :name                     ""
+                          :description              ""
+                          :premium-factor           ""
+                          :icon                     ""
+                          :required?                false
                           :add-to-band-instruments? false
-                          :confirmation-count ""}
+                          :confirmation-count       ""}
                          (dissoc submitted :_error))]
-    {:open           (:open details)
-     :policy-id      (:policy-id details)
-     :name           (:name details)
-     :description    (:description details)
-     :premium-factor (:premium-factor details)
-     :icon           (:icon details)
-     :required?      (boolean (:required? details))
+    {:open               (:open details)
+     :policy-id          (:policy-id details)
+     :name               (:name details)
+     :description        (:description details)
+     :premium-factor     (:premium-factor details)
+     :icon               (:icon details)
+     :required?          (boolean (:required? details))
      :add-to-band-instruments?
      (boolean (:add-to-band-instruments? details))
-     :impact-count   (:impact-count details)
+     :impact-count       (:impact-count details)
      :confirmation-count (:confirmation-count details)
-     :_error         (:_error submitted)}))
+     :_error             (:_error submitted)}))
 
 (defn- coverage-type-edit-state
   [req]
   (let [submitted (page-state-map req :coverage-type)]
-    {:policy-id      (:policy-id submitted)
-     :type-id        (:type-id submitted)
-     :name           (:name submitted)
-     :description    (:description submitted)
-     :premium-factor (:premium-factor submitted)
-     :icon           (:icon submitted)
-     :required?      (boolean (:required? submitted))
-     :impact-count   (:impact-count submitted)
+    {:policy-id          (:policy-id submitted)
+     :type-id            (:type-id submitted)
+     :name               (:name submitted)
+     :description        (:description submitted)
+     :premium-factor     (:premium-factor submitted)
+     :icon               (:icon submitted)
+     :required?          (boolean (:required? submitted))
+     :impact-count       (:impact-count submitted)
      :confirmation-count (:confirmation-count submitted)
-     :_error         (:_error submitted)}))
+     :_error             (:_error submitted)}))
 
 (defn- active-coverage-type-state
   [req settings]
@@ -121,16 +121,16 @@
 (defn- coverage-type-signal
   [{:keys [add-to-band-instruments? confirmation-count description icon name
            policy-id premium-factor required? type-id]}]
-  (cond-> {:policyId      (signal-string policy-id)
-           :name          (signal-string name)
-           :description   (signal-string description)
-           :premiumFactor (signal-string premium-factor)
-           :icon          (if (keyword? icon)
-                            (subs (str icon) 1)
-                            "")
-           :required      (boolean required?)
+  (cond-> {:policyId             (signal-string policy-id)
+           :name                 (signal-string name)
+           :description          (signal-string description)
+           :premiumFactor        (signal-string premium-factor)
+           :icon                 (if (keyword? icon)
+                                   (subs (str icon) 1)
+                                   "")
+           :required             (boolean required?)
            :addToBandInstruments (boolean add-to-band-instruments?)
-           :confirmationCount (signal-string confirmation-count)}
+           :confirmationCount    (signal-string confirmation-count)}
     type-id (assoc :typeId (signal-string type-id))))
 
 (defn- category-factor-create-state
@@ -172,10 +172,10 @@
     category-factor-id (assoc :categoryFactorId (signal-string category-factor-id))))
 
 (defn- exporter-form-state
-  [req {{:keys [policy-id]} :policy-details
+  [req {{:keys [policy-id]}             :policy-details
         {:keys [exporter-id role-rows]} :exporter-configuration}]
   (let [submitted (page-state-map req :exporter)
-        details   (merge {:policy-id  policy-id
+        details   (merge {:policy-id   policy-id
                           :exporter-id exporter-id
                           :mappings    (mapv #(select-keys %
                                                            [:role
@@ -186,7 +186,7 @@
 
 (defn- exporter-signal
   [{:keys [exporter-id mappings policy-id]}]
-  {:policyId  (signal-string policy-id)
+  {:policyId   (signal-string policy-id)
    :exporterId (if (keyword? exporter-id)
                  (subs (str exporter-id) 1)
                  "")
@@ -333,7 +333,7 @@
   [req {:keys [editable? supported-currencies] :as settings}]
   (let [{:keys [_error currency effective-at effective-until name premium-factor status] :as form}
         (policy-form-state req settings)
-        disabled? (not editable?)]
+        disabled?                                                                                  (not editable?)]
     (settings-card
      {:title    [:i18n/tr :insurance/dashboard-policy-details]
       :subtitle [:i18n/tr :insurance/policy-settings-policy-details-subtitle]}
@@ -490,7 +490,7 @@
   [coverage-type-rows selected-exporter-id mappings disabled?
    {:keys [exporter-id role-rows]}]
   (let [selected-by-role (into {} (map (juxt :role :coverage-type-id)) mappings)
-        exporter-value  (subs (str exporter-id) 1)]
+        exporter-value   (subs (str exporter-id) 1)]
     (into
      [:div {:class            "wa-stack wa-gap-m"
             :data-exporter-id exporter-value
@@ -515,7 +515,7 @@
    {:keys [coverage-type-rows editable? exporter-options] :as settings}]
   (let [{:keys [_error exporter-id mappings policy-id] :as form}
         (exporter-form-state req settings)
-        disabled? (not editable?)]
+        disabled?                                                (not editable?)]
     (settings-card
      {:title    [:i18n/tr :insurance/exporter]
       :subtitle [:i18n/tr :insurance/exporter-subtitle]}
@@ -540,10 +540,10 @@
       (when-let [mapping-error (field-error _error :mappings)]
         [:small {:class "wa-color-danger-fill-loud"}
          mapping-error])
-      [button/Button {:appearance         "filled"
-                      :variant            "brand"
-                      :type               "submit"
-                      :disabled           disabled?
+      [button/Button {:appearance "filled"
+                      :variant    "brand"
+                      :type       "submit"
+                      :disabled   disabled?
                       :data-attr:disabled
                       "!!$loading && $loading !== 'insurance-policy-settings-exporter'"
                       :data-attr:loading
@@ -625,9 +625,9 @@
 
 (defn- coverage-type-current-icon
   [icon]
-  (let [initial-icon  (if (registered-icons icon)
-                        icon
-                        :phosphor/shield)]
+  (let [initial-icon (if (registered-icons icon)
+                       icon
+                       :phosphor/shield)]
     [ico/Icon
      (cond->
       {::ico/library (keyword (namespace initial-icon))
@@ -683,7 +683,7 @@
 
 (defn- coverage-type-fields
   [{:keys [_error add-to-band-instruments? description icon name premium-factor
-           required?] :as form}
+           required?]                                                           :as form}
    {:keys [create? id-prefix]}]
   [:div {:class "wa-stack wa-gap-m"}
    (top-error-callout (:_top _error))
@@ -853,7 +853,7 @@
 
 (defn- coverage-types-section
   [req {{:keys [currency policy-id]} :policy-details
-        :keys [coverage-type-rows editable?]}]
+        :keys                        [coverage-type-rows editable?]}]
   (settings-card
    {:title    [:i18n/tr :insurance/coverage-types]
     :subtitle [:i18n/tr :insurance/policy-settings-coverage-types-subtitle]
@@ -1061,7 +1061,7 @@
 
 (defn- category-factors-section
   [req {{:keys [currency policy-id]} :policy-details
-        :keys [category-factor-rows editable? unused-categories]}]
+        :keys                        [category-factor-rows editable? unused-categories]}]
   (settings-card
    {:title    [:i18n/tr :insurance/category-factors]
     :subtitle [:i18n/tr :insurance/policy-settings-category-factors-subtitle]
@@ -1124,7 +1124,7 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy (:policy settings))}
                                                              (get-in settings [:policy :insurance.policy/name])]
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/policy-settings]]]
-                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                                           :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       (settings-page-content req settings)])))
 
 (d*/refresh-all!)

@@ -52,11 +52,11 @@
 
 (def default-separator
   #_[:svg
-     {:viewBox "0 0 20 20",
-      :fill "currentColor",
-      :data-slot "icon",
+     {:viewBox     "0 0 20 20",
+      :fill        "currentColor",
+      :data-slot   "icon",
       :aria-hidden "true",
-      :class "size-5 shrink-0 text-gray-400 dark:text-gray-500"}
+      :class       "size-5 shrink-0 text-gray-400 dark:text-gray-500"}
      [:path
       {:d
        "M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z",
@@ -70,7 +70,7 @@
       (uic/assoc-attr separator
                       :class "separator"
                       :aria-hidden true)
-      [:span {:class "separator"
+      [:span {:class       "separator"
               :aria-hidden true}
        separator])))
 
@@ -95,9 +95,9 @@
 
 (defn- mobile-parent [item]
   (let [{:keys [attrs children]} (item-parts item)
-        href   (option attrs ::href :href nil)
-        target (option attrs ::target :target nil)
-        rel    (option attrs ::rel :rel (when target "noreferrer noopener"))]
+        href                     (option attrs ::href :href nil)
+        target                   (option attrs ::target :target nil)
+        rel                      (option attrs ::rel :rel (when target "noreferrer noopener"))]
     (when (or (not (string? href)) (str/blank? href))
       (throw
        (ex-info "Breadcrumb mobile parent requires an href"
@@ -148,10 +148,10 @@
             [ico/Icon {::ico/library :snoico
                        ::ico/name    :ellipsis}]]
            (collapse-labels hidden-counts))
-     [:wa-popover {:id        popover-id
-                   :class     "popover"
-                   :for       trigger-id
-                   :placement "bottom-start"
+     [:wa-popover {:id            popover-id
+                   :class         "popover"
+                   :for           trigger-id
+                   :placement     "bottom-start"
                    :without-arrow true
                    :data-on:wa-show
                    (str trigger ".setAttribute('aria-expanded', 'true')")
@@ -174,18 +174,18 @@
     (mapv #(item-position items %) (range (count items)))
     (let [trailing-count (- max-items items-before-collapse)
           trailing-start (- (count items) trailing-count)
-          leading         (range items-before-collapse)
-          collapsed       (range items-before-collapse trailing-start)
-          trailing        (range trailing-start (count items))]
+          leading        (range items-before-collapse)
+          collapsed      (range items-before-collapse trailing-start)
+          trailing       (range trailing-start (count items))]
       (into
        (mapv #(item-position items %) leading)
        (concat
-        [{:child         (collapse-popover
-                          (mapv (fn [idx] {:child (nth items idx)}) collapsed)
-                          {:compact  (count collapsed)
-                           :expanded (count collapsed)})
-          :collapse?     true
-          :separator?    (pos? items-before-collapse)}]
+        [{:child      (collapse-popover
+                       (mapv (fn [idx] {:child (nth items idx)}) collapsed)
+                       {:compact  (count collapsed)
+                        :expanded (count collapsed)})
+          :collapse?  true
+          :separator? (pos? items-before-collapse)}]
         (map #(item-position items %) trailing))))))
 
 (defn- collapse-projection [item-count max-items items-before-collapse]
@@ -200,51 +200,51 @@
 
 (defn- adaptive-positions
   [items compact-max expanded-max items-before-collapse]
-  (let [item-count          (count items)
-        compact             (collapse-projection item-count
-                                                 compact-max
-                                                 items-before-collapse)
-        expanded            (collapse-projection item-count
-                                                 expanded-max
-                                                 items-before-collapse)
-        compact-visible     (:visible compact)
-        expanded-visible    (:visible expanded)
-        compact-collapsed   (:collapsed compact)
-        expanded-collapsed  (:collapsed expanded)
-        visible-indices     (filter #(or (contains? compact-visible %)
-                                         (contains? expanded-visible %))
-                                    (range item-count))
-        collapsed-indices   (filter #(or (contains? compact-collapsed %)
-                                         (contains? expanded-collapsed %))
-                                    (range item-count))
-        collapse?           (seq collapsed-indices)
-        position            (fn [idx]
-                              (assoc (item-position items idx)
-                                     :variant-class
-                                     (projection-class
-                                      (contains? compact-visible idx)
-                                      (contains? expanded-visible idx))))
-        collapse-position   (when collapse?
-                              {:child
-                               (collapse-popover
-                                (mapv
-                                 (fn [idx]
-                                   {:child         (nth items idx)
+  (let [item-count         (count items)
+        compact            (collapse-projection item-count
+                                                compact-max
+                                                items-before-collapse)
+        expanded           (collapse-projection item-count
+                                                expanded-max
+                                                items-before-collapse)
+        compact-visible    (:visible compact)
+        expanded-visible   (:visible expanded)
+        compact-collapsed  (:collapsed compact)
+        expanded-collapsed (:collapsed expanded)
+        visible-indices    (filter #(or (contains? compact-visible %)
+                                        (contains? expanded-visible %))
+                                   (range item-count))
+        collapsed-indices  (filter #(or (contains? compact-collapsed %)
+                                        (contains? expanded-collapsed %))
+                                   (range item-count))
+        collapse?          (seq collapsed-indices)
+        position           (fn [idx]
+                             (assoc (item-position items idx)
                                     :variant-class
                                     (projection-class
-                                     (contains? compact-collapsed idx)
-                                     (contains? expanded-collapsed idx))})
-                                 collapsed-indices)
-                                {:compact  (count compact-collapsed)
-                                 :expanded (count expanded-collapsed)})
-                               :collapse?     true
-                               :separator?    (pos? items-before-collapse)
-                               :variant-class
-                               (projection-class
-                                (boolean (seq compact-collapsed))
-                                (boolean (seq expanded-collapsed)))})
-        [leading trailing]  (split-with #(< % items-before-collapse)
-                                        visible-indices)]
+                                     (contains? compact-visible idx)
+                                     (contains? expanded-visible idx))))
+        collapse-position  (when collapse?
+                             {:child
+                              (collapse-popover
+                               (mapv
+                                (fn [idx]
+                                  {:child (nth items idx)
+                                   :variant-class
+                                   (projection-class
+                                    (contains? compact-collapsed idx)
+                                    (contains? expanded-collapsed idx))})
+                                collapsed-indices)
+                               {:compact  (count compact-collapsed)
+                                :expanded (count expanded-collapsed)})
+                              :collapse?  true
+                              :separator? (pos? items-before-collapse)
+                              :variant-class
+                              (projection-class
+                               (boolean (seq compact-collapsed))
+                               (boolean (seq expanded-collapsed)))})
+        [leading trailing] (split-with #(< % items-before-collapse)
+                                       visible-indices)]
     (cond-> (mapv position leading)
       collapse-position (conj collapse-position)
       true              (into (map position trailing)))))
@@ -330,77 +330,77 @@
   [_ attrs children]
   (uic/validate-opts! doc-breadcrumb attrs)
   (let [max-items             (option attrs ::max-items :max-items [2 3])
-        responsive?          (vector? max-items)
+        responsive?           (vector? max-items)
         items-before-collapse (option attrs
                                       ::items-before-collapse
                                       :items-before-collapse
                                       0)
-        mobile-mode          (option attrs ::mobile-mode :mobile-mode :parent)
-        _                    (validate-collapse-options! max-items
+        mobile-mode           (option attrs ::mobile-mode :mobile-mode :parent)
+        _                     (validate-collapse-options! max-items
+                                                          items-before-collapse
+                                                          mobile-mode)
+        separator             (option attrs ::separator :separator default-separator)
+        label                 (or (option attrs ::label :label nil)
+                                  (:aria-label attrs)
+                                  "Breadcrumb")
+        attrs                 (dissoc attrs
+                                      ::separator
+                                      ::label
+                                      ::max-items
+                                      ::items-before-collapse
+                                      ::mobile-mode
+                                      :separator
+                                      :label
+                                      :max-items
+                                      :items-before-collapse
+                                      :mobile-mode)
+        items                 (vec (filter some? children))
+        items                 (if (seq items)
+                                (update items (dec (count items)) mark-current-page)
+                                items)
+        mobile-parent         (when (and (= :parent mobile-mode)
+                                         (> (count items) 1))
+                                (mobile-parent (nth items (- (count items) 2))))
+        lists                 (cond
+                                responsive?
+                                (cond-> []
+                                  mobile-parent
+                                  (conj mobile-parent)
+
+                                  (= :trail mobile-mode)
+                                  (conj (breadcrumb-list items
+                                                         (first max-items)
                                                          items-before-collapse
-                                                         mobile-mode)
-        separator            (option attrs ::separator :separator default-separator)
-        label                (or (option attrs ::label :label nil)
-                                 (:aria-label attrs)
-                                 "Breadcrumb")
-        attrs                (dissoc attrs
-                                     ::separator
-                                     ::label
-                                     ::max-items
-                                     ::items-before-collapse
-                                     ::mobile-mode
-                                     :separator
-                                     :label
-                                     :max-items
-                                     :items-before-collapse
-                                     :mobile-mode)
-        items                (vec (filter some? children))
-        items                (if (seq items)
-                               (update items (dec (count items)) mark-current-page)
-                               items)
-        mobile-parent        (when (and (= :parent mobile-mode)
-                                        (> (count items) 1))
-                               (mobile-parent (nth items (- (count items) 2))))
-        lists                (cond
-                               responsive?
-                               (cond-> []
-                                 mobile-parent
-                                 (conj mobile-parent)
+                                                         separator
+                                                         "mobile"))
 
-                                 (= :trail mobile-mode)
-                                 (conj (breadcrumb-list items
-                                                        (first max-items)
-                                                        items-before-collapse
-                                                        separator
-                                                        "mobile"))
+                                  true
+                                  (conj (adaptive-breadcrumb-list
+                                         items
+                                         (first max-items)
+                                         (second max-items)
+                                         items-before-collapse
+                                         separator)))
 
-                                 true
-                                 (conj (adaptive-breadcrumb-list
-                                        items
-                                        (first max-items)
-                                        (second max-items)
-                                        items-before-collapse
-                                        separator)))
+                                (= :trail mobile-mode)
+                                [(breadcrumb-list items
+                                                  max-items
+                                                  items-before-collapse
+                                                  separator
+                                                  nil)]
 
-                               (= :trail mobile-mode)
-                               [(breadcrumb-list items
-                                                 max-items
-                                                 items-before-collapse
-                                                 separator
-                                                 nil)]
+                                :else
+                                (cond-> []
+                                  mobile-parent
+                                  (conj mobile-parent)
 
-                               :else
-                               (cond-> []
-                                 mobile-parent
-                                 (conj mobile-parent)
-
-                                 true
-                                 (conj (breadcrumb-list
-                                        items
-                                        max-items
-                                        items-before-collapse
-                                        separator
-                                        "desktop"))))]
+                                  true
+                                  (conj (breadcrumb-list
+                                         items
+                                         max-items
+                                         items-before-collapse
+                                         separator
+                                         "desktop"))))]
     (cc/compile
      (into
       [:nav (uic/merge-attrs attrs

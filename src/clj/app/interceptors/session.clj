@@ -10,8 +10,8 @@
    [ring.middleware.cookies :as cookies]))
 
 (defn- cookie-response [response request cookie-sid {:keys [cookie-name cookie-attrs] :as opts}]
-  (let [sid (if (contains? response :app/sid) (:app/sid response) (:app/sid request))
-        attrs (:app/session-cookie-attrs response)
+  (let [sid      (if (contains? response :app/sid) (:app/sid response) (:app/sid request))
+        attrs    (:app/session-cookie-attrs response)
         response (cond-> response
                    (or (not= sid cookie-sid)
                        (and attrs sid)
@@ -40,10 +40,10 @@
   ([opts]
    (let [opts (options/valid! "session-cookie-interceptor" options/SessionCookieInterceptorOptions
                               (options/coerce options/SessionCookieInterceptorOptions opts))]
-     {:name ::session-cookie
+     {:name  ::session-cookie
       :enter (fn [{:keys [request] :as context}]
                (let [request (cookies/cookies-request request opts)
-                     sid (not-empty (get-in request [:cookies (:cookie-name opts) :value]))
+                     sid     (not-empty (get-in request [:cookies (:cookie-name opts) :value]))
                      context (assoc context ::cookie-sid sid :request request)]
                  (cond
                    sid (assoc-in context [:request :app/sid] sid)
@@ -63,7 +63,7 @@
 
     (or (contains? response :app/session)
         (and stored-session (:app/sid response) (not= sid (:app/sid response))))
-    (let [data (if (contains? response :app/session) (:app/session response) stored-session)
+    (let [data    (if (contains? response :app/session) (:app/session response) stored-session)
           new-sid (or (:app/sid response) (when stored-session sid) (crypto/new-uid))]
       (assert (map? data) "Response :app/session must be a map or nil")
       (session/write-session! db sid new-sid data)
@@ -86,7 +86,7 @@
   The caller owns `db` and its lifecycle."
   [db opts]
   (let [db (session/init! db opts)]
-    {:name ::session-data
+    {:name  ::session-data
      :enter (fn [{:keys [request] :as context}]
               (let [data (session/read-session db (:app/sid request))]
                 (-> context

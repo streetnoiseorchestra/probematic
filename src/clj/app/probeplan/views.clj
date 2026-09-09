@@ -218,8 +218,8 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
                                                              [:i18n/tr :home]]
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :probeplan/title]]]
-                                                           ::page-toolbar/actions actions
-                                                           :aria-label            [:i18n/tr :probeplan/toolbar-label]}]}
+                                                           ::page-toolbar/actions    actions
+                                                           :aria-label               [:i18n/tr :probeplan/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"
              :data-signals (d*/->signals (editable-signals rows))}
        [page-header/PageHeader {::page-header/title [:i18n/tr :probeplan/title]}]

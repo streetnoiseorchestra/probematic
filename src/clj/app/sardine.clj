@@ -59,25 +59,25 @@
   (assert (string/starts-with? webdav-base-path "/") "webdav base path must start and end with a slash")
   (assert (not (string/blank? host)) "Webdav host cannot be empty")
   (assert (not (string/blank? token)) "Webdav bearer token cannot be empty")
-  {:token token :host host :webdav-base-path webdav-base-path
+  {:token  token                 :host host :webdav-base-path webdav-base-path
    :client (build-sardine token)})
 
 (defn shutdown [^SardineImpl sardine]
   (.shutdown sardine))
 
 (defn ->dav-resource [{:keys [webdav-base-path]} ^DavResource r]
-  {:full-path (.getPath r)
-   :path (subs (.getPath r) (count webdav-base-path))
-   :creation-date (.getCreation r)
-   :modified-date (.getModified r)
-   :content-type (.getContentType r)
+  {:full-path      (.getPath r)
+   :path           (subs (.getPath r) (count webdav-base-path))
+   :creation-date  (.getCreation r)
+   :modified-date  (.getModified r)
+   :content-type   (.getContentType r)
    :content-length (.getContentLength r)
-   :display-name (.getDisplayName r)
+   :display-name   (.getDisplayName r)
    :resource-types (.getResourceTypes r)
-   :directory? (.isDirectory r)
-   :file? (not (.isDirectory r))
-   :uri (.getHref r)
-   :name (.getName r)})
+   :directory?     (.isDirectory r)
+   :file?          (not (.isDirectory r))
+   :uri            (.getHref r)
+   :name           (.getName r)})
 
 (def excluded-folder-patterns
   [#".DAV"])
@@ -87,8 +87,8 @@
    (list-directory webdav-config remote-path 1))
   ([{:keys [client] :as webdav-config} remote-path depth]
    (let [full-path (build-full-path webdav-config remote-path)
-         result (-> ^Sardine client
-                    (.list (build-uri webdav-config full-path) (int depth)))]
+         result    (-> ^Sardine client
+                       (.list (build-uri webdav-config full-path) (int depth)))]
      (->> (for [r result]
             (->dav-resource webdav-config r))
           (remove (fn [{:keys [path]}] (some #(re-find % path) excluded-folder-patterns)))
@@ -113,13 +113,13 @@
 (defn fetch-file-response [{:keys [webdav] :as req} path inline?]
   (try
     (let [{:keys [content-type content-length name]} (list-directory webdav path)]
-      {:status 200
+      {:status  200
        :headers {"Content-Disposition" (content-disposition-filename (if inline?
                                                                        "inline" "attachment")
                                                                      name)
-                 "Content-Type" content-type
-                 "Content-Length" (str content-length)}
-       :body (stream-file (:webdav req) path)})
+                 "Content-Type"        content-type
+                 "Content-Length"      (str content-length)}
+       :body    (stream-file (:webdav req) path)})
     (catch SardineException e
       (cond
         (string/includes? (ex-message e) "404")

@@ -324,10 +324,10 @@
    (assoc-in signals [:insuranceWorkbench :targetWorkflowStatus] "keep")))
 
 (def actions
-  {::set-member-search-phrase  #'set-member-search-phrase-action
-   ::bulk-update-statuses       #'bulk-update-statuses-action
+  {::set-member-search-phrase    #'set-member-search-phrase-action
+   ::bulk-update-statuses        #'bulk-update-statuses-action
    ::bulk-update-workflow-status #'bulk-update-workflow-status-action
-   ::bulk-mark-workflow         #'bulk-mark-workflow-action
-   ::bulk-set-change            #'bulk-set-change-action
-   ::apply-filter               #'apply-filter-action
-   ::toggle-table-column        #'toggle-table-column-action})
+   ::bulk-mark-workflow          #'bulk-mark-workflow-action
+   ::bulk-set-change             #'bulk-set-change-action
+   ::apply-filter                #'apply-filter-action
+   ::toggle-table-column         #'toggle-table-column-action})

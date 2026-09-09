@@ -125,7 +125,7 @@
                     (remove #(contains? (coverage-type-ids %) type-id))
                     (mapv (fn [coverage]
                             (let [change (:instrument.coverage/change coverage)]
-                              {:db/id (:db/id coverage)
+                              {:db/id                     (:db/id coverage)
                                :instrument.coverage/types type-ref
                                :instrument.coverage/status
                                :instrument.coverage.status/needs-review
@@ -162,17 +162,17 @@
   [policy]
   (when (and (nil? (:insurance.policy/exporter-id policy))
              (legacy-policy? policy))
-    (let [descriptor (exporters/descriptor exporters/harmonia-v1)
-          by-name    (group-by :insurance.coverage.type/name
-                               (:insurance.policy/coverage-types policy))
-          role-matches (mapv (partial role-match by-name)
-                             (:roles descriptor))
-          mapping-txs (->> role-matches
-                           (filter #(= :matched (:status %)))
-                           (mapv mapping-tx))
-          missing-roles (->> role-matches
-                             (filter #(= :missing (:status %)))
-                             (mapv :role))
+    (let [descriptor      (exporters/descriptor exporters/harmonia-v1)
+          by-name         (group-by :insurance.coverage.type/name
+                                    (:insurance.policy/coverage-types policy))
+          role-matches    (mapv (partial role-match by-name)
+                                (:roles descriptor))
+          mapping-txs     (->> role-matches
+                               (filter #(= :matched (:status %)))
+                               (mapv mapping-tx))
+          missing-roles   (->> role-matches
+                               (filter #(= :missing (:status %)))
+                               (mapv :role))
           ambiguous-roles (->> role-matches
                                (filter #(= :ambiguous (:status %)))
                                (mapv :role))]
@@ -193,8 +193,8 @@
         coverage-txs          (coverage-metadata-txs policies)
         required-coverage-txs (required-coverage-txs policies)
         policy-plans          (into [] (keep policy-export-plan) policies)]
-    {:tx-data (into coverage-txs
-                    (concat required-coverage-txs (map :tx policy-plans)))
+    {:tx-data                      (into coverage-txs
+                                         (concat required-coverage-txs (map :tx policy-plans)))
      :migrated-coverage-type-count (count coverage-txs)
      :configured-policy-count      (count policy-plans)
      :incomplete-policies          (into [] (keep :incomplete) policy-plans)}))

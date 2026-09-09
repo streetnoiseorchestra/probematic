@@ -143,8 +143,8 @@
   (status-label* change-status-data change))
 
 (def history-action-data
-  {:retracted {:icon "circle-xmark"       :class "insurance-history-icon--retracted"}
-   :added     {:icon "circle-plus-solid"  :class "insurance-history-icon--added"}
+  {:retracted {:icon "circle-xmark" :class "insurance-history-icon--retracted"}
+   :added     {:icon "circle-plus-solid" :class "insurance-history-icon--added"}
    :updated   {:icon "circle-exclamation" :class "insurance-history-icon--updated"}})
 
 (def history-field-exclusions
@@ -392,7 +392,7 @@
   [comment]
   [:li {:class "wa-stack wa-gap-2xs"}
    [:div {:class "wa-flank"}
-    [avatar/Avatar {::avatar/name (author-name comment)
+    [avatar/Avatar {::avatar/name     (author-name comment)
                     ::avatar/initials (author-initials comment)}]
     [:div {:class "wa-cluster"}
      [:strong (author-name comment)]
@@ -417,7 +417,7 @@
   (when (seq replies)
     [:div {:class "wa-flank"}
      [divider/Divider {::divider/orientation :vertical
-                       :style                 "height: auto; align-self: stretch;"}]
+                       :style                "height: auto; align-self: stretch;"}]
      (into [:ul {:class "wa-stack"
                  :style "list-style: none; padding-inline-start: 0; margin: 0;"}]
            (concat (map comment-item replies)
@@ -493,24 +493,24 @@
   (ownership-badge private?))
 
 (def history-field-label-keys
-  {:instrument/category                 :instrument/category
-   :instrument/description              :instrument/description
-   :instrument/images                   :insurance/photos
-   :instrument/make                     :instrument/make
-   :instrument/model                    :instrument/model
-   :instrument/name                     :instrument/name
-   :instrument/owner                    :instrument/owner
-   :instrument/serial-number            :instrument/serial-number
-   :instrument/build-year               :instrument/build-year
-   :instrument.coverage/change          :insurance/coverage-change-status
-   :instrument.coverage/cost            :insurance/cost
-   :instrument.coverage/insurer-id      :insurance/insurer-id
-   :instrument.coverage/instrument      :instrument/instrument
-   :instrument.coverage/item-count      :insurance/item-count
-   :instrument.coverage/private?        :insurance/ownership
-   :instrument.coverage/status          :insurance/coverage-status
-   :instrument.coverage/types           :insurance/coverage-types
-   :instrument.coverage/value           :insurance/value})
+  {:instrument/category            :instrument/category
+   :instrument/description         :instrument/description
+   :instrument/images              :insurance/photos
+   :instrument/make                :instrument/make
+   :instrument/model               :instrument/model
+   :instrument/name                :instrument/name
+   :instrument/owner               :instrument/owner
+   :instrument/serial-number       :instrument/serial-number
+   :instrument/build-year          :instrument/build-year
+   :instrument.coverage/change     :insurance/coverage-change-status
+   :instrument.coverage/cost       :insurance/cost
+   :instrument.coverage/insurer-id :insurance/insurer-id
+   :instrument.coverage/instrument :instrument/instrument
+   :instrument.coverage/item-count :insurance/item-count
+   :instrument.coverage/private?   :insurance/ownership
+   :instrument.coverage/status     :insurance/coverage-status
+   :instrument.coverage/types      :insurance/coverage-types
+   :instrument.coverage/value      :insurance/value})
 
 (def history-action-label-keys
   {:added     :insurance/history-action-added

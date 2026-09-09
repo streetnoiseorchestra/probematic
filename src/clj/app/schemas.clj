@@ -47,10 +47,10 @@
   (throw
    (ex-info msg
             {:app/error-type :app.error.type/validation
-             :schema (schema->map schema)
-             :schema-name (schema-name schema)
-             :value value
-             :explain (explain-human schema value)}
+             :schema         (schema->map schema)
+             :schema-name    (schema-name schema)
+             :value          value
+             :explain        (explain-human schema value)}
             cause)))
 
 (defn decode [schema value]
@@ -61,7 +61,7 @@
 
 (defn datomic-transformer []
   (mt/transformer
-   {:name :datomic
+   {:name     :datomic
     :decoders (assoc (mt/-string-decoders) :uuid identity)
     ;; :encoders (assoc  (mt/-string-encoders) :uuid identity)
     }))

@@ -76,8 +76,8 @@
                              :doc      "Size used when expanding an avatar template."}
                [:or :int :string]]
               [::allow-legacy? {:optional true
-                                :default true
-                                :doc "When false, ignore a member's dormant Discourse avatar template."}
+                                :default  true
+                                :doc      "When false, ignore a member's dormant Discourse avatar template."}
                :boolean]
               [::initials {:optional true
                            :doc      "Initials to show as an image fallback. Overrides `:initials`."}
@@ -134,7 +134,7 @@
     (::member attrs)
     (member-avatar/avatar-image
      (::member attrs)
-     {:size (or (::image-size attrs) 80)
+     {:size          (or (::image-size attrs) 80)
       :allow-legacy? (not= false (::allow-legacy? attrs))})
     :else
     (member-avatar/avatar-image

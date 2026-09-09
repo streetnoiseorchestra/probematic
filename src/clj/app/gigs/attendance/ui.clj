@@ -74,8 +74,8 @@
 
 (defn summary-counts [summary]
   [:div {:class "gigs-attendance-summary"}
-   (for [plan plan-display-order
-         :let [count (get summary plan 0)]
+   (for [plan  plan-display-order
+         :let  [count (get summary plan 0)]
          :when (not (and (zero? count)
                          (contains? domain/plan-priority-optional-display plan)))]
      [:div {:class "gigs-attendance-summary-item"}

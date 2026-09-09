@@ -103,15 +103,15 @@
     (when process-avatar-square
       (doseq [size [40 80 160 320]]
         (let [result (process-avatar-square
-                      {:input {:path jpeg-path}
-                       :size size
+                      {:input   {:path jpeg-path}
+                       :size    size
                        :quality 85
-                       :format :webp})]
+                       :format  :webp})]
           (try
-            (is (= {:format :webp
+            (is (= {:format    :webp
                     :mime-type "image/webp"
-                    :width size
-                    :height size}
+                    :width     size
+                    :height    size}
                    (select-keys
                     (merge result (image/identify (:out-file result)))
                     [:format :mime-type :width :height])))
@@ -120,19 +120,19 @@
 
 (deftest process-avatar-square-cleans-its-output-after-processing-fails
   (let [temp-dir (bfs/temp-dir)
-        pattern "snorga.avatar.*.webp"
-        before (set (bfs/glob temp-dir pattern))]
+        pattern  "snorga.avatar.*.webp"
+        before   (set (bfs/glob temp-dir pattern))]
     (is (thrown? Throwable
                  (image/process-avatar-square
-                  {:input {:path "/path/that/does/not/exist/avatar.jpg"}
-                   :size 80
+                  {:input   {:path "/path/that/does/not/exist/avatar.jpg"}
+                   :size    80
                    :quality 85
-                   :format :webp})))
+                   :format  :webp})))
     (let [after (set (bfs/glob temp-dir pattern))]
       (try
         (is (= before after))
         (finally
-          (doseq [path after
+          (doseq [path  after
                   :when (not (contains? before path))]
             (bfs/delete-if-exists path)))))))
 

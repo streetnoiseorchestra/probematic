@@ -71,8 +71,8 @@
   (d/pull db '[*] eid))
 
 (defn entity-history [db id-key id-value]
-  (->> (d/q '{:find [?tx ?attr ?val ?added]
-              :in [$ ?id-key ?id-value]
+  (->> (d/q '{:find  [?tx ?attr ?val ?added]
+              :in    [$ ?id-key ?id-value]
               :where [[?e ?id-key ?id-value]
                       [?e ?attr ?val ?tx ?added]]}
             (d/history db)
@@ -80,17 +80,17 @@
        (group-by first)
        (map (fn [[tx transactions]]
               (let [tx-info (d/pull db '[*] tx)]
-                {:timestamp (:db/txInstant tx-info)
-                 :ent-id-key id-key
+                {:timestamp    (:db/txInstant tx-info)
+                 :ent-id-key   id-key
                  :ent-id-value id-value
-                 :tx-id (:db/id tx-info)
-                 :audit (expand-audit-user db (select-keys tx-info [:audit/user :audit/comment]))
-                 :changes (->> transactions
-                               (map (fn [[_ attr val added]]
-                                      [(ident db attr) (if (ref? db attr)
-                                                         (resolve-ref db val)
-                                                         val) (if added :added :retracted)]))
-                               (sort-by last))})))
+                 :tx-id        (:db/id tx-info)
+                 :audit        (expand-audit-user db (select-keys tx-info [:audit/user :audit/comment]))
+                 :changes      (->> transactions
+                                    (map (fn [[_ attr val added]]
+                                           [(ident db attr) (if (ref? db attr)
+                                                              (resolve-ref db val)
+                                                              val) (if added :added :retracted)]))
+                                    (sort-by last))})))
        (sort-by :timestamp)))
 
 (defn unique-error? [error]
@@ -191,7 +191,7 @@
   ([m]
    (if-let [k (m/find-first #(contains? m %) entity-ids)]
      (ref m k)
-     (throw (ex-info "entity map does not contain a known id key" {:entity-map m
+     (throw (ex-info "entity map does not contain a known id key" {:entity-map       m
                                                                    :possible-id-keys entity-ids}))))
 
   ([m k]
@@ -239,9 +239,9 @@
     (if (map? entry)
       entry
       (let [[ident type doc & flags] entry]
-        (cond-> {:db/ident     ident
-                 :db/valueType (keyword "db.type" (name type))
-                 :db/doc       doc
+        (cond-> {:db/ident       ident
+                 :db/valueType   (keyword "db.type" (name type))
+                 :db/doc         doc
                  :db/cardinality (if (some #{:many} flags)
                                    :db.cardinality/many
                                    :db.cardinality/one)}

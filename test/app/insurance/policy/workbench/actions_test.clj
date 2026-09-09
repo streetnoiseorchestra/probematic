@@ -99,7 +99,7 @@
 
 (defn workbench-signals
   [{:keys [policy-id selected-ids target-change-status target-status]}]
-  (cond-> {:insuranceWorkbench {:policyId             (str policy-id)
+  (cond-> {:insuranceWorkbench {:policyId            (str policy-id)
                                 :selectedCoverageIds (mapv str selected-ids)}}
     target-status
     (assoc-in [:insuranceWorkbench :targetWorkflowStatus] (name target-status))
@@ -169,8 +169,8 @@
                  ["insuranceWorkbench.selectedCoverageIds"]]]]]
              (actions/bulk-update-workflow-status-action
               (state system)
-              (workbench-signals {:policy-id policy-id
-                                  :selected-ids [coverage-a coverage-b]
+              (workbench-signals {:policy-id     policy-id
+                                  :selected-ids  [coverage-a coverage-b]
                                   :target-status :reviewed})))))))
 
 (deftest bulk-update-workflow-status-action-target-statuses-test
@@ -193,8 +193,8 @@
                       (transaction-statuses
                        (actions/bulk-update-workflow-status-action
                         (state system)
-                        (workbench-signals {:policy-id policy-id
-                                            :selected-ids [coverage-id]
+                        (workbench-signals {:policy-id     policy-id
+                                            :selected-ids  [coverage-id]
                                             :target-status target-status})))])))))))
 
 (deftest bulk-update-statuses-action-updates-workflow-and-change-statuses
@@ -295,54 +295,54 @@
       (seed-insurance-team! conn member-id)
       (seed-action-policy! conn {:policy-id policy-id
                                  :coverages [{:coverage-id coverage-id}]})
-      (seed-action-policy! conn {:policy-id frozen-policy-id
+      (seed-action-policy! conn {:policy-id     frozen-policy-id
                                  :policy-status :insurance.policy.status/active
-                                 :coverages [{:coverage-id frozen-coverage-id}]})
+                                 :coverages     [{:coverage-id frozen-coverage-id}]})
       (seed-action-policy! conn {:policy-id foreign-policy-id
                                  :coverages [{:coverage-id foreign-coverage-id}]})
-      (is (= {:empty-selection {:has-transaction? false
-                                :effects [support/clear-loading
-                                          [:app.datastar/assoc-state
-                                           [:insurance-workbench :error]
-                                           {:error [:insurance/workbench-error-empty-selection]}]]}
-              :invalid-status  {:has-transaction? false
-                                :effects [support/clear-loading
-                                          [:app.datastar/assoc-state
-                                           [:insurance-workbench :error]
-                                           {:error [:insurance/workbench-error-invalid-target-status]}]]}
-              :not-allowed     {:has-transaction? false
-                                :effects [support/clear-loading
-                                          [:app.datastar/assoc-state
-                                           [:insurance-workbench :error]
-                                           {:error [:insurance/workbench-error-not-allowed]}]]}
-              :frozen-policy   {:has-transaction? false
-                                :effects [support/clear-loading
-                                          [:app.datastar/assoc-state
-                                           [:insurance-workbench :error]
-                                           {:error [:insurance/workbench-error-frozen-policy]}]]}
+      (is (= {:empty-selection  {:has-transaction? false
+                                 :effects          [support/clear-loading
+                                                    [:app.datastar/assoc-state
+                                                     [:insurance-workbench :error]
+                                                     {:error [:insurance/workbench-error-empty-selection]}]]}
+              :invalid-status   {:has-transaction? false
+                                 :effects          [support/clear-loading
+                                                    [:app.datastar/assoc-state
+                                                     [:insurance-workbench :error]
+                                                     {:error [:insurance/workbench-error-invalid-target-status]}]]}
+              :not-allowed      {:has-transaction? false
+                                 :effects          [support/clear-loading
+                                                    [:app.datastar/assoc-state
+                                                     [:insurance-workbench :error]
+                                                     {:error [:insurance/workbench-error-not-allowed]}]]}
+              :frozen-policy    {:has-transaction? false
+                                 :effects          [support/clear-loading
+                                                    [:app.datastar/assoc-state
+                                                     [:insurance-workbench :error]
+                                                     {:error [:insurance/workbench-error-frozen-policy]}]]}
               :missing-coverage {:has-transaction? false
-                                 :effects [support/clear-loading
-                                           [:app.datastar/assoc-state
-                                            [:insurance-workbench :error]
-                                            {:error [:insurance/workbench-error-coverage-not-found]}]]}
+                                 :effects          [support/clear-loading
+                                                    [:app.datastar/assoc-state
+                                                     [:insurance-workbench :error]
+                                                     {:error [:insurance/workbench-error-coverage-not-found]}]]}
               :foreign-coverage {:has-transaction? false
-                                 :effects [support/clear-loading
-                                           [:app.datastar/assoc-state
-                                            [:insurance-workbench :error]
-                                            {:error [:insurance/workbench-error-coverage-not-in-policy]}]]}}
+                                 :effects          [support/clear-loading
+                                                    [:app.datastar/assoc-state
+                                                     [:insurance-workbench :error]
+                                                     {:error [:insurance/workbench-error-coverage-not-in-policy]}]]}}
              {:empty-selection
               (rejection-summary
                (actions/bulk-update-workflow-status-action
                 (state system)
-                (workbench-signals {:policy-id policy-id
-                                    :selected-ids []
+                (workbench-signals {:policy-id     policy-id
+                                    :selected-ids  []
                                     :target-status :reviewed})))
               :invalid-status
               (rejection-summary
                (actions/bulk-update-workflow-status-action
                 (state system)
-                {:insuranceWorkbench {:policyId (str policy-id)
-                                      :selectedCoverageIds [(str coverage-id)]
+                {:insuranceWorkbench {:policyId             (str policy-id)
+                                      :selectedCoverageIds  [(str coverage-id)]
                                       :targetWorkflowStatus "archived"}}))
               :not-allowed
               (let [{other-conn :conn :as other-system} (tc/new-system "insurance-workbench-action-not-allowed")]
@@ -351,29 +351,29 @@
                 (rejection-summary
                  (actions/bulk-update-workflow-status-action
                   (state other-system)
-                  (workbench-signals {:policy-id policy-id
-                                      :selected-ids [coverage-id]
+                  (workbench-signals {:policy-id     policy-id
+                                      :selected-ids  [coverage-id]
                                       :target-status :reviewed}))))
               :frozen-policy
               (rejection-summary
                (actions/bulk-update-workflow-status-action
                 (state system)
-                (workbench-signals {:policy-id frozen-policy-id
-                                    :selected-ids [frozen-coverage-id]
+                (workbench-signals {:policy-id     frozen-policy-id
+                                    :selected-ids  [frozen-coverage-id]
                                     :target-status :reviewed})))
               :missing-coverage
               (rejection-summary
                (actions/bulk-update-workflow-status-action
                 (state system)
-                (workbench-signals {:policy-id policy-id
-                                    :selected-ids [missing-coverage-id]
+                (workbench-signals {:policy-id     policy-id
+                                    :selected-ids  [missing-coverage-id]
                                     :target-status :reviewed})))
               :foreign-coverage
               (rejection-summary
                (actions/bulk-update-workflow-status-action
                 (state system)
-                (workbench-signals {:policy-id policy-id
-                                    :selected-ids [coverage-id foreign-coverage-id]
+                (workbench-signals {:policy-id     policy-id
+                                    :selected-ids  [coverage-id foreign-coverage-id]
                                     :target-status :reviewed})))})))))
 
 (deftest apply-filter-action-stores-active-category-filter-in-page-state
@@ -383,8 +383,8 @@
              [:insurance-workbench :filters :category-ids]
              [category-a category-b]]
             (merge-signals-response
-             {:insuranceWorkbench {:filterEditor  {:field ""
-                                                   :source nil
+             {:insuranceWorkbench {:filterEditor  {:field        ""
+                                                   :source       nil
                                                    :appliedField "category"}
                                    :filterPopover {:open false}}})]
            (actions/apply-filter-action
@@ -396,13 +396,13 @@
            [:insurance-workbench :filters :ownership]
            :private]
           (merge-signals-response
-           {:insuranceWorkbench {:filterEditor  {:field ""
-                                                 :source nil
+           {:insuranceWorkbench {:filterEditor  {:field        ""
+                                                 :source       nil
                                                  :appliedField "ownership"}
                                  :filterPopover {:open false}}})]
          (actions/apply-filter-action
           {}
-          (apply-filter-signals {:field :ownership
+          (apply-filter-signals {:field     :ownership
                                  :ownership :private})))))
 
 (deftest apply-filter-action-stores-extended-filters-in-page-state
@@ -426,27 +426,27 @@
            {:coverage-types
             (first (actions/apply-filter-action
                     {}
-                    (apply-filter-signals {:field :coverage-types
+                    (apply-filter-signals {:field             :coverage-types
                                            :coverage-type-ids [type-a type-b]})))
             :photos
             (first (actions/apply-filter-action
                     {}
-                    (apply-filter-signals {:field :photos
+                    (apply-filter-signals {:field           :photos
                                            :missing-photos? true})))
             :harmonia-id
             (first (actions/apply-filter-action
                     {}
-                    (apply-filter-signals {:field :harmonia-id
+                    (apply-filter-signals {:field                :harmonia-id
                                            :missing-harmonia-id? true})))
             :workflow
             (first (actions/apply-filter-action
                     {}
-                    (apply-filter-signals {:field :workflow
+                    (apply-filter-signals {:field             :workflow
                                            :workflow-statuses [:needs-review :reviewed]})))
             :change
             (first (actions/apply-filter-action
                     {}
-                    (apply-filter-signals {:field :change
+                    (apply-filter-signals {:field           :change
                                            :change-statuses [:changed :new]})))}))))
 
 (deftest apply-filter-action-stores-value-filter-in-page-state
@@ -455,8 +455,8 @@
                           {:operator :greater-than
                            :value    1000M}]
                          (merge-signals-response
-                          {:insuranceWorkbench {:filterEditor  {:field ""
-                                                                :source nil
+                          {:insuranceWorkbench {:filterEditor  {:field        ""
+                                                                :source       nil
                                                                 :appliedField "value"}
                                                 :filterPopover {:open false}}})]
           :between      [[:app.datastar/assoc-state
@@ -465,37 +465,37 @@
                            :min      1000M
                            :max      3000M}]
                          (merge-signals-response
-                          {:insuranceWorkbench {:filterEditor  {:field ""
-                                                                :source nil
+                          {:insuranceWorkbench {:filterEditor  {:field        ""
+                                                                :source       nil
                                                                 :appliedField "value"}
                                                 :filterPopover {:open false}}})]
           :blank        [[:app.datastar/assoc-state
                           [:insurance-workbench :filters :value-filter]
                           nil]
                          (merge-signals-response
-                          {:insuranceWorkbench {:filterEditor  {:field ""
-                                                                :source nil
+                          {:insuranceWorkbench {:filterEditor  {:field        ""
+                                                                :source       nil
                                                                 :appliedField "value"}
                                                 :filterPopover {:open false}}})]}
          {:greater-than
           (actions/apply-filter-action
            {}
-           (apply-filter-signals {:field :value
+           (apply-filter-signals {:field          :value
                                   :value-operator :greater-than
-                                  :value "1000"}))
+                                  :value          "1000"}))
           :between
           (actions/apply-filter-action
            {}
-           (apply-filter-signals {:field :value
+           (apply-filter-signals {:field          :value
                                   :value-operator :between
-                                  :value-min "1000"
-                                  :value-max "3000"}))
+                                  :value-min      "1000"
+                                  :value-max      "3000"}))
           :blank
           (actions/apply-filter-action
            {}
-           (apply-filter-signals {:field :value
+           (apply-filter-signals {:field          :value
                                   :value-operator :less-than
-                                  :value ""}))})))
+                                  :value          ""}))})))
 
 (deftest toggle-table-column-action-stores-column-visibility-in-view-scoped-page-state
   (is (= {:hide [[:app.datastar/assoc-state
@@ -507,28 +507,28 @@
          {:hide
           (actions/toggle-table-column-action
            {}
-           {:insuranceWorkbench {:table {:view "missing-id"
-                                         :column "cost"
+           {:insuranceWorkbench {:table {:view          "missing-id"
+                                         :column        "cost"
                                          :columnVisible false}}})
           :show
           (actions/toggle-table-column-action
            {}
-           {:insuranceWorkbench {:table {:view "missing-id"
-                                         :column "cost"
+           {:insuranceWorkbench {:table {:view          "missing-id"
+                                         :column        "cost"
                                          :columnVisible true}}})})))
 
 (deftest toggle-table-column-action-rejects-unsupported-columns
   (is (= {:selection-column []
-          :unknown-column []}
+          :unknown-column   []}
          {:selection-column
           (actions/toggle-table-column-action
            {}
-           {:insuranceWorkbench {:table {:column "selection"
+           {:insuranceWorkbench {:table {:column        "selection"
                                          :columnVisible false}}})
           :unknown-column
           (actions/toggle-table-column-action
            {}
-           {:insuranceWorkbench {:table {:column "internal"
+           {:insuranceWorkbench {:table {:column        "internal"
                                          :columnVisible false}}})})))
 
 (deftest toggle-table-column-action-normalizes-string-visibility
@@ -537,5 +537,5 @@
            false]]
          (actions/toggle-table-column-action
           {}
-          {:insuranceWorkbench {:table {:column "harmonia-id"
+          {:insuranceWorkbench {:table {:column        "harmonia-id"
                                         :columnVisible "false"}}}))))

@@ -41,7 +41,7 @@
         (is (= {:width       :standard
                 :breadcrumbs [:account-settings/title
                               :account-settings/preferences-title]
-                :mobile      {:href "/account-settings"
+                :mobile      {:href  "/account-settings"
                               :label :account-settings/title}
                 :actions     []
                 :overflow    []
@@ -66,15 +66,15 @@
               (mapv #(-> % support/attrs :value)
                     (support/elements :option
                                       (support/element-by-id id view))))]
-        (is (= {:name "week-start"
-                :form "account-preferences-form"
+        (is (= {:name      "week-start"
+                :form      "account-preferences-form"
                 :data-bind "account-preferences.week-start"}
                (select-keys (control "account-preferences-week-start" view)
                             [:name :form :data-bind])))
         (is (= ["monday" "sunday"]
                (option-values "account-preferences-week-start")))
-        (is (= {:name "time-format"
-                :form "account-preferences-form"
+        (is (= {:name      "time-format"
+                :form      "account-preferences-form"
                 :data-bind "account-preferences.time-format"}
                (select-keys (control "account-preferences-time-format" view)
                             [:name :form :data-bind])))

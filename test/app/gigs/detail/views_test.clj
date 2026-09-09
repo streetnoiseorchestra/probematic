@@ -60,14 +60,14 @@
 (deftest current-and-past-gig-toolbar-actions
   (testing "Today and past gigs expose play logging as the primary action."
     (let [today (t/date (util/local-time-austria!))]
-      (is (= [{:visible [{:label :gigs/log-plays
-                          :href  (str "/gig/" gig-id "/log-plays")}]
+      (is (= [{:visible  [{:label :gigs/log-plays
+                           :href  (str "/gig/" gig-id "/log-plays")}]
                :overflow [{:label :action/edit
                            :value (str "/gig/" gig-id "/edit")}
                           {:label       :gigs/remind-all
                            :data-dialog "open gig-detail-remind-all-dialog"}]}
-              {:visible [{:label :gigs/log-plays
-                          :href  (str "/gig/" gig-id "/log-plays")}]
+              {:visible  [{:label :gigs/log-plays
+                           :href  (str "/gig/" gig-id "/log-plays")}]
                :overflow [{:label :action/edit
                            :value (str "/gig/" gig-id "/edit")}
                           {:label       :gigs/remind-all
@@ -78,8 +78,8 @@
 (deftest future-gig-toolbar-actions
   (testing "A future gig exposes editing as the primary action."
     (let [today (t/date (util/local-time-austria!))]
-      (is (= {:visible [{:label :action/edit
-                         :href  (str "/gig/" gig-id "/edit")}]
+      (is (= {:visible  [{:label :action/edit
+                          :href  (str "/gig/" gig-id "/edit")}]
               :overflow [{:label :gigs/log-plays
                           :value (str "/gig/" gig-id "/log-plays")}
                          {:label       :gigs/remind-all
@@ -91,8 +91,8 @@
 
 (deftest archived-gig-toolbar-actions
   (testing "An archived gig omits the reminder action."
-    (is (= {:visible [{:label :gigs/log-plays
-                       :href  (str "/gig/" gig-id "/log-plays")}]
+    (is (= {:visible  [{:label :gigs/log-plays
+                        :href  (str "/gig/" gig-id "/log-plays")}]
             :overflow [{:label :action/edit
                         :value (str "/gig/" gig-id "/edit")}]}
            (-> (t/date (util/local-time-austria!))

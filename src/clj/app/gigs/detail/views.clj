@@ -154,9 +154,9 @@
          (t/>> (t/instant sent-at) (t/new-duration 24 :hours)))))
 
 (defn- remind-all-menu-item [{:keys [page-state] :as req}]
-  (let [sent-at       (get-in page-state actions/remind-all-sent-at-path)
-        recent?       (recent-reminder? sent-at)
-        dialog-id     "gig-detail-remind-all-dialog"]
+  (let [sent-at   (get-in page-state actions/remind-all-sent-at-path)
+        recent?   (recent-reminder? sent-at)
+        dialog-id "gig-detail-remind-all-dialog"]
     [:wa-dropdown-item {:data-dialog (str "open " dialog-id)}
      (when recent?
        [ico/Icon {::ico/library :snoico
@@ -210,7 +210,7 @@
                                                        ::ico/name    :pencil-simple}
                                                       edit-label))]
                                  (not archived?) (conj (remind-all-menu-item req)))
-                               :aria-label [:i18n/tr :gigs/detail-toolbar-label]}]))
+                               :aria-label                   [:i18n/tr :gigs/detail-toolbar-label]}]))
 
 (defn- remind-all-dialog [req gig-id]
   [:wa-dialog {:id    "gig-detail-remind-all-dialog"
@@ -242,7 +242,7 @@
         [:i18n/tr :gigs/show-committed-attendance])]]))
 
 (defn- attendance-section [{:keys [db page-state] :as req} {:gig/keys [gig-id] :as gig}]
-  (let [show-committed? (boolean (get-in page-state [:gig-detail :attendance :show-committed?]))
+  (let [show-committed?                      (boolean (get-in page-state [:gig-detail :attendance :show-committed?]))
         {:keys [archived? sections summary]} (gigs.queries/attendance-data db gig show-committed?)]
     (ui2/section-card
      {:id       "gig-attendance"

@@ -313,7 +313,7 @@
                                                              :data-dialog (str "open " (remove-dialog-id coverage))}
                                           [:i18n/tr :action/delete]]])
                                       ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-                                      :aria-label                    [:i18n/tr :insurance/toolbar-label]}]}
+                                      :aria-label                   [:i18n/tr :insurance/toolbar-label]}]}
           [:div {:class "insurance-coverage-edit-page wa-stack wa-gap-2xl"}
            [page-header/PageHeader {:class    "insurance-coverage-page-header"
                                     :title    (:instrument/name instrument)
@@ -321,7 +321,7 @@
            (edit-form req coverage policy)]]
          (remove-dialog req coverage)
          (upload/upload-script)))
-      (throw (ex-info "Instrument coverage not found" {:app/error-type :app.error.type/not-found
+      (throw (ex-info "Instrument coverage not found" {:app/error-type                  :app.error.type/not-found
                                                        :instrument.coverage/coverage-id coverage-id})))))
 
 (d*/refresh-all!)

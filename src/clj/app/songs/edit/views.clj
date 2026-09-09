@@ -111,7 +111,7 @@
                                               :href       (urls/link-songs-home)}
                                [:i18n/tr :action/cancel]]
                               (save-button)]
-                             :aria-label [:i18n/tr :repertoire/edit-toolbar-label]}])
+                             :aria-label               [:i18n/tr :repertoire/edit-toolbar-label]}])
 
 (defn- edit-toolbar [song]
   (let [song-url (urls/link-song song)]
@@ -132,7 +132,7 @@
                                                     :data-dialog (str "open " (song-remove-dialog-id song))}
                                  [:i18n/tr :action/delete]]]
                                ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-                               :aria-label                    [:i18n/tr :repertoire/edit-toolbar-label]}]))
+                               :aria-label                   [:i18n/tr :repertoire/edit-toolbar-label]}]))
 
 (defn- edit-header [{:song/keys [active? title]}]
   [page-header/PageHeader
@@ -143,7 +143,7 @@
 (defn create-header []
   [page-header/PageHeader {:title [:i18n/tr :repertoire/add-song]}])
 
-(defn- song->form [{:song/keys [active? arrangement-credits arrangement-notes composition-credits lyrics origin solo-info song-id title]
+(defn- song->form [{:song/keys        [active? arrangement-credits arrangement-notes composition-credits lyrics origin solo-info song-id title]
                     :forum.topic/keys [topic-id]}]
   {:song-id             (str song-id)
    :title               (form/text-value title)

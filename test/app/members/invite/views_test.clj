@@ -21,7 +21,7 @@
    (name (last path))))
 
 (def request
-  {:tr tr
+  {:tr     tr
    :params {:invite-code "retry-code"}})
 
 (defn- breadcrumb-parent-context [breadcrumb]
@@ -35,21 +35,21 @@
 (deftest acceptance-form-contains-only-the-invitation-receipt-test
   (let [view
         (views/accept-invite-form
-         {:member {:member/email "alice@example.com"}
+         {:member      {:member/email "alice@example.com"}
           :invite-code "retry-code"})
         form        (l/select-one "form" view)
         invite-code (l/select-one "input[type=hidden]" form)]
-    (is (= {:siblings [:header :p :dl :footer]
-            :form {:action "/invite-accept"
-                   :method "POST"}
-            :email "alice@example.com"
-            :invite-code {:type "hidden"
-                          :name "invite-code"
-                          :value "retry-code"}
+    (is (= {:siblings             [:header :p :dl :footer]
+            :form                 {:action "/invite-accept"
+                                   :method "POST"}
+            :email                "alice@example.com"
+            :invite-code          {:type  "hidden"
+                                   :name  "invite-code"
+                                   :value "retry-code"}
             :password-input-count 0}
-           {:siblings (mapv first view)
-            :form (select-keys (l/attrs form) [:action :method])
-            :email (some-> (l/select-one "code" view) l/text)
+           {:siblings    (mapv first view)
+            :form        (select-keys (l/attrs form) [:action :method])
+            :email       (some-> (l/select-one "code" view) l/text)
             :invite-code (select-keys (l/attrs invite-code)
                                       [:type :name :value])
             :password-input-count
@@ -58,7 +58,7 @@
 (deftest accepted-receipt-renders-success-without-another-create-form-test
   (with-redefs [views/load-invite
                 (fn [_req]
-                  {:member {:member/email "alice@example.com"}
+                  {:member           {:member/email "alice@example.com"}
                    :invite-accepted? true})
                 views/login-link
                 (fn [_req _member]
@@ -81,11 +81,11 @@
 
 (deftest invitation-editor-owns-its-lifecycle-actions-test
   (let [{:keys [conn]} (tc/new-system "member-invite-view")
-        request        {::r/router       (r/router ["/act" {:name :app.routes.datastar/act}])
+        request        {::r/router      (r/router ["/act" {:name :app.routes.datastar/act}])
                         :current-locale :en
                         :db             (d/db conn)
                         :page-state     {}
-                        :app/session        {:session/roles #{}}
+                        :app/session    {:session/roles #{}}
                         :system         {:env {}}
                         :tr             tr}
         view           (views/page request)
@@ -113,7 +113,7 @@
                             [:data-on:blur
                              :data-on:input__debounce.500ms])])))
          (l/select "wa-input" form))
-        section-attrs (some-> (l/select-one "wa-select" form) l/attrs)]
+        section-attrs  (some-> (l/select-one "wa-select" form) l/attrs)]
     (is (= :standard (::page-surface/width surface-attrs)))
     (is (= [:members/title :members/invite-member]
            (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
@@ -122,14 +122,14 @@
             :label :members/title}
            (breadcrumb-parent-context breadcrumb)))
     (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
-    (is (= [{:form nil
-             :href "/members"
+    (is (= [{:form  nil
+             :href  "/members"
              :label :action/cancel
-             :type nil}
-            {:form "member-invite-form"
-             :href nil
+             :type  nil}
+            {:form  "member-invite-form"
+             :href  nil
              :label :members/invite-member
-             :type "submit"}]
+             :type  "submit"}]
            (mapv (fn [action]
                    {:form  (:form (l/attrs action))
                     :href  (:href (l/attrs action))
@@ -148,19 +148,19 @@
                    ::page-header/title
                    l/first-child)))
     (is (= {"member-invite.name"
-            {:data-on:blur                    (validation-action "name")
+            {:data-on:blur                  (validation-action "name")
              :data-on:input__debounce.500ms (validation-action "name")}
             "member-invite.nick"
-            {:data-on:blur                    (validation-action "nick")
+            {:data-on:blur                  (validation-action "nick")
              :data-on:input__debounce.500ms (validation-action "nick")}
             "member-invite.email"
-            {:data-on:blur                    (validation-action "email")
+            {:data-on:blur                  (validation-action "email")
              :data-on:input__debounce.500ms (validation-action "email")}
             "member-invite.username"
-            {:data-on:blur                    (validation-action "username")
+            {:data-on:blur                  (validation-action "username")
              :data-on:input__debounce.500ms (validation-action "username")}
             "member-invite.phone"
-            {:data-on:blur                    (validation-action "phone")
+            {:data-on:blur                  (validation-action "phone")
              :data-on:input__debounce.500ms (validation-action "phone")}}
            input-validation))
     (is (= {:data-on:blur (validation-action "section-name")}

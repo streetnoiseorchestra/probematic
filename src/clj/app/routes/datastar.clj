@@ -66,7 +66,7 @@
                           "Vary"           "Accept-Encoding"}
                    (= :br encoding)   (assoc "content-encoding" "br")
                    (= :gzip encoding) (assoc "content-encoding" "gzip"))]
-    {:status 200
+    {:status  200
      :headers headers
      :body    (ByteArrayInputStream. body)}))
 
@@ -75,7 +75,7 @@
   (precompressed-shim-response req (cached-precompressed-shim req)))
 
 (defn- full-page-response [render-fn opts req]
-  {:status 200
+  {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (layout2/datastar-page-html req opts (render-fn req))})
 
@@ -106,22 +106,22 @@
         action       (get-in nexus-config [:nexus/actions action-key])]
     (cond
       (nil? action-key)
-      {:status 400
+      {:status  400
        :headers {}
-       :body "Missing or invalid act query params: ns and kw"}
+       :body    "Missing or invalid act query params: ns and kw"}
 
       (nil? action)
-      {:status 404
+      {:status  404
        :headers {}
-       :body (str "No such action registered for " action-key)}
+       :body    (str "No such action registered for " action-key)}
 
       :else
       [[action-key (action-body req)]])))
 
 (defn act-route [system]
-  ["/act" {:name       ::act
+  ["/act" {:name         ::act
            :interceptors [(nexus/nexus-interceptor (:nexus system) system)]
-           :post       {:handler act-handler}}])
+           :post         {:handler act-handler}}])
 
 (defn- wrap-render-fn [render-fn]
   (fn [req]

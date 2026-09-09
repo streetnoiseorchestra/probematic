@@ -30,12 +30,12 @@
   (with-db
     (fn [db]
       (let [s    (session/init! db {:expire-secs 60})
-            data {:session/email "member@example.com"
-                  :session/roles #{:admin :Mitglieder}
-                  :session/member-id (random-uuid)
-                  :session/access-token "access-token"
+            data {:session/email         "member@example.com"
+                  :session/roles         #{:admin :Mitglieder}
+                  :session/member-id     (random-uuid)
+                  :session/access-token  "access-token"
                   :session/refresh-token "refresh-token"
-                  :nested {:items [nil false 42]}}
+                  :nested                {:items [nil false 42]}}
             key  (session/write-session! s nil data)]
         (is (re-matches #"[A-Za-z0-9_-]{27}" key))
         (is (= 20 (alength (.decode (java.util.Base64/getUrlDecoder) ^String key))))
@@ -54,7 +54,7 @@
 (deftest expiry-is-refreshed-only-by-writes
   (with-db
     (fn [db]
-      (let [s (session/init! db {:expire-secs 60})
+      (let [s   (session/init! db {:expire-secs 60})
             key (t/with-clock (t/instant "2026-08-01T00:00:00Z")
                   (session/write-session! s nil {:value :original}))]
         (t/with-clock (t/instant "2026-08-01T00:00:59Z")
@@ -73,11 +73,11 @@
 (deftest startup-removes-expired-sessions
   (with-db
     (fn [db]
-      (let [s (session/init! db {:expire-secs 60})
+      (let [s       (session/init! db {:expire-secs 60})
             expired (t/with-clock (t/instant "2026-08-01T00:00:00Z")
                       (session/write-session! s nil {:expired true}))
-            live (t/with-clock (t/instant "2026-08-01T00:00:30Z")
-                   (session/write-session! s nil {:live true}))]
+            live    (t/with-clock (t/instant "2026-08-01T00:00:30Z")
+                      (session/write-session! s nil {:live true}))]
         (t/with-clock (t/instant "2026-08-01T00:01:00Z")
           (let [recreated (session/init! db {:expire-secs 60})]
             (is (= [nil {:live true}]
@@ -88,11 +88,11 @@
   (with-filename
     (fn [filename]
       (let [config {:filename filename :config {:pool-size 2}}
-            data {:session/roles #{:admin}}
-            key (let [db (sqlite/start config)]
-                  (try
-                    (session/write-session! (session/init! db {:expire-secs 60}) nil data)
-                    (finally (sqlite/stop db))))]
+            data   {:session/roles #{:admin}}
+            key    (let [db (sqlite/start config)]
+                     (try
+                       (session/write-session! (session/init! db {:expire-secs 60}) nil data)
+                       (finally (sqlite/stop db))))]
         (testing "all connections close and SQLite removes the WAL"
           (is (not (.exists (io/file (str filename "-wal"))))))
         (let [db (sqlite/start config)]
@@ -104,11 +104,11 @@
   (with-filename
     (fn [filename]
       (let [config {:filename filename :config {:pool-size 1}}
-            a (sqlite/start config)]
+            a      (sqlite/start config)]
         (try
-          (let [sa (session/init! a {:expire-secs 60})
+          (let [sa  (session/init! a {:expire-secs 60})
                 key (session/write-session! sa nil {:value 1})
-                b (sqlite/start config)]
+                b   (sqlite/start config)]
             (try
               (let [sb (session/init! b {:expire-secs 60})]
                 (is (= {:value 1} (session/read-session sb key)))
@@ -122,21 +122,21 @@
 (deftest in-memory-database-shares-one-pool
   (let [db (sqlite/start {:filename ":memory:"})]
     (try
-      (let [s (session/init! db {:expire-secs 60})
+      (let [s   (session/init! db {:expire-secs 60})
             key (session/write-session! s nil {:value 1})]
         (is (identical? (:writer db) (:reader db)))
         (is (= {:value 1} (session/read-session s key))))
       (finally (sqlite/stop db)))))
 
 (deftest shutdown-waits-for-borrowed-connections
-  (let [db (sqlite/start {:filename ":memory:"})
+  (let [db       (sqlite/start {:filename ":memory:"})
         borrowed (promise)
-        release (promise)
-        reader (future
-                 (sql/with-conn [conn (:reader db)]
-                   (deliver borrowed true)
-                   @release
-                   (sql/q conn ["SELECT 1"])))]
+        release  (promise)
+        reader   (future
+                   (sql/with-conn [conn (:reader db)]
+                     (deliver borrowed true)
+                     @release
+                     (sql/q conn ["SELECT 1"])))]
     (is (= true (deref borrowed 5000 ::timeout)))
     (let [closing (future (sqlite/stop db))]
       (try

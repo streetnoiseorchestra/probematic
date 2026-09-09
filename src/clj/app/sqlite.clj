@@ -14,16 +14,16 @@
 (defn stop
   "Closes the database after all callers have stopped using it. Call once."
   [db]
-  (let [pools (if (identical? (:reader db) (:writer db))
-                [(:writer db)]
-                [(:reader db) (:writer db)])
-        codes (for [pool pools
-                    _ (:connections pool)]
-                (let [conn (.take ^java.util.concurrent.BlockingQueue (:conn-pool pool))]
+  (let [pools  (if (identical? (:reader db) (:writer db))
+                 [(:writer db)]
+                 [(:reader db) (:writer db)])
+        codes  (for [pool pools
+                     _    (:connections pool)]
+                 (let [conn (.take ^java.util.concurrent.BlockingQueue (:conn-pool pool))]
                   ;; sqlite4clj does not finalize its cached statements on close.
-                  (doseq [cached (vals @(:stmt-cache conn))]
-                    (api/finalize (:stmt (force cached))))
-                  (api/close (:pdb conn))))
+                   (doseq [cached (vals @(:stmt-cache conn))]
+                     (api/finalize (:stmt (force cached))))
+                   (api/close (:pdb conn))))
         errors (into [] (remove zero?) codes)]
     (when (seq errors)
       (throw (ex-info "Could not close SQLite connections" {:codes errors})))))

@@ -31,16 +31,16 @@
 
 (defn- song-update-map
   [{:keys [song-id title active? composition-credits arrangement-credits arrangement-notes origin lyrics solo-info topic-id]}]
-  {:song/song-id              (util/ensure-uuid! song-id)
-   :song/title                title
-   :song/active?              (form/normalize-bool active?)
-   :song/solo-info            (form/optional-text solo-info)
-   :song/composition-credits  (form/optional-text composition-credits)
-   :song/arrangement-credits  (form/optional-text arrangement-credits)
-   :song/arrangement-notes    (form/optional-text arrangement-notes)
-   :song/origin               (form/optional-text origin)
-   :song/lyrics               (form/optional-text lyrics)
-   :forum.topic/topic-id      (some-> topic-id form/optional-text discourse/parse-topic-id)})
+  {:song/song-id             (util/ensure-uuid! song-id)
+   :song/title               title
+   :song/active?             (form/normalize-bool active?)
+   :song/solo-info           (form/optional-text solo-info)
+   :song/composition-credits (form/optional-text composition-credits)
+   :song/arrangement-credits (form/optional-text arrangement-credits)
+   :song/arrangement-notes   (form/optional-text arrangement-notes)
+   :song/origin              (form/optional-text origin)
+   :song/lyrics              (form/optional-text lyrics)
+   :forum.topic/topic-id     (some-> topic-id form/optional-text discourse/parse-topic-id)})
 
 (defn update-song-tx-data [params]
   [(song-update-map params)])
@@ -81,15 +81,15 @@
 
 (defn update-song-action
   [{:keys [db tr]} signals]
-  (let [params (normalize-form (form-params signals))
+  (let [params  (normalize-form (form-params signals))
         song-id (util/ensure-uuid! (:song-id params))
-        song   (q/retrieve-song db song-id)
-        errors (with-generic-top-error
-                 tr
-                 (merge
-                  (when-not song
-                    (top-error (tr [:error/not-found-title])))
-                  (validation-errors {:tr tr} params)))]
+        song    (q/retrieve-song db song-id)
+        errors  (with-generic-top-error
+                  tr
+                  (merge
+                   (when-not song
+                     (top-error (tr [:error/not-found-title])))
+                   (validation-errors {:tr tr} params)))]
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state [:song-edit] (assoc params :_error errors)]]

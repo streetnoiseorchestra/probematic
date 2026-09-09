@@ -25,7 +25,7 @@
 (defn system-config
   "Construct an expanded Integrant config for the given Aero options."
   [opts]
-  (let [config (config opts)
+  (let [config        (config opts)
         system-config (:ig/system config)]
     (load-namespaces system-config)
     (ig/expand system-config)))

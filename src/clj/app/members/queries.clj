@@ -17,12 +17,12 @@
            :dir     (if (= :asc (-> sorting first :order)) :asc :desc)})
   (let [asc? (= :asc (-> sorting first :order))
 
-        r (sort-by (fn [v]
-                     (mapv (fn [s]
-                             (if (string? s)
-                               (str/lower-case s)
-                               s))
-                           ((apply juxt (map :field sorting)) v))) coll)]
+        r    (sort-by (fn [v]
+                        (mapv (fn [s]
+                                (if (string? s)
+                                  (str/lower-case s)
+                                  s))
+                              ((apply juxt (map :field sorting)) v))) coll)]
     (if asc? r (reverse r))))
 
 (def filter-preset-pred
@@ -119,13 +119,13 @@
     (when (or (and (= :member.invite.status/pending invite-status)
                    (after? invite-expires-at now))
               (recoverable-invitation-statuses invite-status))
-      {:member (d/find-by db
-                          :member/member-id
-                          member-id
-                          acceptance-member-pattern)
-       :member-id member-id
-       :invite-code invite-code
-       :invite-status invite-status
+      {:member            (d/find-by db
+                                     :member/member-id
+                                     member-id
+                                     acceptance-member-pattern)
+       :member-id         member-id
+       :invite-code       invite-code
+       :invite-status     invite-status
        :invite-generation invite-generation})))
 
 (defn accepted-invitation-by-code
@@ -146,10 +146,10 @@
                 normalize-invitation-status)]
       (when (and (= :member.invite.status/accepted invite-status)
                  (not (str/blank? keycloak-id)))
-        {:member (d/find-by db
-                            :member/member-id
-                            member-id
-                            acceptance-member-pattern)
+        {:member    (d/find-by db
+                               :member/member-id
+                               member-id
+                               acceptance-member-pattern)
          :member-id member-id}))))
 
 (defn revoked-invitation-by-member-id
@@ -203,29 +203,29 @@
     (if (some #{page-size} page-size-options) page-size 30)))
 
 (defn paginate-members [page-state members]
-  (let [members (vec members)
+  (let [members       (vec members)
         total-results (count members)
-        page-size (normalize-page-size (:page-size page-state))
-        total-pages (max 1 (quot (+ total-results (dec page-size)) page-size))
-        page (min (normalize-page (:page page-state)) total-pages)
-        offset (* (dec page) page-size)
-        range-end (min total-results (+ offset page-size))]
-    {:members (subvec members offset range-end)
-     :page page
-     :page-size page-size
+        page-size     (normalize-page-size (:page-size page-state))
+        total-pages   (max 1 (quot (+ total-results (dec page-size)) page-size))
+        page          (min (normalize-page (:page page-state)) total-pages)
+        offset        (* (dec page) page-size)
+        range-end     (min total-results (+ offset page-size))]
+    {:members       (subvec members offset range-end)
+     :page          page
+     :page-size     page-size
      :total-results total-results
-     :range-start (if (pos? total-results) (inc offset) 0)
-     :range-end range-end
-     :has-prev? (> page 1)
-     :has-next? (< page total-pages)}))
+     :range-start   (if (pos? total-results) (inc offset) 0)
+     :range-end     range-end
+     :has-prev?     (> page 1)
+     :has-next?     (< page total-pages)}))
 
 (def default-page-state
-  {:search                    ""
-   :filter-preset             "active"
-   :sort-field                "name"
-   :sort-order                "asc"
-   :page                      1
-   :page-size                 30})
+  {:search        ""
+   :filter-preset "active"
+   :sort-field    "name"
+   :sort-order    "asc"
+   :page          1
+   :page-size     30})
 
 (def valid-filter-presets
   #{"all" "active" "inactive"})

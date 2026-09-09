@@ -7,11 +7,11 @@
    [datomic.api :as d]))
 
 (def translations
-  {[:action/save]          "Save"
-   [:error/form-has-errors] "Please fix the errors in the form."
-   [:error/is-required]    "%field is required."
-   [:error/not-found-title]          "Not Found"
-   [:repertoire/song-title-label]    "Song Title"})
+  {[:action/save]                 "Save"
+   [:error/form-has-errors]       "Please fix the errors in the form."
+   [:error/is-required]           "%field is required."
+   [:error/not-found-title]       "Not Found"
+   [:repertoire/song-title-label] "Song Title"})
 
 (defn tr
   ([k]

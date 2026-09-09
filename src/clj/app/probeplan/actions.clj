@@ -143,10 +143,10 @@
   (let [new-set     (set new-song-tuples)
         current-set (set current-song-tuples)
         add-tx      (for [song-tuple new-song-tuples
-                          :when (not (current-set song-tuple))]
+                          :when      (not (current-set song-tuple))]
                       [:db/add eid :probeplan.classic/ordered-songs song-tuple])
         remove-tx   (for [song-tuple current-song-tuples
-                          :when (not (new-set song-tuple))]
+                          :when      (not (new-set song-tuple))]
                       [:db/retract eid :probeplan.classic/ordered-songs song-tuple])]
     (vec (concat add-tx remove-tx))))
 

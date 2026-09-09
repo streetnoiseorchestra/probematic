@@ -56,9 +56,9 @@
   [:db/transact tx-data {:on-success [[:app.gigs/trigger-gig-edited gig-id :attendance]]}])
 
 (defn update-attendance-plan-action [{:keys [db] :as state} signals]
-  (let [{:keys [plan] :as params} (:gig-attendance signals)
+  (let [{:keys [plan] :as params}  (:gig-attendance signals)
         {:keys [gig-id member-id]} (ids params)
-        plan-kw (str->plan plan)]
+        plan-kw                    (str->plan plan)]
     (if-not plan-kw
       (invalid-plan state)
       (let [tx-data (if (attendance db gig-id member-id)
@@ -68,8 +68,8 @@
 
 (defn update-attendance-motivation-action [{:keys [db] :as state} signals]
   (let [{:keys [motivation] :as params} (:gig-attendance signals)
-        {:keys [gig-id member-id]} (ids params)
-        motivation-kw (str->motivation motivation)]
+        {:keys [gig-id member-id]}      (ids params)
+        motivation-kw                   (str->motivation motivation)]
     (if-not motivation-kw
       (invalid-motivation state)
       (let [tx-data (if (attendance db gig-id member-id)
@@ -79,7 +79,7 @@
 
 (defn open-attendance-comment-action [_state signals]
   (let [{:keys [comment] :as params} (:gig-attendance signals)
-        {:keys [gig-id member-id]} (ids params)]
+        {:keys [gig-id member-id]}   (ids params)]
     [[:app.datastar/assoc-state
       comment-edit-path
       {:gig-id    (str gig-id)
@@ -109,9 +109,9 @@
 
 (defn update-attendance-comment-action [{:keys [db]} signals]
   (let [{:keys [comment] :as params} (:gig-attendance signals)
-        {:keys [gig-id member-id]} (ids params)
-        tx-data    (comment-tx-data db gig-id member-id comment)
-        close-edit [:app.datastar/assoc-state comment-edit-path nil]]
+        {:keys [gig-id member-id]}   (ids params)
+        tx-data                      (comment-tx-data db gig-id member-id comment)
+        close-edit                   [:app.datastar/assoc-state comment-edit-path nil]]
     (if tx-data
       [(transact-attendance-effect gig-id tx-data)
        close-edit]
@@ -119,33 +119,33 @@
 
 (defn switch-attendance-comment-action [{:keys [db]} signals]
   (let [{:keys [comment comment-gig-id comment-member-id next-comment next-gig-id next-member-id]} (:gig-attendance signals)
-        comment-gig-id    (util/ensure-uuid! comment-gig-id)
-        comment-member-id (util/ensure-uuid! comment-member-id)
-        next-gig-id       (util/ensure-uuid! next-gig-id)
-        next-member-id    (util/ensure-uuid! next-member-id)
-        tx-data           (comment-tx-data db comment-gig-id comment-member-id comment)
-        open-next         [:app.datastar/assoc-state
-                           comment-edit-path
-                           {:gig-id    (str next-gig-id)
-                            :member-id (str next-member-id)
-                            :comment   (or next-comment "")}]
-        clear-switching   [:app.datastar/respond-sse
-                           [[:app.datastar.sse/merge-signals
-                             {:gig-attendance {:switching-comment false}}]]]]
+        comment-gig-id                                                                             (util/ensure-uuid! comment-gig-id)
+        comment-member-id                                                                          (util/ensure-uuid! comment-member-id)
+        next-gig-id                                                                                (util/ensure-uuid! next-gig-id)
+        next-member-id                                                                             (util/ensure-uuid! next-member-id)
+        tx-data                                                                                    (comment-tx-data db comment-gig-id comment-member-id comment)
+        open-next                                                                                  [:app.datastar/assoc-state
+                                                                                                    comment-edit-path
+                                                                                                    {:gig-id    (str next-gig-id)
+                                                                                                     :member-id (str next-member-id)
+                                                                                                     :comment   (or next-comment "")}]
+        clear-switching                                                                            [:app.datastar/respond-sse
+                                                                                                    [[:app.datastar.sse/merge-signals
+                                                                                                      {:gig-attendance {:switching-comment false}}]]]]
     (cond-> []
       tx-data (conj (transact-attendance-effect comment-gig-id tx-data))
       true    (conj open-next clear-switching))))
 
 (defn toggle-attendance-committed-action [_state signals]
   (let [{:keys [show-committed? show-committed]} (:gig-attendance signals)
-        show-committed? (form/normalize-bool (if (some? show-committed?)
-                                               show-committed?
-                                               show-committed))]
+        show-committed?                          (form/normalize-bool (if (some? show-committed?)
+                                                                        show-committed?
+                                                                        show-committed))]
     [[:app.datastar/assoc-state show-committed-path show-committed?]]))
 
 (defn send-reminder-to-all-action [{:keys [now]} signals]
   (let [{:keys [gig-id]} (:gig-attendance signals)
-        gig-id (util/ensure-uuid! gig-id)]
+        gig-id           (util/ensure-uuid! gig-id)]
     [[:app.gigs/send-reminder-to-all gig-id]
      [:app.datastar/assoc-state remind-all-sent-at-path now]]))
 

@@ -30,8 +30,8 @@
        [:app.datastar/merge-state
         [:section-create]
         {:section-name section-name
-         :error {:section-name
-                 {:error (format "Section named '%s' already exists." section-name)}}}]]
+         :error        {:section-name
+                        {:error (format "Section named '%s' already exists." section-name)}}}]]
 
       :else
       (let [tx-data (support/with-audit [{:section/active? true
@@ -55,8 +55,8 @@
        [:app.datastar/merge-state
         [:section]
         {:section-name section-name
-         :error {:section-name
-                 {:error (format "Section named '%s' already exists." section-name)}}}]]
+         :error        {:section-name
+                        {:error (format "Section named '%s' already exists." section-name)}}}]]
 
       :else
       [[:db/transact
@@ -93,7 +93,7 @@
   [_ _]
   [support/clear-loading
    [:app.datastar/assoc-state [:section-create]
-    {:open true
+    {:open         true
      :section-name ""}]])
 
 (defn close-section-create-action [_state _signals]

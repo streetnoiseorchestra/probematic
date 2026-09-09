@@ -30,12 +30,12 @@
    (request {}))
   ([overrides]
    (let [{:keys [conn member-id]} @default-member-system]
-     (merge {:tr         settings-support/legacy-tr
-             :system     {:env {:name "Test Instance"}}
-             :db         (d/db conn)
-             :app/session    {:session/member {:member/member-id member-id}}
-             :page-state {}
-             ::r/router  router}
+     (merge {:tr          settings-support/legacy-tr
+             :system      {:env {:name "Test Instance"}}
+             :db          (d/db conn)
+             :app/session {:session/member {:member/member-id member-id}}
+             :page-state  {}
+             ::r/router   router}
             overrides))))
 
 (defn translation-keys [hiccup]

@@ -24,7 +24,7 @@
    (vals)
    (map (fn [gs]
           {:song/song-id (-> gs first :song/song-id)
-           :song/title (-> gs first :song/title)
+           :song/title   (-> gs first :song/title)
            :plays
            (->> gs
                 (sort-by :gig/date t/>)
@@ -36,7 +36,7 @@
 
 (defn calc-stats [db]
   (let [window-period (t/new-period 6 :months)
-        today (t/at (t/date) (t/midnight))
+        today         (t/at (t/date) (t/midnight))
         window-cutoff (t/<< today window-period)]
     (->> (fetch-plays db today)
          (map (partial domain/calc-play-stat window-cutoff))

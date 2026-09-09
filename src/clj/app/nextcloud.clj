@@ -64,9 +64,9 @@
     (->  resp parse-body :body :ocs :data)))
 
 (defn get-shares [config dir]
-  (let [resp @(request-v2 {:method :get
+  (let [resp @(request-v2 {:method       :get
                            :query-params {:path dir}
-                           :url "/apps/files_sharing/api/v1/shares"} config)]
+                           :url          "/apps/files_sharing/api/v1/shares"} config)]
     (->> resp
          parse-body-xml
          :body
@@ -90,13 +90,13 @@
     (filter #(= (:label %) label) shares)))
 
 (defn share-folder-public-ro [config  dir label]
-  (let [resp @(request-v2 {:method :post
+  (let [resp @(request-v2 {:method      :post
                            ;; :headers {"content-type" "application/x-www-form-urlencoded"}
-                           :form-params {:path dir
-                                         :shareType "3"
+                           :form-params {:path        dir
+                                         :shareType   "3"
                                          :permissions "1"
-                                         :label label}
-                           :url "/apps/files_sharing/api/v1/shares"} config)]
+                                         :label       label}
+                           :url         "/apps/files_sharing/api/v1/shares"} config)]
     (->> resp
          parse-body-xml
          :body
@@ -117,10 +117,10 @@
     (str nc-url base-path path)))
 
 (defn routes []
-  ["/nextcloud-fetch" {:parameters {:query [:map [:path string?]]}
-                       :coercion rcm/coercion
+  ["/nextcloud-fetch" {:parameters     {:query [:map [:path string?]]}
+                       :coercion       rcm/coercion
                        :app.route/name :app/nextcloud-fetch
-                       :handler (fn [req] (sardine/fetch-file-handler req false))}])
+                       :handler        (fn [req] (sardine/fetch-file-handler req false))}])
 
 (comment
   (do

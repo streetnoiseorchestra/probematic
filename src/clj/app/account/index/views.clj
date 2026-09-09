@@ -9,48 +9,48 @@
    [app.ui2.icon :as ico]))
 
 (def directory-items
-  [{:href "/account-settings/profile"
-    :icon :user
+  [{:href  "/account-settings/profile"
+    :icon  :user
     :title :account-settings/profile-row-title}
-   {:href "/account-settings/notifications"
-    :icon :bell
+   {:href         "/account-settings/notifications"
+    :icon         :bell
     :icon-library :phosphor
-    :title :account-settings/notifications-row-title}
-   {:href "/account-settings/preferences"
-    :icon :palette
+    :title        :account-settings/notifications-row-title}
+   {:href         "/account-settings/preferences"
+    :icon         :palette
     :icon-library :phosphor
-    :title :account-settings/preferences-row-title}
-   {:href "/account-settings/on-a-break"
-    :icon :pause-circle
+    :title        :account-settings/preferences-row-title}
+   {:href         "/account-settings/on-a-break"
+    :icon         :pause-circle
     :icon-library :phosphor
-    :title :account-settings/break-row-title}
-   {:href "#"
-    :icon :question
-    :title :account-settings/help-row-title
+    :title        :account-settings/break-row-title}
+   {:href             "#"
+    :icon             :question
+    :title            :account-settings/help-row-title
     :prevent-default? true}
-   {:form auth/logout-form-id
-    :icon :sign-out
+   {:form         auth/logout-form-id
+    :icon         :sign-out
     :icon-library :phosphor
-    :title :account-settings/logout-row-title}])
+    :title        :account-settings/logout-row-title}])
 
 (defn- directory-row
   [{:keys [form href icon icon-library title prevent-default?]}]
   (let [icon  [ico/Icon {::ico/library (or icon-library :snoico)
-                         ::ico/name icon}]
+                         ::ico/name    icon}]
         label [:span [:i18n/tr title]]]
     (if form
-      [button/Button {:type "submit"
-                      :form form
-                      :class "account-settings-row sno-no-visited"
+      [button/Button {:type       "submit"
+                      :form       form
+                      :class      "account-settings-row sno-no-visited"
                       :appearance "plain"
-                      :style {:border-radius "0"
-                              :font-weight "inherit"
-                              :height "auto"
-                              :justify-content "normal"
-                              :text-align "start"}}
+                      :style      {:border-radius   "0"
+                                   :font-weight     "inherit"
+                                   :height          "auto"
+                                   :justify-content "normal"
+                                   :text-align      "start"}}
        icon
        label]
-      [:a (cond-> {:href href
+      [:a (cond-> {:href  href
                    :class "account-settings-row sno-no-visited"}
             prevent-default? (assoc :data-on:click "evt.preventDefault();"))
        icon
@@ -61,14 +61,14 @@
        "'; @post('" (d*/act req ::actions/launch-app) "')"))
 
 (defn- app-link [req platform child]
-  [:a {:href "#"
-       :class "account-app-link"
+  [:a {:href          "#"
+       :class         "account-app-link"
        :data-on:click (app-action req platform)}
    child])
 
 (defn- apps-card [req app-state]
-  [card/Card {:id "account-settings-apps"
-              :class "account-settings-group"
+  [card/Card {:id         "account-settings-apps"
+              :class      "account-settings-group"
               :appearance "outlined"}
    [:h2 {:slot "header" :class "wa-heading-m wa-text-center"}
     [:i18n/tr :account-settings/apps-title]]
@@ -94,13 +94,13 @@
 (defn page [{:keys [page-state] :as req}]
   (let [app-state (merge {:platform ""} (:account-app page-state))]
     (support/account-main
-     [:div {:class "account-directory wa-stack wa-gap-l"
+     [:div {:class        "account-directory wa-stack wa-gap-l"
             :data-signals (d*/->signals {:account-app app-state})}
       [:header
        [:h1 {:class "wa-heading-2xl wa-text-center"}
         [:i18n/tr :account-settings/title]]]
-      [card/Card {:id "account-settings-directory"
-                  :class "account-settings-group"
+      [card/Card {:id         "account-settings-directory"
+                  :class      "account-settings-group"
                   :appearance "outlined"}
        [:h2 {:slot "header" :class "wa-heading-m wa-text-center"}
         [:i18n/tr :account-settings/settings-title]]

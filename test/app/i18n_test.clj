@@ -12,12 +12,12 @@
 (deftest fluent-translations-test
   (let [en (translator :en)
         de (translator :de)]
-    (is (= {:english          "Teams"
-            :german           "Teams"
-            :other-file       "Save"
-            :default-file     "Active"
-            :map-data         "Are you sure you want to delete the team “Brass”?"
-            :inline-fallback  "Inline fallback"}
+    (is (= {:english         "Teams"
+            :german          "Teams"
+            :other-file      "Save"
+            :default-file    "Active"
+            :map-data        "Are you sure you want to delete the team “Brass”?"
+            :inline-fallback "Inline fallback"}
            {:english         (en [:band-settings/team-title])
             :german          (de [:band-settings/team-title])
             :other-file      (en [:action/save])
@@ -66,8 +66,8 @@
         left        ((:leave interceptor) (assoc entered :response {}))]
     (is (= {:current-locale :en
             :translation    "Teams"
-            :cookie         {:value "en"
-                             :path  "/"
+            :cookie         {:value   "en"
+                             :path    "/"
                              :max-age 108000}}
            {:current-locale (get-in entered [:request :current-locale])
             :translation    ((get-in entered [:request :tr]) [:band-settings/team-title])

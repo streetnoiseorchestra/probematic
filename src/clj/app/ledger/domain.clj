@@ -59,17 +59,17 @@
                                       (reverse)))))
 
 (defn txs-new-member-ledger [tmpid ledger-id owner]
-  [{:db/id tmpid
+  [{:db/id            tmpid
     :ledger/ledger-id ledger-id
-    :ledger/owner owner
-    :ledger/balance 0}])
+    :ledger/owner     owner
+    :ledger/balance   0}])
 
 (defn txs-balance-adjustment
   "Calculates the adjustment datoms for the specified transaction"
   [ledger entry]
   (let [balance-before (:ledger/balance ledger)
-        entry-amount (:ledger.entry/amount entry)
-        balance-after (+ balance-before entry-amount)]
+        entry-amount   (:ledger.entry/amount entry)
+        balance-after  (+ balance-before entry-amount)]
     [[:db/add (d/ref ledger) :ledger/entries (:db/id entry)]
      [:db/add (d/ref ledger) :ledger/balance balance-after]]))
 

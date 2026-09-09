@@ -22,20 +22,20 @@
    (let [{:keys [conn member-id]} (tc/new-system "insurance-survey-actions")
          {:keys [coverage-id policy-id] :as ids}
          (insurance-test/seed-page-shell-fixture! conn member-id)
-         survey-ids (insurance-test/seed-member-survey!
-                     conn
-                     {:coverage-ids (vec (repeat report-count coverage-id))
-                      :member-id    member-id
-                      :policy-id    policy-id})]
+         survey-ids               (insurance-test/seed-member-survey!
+                                   conn
+                                   {:coverage-ids (vec (repeat report-count coverage-id))
+                                    :member-id    member-id
+                                    :policy-id    policy-id})]
      (merge ids
             survey-ids
-            {:conn conn
+            {:conn      conn
              :member-id member-id
-             :state {:current-member-id member-id
-                     :db                (d/db conn)
-                     :now               #inst "2026-03-20T00:00:00.000-00:00"
-                     :page-state        {}
-                     :tr                tr}}))))
+             :state     {:current-member-id member-id
+                         :db                (d/db conn)
+                         :now               #inst "2026-03-20T00:00:00.000-00:00"
+                         :page-state        {}
+                         :tr                tr}}))))
 
 (defn signals [policy-id values]
   {:insuranceSurvey (merge {:policyId (str policy-id)} values)})
@@ -111,7 +111,7 @@
 
 (deftest transition-action-validates-and-advances-the-server-owned-flow
   (let [{:keys [policy-id report-ids state]} (fixture)
-        report-id (first report-ids)]
+        report-id                            (first report-ids)]
     (testing "a valid answer advances the current report and records its decision"
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
@@ -137,26 +137,26 @@
 
 (deftest member-survey-actions-reject-expired-surveys
   (let [{:keys [policy-id state]} (fixture)
-        effects (actions/transition-action
-                 (assoc state :now #inst "2027-01-01T00:00:00.000-00:00")
-                 (signals policy-id {:answer "yes"}))]
+        effects                   (actions/transition-action
+                                   (assoc state :now #inst "2027-01-01T00:00:00.000-00:00")
+                                   (signals policy-id {:answer "yes"}))]
     (is (= support/clear-loading (first effects)))
     (is (not-any? #(= :db/transact (first %)) effects))
     (is (some? (get-in effects [1 2 :error])))))
 
 (deftest completing-a-report-applies-decisions-and-finishes-the-response
   (let [{:keys [conn member-id policy-id report-ids response-id state]} (fixture)
-        report-id (first report-ids)
-        state     (assoc state :page-state
-                         {actions/form-key
-                          {:current-flow-key :data-check
-                           :decisions        [:confirm-band]
-                           :mode             :question
-                           :report-id        report-id}})
-        effects   (actions/transition-action
-                   state
-                   (signals policy-id {:answer "yes"}))
-        [_ tx-data] (first effects)]
+        report-id                                                       (first report-ids)
+        state                                                           (assoc state :page-state
+                                                                               {actions/form-key
+                                                                                {:current-flow-key :data-check
+                                                                                 :decisions        [:confirm-band]
+                                                                                 :mode             :question
+                                                                                 :report-id        report-id}})
+        effects                                                         (actions/transition-action
+                                                                         state
+                                                                         (signals policy-id {:answer "yes"}))
+        [_ tx-data]                                                     (first effects)]
     (is (= :db/transact (ffirst effects)))
     (is (= support/clear-loading (second effects)))
     (is (= :item (get-in effects [2 2 :transition-kind])))
@@ -174,19 +174,19 @@
 
 (deftest completing-an-item-keeps-the-next-card-visible-with-a-milestone
   (let [{:keys [member-id policy-id state]} (fixture 2)
-        data      (queries/survey-data (:db state) policy-id member-id)
-        report-id (:insurance.survey.report/report-id (:active-report data))
-        next-report-id (:insurance.survey.report/report-id
-                        (second (:todo-reports data)))
-        state     (assoc state :page-state
-                         {actions/form-key
-                          {:current-flow-key :data-check
-                           :decisions        [:confirm-band]
-                           :mode             :question
-                           :report-id        report-id}})
-        effects   (actions/transition-action
-                   state
-                   (signals policy-id {:answer "yes"}))]
+        data                                (queries/survey-data (:db state) policy-id member-id)
+        report-id                           (:insurance.survey.report/report-id (:active-report data))
+        next-report-id                      (:insurance.survey.report/report-id
+                                             (second (:todo-reports data)))
+        state                               (assoc state :page-state
+                                                   {actions/form-key
+                                                    {:current-flow-key :data-check
+                                                     :decisions        [:confirm-band]
+                                                     :mode             :question
+                                                     :report-id        report-id}})
+        effects                             (actions/transition-action
+                                             state
+                                             (signals policy-id {:answer "yes"}))]
     (is (= {:answered-count   0
             :current-flow-key :used
             :decisions        []
@@ -198,15 +198,15 @@
 
 (deftest dismissal-only-finishes-a-response-without-open-reports
   (let [{:keys [conn policy-id response-id state]} (fixture 0)
-        effects (actions/dismiss-action state (signals policy-id {}))
-        [_ tx-data] (first effects)]
+        effects                                    (actions/dismiss-action state (signals policy-id {}))
+        [_ tx-data]                                (first effects)]
     (is (= :db/transact (ffirst effects)))
     @(d/transact conn tx-data)
     (is (some? (:insurance.survey.response/completed-at
                 (q/retrieve-survey-response (d/db conn) response-id)))))
 
   (let [{:keys [policy-id state]} (fixture 1)
-        effects (actions/dismiss-action state (signals policy-id {}))]
+        effects                   (actions/dismiss-action state (signals policy-id {}))]
     (is (not-any? #(= :db/transact (first %)) effects))
     (is (some? (get-in effects [1 2 :error])))))
 
@@ -227,33 +227,33 @@
                                 [:insurance.policy/policy-id policy-id]
                                 :insurance.policy/status
                                 :insurance.policy.status/active]])
-            (let [state     (assoc state :db (d/db conn))
-                  report-id (first report-ids)
-                  data      (queries/survey-data
-                             (:db state)
-                             policy-id
-                             member-id)
-                  coverage  (:insurance.survey.report/coverage
-                             (:active-report data))
+            (let [state        (assoc state :db (d/db conn))
+                  report-id    (first report-ids)
+                  data         (queries/survey-data
+                                (:db state)
+                                policy-id
+                                member-id)
+                  coverage     (:insurance.survey.report/coverage
+                                (:active-report data))
                   initial-type-ids
                   (mapv :insurance.coverage.type/type-id
                         (:instrument.coverage/types coverage))
-                  state     (assoc state :page-state
-                                   {actions/form-key
-                                    {:current-flow-key :data-edit
-                                     :decisions        [:confirm-not-band]
-                                     :mode             :edit
-                                     :report-id        report-id}})
-                  effects   (actions/save-edit-action
-                             state
-                             (survey-edit-signals
-                              policy-id
-                              coverage
-                              []))
+                  state        (assoc state :page-state
+                                      {actions/form-key
+                                       {:current-flow-key :data-edit
+                                        :decisions        [:confirm-not-band]
+                                        :mode             :edit
+                                        :report-id        report-id}})
+                  effects      (actions/save-edit-action
+                                state
+                                (survey-edit-signals
+                                 policy-id
+                                 coverage
+                                 []))
                   transactions (second (first effects))]
-              (is (= {:transact?     true
+              (is (= {:transact?      true
                       :coverage-types required-ids}
-                     {:transact?     (= :db/transact (ffirst effects))
+                     {:transact? (= :db/transact (ffirst effects))
                       :coverage-types
                       (apply-coverage-type-transactions
                        initial-type-ids
@@ -261,36 +261,36 @@
 
 (deftest survey-edit-reuses-coverage-validation-and-completes-the-report
   (let [{:keys [conn coverage-id member-id policy-id report-ids state]} (fixture)
-        _         @(d/transact conn [[:db/add
-                                      [:insurance.policy/policy-id policy-id]
-                                      :insurance.policy/status
-                                      :insurance.policy.status/active]])
-        state     (assoc state :db (d/db conn))
-        report-id (first report-ids)
-        data      (queries/survey-data (:db state) policy-id member-id)
-        coverage  (:insurance.survey.report/coverage (:active-report data))
-        type-id   (get-in coverage [:instrument.coverage/types 0
-                                    :insurance.coverage.type/type-id])
-        category-id (get-in coverage [:instrument.coverage/instrument
-                                      :instrument/category
-                                      :instrument.category/category-id])
-        state     (assoc state :page-state
-                         {actions/form-key
-                          {:current-flow-key :data-edit
-                           :decisions        [:confirm-band]
-                           :mode             :edit
-                           :report-id        report-id}})
-        edit      {:buildYear      "1988"
-                   :categoryId     (str category-id)
-                   :coverageTypes  [(str type-id)]
-                   :description    "Recently serviced"
-                   :insurerId      "H-999"
-                   :instrumentName "Updated Trumpet"
-                   :itemCount      "1"
-                   :make           "Yamaha"
-                   :model          "Xeno"
-                   :serialNumber   "ABC"
-                   :value          "150"}]
+        _                                                               @(d/transact conn [[:db/add
+                                                                                            [:insurance.policy/policy-id policy-id]
+                                                                                            :insurance.policy/status
+                                                                                            :insurance.policy.status/active]])
+        state                                                           (assoc state :db (d/db conn))
+        report-id                                                       (first report-ids)
+        data                                                            (queries/survey-data (:db state) policy-id member-id)
+        coverage                                                        (:insurance.survey.report/coverage (:active-report data))
+        type-id                                                         (get-in coverage [:instrument.coverage/types 0
+                                                                                          :insurance.coverage.type/type-id])
+        category-id                                                     (get-in coverage [:instrument.coverage/instrument
+                                                                                          :instrument/category
+                                                                                          :instrument.category/category-id])
+        state                                                           (assoc state :page-state
+                                                                               {actions/form-key
+                                                                                {:current-flow-key :data-edit
+                                                                                 :decisions        [:confirm-band]
+                                                                                 :mode             :edit
+                                                                                 :report-id        report-id}})
+        edit                                                            {:buildYear      "1988"
+                                                                         :categoryId     (str category-id)
+                                                                         :coverageTypes  [(str type-id)]
+                                                                         :description    "Recently serviced"
+                                                                         :insurerId      "H-999"
+                                                                         :instrumentName "Updated Trumpet"
+                                                                         :itemCount      "1"
+                                                                         :make           "Yamaha"
+                                                                         :model          "Xeno"
+                                                                         :serialNumber   "ABC"
+                                                                         :value          "150"}]
     (testing "invalid edits stay in the edit state with field errors"
       (let [effects (actions/save-edit-action
                      state
@@ -299,9 +299,9 @@
         (is (some? (get-in effects [1 2 :edit :_error :make :error])))))
 
     (testing "a valid edit updates coverage data and completes the report atomically"
-      (let [effects (actions/save-edit-action
-                     state
-                     (signals policy-id {:edit edit}))
+      (let [effects     (actions/save-edit-action
+                         state
+                         (signals policy-id {:edit edit}))
             [_ tx-data] (first effects)]
         (is (= :db/transact (ffirst effects)))
         (is (= :item (get-in effects [2 2 :transition-kind])))

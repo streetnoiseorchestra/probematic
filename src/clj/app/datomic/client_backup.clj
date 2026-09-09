@@ -79,9 +79,9 @@
                                                        (integer? v))
                                                 (:db/ident (attr-info db-ref attr-info-cache v))
                                                 v)]
-                     :when (not (ignore-attributes ident))]
+                     :when                 (not (ignore-attributes ident))]
                  [e ident v added])
-        tx-id (:tx (first data))]
+        tx-id  (:tx (first data))]
     {:tx   (into {}
                  (comp
                   (filter (fn [[e _ _ _]]
@@ -167,12 +167,12 @@
           card-one-datoms  false} (group-by (comp boolean cardinality-many-attrs
                                                   second)
                                             tx-data)
-         ->value (partial prepare-restore-value old->new ref-attrs tuple-ref-attrs)]
+         ->value                  (partial prepare-restore-value old->new ref-attrs tuple-ref-attrs)]
      (concat
       ;; Output map tx for all cardinality one values, filtering out retractions
       ;; that have an assertion for the same attribute
       (mapcat (fn [[e datoms]]
-                (let [e (->mapped-id old->new e)
+                (let [e            (->mapped-id old->new e)
 
                       ;; Group by assertions and retractions
                       {asserted  true

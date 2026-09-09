@@ -227,8 +227,8 @@
 (defn coverage-validation-errors
   [{:keys [tr] :as state} params]
   (let [{:keys [instrument policy]} (instrument-context (:db state) params)
-        policy-type-ids (policy-coverage-type-ids policy)
-        private-band   (:private-band params)]
+        policy-type-ids             (policy-coverage-type-ids policy)
+        private-band                (:private-band params)]
     (merge
      (cond
        (nil? policy)

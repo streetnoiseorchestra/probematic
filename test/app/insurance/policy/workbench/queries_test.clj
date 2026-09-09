@@ -7,17 +7,17 @@
 
 (defn seed-workbench-policy!
   [conn policy-id]
-  (let [brass-id     (random-uuid)
-        woodwind-id  (random-uuid)
+  (let [brass-id      (random-uuid)
+        woodwind-id   (random-uuid)
         basic-type-id (random-uuid)
         extra-type-id (random-uuid)
-        anna-id      (random-uuid)
-        zoe-id       (random-uuid)
-        alto-id      (random-uuid)
-        bass-id      (random-uuid)
-        cornet-id    (random-uuid)
-        drum-id      (random-uuid)
-        euphonium-id (random-uuid)]
+        anna-id       (random-uuid)
+        zoe-id        (random-uuid)
+        alto-id       (random-uuid)
+        bass-id       (random-uuid)
+        cornet-id     (random-uuid)
+        drum-id       (random-uuid)
+        euphonium-id  (random-uuid)]
     @(d/transact
       conn
       [{:db/id            "anna"
@@ -194,23 +194,23 @@
           policy-id      (random-uuid)
           {:keys [basic-type-id extra-type-id]}
           (seed-workbench-policy! conn policy-id)
-          icon-status (configure-workbench-icons!
-                       conn
-                       basic-type-id
-                       extra-type-id)
-          result      (workbench conn policy-id {})]
+          icon-status    (configure-workbench-icons!
+                          conn
+                          basic-type-id
+                          extra-type-id)
+          result         (workbench conn policy-id {})]
       (is (= {:icon-status              :accepted
               :view                     :all
-              :filters                  {:member-q nil
-                                         :category-ids #{}
-                                         :coverage-type-ids #{}
-                                         :ownership :all
-                                         :missing-photos? false
+              :filters                  {:member-q             nil
+                                         :category-ids         #{}
+                                         :coverage-type-ids    #{}
+                                         :ownership            :all
+                                         :missing-photos?      false
                                          :missing-harmonia-id? false
-                                         :workflow-statuses #{}
-                                         :change-statuses #{}
-                                         :value-filter nil
-                                         :group :none}
+                                         :workflow-statuses    #{}
+                                         :change-statuses      #{}
+                                         :value-filter         nil
+                                         :group                :none}
               :editable?                true
               :available-category-names ["Brass" "Woodwind"]
               :row-names                ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
@@ -219,20 +219,20 @@
                 :insurance.coverage.type/icon :phosphor/car-profile
                 :insurance.coverage.type/cost 0.1M}]
               :groups                   []
-              :summary-counts           {:all 5
-                                         :todo 2
-                                         :missing-id 2
+              :summary-counts           {:all            5
+                                         :todo           2
+                                         :missing-id     2
                                          :missing-photos 2
-                                         :private 2
-                                         :changed 3
-                                         :new 1
-                                         :removed 1}
-              :totals                   {:total-instruments 5
-                                         :total-insured-value 10500M
-                                         :missing-photo-count 2
+                                         :private        2
+                                         :changed        3
+                                         :new            1
+                                         :removed        1}
+              :totals                   {:total-instruments        5
+                                         :total-insured-value      10500M
+                                         :missing-photo-count      2
                                          :missing-insurer-id-count 2
-                                         :private-count 2
-                                         :band-count 3}}
+                                         :private-count            2
+                                         :band-count               3}}
              {:icon-status              icon-status
               :view                     (:view result)
               :filters                  (:filters result)
@@ -259,15 +259,15 @@
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-review-filter")
           policy-id      (random-uuid)]
       (seed-workbench-policy! conn policy-id)
-      (is (= {:todo-view       {:view :todo
+      (is (= {:todo-view       {:view      :todo
                                 :row-names ["Alto Horn" "Cornet"]}
-              :missing-id-view {:view :missing-id
+              :missing-id-view {:view      :missing-id
                                 :row-names ["Bass Clarinet" "Cornet"]}}
              {:todo-view       (let [result (workbench conn policy-id {:review-filter "todo"})]
-                                 {:view (:view result)
+                                 {:view      (:view result)
                                   :row-names (row-names result)})
               :missing-id-view (let [result (workbench conn policy-id {:review-filter "missing-id"})]
-                                 {:view (:view result)
+                                 {:view      (:view result)
                                   :row-names (row-names result)})})))))
 
 (deftest view-precedence-and-predefined-views-test
@@ -275,7 +275,7 @@
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-views")
           policy-id      (random-uuid)]
       (seed-workbench-policy! conn policy-id)
-      (is (= {:precedence {:view :private
+      (is (= {:precedence {:view      :private
                            :row-names ["Bass Clarinet" "Cornet"]}
               :views      {:all            ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
                            :todo           ["Alto Horn" "Cornet"]
@@ -285,9 +285,9 @@
                            :changed        ["Bass Clarinet" "Cornet" "Drum Kit"]
                            :new            ["Bass Clarinet"]
                            :removed        ["Drum Kit"]}}
-             {:precedence (let [result (workbench conn policy-id {:view "private"
+             {:precedence (let [result (workbench conn policy-id {:view          "private"
                                                                   :review-filter "todo"})]
-                            {:view (:view result)
+                            {:view      (:view result)
                              :row-names (row-names result)})
               :views      (into {}
                                 (for [view [:all :todo :missing-id :missing-photos
@@ -351,24 +351,24 @@
 
 (deftest category-filtering-test
   (testing "accepts single, repeated, and comma-separated category id query values"
-    (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-categories")
-          policy-id      (random-uuid)
+    (let [{:keys [conn]}                 (tc/new-system "insurance-workbench-query-categories")
+          policy-id                      (random-uuid)
           {:keys [brass-id woodwind-id]} (seed-workbench-policy! conn policy-id)]
       (is (= {:single          {:category-ids #{brass-id}
-                                :row-names ["Alto Horn" "Cornet" "Drum Kit"]}
+                                :row-names    ["Alto Horn" "Cornet" "Drum Kit"]}
               :repeated        {:category-ids #{brass-id woodwind-id}
-                                :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
+                                :row-names    ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
               :comma-separated {:category-ids #{brass-id woodwind-id}
-                                :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}}
+                                :row-names    ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}}
              {:single          (let [result (workbench conn policy-id {:category-id (str brass-id)})]
                                  {:category-ids (get-in result [:filters :category-ids])
-                                  :row-names (row-names result)})
+                                  :row-names    (row-names result)})
               :repeated        (let [result (workbench conn policy-id {:category-id [(str brass-id) (str woodwind-id)]})]
                                  {:category-ids (get-in result [:filters :category-ids])
-                                  :row-names (row-names result)})
+                                  :row-names    (row-names result)})
               :comma-separated (let [result (workbench conn policy-id {:category-id (str brass-id "," woodwind-id)})]
                                  {:category-ids (get-in result [:filters :category-ids])
-                                  :row-names (row-names result)})})))))
+                                  :row-names    (row-names result)})})))))
 
 (deftest ownership-filtering-test
   (testing "supports all, band, and private ownership filters"
@@ -384,31 +384,31 @@
 
 (deftest extended-filtering-test
   (testing "supports coverage type, missing field, workflow, and change filters"
-    (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-extended-filters")
-          policy-id      (random-uuid)
+    (let [{:keys [conn]}                        (tc/new-system "insurance-workbench-query-extended-filters")
+          policy-id                             (random-uuid)
           {:keys [basic-type-id extra-type-id]} (seed-workbench-policy! conn policy-id)]
       (is (= {:coverage-type-single   {:coverage-type-ids #{basic-type-id}
-                                       :row-names ["Alto Horn" "Bass Clarinet" "Drum Kit"]}
+                                       :row-names         ["Alto Horn" "Bass Clarinet" "Drum Kit"]}
               :coverage-type-multiple {:coverage-type-ids #{basic-type-id extra-type-id}
-                                       :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
+                                       :row-names         ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
               :missing-photos         ["Bass Clarinet" "Cornet"]
               :missing-harmonia-id    ["Bass Clarinet" "Cornet"]
               :workflow-statuses      {:workflow-statuses #{:needs-review :reviewed}
-                                       :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Euphonium"]}
+                                       :row-names         ["Alto Horn" "Bass Clarinet" "Cornet" "Euphonium"]}
               :workflow-keywords      {:workflow-statuses #{:needs-review :reviewed}
-                                       :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Euphonium"]}
+                                       :row-names         ["Alto Horn" "Bass Clarinet" "Cornet" "Euphonium"]}
               :change-statuses        {:change-statuses #{:changed :new}
-                                       :row-names ["Bass Clarinet" "Cornet"]}
+                                       :row-names       ["Bass Clarinet" "Cornet"]}
               :change-keywords        {:change-statuses #{:changed :new}
-                                       :row-names ["Bass Clarinet" "Cornet"]}}
+                                       :row-names       ["Bass Clarinet" "Cornet"]}}
              {:coverage-type-single
               (let [result (workbench conn policy-id {:coverage-type-id (str basic-type-id)})]
                 {:coverage-type-ids (get-in result [:filters :coverage-type-ids])
-                 :row-names (row-names result)})
+                 :row-names         (row-names result)})
               :coverage-type-multiple
               (let [result (workbench conn policy-id {:coverage-type-id [(str basic-type-id) (str extra-type-id)]})]
                 {:coverage-type-ids (get-in result [:filters :coverage-type-ids])
-                 :row-names (row-names result)})
+                 :row-names         (row-names result)})
               :missing-photos
               (row-names (workbench conn policy-id {:missing-photos true}))
               :missing-harmonia-id
@@ -416,19 +416,19 @@
               :workflow-statuses
               (let [result (workbench conn policy-id {:workflow-status ["needs-review" "reviewed"]})]
                 {:workflow-statuses (get-in result [:filters :workflow-statuses])
-                 :row-names (row-names result)})
+                 :row-names         (row-names result)})
               :workflow-keywords
               (let [result (workbench conn policy-id {:workflow-status [:needs-review :reviewed]})]
                 {:workflow-statuses (get-in result [:filters :workflow-statuses])
-                 :row-names (row-names result)})
+                 :row-names         (row-names result)})
               :change-statuses
               (let [result (workbench conn policy-id {:change-status ["changed" "new"]})]
                 {:change-statuses (get-in result [:filters :change-statuses])
-                 :row-names (row-names result)})
+                 :row-names       (row-names result)})
               :change-keywords
               (let [result (workbench conn policy-id {:change-status [:changed :new]})]
                 {:change-statuses (get-in result [:filters :change-statuses])
-                 :row-names (row-names result)})})))))
+                 :row-names       (row-names result)})})))))
 
 (deftest value-filtering-test
   (testing "supports numeric insured-value filters"
@@ -437,128 +437,128 @@
       (seed-workbench-policy! conn policy-id)
       (is (= {:greater-than {:value-filter {:operator :greater-than
                                             :value    2500M}
-                             :row-names ["Cornet" "Drum Kit"]}
+                             :row-names    ["Cornet" "Drum Kit"]}
               :less-than    {:value-filter {:operator :less-than
                                             :value    1000M}
-                             :row-names ["Euphonium"]}
+                             :row-names    ["Euphonium"]}
               :equal-to     {:value-filter {:operator :equal-to
                                             :value    2000M}
-                             :row-names ["Bass Clarinet"]}
+                             :row-names    ["Bass Clarinet"]}
               :between      {:value-filter {:operator :between
                                             :min      1000M
                                             :max      3000M}
-                             :row-names ["Alto Horn" "Bass Clarinet" "Cornet"]}
+                             :row-names    ["Alto Horn" "Bass Clarinet" "Cornet"]}
               :invalid      {:value-filter nil
-                             :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}}
+                             :row-names    ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}}
              {:greater-than
               (let [result (workbench conn policy-id {:value-operator "greater-than"
-                                                      :value "2500"})]
+                                                      :value          "2500"})]
                 {:value-filter (get-in result [:filters :value-filter])
-                 :row-names (row-names result)})
+                 :row-names    (row-names result)})
               :less-than
               (let [result (workbench conn policy-id {:value-operator "less-than"
-                                                      :value "1000"})]
+                                                      :value          "1000"})]
                 {:value-filter (get-in result [:filters :value-filter])
-                 :row-names (row-names result)})
+                 :row-names    (row-names result)})
               :equal-to
               (let [result (workbench conn policy-id {:value-operator "equal-to"
-                                                      :value "2000"})]
+                                                      :value          "2000"})]
                 {:value-filter (get-in result [:filters :value-filter])
-                 :row-names (row-names result)})
+                 :row-names    (row-names result)})
               :between
               (let [result (workbench conn policy-id {:value-operator "between"
-                                                      :value-min "1000"
-                                                      :value-max "3000"})]
+                                                      :value-min      "1000"
+                                                      :value-max      "3000"})]
                 {:value-filter (get-in result [:filters :value-filter])
-                 :row-names (row-names result)})
+                 :row-names    (row-names result)})
               :invalid
               (let [result (workbench conn policy-id {:value-operator "between"
-                                                      :value-min "nope"
-                                                      :value-max "3000"})]
+                                                      :value-min      "nope"
+                                                      :value-max      "3000"})]
                 {:value-filter (get-in result [:filters :value-filter])
-                 :row-names (row-names result)})})))))
+                 :row-names    (row-names result)})})))))
 
 (deftest grouping-modes-test
   (testing "member grouping and flat list modes return stable row order and group metadata"
-    (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-grouping")
-          policy-id      (random-uuid)
+    (let [{:keys [conn]}           (tc/new-system "insurance-workbench-query-grouping")
+          policy-id                (random-uuid)
           {:keys [anna-id zoe-id]} (seed-workbench-policy! conn policy-id)]
-      (is (= {:member {:group :member
+      (is (= {:member {:group     :member
                        :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
-                       :groups [{:member-id anna-id
-                                 :member-label "Anna Alto"
-                                 :row-count 2}
-                                {:member-id zoe-id
-                                 :member-label "Zoe Zebra"
-                                 :row-count 3}]}
-              :none   {:group :none
+                       :groups    [{:member-id    anna-id
+                                    :member-label "Anna Alto"
+                                    :row-count    2}
+                                   {:member-id    zoe-id
+                                    :member-label "Zoe Zebra"
+                                    :row-count    3}]}
+              :none   {:group     :none
                        :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
-                       :groups []}}
+                       :groups    []}}
              {:member (let [result (workbench conn policy-id {:group "member"})]
-                        {:group (get-in result [:filters :group])
+                        {:group     (get-in result [:filters :group])
                          :row-names (row-names result)
-                         :groups (group-summary result)})
+                         :groups    (group-summary result)})
               :none   (let [result (workbench conn policy-id {:group "none"})]
-                        {:group (get-in result [:filters :group])
+                        {:group     (get-in result [:filters :group])
                          :row-names (row-names result)
-                         :groups (group-summary result)})})))))
+                         :groups    (group-summary result)})})))))
 
 (deftest pagination-test
   (testing "defaults to 20 rows per page and paginates after filtering and sorting"
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-pagination")
           policy-id      (random-uuid)]
       (seed-workbench-policy! conn policy-id)
-      (is (= {:default {:pagination {:page 1
-                                     :page-size 20
-                                     :total-results 5
-                                     :total-pages 1
-                                     :range-start 1
-                                     :range-end 5
-                                     :has-prev? false
-                                     :has-next? false}
-                        :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
+      (is (= {:default {:pagination        {:page          1
+                                            :page-size     20
+                                            :total-results 5
+                                            :total-pages   1
+                                            :range-start   1
+                                            :range-end     5
+                                            :has-prev?     false
+                                            :has-next?     false}
+                        :row-names         ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
                         :total-instruments 5}
-              :page-2  {:pagination {:page 2
-                                     :page-size 2
-                                     :total-results 5
-                                     :total-pages 3
-                                     :range-start 3
-                                     :range-end 4
-                                     :has-prev? true
-                                     :has-next? true}
-                        :row-names ["Cornet" "Drum Kit"]
+              :page-2  {:pagination        {:page          2
+                                            :page-size     2
+                                            :total-results 5
+                                            :total-pages   3
+                                            :range-start   3
+                                            :range-end     4
+                                            :has-prev?     true
+                                            :has-next?     true}
+                        :row-names         ["Cornet" "Drum Kit"]
                         :total-instruments 5}
-              :clamped {:pagination {:page 3
-                                     :page-size 2
-                                     :total-results 5
-                                     :total-pages 3
-                                     :range-start 5
-                                     :range-end 5
-                                     :has-prev? true
-                                     :has-next? false}
-                        :row-names ["Euphonium"]
+              :clamped {:pagination        {:page          3
+                                            :page-size     2
+                                            :total-results 5
+                                            :total-pages   3
+                                            :range-start   5
+                                            :range-end     5
+                                            :has-prev?     true
+                                            :has-next?     false}
+                        :row-names         ["Euphonium"]
                         :total-instruments 5}
-              :invalid {:pagination {:page 1
-                                     :page-size 20
-                                     :total-results 5
-                                     :total-pages 1
-                                     :range-start 1
-                                     :range-end 5
-                                     :has-prev? false
-                                     :has-next? false}
-                        :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
+              :invalid {:pagination        {:page          1
+                                            :page-size     20
+                                            :total-results 5
+                                            :total-pages   1
+                                            :range-start   1
+                                            :range-end     5
+                                            :has-prev?     false
+                                            :has-next?     false}
+                        :row-names         ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]
                         :total-instruments 5}}
              (letfn [(shape [result]
-                       {:pagination (select-keys (:pagination result)
-                                                 [:page
-                                                  :page-size
-                                                  :total-results
-                                                  :total-pages
-                                                  :range-start
-                                                  :range-end
-                                                  :has-prev?
-                                                  :has-next?])
-                        :row-names (row-names result)
+                       {:pagination        (select-keys (:pagination result)
+                                                        [:page
+                                                         :page-size
+                                                         :total-results
+                                                         :total-pages
+                                                         :range-start
+                                                         :range-end
+                                                         :has-prev?
+                                                         :has-next?])
+                        :row-names         (row-names result)
                         :total-instruments (get-in result [:totals :total-instruments])})]
                {:default (shape (workbench conn policy-id {}))
                 :page-2  (shape (workbench conn policy-id {:page "2" :page-size "2"}))
@@ -570,24 +570,24 @@
     (let [{:keys [conn]} (tc/new-system "insurance-workbench-query-fallback")
           policy-id      (random-uuid)]
       (seed-workbench-policy! conn policy-id)
-      (is (= {:view :all
-              :filters {:member-q nil
-                        :category-ids #{}
-                        :coverage-type-ids #{}
-                        :ownership :all
-                        :missing-photos? false
-                        :missing-harmonia-id? false
-                        :workflow-statuses #{}
-                        :change-statuses #{}
-                        :value-filter nil
-                        :group :none}
+      (is (= {:view      :all
+              :filters   {:member-q             nil
+                          :category-ids         #{}
+                          :coverage-type-ids    #{}
+                          :ownership            :all
+                          :missing-photos?      false
+                          :missing-harmonia-id? false
+                          :workflow-statuses    #{}
+                          :change-statuses      #{}
+                          :value-filter         nil
+                          :group                :none}
               :row-names ["Alto Horn" "Bass Clarinet" "Cornet" "Drum Kit" "Euphonium"]}
              (let [result (workbench conn
                                      policy-id
-                                     {:view "unknown"
-                                      :group "category"
-                                      :ownership "corporate"
+                                     {:view        "unknown"
+                                      :group       "category"
+                                      :ownership   "corporate"
                                       :category-id ["not-a-uuid" "also-not-a-uuid"]})]
-               {:view (:view result)
-                :filters (:filters result)
+               {:view      (:view result)
+                :filters   (:filters result)
                 :row-names (row-names result)}))))))

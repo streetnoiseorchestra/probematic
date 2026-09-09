@@ -26,131 +26,131 @@
 
 (deftest member-page-shells
   (let [{:keys [conn member-id]} (tc/new-system "member-page-shells")
-        invited-member-id          (random-uuid)
-        expired-member-id          (random-uuid)
-        revoked-member-id          (random-uuid)
-        _                          @(d/transact
-                                     conn
-                                     [{:member/member-id member-id
-                                       :member/name      "Casey Jones"
-                                       :member/nick      "Casey"
-                                       :member/email     "casey@example.test"
-                                       :member/phone     "+43 1 234"
-                                       :member/username  "casey"
-                                       :member/active?   true}
-                                      {:member/member-id         invited-member-id
-                                       :member/name              "Pending Invite"
-                                       :member/email             "pending@example.test"
-                                       :member/username          "pending-invite"
-                                       :member/invite-code       "pending-code"
-                                       :member/invite-expires-at #inst "2099-01-01T00:00:00.000-00:00"
-                                       :member/invite-status     :member.invite.status/pending
-                                       :member/invite-generation 1
-                                       :member/invite-status-at  #inst "2026-07-16T07:00:00.000-00:00"}
-                                      {:member/member-id         expired-member-id
-                                       :member/name              "Expired Invite"
-                                       :member/email             "expired@example.test"
-                                       :member/username          "expired-invite"
-                                       :member/invite-code       "expired-code"
-                                       :member/invite-expires-at #inst "2000-01-01T00:00:00.000-00:00"
-                                       :member/invite-status     :member.invite.status/pending
-                                       :member/invite-generation 1
-                                       :member/invite-status-at  #inst "2000-01-01T00:00:00.000-00:00"}
-                                      {:member/member-id         revoked-member-id
-                                       :member/name              "Revoked Invite"
-                                       :member/email             "revoked@example.test"
-                                       :member/username          "revoked-invite"
-                                       :member/invite-status     :member.invite.status/revoked
-                                       :member/invite-generation 5
-                                       :member/invite-status-at  #inst "2026-07-16T08:00:00.000-00:00"}])
-        tr                         (fn
-                                     ([path]
-                                      (name (last path)))
-                                     ([path _args]
-                                      (name (last path))))
-        request                    {::r/router       (r/router ["/act" {:name :app.routes.datastar/act}])
-                                    :current-locale :en
-                                    :db             (d/db conn)
-                                    :page-state     {}
-                                    :app/session        {:session/roles #{}}
-                                    :system         {:env {:app-base-url "https://members.example.test"}}
-                                    :tr             tr}
-        member-url                 (str "/member/" member-id)]
+        invited-member-id        (random-uuid)
+        expired-member-id        (random-uuid)
+        revoked-member-id        (random-uuid)
+        _                        @(d/transact
+                                   conn
+                                   [{:member/member-id member-id
+                                     :member/name      "Casey Jones"
+                                     :member/nick      "Casey"
+                                     :member/email     "casey@example.test"
+                                     :member/phone     "+43 1 234"
+                                     :member/username  "casey"
+                                     :member/active?   true}
+                                    {:member/member-id         invited-member-id
+                                     :member/name              "Pending Invite"
+                                     :member/email             "pending@example.test"
+                                     :member/username          "pending-invite"
+                                     :member/invite-code       "pending-code"
+                                     :member/invite-expires-at #inst "2099-01-01T00:00:00.000-00:00"
+                                     :member/invite-status     :member.invite.status/pending
+                                     :member/invite-generation 1
+                                     :member/invite-status-at  #inst "2026-07-16T07:00:00.000-00:00"}
+                                    {:member/member-id         expired-member-id
+                                     :member/name              "Expired Invite"
+                                     :member/email             "expired@example.test"
+                                     :member/username          "expired-invite"
+                                     :member/invite-code       "expired-code"
+                                     :member/invite-expires-at #inst "2000-01-01T00:00:00.000-00:00"
+                                     :member/invite-status     :member.invite.status/pending
+                                     :member/invite-generation 1
+                                     :member/invite-status-at  #inst "2000-01-01T00:00:00.000-00:00"}
+                                    {:member/member-id         revoked-member-id
+                                     :member/name              "Revoked Invite"
+                                     :member/email             "revoked@example.test"
+                                     :member/username          "revoked-invite"
+                                     :member/invite-status     :member.invite.status/revoked
+                                     :member/invite-generation 5
+                                     :member/invite-status-at  #inst "2026-07-16T08:00:00.000-00:00"}])
+        tr                       (fn
+                                   ([path]
+                                    (name (last path)))
+                                   ([path _args]
+                                    (name (last path))))
+        request                  {::r/router      (r/router ["/act" {:name :app.routes.datastar/act}])
+                                  :current-locale :en
+                                  :db             (d/db conn)
+                                  :page-state     {}
+                                  :app/session    {:session/roles #{}}
+                                  :system         {:env {:app-base-url "https://members.example.test"}}
+                                  :tr             tr}
+        member-url               (str "/member/" member-id)]
     (testing "only usable invitations can be copied, with plain copy and resend controls"
-      (let [view (index.views/page request)
+      (let [view   (index.views/page request)
             copies (l/select :wa-copy-button view)
-            copy (first copies)
+            copy   (first copies)
             resend (->> (l/select button/Button view)
                         (filter #(= :action/resend-invitation
                                     (some-> (l/select-one :i18n/tr %) l/first-child)))
                         first)]
-        (is (= {:copy-count 1
-                :url "https://members.example.test/invite-accept?code=pending-code"
-                :copy-appearance "plain"
+        (is (= {:copy-count        1
+                :url               "https://members.example.test/invite-accept?code=pending-code"
+                :copy-appearance   "plain"
                 :resend-appearance "plain"}
-               {:copy-count (count copies)
-                :url (:value (l/attrs copy))
-                :copy-appearance (:appearance (l/attrs (l/select-one button/Button copy)))
+               {:copy-count        (count copies)
+                :url               (:value (l/attrs copy))
+                :copy-appearance   (:appearance (l/attrs (l/select-one button/Button copy)))
                 :resend-appearance (:appearance (l/attrs resend))}))))
     (testing "the member header, filters and table precede the invitations section"
-      (let [view (index.views/page request)
+      (let [view    (index.views/page request)
             content (l/select-one "[data-signals]" view)]
         (is (= [page-header/PageHeader :div :div :div :section]
                (mapv first (drop 2 content))))))
     (testing "pagination offers the supported sizes and disables navigation for a single page"
-      (let [view (index.views/page request)
-            nav (->> (l/select :nav view)
-                     (filter #(= [:i18n/tr :pagination] (:aria-label (l/attrs %))))
-                     first)
+      (let [view    (index.views/page request)
+            nav     (->> (l/select :nav view)
+                         (filter #(= [:i18n/tr :pagination] (:aria-label (l/attrs %))))
+                         first)
             buttons (l/select button/Button nav)]
-        (is (= {:sizes ["10" "30" "50" "100"]
+        (is (= {:sizes    ["10" "30" "50" "100"]
                 :disabled [true true]
-                :summary {:range-start 1 :range-end 1 :total-results 1}}
-               {:sizes (mapv #(-> % l/attrs :value) (l/select :wa-dropdown-item nav))
+                :summary  {:range-start 1 :range-end 1 :total-results 1}}
+               {:sizes    (mapv #(-> % l/attrs :value) (l/select :wa-dropdown-item nav))
                 :disabled (mapv #(-> % l/attrs :disabled) [(first buttons) (last buttons)])
-                :summary (->> (l/select :i18n/tr nav)
-                              (filter #(= :pagination-summary (second %)))
-                              first
-                              last)}))))
+                :summary  (->> (l/select :i18n/tr nav)
+                               (filter #(= :pagination-summary (second %)))
+                               first
+                               last)}))))
     (testing "the URL overrides stale page state and table navigation preserves its filters"
-      (let [view (index.views/page
-                  (assoc request
-                         :query-params {"search" "Casey" "filter-preset" "active"
-                                        "sort-field" "name" "sort-order" "asc"
-                                        "page" "2" "page-size" "10"}
-                         :page-state {:members-index {:search "no match" :filter-preset "inactive"}}))
-            forms (l/select :form view)
-            search-form (first forms)
-            filter-form (second forms)
+      (let [view          (index.views/page
+                           (assoc request
+                                  :query-params {"search"     "Casey" "filter-preset" "active"
+                                                 "sort-field" "name"  "sort-order"    "asc"
+                                                 "page"       "2"     "page-size"     "10"}
+                                  :page-state {:members-index {:search "no match" :filter-preset "inactive"}}))
+            forms         (l/select :form view)
+            search-form   (first forms)
+            filter-form   (second forms)
             hidden-fields (fn [form]
                             (into {} (map (fn [input]
                                             (let [{:keys [name value]} (l/attrs input)]
                                               [name (str value)]))
                                           (l/select "input[type=hidden]" form))))
-            sort-url (:href (l/attrs (l/select-one "a.wa-link-plain" view)))]
-        (is (= {:search "Casey" :filter "active"
+            sort-url      (:href (l/attrs (l/select-one "a.wa-link-plain" view)))]
+        (is (= {:search        "Casey"                                          :filter "active"
                 :search-hidden {"filter-preset" "active" "sort-field" "name"
-                                "sort-order" "asc" "page" "1" "page-size" "10"}
-                :filter-hidden {"search" "Casey" "sort-field" "name"
-                                "sort-order" "asc" "page" "1" "page-size" "10"}
-                :sort-query {"search" "Casey" "filter-preset" "active"
-                             "sort-field" "name" "sort-order" "desc"
-                             "page" "1" "page-size" "10"}
-                :form-methods ["get" "get"]}
-               {:search (:value (l/attrs (l/select-one :wa-input search-form)))
-                :filter (:value (l/attrs (l/select-one :wa-select filter-form)))
+                                "sort-order"    "asc"    "page"       "1"    "page-size" "10"}
+                :filter-hidden {"search"     "Casey" "sort-field" "name"
+                                "sort-order" "asc"   "page"       "1"    "page-size" "10"}
+                :sort-query    {"search"     "Casey" "filter-preset" "active"
+                                "sort-field" "name"  "sort-order"    "desc"
+                                "page"       "1"     "page-size"     "10"}
+                :form-methods  ["get" "get"]}
+               {:search        (:value (l/attrs (l/select-one :wa-input search-form)))
+                :filter        (:value (l/attrs (l/select-one :wa-select filter-form)))
                 :search-hidden (hidden-fields search-form)
                 :filter-hidden (hidden-fields filter-form)
-                :sort-query (codec/form-decode (second (str/split sort-url #"\?" 2)))
-                :form-methods (mapv #(-> % l/attrs :method) forms)}))))
+                :sort-query    (codec/form-decode (second (str/split sort-url #"\?" 2)))
+                :form-methods  (mapv #(-> % l/attrs :method) forms)}))))
     (testing "the directory uses a standard Members surface"
-      (let [view          (index.views/page request)
-            surface       (l/select-one page-surface/PageSurface view)
-            surface-attrs (some-> surface l/attrs)
-            toolbar       (::page-surface/toolbar surface-attrs)
-            toolbar-attrs (some-> toolbar l/attrs)
-            breadcrumb    (::page-toolbar/breadcrumb toolbar-attrs)
-            actions       (::page-toolbar/actions toolbar-attrs)
+      (let [view           (index.views/page request)
+            surface        (l/select-one page-surface/PageSurface view)
+            surface-attrs  (some-> surface l/attrs)
+            toolbar        (::page-surface/toolbar surface-attrs)
+            toolbar-attrs  (some-> toolbar l/attrs)
+            breadcrumb     (::page-toolbar/breadcrumb toolbar-attrs)
+            actions        (::page-toolbar/actions toolbar-attrs)
             header         (l/select-one page-header/PageHeader surface)
             invite-signals (-> (l/select-one "[data-signals]" surface)
                                l/attrs
@@ -178,14 +178,14 @@
                      (l/select button/Button actions))))
         (is (= :members/title
                (some-> header l/attrs ::page-header/title l/first-child)))
-        (is (= {:signals {"action" nil
-                          "code" nil
-                          "member-id" nil
+        (is (= {:signals {"action"     nil
+                          "code"       nil
+                          "member-id"  nil
                           "generation" nil
-                          "inflight" false}
+                          "inflight"   false}
                 :reissue-click
                 "$invite.code = \"expired-code\"; $invite.action = \"reissue\"; $invite.inflight = true; @post(\"/act?ns=app.members.index.actions&kw=reissue-invitation\")"}
-               {:signals invite-signals
+               {:signals       invite-signals
                 :reissue-click reissue-click}))
         (is (some #(= "Pending Invite" (l/text %))
                   (l/select "td" surface)))
@@ -193,9 +193,9 @@
                   (l/select "td" surface)))
         (is (some #(= "Revoked Invite" (l/text %))
                   (l/select "td" surface)))
-        (is (= {:action/delete              2
-                :action/reissue-invitation  2
-                :action/resend-invitation   1}
+        (is (= {:action/delete             2
+                :action/reissue-invitation 2
+                :action/resend-invitation  1}
                (->> (l/select button/Button surface)
                     (keep #(some-> (l/select-one :i18n/tr %)
                                    l/first-child))
@@ -205,12 +205,12 @@
                     frequencies)))))
 
     (testing "a revoked invitation exposes only a generation-guarded reissue action"
-      (let [surface     (l/select-one page-surface/PageSurface
-                                      (index.views/page request))
-            actions     (->> (l/select button/Button surface)
-                             (filter #(re-find
-                                       #"reissue-revoked-invitation"
-                                       (or (-> % l/attrs :data-on:click) ""))))]
+      (let [surface (l/select-one page-surface/PageSurface
+                                  (index.views/page request))
+            actions (->> (l/select button/Button surface)
+                         (filter #(re-find
+                                   #"reissue-revoked-invitation"
+                                   (or (-> % l/attrs :data-on:click) ""))))]
         (is (= [:action/reissue-invitation]
                (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
                      actions)))
@@ -313,12 +313,12 @@
                 :label "Casey Jones"}
                (breadcrumb-parent-context breadcrumb)))
         (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
-        (is (= [{:form nil
+        (is (= [{:form  nil
                  :label :action/cancel
-                 :type nil}
-                {:form "member-contact-form"
+                 :type  nil}
+                {:form  "member-contact-form"
                  :label :action/save
-                 :type "submit"}]
+                 :type  "submit"}]
                (mapv (fn [action]
                        {:form  (:form (l/attrs action))
                         :label (some-> (l/select-one :i18n/tr action) l/first-child)

@@ -51,7 +51,7 @@
 
 (defn get-cell-style-at
   ^CellStyle [sheet row col]
-  (let [r (nth (excel/row-seq sheet) row)
+  (let [r       (nth (excel/row-seq sheet) row)
         ^Cell c (nth (excel/cell-seq r) col)]
     (.getCellStyle c)))
 
@@ -100,28 +100,28 @@
    {changed-items :instrument.coverage.change/changed
     removed-items :instrument.coverage.change/removed
     new-items     :instrument.coverage.change/new
-    :as _changeset}]
-  (let [wb               (excel/load-workbook-from-resource fname)
-        sheet            (excel/select-sheet sheet-name wb)
-        ^CellStyle total-style (get-cell-style-at sheet 4 TOTAL-COL)
+    :as           _changeset}]
+  (let [wb                          (excel/load-workbook-from-resource fname)
+        sheet                       (excel/select-sheet sheet-name wb)
+        ^CellStyle total-style      (get-cell-style-at sheet 4 TOTAL-COL)
         ^CellStyle stuckpreis-style (doto (get-cell-style-at sheet START-ROW STUCKPREIS-COL)
                                       (.setLocked false))
-        ^CellStyle label-style (doto ^CellStyle (excel/create-cell-style!
-                                                 wb
-                                                 {:font {:size 14 :bold true}
-                                                  :wrap false})
-                                 (.setLocked false))
-        ^CellStyle normal-style (doto ^CellStyle (excel/create-cell-style! wb {})
-                                  (.setLocked false)
-                                  (.setFillBackgroundColor (short (excel/color-index :white))))
-        date-today       (t/format (t/formatter "dd MMM yyyy" Locale/GERMAN)
-                                   (t/today))
-        add-instruments! (partial -add-instruments!
-                                  sheet
-                                  normal-style
-                                  stuckpreis-style
-                                  total-style
-                                  label-style)]
+        ^CellStyle label-style      (doto ^CellStyle (excel/create-cell-style!
+                                                      wb
+                                                      {:font {:size 14 :bold true}
+                                                       :wrap false})
+                                      (.setLocked false))
+        ^CellStyle normal-style     (doto ^CellStyle (excel/create-cell-style! wb {})
+                                      (.setLocked false)
+                                      (.setFillBackgroundColor (short (excel/color-index :white))))
+        date-today                  (t/format (t/formatter "dd MMM yyyy" Locale/GERMAN)
+                                              (t/today))
+        add-instruments!            (partial -add-instruments!
+                                             sheet
+                                             normal-style
+                                             stuckpreis-style
+                                             total-style
+                                             label-style)]
     (clear-rows! sheet)
     (when new-items
       ;; They do not want new items to have a title.

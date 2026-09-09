@@ -84,7 +84,7 @@
                               [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-dashboard)}
                                [:i18n/tr :home]]
                               [breadcrumb/BreadcrumbItem [:i18n/tr :everything/title]]]
-                             :aria-label [:i18n/tr :everything/toolbar-label]}])
+                             :aria-label               [:i18n/tr :everything/toolbar-label]}])
 
 (defn- destination-copy [{:keys [description external? label disabled?]}]
   [:span {:class "copy wa-stack wa-gap-2xs"}

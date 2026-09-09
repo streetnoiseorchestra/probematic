@@ -18,14 +18,14 @@
    [starfederation.datastar.clojure.expressions :refer [->expr]]))
 
 (def content-type->filetype-icon
-  {"application/pdf" "file-pdf-solid"
-   "application/vnd.oasis.opendocument.text" "file-word-solid"
+  {"application/pdf"                                                         "file-pdf-solid"
+   "application/vnd.oasis.opendocument.text"                                 "file-word-solid"
    "application/vnd.openxmlformats-officedocument.wordprocessingml.document" "file-word-solid"
-   "application/vnd.oasis.opendocument.spreadsheet" "file-excel-solid"
-   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" "file-excel-solid"
-   "audio/mpeg" "file-audio-solid"
-   "audio/flac" "file-audio-solid"
-   "audio/ogg" "file-audio-solid"})
+   "application/vnd.oasis.opendocument.spreadsheet"                          "file-excel-solid"
+   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"       "file-excel-solid"
+   "audio/mpeg"                                                              "file-audio-solid"
+   "audio/flac"                                                              "file-audio-solid"
+   "audio/ogg"                                                               "file-audio-solid"})
 
 (def extension->filetype-icon
   {"csv"  "file-csv-solid"
@@ -132,7 +132,7 @@
         (for [path (filter #(actions/within-root? root-dir %)
                            (component-paths current-dir))]
           [breadcrumb/BreadcrumbItem {::breadcrumb/href "#"
-                                      :data-on:click (breadcrumb-action req picker-id path)}
+                                      :data-on:click    (breadcrumb-action req picker-id path)}
            (fs/file-name path)])))
 
 (defn- picker-files [req root-dir current-dir]
@@ -155,9 +155,9 @@
   The select action receives `:file-browser.selected-path` in the Datastar signals."
   [req {:keys [picker-id select-action state subtitle title]}]
   (when (:open? state)
-    (let [picker-id              (actions/picker-key picker-id)
+    (let [picker-id                      (actions/picker-key picker-id)
           {:keys [root-dir current-dir]} state
-          {:keys [files current-dir]} (picker-files req root-dir current-dir)]
+          {:keys [files current-dir]}    (picker-files req root-dir current-dir)]
       [:div {:class "file-browser-panel"}
        [:div {:class "file-browser-header"}
         [:div {:class "file-browser-title-block"}
@@ -198,7 +198,7 @@
                                                      :variant       "brand"
                                                      :data-on:click (open-demo-action req root-dir current-dir)}
                                       [:i18n/tr :files/choose-file]]])
-                                  :aria-label [:i18n/tr :files/toolbar-label]}]}
+                                  :aria-label               [:i18n/tr :files/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-l"
              :data-signals (d*/->signals {:file-browser {:picker-id     nil
                                                          :target-dir    nil

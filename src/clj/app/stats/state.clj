@@ -8,26 +8,26 @@
 (def default-timespan-id "last-three-months")
 
 (def timespan-options
-  [{:id "last-three-months"
+  [{:id        "last-three-months"
     :label-key :statistics/last-three-months
-    :period (t/new-period 3 :months)}
-   {:id "last-six-months"
+    :period    (t/new-period 3 :months)}
+   {:id        "last-six-months"
     :label-key :statistics/last-six-months
-    :period (t/new-period 6 :months)}
-   {:id "last-one-year"
+    :period    (t/new-period 6 :months)}
+   {:id        "last-one-year"
     :label-key :statistics/last-year
-    :period (t/new-period 12 :months)}])
+    :period    (t/new-period 12 :months)}])
 
 (def timespan-ids
   (into #{} (map :id) timespan-options))
 
 (def query-param-field-mapping
-  {"name" :member/name
-   "gigs-attended" :gigs-attended
-   "gigs-percent" :gig-rate
+  {"name"            :member/name
+   "gigs-attended"   :gigs-attended
+   "gigs-percent"    :gig-rate
    "probes-attended" :probes-attended
-   "probes-percent" :probe-rate
-   "last-seen" :last-seen})
+   "probes-percent"  :probe-rate
+   "last-seen"       :last-seen})
 
 (def field-query-param-mapping
   (set/map-invert query-param-field-mapping))
@@ -100,5 +100,5 @@
   (stats-url {"timespan" (selected-timespan-id req)
               "sort"     (sort-token (update (sort-spec-by-field (sort-spec req) field)
                                              :order
-                                             {:asc :desc
+                                             {:asc  :desc
                                               :desc :asc}))}))

@@ -62,17 +62,17 @@
 
 (defn- row-pop-effect-js [song-id]
   (->expr
-   (let [play (if (.isArray Array $gig-log-plays.plays)
-                (.find $gig-log-plays.plays
-                       (fn [play]
-                         (= (aget play "song-id") ~(str song-id))))
-                nil)
-         rating (if play play.rating "play-rating/not-played")
+   (let [play     (if (.isArray Array $gig-log-plays.plays)
+                    (.find $gig-log-plays.plays
+                           (fn [play]
+                             (= (aget play "song-id") ~(str song-id))))
+                    nil)
+         rating   (if play play.rating "play-rating/not-played")
          emphasis (if play play.emphasis "play-emphasis/durch")
-         state (str rating "|" emphasis)]
+         state    (str rating "|" emphasis)]
      (when (and el.dataset.lastPlayState
                 (!== el.dataset.lastPlayState state))
-       (let [pending (.querySelector el ".pending-pop")
+       (let [pending  (.querySelector el ".pending-pop")
              selected (.querySelector el (str "[data-rating='" rating "']"))]
          (.finish js/window.snoSongPlanPop (or pending selected el))))
      (set! el.dataset.lastPlayState state))))

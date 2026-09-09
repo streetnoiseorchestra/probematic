@@ -14,8 +14,8 @@
    :current-member-id member-id})
 
 (defn seed-section! [conn section-name]
-  @(d/transact conn [{:section/name section-name
-                      :section/active? true
+  @(d/transact conn [{:section/name     section-name
+                      :section/active?  true
                       :section/position 0}]))
 
 (defn seed-member! [conn member]
@@ -41,11 +41,11 @@
 
 (defn submit-signals [overrides]
   {:member-invite
-   (merge {:name          "Alice Admin"
-           :nick          ""
-           :email         "ALICE@example.com  "
-           :username      "Alice.Admin"
-           :phone         "+43 677 123456"
+   (merge {:name         "Alice Admin"
+           :nick         ""
+           :email        "ALICE@example.com  "
+           :username     "Alice.Admin"
+           :phone        "+43 677 123456"
            :section-name "Trumpets"}
           overrides)})
 
@@ -57,8 +57,8 @@
 
 (deftest validate-member-invite-field-action-test
   (let [{:keys [conn] :as system} (new-system)
-        state    (assoc (state-for system) :tr tr)
-        raw-form (:member-invite (submit-signals {}))]
+        state                     (assoc (state-for system) :tr tr)
+        raw-form                  (:member-invite (submit-signals {}))]
     (seed-section! conn "Trumpets")
 
     (testing "validates each field independently"
@@ -191,7 +191,7 @@
                 :create-sno-id true}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals {:active false
+              (submit-signals {:active        false
                                :create-sno-id false}))))))
 
   (testing "returns required field errors without restoring a client member ID"
@@ -215,10 +215,10 @@
                                 :section-name {:error "Section is required."}}}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals {:name ""
-                               :email ""
-                               :username ""
-                               :phone ""
+              (submit-signals {:name         ""
+                               :email        ""
+                               :username     ""
+                               :phone        ""
                                :section-name ""}))))))
 
   (testing "returns format validation errors"
@@ -240,21 +240,21 @@
                                 :phone    {:error "Phone format is invalid."}}}]]
              (actions/submit-member-invite-action
               (assoc (state-for system) :tr tr)
-              (submit-signals {:email "not-an-email"
+              (submit-signals {:email    "not-an-email"
                                :username "bad user"
-                               :phone "123"}))))))
+                               :phone    "123"}))))))
 
   (testing "returns uniqueness errors for duplicate member attributes"
     (let [{:keys [conn] :as system} (new-system)]
       (seed-section! conn "Trumpets")
       (seed-member! conn {:member/member-id (random-uuid)
-                          :member/name "Existing Member"
-                          :member/nick "alice"
-                          :member/email "alice@example.com"
-                          :member/username "alice.admin"
-                          :member/phone "+43677123456"
-                          :member/section [:section/name "Trumpets"]
-                          :member/active? true})
+                          :member/name      "Existing Member"
+                          :member/nick      "alice"
+                          :member/email     "alice@example.com"
+                          :member/username  "alice.admin"
+                          :member/phone     "+43677123456"
+                          :member/section   [:section/name "Trumpets"]
+                          :member/active?   true})
       (is (= [support/clear-loading
               [:app.datastar/assoc-state
                [:member-invite]

@@ -69,9 +69,9 @@
 
 (defn team-edit-form [{:keys [db page-state] :as req}]
   (let [{:keys [error team-id member-id team-type]} (:team page-state)
-        team            (when team-id (q/retrieve-team db team-id))
-        all-members     (q/members-for-select db)
-        team-name-error (-> error :team-name :error)]
+        team                                        (when team-id (q/retrieve-team db team-id))
+        all-members                                 (q/members-for-select db)
+        team-name-error                             (-> error :team-name :error)]
     (when team-id
       [:wa-dialog {:id                    "team-edit-dialog"
                    :label                 [:i18n/tr :action/update]
@@ -244,7 +244,7 @@
                                    [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
                                     [:i18n/tr :band-settings/title]]
                                    [breadcrumb/BreadcrumbItem title]]
-                                  :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
+                                  :aria-label               [:i18n/tr :band-settings/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-l"}
        [page-header/PageHeader
         {:title    title

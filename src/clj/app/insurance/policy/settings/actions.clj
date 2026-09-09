@@ -123,7 +123,7 @@
 (defn- exporter-form
   [signals]
   (let [raw (raw-exporter-form signals)]
-    {:policy-id  (optional-uuid-value (:policyId raw))
+    {:policy-id   (optional-uuid-value (:policyId raw))
      :exporter-id (keyword-value (:exporterId raw))
      :mappings
      (mapv (fn [mapping]
@@ -214,18 +214,18 @@
 (defn- validation-errors
   [{:keys [current-member-id db tr]} form]
   (let [{:keys [policy-id policy]} (policy-context db form)
-        context-error-key (cond
-                            (not (uuid? policy-id))
-                            [:insurance/policy-settings-error-policy-not-found]
+        context-error-key          (cond
+                                     (not (uuid? policy-id))
+                                     [:insurance/policy-settings-error-policy-not-found]
 
-                            (nil? policy)
-                            [:insurance/policy-settings-error-policy-not-found]
+                                     (nil? policy)
+                                     [:insurance/policy-settings-error-policy-not-found]
 
-                            (not (insurance-team-member? db current-member-id))
-                            [:insurance/policy-settings-error-not-allowed]
+                                     (not (insurance-team-member? db current-member-id))
+                                     [:insurance/policy-settings-error-not-allowed]
 
-                            (not (queries/policy-editable? policy))
-                            [:insurance/policy-settings-error-frozen-policy])]
+                                     (not (queries/policy-editable? policy))
+                                     [:insurance/policy-settings-error-frozen-policy])]
     (if context-error-key
       {:_top (error tr context-error-key)}
       (let [field-errors (field-validation-errors tr form)]
@@ -278,7 +278,7 @@
 
 (defn- coverage-type-validation-errors
   [{:keys [db tr] :as state} {:keys [policy-id type-id] :as form} mode]
-  (let [{:keys [policy]} (policy-context db form)
+  (let [{:keys [policy]}  (policy-context db form)
         context-error-key (cond
                             (not (uuid? policy-id))
                             [:insurance/policy-settings-error-policy-not-found]
@@ -357,7 +357,7 @@
 
 (defn- category-factor-validation-errors
   [{:keys [db tr] :as state} {:keys [policy-id category-factor-id] :as form} mode]
-  (let [{:keys [policy]} (policy-context db form)
+  (let [{:keys [policy]}  (policy-context db form)
         context-error-key (cond
                             (not (uuid? policy-id))
                             [:insurance/policy-settings-error-policy-not-found]
@@ -414,7 +414,7 @@
      (assoc form :impact-count impact-count)
      (if stale?
        {:confirmation-count stale-error
-        :_top              stale-error}
+        :_top               stale-error}
        {}))))
 
 (defn- category-factor-failure-effects
@@ -505,8 +505,8 @@
 
 (defn- export-mapping-tx
   [idx {:keys [coverage-type-id role]}]
-  {:db/id                                  (str "export_mapping_" idx)
-   :insurance.export.mapping/role          role
+  {:db/id                         (str "export_mapping_" idx)
+   :insurance.export.mapping/role role
    :insurance.export.mapping/coverage-type
    [:insurance.coverage.type/type-id coverage-type-id]})
 
@@ -561,9 +561,9 @@
     (into []
           (mapcat
            (fn [coverage-id]
-             (let [coverage    (get coverage-by-id coverage-id)
+             (let [coverage     (get coverage-by-id coverage-id)
                    coverage-ref [:instrument.coverage/coverage-id coverage-id]
-                   change      (:instrument.coverage/change coverage)]
+                   change       (:instrument.coverage/change coverage)]
                [[:db/add coverage-ref :instrument.coverage/types type-ref]
                 [:db/add coverage-ref
                  :instrument.coverage/status
@@ -723,8 +723,8 @@
 
 (defn- delete-coverage-type-validation-errors
   [{:keys [db tr] :as state} {:keys [type-id]}]
-  (let [policy-id (policy-id-for-coverage-type db type-id)
-        policy    (when policy-id (retrieve-policy db policy-id))
+  (let [policy-id         (policy-id-for-coverage-type db type-id)
+        policy            (when policy-id (retrieve-policy db policy-id))
         context-error-key (mutation-context-error-key state policy)]
     (cond
       (not (uuid? type-id))
@@ -762,14 +762,14 @@
   [support/clear-loading
    [:app.datastar/assoc-state
     [form-key :coverage-type-create]
-    {:open           true
-     :policy-id      (uuid-value targetid)
-     :name           ""
-     :description    ""
-     :premium-factor ""
-     :required?      false
+    {:open                     true
+     :policy-id                (uuid-value targetid)
+     :name                     ""
+     :description              ""
+     :premium-factor           ""
+     :required?                false
      :add-to-band-instruments? false
-     :confirmation-count ""}]])
+     :confirmation-count       ""}]])
 
 (defn close-coverage-type-create-action
   [_state _signals]
@@ -787,13 +787,13 @@
     [support/clear-loading
      [:app.datastar/assoc-state
       [form-key :coverage-type]
-      {:policy-id      (policy-id-for-coverage-type db type-id)
-       :type-id        type-id
-       :name           (:insurance.coverage.type/name coverage-type)
-       :description    (or (:insurance.coverage.type/description coverage-type) "")
-       :premium-factor (:insurance.coverage.type/premium-factor coverage-type)
-       :icon           (:insurance.coverage.type/icon coverage-type)
-       :required?      (boolean (:insurance.coverage.type/required? coverage-type))
+      {:policy-id          (policy-id-for-coverage-type db type-id)
+       :type-id            type-id
+       :name               (:insurance.coverage.type/name coverage-type)
+       :description        (or (:insurance.coverage.type/description coverage-type) "")
+       :premium-factor     (:insurance.coverage.type/premium-factor coverage-type)
+       :icon               (:insurance.coverage.type/icon coverage-type)
+       :required?          (boolean (:insurance.coverage.type/required? coverage-type))
        :confirmation-count ""}]]))
 
 (defn close-coverage-type-edit-action
@@ -803,10 +803,10 @@
 (defn- create-category-factor-tx-data
   [{:keys [policy-id category-id factor]}]
   (let [tempid "category-factor-create"]
-    [{:db/id                                                tempid
-      :insurance.category.factor/category-factor-id         (sq/generate-squuid)
-      :insurance.category.factor/category                   [:instrument.category/category-id category-id]
-      :insurance.category.factor/factor                     (decimal-value factor)}
+    [{:db/id                                        tempid
+      :insurance.category.factor/category-factor-id (sq/generate-squuid)
+      :insurance.category.factor/category           [:instrument.category/category-id category-id]
+      :insurance.category.factor/factor             (decimal-value factor)}
      [:db/add [:insurance.policy/policy-id policy-id] :insurance.policy/category-factors tempid]]))
 
 (defn create-category-factor-action
@@ -946,19 +946,19 @@
   [support/clear-loading clear-category-factor])
 
 (def actions
-  {::save-policy-details           #'save-policy-details-action
-   ::save-exporter                 #'save-exporter-action
-   ::open-coverage-type-create     #'open-coverage-type-create-action
-   ::close-coverage-type-create    #'close-coverage-type-create-action
-   ::create-coverage-type          #'create-coverage-type-action
-   ::open-coverage-type-edit       #'open-coverage-type-edit-action
-   ::close-coverage-type-edit      #'close-coverage-type-edit-action
-   ::update-coverage-type          #'update-coverage-type-action
-   ::delete-coverage-type          #'delete-coverage-type-action
-   ::open-category-factor-create   #'open-category-factor-create-action
-   ::close-category-factor-create  #'close-category-factor-create-action
-   ::create-category-factor        #'create-category-factor-action
-   ::open-category-factor-edit     #'open-category-factor-edit-action
-   ::close-category-factor-edit    #'close-category-factor-edit-action
-   ::update-category-factor        #'update-category-factor-action
-   ::delete-category-factor        #'delete-category-factor-action})
+  {::save-policy-details          #'save-policy-details-action
+   ::save-exporter                #'save-exporter-action
+   ::open-coverage-type-create    #'open-coverage-type-create-action
+   ::close-coverage-type-create   #'close-coverage-type-create-action
+   ::create-coverage-type         #'create-coverage-type-action
+   ::open-coverage-type-edit      #'open-coverage-type-edit-action
+   ::close-coverage-type-edit     #'close-coverage-type-edit-action
+   ::update-coverage-type         #'update-coverage-type-action
+   ::delete-coverage-type         #'delete-coverage-type-action
+   ::open-category-factor-create  #'open-category-factor-create-action
+   ::close-category-factor-create #'close-category-factor-create-action
+   ::create-category-factor       #'create-category-factor-action
+   ::open-category-factor-edit    #'open-category-factor-edit-action
+   ::close-category-factor-edit   #'close-category-factor-edit-action
+   ::update-category-factor       #'update-category-factor-action
+   ::delete-category-factor       #'delete-category-factor-action})

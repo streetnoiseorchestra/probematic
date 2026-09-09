@@ -9,7 +9,7 @@
 (defn- instrument-not-found! [instrument-id]
   (throw (ex-info "Instrument not found"
                   {:app/error-type :app.error.type/not-found
-                   :instrument-id instrument-id})))
+                   :instrument-id  instrument-id})))
 
 (defn- download-link [instrument-id]
   (str "/instrument-public/" instrument-id "/download-zip"))

@@ -65,7 +65,7 @@
         (is (= {:width       :standard
                 :breadcrumbs [:account-settings/title
                               :account-settings/break-title]
-                :mobile      {:href "/account-settings"
+                :mobile      {:href  "/account-settings"
                               :label :account-settings/title}
                 :actions     []
                 :overflow    []
@@ -130,13 +130,13 @@
   (let [page (support/public-fn 'app.account.break.views/page)]
     (is (fn? page) "app.account.break.views/page should exist")
     (when page
-      (let [view (page
-                  (support/request
-                   {:page-state
-                    {:account-break
-                     {:_feedback
-                      [:i18n/tr :account-settings/break-ended-feedback]}}}))
-            content (support/element-by-id "account-break-card-content" view)
+      (let [view     (page
+                      (support/request
+                       {:page-state
+                        {:account-break
+                         {:_feedback
+                          [:i18n/tr :account-settings/break-ended-feedback]}}}))
+            content  (support/element-by-id "account-break-card-content" view)
             feedback (support/element-by-id "account-break-feedback" view)]
         (is (contains? (support/class-tokens content) "wa-stack"))
         (is (contains? (support/class-tokens content) "wa-gap-l"))

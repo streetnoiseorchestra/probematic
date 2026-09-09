@@ -86,26 +86,26 @@
 
 (defn page
   [{:keys [db] :as req}]
-  (let [policy-id   (util/ensure-uuid! (get-in req [:path-params :policy-id]))
-        policy      (q/retrieve-policy db policy-id)
-        policy-name (:insurance.policy/name policy)
+  (let [policy-id       (util/ensure-uuid! (get-in req [:path-params :policy-id]))
+        policy          (q/retrieve-policy db policy-id)
+        policy-name     (:insurance.policy/name policy)
         {:keys [policy-number recipient-email recipient-name recipient-title]}
         (config/external-insurance-policy (-> req :system :env))
-        sender       (get-in req [:app/session :session/member :member/name])
-        today        (t/format (t/formatter "yyyy-M-d") (t/today))
-        defaults     (assoc (actions/default-form
-                             (:tr req)
-                             {:policy-id       policy-id
-                              :policy-number   policy-number
-                              :recipient-email recipient-email
-                              :recipient-name  recipient-name
-                              :recipient-title recipient-title
-                              :sender-name     sender
-                              :today           today})
-                            :labels
-                            {:attachment-filename [:i18n/tr :insurance/attachment-filename]})
-        form-state   (merge defaults (get-in req [:page-state actions/form-key]))
-        top-error    (form/field-error form-state :_top)
+        sender          (get-in req [:app/session :session/member :member/name])
+        today           (t/format (t/formatter "yyyy-M-d") (t/today))
+        defaults        (assoc (actions/default-form
+                                (:tr req)
+                                {:policy-id       policy-id
+                                 :policy-number   policy-number
+                                 :recipient-email recipient-email
+                                 :recipient-name  recipient-name
+                                 :recipient-title recipient-title
+                                 :sender-name     sender
+                                 :today           today})
+                               :labels
+                               {:attachment-filename [:i18n/tr :insurance/attachment-filename]})
+        form-state      (merge defaults (get-in req [:page-state actions/form-key]))
+        top-error       (form/field-error form-state :_top)
         export-enabled? (exporters/configured? policy)
         exporter-guidance-key
         (exporters/configuration-guidance-key policy)]
@@ -133,7 +133,7 @@
                                   ::page-toolbar/overflow-items
                                   [[:wa-dropdown-item {:data-dialog "open insurance-policy-confirm-changes-dialog"}
                                     [:i18n/tr :insurance/confirm-skip-send]]]
-                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                  :aria-label                   [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-xl"
              :data-signals (d*/->signals {actions/form-key
                                           (dissoc form-state :_error :labels)})}
@@ -173,12 +173,12 @@
                :class "wa-stack wa-gap-l"}
          (attachment req form-state export-enabled?
                      {:field-name :attachment-filename-new
-                      :type  "new"
-                      :title [:i18n/tr :insurance/new-instruments]})
+                      :type       "new"
+                      :title      [:i18n/tr :insurance/new-instruments]})
          (attachment req form-state export-enabled?
                      {:field-name :attachment-filename-changes
-                      :type  "changes"
-                      :title [:i18n/tr :insurance/changed-and-removed-instruments]})])
+                      :type       "changes"
+                      :title      [:i18n/tr :insurance/changed-and-removed-instruments]})])
        (confirm-dialog req
                        "insurance-policy-send-changes-dialog"
                        [:i18n/tr :insurance/confirm-send-title]

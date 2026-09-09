@@ -85,37 +85,37 @@
     (c/resolve-alias breadcrumb/BreadcrumbItem attrs children)))
 
 (deftest absent-options-use-component-owned-responsive-defaults
-  (let [view       (breadcrumb-view {} six-items)
-        parent     (l/select-one button/BackButton view)
-        desktop    (l/select-one "ol.sno-breadcrumb-list.desktop" view)
-        desktop-li (direct-positions desktop)
+  (let [view           (breadcrumb-view {} six-items)
+        parent         (l/select-one button/BackButton view)
+        desktop        (l/select-one "ol.sno-breadcrumb-list.desktop" view)
+        desktop-li     (direct-positions desktop)
         expanded-label (l/select-one ".expanded-label" desktop)
         compact-label  (l/select-one ".compact-label" desktop)]
-    (is (= {:mobile-parent  {:href  "/root/section/collection/item/parent"
-                             :label "Parent"}
+    (is (= {:mobile-parent    {:href  "/root/section/collection/item/parent"
+                               :label "Parent"}
             :expanded-visible ["Item" "Parent" "Current"]
             :expanded-hidden  ["Root" "Section" "Collection"]
             :compact-visible  ["Parent" "Current"]
             :compact-hidden   ["Root" "Section" "Collection" "Item"]
-            :position-count 4
-            :collapse-count 1
-            :current-count  1
-            :popover-count  1
+            :position-count   4
+            :collapse-count   1
+            :current-count    1
+            :popover-count    1
             :expanded-label
             [:i18n/tr :action/show-hidden-breadcrumb-items {:count 3}]
             :compact-label
             [:i18n/tr :action/show-hidden-breadcrumb-items {:count 4}]}
-           {:mobile-parent  (select-keys (l/attrs parent) [:href :label])
+           {:mobile-parent    (select-keys (l/attrs parent) [:href :label])
             :expanded-visible (state-labels desktop-li :expanded)
             :expanded-hidden  (state-popover-labels desktop :expanded)
             :compact-visible  (state-labels desktop-li :compact)
             :compact-hidden   (state-popover-labels desktop :compact)
-            :position-count (count desktop-li)
-            :collapse-count (count (filter collapse-position? desktop-li))
-            :current-count  (count (l/select "[aria-current=page]" desktop))
-            :popover-count  (count (l/select :wa-popover desktop))
-            :expanded-label (l/select-one :i18n/tr expanded-label)
-            :compact-label  (l/select-one :i18n/tr compact-label)}))
+            :position-count   (count desktop-li)
+            :collapse-count   (count (filter collapse-position? desktop-li))
+            :current-count    (count (l/select "[aria-current=page]" desktop))
+            :popover-count    (count (l/select :wa-popover desktop))
+            :expanded-label   (l/select-one :i18n/tr expanded-label)
+            :compact-label    (l/select-one :i18n/tr compact-label)}))
     (is (= ["Item"]
            (mapv l/text (l/select "li.expanded-only" desktop))))
     (is (= ["Item"]
@@ -126,10 +126,10 @@
     (is (empty? (l/select "ol.sno-breadcrumb-list.mobile" view)))))
 
 (deftest responsive-desktop-trail-keeps-one-trigger-across-states
-  (let [view     (breadcrumb-view {::breadcrumb/max-items [2 3]} six-items)
-        desktop  (l/select-one "ol.sno-breadcrumb-list.desktop" view)
-        trigger  (l/select-one button/Button desktop)
-        popover  (l/select-one :wa-popover desktop)]
+  (let [view    (breadcrumb-view {::breadcrumb/max-items [2 3]} six-items)
+        desktop (l/select-one "ol.sno-breadcrumb-list.desktop" view)
+        trigger (l/select-one button/Button desktop)
+        popover (l/select-one :wa-popover desktop)]
     (is (= {:desktop-trails 1
             :triggers       1
             :popovers       1
@@ -142,16 +142,16 @@
 
 (deftest responsive-limits-count-actual-items-not-the-overflow-trigger
   (let [items   [(first six-items) (nth six-items 4) (last six-items)]
-        view    (breadcrumb-view {::breadcrumb/max-items  [2 2]
+        view    (breadcrumb-view {::breadcrumb/max-items   [2 2]
                                   ::breadcrumb/mobile-mode :trail}
                                  items)
         mobile  (l/select-one "ol.sno-breadcrumb-list.mobile" view)
         desktop (l/select-one "ol.sno-breadcrumb-list.desktop" view)]
-    (is (= {:mobile  {:visible  ["Parent" "Current"]
-                      :hidden   ["Root"]
+    (is (= {:mobile  {:visible   ["Parent" "Current"]
+                      :hidden    ["Root"]
                       :positions 3}
-            :desktop {:visible  ["Parent" "Current"]
-                      :hidden   ["Root"]
+            :desktop {:visible   ["Parent" "Current"]
+                      :hidden    ["Root"]
                       :positions 3}}
            {:mobile  {:visible   (visible-labels mobile)
                       :hidden    (popover-labels mobile)
@@ -161,7 +161,7 @@
                       :positions (count (direct-positions desktop))}}))))
 
 (deftest explicit-nil-limit-keeps-the-standalone-trail-unrestricted
-  (let [view  (breadcrumb-view {::breadcrumb/max-items  nil
+  (let [view  (breadcrumb-view {::breadcrumb/max-items   nil
                                 ::breadcrumb/mobile-mode :trail}
                                six-items)
         trail (l/select-one "ol.sno-breadcrumb-list" view)]
@@ -182,20 +182,20 @@
     (let [view    (breadcrumb-view {::breadcrumb/max-items 2} six-items)
           parent  (l/select-one button/BackButton view)
           desktop (l/select-one "ol.sno-breadcrumb-list.desktop" view)]
-      (is (= {:parent   {:href  "/root/section/collection/item/parent"
-                         :label "Parent"}
-              :visible  ["Parent" "Current"]
-              :hidden   ["Root" "Section" "Collection" "Item"]
+      (is (= {:parent        {:href  "/root/section/collection/item/parent"
+                              :label "Parent"}
+              :visible       ["Parent" "Current"]
+              :hidden        ["Root" "Section" "Collection" "Item"]
               :shared-trails 0}
-             {:parent   (select-keys (l/attrs parent) [:href :label])
-              :visible  (visible-labels desktop)
-              :hidden   (popover-labels desktop)
+             {:parent  (select-keys (l/attrs parent) [:href :label])
+              :visible (visible-labels desktop)
+              :hidden  (popover-labels desktop)
               :shared-trails
               (count (remove #(contains? (:class (l/attrs %))
                                          "desktop")
                              (l/select "ol.sno-breadcrumb-list" view)))}))))
   (testing "an unlimited limit can hide mobile context without limiting desktop"
-    (let [view    (breadcrumb-view {::breadcrumb/max-items  nil
+    (let [view    (breadcrumb-view {::breadcrumb/max-items   nil
                                     ::breadcrumb/mobile-mode :hidden}
                                    six-items)
           desktop (l/select-one "ol.sno-breadcrumb-list.desktop" view)]
@@ -203,26 +203,26 @@
               :parent-count  0
               :mobile-trails 0
               :popover-count 0}
-             {:visible        (visible-labels desktop)
-              :parent-count   (count (l/select button/BackButton view))
-              :mobile-trails  (count (l/select "ol.sno-breadcrumb-list.mobile" view))
-              :popover-count  (count (l/select :wa-popover view))})))))
+             {:visible       (visible-labels desktop)
+              :parent-count  (count (l/select button/BackButton view))
+              :mobile-trails (count (l/select "ol.sno-breadcrumb-list.mobile" view))
+              :popover-count (count (l/select :wa-popover view))})))))
 
 (deftest one-actual-item-limit-keeps-current-and-collapses-every-ancestor
-  (let [view  (breadcrumb-view {::breadcrumb/max-items  1
+  (let [view  (breadcrumb-view {::breadcrumb/max-items   1
                                 ::breadcrumb/mobile-mode :trail}
                                six-items)
         trail (l/select-one "ol.sno-breadcrumb-list" view)]
-    (is (= {:visible-labels ["Current"]
-            :hidden-labels  ["Root" "Section" "Collection" "Item" "Parent"]
-            :position-count 2
+    (is (= {:visible-labels  ["Current"]
+            :hidden-labels   ["Root" "Section" "Collection" "Item" "Parent"]
+            :position-count  2
             :separator-count 1
-            :current-count  1}
-           {:visible-labels (visible-labels trail)
-            :hidden-labels  (popover-labels trail)
-            :position-count (count (direct-positions trail))
+            :current-count   1}
+           {:visible-labels  (visible-labels trail)
+            :hidden-labels   (popover-labels trail)
+            :position-count  (count (direct-positions trail))
             :separator-count (count (l/select ".separator" trail))
-            :current-count  (count (l/select "[aria-current=page]" trail))}))))
+            :current-count   (count (l/select "[aria-current=page]" trail))}))))
 
 (deftest leading-items-use-the-actual-item-budget
   (testing "one preserved leading item still leaves parent and current"
@@ -231,8 +231,8 @@
                                   ::breadcrumb/mobile-mode           :trail}
                                  six-items)
           trail (l/select-one "ol.sno-breadcrumb-list" view)]
-      (is (= {:visible ["Root" "Parent" "Current"]
-              :hidden  ["Section" "Collection" "Item"]
+      (is (= {:visible   ["Root" "Parent" "Current"]
+              :hidden    ["Section" "Collection" "Item"]
               :positions 4}
              {:visible   (visible-labels trail)
               :hidden    (popover-labels trail)
@@ -243,8 +243,8 @@
                                   ::breadcrumb/mobile-mode           :trail}
                                  six-items)
           trail (l/select-one "ol.sno-breadcrumb-list" view)]
-      (is (= {:visible ["Root" "Section" "Current"]
-              :hidden  ["Collection" "Item" "Parent"]
+      (is (= {:visible   ["Root" "Section" "Current"]
+              :hidden    ["Collection" "Item" "Parent"]
               :positions 4}
              {:visible   (visible-labels trail)
               :hidden    (popover-labels trail)
@@ -304,24 +304,24 @@
                 :current-count (count (l/select "[aria-current=page]" view))}))))))
 
 (deftest popover-preserves-ordinary-breadcrumb-items
-  (let [items [[breadcrumb/BreadcrumbItem {::breadcrumb/href   "https://example.test/root"
-                                           ::breadcrumb/target "_blank"
-                                           ::breadcrumb/rel    "external"
-                                           :data-track         "root"}
-                "External"]
-               [breadcrumb/BreadcrumbItem {::breadcrumb/href "relative/path"
-                                           :data-on:click   "evt.preventDefault()"}
-                "Relative"]
-               [breadcrumb/BreadcrumbItem "Grouping"]
-               [breadcrumb/BreadcrumbItem {::breadcrumb/href "/policy"
-                                           ::breadcrumb/rel  "nofollow"}
-                "Rel only"]
-               [breadcrumb/BreadcrumbItem "Current"]]
-        view (breadcrumb-view {::breadcrumb/max-items  1
-                               ::breadcrumb/mobile-mode :trail}
-                              items)
-        popover (l/select-one :wa-popover view)
-        hidden  (popover-items popover)
+  (let [items    [[breadcrumb/BreadcrumbItem {::breadcrumb/href   "https://example.test/root"
+                                              ::breadcrumb/target "_blank"
+                                              ::breadcrumb/rel    "external"
+                                              :data-track         "root"}
+                   "External"]
+                  [breadcrumb/BreadcrumbItem {::breadcrumb/href "relative/path"
+                                              :data-on:click    "evt.preventDefault()"}
+                   "Relative"]
+                  [breadcrumb/BreadcrumbItem "Grouping"]
+                  [breadcrumb/BreadcrumbItem {::breadcrumb/href "/policy"
+                                              ::breadcrumb/rel  "nofollow"}
+                   "Rel only"]
+                  [breadcrumb/BreadcrumbItem "Current"]]
+        view     (breadcrumb-view {::breadcrumb/max-items   1
+                                   ::breadcrumb/mobile-mode :trail}
+                                  items)
+        popover  (l/select-one :wa-popover view)
+        hidden   (popover-items popover)
         resolved (mapv resolved-item hidden)]
     (is (= (mapv l/attrs (take 4 items))
            (mapv l/attrs hidden)))
@@ -334,12 +334,12 @@
     (is (empty? (l/select ico/Icon popover)))))
 
 (deftest responsive-popovers-have-distinct-connected-triggers
-  (let [view      (breadcrumb-view {::breadcrumb/max-items  [1 2]
-                                    ::breadcrumb/mobile-mode :trail}
-                                   six-items)
-        triggers  (l/select button/Button view)
-        popovers  (l/select :wa-popover view)
-        trigger-ids (mapv #(-> % l/attrs :id) triggers)
+  (let [view         (breadcrumb-view {::breadcrumb/max-items   [1 2]
+                                       ::breadcrumb/mobile-mode :trail}
+                                      six-items)
+        triggers     (l/select button/Button view)
+        popovers     (l/select :wa-popover view)
+        trigger-ids  (mapv #(-> % l/attrs :id) triggers)
         popover-fors (mapv #(-> % l/attrs :for) popovers)]
     (is (= {:trigger-count 2
             :popover-count 2

@@ -42,8 +42,8 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
                                                              (:insurance.policy/name policy)]
                                                             [breadcrumb/BreadcrumbItem (:instrument/name instrument)]]
-                                                           ::page-toolbar/actions (page-actions coverage policy)
-                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                                           ::page-toolbar/actions    (page-actions coverage policy)
+                                                           :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "insurance-coverage-detail-page wa-stack wa-gap-xl"}
        [page-header/PageHeader {:class "insurance-coverage-page-header"
                                 :title (:instrument/name instrument)}]

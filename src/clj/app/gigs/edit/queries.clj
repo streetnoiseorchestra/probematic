@@ -10,7 +10,7 @@
        (str/lower-case (tr [label-key])))))
 
 (defn gig->form
-  [{:gig/keys [call-time contact date description end-date end-time gig-id gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title]
+  [{:gig/keys         [call-time contact date description end-date end-time gig-id gig-type leader location more-details outfit pay-deal post-gig-plans rehearsal-leader1 rehearsal-leader2 set-time status title]
     :forum.topic/keys [topic-id]}]
   {:gig-id            (str gig-id)
    :title             (form/text-value title)

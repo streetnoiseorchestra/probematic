@@ -105,4 +105,4 @@
    [:map
     [:cookie-name {:default "sid" :doc "Name of the opaque session ID cookie."} NonBlankString]
     [:cookie-attrs {:default {:path "/" :same-site :lax :http-only true}
-                    :doc "Ring cookie attributes."} CookieAttrsOption]]))
+                    :doc     "Ring cookie attributes."} CookieAttrsOption]]))

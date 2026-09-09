@@ -15,7 +15,7 @@
   (is (identical? (random/secure-random) (random/secure-random)))
   (let [rng (random/make-reseeding-secure-random 1)]
     (is (identical? (rng) (rng))))
-  (let [sizes [16 20 32]
+  (let [sizes   [16 20 32]
         results (mapv crypto/bytes sizes)]
     (is (= [[true true true] sizes]
            [(mapv bytes? results) (mapv count results)])))
@@ -55,7 +55,7 @@
             (crypto/sri-sha384-file path)]))))
 
 (deftest resource-hashing
-  (let [path "app/util/crypto_test.clj"
+  (let [path     "app/util/crypto_test.clj"
         hex-hash (crypto/sha256-resource-hex path)]
     (is (= [32 48] [(count (crypto/sha256-resource path))
                     (count (crypto/sha384-resource path))]))
@@ -82,7 +82,7 @@
                             (crypto/sri-hash-stream algo in))))))
 
 (deftest hmac-and-equality
-  (let [key (crypto/secret-key->hmac-sha256-keyspec "key")
+  (let [key    (crypto/secret-key->hmac-sha256-keyspec "key")
         result (crypto/hmac-sha256 key "The quick brown fox jumps over the lazy dog")]
     (is (= "97yD9DBThCSxMpjmqm-xQ-9NWaFJRhdZl0edvC0aPNg" result))
     (is (crypto/eq? result result))
@@ -96,12 +96,12 @@
            (codec/->hex
             (crypto/derive-subkey-hkdf-sha256
              (byte-array (repeat 22 11))
-             {:salt (codec/hex-> "000102030405060708090a0b0c")
-              :info (codec/hex-> "f0f1f2f3f4f5f6f7f8f9")
+             {:salt   (codec/hex-> "000102030405060708090a0b0c")
+              :info   (codec/hex-> "f0f1f2f3f4f5f6f7f8f9")
               :length 42}))))))
 
 (deftest hkdf-length-and-context
-  (let [ikm (byte-array (range 32))
+  (let [ikm     (byte-array (range 32))
         primary (crypto/secret-bytes->hmac-sha256-keyspec ikm)]
     (doseq [length [0 32 4096 8160]]
       (is (= length (alength (crypto/derive-subkey-hkdf-sha256 ikm {:length length})))))
@@ -115,9 +115,9 @@
     (is (thrown? clojure.lang.ExceptionInfo (crypto/derive-hmac-keyspec primary " ")))))
 
 (deftest csrf-key-derivation
-  (let [primary (crypto/key->hmac-sha256-keyspec
-                 "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f")
-        ^javax.crypto.spec.SecretKeySpec csrf-key (crypto/derive-csrf-hmac-keyspec primary)
+  (let [primary                                    (crypto/key->hmac-sha256-keyspec
+                                                    "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f")
+        ^javax.crypto.spec.SecretKeySpec csrf-key  (crypto/derive-csrf-hmac-keyspec primary)
         ^javax.crypto.spec.SecretKeySpec short-key (crypto/derive-csrf-hmac-keyspec primary {:length 16})]
     (is (= [javax.crypto.spec.SecretKeySpec
             "ea194113a5ca61485b1243cd66d19c79c41ed4c9a28b623a73b227e3a9c9a31b"

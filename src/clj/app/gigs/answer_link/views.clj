@@ -8,9 +8,9 @@
    [app.urls :as urls]))
 
 (defn- redirect [url]
-  {:status 302
+  {:status  302
    :headers {"Location" url}
-   :body ""})
+   :body    ""})
 
 (defn- page-shell [req & body]
   (apply ui2/standalone-page

@@ -29,11 +29,11 @@
 
 (defn add-sheet-music-action
   [{:keys [db page-state]} signals]
-  (let [picker-id      (picker-key signals)
-        picker         (get-in page-state [:file-browser picker-id])
-        selected-path  (selected-path signals)
-        song-id        (some-> (get-in picker [:target :song-id]) util/ensure-uuid!)
-        section-name   (get-in picker [:target :section-name])]
+  (let [picker-id     (picker-key signals)
+        picker        (get-in page-state [:file-browser picker-id])
+        selected-path (selected-path signals)
+        song-id       (some-> (get-in picker [:target :song-id]) util/ensure-uuid!)
+        section-name  (get-in picker [:target :section-name])]
     (if (and selected-path song-id section-name (q/retrieve-song db song-id))
       [[:db/transact
         (add-sheet-music-tx-data song-id section-name selected-path)

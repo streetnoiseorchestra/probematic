@@ -79,18 +79,18 @@
   ([req]
    (submit-answer! default-deps req))
   ([deps {:keys [db datomic-conn] :as req}]
-   (let [deps                 (merge default-deps deps)
-         decrypt-answer       (:decrypt-answer deps)
-         transact!            (:transact! deps)
-         trigger-gig-edited!  (:trigger-gig-edited! deps)
-         answer               (decrypt-answer req (answer-token req))
-         member-id            (util/ensure-uuid! (:member/member-id answer))
-         gig-id               (util/ensure-uuid! (:gig/gig-id answer))
-         gig                  (q/retrieve-gig db gig-id)
-         member               (q/retrieve-member db member-id)
-         reminder?            (:reminder answer)
-         plan                 (:attendance/plan answer)
-         plan-kw              (str->plan plan)]
+   (let [deps                (merge default-deps deps)
+         decrypt-answer      (:decrypt-answer deps)
+         transact!           (:transact! deps)
+         trigger-gig-edited! (:trigger-gig-edited! deps)
+         answer              (decrypt-answer req (answer-token req))
+         member-id           (util/ensure-uuid! (:member/member-id answer))
+         gig-id              (util/ensure-uuid! (:gig/gig-id answer))
+         gig                 (q/retrieve-gig db gig-id)
+         member              (q/retrieve-member db member-id)
+         reminder?           (:reminder answer)
+         plan                (:attendance/plan answer)
+         plan-kw             (str->plan plan)]
      (assert gig)
      (assert member)
      (when-not reminder?

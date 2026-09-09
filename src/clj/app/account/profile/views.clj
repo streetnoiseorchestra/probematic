@@ -44,12 +44,12 @@
                           (not real-avatar?) (dissoc :member/avatar))]
     [:div {:class "avatar-editor wa-stack wa-gap-m wa-align-items-center"}
      [:div {:class "avatar-frame"}
-      [avatar/Avatar {::avatar/member preview-member
-                      ::avatar/link? false
+      [avatar/Avatar {::avatar/member        preview-member
+                      ::avatar/link?         false
                       ::avatar/allow-legacy? false
-                      ::avatar/icon :user
-                      ::avatar/image-size 160
-                      :class "profile-avatar"}]
+                      ::avatar/icon          :user
+                      ::avatar/image-size    160
+                      :class                 "profile-avatar"}]
       [:img {:id                 "account-profile-avatar-preview"
              :class              (str "avatar-preview" (when staged? " staged"))
              :alt                [:i18n/tr :account-settings/avatar-label]
@@ -58,17 +58,17 @@
        [:div {:class "avatar-empty-prompt wa-stack wa-gap-2xs wa-align-items-center"}
         [:wa-callout {:class "avatar-empty" :appearance "outlined" :variant "warning"}
          [ico/Icon {::ico/library :snoico
-                    ::ico/name :smile
-                    :slot "icon"
-                    :style "color: var(--wa-color-brand-fill-loud);"}]
+                    ::ico/name    :smile
+                    :slot         "icon"
+                    :style        "color: var(--wa-color-brand-fill-loud);"}]
          [:i18n/tr :account-settings/avatar-empty-callout]]
         [ico/Icon {::ico/library :phosphor
-                   ::ico/name :arrow-fat-down
-                   :class "avatar-upload-arrow"
-                   :aria-hidden "true"}]])
+                   ::ico/name    :arrow-fat-down
+                   :class        "avatar-upload-arrow"
+                   :aria-hidden  "true"}]])
      [:div {:class "avatar-actions wa-stack wa-gap-xs wa-align-items-center"}
-      [button/Button {:appearance "outlined"
-                      :type "button"
+      [button/Button {:appearance    "outlined"
+                      :type          "button"
                       :data-on:click "document.getElementById('account-profile-avatar').click()"}
        [:i18n/tr (if avatar-present?
                    :account-settings/avatar-replace
@@ -89,9 +89,9 @@
          [:i18n/tr :account-settings/avatar-remove]])]
      (when-let [error (support/field-error state :avatar)]
        [:p {:class "wa-caption-s wa-color-text-danger" :role "alert"} error])
-     [:input {:id "account-profile-avatar-removed"
-              :type "hidden"
-              :name "avatar-removed?"
+     [:input {:id        "account-profile-avatar-removed"
+              :type      "hidden"
+              :name      "avatar-removed?"
               :data-bind "account-profile.avatar-removed?"}]
      (support/feedback state)]))
 
@@ -126,9 +126,9 @@
    [:p (support/instance-tr
         req
         :account-settings/login-security-description)]
-   [:a {:href (security-account-url req)
+   [:a {:href   (security-account-url req)
         :target "_blank"
-        :rel "noopener"}
+        :rel    "noopener"}
     (support/instance-tr req :account-settings/login-security-link)]])
 
 (defn page [{:keys [db page-state] :as req}]
@@ -140,18 +140,18 @@
      {:title        title
       :show-header? false
       :actions      [(support/save-action form-id [:i18n/tr :action/save])]}
-     [:form {:id             form-id
-             :class          "wa-stack wa-gap-l"
-             :method         "post"
-             :action         "/account-settings/profile/save"
-             :enctype        "multipart/form-data"
-             :data-id        "account-profile"
-             :data-signals   (d*/->signals {:account-profile state})
+     [:form {:id           form-id
+             :class        "wa-stack wa-gap-l"
+             :method       "post"
+             :action       "/account-settings/profile/save"
+             :enctype      "multipart/form-data"
+             :data-id      "account-profile"
+             :data-signals (d*/->signals {:account-profile state})
              :data-on:submit
              (str "evt.preventDefault(); "
                   "document.getElementById('account-profile-tab-id').value = $tab-id; "
                   "@post('/account-settings/profile/save', {contentType: 'form'})")}
-      [:input {:id "account-profile-tab-id"
+      [:input {:id   "account-profile-tab-id"
                :type "hidden"
                :name "tab-id"}]
       (when-let [top-error (support/field-error state :_top)]

@@ -168,7 +168,7 @@
                                    [breadcrumb/BreadcrumbItem {::breadcrumb/href "/band-settings"}
                                     [:i18n/tr :band-settings/title]]
                                    [breadcrumb/BreadcrumbItem title]]
-                                  :aria-label [:i18n/tr :band-settings/toolbar-label]}]}
+                                  :aria-label               [:i18n/tr :band-settings/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-l"}
        [page-header/PageHeader
         {:title    title

@@ -6,9 +6,9 @@
    [clojure.test :refer [deftest is]]))
 
 (def member
-  {:member/member-id #uuid "11111111-1111-4111-8111-111111111111"
-   :member/name "Ada Lovelace"
-   :member/nick "Ada"
+  {:member/member-id       #uuid "11111111-1111-4111-8111-111111111111"
+   :member/name            "Ada Lovelace"
+   :member/nick            "Ada"
    :member/avatar-template "/user_avatar/forum.streetnoise.at/ada/{size}/1.png"})
 
 (def managed-member
@@ -20,7 +20,7 @@
 
 (deftest member-avatar-links-to-member-by-default
   (let [html (avatar-html {::avatar/member member
-                           :shape "rounded"})]
+                           :shape          "rounded"})]
     (is (str/includes? html "<a aria-label=\"Ada Lovelace\" href=\"/member/11111111-1111-4111-8111-111111111111\""))
     (is (str/includes? html "<span class=\"sno-avatar\" shape=\"rounded\""))
     (is (not (str/includes? html "<wa-avatar")))
@@ -28,9 +28,9 @@
     (is (not (str/includes? html "app.ui2.avatar/member")))))
 
 (deftest managed-member-avatar-precedes-the-legacy-template-and-renders-retina-sources
-  (let [html (avatar-html {::avatar/member managed-member
+  (let [html (avatar-html {::avatar/member     managed-member
                            ::avatar/image-size 40
-                           :shape "rounded"})]
+                           :shape              "rounded"})]
     (is (str/includes?
          html
          (str "src=\"/member-avatar/11111111-1111-4111-8111-111111111111/40"
@@ -44,10 +44,10 @@
     (is (not (str/includes? html "forum.streetnoise.at/user_avatar")))))
 
 (deftest profile-avatar-can-explicitly-disable-the-legacy-template
-  (let [html (avatar-html {::avatar/member member
-                           ::avatar/image-size 160
+  (let [html (avatar-html {::avatar/member        member
+                           ::avatar/image-size    160
                            ::avatar/allow-legacy? false
-                           ::avatar/link? false})]
+                           ::avatar/link?         false})]
     (is (str/includes? html "class=\"initials\""))
     (is (not (str/includes? html "forum.streetnoise.at")))))
 
@@ -78,8 +78,8 @@
     (is (not (str/includes? html "part=")))))
 
 (deftest member-avatar-can-render-nick-text
-  (let [html (avatar-html {::avatar/member member
-                           ::avatar/text :nick
+  (let [html (avatar-html {::avatar/member        member
+                           ::avatar/text          :nick
                            ::avatar/wrapper-attrs {:class "member-chip"}})]
     (is (str/includes? html "member-chip"))
     (is (str/includes? html "wa-flank wa-gap-xs wa-align-items-center"))
@@ -88,8 +88,8 @@
 
 (deftest member-avatar-link-can-be-disabled
   (let [html (avatar-html {::avatar/member member
-                           ::avatar/link? false
-                           :class "plain-avatar"})]
+                           ::avatar/link?  false
+                           :class          "plain-avatar"})]
     (is (str/starts-with? html "<span"))
     (is (str/includes? html "class=\"sno-avatar plain-avatar\""))
     (is (not (str/includes? html "<a ")))))

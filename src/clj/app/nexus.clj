@@ -48,12 +48,12 @@
    (mapcat
     (fn [tx]
       (if (map? tx)
-        (let [nil-ks (map key (filter (comp nil? val) tx))
-              db-id (:db/id tx)
+        (let [nil-ks      (map key (filter (comp nil? val) tx))
+              db-id       (:db/id tx)
               unique-attr (when-let [attr (some #(when (unique-attrs %) %)
                                                 (keys tx))]
                             [attr (attr tx)])
-              identity (or db-id unique-attr)]
+              identity    (or db-id unique-attr)]
           (if (seq nil-ks)
             (if identity
               (if db-id

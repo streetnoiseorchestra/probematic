@@ -21,7 +21,7 @@
                                               :variant    "brand"
                                               :href       (urls/link-polls-create)}
                                [:i18n/tr :polls/new-poll]]]
-                             :aria-label [:i18n/tr :polls/index-toolbar-label]}])
+                             :aria-label               [:i18n/tr :polls/index-toolbar-label]}])
 
 (defn page [{:keys [db] :as req}]
   (let [{:keys [running-polls past-polls]} (queries/index-page-data db)]

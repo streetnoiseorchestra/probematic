@@ -120,9 +120,9 @@
   | `:size`  | Content size in bytes"
   [source]
   (let [{:keys [id size] :as block} (block/read! source)]
-    {:hash (mhash/hex id)
+    {:hash  (mhash/hex id)
      :block block
-     :size size}))
+     :size  size}))
 
 (defn prepare-image!
   "Strips metadata from image `file` in place and prepares it for storage.
@@ -142,14 +142,14 @@
   [file]
   (im/strip-metadata-in-place! {:input {:path file}})
   (let [{:keys [width height format mime-type]} (im/identify-detailed file)
-        {:keys [id size] :as block} (block/read! file)]
-    {:hash (mhash/hex id)
-     :block block
-     :format format
+        {:keys [id size] :as block}             (block/read! file)]
+    {:hash      (mhash/hex id)
+     :block     block
+     :format    format
      :mime-type mime-type
-     :size size
-     :width width
-     :height height}))
+     :size      size
+     :width     width
+     :height    height}))
 
 (comment
   (def store (start! {:store-path "/home/ramblurr/src/sno/probematic/data.dev/filestore"}))

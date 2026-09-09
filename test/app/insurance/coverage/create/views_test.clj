@@ -14,59 +14,59 @@
    [reitit.core :as r]))
 
 (def translations
-  {[:action/back] "Back"
-   [:action/next] "Next"
-   [:action/save] "Save"
+  {[:action/back]                             "Back"
+   [:action/next]                             "Next"
+   [:action/save]                             "Save"
    [:insurance/add-coverage-separate-warning] "Use a separate form for each item."
-   [:insurance/add-coverage-subtitle] "Add an instrument and register it for %1."
-   [:insurance/add-coverage-title] "Add Instrument Coverage"
-   [:insurance/coverage-for] "Coverage details for %1."
-   [:insurance/coverage-create-steps] "Coverage creation steps"
-   [:insurance/coverage-step] "Coverage"
-   [:insurance/coverage-types] "Coverage types"
-   [:insurance/insured-value-hint] "The estimated replacement market value of the item."
-   [:insurance/instrument-coverage] "Instrument Coverage"
-   [:insurance/instrument-step] "Instrument"
-   [:insurance/insurer-id] "Harmonia ID"
-   [:insurance/insurer-id-hint] "Enter the identifier assigned by Harmonia."
-   [:insurance/item-count] "Count"
-   [:insurance/item-count-hint] "How many identical items are being insured?"
-   [:insurance/no-coverage-types] "No coverage types configured."
-   [:insurance/no-photos] "No photos have been uploaded yet."
-   [:insurance/ownership] "Band or private"
-   [:insurance/ownership-band] "Band instrument"
-   [:insurance/ownership-band-description] "Played by the band."
-   [:insurance/ownership-hint] "Is this a band instrument or private instrument?"
-   [:insurance/ownership-private] "Private instrument"
+   [:insurance/add-coverage-subtitle]         "Add an instrument and register it for %1."
+   [:insurance/add-coverage-title]            "Add Instrument Coverage"
+   [:insurance/coverage-for]                  "Coverage details for %1."
+   [:insurance/coverage-create-steps]         "Coverage creation steps"
+   [:insurance/coverage-step]                 "Coverage"
+   [:insurance/coverage-types]                "Coverage types"
+   [:insurance/insured-value-hint]            "The estimated replacement market value of the item."
+   [:insurance/instrument-coverage]           "Instrument Coverage"
+   [:insurance/instrument-step]               "Instrument"
+   [:insurance/insurer-id]                    "Harmonia ID"
+   [:insurance/insurer-id-hint]               "Enter the identifier assigned by Harmonia."
+   [:insurance/item-count]                    "Count"
+   [:insurance/item-count-hint]               "How many identical items are being insured?"
+   [:insurance/no-coverage-types]             "No coverage types configured."
+   [:insurance/no-photos]                     "No photos have been uploaded yet."
+   [:insurance/ownership]                     "Band or private"
+   [:insurance/ownership-band]                "Band instrument"
+   [:insurance/ownership-band-description]    "Played by the band."
+   [:insurance/ownership-hint]                "Is this a band instrument or private instrument?"
+   [:insurance/ownership-private]             "Private instrument"
    [:insurance/ownership-private-description] "Paid for by the owner."
-   [:insurance/photo-upload] "Photo Upload"
-   [:insurance/photo-upload-subtitle] "Upload photos from several angles."
-   [:insurance/photos] "Photos"
-   [:insurance/photos-step] "Photos"
-   [:insurance/upload-complete] "Upload complete."
-   [:insurance/upload-drop-label] "Choose photos to upload"
-   [:insurance/upload-error] "Upload failed."
-   [:insurance/upload-help] "PNG, JPG, or GIF up to 10 MB."
-   [:insurance/upload-progress] "Uploading photos…"
-   [:insurance/value] "Value"
-   [:instrument/build-year] "Build year"
-   [:instrument/build-year-hint] "if available"
-   [:instrument/category] "Category"
-   [:instrument/category-hint] "What type of item is this?"
-   [:instrument/create-subtitle] "Describe the instrument in detail."
-   [:instrument/description] "Description"
-   [:instrument/description-hint] "e.g., color or material"
-   [:instrument/instrument] "Instrument"
-   [:instrument/make] "Make"
-   [:instrument/make-hint] "Which company manufactures the item?"
-   [:instrument/model] "Model"
-   [:instrument/model-hint-optional] "What is the model number? if available"
-   [:instrument/name] "Instrument name"
-   [:instrument/name-hint] "e.g., trumpet, Yamaha, or tenor sax mouthpiece"
-   [:instrument/owner] "Owner"
-   [:instrument/serial-number] "Serial number"
-   [:instrument/serial-number-hint] "if available"
-   [:nav/insurance] "Insurance"})
+   [:insurance/photo-upload]                  "Photo Upload"
+   [:insurance/photo-upload-subtitle]         "Upload photos from several angles."
+   [:insurance/photos]                        "Photos"
+   [:insurance/photos-step]                   "Photos"
+   [:insurance/upload-complete]               "Upload complete."
+   [:insurance/upload-drop-label]             "Choose photos to upload"
+   [:insurance/upload-error]                  "Upload failed."
+   [:insurance/upload-help]                   "PNG, JPG, or GIF up to 10 MB."
+   [:insurance/upload-progress]               "Uploading photos…"
+   [:insurance/value]                         "Value"
+   [:instrument/build-year]                   "Build year"
+   [:instrument/build-year-hint]              "if available"
+   [:instrument/category]                     "Category"
+   [:instrument/category-hint]                "What type of item is this?"
+   [:instrument/create-subtitle]              "Describe the instrument in detail."
+   [:instrument/description]                  "Description"
+   [:instrument/description-hint]             "e.g., color or material"
+   [:instrument/instrument]                   "Instrument"
+   [:instrument/make]                         "Make"
+   [:instrument/make-hint]                    "Which company manufactures the item?"
+   [:instrument/model]                        "Model"
+   [:instrument/model-hint-optional]          "What is the model number? if available"
+   [:instrument/name]                         "Instrument name"
+   [:instrument/name-hint]                    "e.g., trumpet, Yamaha, or tenor sax mouthpiece"
+   [:instrument/owner]                        "Owner"
+   [:instrument/serial-number]                "Serial number"
+   [:instrument/serial-number-hint]           "if available"
+   [:nav/insurance]                           "Insurance"})
 
 (defn tr
   ([path]
@@ -109,14 +109,14 @@
   {:insurance.policy/policy-id policy-id
    :insurance.policy/name      "Test Policy"
    :insurance.policy/coverage-types
-   [{:insurance.coverage.type/type-id   base-coverage-type-id
-     :insurance.coverage.type/name      "Base"
+   [{:insurance.coverage.type/type-id     base-coverage-type-id
+     :insurance.coverage.type/name        "Base"
      :insurance.coverage.type/description "Base coverage"
-     :insurance.coverage.type/required? true}
-    {:insurance.coverage.type/type-id   extra-coverage-type-id
-     :insurance.coverage.type/name      "Extended"
+     :insurance.coverage.type/required?   true}
+    {:insurance.coverage.type/type-id     extra-coverage-type-id
+     :insurance.coverage.type/name        "Extended"
      :insurance.coverage.type/description "Extended coverage"
-     :insurance.coverage.type/required? false}]})
+     :insurance.coverage.type/required?   false}]})
 
 (defn request
   [instrument]
@@ -157,7 +157,7 @@
 (defn instrument-view
   []
   (let [{:keys [conn member-id]} (tc/new-system "insurance-coverage-create-instrument-view")
-        category-id (random-uuid)]
+        category-id              (random-uuid)]
     @(d/transact conn [{:member/member-id member-id
                         :member/name      "Ada"
                         :member/active?   true}
@@ -332,14 +332,14 @@
 
 (deftest coverage-step-form
   (testing "An insurance-team member is entering coverage details for the saved instrument."
-    (let [view        (coverage-view (member-request coverage-instrument true) policy)
-          form        (l/select-one "form#coverage-create-coverage-form" view)
-          steps       (l/select 'li view)
-          count-input (l/select-one "input[name=item-count]" view)
-          value-input (l/select-one "input[name=value]" view)
+    (let [view          (coverage-view (member-request coverage-instrument true) policy)
+          form          (l/select-one "form#coverage-create-coverage-form" view)
+          steps         (l/select 'li view)
+          count-input   (l/select-one "input[name=item-count]" view)
+          value-input   (l/select-one "input[name=value]" view)
           insurer-input (l/select-one "input[name=insurer-id]" view)
-          ownership   (l/select-one "wa-radio-group[name=private-band]" view)
-          checkboxes  (l/select 'wa-checkbox view)]
+          ownership     (l/select-one "wa-radio-group[name=private-band]" view)
+          checkboxes    (l/select 'wa-checkbox view)]
       (testing "Coverage is the current wizard step."
         (is (= {:steps        [{:label "Instrument" :state #{"complete"}}
                                {:label "Photos" :state #{"complete"}}
@@ -401,7 +401,7 @@
                    :data-show))))
       (testing "The required type is enforced and each choice retains its explanatory text."
         (let [optional-handler (:data-on:change (l/attrs (second checkboxes)))
-              extra-id        (str extra-coverage-type-id)]
+              extra-id         (str extra-coverage-type-id)]
           (is (= {:checkboxes [{:value       (str base-coverage-type-id)
                                 :checked     true
                                 :disabled    true
@@ -414,25 +414,25 @@
                        "} else { "
                        "$coverage-create.coverage-types = $coverage-create.coverage-types.filter((id) => id !== '" extra-id "'); "
                        "}")}
-                 {:checkboxes (mapv (fn [checkbox]
-                                      (assoc (select-keys (l/attrs checkbox) [:value :checked :disabled])
-                                             :description (-> (l/select-one 'small checkbox) l/text)))
-                                    checkboxes)
+                 {:checkboxes       (mapv (fn [checkbox]
+                                            (assoc (select-keys (l/attrs checkbox) [:value :checked :disabled])
+                                                   :description (-> (l/select-one 'small checkbox) l/text)))
+                                          checkboxes)
                   :optional-handler optional-handler})))))))
 
 (deftest required-coverage-type-controls
   (testing "zero, one, or multiple explicit required types are selected in any policy order"
-    (let [optional-a {:insurance.coverage.type/type-id base-coverage-type-id
-                      :insurance.coverage.type/name "Optional A"
+    (let [optional-a {:insurance.coverage.type/type-id   base-coverage-type-id
+                      :insurance.coverage.type/name      "Optional A"
                       :insurance.coverage.type/required? false}
-          optional-b {:insurance.coverage.type/type-id extra-coverage-type-id
-                      :insurance.coverage.type/name "Optional B"
+          optional-b {:insurance.coverage.type/type-id   extra-coverage-type-id
+                      :insurance.coverage.type/name      "Optional B"
                       :insurance.coverage.type/required? false}
           required-a (assoc optional-a
                             :insurance.coverage.type/name "Required A"
                             :insurance.coverage.type/required? true)
-          required-b {:insurance.coverage.type/type-id third-coverage-type-id
-                      :insurance.coverage.type/name "Required B"
+          required-b {:insurance.coverage.type/type-id   third-coverage-type-id
+                      :insurance.coverage.type/name      "Required B"
                       :insurance.coverage.type/required? true}
           cases      [{:label    "zero required"
                        :orders   [[optional-a optional-b]
@@ -449,7 +449,7 @@
                        :expected #{(str base-coverage-type-id)
                                    (str third-coverage-type-id)}}]]
       (doseq [{:keys [label orders expected]} cases
-              coverage-types orders]
+              coverage-types                  orders]
         (is (= {:selected expected
                 :checked  expected
                 :disabled expected}
@@ -494,13 +494,13 @@
 
 (deftest validation-errors
   (testing "Coverage validation failed after the member submitted invalid values."
-    (let [req  (assoc (member-request coverage-instrument false)
-                      :page-state
-                      {:coverage-create
-                       {:value "invalid"
-                        :_error {:value {:error "Value must be a whole number greater than zero."}
-                                 :_top  {:error "Please fix the errors in the form."}}}})
-          view (coverage-view req policy)
+    (let [req         (assoc (member-request coverage-instrument false)
+                             :page-state
+                             {:coverage-create
+                              {:value  "invalid"
+                               :_error {:value {:error "Value must be a whole number greater than zero."}
+                                        :_top  {:error "Please fix the errors in the form."}}}})
+          view        (coverage-view req policy)
           value-field (l/select-one
                        "div.insurance-coverage-create-field:has(input[name=value])"
                        view)

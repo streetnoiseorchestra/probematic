@@ -20,23 +20,23 @@
    :fixed?      true
    :last-fixed? false
    :num-gigs    0
-   :songs       [{:song/title  "Dude"
+   :songs       [{:song/title   "Dude"
                   :song/song-id #uuid "01844740-3eed-856d-84c1-c26f0706820a"
                   :position     0
                   :emphasis     :probeplan.emphasis/intensive}
-                 {:song/title  "Alerta Feminista"
+                 {:song/title   "Alerta Feminista"
                   :song/song-id #uuid "019b0bfd-350d-8056-86f7-05571a05f412"
                   :position     1
                   :emphasis     :probeplan.emphasis/none}
-                 {:song/title  "Burkan Čoček"
+                 {:song/title   "Burkan Čoček"
                   :song/song-id #uuid "01860df5-b3fe-8a11-aae0-5091418dd9e7"
                   :position     2
                   :emphasis     :probeplan.emphasis/none}
-                 {:song/title  "Rave de la Relation"
+                 {:song/title   "Rave de la Relation"
                   :song/song-id #uuid "01860df5-da90-83b8-8a78-84dbf9734adb"
                   :position     3
                   :emphasis     :probeplan.emphasis/none}
-                 {:song/title  "Ti-cul"
+                 {:song/title   "Ti-cul"
                   :song/song-id #uuid "018cf96c-d5d3-8222-baf0-dfd6dc7347e9"
                   :position     4
                   :emphasis     :probeplan.emphasis/none}]})
@@ -105,7 +105,7 @@
 
 (deftest probeplan-page-surface
   (let [{:keys [conn]} (tc/new-system "probeplan-page-surface")
-        request        {::r/router       (r/router ["/act" {:name :app.routes.datastar/act}])
+        request        {::r/router      (r/router ["/act" {:name :app.routes.datastar/act}])
                         :current-locale :en
                         :db             (d/db conn)
                         :page-state     {}}
@@ -121,22 +121,22 @@
         actions        (l/select button/Button (::page-toolbar/actions toolbar-attrs))
         header         (l/select-one page-header/PageHeader surface)]
     (testing "The probeplan uses a standard workspace with its lifecycle action in the toolbar."
-      (is (= {:width       :standard
-              :breadcrumbs [:home :probeplan/title]
-              :mobile      {:href "/" :label :home}
-              :actions     [{:id "probeplan-edit" :label :action/edit}]
-              :heading     :probeplan/title
+      (is (= {:width          :standard
+              :breadcrumbs    [:home :probeplan/title]
+              :mobile         {:href "/" :label :home}
+              :actions        [{:id "probeplan-edit" :label :action/edit}]
+              :heading        :probeplan/title
               :header-actions nil}
-             {:width       (or (::page-surface/width surface-attrs) :standard)
-              :breadcrumbs (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
-                                 (l/select breadcrumb/BreadcrumbItem breadcrumb))
-              :mobile      {:href  (-> parent l/attrs ::breadcrumb/href)
-                            :label (some-> (l/select-one :i18n/tr parent) l/first-child)}
-              :actions     (mapv (fn [action]
-                                   {:id    (:data-id (l/attrs action))
-                                    :label (some-> (l/select-one :i18n/tr action) l/first-child)})
-                                 actions)
-              :heading     (some-> header l/attrs ::page-header/title l/first-child)
+             {:width          (or (::page-surface/width surface-attrs) :standard)
+              :breadcrumbs    (mapv #(some-> (l/select-one :i18n/tr %) l/first-child)
+                                    (l/select breadcrumb/BreadcrumbItem breadcrumb))
+              :mobile         {:href  (-> parent l/attrs ::breadcrumb/href)
+                               :label (some-> (l/select-one :i18n/tr parent) l/first-child)}
+              :actions        (mapv (fn [action]
+                                      {:id    (:data-id (l/attrs action))
+                                       :label (some-> (l/select-one :i18n/tr action) l/first-child)})
+                                    actions)
+              :heading        (some-> header l/attrs ::page-header/title l/first-child)
               :header-actions (some-> header l/attrs ::page-header/actions)})))
     (is (not (contains? toolbar-attrs ::page-toolbar/mobile-back)))
 

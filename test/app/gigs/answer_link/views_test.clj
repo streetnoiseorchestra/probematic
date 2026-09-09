@@ -19,7 +19,7 @@
     (is (str/includes? body "Your answer has been submitted - thanks!"))))
 
 (deftest answer-link-success-page-redirects-to-gig-detail-test
-  (let [gig-id (UUID/randomUUID)
+  (let [gig-id                (UUID/randomUUID)
         {:keys [status body]} (#'views/success-page {:tr tr} {:gig/gig-id gig-id})]
     (is (= 200 status))
     (is (str/includes? body "Your answer has been submitted - thanks!"))))

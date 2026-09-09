@@ -10,10 +10,10 @@
 (defn- render-gig-row [gig]
   (html/->str
    (gigs.ui/gig-row {:current-locale :en}
-                    (merge {:gig/gig-id "gig-1"
-                            :gig/title "Skappanabanda, Graz"
-                            :gig/status :gig.status/confirmed
-                            :gig/date (t/date "2026-06-04")
+                    (merge {:gig/gig-id   "gig-1"
+                            :gig/title    "Skappanabanda, Graz"
+                            :gig/status   :gig.status/confirmed
+                            :gig/date     (t/date "2026-06-04")
                             :gig/end-date (t/date "2026-06-07")}
                            gig))))
 

@@ -33,7 +33,7 @@
 
 (deftest edit-poll-page-surface
   (testing "The poll title identifies the editor while Delete remains secondary."
-    (let [system             (support/new-system "poll-edit-surface")
+    (let [system            (support/new-system "poll-edit-surface")
           {:keys [poll-id]} (support/seed-poll! system :poll.status/draft)]
       (is (= {:contract {:width       :standard
                          :breadcrumbs [:polls/title "Existing Poll" :action/edit]

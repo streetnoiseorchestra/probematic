@@ -18,8 +18,8 @@
   (let [page-surface (page-surface-alias)]
     (is (some? page-surface) "PageSurface alias should exist")
     (when page-surface
-      (let [rendered (page-surface-html {:id "member-page"
-                                         :class "member-surface"
+      (let [rendered (page-surface-html {:id         "member-page"
+                                         :class      "member-surface"
                                          :aria-label "Member details"}
                                         [:h1 "Ada Lovelace"])]
         (is (str/starts-with? rendered "<section"))

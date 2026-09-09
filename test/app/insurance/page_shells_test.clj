@@ -46,9 +46,9 @@
             :request
             {:db             (d/db conn)
              :current-locale "en"
-             :app/session        {:session/member {:member/member-id member-id
-                                                   :member/name      "Ada"
-                                                   :member/email     "ada@example.test"}}
+             :app/session    {:session/member {:member/member-id member-id
+                                               :member/name      "Ada"
+                                               :member/email     "ada@example.test"}}
              :system         {:env {:app-base-url "https://example.test"}}
              :tr             tr
              ::r/router      router}})))
@@ -59,10 +59,10 @@
       (is (= {:width       :standard
               :breadcrumbs [:home :insurance/title]
               :mobile      {:label :home :href "/"}
-              :actions     [{:label :insurance/new-policy
-                             :href  "/insurance-new/"
+              :actions     [{:label      :insurance/new-policy
+                             :href       "/insurance-new/"
                              :appearance "filled"
-                             :variant "brand"}]
+                             :variant    "brand"}]
               :overflow    []}
              (-> request index.views/page page-shell/page-contract))))
     (testing "Coverage detail keeps the policy and instrument in context."
@@ -70,10 +70,10 @@
               :breadcrumbs [:insurance/title "Insurance 2026" "Test Trumpet"]
               :mobile      {:label "Insurance 2026"
                             :href  (str "/insurance-policy/" policy-id "/")}
-              :actions     [{:label :action/edit
-                             :href  (str "/insurance-coverage-edit/" coverage-id "/")
+              :actions     [{:label      :action/edit
+                             :href       (str "/insurance-coverage-edit/" coverage-id "/")
                              :appearance "outlined"
-                             :variant "brand"}]
+                             :variant    "brand"}]
               :overflow    []}
              (-> request
                  (assoc :path-params {:coverage-id coverage-id})
@@ -82,36 +82,36 @@
 
 (deftest insurance-directory-faq-uses-active-policy-coverage-data
   (let [{:keys [conn coverage-type-id policy-id request]} (fixture)
-        optional-type-id (random-uuid)
-        _                @(d/transact
-                           conn
-                           [[:db/add
-                             [:insurance.coverage.type/type-id coverage-type-id]
-                             :insurance.coverage.type/name
-                             "Worldwide touring"]
-                            [:db/add
-                             [:insurance.coverage.type/type-id coverage-type-id]
-                             :insurance.coverage.type/description
-                             "Coverage while travelling with the instrument."]
-                            {:db/id                                  "optional-coverage-type"
-                             :insurance.coverage.type/type-id        optional-type-id
-                             :insurance.coverage.type/name           "Locked rehearsal storage"
-                             :insurance.coverage.type/description    "Coverage while stored in a locked rehearsal room."
-                             :insurance.coverage.type/premium-factor 0.25M}
-                            [:db/add
-                             [:insurance.policy/policy-id policy-id]
-                             :insurance.policy/coverage-types
-                             "optional-coverage-type"]])
-        request          (assoc request :db (d/db conn))
-        coverage-faq     (l/select-one "#faq5" (index.views/page request))
-        coverage-copy    ["Worldwide touring"
-                          "Coverage while travelling with the instrument."
-                          "Locked rehearsal storage"
-                          "Coverage while stored in a locked rehearsal room."]
-        required-schema? (boolean
-                          (d/entid
-                           (:db request)
-                           :insurance.coverage.type/required?))]
+        optional-type-id                                  (random-uuid)
+        _                                                 @(d/transact
+                                                            conn
+                                                            [[:db/add
+                                                              [:insurance.coverage.type/type-id coverage-type-id]
+                                                              :insurance.coverage.type/name
+                                                              "Worldwide touring"]
+                                                             [:db/add
+                                                              [:insurance.coverage.type/type-id coverage-type-id]
+                                                              :insurance.coverage.type/description
+                                                              "Coverage while travelling with the instrument."]
+                                                             {:db/id                                  "optional-coverage-type"
+                                                              :insurance.coverage.type/type-id        optional-type-id
+                                                              :insurance.coverage.type/name           "Locked rehearsal storage"
+                                                              :insurance.coverage.type/description    "Coverage while stored in a locked rehearsal room."
+                                                              :insurance.coverage.type/premium-factor 0.25M}
+                                                             [:db/add
+                                                              [:insurance.policy/policy-id policy-id]
+                                                              :insurance.policy/coverage-types
+                                                              "optional-coverage-type"]])
+        request                                           (assoc request :db (d/db conn))
+        coverage-faq                                      (l/select-one "#faq5" (index.views/page request))
+        coverage-copy                                     ["Worldwide touring"
+                                                           "Coverage while travelling with the instrument."
+                                                           "Locked rehearsal storage"
+                                                           "Coverage while stored in a locked rehearsal room."]
+        required-schema?                                  (boolean
+                                                           (d/entid
+                                                            (:db request)
+                                                            :insurance.coverage.type/required?))]
     (testing "coverage names and descriptions come from the active policy"
       (is (= coverage-copy
              (filterv #(str/includes? (l/text coverage-faq) %)
@@ -139,48 +139,48 @@
 
 (deftest policy-dashboard-lifecycle-toolbar
   (let [{:keys [conn request policy-id coverage-id]} (fixture)
-        policy-url       (str "/insurance-policy/" policy-id "/")
-        review-url       (str policy-url "review")
-        workbench-url    (str policy-url "workbench")
-        settings-url     (str policy-url "settings")
-        surveys-url      (str policy-url "surveys")
-        changes-url      (str "/insurance-policy-changes/" policy-id "/")
-        notifications-url (str "/insurance-policy-notify/" policy-id "/")
-        request-for      (fn [db]
-                           (assoc request
-                                  :db db
-                                  :path-params {:policy-id policy-id}))
-        todo-contract    (-> (:db request)
-                             request-for
-                             dashboard.views/page
-                             page-shell/page-contract)
-        ready-db         (:db-after
-                          @(d/transact conn [[:db/add
-                                              [:instrument.coverage/coverage-id coverage-id]
-                                              :instrument.coverage/status
-                                              :instrument.coverage.status/reviewed]]))
-        ready-contract   (-> ready-db
-                             request-for
-                             dashboard.views/page
-                             page-shell/page-contract)
-        sent-db          (:db-after
-                          @(d/transact conn [[:db/add
-                                              [:insurance.policy/policy-id policy-id]
-                                              :insurance.policy/status
-                                              :insurance.policy.status/sent]]))
-        sent-contract    (-> sent-db
-                             request-for
-                             dashboard.views/page
-                             page-shell/page-contract)
-        active-db        (:db-after
-                          @(d/transact conn [[:db/add
-                                              [:insurance.policy/policy-id policy-id]
-                                              :insurance.policy/status
-                                              :insurance.policy.status/active]]))
-        active-contract  (-> active-db
-                             request-for
-                             dashboard.views/page
-                             page-shell/page-contract)]
+        policy-url                                   (str "/insurance-policy/" policy-id "/")
+        review-url                                   (str policy-url "review")
+        workbench-url                                (str policy-url "workbench")
+        settings-url                                 (str policy-url "settings")
+        surveys-url                                  (str policy-url "surveys")
+        changes-url                                  (str "/insurance-policy-changes/" policy-id "/")
+        notifications-url                            (str "/insurance-policy-notify/" policy-id "/")
+        request-for                                  (fn [db]
+                                                       (assoc request
+                                                              :db db
+                                                              :path-params {:policy-id policy-id}))
+        todo-contract                                (-> (:db request)
+                                                         request-for
+                                                         dashboard.views/page
+                                                         page-shell/page-contract)
+        ready-db                                     (:db-after
+                                                      @(d/transact conn [[:db/add
+                                                                          [:instrument.coverage/coverage-id coverage-id]
+                                                                          :instrument.coverage/status
+                                                                          :instrument.coverage.status/reviewed]]))
+        ready-contract                               (-> ready-db
+                                                         request-for
+                                                         dashboard.views/page
+                                                         page-shell/page-contract)
+        sent-db                                      (:db-after
+                                                      @(d/transact conn [[:db/add
+                                                                          [:insurance.policy/policy-id policy-id]
+                                                                          :insurance.policy/status
+                                                                          :insurance.policy.status/sent]]))
+        sent-contract                                (-> sent-db
+                                                         request-for
+                                                         dashboard.views/page
+                                                         page-shell/page-contract)
+        active-db                                    (:db-after
+                                                      @(d/transact conn [[:db/add
+                                                                          [:insurance.policy/policy-id policy-id]
+                                                                          :insurance.policy/status
+                                                                          :insurance.policy.status/active]]))
+        active-contract                              (-> active-db
+                                                         request-for
+                                                         dashboard.views/page
+                                                         page-shell/page-contract)]
     (testing "The primary action follows the policy lifecycle and outstanding review work."
       (is (= {:todo   [{:label      :insurance/review
                         :href       review-url
@@ -203,34 +203,34 @@
               :sent   (:actions sent-contract)
               :active (:actions active-contract)})))
     (testing "Secondary actions remain reachable without offering a live blocked destination."
-      (is (= {:todo [{:label :insurance/workbench
-                      :value workbench-url}
-                     {:label :insurance/add-coverage
-                      :value (str "/insurance-coverage-create/" policy-id)}
-                     {:label :insurance/policy-settings
-                      :value settings-url}
-                     {:label :insurance/manage-surveys
-                      :value surveys-url}
-                     {:label    :insurance/send-changes
-                      :disabled true}]
-              :ready [{:label :insurance/review
-                       :value review-url}
-                      {:label :insurance/workbench
-                       :value workbench-url}
-                      {:label :insurance/add-coverage
-                       :value (str "/insurance-coverage-create/" policy-id)}
-                      {:label :insurance/policy-settings
-                       :value settings-url}
-                      {:label :insurance/manage-surveys
-                       :value surveys-url}]
-              :sent [{:label :insurance/review
-                      :value review-url}
-                     {:label :insurance/add-coverage
-                      :value (str "/insurance-coverage-create/" policy-id)}
-                     {:label :insurance/policy-settings
-                      :value settings-url}
-                     {:label :insurance/manage-surveys
-                      :value surveys-url}]
+      (is (= {:todo   [{:label :insurance/workbench
+                        :value workbench-url}
+                       {:label :insurance/add-coverage
+                        :value (str "/insurance-coverage-create/" policy-id)}
+                       {:label :insurance/policy-settings
+                        :value settings-url}
+                       {:label :insurance/manage-surveys
+                        :value surveys-url}
+                       {:label    :insurance/send-changes
+                        :disabled true}]
+              :ready  [{:label :insurance/review
+                        :value review-url}
+                       {:label :insurance/workbench
+                        :value workbench-url}
+                       {:label :insurance/add-coverage
+                        :value (str "/insurance-coverage-create/" policy-id)}
+                       {:label :insurance/policy-settings
+                        :value settings-url}
+                       {:label :insurance/manage-surveys
+                        :value surveys-url}]
+              :sent   [{:label :insurance/review
+                        :value review-url}
+                       {:label :insurance/add-coverage
+                        :value (str "/insurance-coverage-create/" policy-id)}
+                       {:label :insurance/policy-settings
+                        :value settings-url}
+                       {:label :insurance/manage-surveys
+                        :value surveys-url}]
               :active [{:label :insurance/review
                         :value review-url}
                        {:label :insurance/workbench
@@ -248,38 +248,38 @@
 
 (deftest open-policy-survey-is-prominent-on-the-dashboard
   (let [{:keys [conn coverage-id outsider-id request policy-id]} (fixture)
-        member-id   (get-in request [:app/session :session/member :member/member-id])
-        surveys-url (urls/link-policy-surveys policy-id)
-        _           @(d/transact
-                      conn
-                      [{:insurance.survey/survey-id   (random-uuid)
-                        :insurance.survey/policy      [:insurance.policy/policy-id policy-id]
-                        :insurance.survey/created-at  #inst "2026-07-01T00:00:00.000-00:00"
-                        :insurance.survey/closes-at   #inst "2099-08-01T00:00:00.000-00:00"
-                        :insurance.survey/responses
-                        [{:insurance.survey.response/response-id  (random-uuid)
-                          :insurance.survey.response/member       [:member/member-id member-id]
-                          :insurance.survey.response/completed-at #inst "2026-07-02T00:00:00.000-00:00"}
-                         {:insurance.survey.response/response-id (random-uuid)
-                          :insurance.survey.response/member      [:member/member-id outsider-id]
-                          :insurance.survey.response/coverage-reports
-                          [{:insurance.survey.report/report-id (random-uuid)
-                            :insurance.survey.report/coverage  [:instrument.coverage/coverage-id coverage-id]}]}]}])
-        view        (-> request
-                        (assoc :db (d/db conn)
-                               :path-params {:policy-id policy-id})
-                        dashboard.views/page)
-        contract    (page-shell/page-contract view)
-        main-column (first (l/select ".leading-none.wa-grid" view))
-        cards       (->> (l/children main-column)
-                         (filter #(= card/Card (first %)))
-                         vec)
-        survey-card (second cards)
-        card-action (l/select-one button/Button survey-card)
-        action-icon (l/select-one ico/Icon card-action)
-        progress    (l/select-one 'div.insurance-dashboard-survey-progress survey-card)
-        percentage  (l/select-one ".insurance-dashboard-survey-progress-value" survey-card)
-        summary     (l/select-one ".wa-text-end" survey-card)]
+        member-id                                                (get-in request [:app/session :session/member :member/member-id])
+        surveys-url                                              (urls/link-policy-surveys policy-id)
+        _                                                        @(d/transact
+                                                                   conn
+                                                                   [{:insurance.survey/survey-id  (random-uuid)
+                                                                     :insurance.survey/policy     [:insurance.policy/policy-id policy-id]
+                                                                     :insurance.survey/created-at #inst "2026-07-01T00:00:00.000-00:00"
+                                                                     :insurance.survey/closes-at  #inst "2099-08-01T00:00:00.000-00:00"
+                                                                     :insurance.survey/responses
+                                                                     [{:insurance.survey.response/response-id  (random-uuid)
+                                                                       :insurance.survey.response/member       [:member/member-id member-id]
+                                                                       :insurance.survey.response/completed-at #inst "2026-07-02T00:00:00.000-00:00"}
+                                                                      {:insurance.survey.response/response-id (random-uuid)
+                                                                       :insurance.survey.response/member      [:member/member-id outsider-id]
+                                                                       :insurance.survey.response/coverage-reports
+                                                                       [{:insurance.survey.report/report-id (random-uuid)
+                                                                         :insurance.survey.report/coverage  [:instrument.coverage/coverage-id coverage-id]}]}]}])
+        view                                                     (-> request
+                                                                     (assoc :db (d/db conn)
+                                                                            :path-params {:policy-id policy-id})
+                                                                     dashboard.views/page)
+        contract                                                 (page-shell/page-contract view)
+        main-column                                              (first (l/select ".leading-none.wa-grid" view))
+        cards                                                    (->> (l/children main-column)
+                                                                      (filter #(= card/Card (first %)))
+                                                                      vec)
+        survey-card                                              (second cards)
+        card-action                                              (l/select-one button/Button survey-card)
+        action-icon                                              (l/select-one ico/Icon card-action)
+        progress                                                 (l/select-one 'div.insurance-dashboard-survey-progress survey-card)
+        percentage                                               (l/select-one ".insurance-dashboard-survey-progress-value" survey-card)
+        summary                                                  (l/select-one ".wa-text-end" survey-card)]
     (is (= {:toolbar-actions [{:label      :insurance/manage-surveys
                                :href       surveys-url
                                :appearance "outlined"
@@ -300,18 +300,18 @@
                               :title      [:i18n/tr :insurance/manage-surveys]
                               :aria-label [:i18n/tr :insurance/manage-surveys]
                               :icon       :clipboard-text}
-            :progress       {:role          "progressbar"
-                             :aria-valuemin 0
-                             :aria-valuemax 100
-                             :aria-valuenow 50
-                             :aria-label    [:i18n/tr
-                                             :insurance/survey-progress-summary
-                                             {:completed 1 :total 2}]
-                             :style         {"--progress-value" "50.0%"}}
-            :percentage     {:type                    "percent"
-                             :value                   0.5
-                             :minimum-fraction-digits 0
-                             :maximum-fraction-digits 0}
+            :progress        {:role          "progressbar"
+                              :aria-valuemin 0
+                              :aria-valuemax 100
+                              :aria-valuenow 50
+                              :aria-label    [:i18n/tr
+                                              :insurance/survey-progress-summary
+                                              {:completed 1 :total 2}]
+                              :style         {"--progress-value" "50.0%"}}
+            :percentage      {:type                    "percent"
+                              :value                   0.5
+                              :minimum-fraction-digits 0
+                              :maximum-fraction-digits 0}
             :legend-labels   [:insurance/survey-complete
                               :insurance/survey-incomplete]
             :legend-counts   ["1" "1"]
@@ -332,18 +332,18 @@
                                             :title
                                             :aria-label])
                               :icon (::ico/name (l/attrs action-icon)))
-            :progress       (select-keys (l/attrs progress)
-                                         [:role
-                                          :aria-valuemin
-                                          :aria-valuemax
-                                          :aria-valuenow
-                                          :aria-label
-                                          :style])
-            :percentage     (select-keys (l/attrs percentage)
-                                         [:type
-                                          :value
-                                          :minimum-fraction-digits
-                                          :maximum-fraction-digits])
+            :progress        (select-keys (l/attrs progress)
+                                          [:role
+                                           :aria-valuemin
+                                           :aria-valuemax
+                                           :aria-valuenow
+                                           :aria-label
+                                           :style])
+            :percentage      (select-keys (l/attrs percentage)
+                                          [:type
+                                           :value
+                                           :minimum-fraction-digits
+                                           :maximum-fraction-digits])
             :legend-labels   (mapv page-shell/translation-key
                                    (l/select '[dl dt] survey-card))
             :legend-counts   (mapv l/text (l/select '[dl dd] survey-card))
@@ -353,40 +353,40 @@
 
 (deftest open-survey-replaces-each-policy-primary-action
   (let [{:keys [conn coverage-id request policy-id]} (fixture)
-        _           @(d/transact
-                      conn
-                      [{:insurance.survey/survey-id   (random-uuid)
-                        :insurance.survey/policy      [:insurance.policy/policy-id policy-id]
-                        :insurance.survey/created-at  #inst "2026-07-01T00:00:00.000-00:00"
-                        :insurance.survey/closes-at   #inst "2099-08-01T00:00:00.000-00:00"}])
-        contract-at (fn [db]
-                      (-> request
-                          (assoc :db db
-                                 :path-params {:policy-id policy-id})
-                          dashboard.views/page
-                          page-shell/page-contract))
-        todo        (contract-at (d/db conn))
-        ready-db    (:db-after
-                     @(d/transact conn [[:db/add
-                                         [:instrument.coverage/coverage-id coverage-id]
-                                         :instrument.coverage/status
-                                         :instrument.coverage.status/reviewed]]))
-        ready       (contract-at ready-db)
-        sent-db     (:db-after
-                     @(d/transact conn [[:db/add
-                                         [:insurance.policy/policy-id policy-id]
-                                         :insurance.policy/status
-                                         :insurance.policy.status/sent]]))
-        sent        (contract-at sent-db)
-        active-db   (:db-after
-                     @(d/transact conn [[:db/add
-                                         [:insurance.policy/policy-id policy-id]
-                                         :insurance.policy/status
-                                         :insurance.policy.status/active]]))
-        active      (contract-at active-db)
-        summarize   (fn [contract]
-                      {:actions  (mapv :label (:actions contract))
-                       :overflow (mapv :label (:overflow contract))})]
+        _                                            @(d/transact
+                                                       conn
+                                                       [{:insurance.survey/survey-id  (random-uuid)
+                                                         :insurance.survey/policy     [:insurance.policy/policy-id policy-id]
+                                                         :insurance.survey/created-at #inst "2026-07-01T00:00:00.000-00:00"
+                                                         :insurance.survey/closes-at  #inst "2099-08-01T00:00:00.000-00:00"}])
+        contract-at                                  (fn [db]
+                                                       (-> request
+                                                           (assoc :db db
+                                                                  :path-params {:policy-id policy-id})
+                                                           dashboard.views/page
+                                                           page-shell/page-contract))
+        todo                                         (contract-at (d/db conn))
+        ready-db                                     (:db-after
+                                                      @(d/transact conn [[:db/add
+                                                                          [:instrument.coverage/coverage-id coverage-id]
+                                                                          :instrument.coverage/status
+                                                                          :instrument.coverage.status/reviewed]]))
+        ready                                        (contract-at ready-db)
+        sent-db                                      (:db-after
+                                                      @(d/transact conn [[:db/add
+                                                                          [:insurance.policy/policy-id policy-id]
+                                                                          :insurance.policy/status
+                                                                          :insurance.policy.status/sent]]))
+        sent                                         (contract-at sent-db)
+        active-db                                    (:db-after
+                                                      @(d/transact conn [[:db/add
+                                                                          [:insurance.policy/policy-id policy-id]
+                                                                          :insurance.policy/status
+                                                                          :insurance.policy.status/active]]))
+        active                                       (contract-at active-db)
+        summarize                                    (fn [contract]
+                                                       {:actions  (mapv :label (:actions contract))
+                                                        :overflow (mapv :label (:overflow contract))})]
     (is (= {:todo   {:actions  [:insurance/manage-surveys]
                      :overflow [:insurance/review
                                 :insurance/workbench
@@ -417,18 +417,18 @@
 
 (deftest policy-dashboard-overflow-actions-have-icons
   (let [{:keys [request policy-id]} (fixture)
-        view         (-> request
-                         (assoc :path-params {:policy-id policy-id})
-                         dashboard.views/page)
-        surface      (l/select-one page-surface/PageSurface view)
-        toolbar      (-> surface l/attrs ::page-surface/toolbar)
-        overflow     (-> toolbar l/attrs ::page-toolbar/overflow-items)
-        item-summary (mapv (fn [item]
-                             (let [icon (l/select-one ico/Icon item)]
-                               {:label (page-shell/translation-key item)
-                                :icon  (::ico/name (l/attrs icon))
-                                :slot  (:slot (l/attrs icon))}))
-                           (l/select 'wa-dropdown-item overflow))]
+        view                        (-> request
+                                        (assoc :path-params {:policy-id policy-id})
+                                        dashboard.views/page)
+        surface                     (l/select-one page-surface/PageSurface view)
+        toolbar                     (-> surface l/attrs ::page-surface/toolbar)
+        overflow                    (-> toolbar l/attrs ::page-toolbar/overflow-items)
+        item-summary                (mapv (fn [item]
+                                            (let [icon (l/select-one ico/Icon item)]
+                                              {:label (page-shell/translation-key item)
+                                               :icon  (::ico/name (l/attrs icon))
+                                               :slot  (:slot (l/attrs icon))}))
+                                          (l/select 'wa-dropdown-item overflow))]
     (is (= [{:label :insurance/workbench
              :icon  :table
              :slot  "icon"}
@@ -448,18 +448,18 @@
 
 (deftest policy-dashboard-does-not-offer-team-actions-to-other-members
   (let [{:keys [conn request outsider-id policy-id]} (fixture)
-        active-db (:db-after
-                   @(d/transact conn [[:db/add
-                                       [:insurance.policy/policy-id policy-id]
-                                       :insurance.policy/status
-                                       :insurance.policy.status/active]]))
-        contract (-> request
-                     (assoc :db active-db
-                            :path-params {:policy-id policy-id}
-                            :app/session {:session/member
-                                          {:member/member-id outsider-id}})
-                     dashboard.views/page
-                     page-shell/page-contract)]
+        active-db                                    (:db-after
+                                                      @(d/transact conn [[:db/add
+                                                                          [:insurance.policy/policy-id policy-id]
+                                                                          :insurance.policy/status
+                                                                          :insurance.policy.status/active]]))
+        contract                                     (-> request
+                                                         (assoc :db active-db
+                                                                :path-params {:policy-id policy-id}
+                                                                :app/session {:session/member
+                                                                              {:member/member-id outsider-id}})
+                                                         dashboard.views/page
+                                                         page-shell/page-contract)]
     (is (= [{:label      :insurance/add-coverage
              :href       (str "/insurance-coverage-create/" policy-id)
              :appearance "filled"
@@ -472,7 +472,7 @@
 
 (deftest policy-workflows-use-wide-contextual-surfaces
   (let [{:keys [request policy-id]} (fixture)
-        policy-url (str "/insurance-policy/" policy-id "/")]
+        policy-url                  (str "/insurance-policy/" policy-id "/")]
     (testing "Review keeps policy context while review commands remain with the content."
       (is (= {:width       :wide
               :breadcrumbs [:insurance/title "Insurance 2026" :insurance/review]
@@ -509,14 +509,14 @@
     (is (= {:width       :standard
             :breadcrumbs [:insurance/title :insurance/create-title]
             :mobile      {:label :insurance/title :href "/insurance"}
-            :actions     [{:label :action/cancel
-                           :href  "/insurance"
+            :actions     [{:label      :action/cancel
+                           :href       "/insurance"
                            :appearance "outlined"}
-                          {:label :action/create
-                           :form "insurance-policy-create-form"
-                           :type "submit"
+                          {:label      :action/create
+                           :form       "insurance-policy-create-form"
+                           :type       "submit"
                            :appearance "filled"
-                           :variant "brand"}]
+                           :variant    "brand"}]
             :overflow    []}
            (-> request
                policy-create.views/page
@@ -524,28 +524,28 @@
 
 (deftest policy-changes-use-a-standard-confirmation-surface
   (let [{:keys [request policy-id]} (fixture)
-        policy-url (urls/link-policy policy-id)
-        view       (-> request
-                       (assoc :path-params {:policy-id policy-id})
-                       policy-changes.views/page)]
+        policy-url                  (urls/link-policy policy-id)
+        view                        (-> request
+                                        (assoc :path-params {:policy-id policy-id})
+                                        policy-changes.views/page)]
     (is (= {:width       :standard
             :breadcrumbs [:insurance/title "Insurance 2026" :insurance/send-changes]
             :mobile      {:label "Insurance 2026" :href policy-url}
-            :actions     [{:label :action/cancel
-                           :href  policy-url
+            :actions     [{:label      :action/cancel
+                           :href       policy-url
                            :appearance "outlined"}
-                          {:label :insurance/confirm-and-send
+                          {:label       :insurance/confirm-and-send
                            :data-dialog "open insurance-policy-send-changes-dialog"
-                           :appearance "filled"
-                           :variant "brand"
-                           :disabled true}]
-            :overflow    [{:label :insurance/confirm-skip-send
+                           :appearance  "filled"
+                           :variant     "brand"
+                           :disabled    true}]
+            :overflow    [{:label       :insurance/confirm-skip-send
                            :data-dialog "open insurance-policy-confirm-changes-dialog"}]}
            (page-shell/page-contract view)))
     (testing "an unconfigured exporter disables spreadsheet actions with guidance"
-      (let [guidance (l/select-one "#insurance-policy-exporter-guidance" view)
-            previews (l/select :app.ui2.button/button
-                               (l/select-one "#insurance-policy-attachments" view))
+      (let [guidance    (l/select-one "#insurance-policy-exporter-guidance" view)
+            previews    (l/select :app.ui2.button/button
+                                  (l/select-one "#insurance-policy-attachments" view))
             send-dialog (l/select-one "#insurance-policy-send-changes-dialog" view)]
         (is (= {:guidance :insurance/exporter-not-configured-guidance
                 :previews [true true]
@@ -561,7 +561,7 @@
   (let [{:keys [conn coverage-type-id policy-id request]} (fixture)]
     @(d/transact
       conn
-      [{:db/id [:insurance.policy/policy-id policy-id]
+      [{:db/id                        [:insurance.policy/policy-id policy-id]
         :insurance.policy/exporter-id :insurance/exporter-harmonia-v1
         :insurance.policy/export-mappings
         [{:insurance.export.mapping/role
@@ -572,40 +572,40 @@
           :insurance.exporter.harmonia-v1/unattended-building
           :insurance.export.mapping/coverage-type
           [:insurance.coverage.type/type-id coverage-type-id]}]}])
-    (let [view (-> request
-                   (assoc :db (d/db conn)
-                          :path-params {:policy-id policy-id})
-                   policy-changes.views/page)
+    (let [view        (-> request
+                          (assoc :db (d/db conn)
+                                 :path-params {:policy-id policy-id})
+                          policy-changes.views/page)
           send-action (second (:actions (page-shell/page-contract view)))
-          previews (l/select :app.ui2.button/button
-                             (l/select-one "#insurance-policy-attachments" view))]
-      (is (= {:send-disabled? false
-              :guidance?      false
+          previews    (l/select :app.ui2.button/button
+                                (l/select-one "#insurance-policy-attachments" view))]
+      (is (= {:send-disabled?   false
+              :guidance?        false
               :preview-disabled [nil nil]}
-             {:send-disabled? (true? (:disabled send-action))
-              :guidance?      (boolean
-                               (l/select-one
-                                "#insurance-policy-exporter-guidance"
-                                view))
+             {:send-disabled?   (true? (:disabled send-action))
+              :guidance?        (boolean
+                                 (l/select-one
+                                  "#insurance-policy-exporter-guidance"
+                                  view))
               :preview-disabled (mapv (comp :disabled l/attrs)
                                       previews)})))))
 
 (deftest payment-notifications-use-a-wide-policy-surface
   (let [{:keys [request policy-id]} (fixture)
-        policy     (q/retrieve-policy (:db request) policy-id)
-        policy-url (urls/link-policy policy-id)]
+        policy                      (q/retrieve-policy (:db request) policy-id)
+        policy-url                  (urls/link-policy policy-id)]
     (is (= {:width       :wide
             :breadcrumbs [:insurance/title "Insurance 2026"
                           :insurance/request-payments-title]
             :mobile      {:label "Insurance 2026" :href policy-url}
-            :actions     [{:label :action/cancel
-                           :href  policy-url
+            :actions     [{:label      :action/cancel
+                           :href       policy-url
                            :appearance "outlined"}
-                          {:label :insurance/send-payment-notifications
-                           :form "insurance-payment-notifications-form"
-                           :type "submit"
+                          {:label      :insurance/send-payment-notifications
+                           :form       "insurance-payment-notifications-form"
+                           :type       "submit"
                            :appearance "filled"
-                           :variant "brand"}]
+                           :variant    "brand"}]
             :overflow    []}
            (-> request
                (assoc :path-params {:policy-id policy-id}
@@ -615,19 +615,19 @@
 
 (deftest payment-notifications-hide-private-data-from-other-members
   (let [{:keys [request outsider-id policy-id]} (fixture)
-        policy (q/retrieve-policy (:db request) policy-id)
-        view (-> request
-                 (assoc :path-params {:policy-id policy-id}
-                        :policy policy
-                        :app/session {:session/member
-                                      {:member/member-id outsider-id}})
-                 policy-notifications.views/page)]
+        policy                                  (q/retrieve-policy (:db request) policy-id)
+        view                                    (-> request
+                                                    (assoc :path-params {:policy-id policy-id}
+                                                           :policy policy
+                                                           :app/session {:session/member
+                                                                         {:member/member-id outsider-id}})
+                                                    policy-notifications.views/page)]
     (is (empty? (:actions (page-shell/page-contract view))))
     (is (nil? (l/select-one "#insurance-payment-notifications-form" view)))))
 
 (deftest policy-surveys-use-a-wide-policy-management-surface
   (let [{:keys [request policy-id]} (fixture)
-        policy-url (urls/link-policy policy-id)]
+        policy-url                  (urls/link-policy policy-id)]
     (is (= {:width       :wide
             :breadcrumbs [:insurance/title "Insurance 2026"
                           :insurance/manage-surveys]
@@ -645,12 +645,12 @@
 
 (deftest member-instrument-check-uses-a-compact-context-only-surface
   (let [{:keys [conn request policy-id coverage-id]} (fixture)
-        member-id (get-in request [:app/session :session/member :member/member-id])
-        _ (insurance-test/seed-member-survey!
-           conn
-           {:coverage-ids [coverage-id]
-            :member-id    member-id
-            :policy-id    policy-id})]
+        member-id                                    (get-in request [:app/session :session/member :member/member-id])
+        _                                            (insurance-test/seed-member-survey!
+                                                      conn
+                                                      {:coverage-ids [coverage-id]
+                                                       :member-id    member-id
+                                                       :policy-id    policy-id})]
     (is (= {:width       :compact
             :breadcrumbs [:home :insurance/review-title]
             :mobile      {:label :home :href "/"}
@@ -665,29 +665,29 @@
 
 (deftest coverage-creation-uses-standard-step-surfaces
   (let [{:keys [request policy-id instrument-id]} (fixture)
-        redirect "/return"
-        step-one (urls/link-coverage-create-edit policy-id instrument-id redirect)
-        step-two (urls/link-coverage-create2 policy-id instrument-id redirect)
-        step-three (urls/link-coverage-create3 policy-id instrument-id redirect)]
+        redirect                                  "/return"
+        step-one                                  (urls/link-coverage-create-edit policy-id instrument-id redirect)
+        step-two                                  (urls/link-coverage-create2 policy-id instrument-id redirect)
+        step-three                                (urls/link-coverage-create3 policy-id instrument-id redirect)]
     (testing "The instrument step can be cancelled or submitted from the toolbar."
       (is (= {:width       :standard
               :breadcrumbs [:insurance/title "Insurance 2026"
                             :insurance/instrument-step]
               :mobile      {:label "Insurance 2026"
                             :href  (str "/insurance-policy/" policy-id "/")}
-              :actions     [{:label :action/cancel
-                             :href  (str "/insurance-policy/" policy-id "/")
+              :actions     [{:label      :action/cancel
+                             :href       (str "/insurance-policy/" policy-id "/")
                              :appearance "outlined"}
-                            {:label :action/next
-                             :form "coverage-create-instrument-form"
-                             :type "submit"
+                            {:label      :action/next
+                             :form       "coverage-create-instrument-form"
+                             :type       "submit"
                              :appearance "filled"
-                             :variant "brand"}]
+                             :variant    "brand"}]
               :overflow    []}
              (-> request
                  (assoc :path-params {:policy-id policy-id}
                         :query-params {:instrument-id (str instrument-id)
-                                       :redirect redirect})
+                                       :redirect      redirect})
                  coverage-create.views/instrument-page
                  page-shell/page-contract))))
     (testing "The photos step preserves the redirect in both directions."
@@ -695,16 +695,16 @@
               :breadcrumbs [:insurance/title "Insurance 2026"
                             :insurance/instrument-step :insurance/photos-step]
               :mobile      {:label :insurance/instrument-step :href step-one}
-              :actions     [{:label :action/back
-                             :href step-one
+              :actions     [{:label      :action/back
+                             :href       step-one
                              :appearance "outlined"}
-                            {:label :action/next
-                             :href step-three
+                            {:label      :action/next
+                             :href       step-three
                              :appearance "filled"
-                             :variant "brand"}]
+                             :variant    "brand"}]
               :overflow    []}
              (-> request
-                 (assoc :path-params {:policy-id policy-id
+                 (assoc :path-params {:policy-id     policy-id
                                       :instrument-id instrument-id}
                         :query-params {:redirect redirect})
                  coverage-create.views/photos-page
@@ -715,17 +715,17 @@
                             :insurance/instrument-step :insurance/photos-step
                             :insurance/coverage-step]
               :mobile      {:label :insurance/photos-step :href step-two}
-              :actions     [{:label :action/back
-                             :href step-two
+              :actions     [{:label      :action/back
+                             :href       step-two
                              :appearance "outlined"}
-                            {:label :action/save
-                             :form "coverage-create-coverage-form"
-                             :type "submit"
+                            {:label      :action/save
+                             :form       "coverage-create-coverage-form"
+                             :type       "submit"
                              :appearance "filled"
-                             :variant "brand"}]
+                             :variant    "brand"}]
               :overflow    []}
              (-> request
-                 (assoc :path-params {:policy-id policy-id
+                 (assoc :path-params {:policy-id     policy-id
                                       :instrument-id instrument-id}
                         :query-params {:redirect redirect})
                  coverage-create.views/coverage-page
@@ -733,23 +733,23 @@
 
 (deftest coverage-edit-uses-form-actions-and-role-gated-overflow
   (let [{:keys [request coverage-id outsider-id]} (fixture)
-        edit-request (assoc request :path-params {:coverage-id coverage-id})]
+        edit-request                              (assoc request :path-params {:coverage-id coverage-id})]
     (testing "An insurance-team member can save or delete while the instrument remains the title."
       (is (= {:width       :standard
               :breadcrumbs [:insurance/title "Insurance 2026" "Test Trumpet" :action/edit]
               :mobile      {:label "Test Trumpet"
                             :href  (str "/insurance-coverage/" coverage-id "/")}
-              :actions     [{:label :action/cancel
-                             :href  (str "/insurance-coverage/" coverage-id "/")
+              :actions     [{:label      :action/cancel
+                             :href       (str "/insurance-coverage/" coverage-id "/")
                              :appearance "plain"}
-                            {:label :action/save
-                             :form "coverage-edit-form"
-                             :type "submit"
+                            {:label      :action/save
+                             :form       "coverage-edit-form"
+                             :type       "submit"
                              :appearance "filled"
-                             :variant "brand"}]
-              :overflow    [{:label :action/delete
+                             :variant    "brand"}]
+              :overflow    [{:label       :action/delete
                              :data-dialog (str "open coverage-remove-" coverage-id)
-                             :variant "danger"}]}
+                             :variant     "danger"}]}
              (-> edit-request
                  coverage-edit.views/page
                  page-shell/page-contract))))
@@ -763,20 +763,20 @@
 
 (deftest long-insurance-trails-use-responsive-item-limits
   (let [{:keys [request policy-id coverage-id instrument-id]} (fixture)
-        policy       (q/retrieve-policy (:db request) policy-id)
-        policy-req   (assoc request :path-params {:policy-id policy-id})
-        coverage-req (assoc request :path-params {:coverage-id coverage-id})]
-    (is (= {:coverage-detail  [2 2]
-            :coverage-edit    [2 3]
-            :coverage-create  [2 3]
-            :coverage-photos  [2 3]
-            :coverage-final   [2 3]
-            :review           [2 2]
-            :workbench        [2 2]
-            :settings         [2 2]
-            :surveys          [2 2]
-            :notifications    [2 2]
-            :changes          [2 2]}
+        policy                                                (q/retrieve-policy (:db request) policy-id)
+        policy-req                                            (assoc request :path-params {:policy-id policy-id})
+        coverage-req                                          (assoc request :path-params {:coverage-id coverage-id})]
+    (is (= {:coverage-detail [2 2]
+            :coverage-edit   [2 3]
+            :coverage-create [2 3]
+            :coverage-photos [2 3]
+            :coverage-final  [2 3]
+            :review          [2 2]
+            :workbench       [2 2]
+            :settings        [2 2]
+            :surveys         [2 2]
+            :notifications   [2 2]
+            :changes         [2 2]}
            {:coverage-detail (page-shell/breadcrumb-max-items
                               (coverage.views/page coverage-req))
             :coverage-edit   (page-shell/breadcrumb-max-items

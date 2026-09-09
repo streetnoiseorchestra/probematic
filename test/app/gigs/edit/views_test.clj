@@ -24,11 +24,11 @@
                               :appearance "plain"}
                              (save-action)]
                :overflow    []}
-              :heading     :gigs/new-gig
-              :subtitle    nil
-              :form-id     "gig-edit-form"
-              :last-tag    :app.ui2.page-surface/page-surface
-              :last-id     nil}
+              :heading  :gigs/new-gig
+              :subtitle nil
+              :form-id  "gig-edit-form"
+              :last-tag :app.ui2.page-surface/page-surface
+              :last-id  nil}
              (-> conn support/request views/page page-shell/page-structure))))))
 
 (deftest edit-gig-page-surface
@@ -48,7 +48,7 @@
                :overflow    [{:label       :action/delete
                               :data-dialog (str "open gig-remove-" gig-id)
                               :variant     "danger"}]}
-              :heading "Summer Concert"
+              :heading  "Summer Concert"
               :subtitle [:i18n/tr :gigs/type-gig]
               :form-id  "gig-edit-form"
               :last-tag :wa-dialog

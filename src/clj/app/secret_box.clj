@@ -34,9 +34,9 @@
   ;; => "hello world"
 
   (encrypt {:member-id "7a0affc7-9436-4667-b57a-f622e8fb82e4"
-            :uuid (sq/generate-squuid)} "hunter2")
+            :uuid      (sq/generate-squuid)} "hunter2")
   (-> {:member-id "7a0affc7-9436-4667-b57a-f622e8fb82e4"
-       :uuid (sq/generate-squuid)}
+       :uuid      (sq/generate-squuid)}
       (encrypt "hunter2")
       (decrypt "hunter2")) ;; rcf
   )

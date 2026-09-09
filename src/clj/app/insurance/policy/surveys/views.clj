@@ -75,11 +75,11 @@
                      :data-on:submit "evt.preventDefault();"
                      :data-signals:insurance-survey-admin__ifmissing
                      (d*/->signals
-                      {:policyId      (str (:policy-id form-state))
-                       :surveyId      survey-id
-                       :closesAt      (:closes-at form-state)
+                      {:policyId       (str (:policy-id form-state))
+                       :surveyId       survey-id
+                       :closesAt       (:closes-at form-state)
                        :responseFilter "all"
-                       :saveStatus    "idle"})}
+                       :saveStatus     "idle"})}
               (not active-survey)
               (assoc :data-action (d*/act req ::actions/start-survey)))
       (when-not active-survey
@@ -114,10 +114,10 @@
                    :class     "saving"
                    :style     "display: none;"}
             [:i18n/tr :insurance/survey-closes-at-saving]]
-           [:span {:data-show "$insuranceSurveyAdmin.saveStatus === 'saved'"
+           [:span {:data-show            "$insuranceSurveyAdmin.saveStatus === 'saved'"
                    :data-on:animationend "$insuranceSurveyAdmin.saveStatus = 'idle'"
-                   :class     "saved"
-                   :style     "display: none;"}
+                   :class                "saved"
+                   :style                "display: none;"}
             [:i18n/tr :insurance/survey-closes-at-saved]]
            [:span {:data-show "$insuranceSurveyAdmin.saveStatus === 'error'"
                    :style     "display: none;"}
@@ -221,19 +221,19 @@
        [:wa-button-group {:label [:i18n/tr :insurance/survey-filter-label]}]
        (for [{:keys [count key value]} filters]
          [button/Button
-          {:appearance                 (if (= "all" value) "filled" "outlined")
-           :variant                    (when (= "all" value) "brand")
-           :size                       "s"
-           :data-on:click              (str "$insuranceSurveyAdmin.responseFilter = '"
-                                            value "'")
-           :data-class:wa-filled       (str "$insuranceSurveyAdmin.responseFilter === '"
-                                            value "'")
-           :data-class:wa-outlined     (str "$insuranceSurveyAdmin.responseFilter !== '"
-                                            value "'")
-           :data-class:wa-brand        (str "$insuranceSurveyAdmin.responseFilter === '"
-                                            value "'")
-           :data-attr:aria-pressed     (str "$insuranceSurveyAdmin.responseFilter === '"
-                                            value "' ? 'true' : 'false'")}
+          {:appearance             (if (= "all" value) "filled" "outlined")
+           :variant                (when (= "all" value) "brand")
+           :size                   "s"
+           :data-on:click          (str "$insuranceSurveyAdmin.responseFilter = '"
+                                        value "'")
+           :data-class:wa-filled   (str "$insuranceSurveyAdmin.responseFilter === '"
+                                        value "'")
+           :data-class:wa-outlined (str "$insuranceSurveyAdmin.responseFilter !== '"
+                                        value "'")
+           :data-class:wa-brand    (str "$insuranceSurveyAdmin.responseFilter === '"
+                                        value "'")
+           :data-attr:aria-pressed (str "$insuranceSurveyAdmin.responseFilter === '"
+                                        value "' ? 'true' : 'false'")}
           [:i18n/tr key {:count count}]]))
       (ui2/table-shell
        [:table {:class "wa-table insurance-survey-responses"}
@@ -321,39 +321,39 @@
         current-member-id (get-in req [:app/session :session/member :member/member-id])
         {:keys [active-survey authorized? closed-surveys policy response-rows]}
         (queries/policy-surveys (:db req) policy-id current-member-id)
-        form-state         (form-state req policy active-survey)
-        result             (get-in req [:page-state actions/form-key :result])
-        toolbar-action     (when authorized?
-                             (if active-survey
-                               [button/Button
-                                {:appearance  "filled"
-                                 :variant     "brand"
-                                 :disabled    (not-any? (complement :completed?)
-                                                        response-rows)
-                                 :data-dialog (str "open " reminders-dialog-id)}
-                                [ico/Icon {::ico/library :snoico
-                                           ::ico/name    :envelope
-                                           :slot         "start"}]
-                                [:i18n/tr :insurance/survey-send-reminders]]
-                               [button/Button
-                                {:appearance         "filled"
-                                 :variant            "brand"
-                                 :type               "submit"
-                                 :form               "insurance-survey-admin-form"
-                                 :data-attr:disabled "$loading === 'insurance-survey-admin'"
-                                 :data-attr:loading  "$loading === 'insurance-survey-admin'"}
-                                [ico/Icon {::ico/library :phosphor
-                                           ::ico/name    :clipboard-text
-                                           :slot         "start"}]
-                                [:i18n/tr :insurance/start-survey]]))
-        overflow-items     (when (and authorized? active-survey)
-                             [[:wa-dropdown-item
-                               {:variant     "danger"
-                                :data-dialog (str "open " close-dialog-id)}
+        form-state        (form-state req policy active-survey)
+        result            (get-in req [:page-state actions/form-key :result])
+        toolbar-action    (when authorized?
+                            (if active-survey
+                              [button/Button
+                               {:appearance  "filled"
+                                :variant     "brand"
+                                :disabled    (not-any? (complement :completed?)
+                                                       response-rows)
+                                :data-dialog (str "open " reminders-dialog-id)}
                                [ico/Icon {::ico/library :snoico
-                                          ::ico/name    :xmark
-                                          :slot         "icon"}]
-                               [:i18n/tr :insurance/survey-close]]])]
+                                          ::ico/name    :envelope
+                                          :slot         "start"}]
+                               [:i18n/tr :insurance/survey-send-reminders]]
+                              [button/Button
+                               {:appearance         "filled"
+                                :variant            "brand"
+                                :type               "submit"
+                                :form               "insurance-survey-admin-form"
+                                :data-attr:disabled "$loading === 'insurance-survey-admin'"
+                                :data-attr:loading  "$loading === 'insurance-survey-admin'"}
+                               [ico/Icon {::ico/library :phosphor
+                                          ::ico/name    :clipboard-text
+                                          :slot         "start"}]
+                               [:i18n/tr :insurance/start-survey]]))
+        overflow-items    (when (and authorized? active-survey)
+                            [[:wa-dropdown-item
+                              {:variant     "danger"
+                               :data-dialog (str "open " close-dialog-id)}
+                              [ico/Icon {::ico/library :snoico
+                                         ::ico/name    :xmark
+                                         :slot         "icon"}]
+                              [:i18n/tr :insurance/survey-close]]])]
     (ui2/datastar-page*
      [page-surface/PageSurface {::page-surface/width :wide
                                 ::page-surface/toolbar
@@ -364,11 +364,11 @@
                                                             [breadcrumb/BreadcrumbItem {::breadcrumb/href (urls/link-policy policy)}
                                                              (:insurance.policy/name policy)]
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/manage-surveys]]]
-                                                           ::page-toolbar/actions (when toolbar-action [toolbar-action])
+                                                           ::page-toolbar/actions        (when toolbar-action [toolbar-action])
                                                            ::page-toolbar/overflow-items overflow-items
                                                            ::page-toolbar/overflow-label (when overflow-items
                                                                                            [:i18n/tr :insurance/survey-more-actions])
-                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                                           :aria-label                   [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "wa-stack wa-gap-xl"}
        [page-header/PageHeader
         {:title    [:i18n/tr :insurance/survey-admin-title]

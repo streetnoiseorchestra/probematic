@@ -18,10 +18,10 @@
   (alter-var-root #'system ig/halt!))
 
 (defn -main [& _args]
-  (let [profile (profile)
-        _ (μ/log ::pre-start :profile profile)
+  (let [profile       (profile)
+        _             (μ/log ::pre-start :profile profile)
         system-config (app.system/system-config {:profile profile})
-        sys (ig/init system-config)]
+        sys           (ig/init system-config)]
     (.addShutdownHook
      (Runtime/getRuntime)
      (Thread.

@@ -41,12 +41,12 @@
 
 (def InstSchema (m/-simple-schema {:type            :app.schemas/inst
                                    :pred            inst?
-                                   :type-properties {:error/message "should be a valid inst"
-                                                     :decode/string #(some-> % t/inst)
-                                                     :encode/string str
-                                                     :decode/json #(some-> % t/inst)
-                                                     :encode/json str
-                                                     :json-schema/type "string"
+                                   :type-properties {:error/message      "should be a valid inst"
+                                                     :decode/string      #(some-> % t/inst)
+                                                     :encode/string      str
+                                                     :decode/json        #(some-> % t/inst)
+                                                     :encode/json        str
+                                                     :json-schema/type   "string"
                                                      :json-schema/format "date-time"}}))
 
 ;; This is a date stored as an instant. So the time information should always be midnight and not used
@@ -117,14 +117,14 @@
                                                            :json-schema/type   "string"
                                                            :json-schema/format "time"}}))
 (def NonBlankString
-  (m/-simple-schema {:type :app.schemas/non-blank-string
-                     :pred #(and (string? %) (not (string/blank? %)))
-                     :type-properties {:error/message "should not be blank"
-                                       :decode/string str
-                                       :encode/string str
-                                       :decode/json str
-                                       :encode/json str
-                                       :json-schema/type "string"
+  (m/-simple-schema {:type            :app.schemas/non-blank-string
+                     :pred            #(and (string? %) (not (string/blank? %)))
+                     :type-properties {:error/message      "should not be blank"
+                                       :decode/string      str
+                                       :encode/string      str
+                                       :decode/json        str
+                                       :encode/json        str
+                                       :json-schema/type   "string"
                                        :json-schema/format "string"}}))
 
 (def parse-boolean-checkbox
@@ -134,27 +134,27 @@
      (contains? #{"true" "on"} %)))
 
 (def CheckboxBoolean
-  (m/-simple-schema {:type :app.schemas/checkbox-boolean
-                     :pred boolean?
+  (m/-simple-schema {:type            :app.schemas/checkbox-boolean
+                     :pred            boolean?
                      :type-properties {:error/message "Should be true or false"
                                        :decode/string parse-boolean-checkbox
                                        :encode/string str}}))
 
 (def DatomicRef
-  (m/-simple-schema {:type :app.schemas/datomic-ref
-                     :pred (fn [v]
-                             (and (vector? v)
-                                  (= 2 (count v))
-                                  (keyword? (first v))
-                                  (some? (second v))))
-                     :type-properties {:error/message "should be a valid datomic ref, e.g., [:a/keyword value] "
-                                       :decode/string str
-                                       :encode/string str
-                                       :decode/datomic identity
-                                       :encode/datomic identity
-                                       :decode/json str
-                                       :encode/json str
-                                       :json-schema/type "string"
+  (m/-simple-schema {:type            :app.schemas/datomic-ref
+                     :pred            (fn [v]
+                                        (and (vector? v)
+                                             (= 2 (count v))
+                                             (keyword? (first v))
+                                             (some? (second v))))
+                     :type-properties {:error/message      "should be a valid datomic ref, e.g., [:a/keyword value] "
+                                       :decode/string      str
+                                       :encode/string      str
+                                       :decode/datomic     identity
+                                       :encode/datomic     identity
+                                       :decode/json        str
+                                       :encode/json        str
+                                       :json-schema/type   "string"
                                        :json-schema/format "string"}}))
 
 (def common-registry

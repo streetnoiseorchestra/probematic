@@ -24,28 +24,28 @@
 
 (defn seed-review-policy!
   [conn policy-id]
-  (let [brass-id        (random-uuid)
-        woodwind-id     (random-uuid)
-        basic-type-id   (random-uuid)
-        extra-type-id   (random-uuid)
-        alpha-id        (random-uuid)
-        bravo-id        (random-uuid)
-        clarinet-id     (random-uuid)
-        drum-id         (random-uuid)]
+  (let [brass-id      (random-uuid)
+        woodwind-id   (random-uuid)
+        basic-type-id (random-uuid)
+        extra-type-id (random-uuid)
+        alpha-id      (random-uuid)
+        bravo-id      (random-uuid)
+        clarinet-id   (random-uuid)
+        drum-id       (random-uuid)]
     @(d/transact
       conn
-      [{:db/id                           "alice"
-        :member/member-id                (random-uuid)
-        :member/name                     "Alice Admin"}
-       {:db/id                           "bob"
-        :member/member-id                (random-uuid)
-        :member/name                     "Bob Brass"}
-       {:db/id                           "cara"
-        :member/member-id                (random-uuid)
-        :member/name                     "Cara Clarinet"}
-       {:db/id                           "delta"
-        :member/member-id                (random-uuid)
-        :member/name                     "Delta Drums"}
+      [{:db/id            "alice"
+        :member/member-id (random-uuid)
+        :member/name      "Alice Admin"}
+       {:db/id            "bob"
+        :member/member-id (random-uuid)
+        :member/name      "Bob Brass"}
+       {:db/id            "cara"
+        :member/member-id (random-uuid)
+        :member/name      "Cara Clarinet"}
+       {:db/id            "delta"
+        :member/member-id (random-uuid)
+        :member/name      "Delta Drums"}
        {:db/id                           "brass"
         :instrument.category/category-id brass-id
         :instrument.category/name        "Brass"
@@ -143,10 +143,10 @@
                                                "bravo-coverage"
                                                "clarinet-coverage"
                                                "drum-coverage"]}])
-    {:alpha-id alpha-id
-     :bravo-id bravo-id
+    {:alpha-id    alpha-id
+     :bravo-id    bravo-id
      :clarinet-id clarinet-id
-     :drum-id drum-id}))
+     :drum-id     drum-id}))
 
 (deftest policy-review-default-queue-test
   (testing "selects the first needs-review coverage by owner and instrument name"
@@ -175,13 +175,13 @@
 
 (deftest policy-review-filter-and-navigation-test
   (testing "filters missing insurer ids and falls back when the selected coverage is outside the filter"
-    (let [{:keys [conn]} (tc/new-system "insurance-review-query-filter")
-          policy-id      (random-uuid)
+    (let [{:keys [conn]}                 (tc/new-system "insurance-review-query-filter")
+          policy-id                      (random-uuid)
           {:keys [alpha-id clarinet-id]} (seed-review-policy! conn policy-id)
-          review         (queries/policy-review (d/db conn)
-                                                policy-id
-                                                {:filter      "missing-insurer-id"
-                                                 :coverage-id (str alpha-id)})]
+          review                         (queries/policy-review (d/db conn)
+                                                                policy-id
+                                                                {:filter      "missing-insurer-id"
+                                                                 :coverage-id (str alpha-id)})]
       (is (= ["Clarinet" "Drum Kit"] (queue-instrument-names review)))
       (is (= clarinet-id (:instrument.coverage/coverage-id (:selected-coverage review))))
       (is (nil? (:previous-coverage review)))
@@ -198,13 +198,13 @@
                (queue-instrument-names review))))))
 
   (testing "computes previous and next links inside the active filter"
-    (let [{:keys [conn]} (tc/new-system "insurance-review-query-navigation")
-          policy-id      (random-uuid)
+    (let [{:keys [conn]}                (tc/new-system "insurance-review-query-navigation")
+          policy-id                     (random-uuid)
           {:keys [clarinet-id drum-id]} (seed-review-policy! conn policy-id)
-          review         (queries/policy-review (d/db conn)
-                                                policy-id
-                                                {:filter      "missing-insurer-id"
-                                                 :coverage-id (str drum-id)})]
+          review                        (queries/policy-review (d/db conn)
+                                                               policy-id
+                                                               {:filter      "missing-insurer-id"
+                                                                :coverage-id (str drum-id)})]
       (is (= ["Clarinet" "Drum Kit"]
              (queue-instrument-names review)))
       (is (= drum-id (:instrument.coverage/coverage-id (:selected-coverage review))))

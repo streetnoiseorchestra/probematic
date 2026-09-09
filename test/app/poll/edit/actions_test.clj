@@ -21,28 +21,28 @@
 (deftest create-poll-action-test
   (testing "returns a draft poll transaction with options and redirects to detail"
     (let [{:keys [conn member-id]} (tc/new-system "poll-create-action")
-          effects                 (actions/create-poll-action
-                                   (pts/action-state conn member-id)
-                                   {:poll-edit (pts/valid-edit-form "")})
-          [transact redirect]     effects
-          [_ tx-data opts]        transact
-          poll-tx                 (first tx-data)
-          poll-id                 (:poll/poll-id poll-tx)
-          option-maps             (filter :poll.option/poll-option-id tx-data)
-          option-adds             (filter #(and (vector? %)
-                                                (= :db/add (first %))
-                                                (= :poll/options (nth % 2)))
-                                          tx-data)]
+          effects                  (actions/create-poll-action
+                                    (pts/action-state conn member-id)
+                                    {:poll-edit (pts/valid-edit-form "")})
+          [transact redirect]      effects
+          [_ tx-data opts]         transact
+          poll-tx                  (first tx-data)
+          poll-id                  (:poll/poll-id poll-tx)
+          option-maps              (filter :poll.option/poll-option-id tx-data)
+          option-adds              (filter #(and (vector? %)
+                                                 (= :db/add (first %))
+                                                 (= :poll/options (nth % 2)))
+                                           tx-data)]
       (is (= :db/transact (first transact)))
       (is (uuid? poll-id))
       (is (= {:poll/title       "Pizza Poll"
               :poll/description "Choose dinner"
               :poll/poll-type   :poll.type/single
               :poll/poll-status :poll.status/draft
-              :poll/chart-type   :poll.chart.type/bar
-              :poll/author       [:member/member-id member-id]
-              :poll/autoremind?  false
-              :poll/closes-at    expected-closes-at}
+              :poll/chart-type  :poll.chart.type/bar
+              :poll/author      [:member/member-id member-id]
+              :poll/autoremind? false
+              :poll/closes-at   expected-closes-at}
              (select-keys poll-tx [:poll/title
                                    :poll/description
                                    :poll/poll-type
@@ -66,33 +66,33 @@
 
 (deftest update-poll-action-test
   (testing "updates draft poll fields and replaces options"
-    (let [{:keys [conn member-id]} (tc/new-system "poll-update-draft-action")
+    (let [{:keys [conn member-id]}     (tc/new-system "poll-update-draft-action")
           {:keys [poll-id option-ids]} (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})
-          form                    (pts/multiple-edit-form poll-id)
-          effects                 (actions/update-poll-action
-                                   (pts/action-state conn member-id)
-                                   {:poll-edit form})
-          [transact redirect]     effects
-          [_ tx-data opts]        transact
-          poll-tx                 (first tx-data)
-          option-maps             (filter :poll.option/poll-option-id tx-data)
-          option-retractions      (filter #(and (vector? %)
-                                                (= :db/retractEntity (first %))
-                                                (= :poll.option/poll-option-id (first (second %))))
-                                          tx-data)
-          option-adds             (filter #(and (vector? %)
-                                                (= :db/add (first %))
-                                                (= :poll/options (nth % 2)))
-                                          tx-data)]
+          form                         (pts/multiple-edit-form poll-id)
+          effects                      (actions/update-poll-action
+                                        (pts/action-state conn member-id)
+                                        {:poll-edit form})
+          [transact redirect]          effects
+          [_ tx-data opts]             transact
+          poll-tx                      (first tx-data)
+          option-maps                  (filter :poll.option/poll-option-id tx-data)
+          option-retractions           (filter #(and (vector? %)
+                                                     (= :db/retractEntity (first %))
+                                                     (= :poll.option/poll-option-id (first (second %))))
+                                               tx-data)
+          option-adds                  (filter #(and (vector? %)
+                                                     (= :db/add (first %))
+                                                     (= :poll/options (nth % 2)))
+                                               tx-data)]
       (is (= {:poll/poll-id     poll-id
               :poll/title       "Pizza Poll"
               :poll/description "Choose dinner"
               :poll/poll-type   :poll.type/multiple
               :poll/poll-status :poll.status/draft
-              :poll/chart-type   :poll.chart.type/bar
-              :poll/min-choice   1
-              :poll/max-choice   2
-              :poll/closes-at    expected-closes-at}
+              :poll/chart-type  :poll.chart.type/bar
+              :poll/min-choice  1
+              :poll/max-choice  2
+              :poll/closes-at   expected-closes-at}
              (select-keys poll-tx [:poll/poll-id
                                    :poll/title
                                    :poll/description
@@ -117,13 +117,13 @@
 
   (testing "rejects changed type or options for an open poll"
     (let [{:keys [conn member-id]} (tc/new-system "poll-update-open-action")
-          {:keys [poll-id]}       (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/open})
-          form                    (assoc (pts/multiple-edit-form poll-id)
-                                         :options [{:value "Changed"}
-                                                   {:value "Tacos"}])
-          effects                 (actions/update-poll-action
-                                   (pts/action-state conn member-id)
-                                   {:poll-edit form})]
+          {:keys [poll-id]}        (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/open})
+          form                     (assoc (pts/multiple-edit-form poll-id)
+                                          :options [{:value "Changed"}
+                                                    {:value "Tacos"}])
+          effects                  (actions/update-poll-action
+                                    (pts/action-state conn member-id)
+                                    {:poll-edit form})]
       (is (= [support/clear-loading
               :app.datastar/assoc-state
               [:poll-edit]
@@ -132,10 +132,10 @@
 
   (testing "rejects edits for a closed poll"
     (let [{:keys [conn member-id]} (tc/new-system "poll-update-closed-action")
-          {:keys [poll-id]}       (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/closed})
-          effects                 (actions/update-poll-action
-                                   (pts/action-state conn member-id)
-                                   {:poll-edit (pts/valid-edit-form poll-id)})]
+          {:keys [poll-id]}        (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/closed})
+          effects                  (actions/update-poll-action
+                                    (pts/action-state conn member-id)
+                                    {:poll-edit (pts/valid-edit-form poll-id)})]
       (is (= [support/clear-loading
               :app.datastar/assoc-state
               [:poll-edit]
@@ -145,7 +145,7 @@
 (deftest delete-poll-action-test
   (testing "returns a retract transaction effect and redirects to the polls list"
     (let [{:keys [conn member-id]} (tc/new-system "poll-delete-action")
-          {:keys [poll-id]}       (pts/seed-poll! conn member-id {})]
+          {:keys [poll-id]}        (pts/seed-poll! conn member-id {})]
       (is (= [[:db/transact
                [[:db/retractEntity (pts/poll-ref poll-id)]]
                {}]
@@ -202,4 +202,4 @@
             {:poll-edit {:options [{:value "Pizza"}
                                    {:value "Tacos"}
                                    {:value "Salad"}]}
-             :targetid "1"})))))
+             :targetid  "1"})))))

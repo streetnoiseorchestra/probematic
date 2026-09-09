@@ -17,16 +17,16 @@
        (let [r (j/read-value (:body resp))]
          (tap> r)
          (if (seq (get r "validation_errors"))
-           (throw (ex-info "Invalid number" {:number number :country-code country-code
-                                             :twilio r
+           (throw (ex-info "Invalid number" {:number           number                 :country-code country-code
+                                             :twilio           r
                                              :validation/error "Invalid phone number"}))
            (get r "phone_number")))
 
        (do
          (tap> {:lookup-error resp})
-         (throw  (ex-info "Invalid number" {:number number :country-code country-code
+         (throw  (ex-info "Invalid number" {:number           number                      :country-code country-code
                                             :validation/error "Invalid phone number"
-                                            :body (j/read-value (:body resp))})))))))
+                                            :body             (j/read-value (:body resp))})))))))
 
 (defn clean-number [env orig-number]
   (let [number (util/clean-number orig-number)]
@@ -36,7 +36,7 @@
         (or
          (lookup-number (:twilio env) number "AT")
          (lookup-number (:twilio env) number "DE")
-         (throw (ex-info "Invalid Austrian or German number" {:orig-number orig-number :clean number
+         (throw (ex-info "Invalid Austrian or German number" {:orig-number      orig-number            :clean number
                                                               :validation/error "Invalid phone number"})))))))
 
 (comment

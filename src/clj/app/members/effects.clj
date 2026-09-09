@@ -49,10 +49,10 @@
 
 (defn- invitation-workflow-resources [deps req]
   (let [email-system (email-sys req)]
-    {:datomic-conn (conn-from-req req)
-     :clock (:now deps)
-     :random-code (:random-code deps)
-     :random-uuid (:random-uuid deps)
+    {:datomic-conn      (conn-from-req req)
+     :clock             (:now deps)
+     :random-code       (:random-code deps)
+     :random-uuid       (:random-uuid deps)
      :current-member-id (current-member-id req)
      :build-invitation-email
      (fn [member code]
@@ -124,7 +124,7 @@
                (myc/run-compiled
                 invite.workflows/reissue-invitation-wf
                 (invitation-workflow-resources deps req)
-                {:member/member-id member-id
+                {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
              (throw (ex-info "Member invitation reissue workflow failed"
@@ -156,7 +156,7 @@
                (myc/run-compiled
                 invite.workflows/reissue-invitation-wf
                 (invitation-workflow-resources deps req)
-                {:member/member-id member-id
+                {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
              (throw (ex-info
@@ -206,14 +206,14 @@
                (myc/run-compiled
                 invite.workflows/revoke-invitation-wf
                 (invitation-workflow-resources deps req)
-                {:member/member-id member-id
+                {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
              (throw (ex-info "Member invitation revoke workflow failed"
                              (myc/workflow-error result))))
            (when (and (= :revoke (:member-invite/revoke-step result))
                       (= :revoked (:member-invite/revoke-status result)))
-             {:outcome :revoked
+             {:outcome    :revoked
               :generation (get-in result
                                   [:member-invite/state :generation])})))))))
 

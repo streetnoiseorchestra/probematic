@@ -38,15 +38,15 @@
     (do
       (enable-feat! f-kw)
       {:status 200
-       :body {:feature (name f-kw) :value true}})
+       :body   {:feature (name f-kw) :value true}})
     {:status 404
-     :body {:msg "no such flag"}}))
+     :body   {:msg "no such flag"}}))
 
 (defn disable-feature-handler [req]
   (if-let [f-kw (coerce-to-kw (-> req :body-params :feature))]
     (do
       (disable-feat! f-kw)
       {:status 200
-       :body {:feature (name f-kw) :value false}})
+       :body   {:feature (name f-kw) :value false}})
     {:status 404
-     :body {:msg "no such flag"}}))
+     :body   {:msg "no such flag"}}))

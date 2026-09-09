@@ -34,10 +34,10 @@
 
 (defn- validate-field-attrs [req form-state field]
   (let [error (form/field-error form-state field)]
-    {:hint                            error
-     :data-invalid                    (when error "true")
-     :data-bind                       (str "poll-edit." (name field))
-     :data-on:blur                    (validate-field-action req field)
+    {:hint                          error
+     :data-invalid                  (when error "true")
+     :data-bind                     (str "poll-edit." (name field))
+     :data-on:blur                  (validate-field-action req field)
      :data-on:input__debounce.500ms (validate-field-action req field)}))
 
 (defn- validate-select-attrs [req form-state field]
@@ -165,7 +165,7 @@
                                               :href       (urls/link-polls-home)}
                                [:i18n/tr :action/cancel]]
                               (save-button)]
-                             :aria-label [:i18n/tr :polls/edit-toolbar-label]}])
+                             :aria-label               [:i18n/tr :polls/edit-toolbar-label]}])
 
 (defn- edit-toolbar [poll]
   (let [poll-url (urls/link-poll poll)]
@@ -186,7 +186,7 @@
                                                     :data-dialog (str "open " (delete-dialog-id poll))}
                                  [:i18n/tr :action/delete]]]
                                ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-                               :aria-label                    [:i18n/tr :polls/edit-toolbar-label]}]))
+                               :aria-label                   [:i18n/tr :polls/edit-toolbar-label]}]))
 
 (defn- create-header []
   [page-header/PageHeader {:title [:i18n/tr :polls/new-poll]}])

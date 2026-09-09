@@ -37,28 +37,28 @@
    ::answer      answer})
 
 (def deps
-  {:decrypt-answer (fn [req _token] (::answer req))
+  {:decrypt-answer      (fn [req _token] (::answer req))
    :trigger-gig-edited! (fn [& _] nil)})
 
 (deftest submit-answer-test
   (testing "creates attendance from an encrypted future-gig answer"
-    (let [{:keys [conn]} (tc/new-system "gig-answer-link-attendance")
+    (let [{:keys [conn]}             (tc/new-system "gig-answer-link-attendance")
           {:keys [gig-id member-id]} (seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days)))
-          edited_ (atom [])
-          result  (service/submit-answer!
-                   (assoc deps :trigger-gig-edited! (fn [_req gig-id edit-type]
-                                                      (swap! edited_ conj [gig-id edit-type])))
-                   (req conn {:gig/gig-id       gig-id
-                              :member/member-id member-id
-                              :attendance/plan  :plan/definitely-not}))
-          attendance (q/attendance-for-gig (d/db conn) gig-id member-id)]
+          edited_                    (atom [])
+          result                     (service/submit-answer!
+                                      (assoc deps :trigger-gig-edited! (fn [_req gig-id edit-type]
+                                                                         (swap! edited_ conj [gig-id edit-type])))
+                                      (req conn {:gig/gig-id       gig-id
+                                                 :member/member-id member-id
+                                                 :attendance/plan  :plan/definitely-not}))
+          attendance                 (q/attendance-for-gig (d/db conn) gig-id member-id)]
       (is (= gig-id (get-in result [:gig :gig/gig-id])))
       (is (= member-id (get-in result [:member :member/member-id])))
       (is (= :plan/definitely-not (:attendance/plan attendance)))
       (is (= [[gig-id :attendance]] @edited_))))
 
   (testing "does not change attendance for a past-gig answer"
-    (let [{:keys [conn]} (tc/new-system "gig-answer-link-past")
+    (let [{:keys [conn]}             (tc/new-system "gig-answer-link-past")
           {:keys [gig-id member-id]} (seed-gig-member! conn (t/<< (t/date) (t/new-period 7 :days)))]
       (is (nil? (service/submit-answer!
                  deps
@@ -68,14 +68,14 @@
       (is (nil? (q/attendance-for-gig (d/db conn) gig-id member-id)))))
 
   (testing "creates and resets a pending reminder from an encrypted reminder answer"
-    (let [{:keys [conn]} (tc/new-system "gig-answer-link-reminder")
+    (let [{:keys [conn]}             (tc/new-system "gig-answer-link-reminder")
           {:keys [gig-id member-id]} (seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days)))
-          result (service/submit-answer!
-                  deps
-                  (req conn {:gig/gig-id       gig-id
-                             :member/member-id member-id
-                             :reminder         true}))
-          reminder (q/gig-reminder-for (d/db conn) gig-id member-id)]
+          result                     (service/submit-answer!
+                                      deps
+                                      (req conn {:gig/gig-id       gig-id
+                                                 :member/member-id member-id
+                                                 :reminder         true}))
+          reminder                   (q/gig-reminder-for (d/db conn) gig-id member-id)]
       (service/submit-answer!
        deps
        (req conn {:gig/gig-id       gig-id

@@ -48,7 +48,7 @@
                                                 :variant    "brand"
                                                 :href       gig-url}
                                  [:i18n/tr :action/done]]]
-                               :aria-label [:i18n/tr :gigs/tool-toolbar-label]}]))
+                               :aria-label               [:i18n/tr :gigs/tool-toolbar-label]}]))
 
 (defn page-summary [title-key]
   [page-header/PageHeader {:title [:i18n/tr title-key]}])

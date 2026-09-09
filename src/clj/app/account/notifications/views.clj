@@ -22,19 +22,19 @@
      [:i18n/tr legend]]]
    (for [[value label description] options]
      (support/radio-option
-      {:id       (str "account-notifications-" name "-" value)
-       :name     name
-       :value    value
-       :signal   signal
-       :checked? (= value selected)
-       :label    [:i18n/tr label]
+      {:id          (str "account-notifications-" name "-" value)
+       :name        name
+       :value       value
+       :signal      signal
+       :checked?    (= value selected)
+       :label       [:i18n/tr label]
        :description (when description
                       (if (= description
                              :account-settings/notifications-what-gigs-description)
                         (support/instance-tr req description)
                         [:i18n/tr description]))
-       :form     form-id
-       :attrs    (update-on-change req)}))))
+       :form        form-id
+       :attrs       (update-on-change req)}))))
 
 (defn- summary-key [{:keys [what delivery] delivery-time :when}]
   (let [channels (cond
@@ -65,9 +65,9 @@
      (list
       (when-not (get-in state [:delivery :browser?])
         [button/Button
-         {:id "enable-browser-notifications"
-          :appearance "outlined"
-          :variant "brand"
+         {:id            "enable-browser-notifications"
+          :appearance    "outlined"
+          :variant       "brand"
           :data-browser-capability-signal
           "account-notifications.delivery.browser-capable?"
           :data-browser-permission-signal
@@ -75,21 +75,21 @@
           :data-on:click (browser-action req)}
          [:i18n/tr :account-settings/notifications-browser-enable]])
       [button/Button
-       {:id "turn-notifications-off"
-        :appearance "plain"
-        :variant "brand"
+       {:id            "turn-notifications-off"
+        :appearance    "plain"
+        :variant       "brand"
         :data-on:click (toggle-action req false)}
        [:i18n/tr :account-settings/notifications-turn-off]])
      [button/Button
-      {:id "turn-notifications-on"
-       :appearance "outlined"
-       :variant "brand"
+      {:id            "turn-notifications-on"
+       :appearance    "outlined"
+       :variant       "brand"
        :data-on:click (toggle-action req true)}
       [:i18n/tr :account-settings/notifications-turn-on]])])
 
 (defn- status-card [req state]
-  [card/Card {:id "notification-status-summary"
-              :class "notification-status-card"
+  [card/Card {:id         "notification-status-summary"
+              :class      "notification-status-card"
               :appearance "filled-outlined"}
    [:div {:class "wa-stack wa-gap-s wa-align-items-center wa-text-center"}
     [:div {:class "wa-cluster wa-gap-xs wa-justify-content-center"}
@@ -122,41 +122,41 @@
     [:legend {:class "account-subsection-heading"}
      [:i18n/tr :account-settings/notifications-reminders-title]]
     (support/checkbox-option
-     {:id "account-notifications-reminder-attendance"
-      :name "reminder-attendance"
-      :signal "account-notifications.reminders.attendance?"
-      :checked? (get-in state [:reminders :attendance?])
-      :label [:i18n/tr :account-settings/notifications-reminder-attendance]
+     {:id          "account-notifications-reminder-attendance"
+      :name        "reminder-attendance"
+      :signal      "account-notifications.reminders.attendance?"
+      :checked?    (get-in state [:reminders :attendance?])
+      :label       [:i18n/tr :account-settings/notifications-reminder-attendance]
       :description [:i18n/tr
                     :account-settings/notifications-reminder-attendance-description]
-      :form form-id
-      :attrs (update-on-change req)})
+      :form        form-id
+      :attrs       (update-on-change req)})
     (support/checkbox-option
-     {:id "account-notifications-reminder-polls"
-      :name "reminder-polls"
-      :signal "account-notifications.reminders.polls?"
-      :checked? (get-in state [:reminders :polls?])
-      :label [:i18n/tr :account-settings/notifications-reminder-polls]
+     {:id          "account-notifications-reminder-polls"
+      :name        "reminder-polls"
+      :signal      "account-notifications.reminders.polls?"
+      :checked?    (get-in state [:reminders :polls?])
+      :label       [:i18n/tr :account-settings/notifications-reminder-polls]
       :description [:i18n/tr
                     :account-settings/notifications-reminder-polls-description]
-      :form form-id
-      :attrs (update-on-change req)})]])
+      :form        form-id
+      :attrs       (update-on-change req)})]])
 
 (defn- unread-preview [req id numbered? selected label]
   (let [value (if numbered? "numbered" "unnumbered")]
-    [:label {:for (str id "-input")
-             :id id
+    [:label {:for   (str id "-input")
+             :id    id
              :class "unread-preview account-choice wa-stack wa-gap-xs"}
-     [:input (merge {:id (str id "-input")
-                     :type "radio"
-                     :name "unread-style"
-                     :value value
-                     :checked (= value selected)
-                     :form form-id
+     [:input (merge {:id        (str id "-input")
+                     :type      "radio"
+                     :name      "unread-style"
+                     :value     value
+                     :checked   (= value selected)
+                     :form      form-id
                      :data-bind "account-notifications.unread-style"}
                     (update-on-change req))]
      [:span {:class "wa-flank wa-gap-xs wa-align-items-center"}
-      [:span {:class (str "ping-mark" (when numbered? " numbered"))
+      [:span {:class       (str "ping-mark" (when numbered? " numbered"))
               :aria-hidden "true"}
        (when numbered? "3")]
       [:span [:i18n/tr label]]]]))
@@ -185,32 +185,32 @@
    [:h2 {:class "account-section-heading"}
     [:i18n/tr :account-settings/notifications-how-title]]
    (support/checkbox-option
-    {:id "account-notifications-email"
-     :name "notification-email"
-     :signal "account-notifications.delivery.email?"
-     :checked? (get-in state [:delivery :email?])
-     :label [:i18n/tr :account-settings/notifications-email]
+    {:id          "account-notifications-email"
+     :name        "notification-email"
+     :signal      "account-notifications.delivery.email?"
+     :checked?    (get-in state [:delivery :email?])
+     :label       [:i18n/tr :account-settings/notifications-email]
      :description (support/instance-tr
                    req
                    :account-settings/notifications-email-description)
-     :form form-id
-     :attrs (update-on-change req)})
+     :form        form-id
+     :attrs       (update-on-change req)})
    (support/checkbox-option
-    {:id "account-notifications-browser"
-     :name "notification-browser"
-     :signal "account-notifications.delivery.browser?"
-     :checked? (get-in state [:delivery :browser?])
-     :label (support/instance-tr req :account-settings/notifications-browser)
+    {:id          "account-notifications-browser"
+     :name        "notification-browser"
+     :signal      "account-notifications.delivery.browser?"
+     :checked?    (get-in state [:delivery :browser?])
+     :label       (support/instance-tr req :account-settings/notifications-browser)
      :description [:i18n/tr :account-settings/notifications-browser-description]
-     :form form-id
-     :attrs (update-on-change req)})
+     :form        form-id
+     :attrs       (update-on-change req)})
    (when-let [error (or (support/field-error state :browser)
                         (support/field-error state :browser-permission))]
      [:p {:class "wa-caption-s wa-color-text-danger" :role "alert"} error])
    (unread-choices req state)])
 
 (defn- timing-card [req state]
-  (let [daily? (= "daily-batch" (:when state))
+  (let [daily?     (= "daily-batch" (:when state))
         expression "$account-notifications.when === 'daily-batch'"]
     [:section {:class "account-section wa-stack wa-gap-l"}
      (radio-group req
@@ -225,9 +225,9 @@
                     :account-settings/notifications-when-daily
                     :account-settings/notifications-when-daily-description]])
      (into
-      [:fieldset (cond-> {:id "notification-batch-times"
-                          :class "wa-stack wa-gap-xs"
-                          :data-show expression
+      [:fieldset (cond-> {:id               "notification-batch-times"
+                          :class            "wa-stack wa-gap-xs"
+                          :data-show        expression
                           :data-attr:hidden (str "!(" expression ")")}
                    (not daily?) (assoc :hidden true))
        [:legend {:class "wa-visually-hidden"}
@@ -236,14 +236,14 @@
                            ["13:00" :account-settings/notifications-batch-afternoon]
                            ["20:00" :account-settings/notifications-batch-evening]]]
         (support/radio-option
-         {:id (str "account-notifications-batch-" value)
-          :name "batch-time"
-          :value value
-          :signal "account-notifications.batch-time"
+         {:id       (str "account-notifications-batch-" value)
+          :name     "batch-time"
+          :value    value
+          :signal   "account-notifications.batch-time"
           :checked? (= value (:batch-time state))
-          :label [:i18n/tr label]
-          :form form-id
-          :attrs (update-on-change req)})))]))
+          :label    [:i18n/tr label]
+          :form     form-id
+          :attrs    (update-on-change req)})))]))
 
 (defn page [{:keys [db page-state] :as req}]
   (let [title [:i18n/tr :account-settings/notifications-title]
@@ -252,13 +252,13 @@
                (support/current-member-id req)
                page-state)]
     (support/standard-page
-     {:title title
-      :subtitle [:i18n/tr :account-settings/notifications-subtitle]
+     {:title                  title
+      :subtitle               [:i18n/tr :account-settings/notifications-subtitle]
       :breadcrumb-mobile-mode :hidden
-      :actions []}
-     [:form {:id form-id
-             :class "wa-stack wa-gap-l"
-             :data-id "account-notifications"
+      :actions                []}
+     [:form {:id           form-id
+             :class        "wa-stack wa-gap-l"
+             :data-id      "account-notifications"
              :data-signals (d*/->signals {:account-notifications state})}
       (status-card req state)
       (what-and-reminders req state)

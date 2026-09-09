@@ -68,10 +68,10 @@
   (let [new-set     (set new-song-tuples)
         current-set (set current-song-tuples)
         add-tx      (for [song-tuple new-song-tuples
-                          :when (not (current-set song-tuple))]
+                          :when      (not (current-set song-tuple))]
                       [:db/add eid :probeplan.classic/ordered-songs song-tuple])
         remove-tx   (for [song-tuple current-song-tuples
-                          :when (not (new-set song-tuple))]
+                          :when      (not (new-set song-tuple))]
                       [:db/retract eid :probeplan.classic/ordered-songs song-tuple])]
     (vec (concat add-tx remove-tx))))
 
@@ -90,11 +90,11 @@
 
 (defn toggle-probeplan-song-action [{:keys [db]} {:keys [gig-probeplan]}]
   (let [{:keys [gig-id song-id selected]} gig-probeplan
-        gig-id         (util/ensure-uuid! gig-id)
-        song-id        (str (util/ensure-uuid! song-id))
-        selected?      (form/normalize-bool selected)
-        songs          (db-songs db gig-id)
-        selected-song? (some #(= song-id (:song-id %)) songs)]
+        gig-id                            (util/ensure-uuid! gig-id)
+        song-id                           (str (util/ensure-uuid! song-id))
+        selected?                         (form/normalize-bool selected)
+        songs                             (db-songs db gig-id)
+        selected-song?                    (some #(= song-id (:song-id %)) songs)]
     (cond
       (and selected? selected-song?)
       [(persist-probeplan-effect db gig-id songs)]
@@ -112,11 +112,11 @@
 
 (defn toggle-probeplan-intensive-action [{:keys [db]} {:keys [gig-probeplan]}]
   (let [{:keys [gig-id song-id]} gig-probeplan
-        gig-id     (util/ensure-uuid! gig-id)
-        song-id    (str (util/ensure-uuid! song-id))
-        songs      (db-songs db gig-id)
-        target     (some #(when (= song-id (:song-id %)) %) songs)
-        intensive? (= "intensive" (:emphasis target))]
+        gig-id                   (util/ensure-uuid! gig-id)
+        song-id                  (str (util/ensure-uuid! song-id))
+        songs                    (db-songs db gig-id)
+        target                   (some #(when (= song-id (:song-id %)) %) songs)
+        intensive?               (= "intensive" (:emphasis target))]
     (if-not target
       [(persist-probeplan-effect db gig-id songs)]
       [(persist-probeplan-effect
@@ -134,14 +134,14 @@
 
 (defn reorder-probeplan-songs-action [{:keys [db]} {:keys [gig-probeplan]}]
   (let [{:keys [gig-id order]} gig-probeplan
-        gig-id      (util/ensure-uuid! gig-id)
-        songs       (db-songs db gig-id)
-        by-id       (into {} (map (juxt :song-id identity)) songs)
-        ordered     (->> order
-                         (map str)
-                         (keep by-id))
-        ordered-ids (set (map :song-id ordered))
-        missing     (remove #(ordered-ids (:song-id %)) songs)]
+        gig-id                 (util/ensure-uuid! gig-id)
+        songs                  (db-songs db gig-id)
+        by-id                  (into {} (map (juxt :song-id identity)) songs)
+        ordered                (->> order
+                                    (map str)
+                                    (keep by-id))
+        ordered-ids            (set (map :song-id ordered))
+        missing                (remove #(ordered-ids (:song-id %)) songs)]
     [(persist-probeplan-effect db gig-id (concat ordered missing))]))
 
 (def actions

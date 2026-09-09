@@ -37,8 +37,8 @@
                               [breadcrumb/BreadcrumbItem {::breadcrumb/href account-root}
                                [:i18n/tr :account-settings/title]]
                               [breadcrumb/BreadcrumbItem title]]
-                             ::page-toolbar/actions actions
-                             :aria-label [:i18n/tr :account-settings/toolbar-label]}])
+                             ::page-toolbar/actions    actions
+                             :aria-label               [:i18n/tr :account-settings/toolbar-label]}])
 
 (defn standard-page
   [{:keys [title subtitle actions after show-header? breadcrumb-mobile-mode]
@@ -46,13 +46,13 @@
   (account-main
    (into
     [page-surface/PageSurface
-     {::page-surface/width :standard
-      :class "account-detail-surface"
+     {::page-surface/width   :standard
+      :class                 "account-detail-surface"
       ::page-surface/toolbar (account-toolbar title actions breadcrumb-mobile-mode)}
      (into (cond-> [:div {:class "wa-stack wa-gap-xl"}]
              show-header?
              (conj [page-header/PageHeader
-                    {::page-header/title title
+                    {::page-header/title    title
                      ::page-header/subtitle subtitle}]))
            content)]
     after)))
@@ -62,9 +62,9 @@
 
 (defn field
   [{:keys [state root field id label description attrs]}]
-  (let [error-id (str id "-error")
+  (let [error-id       (str id "-error")
         description-id (str id "-description")
-        error (field-error state field)]
+        error          (field-error state field)]
     [:div {:class "account-field wa-stack wa-gap-2xs"}
      [:label {:for id :class "wa-caption-s"} label]
      [:input (merge {:id               id
@@ -91,7 +91,7 @@
 
 (defn radio-option
   [{:keys [id name value signal checked? label description form attrs]}]
-  [:label {:for id
+  [:label {:for   id
            :class (str "account-choice wa-flank wa-gap-xs "
                        (if description "wa-align-items-start" "wa-align-items-center"))}
    [:input (merge (cond-> {:id        id
@@ -106,7 +106,7 @@
 
 (defn checkbox-option
   [{:keys [id name signal checked? label description form attrs]}]
-  [:label {:for id
+  [:label {:for   id
            :class (str "account-choice wa-flank wa-gap-xs "
                        (if description "wa-align-items-start" "wa-align-items-center"))}
    [:input (merge (cond-> {:id        id

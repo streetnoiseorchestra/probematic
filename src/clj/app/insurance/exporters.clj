@@ -30,22 +30,22 @@
 
 (defn policy-configuration
   [policy]
-  (let [exporter-id        (:insurance.policy/exporter-id policy)
+  (let [exporter-id         (:insurance.policy/exporter-id policy)
         exporter-descriptor (descriptor exporter-id)]
     (cond
       (nil? exporter-id)
-      {:exporter-id              nil
-       :status                   :not-configured
-       :missing-roles            []
-       :role->coverage-type-id   {}
-       :role->coverage-type      {}}
+      {:exporter-id            nil
+       :status                 :not-configured
+       :missing-roles          []
+       :role->coverage-type-id {}
+       :role->coverage-type    {}}
 
       (nil? exporter-descriptor)
-      {:exporter-id              exporter-id
-       :status                   :unknown
-       :missing-roles            []
-       :role->coverage-type-id   {}
-       :role->coverage-type      {}}
+      {:exporter-id            exporter-id
+       :status                 :unknown
+       :missing-roles          []
+       :role->coverage-type-id {}
+       :role->coverage-type    {}}
 
       :else
       (let [role->type    (role->coverage-type exporter-descriptor policy)
@@ -80,7 +80,7 @@
 (defn- configured-exporter
   [policy]
   (let [{:keys [exporter-id missing-roles status]
-         :as configuration}
+         :as   configuration}
         (policy-configuration policy)]
     (if (= :complete status)
       configuration

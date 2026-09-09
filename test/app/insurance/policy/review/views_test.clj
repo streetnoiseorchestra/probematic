@@ -70,11 +70,11 @@
 
 (defn review-req
   [conn member-id]
-  {::r/router  router
-   :db         (d/db conn)
-   :tr         tr
-   :app/session    {:session/member {:member/member-id member-id}}
-   :page-state {}})
+  {::r/router   router
+   :db          (d/db conn)
+   :tr          tr
+   :app/session {:session/member {:member/member-id member-id}}
+   :page-state  {}})
 
 (defn workflow-actions-view
   [filter coverage]
@@ -228,10 +228,10 @@
                 :placeholder (:placeholder (l/attrs textarea))
                 :buttons     (mapv l/text (action-buttons view))})))
       (testing "The dummy thread contains three attributed comments."
-        (is (= {:authors         ["Robert Fox" "Virginia Woolf" "Clarissa Vaughan"]
+        (is (= {:authors        ["Robert Fox" "Virginia Woolf" "Clarissa Vaughan"]
                 :relative-times 3
                 :reply-link     "Leave a reply"}
-               {:authors         (mapv #(get (l/attrs %) :app.ui2.avatar/name)
-                                       (l/select :app.ui2.avatar/avatar view))
+               {:authors        (mapv #(get (l/attrs %) :app.ui2.avatar/name)
+                                      (l/select :app.ui2.avatar/avatar view))
                 :relative-times (count (l/select 'wa-relative-time view))
                 :reply-link     (-> (l/select-one 'a view) l/text)}))))))

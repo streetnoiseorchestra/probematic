@@ -260,11 +260,11 @@
                             (q/retrieve-instrument db instrument-id)))]
     (cond
       (nil? policy)
-      (throw (ex-info "Policy not found" {:app/error-type :app.error.type/not-found
+      (throw (ex-info "Policy not found" {:app/error-type             :app.error.type/not-found
                                           :insurance.policy/policy-id policy-id}))
 
       (and instrument-id (nil? instrument))
-      (throw (ex-info "Instrument not found" {:app/error-type :app.error.type/not-found
+      (throw (ex-info "Instrument not found" {:app/error-type           :app.error.type/not-found
                                               :instrument/instrument-id instrument-id}))
 
       :else
@@ -290,7 +290,7 @@
                                                      :data-attr:disabled "!!$loading && $loading !== 'coverage-create'"
                                                      :data-attr:loading  "$loading === 'coverage-create'"}
                                       [:i18n/tr :action/next]]]
-                                    :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                    :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
         (instrument-page-content req policy instrument redirect)]))))
 
 (defn photos-page-content
@@ -323,11 +323,11 @@
         redirect      (query-param req :redirect)]
     (cond
       (nil? policy)
-      (throw (ex-info "Policy not found" {:app/error-type :app.error.type/not-found
+      (throw (ex-info "Policy not found" {:app/error-type             :app.error.type/not-found
                                           :insurance.policy/policy-id policy-id}))
 
       (nil? instrument)
-      (throw (ex-info "Instrument not found" {:app/error-type :app.error.type/not-found
+      (throw (ex-info "Instrument not found" {:app/error-type           :app.error.type/not-found
                                               :instrument/instrument-id instrument-id}))
 
       :else
@@ -355,7 +355,7 @@
                                                        :variant    "brand"
                                                        :href       next-url}
                                         [:i18n/tr :action/next]]]
-                                      :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                      :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
           (photos-page-content req instrument)])))))
 
 (defn- coverage-validate-field-action [req field]
@@ -519,7 +519,7 @@
    [:i18n/tr :insurance/no-coverage-types]])
 
 (defn- coverage-form [req policy instrument redirect]
-  (let [form-state      (coverage-form-state req policy instrument redirect)
+  (let [form-state     (coverage-form-state req policy instrument redirect)
         coverage-types (:insurance.policy/coverage-types policy)
         disabled?      (empty? coverage-types)]
     [:form {:id             "coverage-create-coverage-form"
@@ -551,16 +551,16 @@
         redirect      (query-param req :redirect)]
     (cond
       (nil? policy)
-      (throw (ex-info "Policy not found" {:app/error-type :app.error.type/not-found
+      (throw (ex-info "Policy not found" {:app/error-type             :app.error.type/not-found
                                           :insurance.policy/policy-id policy-id}))
 
       (nil? instrument)
-      (throw (ex-info "Instrument not found" {:app/error-type :app.error.type/not-found
+      (throw (ex-info "Instrument not found" {:app/error-type           :app.error.type/not-found
                                               :instrument/instrument-id instrument-id}))
 
       :else
       (let [previous-url (urls/link-coverage-create2 policy-id instrument-id redirect)
-            disabled?   (empty? (:insurance.policy/coverage-types policy))]
+            disabled?    (empty? (:insurance.policy/coverage-types policy))]
         (ui2/datastar-page*
          [page-surface/PageSurface
           {::page-surface/width :standard
@@ -589,7 +589,7 @@
                                                                :data-attr:loading  "$loading === 'coverage-create'"}
                                                         disabled? (assoc :disabled true))
                                         [:i18n/tr :action/save]]]
-                                      :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                      :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
           (coverage-page-content req policy instrument redirect)])))))
 
 (d*/refresh-all!)

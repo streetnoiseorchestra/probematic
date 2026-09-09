@@ -42,17 +42,17 @@
    :tab-id       "ignored"})
 
 (defn seed-gig! [conn gig-id date]
-  @(d/transact conn [(domain/gig->db {:gig/gig-id   gig-id
-                                      :gig/title    "Existing Gig"
-                                      :gig/status   :gig.status/confirmed
-                                      :gig/gig-type :gig.type/gig
-                                      :gig/date     date
-                                      :gig/location "Somewhere"
+  @(d/transact conn [(domain/gig->db {:gig/gig-id    gig-id
+                                      :gig/title     "Existing Gig"
+                                      :gig/status    :gig.status/confirmed
+                                      :gig/gig-type  :gig.type/gig
+                                      :gig/date      date
+                                      :gig/location  "Somewhere"
                                       :gig/call-time (t/time "18:00")})]))
 
 (defn action-state [conn]
-  {:tr tr
-   :db (d/db conn)
+  {:tr                 tr
+   :db                 (d/db conn)
    :current-user-roles #{:admin}})
 
 (deftest update-gig-action-test
@@ -61,27 +61,27 @@
           gig-id         (random-uuid)]
       (seed-gig! conn gig-id (t/date "2026-05-01"))
       (is (= [[:db/transact
-               [{:gig/gig-id             gig-id
-                 :gig/title              "Street Gig"
-                 :gig/date               (-> (t/date "2026-05-01") (t/at (t/midnight)) (t/in "UTC") t/inst)
-                 :gig/location           "Somewhere"
-                 :gig/gig-type           :gig.type/gig
-                 :gig/status             :gig.status/confirmed
-                 :gig/call-time          "18:00"
-                 :gig/set-time           "19:00"
-                 :gig/end-time           "20:00"
-                 :gig/more-details       "Details"
-                 :gig/end-date           nil
-                 :gig/contact            nil
-                 :gig/leader             nil
-                 :gig/rehearsal-leader1  nil
-                 :gig/rehearsal-leader2  nil
-                 :gig/pay-deal           nil
-                 :gig/outfit             nil
-                 :gig/setlist            nil
-                 :gig/description        nil
-                 :gig/post-gig-plans     nil
-                 :forum.topic/topic-id   nil}]
+               [{:gig/gig-id            gig-id
+                 :gig/title             "Street Gig"
+                 :gig/date              (-> (t/date "2026-05-01") (t/at (t/midnight)) (t/in "UTC") t/inst)
+                 :gig/location          "Somewhere"
+                 :gig/gig-type          :gig.type/gig
+                 :gig/status            :gig.status/confirmed
+                 :gig/call-time         "18:00"
+                 :gig/set-time          "19:00"
+                 :gig/end-time          "20:00"
+                 :gig/more-details      "Details"
+                 :gig/end-date          nil
+                 :gig/contact           nil
+                 :gig/leader            nil
+                 :gig/rehearsal-leader1 nil
+                 :gig/rehearsal-leader2 nil
+                 :gig/pay-deal          nil
+                 :gig/outfit            nil
+                 :gig/setlist           nil
+                 :gig/description       nil
+                 :gig/post-gig-plans    nil
+                 :forum.topic/topic-id  nil}]
                {:transact-w-nils? true
                 :on-success       [[:app.gigs/trigger-gig-details-edited gig-id true false]]}]
               [:app.datastar/respond-sse
@@ -128,8 +128,8 @@
                 :more-details "Details"
                 :_error       {:_top {:error "You are not allowed to edit this gig."}}}]]
              (actions/update-gig-action
-              {:tr tr
-               :db (d/db conn)
+              {:tr                 tr
+               :db                 (d/db conn)
                :current-user-roles #{}}
               (valid-signals gig-id))))))
 
@@ -154,7 +154,7 @@
                 :rehearsal-leader2 "00000000-0000-0000-0000-000000000001"
                 :notify?           false
                 :more-details      ""
-                :_error            {:_top             {:error "Please fix the errors in the form."}
+                :_error            {:_top              {:error "Please fix the errors in the form."}
                                     :end-date          {:error "End date must be on or after date."}
                                     :set-time          {:error "Set time must be at or after call time."}
                                     :end-time          {:error "End time must be at or after set time."}
@@ -190,13 +190,13 @@
   (testing "validates one field for blur and keydown"
     (is (= [[:app.datastar/merge-state
              [:gig-edit]
-             {:title          "Street Gig"
-              :date           "2026-05-01"
-              :location       "Somewhere"
-              :gig-type       "gig"
-              :status         "confirmed"
-              :call-time      "18:00"
-              :set-time       "17:00"}]
+             {:title     "Street Gig"
+              :date      "2026-05-01"
+              :location  "Somewhere"
+              :gig-type  "gig"
+              :status    "confirmed"
+              :call-time "18:00"
+              :set-time  "17:00"}]
             [:app.datastar/assoc-state
              [:gig-edit :_error :set-time]
              {:error "Set time must be at or after call time."}]]
@@ -217,8 +217,8 @@
                                            {:tr tr}
                                            (assoc (valid-signals "00000000-0000-0000-0000-000000000000")
                                                   :thread? true))
-          [_ [tx] opts] transact
-          gig-id (:gig/gig-id tx)]
+          [_ [tx] opts]                   transact
+          gig-id                          (:gig/gig-id tx)]
       (is (= :db/transact (first transact)))
       (is (uuid? gig-id))
       (is (= "Street Gig" (:gig/title tx)))
@@ -242,12 +242,12 @@
               :gig-type  ""
               :status    ""
               :call-time ""
-              :_error    {:_top     {:error "Please fix the errors in the form."}
-                          :title    {:error "Title is required."}
-                          :date     {:error "Date is required."}
-                          :location {:error "Location is required."}
-                          :gig-type {:error "Type is required."}
-                          :status   {:error "Status is required."}
+              :_error    {:_top      {:error "Please fix the errors in the form."}
+                          :title     {:error "Title is required."}
+                          :date      {:error "Date is required."}
+                          :location  {:error "Location is required."}
+                          :gig-type  {:error "Type is required."}
+                          :status    {:error "Status is required."}
                           :call-time {:error "Call Time is required."}}}]]
            (actions/create-gig-action
             {:tr tr}
@@ -291,8 +291,8 @@
                [:gig-edit :_error :_top]
                {:error "You are not allowed to edit this gig."}]]
              (actions/delete-gig-action
-              {:tr tr
-               :db (d/db conn)
+              {:tr                 tr
+               :db                 (d/db conn)
                :current-user-roles #{}}
               {:gig-id (str gig-id)
                :tab-id "ignored"}))))))

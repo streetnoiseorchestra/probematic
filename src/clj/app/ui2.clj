@@ -253,8 +253,8 @@
             nil
             (jt.formatter/get-chronology short-date-formatter)
             locale)
-           month-idx     (.indexOf short-pattern "M")
-           day-idx       (.indexOf short-pattern "d")]
+           month-idx            (.indexOf short-pattern "M")
+           day-idx              (.indexOf short-pattern "d")]
        (if (and (not= -1 month-idx)
                 (not= -1 day-idx)
                 (< month-idx day-idx))

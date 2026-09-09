@@ -54,12 +54,12 @@
                                          :grid  {:display false}
                                          :ticks {:padding 0
                                                  :font    {:size 14}}}
-                                     :y {:title      {:display true
-                                                      :padding 0
-                                                      :text    y-axis-label}
-                                         :ticks      {:padding   0
-                                                      :precision 0
-                                                      :font      {:size 14}}
+                                     :y {:title       {:display true
+                                                       :padding 0
+                                                       :text    y-axis-label}
+                                         :ticks       {:padding   0
+                                                       :precision 0
+                                                       :font      {:size 14}}
                                          :beginAtZero true}}
                :plugins             {:tooltip {:enabled false}
                                      :legend  {:position "bottom"

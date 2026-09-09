@@ -116,8 +116,8 @@
    (validation-errors state params {}))
   ([{:keys [tr] :as state} params {:keys [allow-frozen-policy?]}]
    (let [{:keys [coverage policy instrument-id policy-id] :as ctx} (coverage-context (:db state) params)
-         item-count (parse-positive-long (:item-count params))
-         value      (parse-positive-long (:value params))]
+         item-count                                                (parse-positive-long (:item-count params))
+         value                                                     (parse-positive-long (:value params))]
      (merge
       (when-not coverage
         (top-error (tr [:error/not-found-title])))
@@ -165,22 +165,22 @@
 
 (defn update-coverage-tx-data [ctx params]
   (let [{:keys [coverage coverage-id]} ctx
-        coverage-type-txs (vec (coverage-type-txs ctx params))
-        item-count        (parse-positive-long (:item-count params))
-        value             (bigdec (parse-positive-long (:value params)))
-        private?          (private? params)
-        owner-changed?    (not= (util/ensure-uuid! (:owner-member-id params))
-                                (get-in coverage [:instrument.coverage/instrument :instrument/owner :member/member-id]))
-        category-changed? (not= (util/ensure-uuid! (:category-id params))
-                                (get-in coverage [:instrument.coverage/instrument :instrument/category :instrument.category/category-id]))
-        upstream-change?  (domain/has-upstream-change? coverage
-                                                       owner-changed?
-                                                       category-changed?
-                                                       value
-                                                       item-count
-                                                       private?
-                                                       (seq coverage-type-txs))
-        coverage-ref      [:instrument.coverage/coverage-id coverage-id]]
+        coverage-type-txs              (vec (coverage-type-txs ctx params))
+        item-count                     (parse-positive-long (:item-count params))
+        value                          (bigdec (parse-positive-long (:value params)))
+        private?                       (private? params)
+        owner-changed?                 (not= (util/ensure-uuid! (:owner-member-id params))
+                                             (get-in coverage [:instrument.coverage/instrument :instrument/owner :member/member-id]))
+        category-changed?              (not= (util/ensure-uuid! (:category-id params))
+                                             (get-in coverage [:instrument.coverage/instrument :instrument/category :instrument.category/category-id]))
+        upstream-change?               (domain/has-upstream-change? coverage
+                                                                    owner-changed?
+                                                                    category-changed?
+                                                                    value
+                                                                    item-count
+                                                                    private?
+                                                                    (seq coverage-type-txs))
+        coverage-ref                   [:instrument.coverage/coverage-id coverage-id]]
     (vec
      (concat
       coverage-type-txs
@@ -283,6 +283,6 @@
          [:app.datastar.sse/redirect (urls/link-policy policy-id)]]]])))
 
 (def actions
-  {::validate-coverage-field      #'validate-coverage-field-action
-   ::update-instrument-coverage   #'update-instrument-coverage-action
-   ::delete-instrument-coverage   #'delete-instrument-coverage-action})
+  {::validate-coverage-field    #'validate-coverage-field-action
+   ::update-instrument-coverage #'update-instrument-coverage-action
+   ::delete-instrument-coverage #'delete-instrument-coverage-action})

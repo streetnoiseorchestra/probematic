@@ -27,7 +27,7 @@
                                                   :onclick "window.location = this.value"}
                                [:i18n/tr :gigs/view-archive]]]
                              ::page-toolbar/overflow-label [:i18n/tr :action/more-actions]
-                             :aria-label                    [:i18n/tr :gigs/index-toolbar-label]}])
+                             :aria-label                   [:i18n/tr :gigs/index-toolbar-label]}])
 
 (defn page [{:keys [db] :as req}]
   (let [{:keys [future-gigs past-gigs]} (queries/index-page-data db)]

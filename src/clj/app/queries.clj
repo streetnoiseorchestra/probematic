@@ -527,8 +527,8 @@
   "Returns a list of maps :attendance/ with attendance attributes for all active members.
   If some member has a concrete plan response for the gig, that will be included, if not then the plan is set to no-response."
   [db gig-id]
-  (let [plans (attendances-for-gig db gig-id)
-        members  (active-members db)
+  (let [plans   (attendances-for-gig db gig-id)
+        members (active-members db)
         no-plan (remove (fn [member]
                           (m/find-first (fn [p]
                                           (= (:member/member-id member) (get-in p [:attendance/member :member/member-id]))) plans))
@@ -537,7 +537,7 @@
             (map (fn [member]
                    {:attendance/section (:member/section member)
                     :attendance/member  member
-                    :attendance/plan :plan/no-response}) no-plan))))
+                    :attendance/plan    :plan/no-response}) no-plan))))
 
 (defn member-nick-or-name [member]
   (if (:member/nick member)
@@ -653,10 +653,10 @@
   (->> (setlist-song-tuples-for-gig db gig-id)
        (mapv (fn [[[_ song-id] position]]
                (let [{:song/keys [title solo-info]} (retrieve-song db song-id)]
-                 {:song/title title
-                  :song/song-id song-id
+                 {:song/title     title
+                  :song/song-id   song-id
                   :song/solo-info solo-info
-                  :position position})))
+                  :position       position})))
        (sort-by :position)))
 
 (defn planned-songs-for-gig
@@ -697,19 +697,19 @@
 (defn sheet-music-for-song
   "Returns a list of sections. If the section has sheet music, then the map will have a :sheet-music/_section key with the sheet music for that section."
   [db song-id]
-  (let [sections-with-sheets (->>
-                              (d/q '[:find
-                                     (pull ?sm pattern)
-                                     :in $ ?song pattern
-                                     :where
-                                     [?sm :sheet-music/section ?section]
-                                     [?sm :sheet-music/song ?song]]
-                                   db
-                                   [:song/song-id song-id]
-                                   [:sheet-music/sheet-id :sheet-music/title :file/webdav-path {:sheet-music/section [:section/name  :section/position :section/default?]}])
-                              (mapv first)
-                              (group-by :sheet-music/section)
-                              (mapv (fn [[k v]] (assoc k :sheet-music/_section v))))
+  (let [sections-with-sheets    (->>
+                                 (d/q '[:find
+                                        (pull ?sm pattern)
+                                        :in $ ?song pattern
+                                        :where
+                                        [?sm :sheet-music/section ?section]
+                                        [?sm :sheet-music/song ?song]]
+                                      db
+                                      [:song/song-id song-id]
+                                      [:sheet-music/sheet-id :sheet-music/title :file/webdav-path {:sheet-music/section [:section/name  :section/position :section/default?]}])
+                                 (mapv first)
+                                 (group-by :sheet-music/section)
+                                 (mapv (fn [[k v]] (assoc k :sheet-music/_section v))))
         sections-with-no-sheets (->> (d/q '[:find (pull ?section pattern)
                                             :in $ ?song pattern
                                             :where
@@ -1103,17 +1103,17 @@
 
   (member-of-team? db :team.type/insurance #uuid "01887b0c-23f8-86f0-8891-89e322a505d9")
 
-  (let [sheets (->>
-                (d/q '[:find
-                       (pull ?sm pattern)
-                       :in $ ?song pattern
-                       :where
-                       [?sm :sheet-music/section ?section]
-                       [?sm :sheet-music/song ?song]]
-                     db
-                     [:song/song-id (parse-uuid "01844740-3eed-856d-84c1-c26f07068209")]
-                     [:sheet-music/sheet-id :sheet-music/title :file/webdav-path {:sheet-music/section [:section/name  :section/position :section/default?]}])
-                (mapv first))
+  (let [sheets         (->>
+                        (d/q '[:find
+                               (pull ?sm pattern)
+                               :in $ ?song pattern
+                               :where
+                               [?sm :sheet-music/section ?section]
+                               [?sm :sheet-music/song ?song]]
+                             db
+                             [:song/song-id (parse-uuid "01844740-3eed-856d-84c1-c26f07068209")]
+                             [:sheet-music/sheet-id :sheet-music/title :file/webdav-path {:sheet-music/section [:section/name  :section/position :section/default?]}])
+                        (mapv first))
         section-sheets (group-by :sheet-music/section sheets)
         section-sheets (map (fn [[k v]]
                               (assoc k :sheet-music/_section v)) section-sheets)]
@@ -1132,12 +1132,12 @@
                                      (insurance-policy-effective-as-of db (t/now) policy-pattern)
                                      instrument-coverage-detail-pattern)
 
-  (d/transact conn {:tx-data [{:attendance/gig [:gig/gig-id "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww"]
-                               :attendance/member [:member/member-id "ag1zfmdpZy1vLW1hdGljchMLEgZNZW1iZXIYgICA086WiwoM"]
+  (d/transact conn {:tx-data [{:attendance/gig        [:gig/gig-id "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww"]
+                               :attendance/member     [:member/member-id "ag1zfmdpZy1vLW1hdGljchMLEgZNZW1iZXIYgICA086WiwoM"]
                                :attendance/gig+member (pr-str ["ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww" "ag1zfmdpZy1vLW1hdGljchMLEgZNZW1iZXIYgICA086WiwoM"])
-                               :attendance/section [:section/name "flute"]
-                               :attendance/updated (t/inst)
-                               :attendance/plan :plan/definitely-not}]})
+                               :attendance/section    [:section/name "flute"]
+                               :attendance/updated    (t/inst)
+                               :attendance/plan       :plan/definitely-not}]})
 
   (def plans)
 
@@ -1157,18 +1157,18 @@
   (def active-mem (active-members db))
   active-mem
 
-  (let [plans (->>
-               (d/find-by db :gig/gig-id "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww"
-                          [:gig/gig-type :gig/title {:attendance/_gig [{:attendance/section [:section/name]}
-                                                                       {:attendance/member [:member/name :member/member-id :member/nick]}
-                                                                       :attendance/plan
-                                                                       :attendance/comment
-                                                                       :attendance/motivation
-                                                                       :attendance/updated]}])
-               :attendance/_gig
+  (let [plans   (->>
+                 (d/find-by db :gig/gig-id "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww"
+                            [:gig/gig-type :gig/title {:attendance/_gig [{:attendance/section [:section/name]}
+                                                                         {:attendance/member [:member/name :member/member-id :member/nick]}
+                                                                         :attendance/plan
+                                                                         :attendance/comment
+                                                                         :attendance/motivation
+                                                                         :attendance/updated]}])
+                 :attendance/_gig
                 ;; (group-by #(-> % :attendance/section :section/name))
                )
-        plans (attendances-for-gig db "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww")
+        plans   (attendances-for-gig db "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww")
         members (active-members db)
         no-plan]
 
@@ -1176,7 +1176,7 @@
             (map (fn [member]
                    {:attendance/section (:member/section member)
                     :attendance/member  member
-                    :attendance/plan :plan/no-response}) no-plan)))
+                    :attendance/plan    :plan/no-response}) no-plan)))
   (active-members-by-section db)
   (->>
    (attendance-for-gig-with-all-active-members db "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww"))

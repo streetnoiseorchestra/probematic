@@ -46,7 +46,7 @@
                   {:ledger.entry/amount       private-cost-total
                    :ledger.entry/tx-date      (t/date)
                    :ledger.entry/posting-date (t/inst)
-                   :ledger.entry/description   policy-name
+                   :ledger.entry/description  policy-name
                    :ledger.entry/entry-id     (sq/generate-squuid)}
                   {:ledger.entry.meta/meta-type :ledger.entry.meta.type/insurance
                    :ledger.entry.meta.insurance/policy

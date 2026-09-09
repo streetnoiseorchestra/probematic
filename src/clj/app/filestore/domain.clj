@@ -32,22 +32,22 @@
   (assert size "size must be provided")
   (assert file-name "file-name must be provided")
   (let [stime (t/inst)]
-    [(-> {:db/id tempid
-          :filestore.file/file-id (sq/generate-squuid)
+    [(-> {:db/id                    tempid
+          :filestore.file/file-id   (sq/generate-squuid)
           :filestore.file/file-name (util/sanitize-filename file-name)
-          :filestore.file/atime stime
-          :filestore.file/mtime stime
-          :filestore.file/ctime stime
-          :filestore.file/hash hash
-          :filestore.file/size size}
+          :filestore.file/atime     stime
+          :filestore.file/mtime     stime
+          :filestore.file/ctime     stime
+          :filestore.file/hash      hash
+          :filestore.file/size      size}
          (m/assoc-some :filestore.file/mime-type mime-type))]))
 
 (defn txs-new-image [tempid file-tempid width height]
-  [{:db/id tempid
-    :image/image-id (sq/generate-squuid)
+  [{:db/id             tempid
+    :image/image-id    (sq/generate-squuid)
     :image/source-file file-tempid
-    :image/width width
-    :image/height height}])
+    :image/width       width
+    :image/height      height}])
 
 (defn encode-filter-spec [filter-spec]
   (when filter-spec
@@ -60,11 +60,11 @@
 (defn txs-new-rendition [rendition-id tempid file-tempid {:image/keys [image-id] :as parent-image} width height filter-spec]
   [[:db/add (or (:db/id parent-image) [:image/image-id image-id])
     :image/renditions tempid]
-   (-> {:db/id tempid
-        :image/image-id rendition-id
+   (-> {:db/id             tempid
+        :image/image-id    rendition-id
         :image/source-file file-tempid
-        :image/width width
-        :image/height height}
+        :image/width       width
+        :image/height      height}
        (m/assoc-some :image/filter-spec (encode-filter-spec filter-spec)))])
 
 (defn db->file [ent]

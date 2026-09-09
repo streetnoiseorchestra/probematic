@@ -8,11 +8,11 @@
    [lookup.core :as l]))
 
 (defn- page-contract [status]
-  (let [system             (support/new-system (str "poll-detail-" (name status)))
+  (let [system            (support/new-system (str "poll-detail-" (name status)))
         {:keys [poll-id]} (support/seed-poll! system status)
-        view               (-> system
-                               (support/request {:path-params {:poll/poll-id poll-id}})
-                               views/page)]
+        view              (-> system
+                              (support/request {:path-params {:poll/poll-id poll-id}})
+                              views/page)]
     {:poll-id   poll-id
      :structure (page-shell/page-structure view)}))
 
@@ -98,19 +98,19 @@
         (is (= [{:label    "Yes"
                  :summary  "66.7% (2)"
                  :progress {:label "Yes 66.7% (2)"
-                            :style {"--indicator-color" "var(--wa-color-success-fill-loud)"
+                            :style {"--indicator-color"            "var(--wa-color-success-fill-loud)"
                                     "--poll-result-progress-value" "66.7%"}
                             :value "66.7"}}
                 {:label    "No"
                  :summary  "33.3% (1)"
                  :progress {:label "No 33.3% (1)"
-                            :style {"--indicator-color" "var(--wa-color-warning-fill-loud)"
+                            :style {"--indicator-color"            "var(--wa-color-warning-fill-loud)"
                                     "--poll-result-progress-value" "33.3%"}
                             :value "33.3"}}
                 {:label    "Maybe"
                  :summary  "0% (0)"
                  :progress {:label "Maybe 0% (0)"
-                            :style {"--indicator-color" "var(--wa-color-purple-60)"
+                            :style {"--indicator-color"            "var(--wa-color-purple-60)"
                                     "--poll-result-progress-value" "0%"}
                             :value "0"}}]
                (mapv (fn [row]

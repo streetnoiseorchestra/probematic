@@ -11,7 +11,7 @@
 (defn job-defs [opts]
   {:job/ping               make-job-ping
    :job/probe-housekeeping (make-probe-housekeeping-job opts)
-   :job/sync-songs          (make-songs-sync-job opts)
+   :job/sync-songs         (make-songs-sync-job opts)
    :job/poll-housekeeping  (make-poll-housekeeping-job opts)
    :job/reminders          (make-reminder-job opts)
    :job/avatar-cutover     (make-avatar-cutover-job opts)})

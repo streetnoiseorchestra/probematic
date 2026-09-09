@@ -58,9 +58,9 @@
                            :slot               "start"
                            :class              "extra-icon"
                            :data-preserve-attr "class"})]
-    (is (= {:id?       true
-            :slot?     true
-            :class?    true
+    (is (= {:id?        true
+            :slot?      true
+            :class?     true
             :data-attr? true}
            {:id?        (str/includes? html "id=\"home-icon\"")
             :slot?      (str/includes? html "slot=\"start\"")

@@ -105,9 +105,9 @@
                (page-shell/translation-key (:title (l/attrs header))))))
       (testing "The form starts with an active blank song and submits the create action."
         (is (= {:action :app.songs.edit.actions/create-song
-                :title  {:value ""
+                :title  {:value     ""
                          :data-bind "song-edit.title"
-                         :required true}
+                         :required  true}
                 :active {:data-bind "song-edit.active?"
                          :checked   true}}
                {:action (-> (l/attrs form) :data-action action-keyword)

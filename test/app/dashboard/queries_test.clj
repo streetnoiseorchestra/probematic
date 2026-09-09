@@ -49,7 +49,7 @@
   (let [coverage-tempids (mapv (fn [_] (str "coverage-" (random-uuid))) coverages)]
     @(d/transact conn (concat
                        (mapv (fn [tempid coverage]
-                               (merge {:db/id                       tempid
+                               (merge {:db/id                           tempid
                                        :instrument.coverage/coverage-id (random-uuid)}
                                       coverage))
                              coverage-tempids
@@ -73,12 +73,12 @@
   (testing "answered and unanswered dashboard gigs exclude cancelled and past gigs"
     (let [{:keys [conn member-id]} (tc/new-system "dashboard-gig-buckets")]
       (seed-member! conn member-id)
-      (let [answered-id      (seed-gig! conn "Answered future" (t/date "2099-05-01"))
-            _unanswered-id   (seed-gig! conn "Unanswered future" (t/date "2099-05-02"))
-            unknown-id       (seed-gig! conn "Unknown future" (t/date "2099-05-03"))
-            cancelled-id     (seed-gig! conn "Cancelled future" (t/date "2099-05-04"))
-            past-id          (seed-gig! conn "Past answered" (t/date "2000-05-01"))]
-        (seed-attendance! conn answered-id member-id {:attendance/plan :plan/definitely
+      (let [answered-id    (seed-gig! conn "Answered future" (t/date "2099-05-01"))
+            _unanswered-id (seed-gig! conn "Unanswered future" (t/date "2099-05-02"))
+            unknown-id     (seed-gig! conn "Unknown future" (t/date "2099-05-03"))
+            cancelled-id   (seed-gig! conn "Cancelled future" (t/date "2099-05-04"))
+            past-id        (seed-gig! conn "Past answered" (t/date "2000-05-01"))]
+        (seed-attendance! conn answered-id member-id {:attendance/plan       :plan/definitely
                                                       :attendance/motivation :motivation/none})
         (seed-attendance! conn unknown-id member-id {:attendance/plan :plan/unknown})
         (seed-attendance! conn cancelled-id member-id {:attendance/plan :plan/definitely})
@@ -150,14 +150,14 @@
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        answered   (poll-test/seed-poll!
-                    conn member-id
-                    {:poll/poll-status :poll.status/open
-                     :poll/title       "Answered poll"})
-        unanswered (poll-test/seed-poll!
-                    conn member-id
-                    {:poll/poll-status :poll.status/open
-                     :poll/title       "Unanswered poll"})]
+        answered                 (poll-test/seed-poll!
+                                  conn member-id
+                                  {:poll/poll-status :poll.status/open
+                                   :poll/title       "Answered poll"})
+        unanswered               (poll-test/seed-poll!
+                                  conn member-id
+                                  {:poll/poll-status :poll.status/open
+                                   :poll/title       "Unanswered poll"})]
     (poll-test/seed-vote! conn
                           (:poll-id answered)
                           member-id
@@ -177,22 +177,22 @@
   (let [{:keys [conn member-id]} (tc/new-system "dashboard-next-coverage-review")
         {:keys [coverage-id policy-id]}
         (insurance-test/seed-page-shell-fixture! conn member-id)
-        sooner-policy-id          (insurance-test/seed-policy! conn (random-uuid))
-        later                     (insurance-test/seed-member-survey!
-                                   conn
-                                   {:coverage-ids    [coverage-id]
-                                    :member-id       member-id
-                                    :policy-id       policy-id
-                                    :survey-closes-at #inst "2026-11-01T00:00:00.000-00:00"})
-        sooner                    (insurance-test/seed-member-survey!
-                                   conn
-                                   {:coverage-ids    [coverage-id]
-                                    :member-id       member-id
-                                    :policy-id       sooner-policy-id
-                                    :survey-closes-at #inst "2026-10-01T00:00:00.000-00:00"})
-        db                        (d/db conn)
-        member                    (q/retrieve-member db member-id)
-        data                      (queries/dashboard-data db member)]
+        sooner-policy-id         (insurance-test/seed-policy! conn (random-uuid))
+        later                    (insurance-test/seed-member-survey!
+                                  conn
+                                  {:coverage-ids     [coverage-id]
+                                   :member-id        member-id
+                                   :policy-id        policy-id
+                                   :survey-closes-at #inst "2026-11-01T00:00:00.000-00:00"})
+        sooner                   (insurance-test/seed-member-survey!
+                                  conn
+                                  {:coverage-ids     [coverage-id]
+                                   :member-id        member-id
+                                   :policy-id        sooner-policy-id
+                                   :survey-closes-at #inst "2026-10-01T00:00:00.000-00:00"})
+        db                       (d/db conn)
+        member                   (q/retrieve-member db member-id)
+        data                     (queries/dashboard-data db member)]
     (is (= {:policy-id sooner-policy-id
             :survey-id (:survey-id sooner)}
            (select-keys (:insurance-survey data)

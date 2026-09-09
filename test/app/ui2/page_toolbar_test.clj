@@ -27,33 +27,33 @@
 (deftest page-toolbar-composes-one-breadcrumb-and-action-regions
   (let [primary-action [:a {:href "/gig/1/log-plays"} "Log Plays"]
         view           (toolbar-view
-                        {:id "gig-toolbar"
-                         :aria-label "Gig controls"
-                         ::page-toolbar/breadcrumb breadcrumb-node
-                         ::page-toolbar/actions [primary-action]
+                        {:id                           "gig-toolbar"
+                         :aria-label                   "Gig controls"
+                         ::page-toolbar/breadcrumb     breadcrumb-node
+                         ::page-toolbar/actions        [primary-action]
                          ::page-toolbar/overflow-label "More gig actions"
                          ::page-toolbar/overflow-items
                          [[:wa-dropdown-item {:value "/gig/1/edit"} "Edit"]]})
         dropdown       (l/select-one :wa-dropdown view)
         trigger        (l/select-one button/Button dropdown)
         trigger-icon   (l/select-one ico/Icon trigger)]
-    (is (= {:breadcrumb breadcrumb-node
+    (is (= {:breadcrumb     breadcrumb-node
             :primary-action primary-action
-            :dropdown {:placement "bottom-end"}
-            :trigger {:slot "trigger"
-                      :appearance "plain"
-                      :aria-label "More gig actions"}
-            :trigger-icon {::ico/library :snoico
-                           ::ico/name    :ellipsis}
-            :overflow-item {:value "/gig/1/edit"
-                            :label "Edit"}}
-           {:breadcrumb (l/select-one breadcrumb/Breadcrumb view)
+            :dropdown       {:placement "bottom-end"}
+            :trigger        {:slot       "trigger"
+                             :appearance "plain"
+                             :aria-label "More gig actions"}
+            :trigger-icon   {::ico/library :snoico
+                             ::ico/name    :ellipsis}
+            :overflow-item  {:value "/gig/1/edit"
+                             :label "Edit"}}
+           {:breadcrumb     (l/select-one breadcrumb/Breadcrumb view)
             :primary-action (l/select-one "a[href=/gig/1/log-plays]" view)
-            :dropdown (select-keys (l/attrs dropdown) [:placement])
-            :trigger (select-keys (l/attrs trigger)
-                                  [:slot :appearance :aria-label])
-            :trigger-icon (select-keys (l/attrs trigger-icon)
-                                       [::ico/library ::ico/name])
+            :dropdown       (select-keys (l/attrs dropdown) [:placement])
+            :trigger        (select-keys (l/attrs trigger)
+                                         [:slot :appearance :aria-label])
+            :trigger-icon   (select-keys (l/attrs trigger-icon)
+                                         [::ico/library ::ico/name])
             :overflow-item
             (let [item (l/select-one :wa-dropdown-item dropdown)]
               {:value (-> item l/attrs :value)
@@ -64,7 +64,7 @@
 
 (deftest page-toolbar-omits-empty-action-and-overflow-regions
   (let [view (toolbar-view
-              {:aria-label "Page context"
+              {:aria-label               "Page context"
                ::page-toolbar/breadcrumb breadcrumb-node})]
     (is (= breadcrumb-node
            (l/select-one breadcrumb/Breadcrumb view)))
@@ -79,7 +79,7 @@
             (into [breadcrumb/Breadcrumb] breadcrumb-items)]]]
     (testing description
       (let [view   (toolbar-view
-                    {:aria-label "Page context"
+                    {:aria-label               "Page context"
                      ::page-toolbar/breadcrumb source})
             result (l/select-one breadcrumb/Breadcrumb view)]
         (is (= source result))))))
@@ -94,7 +94,7 @@
              [:nav {:aria-label "Special path"}
               [:a {:href "/files"} "Files"]]}]
            ["arbitrary text node"
-            {:aria-label "Page controls"
+            {:aria-label               "Page controls"
              ::page-toolbar/breadcrumb [:span "Gigs"]}]]]
     (testing description
       (is (thrown-with-msg?
@@ -104,7 +104,7 @@
 
 (deftest page-toolbar-publishes-sticky-state-from-a-sibling-sentinel
   (let [view     (toolbar-view
-                  {:aria-label "Page context"
+                  {:aria-label               "Page context"
                    ::page-toolbar/breadcrumb breadcrumb-node})
         sentinel (l/select-one ".sno-page-toolbar-sentinel" view)
         toolbar  (l/select-one ".sno-page-toolbar" view)

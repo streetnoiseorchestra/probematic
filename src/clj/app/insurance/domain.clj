@@ -155,8 +155,8 @@
 (defn reconcile-coverage-types [eid existing-type-ids new-type-ids]
   (let [[added removed] (clojure.data/diff (set existing-type-ids)  (set new-type-ids))
         ;; _ (tap> {:added added :removed removed})
-        add-tx (map #(-> [:db/add eid :instrument.coverage/types [:insurance.coverage.type/type-id  %]]) (filter some? added))
-        remove-tx (map #(-> [:db/retract eid :instrument.coverage/types [:insurance.coverage.type/type-id  %]]) (filter some? removed))]
+        add-tx          (map #(-> [:db/add eid :instrument.coverage/types [:insurance.coverage.type/type-id  %]]) (filter some? added))
+        remove-tx       (map #(-> [:db/retract eid :instrument.coverage/types [:insurance.coverage.type/type-id  %]]) (filter some? removed))]
     (concat add-tx remove-tx)))
 
 (defn make-category-factor-lookup
@@ -164,7 +164,7 @@
   [policy]
   (->> (-> policy :insurance.policy/category-factors)
        (map (fn [factor]
-              {:instrument.category/category-id (-> factor :insurance.category.factor/category :instrument.category/category-id)
+              {:instrument.category/category-id  (-> factor :insurance.category.factor/category :instrument.category/category-id)
                :insurance.category.factor/factor (:insurance.category.factor/factor factor)}))
        (reduce (fn [r m]
                  (assoc r (:instrument.category/category-id m) (:insurance.category.factor/factor m))) {})))
@@ -246,18 +246,18 @@
 (defn tx-new-survey-report [tempid coverage-id]
   (assert tempid "Tempid must be non-nil")
   (assert coverage-id "Coverage ID must be non-nil")
-  {:db/id tempid
+  {:db/id                             tempid
    :insurance.survey.report/report-id (sq/generate-squuid)
-   :insurance.survey.report/coverage [:instrument.coverage/coverage-id coverage-id]})
+   :insurance.survey.report/coverage  [:instrument.coverage/coverage-id coverage-id]})
 
 (defn tx-new-survey-response [tempid member-id coverage-report-tempids]
   (assert tempid "Tempid must be non-nil")
   (assert member-id "Member ID must be non-nil")
   (when (seq coverage-report-tempids)
     (assert (every? some? coverage-report-tempids) "report empids cannot be nil"))
-  (let [tx {:db/id tempid
+  (let [tx {:db/id                                 tempid
             :insurance.survey.response/response-id (sq/generate-squuid)
-            :insurance.survey.response/member [:member/member-id member-id]}]
+            :insurance.survey.response/member      [:member/member-id member-id]}]
     (if (seq coverage-report-tempids)
       (assoc tx :insurance.survey.response/coverage-reports coverage-report-tempids)
       tx)))
@@ -280,8 +280,8 @@
        (throw
         (ex-info "Survey not valid" {:survey survey
                                      :schema schema
-                                     :error (s/explain schema survey)
-                                     :human (s/explain-human schema survey)})))
+                                     :error  (s/explain schema survey)
+                                     :human  (s/explain-human schema survey)})))
      (s/encode-datomic schema survey))))
 
 (defn tx-new-survey [tempid policy-id closes-at response-tempids]
@@ -290,18 +290,18 @@
   (assert closes-at "Closes at must be non-nil")
   (assert (seq response-tempids) "Response tempids must be non-empty")
   (survey->db
-   {:db/id tempid
-    :insurance.survey/survey-id (sq/generate-squuid)
-    :insurance.survey/policy [:insurance.policy/policy-id policy-id]
+   {:db/id                       tempid
+    :insurance.survey/survey-id  (sq/generate-squuid)
+    :insurance.survey/policy     [:insurance.policy/policy-id policy-id]
     :insurance.survey/created-at (t/inst)
-    :insurance.survey/closes-at closes-at
-    :insurance.survey/responses response-tempids}))
+    :insurance.survey/closes-at  closes-at
+    :insurance.survey/responses  response-tempids}))
 
 (defn db->survey-report [m]
   (-> (s/decode-datomic SurveyReportEntity m)
       (set/rename-keys {:insurance.survey.response/_coverage-reports :response})
       (m/update-existing :insurance.survey.report/coverage (fn [coverage]
-                                                             (let [policy (:insurance.policy/_covered-instruments coverage)
+                                                             (let [policy         (:insurance.policy/_covered-instruments coverage)
                                                                    coverage-types (:insurance.policy/coverage-types policy)]
                                                                ;; (tap> {:policy policy :coverage-types coverage-types :coverage coverage})
                                                                (assert policy)
@@ -360,7 +360,7 @@
     [[:db/add (coverage-ref coverage) :instrument.coverage/change :instrument.coverage.change/changed]]))
 
 (defn txs-band-instrument-coverage-types [policy coverage]
-  (let [cov-types (:insurance.policy/coverage-types policy)
+  (let [cov-types       (:insurance.policy/coverage-types policy)
         before-type-ids (mapv :insurance.coverage.type/type-id (:instrument.coverage/types coverage))
         after-type-ids  (mapv :insurance.coverage.type/type-id cov-types)]
     (reconcile-coverage-types (coverage-ref coverage)
@@ -476,21 +476,21 @@
 
   (def report (q/retrieve-survey-report db #uuid  "018f76e0-7959-8168-809b-418f21041371"))
 
-  (let [coverage (:insurance.survey.report/coverage report)
-        policy (:insurance.policy/_covered-instruments coverage)
-        cov-types (:insurance.policy/coverage-types policy)
+  (let [coverage        (:insurance.survey.report/coverage report)
+        policy          (:insurance.policy/_covered-instruments coverage)
+        cov-types       (:insurance.policy/coverage-types policy)
         before-type-ids (mapv :insurance.coverage.type/type-id (:instrument.coverage/types coverage))
         after-type-ids  (mapv :insurance.coverage.type/type-id cov-types)]
     (reconcile-coverage-types  (coverage-ref coverage)
                                after-type-ids
                                before-type-ids))
 
-  (let [coverage (:insurance.survey.report/coverage report)
-        policy (:insurance.policy/_covered-instruments coverage)
-        cov-types (:insurance.policy/coverage-types policy)
+  (let [coverage        (:insurance.survey.report/coverage report)
+        policy          (:insurance.policy/_covered-instruments coverage)
+        cov-types       (:insurance.policy/coverage-types policy)
         before-type-ids (mapv :insurance.coverage.type/type-id (:instrument.coverage/types coverage))
         after-type-ids  (mapv :insurance.coverage.type/type-id cov-types)
-        after-type-ids before-type-ids]
+        after-type-ids  before-type-ids]
     (reconcile-coverage-types  (coverage-ref coverage)
                                after-type-ids
                                before-type-ids))

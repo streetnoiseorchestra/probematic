@@ -104,11 +104,11 @@
 
 (deftest exporter-configuration-guards-delivery-actions-test
   (testing "send and preview reject absent, unknown, and incomplete exporters"
-    (is (= [{:status :not-configured
+    (is (= [{:status  :not-configured
              :message "exporter-not-configured-guidance"}
-            {:status :unknown
+            {:status  :unknown
              :message "exporter-unknown-guidance"}
-            {:status :incomplete
+            {:status  :incomplete
              :message "exporter-incomplete-guidance"}]
            (mapv
             (fn [status]
@@ -123,10 +123,10 @@
                      (assoc-in (signals policy-id)
                                [:insurance-policy-changes :preview-type]
                                "new"))
-                    send-error (get-in (second send-effects)
-                                       [2 :_error :_top :error])
-                    preview-error (get-in (second preview-effects)
-                                          [2 :_error :_top :error])]
+                    send-error                (get-in (second send-effects)
+                                                      [2 :_error :_top :error])
+                    preview-error             (get-in (second preview-effects)
+                                                      [2 :_error :_top :error])]
                 {:status  status
                  :message (when (= send-error preview-error)
                             send-error)}))

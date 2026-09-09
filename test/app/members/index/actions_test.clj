@@ -10,11 +10,11 @@
             [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
             [:app.datastar/respond-sse
              [[:app.datastar.sse/merge-signals
-               {:invite {:action nil
-                         :code nil
-                         :member-id nil
+               {:invite {:action     nil
+                         :code       nil
+                         :member-id  nil
                          :generation nil
-                         :inflight false}}]]]]
+                         :inflight   false}}]]]]
            (actions/resend-invitation-action
             {:now now}
             {:invite {:code "invite-123"}})))))
@@ -25,11 +25,11 @@
             [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
             [:app.datastar/respond-sse
              [[:app.datastar.sse/merge-signals
-               {:invite {:action nil
-                         :code nil
-                         :member-id nil
+               {:invite {:action     nil
+                         :code       nil
+                         :member-id  nil
                          :generation nil
-                         :inflight false}}]]]]
+                         :inflight   false}}]]]]
            (actions/reissue-invitation-action
             {:now now}
             {:invite {:code "expired-code"}})))))
@@ -45,13 +45,13 @@
                now]
               [:app.datastar/respond-sse
                [[:app.datastar.sse/merge-signals
-                 {:invite {:action nil
-                           :code nil
-                           :member-id nil
+                 {:invite {:action     nil
+                           :code       nil
+                           :member-id  nil
                            :generation nil
-                           :inflight false}}]]]]
+                           :inflight   false}}]]]]
              (action {:now now}
-                     {:invite {:member-id (str member-id)
+                     {:invite {:member-id  (str member-id)
                                :generation 5}})))
       (is false "The revoked invitation reissue action is not implemented"))))
 
@@ -61,11 +61,11 @@
             [:app.datastar/assoc-state [:members-index :last-invitation-action-at] now]
             [:app.datastar/respond-sse
              [[:app.datastar.sse/merge-signals
-               {:invite {:action nil
-                         :code nil
-                         :member-id nil
+               {:invite {:action     nil
+                         :code       nil
+                         :member-id  nil
                          :generation nil
-                         :inflight false}}]]]]
+                         :inflight   false}}]]]]
            (actions/delete-invitation-action
             {:now now}
             {:invite {:code "invite-123"}})))))

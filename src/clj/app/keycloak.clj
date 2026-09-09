@@ -32,7 +32,7 @@
 
 (defn init! [sys]
   (let [kc {:client (create-client sys)
-            :realm (-> sys :env :keycloak :realm)}]
+            :realm  (-> sys :env :keycloak :realm)}]
     (merge kc (operations kc))))
 
 (defn halt! [sys]
@@ -45,29 +45,29 @@
   realm)
 
 (defn user-representation-> [^UserRepresentation u]
-  {:user/user-id (.getId u)
-   :user/username (.getUsername u)
-   :user/email (.getEmail u)
+  {:user/user-id    (.getId u)
+   :user/username   (.getUsername u)
+   :user/email      (.getEmail u)
    :user/first-name (.getFirstName u)
-   :user/last-name (.getLastName u)
-   :user/enabled? (.isEnabled u)})
+   :user/last-name  (.getLastName u)
+   :user/enabled?   (.isEnabled u)})
 
 (defn list-users [kc]
   (->> (admin/list-users (client kc) (realm kc))
        (map user-representation->)))
 
 (defn match-members [members kc]
-  (let [users (list-users kc)
-        all (for [{:member/keys [email] :as m} members]
-              (if-let [matched-user (m/find-first #(= (str/lower-case email)  (str/lower-case (:user/email %))) users)]
-                (-> m
-                    (assoc :member/keycloak-id  (:user/user-id matched-user))
-                    (assoc :member/username  (:user/username matched-user)))
-                m))
+  (let [users     (list-users kc)
+        all       (for [{:member/keys [email] :as m} members]
+                    (if-let [matched-user (m/find-first #(= (str/lower-case email)  (str/lower-case (:user/email %))) users)]
+                      (-> m
+                          (assoc :member/keycloak-id  (:user/user-id matched-user))
+                          (assoc :member/username  (:user/username matched-user)))
+                      m))
 
-        matched (remove #(nil? (:member/keycloak-id %)) all)
+        matched   (remove #(nil? (:member/keycloak-id %)) all)
         unmatched (filter #(nil? (:member/keycloak-id %)) all)]
-    {:matched matched
+    {:matched   matched
      :unmatched unmatched}))
 
 (defn match-txs [matches]
@@ -96,7 +96,7 @@
   "Return a string containing the URL to edit a user in the keycloak admin console."
   [env keycloak-id]
   (let [server-url (-> env :keycloak :auth-server-url)
-        realm (-> env :keycloak :realm)]
+        realm      (-> env :keycloak :realm)]
     (str server-url "/admin/master/console/#/" realm "/users/" keycloak-id "/setttings")))
 
 (defn get-user! [{:keys [client realm]} keycloak-id]
@@ -127,8 +127,8 @@
   (assert (not (str/blank? name)))
   (assert (not (str/blank? keycloak-id)))
   (update-user kc keycloak-id
-               {:username username
-                :email email
+               {:username   username
+                :email      email
                 :first-name name}))
 
 (defn lock-account! [kc {:member/keys [keycloak-id]}]
@@ -154,8 +154,8 @@
 (defn user-representation->keycloak-user
   "Normalizes a Keycloak user while preserving all custom attributes."
   [^UserRepresentation user]
-  (cond-> {:id (.getId user)
-           :enabled? (boolean (.isEnabled user))
+  (cond-> {:id         (.getId user)
+           :enabled?   (boolean (.isEnabled user))
            :attributes (normalize-attributes (.getAttributes user))}
     (.getUsername user) (assoc :username (.getUsername user))
     (.getEmail user) (assoc :email (.getEmail user))))
@@ -184,7 +184,7 @@
 
 (defn- find-keycloak-users-in-resource
   [^UsersResource users-resource attributes]
-  (let [query (attribute-query attributes)
+  (let [query      (attribute-query attributes)
         fetch-page (if (seq query)
                      (fn [first-result]
                        (.searchByAttributes users-resource
@@ -198,10 +198,10 @@
                               (int first-result)
                               (int user-search-page-size))))]
     (loop [first-result 0
-           matches []]
+           matches      []]
       (let [candidates (vec (fetch-page first-result))
-            matches (into matches
-                          (exact-user-matches candidates attributes))]
+            matches    (into matches
+                             (exact-user-matches candidates attributes))]
         (if (= user-search-page-size (count candidates))
           (recur (long (+ first-result user-search-page-size)) matches)
           matches)))))
@@ -230,7 +230,7 @@
   (->> (admin/list-groups client realm group-name)
        (keep (fn [^GroupRepresentation group]
                (when (= group-name (.getName group))
-                 {:id (.getId group)
+                 {:id   (.getId group)
                   :name (.getName group)})))
        vec))
 
@@ -246,8 +246,8 @@
 
 (defn- response-location-id [^Response response]
   (let [location (some-> response .getLocation str)
-        user-id (when location
-                  (subs location (inc (str/last-index-of location "/"))))]
+        user-id  (when location
+                   (subs location (inc (str/last-index-of location "/"))))]
     (when (str/blank? user-id)
       (throw (ex-info "Keycloak create response did not include a user ID"
                       {:location location})))
@@ -277,8 +277,8 @@
      (let [^UsersResource users-resource (-> ^Keycloak client
                                              (.realm realm)
                                              (.users))
-           ^Response response (.create users-resource
-                                       (user-spec->representation user-spec))]
+           ^Response response            (.create users-resource
+                                                  (user-spec->representation user-spec))]
        (when-not response
          (throw (ex-info "Keycloak create returned no response" {})))
        (try
@@ -327,7 +327,7 @@
        (let [^UsersResource users-resource (-> ^Keycloak client
                                                (.realm realm)
                                                (.users))
-             ^Response response (.delete users-resource user-id)]
+             ^Response response            (.delete users-resource user-id)]
          (when-not response
            (throw (ex-info "Keycloak delete returned no response" {})))
          (try
@@ -395,11 +395,11 @@
   (get-user! kc "bcaa73f1-e080-420f-ac15-27882dbcb330")
   (get-user! kc "db15536d-9708-42fb-a1e5-61ddf6d7c190")
   (update-user-meta! kc
-                     {:member/username "testusertest"
-                      :member/keycloak-id  "bcaa73f1-e080-420f-ac15-27882dbcb330"
-                      :member/email "testuser+test@example.com"
-                      :member/active? true
-                      :member/name "Testuser Testing"})
+                     {:member/username    "testusertest"
+                      :member/keycloak-id "bcaa73f1-e080-420f-ac15-27882dbcb330"
+                      :member/email       "testuser+test@example.com"
+                      :member/active?     true
+                      :member/name        "Testuser Testing"})
 
   (user-account-enabled? kc "e0acd2e3-1362-4854-b4fe-46813adced84")
 

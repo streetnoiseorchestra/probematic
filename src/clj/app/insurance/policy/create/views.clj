@@ -60,7 +60,7 @@
                                                    :data-attr:disabled "!!$loading && $loading !== 'insurance-policy-create'"
                                                    :data-attr:loading  "$loading === 'insurance-policy-create'"}
                                     [:i18n/tr :action/create]]]
-                                  :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                  :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class        "wa-stack wa-gap-xl"
              :data-signals (d*/->signals {actions/form-key (dissoc form-state :_error)})}
        [page-header/PageHeader

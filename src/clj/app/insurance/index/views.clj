@@ -19,8 +19,8 @@
 
 (def policy-status-data
   {:insurance.policy.status/active {:icon "circle-check-outline" :class "insurance-policy-status-icon--active"}
-   :insurance.policy.status/sent   {:icon "envelope"             :class "insurance-policy-status-icon--sent"}
-   :insurance.policy.status/draft  {:icon "circle-dot-outline"   :class "insurance-policy-status-icon--draft"}})
+   :insurance.policy.status/sent   {:icon "envelope" :class "insurance-policy-status-icon--sent"}
+   :insurance.policy.status/draft  {:icon "circle-dot-outline" :class "insurance-policy-status-icon--draft"}})
 
 (defn- policy-status-icon [status]
   (let [{:keys [icon class]} (policy-status-data status)]
@@ -164,13 +164,13 @@
      (faq-p [:i18n/tr :insurance/faq-coverage-types-summary])]))
 
 (defn- faq-items [{:keys [db system] :as req} active-policy]
-  (let [member            (auth/get-current-member req)
-        form-link         (some-> active-policy :insurance.policy/policy-id urls/link-coverage-create)
-        coverages         (queries/member-coverages db member active-policy)
-        coverages-link    (when (seq coverages) (urls/link-policy-table-member active-policy member))
+  (let [member         (auth/get-current-member req)
+        form-link      (some-> active-policy :insurance.policy/policy-id urls/link-coverage-create)
+        coverages      (queries/member-coverages db member active-policy)
+        coverages-link (when (seq coverages) (urls/link-policy-table-member active-policy member))
         {:keys [policy-terms-link damages-form-link policy-number band-email company-email broker-email]}
         (config/external-insurance-policy (:env system))
-        team-members      (queries/insurance-team-members db)]
+        team-members   (queries/insurance-team-members db)]
     [{:id             "faq7"
       :question       "Was tun beim Schadensfall?"
       :question-class "insurance-faq-question--red"
@@ -295,7 +295,7 @@
                                                                         ::ico/name    :circle-plus-solid
                                                                         :slot         "start"}]
                                                              [:i18n/tr :insurance/new-policy]]]
-                                                           :aria-label [:i18n/tr :insurance/toolbar-label]}]}
+                                                           :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       [:div {:class "insurance-index-page wa-stack wa-gap-xl"}
        [page-header/PageHeader {:title [:i18n/tr :insurance/title]}]
        (insurance-faq req active-policy)

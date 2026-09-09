@@ -4,15 +4,15 @@
    [clojure.test :refer [deftest is testing]]))
 
 (deftest remote-path-test
-  (is (= {nil                "/"
-          ""                 "/"
-          "/"                "/"
-          "foo/bar"          "/foo/bar"
-          "/foo/../bar/"     "/bar"
-          "/foo//bar"        "/foo//bar"
-          "/foo/./bar"       "/foo/bar"
-          "/../foo"          "foo"
-          "/foo/../../bar"   "bar"}
+  (is (= {nil              "/"
+          ""               "/"
+          "/"              "/"
+          "foo/bar"        "/foo/bar"
+          "/foo/../bar/"   "/bar"
+          "/foo//bar"      "/foo//bar"
+          "/foo/./bar"     "/foo/bar"
+          "/../foo"        "foo"
+          "/foo/../../bar" "bar"}
          (into {}
                (map (fn [path] [path (actions/remote-path path)]))
                [nil "" "/" "foo/bar" "/foo/../bar/" "/foo//bar" "/foo/./bar"
@@ -30,10 +30,10 @@
   (testing "opens a picker with normalized root and current directories"
     (is (= [[:app.datastar/assoc-state
              [:file-browser :song-sheet-music]
-             {:open?      true
-              :root-dir   "/Noten - Scores"
+             {:open?       true
+              :root-dir    "/Noten - Scores"
               :current-dir "/Noten - Scores/aktuelle Stücke"
-              :target     {:song-id "song-1" :section-name "Trumpets"}}]]
+              :target      {:song-id "song-1" :section-name "Trumpets"}}]]
            (actions/open-picker-action
             {}
             {:file-browser {:picker-id   "song-sheet-music"
@@ -44,10 +44,10 @@
   (testing "falls back to the root when current dir escapes the root"
     (is (= [[:app.datastar/assoc-state
              [:file-browser :song-sheet-music]
-             {:open?      true
-              :root-dir   "/Noten - Scores"
+             {:open?       true
+              :root-dir    "/Noten - Scores"
               :current-dir "/Noten - Scores"
-              :target     nil}]]
+              :target      nil}]]
            (actions/open-picker-action
             {}
             {:file-browser {:picker-id   "song-sheet-music"
@@ -78,7 +78,7 @@
           [:app.datastar/respond-sse
            [[:app.datastar.sse/merge-signals
              {:file-browser {:selected-path nil
-                             :target-dir nil}}]]]]
+                             :target-dir    nil}}]]]]
          (actions/close-picker-action
           {}
           {:file-browser {:picker-id "song-sheet-music"}}))))

@@ -31,15 +31,15 @@
 (defn payload-for-attendance [env gig-id member-id attendance-plan]
   (secret-box/encrypt
    {:member/member-id member-id
-    :gig/gig-id gig-id
-    :attendance/plan attendance-plan}
+    :gig/gig-id       gig-id
+    :attendance/plan  attendance-plan}
    (config/app-secret-key env)))
 
 (defn payload-for-reminder [env gig-id member-id]
   (secret-box/encrypt
    {:member/member-id member-id
-    :gig/gig-id gig-id
-    :reminder true}
+    :gig/gig-id       gig-id
+    :reminder         true}
    (config/app-secret-key env)))
 
 (defn- gig-attendance-link [env gig-id member-id attendance-plan]
@@ -90,44 +90,44 @@
 {% endfor %}
 {% if not more-details|empty? %}{{more-details-label}}:
 {{more-details}}{% endif %}"
-   {:title title
-    :more-details more-details
+   {:title              title
+    :more-details       more-details
     :more-details-label (tr [:gigs/more-details])
-    :gig-details (util/remove-nils [;
-                                    {:name (tr [:gigs/type-label]) :value (tr [(gig.domain/gig-type-label-key gig-type)])}
-                                    {:name (tr [:gigs/status-label]) :value (tr [(gig.domain/gig-status-label-key status)])}
-                                    {:name (tr [:gigs/date]) :value  (format-date date)}
-                                    (when end-date
-                                      {:name (tr [:gigs/end-date]) :value (format-date end-date)})
-                                    (when call-time
-                                      {:name (tr [:gigs/call-time]) :value (format-time call-time)})
-                                    (when set-time
-                                      {:name (tr [:gigs/set-time]) :value (format-time set-time)})
-                                    (when end-time
-                                      {:name (tr [:gigs/end-time]) :value (format-time end-time)})
-                                    (when location
-                                      {:name (tr [:gigs/location]) :value location})
-                                    (when-not (str/blank? pay-deal)
-                                      {:name (tr [:gigs/pay-deal]) :value pay-deal})
+    :gig-details        (util/remove-nils [;
+                                           {:name (tr [:gigs/type-label]) :value (tr [(gig.domain/gig-type-label-key gig-type)])}
+                                           {:name (tr [:gigs/status-label]) :value (tr [(gig.domain/gig-status-label-key status)])}
+                                           {:name (tr [:gigs/date]) :value (format-date date)}
+                                           (when end-date
+                                             {:name (tr [:gigs/end-date]) :value (format-date end-date)})
+                                           (when call-time
+                                             {:name (tr [:gigs/call-time]) :value (format-time call-time)})
+                                           (when set-time
+                                             {:name (tr [:gigs/set-time]) :value (format-time set-time)})
+                                           (when end-time
+                                             {:name (tr [:gigs/end-time]) :value (format-time end-time)})
+                                           (when location
+                                             {:name (tr [:gigs/location]) :value location})
+                                           (when-not (str/blank? pay-deal)
+                                             {:name (tr [:gigs/pay-deal]) :value pay-deal})
                                     ;;
                                     ])}))
 (defn gig-created-email-html
   [{:keys [tr env] :as sys} gig member reminder?]
-  (let [gig-id (:gig/gig-id gig)
-        member-id (:member/member-id member)
-        can-make-it-link (gig-attendance-link env
-                                              gig-id
-                                              member-id
-                                              :plan/definitely)
+  (let [gig-id              (:gig/gig-id gig)
+        member-id           (:member/member-id member)
+        can-make-it-link    (gig-attendance-link env
+                                                 gig-id
+                                                 member-id
+                                                 :plan/definitely)
         cannot-make-it-link (gig-attendance-link env
                                                  gig-id
                                                  member-id
                                                  :plan/definitely-not)
-        reminder-link (gig-attendance-link env
-                                           gig-id
-                                           member-id
-                                           :reminder)
-        gig-link (url/absolute-link-gig env (:gig/gig-id gig))]
+        reminder-link       (gig-attendance-link env
+                                                 gig-id
+                                                 member-id
+                                                 :reminder)
+        gig-link            (url/absolute-link-gig env (:gig/gig-id gig))]
     (str (html
           [:div
            [:p
@@ -152,21 +152,21 @@
 (defn gig-created-email-plain
   [{:keys [tr env] :as sys} gig member reminder?]
   (selmer.util/without-escaping
-   (let [gig-id (:gig/gig-id gig)
-         member-id (:member/member-id member)
-         can-make-it-link (gig-attendance-link env
-                                               gig-id
-                                               member-id
-                                               :plan/definitely)
+   (let [gig-id              (:gig/gig-id gig)
+         member-id           (:member/member-id member)
+         can-make-it-link    (gig-attendance-link env
+                                                  gig-id
+                                                  member-id
+                                                  :plan/definitely)
          cannot-make-it-link (gig-attendance-link env
                                                   gig-id
                                                   member-id
                                                   :plan/definitely-not)
-         reminder-link (gig-attendance-link env
-                                            gig-id
-                                            member-id
-                                            :reminder)
-         gig-link (url/absolute-link-gig env (:gig/gig-id gig))]
+         reminder-link       (gig-attendance-link env
+                                                  gig-id
+                                                  member-id
+                                                  :reminder)
+         gig-link            (url/absolute-link-gig env (:gig/gig-id gig))]
      (selmer/render
       "{{greeting}}
 
@@ -186,26 +186,26 @@
 
 {{sign-off}}
 "
-      {:greeting (tr [:email/greeting])
-       :intro (tr [(case (:gig/gig-type gig)
-                     :gig.type/probe (if reminder? :email/remind-probe :email/new-probe-added)
-                     :gig.type/extra-probe (if reminder? :email/remind-extra-probe :email/new-extra-probe-added)
-                     :gig.type/meeting (if reminder? :email/remind-meeting  :email/new-meeting-added)
-                     :gig.type/gig (if reminder? :email/remind-gig :email/new-gig-added))])
-       :gig-info (template-snippet-gig-details-plain sys gig)
-       :can-you-make-it (tr [:email/can-you-make-it])
-       :can-make-it (tr [:email/can-make-it])
-       :can-make-it-link can-make-it-link
+      {:greeting            (tr [:email/greeting])
+       :intro               (tr [(case (:gig/gig-type gig)
+                                   :gig.type/probe (if reminder? :email/remind-probe :email/new-probe-added)
+                                   :gig.type/extra-probe (if reminder? :email/remind-extra-probe :email/new-extra-probe-added)
+                                   :gig.type/meeting (if reminder? :email/remind-meeting  :email/new-meeting-added)
+                                   :gig.type/gig (if reminder? :email/remind-gig :email/new-gig-added))])
+       :gig-info            (template-snippet-gig-details-plain sys gig)
+       :can-you-make-it     (tr [:email/can-you-make-it])
+       :can-make-it         (tr [:email/can-make-it])
+       :can-make-it-link    can-make-it-link
 
-       :cannot-make-it (tr [:email/cannot-make-it])
+       :cannot-make-it      (tr [:email/cannot-make-it])
        :cannot-make-it-link cannot-make-it-link
 
-       :want-reminder (tr [:email/want-reminder])
-       :want-reminder-link reminder-link
+       :want-reminder       (tr [:email/want-reminder])
+       :want-reminder-link  reminder-link
 
-       :gig-info-page (tr [:email/gig-info-page])
-       :gig-info-page-link gig-link
-       :sign-off (tr [:email/sign-off])
+       :gig-info-page       (tr [:email/gig-info-page])
+       :gig-info-page-link  gig-link
+       :sign-off            (tr [:email/sign-off])
 
         ;;
        }
@@ -248,15 +248,15 @@
 
 {{sign-off}}
 "
-      {:greeting (tr [:email/greeting])
-       :intro (tr [:email/gig-edited])
+      {:greeting            (tr [:email/greeting])
+       :intro               (tr [:email/gig-edited])
        :gig-edit-type-label (tr [:email/gig-edit-type])
        :gig-edit-type-attrs (str/join ", " (map #(edited-gig-attribute-label tr %) edited-attrs))
-       :gig-info (template-snippet-gig-details-plain sys gig)
-       :need-to-change (tr [:email/change-availability])
-       :gig-info-page (tr [:email/gig-info-page])
-       :gig-info-page-link gig-link
-       :sign-off (tr [:email/sign-off])
+       :gig-info            (template-snippet-gig-details-plain sys gig)
+       :need-to-change      (tr [:email/change-availability])
+       :gig-info-page       (tr [:email/gig-info-page])
+       :gig-info-page-link  gig-link
+       :sign-off            (tr [:email/sign-off])
 
        ;;
        }
@@ -288,11 +288,11 @@
 
 {{sign-off}}
 "
-      {:greeting (tr [:email/greeting])
-       :intro (tr [:email/invite-new-user-intro])
-       :intro2 (tr [:email/invite-new-user-intro2])
+      {:greeting    (tr [:email/greeting])
+       :intro       (tr [:email/invite-new-user-intro])
+       :intro2      (tr [:email/invite-new-user-intro2])
        :invite-link invite-link
-       :sign-off (tr [:email/sign-off])}))))
+       :sign-off    (tr [:email/sign-off])}))))
 
 (defn summarize-instrument-str [{:instrument/keys [name make model serial-number build-year]}]
   (str name
@@ -303,20 +303,20 @@
 
 (defn build-insurance-debt-args [{:keys [env]} {:member/keys [name member-id]} private-coverages sender-name time-range amount-cents]
   (let [{:keys [iban bic account-name]} (config/band-bank-info env)]
-    {:member-name name
-     :sender-name sender-name
-     :time-range time-range
-     :amount (if (string? amount-cents) amount-cents (money-cents-format amount-cents :EUR))
+    {:member-name         name
+     :sender-name         sender-name
+     :time-range          time-range
+     :amount              (if (string? amount-cents) amount-cents (money-cents-format amount-cents :EUR))
      :private-instruments (map (fn [{:instrument.coverage/keys [cost instrument description value]}]
                                  {:instrument-summary (summarize-instrument-str  instrument)
-                                  :value (ui2/money-format value :EUR)
-                                  :cost (ui2/money-format cost :EUR)
-                                  :description description})
+                                  :value              (ui2/money-format value :EUR)
+                                  :cost               (ui2/money-format cost :EUR)
+                                  :description        description})
                                private-coverages)
-     :account-name account-name
-     :iban iban
-     :bic bic
-     :insurance-link (url/absolute-link-member-ledger env member-id)}))
+     :account-name        account-name
+     :iban                iban
+     :bic                 bic
+     :insurance-link      (url/absolute-link-member-ledger env member-id)}))
 
 (defn insurance-debt-hiccup [{:keys [tr]} {:keys [member-name private-instruments time-range amount account-name iban bic insurance-link sender-name]}]
   [:div
@@ -391,26 +391,26 @@
 {{sender-name}}
 Versicherungsteam StreetNoise Orchestra
 "
-    {:greeting (tr [:email/greeting-personal] {:member-name member-name})
-     :p1 (str (tr [:insurance/payment-email-intro]) " " time-range)
-     :p2 (tr [:insurance/payment-email-member-costs]
-             {:member-name member-name})
-     :amount (str (tr [:total]) ": " amount)
-     :instruments (str/join "\n"
-                            (map (fn [{:keys [value instrument-summary cost]}]
-                                   (str "- " instrument-summary " (" (tr [:insurance/value]) ": " value ")"  " - " cost))
-                                 private-instruments))
-     :please-pay (tr [:ledger/please-pay-to-band] {:amount amount})
-     :bank-data (tr [:insurance/payment-email-bank-data])
-     :account-name account-name
-     :iban iban
-     :bic bic
+    {:greeting       (tr [:email/greeting-personal] {:member-name member-name})
+     :p1             (str (tr [:insurance/payment-email-intro]) " " time-range)
+     :p2             (tr [:insurance/payment-email-member-costs]
+                         {:member-name member-name})
+     :amount         (str (tr [:total]) ": " amount)
+     :instruments    (str/join "\n"
+                               (map (fn [{:keys [value instrument-summary cost]}]
+                                      (str "- " instrument-summary " (" (tr [:insurance/value]) ": " value ")"  " - " cost))
+                                    private-instruments))
+     :please-pay     (tr [:ledger/please-pay-to-band] {:amount amount})
+     :bank-data      (tr [:insurance/payment-email-bank-data])
+     :account-name   account-name
+     :iban           iban
+     :bic            bic
      :insurance-link insurance-link
-     :p3 (tr [:insurance/payment-email-cost-details])
-     :p4 (tr [:insurance/payment-email-claim-guidance])
-     :p5 (tr [:insurance/payment-email-contact])
-     :sender-name sender-name
-     :sign-off (tr [:email/sign-off-personal])})))
+     :p3             (tr [:insurance/payment-email-cost-details])
+     :p4             (tr [:insurance/payment-email-claim-guidance])
+     :p5             (tr [:insurance/payment-email-contact])
+     :sender-name    sender-name
+     :sign-off       (tr [:email/sign-off-personal])})))
 
 (defn generic-email-plain
   ([sys body-text cta-text cta-url]
@@ -428,11 +428,11 @@ Versicherungsteam StreetNoise Orchestra
 
 {{sign-off}}
 "
-     {:greeting (or greeting (tr [:email/greeting]))
+     {:greeting  (or greeting (tr [:email/greeting]))
       :body-text body-text
-      :cta-text cta-text
-      :cta-url cta-url
-      :sign-off (or sign-off (tr [:email/sign-off]))}))))
+      :cta-text  cta-text
+      :cta-url   cta-url
+      :sign-off  (or sign-off (tr [:email/sign-off]))}))))
 
 (defn generic-email-html
   ([sys body-hiccup cta-text cta-url]
@@ -453,9 +453,9 @@ Versicherungsteam StreetNoise Orchestra
            (or sign-off (tr [:email/sign-off]))]]))))
 
 (defn poll-created-email-plain-body [tr poll]
-  (let [title (:poll/title poll)
+  (let [title       (:poll/title poll)
         description (:poll/description poll)
-        closes-at (:poll/closes-at poll)]
+        closes-at   (:poll/closes-at poll)]
     (selmer/render
      "
 ### {{title}}
@@ -468,22 +468,22 @@ Versicherungsteam StreetNoise Orchestra
 {% for option in options %}* {{ option }}
 {% endfor %}"
 
-     {:title title
-      :options-label (tr [:polls/options])
-      :description description
-      :options (map :poll.option/value (:poll/options poll))
+     {:title           title
+      :options-label   (tr [:polls/options])
+      :description     description
+      :options         (map :poll.option/value (:poll/options poll))
       :closes-at-label (tr [:polls/closes-at-label])
-      :closes-at (format-date-time closes-at)})))
+      :closes-at       (format-date-time closes-at)})))
 
 (defn poll-created-email-html-body [tr poll]
   (markdown/render (poll-created-email-plain-body tr poll)))
 
 (defn insurance-survey-created-email-plain-body [tr {:keys [closes-at member-most-instruments member-most-instrument-count]}]
-  (let [closes-at-str (format-date-time closes-at)
+  (let [closes-at-str        (format-date-time closes-at)
         closes-at-str-bolded (str "**" closes-at-str "**")
-        closes-at-days (-> (t/instant)
-                           (t/between  closes-at)
-                           (t/days))]
+        closes-at-days       (-> (t/instant)
+                                 (t/between  closes-at)
+                                 (t/days))]
 
     (selmer/render
      "
@@ -497,7 +497,7 @@ Versicherungsteam StreetNoise Orchestra
 "
 
      {:title (tr [:insurance/survey-email-title])
-      :p1 (tr [:insurance/survey-email-intro])
+      :p1    (tr [:insurance/survey-email-intro])
       :p2
       (if (and member-most-instruments (> member-most-instrument-count 10))
         (tr [:insurance/survey-email-add-instruments-many]
@@ -505,9 +505,9 @@ Versicherungsteam StreetNoise Orchestra
                               (:member/name member-most-instruments))
              :count       member-most-instrument-count})
         (tr [:insurance/survey-email-add-instruments]))
-      :p3 (tr [:insurance/survey-email-deadline]
-              {:closes-at closes-at-str-bolded
-               :days      closes-at-days})})))
+      :p3    (tr [:insurance/survey-email-deadline]
+                 {:closes-at closes-at-str-bolded
+                  :days      closes-at-days})})))
 
 (defn insurance-survey-created-email-html-body [tr closes-at]
   (markdown/render (insurance-survey-created-email-plain-body tr closes-at)))
