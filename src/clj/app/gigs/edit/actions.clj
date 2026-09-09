@@ -1,9 +1,12 @@
 (ns app.gigs.edit.actions
   (:require
    [app.auth :as auth]
+   [app.config :as config]
+   [app.email.mailers :as mailers]
    [app.discourse :as discourse]
    [app.form :as form]
    [app.gigs.domain :as domain]
+   [app.jobs.play-stats :as play-stats]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.urls :as urls]
@@ -193,17 +196,23 @@
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]
-      (let [gig-tx-data (update-gig-tx-data params)]
+      (let [gig-tx-data (update-gig-tx-data params)
+            member-ids  (when (and (:durable-jobs? state) notify? (config/prod-mode? (:env state)))
+                          (q/active-member-ids db))]
         (tap> [:gig-tx-data gig-tx-data])
         [[:db/transact
           gig-tx-data
-          {:transact-w-nils? true
-           :on-success       [[:app.gigs/trigger-gig-details-edited gig-id notify? takeover-topic?]]}]
+          (cond-> {:transact-w-nils? true
+                   :on-success       [[:app.gigs/trigger-gig-details-edited gig-id
+                                       (and notify? (not (:durable-jobs? state))) takeover-topic?]]}
+            (seq member-ids)
+            (assoc :jobs [(mailers/job state ::mailers/gig-committed-update
+                                       {:gig-id gig-id :member-ids member-ids})]))]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]))))
 
 (defn create-gig-action
-  [{:keys [tr]} signals]
+  [{:keys [db tr] :as state} signals]
   (let [params  (normalize-form (form-params signals))
         errors  (with-generic-top-error tr (validation-errors {:tr tr} params))
         notify? (form/normalize-bool (:notify? params))
@@ -211,11 +220,16 @@
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]
-      (let [gig-id (sq/generate-squuid)
-            params (assoc params :gig-id (str gig-id))]
+      (let [gig-id     (sq/generate-squuid)
+            params     (assoc params :gig-id (str gig-id))
+            member-ids (when (and (:durable-jobs? state) notify? (config/prod-mode? (:env state)))
+                         (q/active-member-ids db))]
         [[:db/transact
           (create-gig-tx-data params)
-          {:on-success [[:app.gigs/trigger-gig-created gig-id notify? thread?]]}]
+          (cond-> {:on-success [[:app.gigs/trigger-gig-created gig-id
+                                 (and notify? (not (:durable-jobs? state))) thread?]]}
+            (seq member-ids)
+            (assoc :jobs [(mailers/job state ::mailers/gig-created {:gig-id gig-id :member-ids member-ids})]))]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]))))
 
@@ -256,7 +270,10 @@
       (let [{:keys [tx-data recalc-play-stats?]} (delete-gig-tx-data db gig-id)]
         [[:db/transact
           tx-data
-          {:on-success [[:app.gigs/trigger-gig-deleted gig-id recalc-play-stats?]]}]
+          (if (:durable-jobs? state)
+            {:jobs       (if recalc-play-stats? [play-stats/job] [])
+             :on-success [[:app.gigs/trigger-gig-deleted gig-id false]]}
+            {:on-success [[:app.gigs/trigger-gig-deleted gig-id recalc-play-stats?]]})]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-gigs-home)]]]]))))
 

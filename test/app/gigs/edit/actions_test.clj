@@ -2,11 +2,14 @@
   (:require
    [app.gigs.domain :as domain]
    [app.gigs.edit.actions :as actions]
+   [app.email.mailers :as mailers]
    [app.test-common :as tc]
    [app.urls :as urls]
-   [clojure.test :refer [deftest is testing]]
+   [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]
    [tick.core :as t]))
+
+(use-fixtures :each tc/with-released-test-connections)
 
 (defn tr [[k] & [args]]
   (case k
@@ -54,6 +57,25 @@
   {:tr                 tr
    :db                 (d/db conn)
    :current-user-roles #{:admin}})
+
+(deftest durable-gig-edit-records-explicit-notification-choice
+  (let [{:keys [conn member-id]} (tc/new-system "gig-notification-intent")
+        gig-id                   (random-uuid)]
+    (seed-gig! conn gig-id (t/date "2026-05-01"))
+    @(d/transact conn [{:member/member-id member-id   :member/active? true
+                        :member/name      "Recipient" :member/email   "recipient@example.test"}])
+    (let [state (assoc (action-state conn) :durable-jobs? true :current-locale :de
+                       :env {:ig/system {:app.ig/profile :prod}})
+          opts  (get-in (actions/update-gig-action state (valid-signals gig-id)) [0 2])]
+      (is (= [(mailers/job state ::mailers/gig-committed-update
+                           {:gig-id gig-id :member-ids [member-id]})]
+             (:jobs opts)))
+      (is (= [[:app.gigs/trigger-gig-details-edited gig-id false false]] (:on-success opts)))
+      (is (nil? (get-in (actions/update-gig-action state (assoc (valid-signals gig-id) :notify? "false"))
+                        [0 2 :jobs])))
+      (is (nil? (get-in (actions/update-gig-action (assoc state :env {:ig/system {:app.ig/profile :dev}})
+                                                   (valid-signals gig-id))
+                        [0 2 :jobs]))))))
 
 (deftest update-gig-action-test
   (testing "returns a Datomic transaction effect and redirects to the gig detail page"
