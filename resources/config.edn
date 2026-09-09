@@ -147,6 +147,9 @@
 
                            :app.ig/i18n-langs         {}
                            :app.ig/lettermint         {:env #ig/ref :app.ig/env}
+                           :app.ig/play-stats-worker  {:frame-loop #ig/ref :app.ig/frame-loop
+                                                       :datomic    #ig/ref :app.ig/datomic-db
+                                                       :job-queue  #ig/ref :app.ig/job-queue}
                            :app.ig/identity-worker    {:frame-loop #ig/ref :app.ig/frame-loop
                                                        :datomic    #ig/ref :app.ig/datomic-db
                                                        :keycloak   #ig/ref :app.ig/keycloak

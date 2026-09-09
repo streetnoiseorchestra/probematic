@@ -19,6 +19,7 @@
             [app.game-loop.storage :as frame-storage]
             [app.jobs.log-dispatch :as log-dispatch]
             [app.jobs.identity :as identity-jobs]
+            [app.jobs.play-stats :as play-stats]
             [app.write-runner :as writer]
             [s-exp.drip :as drip]
             [app.nexus :as app-nexus]
@@ -159,6 +160,12 @@
 
 (defmethod ig/halt-key! ::identity-worker [_ worker]
   (when worker (identity-jobs/stop! worker)))
+
+(defmethod ig/init-key ::play-stats-worker [_ {:keys [frame-loop] :as system}]
+  (when (:durable-jobs? frame-loop) (play-stats/start! system)))
+
+(defmethod ig/halt-key! ::play-stats-worker [_ worker]
+  (when worker (play-stats/stop! worker)))
 
 (defmethod ig/halt-key! ::job-maintenance [_ maintenance]
   (when-not (drip/stop-maintenance-worker! maintenance)

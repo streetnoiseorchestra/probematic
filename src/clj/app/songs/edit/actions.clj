@@ -2,6 +2,7 @@
   (:require
    [app.discourse :as discourse]
    [app.form :as form]
+   [app.jobs.play-stats :as play-stats]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.urls :as urls]
@@ -127,7 +128,7 @@
                                       [[:db/retractEntity song-ref]]))}))
 
 (defn delete-song-action
-  [{:keys [db tr]} signals]
+  [{:keys [db tr durable-jobs?]} signals]
   (let [params  (form-params signals)
         song-id (util/ensure-uuid! (or (:song-id params) (:targetid params)))
         song    (q/retrieve-song db song-id)]
@@ -139,8 +140,10 @@
       (let [{:keys [tx-data recalc-play-stats?]} (delete-song-tx-data db song-id)]
         [[:db/transact
           tx-data
-          {:on-success (when recalc-play-stats?
-                         [[:app.songs/recalc-play-stats]])}]
+          (if durable-jobs?
+            {:jobs (if recalc-play-stats? [play-stats/job] [])}
+            {:on-success (when recalc-play-stats?
+                           [[:app.songs/recalc-play-stats]])})]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-songs-home)]]]]))))
 
