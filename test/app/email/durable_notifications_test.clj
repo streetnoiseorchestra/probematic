@@ -5,6 +5,9 @@
    [app.i18n :as i18n]
    [app.insurance.policy.notifications.actions :as payments]
    [app.insurance.policy.notifications.actions-test :as payment-fixtures]
+   [app.insurance.policy.surveys.actions :as surveys]
+   [app.insurance.policy.surveys.actions-test :as survey-fixtures]
+   [app.insurance.test-support :as insurance-fixtures]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.nexus :as nexus]
    [app.test-common :as tc]
@@ -48,3 +51,29 @@
             (is (= source-t (:source-t invocation)))
             (is (= [original-email] (:email/tos message)))
             (is (= (:email-id invocation) (:email/email-id message)))))))))
+
+(deftest survey-reminder-retains-the-selected-recipient-snapshot
+  (queue-fixtures/with-queue
+    (fn [{:keys [client]}]
+      (let [{:keys [conn member-id policy-id coverage-id state]} (survey-fixtures/fixture)
+            {:keys [survey-id]}                                  (insurance-fixtures/seed-member-survey!
+                                                                  conn {:member-id member-id :policy-id policy-id :coverage-ids [coverage-id]})
+            member-ref                                           [:member/member-id member-id]
+            original-email                                       (:member/email (d/entity (d/db conn) member-ref))
+            effects                                              (surveys/send-reminders-action
+                                                                  (assoc state :db (d/db conn) :durable-jobs? true)
+                                                                  (assoc (survey-fixtures/survey-signals policy-id {}) :targetid (str survey-id)))]
+        (is (= [:db/transact] (mapv first effects)))
+        (is (= {:status :queued :count-queued 1}
+               (get-in effects [0 2 :on-success 1 2])))
+        (log-dispatch/initialize! conn client (d/basis-t (d/db conn)))
+        @(d/transact conn (nexus/batch-transactions (mapv rest effects)))
+        @(d/transact conn [[:db/add member-ref :member/email "later@example.test"]])
+        (log-dispatch/dispatch-pending! conn client 128)
+        (let [jobs       (drip/list-jobs client {})
+              invocation (:args (first jobs))
+              message    (mailers/prepare! (mail-system conn) invocation)]
+          (is (= 1 (count jobs)))
+          (is (= ::mailers/survey-reminder (:mailer invocation)))
+          (is (= [[original-email]] (mapv :to (:email/messages message))))
+          (is (= (:email-id invocation) (:email/email-id message))))))))

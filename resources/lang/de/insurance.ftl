@@ -137,6 +137,12 @@ survey-send-reminders = Erinnerungen senden
 survey-send-reminders-title = Erinnerungen zur Versicherungsumfrage senden?
 survey-send-reminders-body = Alle Mitglieder, die diese Umfrage noch nicht abgeschlossen haben, erhalten eine Erinnerung per E-Mail.
 survey-reminders-confirm = Erinnerungen senden
+# $count (Number) - Anzahl ausgewählter Empfänger; die Erinnerungen sind vorgemerkt, noch nicht zugestellt.
+survey-reminders-queued =
+    { $count ->
+        [one] Eine Erinnerung ist zum Versand vorgemerkt.
+       *[other] { $count } Erinnerungen sind zum Versand vorgemerkt.
+    }
 survey-reminders-sent =
     { $count ->
         [one] Eine Erinnerung wurde gesendet.

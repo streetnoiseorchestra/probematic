@@ -1,5 +1,6 @@
 (ns app.insurance.policy.surveys.actions
   (:require
+   [app.email.mailers :as mailers]
    [app.form :as form]
    [app.insurance.domain :as domain]
    [app.insurance.queries :as queries]
@@ -333,23 +334,30 @@
                                 responses))]
         (if (empty? incomplete)
           (result-effects {:status :empty})
-          [[:app.insurance/send-survey-notifications
-            {:email-data      {:closes-at
-                               (:insurance.survey/closes-at survey)
-                               :member-most-instruments
-                               (:insurance.survey.response/member most-items)
-                               :member-most-instrument-count
-                               (count (:insurance.survey.response/coverage-reports
-                                       most-items))}
-             :failure-message (tr [:insurance/survey-reminders-failed])
-             :members         (mapv :insurance.survey.response/member incomplete)
-             :policy          policy
-             :result-path     [form-key :result]
-             :sender-name     (:member/name
-                               (q/retrieve-member db current-member-id))
-             :success         {:status     :sent
-                               :count-sent (count incomplete)}}]
-           support/clear-loading])))))
+          (if (:durable-jobs? state)
+            [[:db/transact []
+              {:jobs       [(mailers/job state ::mailers/survey-reminder
+                                         {:survey-id  (:insurance.survey/survey-id survey)
+                                          :sender-id  current-member-id
+                                          :member-ids (mapv #(get-in % [:insurance.survey.response/member :member/member-id]) incomplete)})]
+               :on-success (result-effects {:status :queued :count-queued (count incomplete)})}]]
+            [[:app.insurance/send-survey-notifications
+              {:email-data      {:closes-at
+                                 (:insurance.survey/closes-at survey)
+                                 :member-most-instruments
+                                 (:insurance.survey.response/member most-items)
+                                 :member-most-instrument-count
+                                 (count (:insurance.survey.response/coverage-reports
+                                         most-items))}
+               :failure-message (tr [:insurance/survey-reminders-failed])
+               :members         (mapv :insurance.survey.response/member incomplete)
+               :policy          policy
+               :result-path     [form-key :result]
+               :sender-name     (:member/name
+                                 (q/retrieve-member db current-member-id))
+               :success         {:status     :sent
+                                 :count-sent (count incomplete)}}]
+             support/clear-loading]))))))
 
 (def actions
   {::close-survey     #'close-survey-action

@@ -137,6 +137,12 @@ survey-send-reminders = Send reminders
 survey-send-reminders-title = Send coverage survey reminders?
 survey-send-reminders-body = Every member who has not completed this survey will receive an email reminder.
 survey-reminders-confirm = Send reminders
+# $count (Number) - Number of selected recipients; reminders are queued, not yet delivered.
+survey-reminders-queued =
+    { $count ->
+        [one] One reminder is queued for delivery.
+       *[other] { $count } reminders are queued for delivery.
+    }
 survey-reminders-sent =
     { $count ->
         [one] One reminder was sent.
