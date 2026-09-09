@@ -160,6 +160,12 @@
                                                        :keycloak   #ig/ref :app.ig/keycloak
                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
                                                        :job-queue  #ig/ref :app.ig/job-queue}
+                           :app.ig/integrations-worker {:frame-loop #ig/ref :app.ig/frame-loop
+                                                        :datomic #ig/ref :app.ig/datomic-db
+                                                        :env #ig/ref :app.ig/env
+                                                        :calendar #ig/ref :app.ig/calendar
+                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                        :job-queue #ig/ref :app.ig/job-queue}
                            :app.ig/email-worker       {:env        #ig/ref :app.ig/env
                                                        :frame-loop #ig/ref :app.ig/frame-loop
                                                        :datomic    #ig/ref :app.ig/datomic-db
