@@ -77,12 +77,27 @@
 ** TODO create admin team
 ** TODO member profile -> show SNO UUID related things only to "admin" team
 ** TODO on gig detail page add a "travel mode" feature which switches view to those attending and shows their travel discount details
+* 2026 Dependency Audit
+** TODO buddy: remove
+** TODO luminus-transit/luminus-transit: is it necessary?
+** TODO metosin/muuntaja: remove
+** TODO  com.github.lookfirst/sardine: find smaller/simpler webdav library.. or drop webdav? what to do about nextcloud ..
+** TODO com.github.oliyh/martian and com.github.oliyh/martian-httpkit: remove martian, just use plain http client
+** TODO com.datomic/local: remove
+** TODO com.github.javafaker/javafaker: remove from prod deps, dev/test is ok. when we resurrect the demo generate the data as edn and slurp it in dont generate on the fly
+** TODO keycloak-clojure/keycloak-clojure: this is a fucking mess of a dependency with a huge transitive tree. surely we can roll our own simple http api calls?
+** TODO toyokumo/tarayo: replace with some email lib that doesnt need jakarata mail if possible
+** TODO org.babashka/sci: do we need it? its a malli peer dep but i dont think we need it
+** TODO com.brunobonacci/mulog: replace with telemere
+** TODO metosin/reitit: stop using omnibus package, dep on the specific things we need
 * 2026 UI Makeover
-** TODO Jump Menu: make current-page aware (with aria)
 ** TODO Recently visited: store recently visited pages in sqlite4clj
+** TODO Jump Menu: make current-page aware (with aria)
 * 2026 Prod Launch Checklist
 ** TODO ensure redis email queue is empty
 * 2026 post d* cool new features
+** TODO full game loop w/ batch renders
+** TODO cross-store bridge with datomic d/log and d/tx-range
 ** TODO View transitions to animated in gig attendance/gig details in dashboard and gig detail page
 ** TODO Ledger bookkeping view for finanz team members
 ** TODO User page presence avatars
