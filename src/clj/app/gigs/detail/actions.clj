@@ -1,5 +1,6 @@
 (ns app.gigs.detail.actions
   (:require
+   [app.email.mailers :as mailers]
    [app.form :as form]
    [app.gigs.domain :as domain]
    [app.nexus.actions :as support]
@@ -11,6 +12,7 @@
 (def comment-edit-path [:gig-detail :attendance :comment-edit])
 (def show-committed-path [:gig-detail :attendance :show-committed?])
 (def remind-all-sent-at-path [:gig-detail :attendance :remind-all-sent-at])
+(def remind-all-queued-at-path [:gig-detail :attendance :remind-all-queued-at])
 
 (defn- str->plan [plan]
   (when (seq (str plan))
@@ -143,11 +145,20 @@
                                                                         show-committed))]
     [[:app.datastar/assoc-state show-committed-path show-committed?]]))
 
-(defn send-reminder-to-all-action [{:keys [now]} signals]
+(defn send-reminder-to-all-action [{:keys [db now durable-jobs?] :as state} signals]
   (let [{:keys [gig-id]} (:gig-attendance signals)
         gig-id           (util/ensure-uuid! gig-id)]
-    [[:app.gigs/send-reminder-to-all gig-id]
-     [:app.datastar/assoc-state remind-all-sent-at-path now]]))
+    (if durable-jobs?
+      (let [member-ids (q/gig-reminder-member-ids db gig-id)]
+        (if (seq member-ids)
+          [[:db/transact []
+            {:jobs       [(mailers/job (assoc state :current-locale :de) ::mailers/gig-reminder
+                                       {:gig-id gig-id :member-ids member-ids})]
+             :on-success [[:app.datastar/assoc-state remind-all-queued-at-path now]
+                          support/clear-loading]}]]
+          [support/clear-loading]))
+      [[:app.gigs/send-reminder-to-all gig-id]
+       [:app.datastar/assoc-state remind-all-sent-at-path now]])))
 
 (def actions
   {::update-attendance-plan       #'update-attendance-plan-action

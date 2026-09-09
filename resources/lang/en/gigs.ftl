@@ -21,6 +21,8 @@ setlist = Setlist
 remind-all = Remind all
 # $time (String) - Localized date and time when the reminder was sent.
 reminded-all-at = Reminded at { $time }
+# $time (String) - Localized time when the reminder request was committed, not delivered.
+reminders-queued-at = Reminders queued at { $time }
 
 ### Gig details
 

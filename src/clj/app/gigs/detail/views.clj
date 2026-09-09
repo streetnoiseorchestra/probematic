@@ -154,8 +154,9 @@
          (t/>> (t/instant sent-at) (t/new-duration 24 :hours)))))
 
 (defn- remind-all-menu-item [{:keys [page-state] :as req}]
-  (let [sent-at   (get-in page-state actions/remind-all-sent-at-path)
-        recent?   (recent-reminder? sent-at)
+  (let [queued-at (get-in page-state actions/remind-all-queued-at-path)
+        at        (or queued-at (get-in page-state actions/remind-all-sent-at-path))
+        recent?   (recent-reminder? at)
         dialog-id "gig-detail-remind-all-dialog"]
     [:wa-dropdown-item {:data-dialog (str "open " dialog-id)}
      (when recent?
@@ -164,9 +165,10 @@
                   :slot         "icon"}])
      [:i18n/tr :gigs/remind-all]
      (when recent?
-       [:span {:slot "details"}
-        [:i18n/tr :gigs/reminded-all-at
-         {:time (ui2/format-date-time req :medium sent-at)}]])]))
+       [:span {:slot  "details"
+               :style {:display "inline-block" :white-space "normal" :max-inline-size "12em"}}
+        [:i18n/tr (if queued-at :gigs/reminders-queued-at :gigs/reminded-all-at)
+         {:time (ui2/format-date-time req :medium at)}]])]))
 
 (defn- toolbar-action [href label]
   [button/Button {:appearance "outlined"

@@ -21,6 +21,8 @@ setlist = Setliste
 remind-all = Alle erinnern
 # $time (String) - Lokalisierte Zeit, zu der die Erinnerung versendet wurde.
 reminded-all-at = Erinnert um { $time }
+# $time (String) - Lokalisierte Zeit der gespeicherten Versandanforderung, nicht der Zustellung.
+reminders-queued-at = Erinnerungen vorgemerkt: { $time }
 
 ### Gig-Details
 

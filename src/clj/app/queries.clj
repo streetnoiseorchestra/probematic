@@ -567,6 +567,13 @@
                                               :section/position))))
        (sort-by :section/position)))
 
+(defn gig-reminder-member-ids
+  "Returns IDs of active members who have not responded, in attendance-list order."
+  [db gig-id]
+  (->> (attendance-plans-by-section-for-gig db (attendance-for-gig-with-all-active-members db gig-id) :no-response?)
+       (mapcat :members)
+       (mapv #(get-in % [:attendance/member :member/member-id]))))
+
 (defn section-for-member [db member-id]
   (->
    (datomic/q '[:find ?section-name
