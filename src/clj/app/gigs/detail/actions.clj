@@ -3,6 +3,7 @@
    [app.email.mailers :as mailers]
    [app.form :as form]
    [app.gigs.domain :as domain]
+   [app.jobs.integrations :as integrations]
    [app.nexus.actions :as support]
    [app.queries :as q]
    [app.util :as util]
@@ -54,8 +55,8 @@
   [[:db/add (attendance-ref gig-id member-id) attr value]
    [:db/add (attendance-ref gig-id member-id) :attendance/updated :db/now]])
 
-(defn- transact-attendance-effect [gig-id tx-data]
-  [:db/transact tx-data {:on-success [[:app.gigs/trigger-gig-edited gig-id :attendance]]}])
+(defn- transact-attendance-effect [state gig-id tx-data]
+  [:db/transact tx-data (integrations/gig-update-options state gig-id :attendance)])
 
 (defn update-attendance-plan-action [{:keys [db] :as state} signals]
   (let [{:keys [plan] :as params}  (:gig-attendance signals)
@@ -66,7 +67,7 @@
       (let [tx-data (if (attendance db gig-id member-id)
                       (update-attendance-tx gig-id member-id :attendance/plan plan-kw)
                       [(create-attendance-tx db gig-id member-id {:attendance/plan plan-kw})])]
-        [(transact-attendance-effect gig-id tx-data)]))))
+        [(transact-attendance-effect state gig-id tx-data)]))))
 
 (defn update-attendance-motivation-action [{:keys [db] :as state} signals]
   (let [{:keys [motivation] :as params} (:gig-attendance signals)
@@ -77,7 +78,7 @@
       (let [tx-data (if (attendance db gig-id member-id)
                       (update-attendance-tx gig-id member-id :attendance/motivation motivation-kw)
                       [(create-attendance-tx db gig-id member-id {:attendance/motivation motivation-kw})])]
-        [(transact-attendance-effect gig-id tx-data)]))))
+        [(transact-attendance-effect state gig-id tx-data)]))))
 
 (defn open-attendance-comment-action [_state signals]
   (let [{:keys [comment] :as params} (:gig-attendance signals)
@@ -109,17 +110,17 @@
       :else
       [(create-attendance-tx db gig-id member-id {:attendance/comment comment})])))
 
-(defn update-attendance-comment-action [{:keys [db]} signals]
+(defn update-attendance-comment-action [{:keys [db] :as state} signals]
   (let [{:keys [comment] :as params} (:gig-attendance signals)
         {:keys [gig-id member-id]}   (ids params)
         tx-data                      (comment-tx-data db gig-id member-id comment)
         close-edit                   [:app.datastar/assoc-state comment-edit-path nil]]
     (if tx-data
-      [(transact-attendance-effect gig-id tx-data)
+      [(transact-attendance-effect state gig-id tx-data)
        close-edit]
       [support/clear-loading close-edit])))
 
-(defn switch-attendance-comment-action [{:keys [db]} signals]
+(defn switch-attendance-comment-action [{:keys [db] :as state} signals]
   (let [{:keys [comment comment-gig-id comment-member-id next-comment next-gig-id next-member-id]} (:gig-attendance signals)
         comment-gig-id                                                                             (util/ensure-uuid! comment-gig-id)
         comment-member-id                                                                          (util/ensure-uuid! comment-member-id)
@@ -135,7 +136,7 @@
                                                                                                     [[:app.datastar.sse/merge-signals
                                                                                                       {:gig-attendance {:switching-comment false}}]]]]
     (cond-> []
-      tx-data (conj (transact-attendance-effect comment-gig-id tx-data))
+      tx-data (conj (transact-attendance-effect state comment-gig-id tx-data))
       true    (conj open-next clear-switching))))
 
 (defn toggle-attendance-committed-action [_state signals]

@@ -1,5 +1,6 @@
 (ns app.gigs.log-plays.actions
   (:require
+   [app.jobs.integrations :as integrations]
    [app.jobs.play-stats :as play-stats]
    [app.queries :as queries]
    [app.util :as util]))
@@ -60,14 +61,12 @@
        (:played/play-id current-play) (assoc :played/play-id (:played/play-id current-play))
        (nil? (:played/play-id current-play)) (assoc :played/play-id :db/gen-uuid))]))
 
-(defn persist-play-effect [{:keys [db durable-jobs?]} gig-id song-id rating emphasis]
+(defn persist-play-effect [{:keys [db durable-jobs?] :as state} gig-id song-id rating emphasis]
   [:db/transact
    (play-tx-data db gig-id song-id rating emphasis)
-   (if durable-jobs?
-     {:jobs       [play-stats/job]
-      :on-success [[:app.gigs/trigger-gig-edited (util/ensure-uuid! gig-id) :plays]]}
-     {:on-success [[:app.gigs/recalc-play-stats]
-                   [:app.gigs/trigger-gig-edited (util/ensure-uuid! gig-id) :plays]]})])
+   (cond-> (integrations/gig-update-options state (util/ensure-uuid! gig-id) :plays)
+     durable-jobs? (update :jobs (fnil conj []) play-stats/job)
+     (not durable-jobs?) (update :on-success #(into [[:app.gigs/recalc-play-stats]] %)))])
 
 (defn update-rating-action [state {:keys [gig-log-plays]}]
   (let [{:keys [gig-id song-id rating emphasis]} gig-log-plays]

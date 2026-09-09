@@ -13,6 +13,13 @@
 (defn gig-job [gig-id options]
   ["sync-gig" (assoc options :gig-id gig-id) {:queue "integrations" :max-attempts 25}])
 
+(defn gig-update-options [state gig-id trigger]
+  (if (:durable-jobs? state)
+    (if (config/prod-mode? (:env state))
+      {:jobs [(gig-job gig-id {:operation :updated})]}
+      {})
+    {:on-success [[:app.gigs/trigger-gig-edited gig-id trigger]]}))
+
 (defn song-job [song-id]
   ["sync-song" {:song-id song-id} {:queue "integrations" :max-attempts 25}])
 

@@ -1,6 +1,7 @@
 (ns app.gigs.setlist.actions
   (:require
    [app.form :as form]
+   [app.jobs.integrations :as integrations]
    [app.queries :as q]
    [app.util :as util]))
 
@@ -66,12 +67,12 @@
             :setlist/version :setlist.version/v1}]
           (reconcile-setlist "setlist" song-tuples current))))
 
-(defn persist-setlist-effect [db gig-id songs]
+(defn persist-setlist-effect [{:keys [db] :as state} gig-id songs]
   [:db/transact
    (setlist-tx-data db gig-id songs)
-   {:on-success [[:app.gigs/trigger-gig-edited gig-id :setlist]]}])
+   (integrations/gig-update-options state gig-id :setlist)])
 
-(defn toggle-setlist-song-action [{:keys [db]} {:keys [gig-setlist]}]
+(defn toggle-setlist-song-action [{:keys [db] :as state} {:keys [gig-setlist]}]
   (let [{:keys [gig-id song-id selected]} gig-setlist
         gig-id                            (util/ensure-uuid! gig-id)
         song-id                           (str (util/ensure-uuid! song-id))
@@ -80,23 +81,23 @@
         selected-song?                    (some #(= song-id (:song-id %)) songs)]
     (cond
       (and selected? selected-song?)
-      [(persist-setlist-effect db gig-id songs)]
+      [(persist-setlist-effect state gig-id songs)]
 
       selected?
       (let [song (q/retrieve-song db (util/ensure-uuid! song-id))]
         (if song
-          [(persist-setlist-effect db gig-id (conj songs {:song-id  song-id
-                                                          :position (count songs)}))]
+          [(persist-setlist-effect state gig-id (conj songs {:song-id  song-id
+                                                             :position (count songs)}))]
           (error-effect "Song not found.")))
 
       :else
-      [(persist-setlist-effect db gig-id (remove #(= song-id (:song-id %)) songs))])))
+      [(persist-setlist-effect state gig-id (remove #(= song-id (:song-id %)) songs))])))
 
 (defn set-repertoire-filter-action [_state {:keys [gig-setlist]}]
   (let [{:keys [repertoire-filter]} gig-setlist]
     [[:app.datastar/assoc-state repertoire-filter-path (normalize-repertoire-filter repertoire-filter)]]))
 
-(defn reorder-setlist-songs-action [{:keys [db]} {:keys [gig-setlist]}]
+(defn reorder-setlist-songs-action [{:keys [db] :as state} {:keys [gig-setlist]}]
   (let [{:keys [gig-id order]} gig-setlist
         gig-id                 (util/ensure-uuid! gig-id)
         songs                  (db-songs db gig-id)
@@ -106,7 +107,7 @@
                                     (keep by-id))
         ordered-ids            (set (map :song-id ordered))
         missing                (remove #(ordered-ids (:song-id %)) songs)]
-    [(persist-setlist-effect db gig-id (concat ordered missing))]))
+    [(persist-setlist-effect state gig-id (concat ordered missing))]))
 
 (def actions
   {::set-repertoire-filter #'set-repertoire-filter-action

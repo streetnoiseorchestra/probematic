@@ -1,6 +1,7 @@
 (ns app.gigs.probeplan.actions
   (:require
    [app.form :as form]
+   [app.jobs.integrations :as integrations]
    [app.queries :as q]
    [app.util :as util]))
 
@@ -83,12 +84,12 @@
             :probeplan/version :probeplan.version/classic}]
           (reconcile-probeplan "probeplan" song-tuples current))))
 
-(defn persist-probeplan-effect [db gig-id songs]
+(defn persist-probeplan-effect [{:keys [db] :as state} gig-id songs]
   [:db/transact
    (probeplan-tx-data db gig-id songs)
-   {:on-success [[:app.gigs/trigger-gig-edited gig-id :probeplan]]}])
+   (integrations/gig-update-options state gig-id :probeplan)])
 
-(defn toggle-probeplan-song-action [{:keys [db]} {:keys [gig-probeplan]}]
+(defn toggle-probeplan-song-action [{:keys [db] :as state} {:keys [gig-probeplan]}]
   (let [{:keys [gig-id song-id selected]} gig-probeplan
         gig-id                            (util/ensure-uuid! gig-id)
         song-id                           (str (util/ensure-uuid! song-id))
@@ -97,20 +98,20 @@
         selected-song?                    (some #(= song-id (:song-id %)) songs)]
     (cond
       (and selected? selected-song?)
-      [(persist-probeplan-effect db gig-id songs)]
+      [(persist-probeplan-effect state gig-id songs)]
 
       selected?
       (let [song (q/retrieve-song db (util/ensure-uuid! song-id))]
         (if song
-          [(persist-probeplan-effect db gig-id (conj songs {:song-id  song-id
-                                                            :position (count songs)
-                                                            :emphasis "none"}))]
+          [(persist-probeplan-effect state gig-id (conj songs {:song-id  song-id
+                                                               :position (count songs)
+                                                               :emphasis "none"}))]
           (error-effect "Song not found.")))
 
       :else
-      [(persist-probeplan-effect db gig-id (remove #(= song-id (:song-id %)) songs))])))
+      [(persist-probeplan-effect state gig-id (remove #(= song-id (:song-id %)) songs))])))
 
-(defn toggle-probeplan-intensive-action [{:keys [db]} {:keys [gig-probeplan]}]
+(defn toggle-probeplan-intensive-action [{:keys [db] :as state} {:keys [gig-probeplan]}]
   (let [{:keys [gig-id song-id]} gig-probeplan
         gig-id                   (util/ensure-uuid! gig-id)
         song-id                  (str (util/ensure-uuid! song-id))
@@ -118,9 +119,9 @@
         target                   (some #(when (= song-id (:song-id %)) %) songs)
         intensive?               (= "intensive" (:emphasis target))]
     (if-not target
-      [(persist-probeplan-effect db gig-id songs)]
+      [(persist-probeplan-effect state gig-id songs)]
       [(persist-probeplan-effect
-        db
+        state
         gig-id
         (mapv (fn [song]
                 (if (= song-id (:song-id song))
@@ -132,7 +133,7 @@
   (let [{:keys [repertoire-filter]} gig-probeplan]
     [[:app.datastar/assoc-state repertoire-filter-path (normalize-repertoire-filter repertoire-filter)]]))
 
-(defn reorder-probeplan-songs-action [{:keys [db]} {:keys [gig-probeplan]}]
+(defn reorder-probeplan-songs-action [{:keys [db] :as state} {:keys [gig-probeplan]}]
   (let [{:keys [gig-id order]} gig-probeplan
         gig-id                 (util/ensure-uuid! gig-id)
         songs                  (db-songs db gig-id)
@@ -142,7 +143,7 @@
                                     (keep by-id))
         ordered-ids            (set (map :song-id ordered))
         missing                (remove #(ordered-ids (:song-id %)) songs)]
-    [(persist-probeplan-effect db gig-id (concat ordered missing))]))
+    [(persist-probeplan-effect state gig-id (concat ordered missing))]))
 
 (def actions
   {::set-repertoire-filter      #'set-repertoire-filter-action
