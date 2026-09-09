@@ -1,7 +1,9 @@
 (ns app.poll.detail.actions
   (:require
+   [app.email.mailers :as mailers]
    [app.nexus.actions :as support]
    [app.poll.queries :as queries]
+   [app.queries :as q]
    [app.urls :as urls]
    [app.util :as util]
    [clojure.string :as str]
@@ -24,9 +26,10 @@
   [support/clear-loading
    [:app.datastar/assoc-state path {:_error {:_top {:error message}}}]])
 
-(defn open-poll-action [{:keys [db tr]} signals]
+(defn open-poll-action [{:keys [db tr] :as state} signals]
   (let [poll-id (poll-id-from signals :poll-detail)
-        poll    (queries/retrieve-poll db poll-id)]
+        poll    (queries/retrieve-poll db poll-id)
+        tx-data [[:db/add (poll-ref poll-id) :poll/poll-status :poll.status/open]]]
     (cond
       (nil? poll)
       (invalid [:poll-detail] (tr [:polls/error-not-found]))
@@ -35,11 +38,16 @@
       (invalid [:poll-detail] (tr [:polls/open-hint]))
 
       :else
-      [[:db/transact
-        [[:db/add (poll-ref poll-id) :poll/poll-status :poll.status/open]]
-        {}]
-       [:app.poll/send-poll-opened poll-id]
-       support/clear-loading])))
+      (if (:durable-jobs? state)
+        (let [member-ids (q/active-member-ids db)]
+          [[:db/transact tx-data
+            {:jobs       (if (seq member-ids)
+                           [(mailers/job state ::mailers/poll-opened {:poll-id poll-id :member-ids member-ids})]
+                           [])
+             :on-success [support/clear-loading]}]])
+        [[:db/transact tx-data {}]
+         [:app.poll/send-poll-opened poll-id]
+         support/clear-loading]))))
 
 (defn close-poll-action [{:keys [now]} signals]
   (let [poll-id (poll-id-from signals :poll-detail)]

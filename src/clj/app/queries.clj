@@ -496,6 +496,9 @@
    (map first)
    (map #(update % :member/section :section/name))))
 
+(defn active-member-ids [db]
+  (->> (active-members db) (map :member/member-id) sort vec))
+
 (defn attendance-for-gig
   "Return the member's attendance for the gig"
   [db gig-id member-id]

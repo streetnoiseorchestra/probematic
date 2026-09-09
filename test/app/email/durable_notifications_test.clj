@@ -10,6 +10,8 @@
    [app.insurance.test-support :as insurance-fixtures]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.nexus :as nexus]
+   [app.poll.detail.actions :as polls]
+   [app.poll.test-support :as poll-fixtures]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is use-fixtures]]
    [datomic.api :as d]
@@ -76,4 +78,31 @@
           (is (= 1 (count jobs)))
           (is (= ::mailers/survey-reminder (:mailer invocation)))
           (is (= [[original-email]] (mapv :to (:email/messages message))))
+          (is (= (:email-id invocation) (:email/email-id message))))))))
+
+(deftest opening-a-poll-commits-the-notification-intent
+  (queue-fixtures/with-queue
+    (fn [{:keys [client]}]
+      (let [{:keys [conn member-id]} (tc/new-system "durable-poll-mail")
+            member-ref               [:member/member-id member-id]
+            _                        @(d/transact conn [{:member/member-id member-id :member/name  "Ada"
+                                                         :member/active?   true      :member/email "ada@example.test"}])
+            {:keys [poll-id]}        (poll-fixtures/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})
+            effects                  (polls/open-poll-action
+                                      (assoc (poll-fixtures/action-state conn member-id) :durable-jobs? true)
+                                      (poll-fixtures/poll-detail-signals poll-id))]
+        (is (= [:db/transact] (mapv first effects)))
+        (log-dispatch/initialize! conn client (d/basis-t (d/db conn)))
+        @(d/transact conn (nexus/batch-transactions (mapv rest effects)))
+        (is (= :poll.status/open
+               (:poll/poll-status (d/entity (d/db conn) (poll-fixtures/poll-ref poll-id)))))
+        @(d/transact conn [[:db/add member-ref :member/email "later@example.test"]
+                           [:db/add member-ref :member/active? false]])
+        (log-dispatch/dispatch-pending! conn client 128)
+        (let [jobs       (drip/list-jobs client {})
+              invocation (:args (first jobs))
+              message    (mailers/prepare! (mail-system conn) invocation)]
+          (is (= 1 (count jobs)))
+          (is (= ::mailers/poll-opened (:mailer invocation)))
+          (is (= [["ada@example.test"]] (mapv :to (:email/messages message))))
           (is (= (:email-id invocation) (:email/email-id message))))))))
