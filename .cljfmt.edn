@@ -1,0 +1,6 @@
+{:align-form-columns? true
+ :align-map-columns?  true
+ :extra-indents       {>defn         [[:inner 0]]
+                       assertions    [[:inner 0]]
+                       behavior      [[:inner 0]]
+                       specification [[:inner 0]]}}
