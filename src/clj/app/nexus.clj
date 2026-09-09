@@ -3,6 +3,8 @@
    [app.account.actions]
    [app.account.effects :as account.effects]
    [app.datastar :as datastar]
+   [app.errors :as errors]
+   [app.game-loop :as game]
    [app.file-browser.actions]
    [app.gigs.actions]
    [app.gigs.effects :as gigs.effects]
@@ -167,11 +169,16 @@
   (some-> dispatch-result result-responses single-response))
 
 (defn ^:nexus/batch db-transact-fx
-  [{:keys [dispatch]} {:keys [system]} transact-actions]
+  [{:keys [dispatch]} {:keys [system request]} transact-actions]
   (let [conn (-> system :datomic :conn)
         _    (assert conn "Nexus :db/transact requires a Datomic connection")]
     (try
-      (let [result          @(d/transact conn (batch-transactions transact-actions))
+      (let [tx-data         (cond-> (batch-transactions transact-actions)
+                              (::audit-action request)
+                              (conj {:db/id        "datomic.tx"
+                                     :audit/action (::audit-action request)
+                                     :audit/origin :app.origin/browser}))
+            result          @(d/transact conn tx-data)
             actions         (vec (on-success-actions transact-actions))
             dispatch-result (when (seq actions)
                               (dispatch actions {:tx-result result}))]
@@ -247,6 +254,54 @@
         (catch Exception error
           (on-error error)
           empty-response)))))
+
+(defn queue-actions!
+  "Admits an action request without evaluating Nexus or waiting for a commit."
+  [runtime request actions]
+  (if @(:stopped? runtime)
+    {:status 503 :headers {} :body ""}
+    (if-let [request (datastar/assoc-connection-token runtime request)]
+      (if ((::game/submit! runtime)
+           {:request (assoc (dissoc request :body) ::audit-action (ffirst actions))
+            :actions actions})
+        {:status 204 :headers {} :body ""}
+        {:status 503 :headers {} :body ""})
+      {:status 409 :headers {} :body ""})))
+
+(defn process-queued!
+  "Evaluates one accepted action and executes its effects on the writer thread."
+  [nexus system runtime {:keys [request actions]}]
+  (try
+    (let [conn    (get-in system [:datomic :conn])
+          request (assoc request :db (d/db conn) :datomic-conn conn)
+          result  (nexus/dispatch nexus {:system (or (:system request) system) :request request}
+                                  {:request request} actions)]
+      (if-let [error (->> (:errors result) (keep :err) first)]
+        (throw error)
+        (when-let [response (result-response result)]
+          (cond
+            (datastar/sse-response-plan? response)
+            (datastar/queue-sse-events! runtime request (datastar/sse-response-events response))
+
+            (= 204 (:status response)) nil
+
+            (and (#{301 302 303 307 308} (:status response))
+                 (or (get-in response [:headers "Location"]) (get-in response [:headers "location"])))
+            (datastar/queue-sse-events!
+             runtime request
+             [[:app.datastar.sse/redirect
+               (or (get-in response [:headers "Location"]) (get-in response [:headers "location"]))]])
+
+            :else
+            (throw (ex-info "Queued action cannot own a finite HTTP response"
+                            {:action (ffirst actions) :status (:status response)}))))))
+    (catch Exception error
+      (errors/report-error! error {:action (ffirst actions)})
+      (datastar/queue-sse-events!
+       runtime request
+       [[:app.datastar.sse/merge-signals {:loading false :targetid false}]
+        [:app.datastar.sse/execute-script
+         (str "window.alert(" (datastar/->signals ((:tr request) [:error/unknown-title])) ");")]]))))
 
 (defn nexus-interceptor
   "Dispatch Nexus action vectors returned by a Reitit route handler.

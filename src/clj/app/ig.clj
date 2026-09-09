@@ -15,6 +15,8 @@
             [app.job-queue :as job-queue]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
+            [app.game-loop :as frame-loop]
+            [app.game-loop.storage :as frame-storage]
             [app.nexus :as app-nexus]
             [app.routes :as routes]
             [app.sardine :as sardine]
@@ -42,6 +44,37 @@
 (defmethod ig/init-key ::nexus
   [_ _config]
   (app-nexus/nexus))
+
+(defmethod ig/init-key ::frame-loop [_ {:keys [profile enabled?] :as system}]
+  (when (and enabled? (= :dev profile))
+    (let [hooks   (frame-storage/render-hooks (get-in system [:datomic :conn]) {})
+          clients (atom {})
+          pool    (frame-loop/start-render-pool {:pool-size 2})]
+      (try
+        (frame-loop/start-batch-loop!
+         {::frame-loop/conns       (java.util.concurrent.ConcurrentHashMap.)
+          ::frame-loop/render-pool pool
+          :clients                 clients                                   :stopped? (atom false)}
+         (assoc (merge hooks (select-keys system [:queue-capacity :batch-size :batch-tick-ms]))
+                :capture-frame (fn [ctx]
+                                 (locking clients
+                                   (assoc ((:capture-frame hooks) ctx)
+                                          :clients @clients :page-state @app.datastar/!page-state)))
+                :process-batch! (fn [runtime batch]
+                                  (doseq [action batch]
+                                    (app-nexus/process-queued! (:nexus system) system runtime action)))))
+        (catch Exception e
+          (.close ^java.util.concurrent.ExecutorService pool)
+          (throw e))))))
+
+(defmethod ig/halt-key! ::frame-loop [_ runtime]
+  (when runtime
+    (let [clients (:clients runtime)]
+      (locking clients (reset! (:stopped? runtime) true)))
+    ((::frame-loop/stop! runtime))
+    (try
+      (doseq [client (vals @(:clients runtime))] ((:close! client)))
+      (finally (.close ^java.util.concurrent.ExecutorService (::frame-loop/render-pool runtime))))))
 
 (defmethod ig/init-key :app.ig.router/routes
   [_ system]

@@ -22,6 +22,7 @@
   (:require
    [app.brotli :as br]
    [app.errors :as error]
+   [app.game-loop :as game]
    [app.html :as html]
    [app.urls :as urls]
    [app.util :as util]
@@ -39,7 +40,7 @@
    [starfederation.datastar.clojure.api :as d*]
    [tick.core :as t])
   (:import
-   [java.util.concurrent BlockingQueue]))
+   [java.util.concurrent BlockingQueue ConcurrentHashMap]))
 
 (defn ->signals [m]
   (j/write-value-as-string m))
@@ -80,10 +81,13 @@
   "Updates the transient page state addressed by the request's tab signal."
   [req f]
   (if-let [tab-id (request-tab-id req)]
-    (swap! !page-state update tab-id (fn [state]
-                                       (-> state
-                                           (f)
-                                           (assoc ::modified (t/instant)))))
+    (swap! !page-state
+           (fn [pages]
+             (let [state (get pages tab-id)]
+               (if (and (::state-token req)
+                        (not= (::state-token req) (::state-token state)))
+                 pages
+                 (assoc pages tab-id (-> state (f) (assoc ::modified (t/instant))))))))
     (throw (ex-info "No tab-id in request" {}))))
 
 (defn init-tab-state! [<ch tab-id]
@@ -381,6 +385,124 @@
   "Returns the ordered events from `response-plan`."
   [response-plan]
   (::sse-events response-plan))
+
+(defn assoc-connection-token
+  "Returns `request` with its connection token if the authenticated member owns
+  the active connection. Otherwise returns nil."
+  [runtime request]
+  (let [client    (get @(:clients runtime) (request-tab-id request))
+        member-id (get-in request [:app/session :session/member :member/member-id])]
+    (when (and member-id client (= member-id (:member-id client)))
+      (assoc request ::state-token (:token client)))))
+
+(defn- update-frame-client! [runtime tab-id token f]
+  (swap! (:clients runtime)
+         (fn [clients]
+           (if (= token (get-in clients [tab-id :token]))
+             (update clients tab-id f)
+             clients))))
+
+(defn queue-sse-events!
+  "Validates `events` and appends them to the originating connection's pending SSE
+  messages. A render worker sends them in order during a later render phase;
+  this function does not send them or wait for delivery.
+
+  Queued actions use this to return feedback through the existing SSE connection
+  after `/act` has returned. The connection is identified by the tab ID and token
+  in `request`. Discards events if that connection has closed or been replaced.
+  Throws for invalid events, even if the connection no longer exists."
+  [runtime request events]
+  (validate-sse-events! events)
+  (when (seq events)
+    (update-frame-client!
+     runtime (request-tab-id request) (::state-token request)
+     (fn [client]
+       (let [revision (inc (:revision client))]
+         (-> client
+             (assoc :revision revision)
+             (update :events conj [revision events])))))))
+
+(defn render-in-frame!
+  "Runs `render!` on a render worker with a captured frame and returns its result.
+
+  Initial page GET requests use this to produce full HTML from the committed
+  frame database. The calling HTTP request thread waits up to five seconds.
+  Action requests (`POST /act`) do not use this function or wait for execution.
+
+  Returns a Ring 503 response if `runtime` is stopped or the wait times out.
+  Rethrows exceptions from `render!` on the calling thread. Removes the temporary
+  render callback on exit; a timeout does not cancel rendering already in progress."
+  [runtime render!]
+  (if @(:stopped? runtime)
+    {:status 503 :headers {} :body ""}
+    (let [id     (Object.)
+          result (promise)
+          conns  ^ConcurrentHashMap (::game/conns runtime)]
+      (try
+        (.put conns id (fn [frame]
+                         (when-not (realized? result)
+                           (deliver result (try (render! frame) (catch Exception e e))))))
+        (let [value (deref result 5000 ::timeout)]
+          (cond
+            (= ::timeout value) {:status 503 :headers {} :body ""}
+            (instance? Exception value) (throw value)
+            :else value))
+        (finally (.remove conns id))))))
+
+(defn- frame-connection-render [runtime request tab-id token sse render-fn]
+  (let [render-html!
+        (game/render-callback
+         (fn [frame]
+           (render-fn (assoc request :request-method :get :db (:db frame)
+                             :page-state (get (:page-state frame) tab-id {}))))
+         #(d*/patch-elements! sse % {d*/id (digest %)}))]
+    (fn [frame]
+      (let [client (get (:clients frame) tab-id)]
+        (when (= token (:token client))
+          ;; HTML and compression run here; sending does not wait for delivery.
+          (render-html! frame)
+          (loop [[[revision events] & remaining] (:events client)]
+            (when revision
+              (when (every? #(emit-sse-event! sse %) events)
+                (update-frame-client!
+                 runtime tab-id token
+                 #(update % :events (fn [pending] (filterv (fn [[id]] (> id revision)) pending))))
+                (recur remaining)))))))))
+
+(defn frame-render-handler [runtime render-fn]
+  (fn [request]
+    (if @(:stopped? runtime)
+      {:status 503 :headers {} :body ""}
+      (let [tab-id    (or (request-tab-id request) (str (random-uuid)))
+            token     (Object.)
+            member-id (get-in request [:app/session :session/member :member/member-id])
+            clients   (:clients runtime)
+            conns     ^ConcurrentHashMap (::game/conns runtime)]
+        (hk-gen/->sse-response
+         request
+         {:headers             {"X-Accel-Buffering" "no" "Cache-Control" "no-cache"}
+          hk-gen/write-profile brotli-write-profile
+          hk-gen/on-open
+          (fn [sse]
+            (locking clients
+              (let [old (get @clients tab-id)]
+                (if (or @(:stopped? runtime) (and old (not= member-id (:member-id old))))
+                  (d*/close-sse! sse)
+                  (do
+                    (when old ((:close! old)))
+                    (swap! !page-state assoc tab-id {::created (t/instant) ::state-token token})
+                    (swap! clients assoc tab-id
+                           {:token  token                                                      :member-id member-id :revision 0
+                            :events [[0 [[:app.datastar.sse/merge-signals {:tab-id tab-id}]]]]
+                            :close! #(d*/close-sse! sse)})
+                    (.put conns tab-id (frame-connection-render runtime request tab-id token sse render-fn)))))))
+          hk-gen/on-close
+          (fn [_ _]
+            (locking clients
+              (when (= token (get-in @clients [tab-id :token]))
+                (.remove conns tab-id)
+                (swap! clients dissoc tab-id)
+                (remove-tab-state! tab-id))))})))))
 
 (defmethod ig/init-key ::refresh-mult
   [_ sys]
