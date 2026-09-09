@@ -4,6 +4,8 @@
    [app.datomic.shim :as datomic]
    [app.gigs.domain :as domain]
    [app.jobs.gig-events :as gig.events]
+   [app.jobs.integrations :as integrations]
+   [app.jobs.log-dispatch :as log-dispatch]
    [app.queries :as q]
    [app.secret-box :as secret-box]
    [app.util :as util]
@@ -91,6 +93,8 @@
          plan                (:attendance/plan answer)
          plan-kw             (str->plan plan)
          control             (get-in req [:system :frame-loop :write-runner])
+         durable?            (get-in req [:system :frame-loop :durable-jobs?])
+         jobs                (:jobs (integrations/gig-update-options {:durable-jobs? durable? :env (:env req)} gig-id :attendance))
          submit!             (fn []
                                (let [db     (if control (datomic/db datomic-conn) db)
                                      gig    (q/retrieve-gig db gig-id)
@@ -106,11 +110,13 @@
                                      {:gig gig :member member :reminder? true})
 
                                    (domain/in-future? gig)
-                                   (let [report (transact! datomic-conn {:tx-data (attendance-plan-tx-data db gig-id member-id plan-kw)})]
+                                   (let [tx-data (cond-> (attendance-plan-tx-data db gig-id member-id plan-kw)
+                                                   (seq jobs) (into (log-dispatch/intent-tx jobs)))
+                                         report  (transact! datomic-conn {:tx-data tx-data})]
                                      {:gig (q/retrieve-gig (:db-after report) gig-id) :member member})
 
                                    :else nil)))
          result              (if control (writer/call! control submit!) (submit!))]
-     (when (and result (not reminder?))
+     (when (and result (not reminder?) (not durable?))
        (trigger-gig-edited! req gig-id :attendance))
      result)))
