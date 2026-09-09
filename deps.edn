@@ -57,14 +57,14 @@
          com.datomic/peer                               {:mvn/version "1.0.7622"}
          org.xerial/sqlite-jdbc                         {:mvn/version "3.53.1.0"}
          com.s-exp/drip                                 {:git/url   "https://github.com/outskirtslabs/dollop"
-                                                         :git/sha   "a0814df80ab3e7d5ec7029c981ffe27ed258b8d4"
+                                                         :git/sha   "7ffb710bee8ca56d3f5285f2073c0341a12bb1d8"
                                                          :deps/root "modules/drip"}
          com.s-exp/drip-ui                              {:git/url   "https://github.com/outskirtslabs/dollop"
-                                                         :git/sha   "a0814df80ab3e7d5ec7029c981ffe27ed258b8d4"
+                                                         :git/sha   "7ffb710bee8ca56d3f5285f2073c0341a12bb1d8"
                                                          :deps/root "modules/drip-ui"}
          andersmurphy/sqlite4clj                        {:git/url "https://github.com/Ramblurr/sqlite4clj"
                                                          :git/sha "64547865b8dcbec8dbd1e2f6278ac9f6f9b2d458"}
-         ;; this coffi is needed until dollop/drip and ol.vips have migrated to bb/ffi
+         ;; this coffi is needed until ol.vips migrates to bb/ffi
          org.suskalo/coffi                              {:git/url "https://github.com/ramblurr/coffi"
                                                          :git/sha "9b05e268b915b1992bfd4175cb7c8c7c45d8973a"}
          dev.gethop/stork                               {:mvn/version "0.1.7"}
