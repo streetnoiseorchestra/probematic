@@ -7,6 +7,7 @@
    [app.queries :as q]
    [app.secret-box :as secret-box]
    [app.util :as util]
+   [app.write-runner :as writer]
    [app.util.http :as http.util]
    [com.yetanalytics.squuid :as sq]
    [tick.core :as t]))
@@ -86,26 +87,30 @@
          answer              (decrypt-answer req (answer-token req))
          member-id           (util/ensure-uuid! (:member/member-id answer))
          gig-id              (util/ensure-uuid! (:gig/gig-id answer))
-         gig                 (q/retrieve-gig db gig-id)
-         member              (q/retrieve-member db member-id)
          reminder?           (:reminder answer)
          plan                (:attendance/plan answer)
-         plan-kw             (str->plan plan)]
-     (assert gig)
-     (assert member)
-     (when-not reminder?
-       (assert plan-kw (str "Unknown answer-link attendance plan: " plan)))
-     (cond
-       reminder?
-       (do
-         (transact! datomic-conn {:tx-data (reminder-tx-data db gig-id member-id 2)})
-         {:gig gig :member member :reminder? true})
+         plan-kw             (str->plan plan)
+         control             (get-in req [:system :frame-loop :write-runner])
+         submit!             (fn []
+                               (let [db     (if control (datomic/db datomic-conn) db)
+                                     gig    (q/retrieve-gig db gig-id)
+                                     member (q/retrieve-member db member-id)]
+                                 (assert gig)
+                                 (assert member)
+                                 (when-not reminder?
+                                   (assert plan-kw (str "Unknown answer-link attendance plan: " plan)))
+                                 (cond
+                                   reminder?
+                                   (do
+                                     (transact! datomic-conn {:tx-data (reminder-tx-data db gig-id member-id 2)})
+                                     {:gig gig :member member :reminder? true})
 
-       (domain/in-future? gig)
-       (let [result (transact! datomic-conn {:tx-data (attendance-plan-tx-data db gig-id member-id plan-kw)})]
-         (trigger-gig-edited! req gig-id :attendance)
-         {:gig    (q/retrieve-gig (:db-after result) gig-id)
-          :member member})
+                                   (domain/in-future? gig)
+                                   (let [report (transact! datomic-conn {:tx-data (attendance-plan-tx-data db gig-id member-id plan-kw)})]
+                                     {:gig (q/retrieve-gig (:db-after report) gig-id) :member member})
 
-       :else
-       nil))))
+                                   :else nil)))
+         result              (if control (writer/call! control submit!) (submit!))]
+     (when (and result (not reminder?))
+       (trigger-gig-edited! req gig-id :attendance))
+     result)))
