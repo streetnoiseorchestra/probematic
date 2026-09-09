@@ -1,8 +1,8 @@
 (ns app.email-test
   (:require
-   [app.email :as email]
    [app.email.domain :as email.domain]
    [app.email.mailers :as mailers]
+   [app.email.messages :as messages]
    [app.schemas :as s]
    [app.secret-box :as secret-box]
    [clojure.string :as str]
@@ -79,7 +79,7 @@
       (is (= expected (set (answer-payloads (:text message))))))))
 
 (deftest gig-created-email-materializes-member-specific-answer-links
-  (let [queued-email (email/build-gig-created-email test-system gig members)]
+  (let [queued-email (messages/build-gig-created-email test-system gig members)]
     (is (= {:batch?        true
             :message-count 2
             :sender        :lettermint}
@@ -91,7 +91,7 @@
     (is (not (contains? queued-email :email/recipient-variables)))))
 
 (deftest gig-reminder-email-materializes-member-specific-answer-links
-  (let [queued-email (email/build-gig-reminder-email test-system gig members)]
+  (let [queued-email (messages/build-gig-reminder-email test-system gig members)]
     (is (= {:batch?        true
             :message-count 2
             :sender        :lettermint}
@@ -130,7 +130,7 @@
 
   (testing "poll-opened email"
     (assert-shared-body-batch
-     (email/build-new-poll-opened
+     (messages/build-new-poll-opened
       test-system
       {:poll/closes-at   (t/instant "2099-08-31T20:00:00Z")
        :poll/description "Choose a rehearsal day."
@@ -143,9 +143,8 @@
 
   (testing "insurance survey notification"
     (assert-shared-body-batch
-     (email/build-survey-notifications
-      {:system {:env test-env}
-       :tr     tr}
+     (messages/build-survey-notifications
+      test-system
       "Linus"
       {:insurance.policy/policy-id
        #uuid "01982163-3da9-7500-953b-d4642732fc3f"}
@@ -155,7 +154,7 @@
        :member-most-instruments      nil}))))
 
 (deftest single-email-builder-creates-one-complete-lettermint-message
-  (let [queued-email (email/build-new-user-invite
+  (let [queued-email (messages/build-new-user-invite
                       test-system
                       (first members)
                       "invite-code")]

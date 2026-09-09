@@ -3,6 +3,7 @@
             [app.email.email-worker :as worker]
             [app.email.email-worker-test :as fixtures]
             [app.email.lettermint :as lettermint]
+            [app.email.messages :as messages]
             [app.job-queue :as job-queue]
             [app.system :as system]
             [clojure.java.io :as io]
@@ -34,7 +35,7 @@
     (fn [{:keys [client] :as queue}]
       (doseq [message [fixtures/single-queued-email
                        fixtures/batch-queued-email
-                       (email/build-smtp-email
+                       (messages/build-smtp-email
                         "ada@example.test" "Hello" "<p>Hello</p>" "Hello"
                         [{:filename "report.pdf"              :content-type "application/pdf"
                           :content  (byte-array [0 1 -1 127])}])]]
@@ -106,7 +107,7 @@
 (deftest prepared-attachment-bytes-reach-smtp-through-edn-storage
   (with-queue
     (fn [{:keys [client] :as queue}]
-      (let [message    (email/build-smtp-email
+      (let [message    (messages/build-smtp-email
                         "ada@example.test" "Report" "<p>Report</p>" "Report"
                         [{:filename "report.pdf"              :content-type "application/pdf"
                           :content  (byte-array [0 1 -1 127])}])

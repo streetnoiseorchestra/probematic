@@ -3,6 +3,7 @@
    [app.datastar :as datastar]
    [app.datomic.shim :as datomic]
    [app.email :as email]
+   [app.email.messages :as messages]
    [app.i18n :as i18n]
    [app.keycloak :as keycloak]
    [app.members.invite.cells]
@@ -18,7 +19,7 @@
   {:now                   t/inst
    :random-code           #(crypto/rand-string 32)
    :random-uuid           random-uuid
-   :build-new-user-invite email/build-new-user-invite
+   :build-new-user-invite messages/build-new-user-invite
    :queue-email!          email/queue-email!})
 
 (defn- conn-from-req [req]

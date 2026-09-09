@@ -2,111 +2,20 @@
   (:require
    [app.email.email-worker :as email-worker]
    [app.email.mailers :as mailers]
+   [app.email.messages :as messages]
    [app.email.templates :as tmpl]
    [app.i18n :as i18n]
    [app.poll.queries :as poll.queries]
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.urls :as url]
-   [app.util :as util]
-   [com.yetanalytics.squuid :as sq]
-   [app.datomic.shim :as datomic]
-   [tick.core :as t]))
+   [app.datomic.shim :as datomic]))
 
 (defn- gig-date-plain [{:gig/keys [date end-date]}]
   (ui2/format-date-range {:current-locale :de} :compact-with-weekday date end-date))
 
 (defn queue-email! [sys email]
   (email-worker/queue-mail! (:job-queue sys) email))
-
-(defn- lettermint-message [to subject body-html body-plain]
-  {:to      [to]
-   :subject subject
-   :html    body-html
-   :text    body-plain})
-
-(defn- build-lettermint-email [batch? messages]
-  {:email/sender     :lettermint
-   :email/batch?     batch?
-   :email/email-id   (sq/generate-squuid)
-   :email/messages   messages
-   :email/created-at (t/inst)})
-
-(defn build-email [to subject body-html body-plain]
-  (assert subject)
-  (build-lettermint-email
-   false
-   [(lettermint-message to subject body-html body-plain)]))
-
-(defn build-smtp-email
-  ([to subject body-html body-plain]
-   (build-smtp-email to subject body-html body-plain nil))
-  ([to subject body-html body-plain attachments]
-   (assert subject)
-   (util/remove-nils
-    {:email/sender      :band-smtp
-     :email/batch?      false
-     :email/attachments attachments
-     :email/email-id    (sq/generate-squuid)
-     :email/tos         [to]
-     :email/subject     subject
-     :email/body-plain  body-plain
-     :email/body-html   body-html
-     :email/created-at  (t/inst)})))
-
-(defn build-batch-emails [tos subject body-html body-plain]
-  (assert subject)
-  (build-lettermint-email
-   true
-   (mapv #(lettermint-message % subject body-html body-plain)
-         tos)))
-
-(defn build-gig-created-email [{:keys [tr] :as sys} gig members]
-  (let [subject (tr [:email-subject/gig-created]
-                    {:gig-title (:gig/title gig)})]
-    (build-lettermint-email
-     true
-     (mapv (fn [member]
-             (lettermint-message
-              (:member/email member)
-              subject
-              (tmpl/gig-created-email-html sys gig member false)
-              (tmpl/gig-created-email-plain sys gig member false)))
-           members))))
-
-(defn build-gig-reminder-email [{:keys [tr] :as sys} gig members]
-  (assert tr)
-  (let [subject (tr [:email-subject/gig-reminder]
-                    {:gig-title (:gig/title gig)})]
-    (build-lettermint-email
-     true
-     (mapv (fn [member]
-             (lettermint-message
-              (:member/email member)
-              subject
-              (tmpl/gig-created-email-html sys gig member true)
-              (tmpl/gig-created-email-plain sys gig member true)))
-           members))))
-
-(defn build-new-poll-opened [{:keys [tr env] :as sys} poll members]
-  (let [url (url/absolute-link-poll env (:poll/poll-id poll))]
-    (build-batch-emails
-     (mapv :member/email members)
-     (tr [:email-subject/poll-created] {:poll-title (:poll/title poll)})
-     (tmpl/generic-email-html sys (tmpl/poll-created-email-html-body tr poll) (tr [:polls/vote-now]) url)
-     (tmpl/generic-email-plain sys (tmpl/poll-created-email-plain-body tr poll) (tr [:polls/vote-now])  url))))
-
-(defn build-new-user-invite [{:keys [tr] :as sys} {:member/keys [email]} invite-code]
-  (build-email email
-               (tr [:email-subject/new-invite])
-               (tmpl/new-user-invite-html sys invite-code)
-               (tmpl/new-user-invite-plain sys invite-code)))
-
-(defn build-generic-email [sys to-email subject body-text cta-text cta-url]
-  (build-email to-email
-               subject
-               (tmpl/generic-email-html sys body-text cta-text cta-url)
-               (tmpl/generic-email-plain sys body-text cta-text cta-url)))
 
 (defn- sys-from-req [req]
   {:tr           (:tr req)
@@ -120,7 +29,7 @@
         gig     (q/retrieve-gig  db gig-id)
         members (q/active-members db)
         sys     (sys-from-req req)]
-    (queue-email! sys  (build-gig-created-email sys gig members))))
+    (queue-email! sys (messages/build-gig-created-email sys gig members))))
 
 (defn send-gig-reminder-to! [{:keys [datomic-conn i18n-langs env job-queue]} gig-id members]
   (assert datomic-conn)
@@ -132,7 +41,7 @@
         tr  (i18n/tr-with i18n-langs [:de])
         sys {:tr tr :env env :job-queue job-queue}
         gig (q/retrieve-gig db gig-id)]
-    (queue-email! sys (build-gig-reminder-email sys gig members))))
+    (queue-email! sys (messages/build-gig-reminder-email sys gig members))))
 
 (defn send-gig-reminder-to-all! [{:keys [db] :as req}  gig-id]
   (let [attendance (q/attendance-for-gig-with-all-active-members db gig-id)
@@ -162,55 +71,39 @@
         poll    (poll.queries/retrieve-poll db poll-id)
         members (q/active-members db)
         sys     (sys-from-req req)]
-    (queue-email! sys  (build-new-poll-opened (sys-from-req req) poll members))))
+    (queue-email! sys (messages/build-new-poll-opened sys poll members))))
 
 (defn send-new-user-email! [req new-member invite-code]
   (queue-email! (sys-from-req req)
-                (build-new-user-invite (sys-from-req req) new-member invite-code)))
+                (messages/build-new-user-invite (sys-from-req req) new-member invite-code)))
 
 (defn send-admin-email! [req from-member req-human-id]
   (let [member-name (:member/name from-member)
         admin-email (-> req :system :env :admin-email)]
     (assert admin-email)
     (queue-email! (sys-from-req req)
-                  (build-generic-email (sys-from-req req)
-                                       admin-email
-                                       (str "SNOrga Error from " member-name)
-                                       (format "There was a SNOrga error that needs attention from %s with human-id %s" member-name req-human-id)
-                                       nil
-                                       nil))))
+                  (messages/build-generic-email (sys-from-req req)
+                                                admin-email
+                                                (str "SNOrga Error from " member-name)
+                                                (format "There was a SNOrga error that needs attention from %s with human-id %s" member-name req-human-id)
+                                                nil
+                                                nil))))
 (defn send-rehearsal-leader-email! [{:keys [i18n-langs env job-queue]} gig leader-member]
   (assert gig)
   (assert leader-member)
   (let [tr  (i18n/tr-with i18n-langs [:de])
         sys {:tr tr :env env :job-queue job-queue}]
     (queue-email! sys
-                  (build-generic-email sys
-                                       (:member/email leader-member)
-                                       (tr [:email/subject-log-plays])
-                                       (tr [:email/body-log-plays] {:gig-date (gig-date-plain gig)})
-                                       (tr [:email/cta-log-plays])
-                                       (url/absolute-link-gig-log-plays env (:gig/gig-id gig))))))
-
-(defn build-insurance-debt-notification-emails [{:keys [tr] :as sys} sender-name time-range member-data]
-  (assert tr)
-  (map (fn [{:keys [member private-cost-total private-coverages]}]
-         (assert private-cost-total)
-         (assert time-range)
-         (assert (:member/email member))
-         (let [args       (tmpl/build-insurance-debt-args sys member private-coverages sender-name time-range private-cost-total)
-               to         (:member/email member)
-               subject    (tr [:insurance/payment-email-subject]
-                              {:member-name (:member/name member)
-                               :time-range  time-range})
-               body-html  (tmpl/insurance-debt-html sys args)
-               body-plain (tmpl/insurance-debt-plain sys args)]
-           (build-smtp-email to subject body-html body-plain)))
-       member-data))
+                  (messages/build-generic-email sys
+                                                (:member/email leader-member)
+                                                (tr [:email/subject-log-plays])
+                                                (tr [:email/body-log-plays] {:gig-date (gig-date-plain gig)})
+                                                (tr [:email/cta-log-plays])
+                                                (url/absolute-link-gig-log-plays env (:gig/gig-id gig))))))
 
 (defn send-insurance-debt-notifications! [req sender-name time-range member-data]
   (let [sys    (sys-from-req req)
-        emails (build-insurance-debt-notification-emails sys sender-name time-range member-data)]
+        emails (messages/build-insurance-debt-notification-emails sys sender-name time-range member-data)]
     (doseq [email emails]
       (queue-email! sys email))))
 
@@ -224,32 +117,17 @@
                                                                 time-range
                                                                 (:private-cost-total sample-data)))))
 
-(defn build-survey-notifications [{:keys [tr system] :as req} sender-name policy members email-data]
-  (let [url (url/absolute-link-insurance-survey-start (:env system) (:insurance.policy/policy-id policy))
-        sys (sys-from-req req)]
-    (build-batch-emails
-     (mapv :member/email members)
-     (tr [:insurance/survey-email-subject])
-     (tmpl/generic-email-html sys (tmpl/insurance-survey-created-email-html-body tr email-data) (tr [:insurance/survey-email-start]) url
-                              {:sign-off
-                               [:p
-                                (tr [:email/sign-off-personal])
-                                [:br] sender-name
-                                [:br] (tr [:insurance/email-team-name])]})
-     (tmpl/generic-email-plain sys (tmpl/insurance-survey-created-email-plain-body tr email-data) (tr [:insurance/survey-email-start]) url
-                               {:sign-off (str (tr [:email/sign-off-personal])
-                                               "\n" sender-name
-                                               "\n" (tr [:insurance/email-team-name]))}))))
-
 (defn send-survey-notifications! [req sender-name policy members email-data]
-  (queue-email! (sys-from-req req)
-                (build-survey-notifications req sender-name policy members email-data)))
+  (let [sys (sys-from-req req)]
+    (queue-email! sys
+                  (messages/build-survey-notifications sys sender-name policy members email-data))))
 
 (comment
 
   (do
 
     (require '[integrant.repl.state :as state])
+    (require '[tick.core :as t])
     (def conn (-> state/system :app.ig/datomic-db :conn))
     (def db (datomic/db conn))
     (def gig (q/retrieve-gig db "01863829-2527-89fb-a582-4bd00f40c6b2"))
@@ -280,14 +158,14 @@
     (def sys {:tr tr :env env})) ;; rcf
 
   (spit "plain-email.txt"
-        (get-in (build-new-poll-opened
+        (get-in (messages/build-new-poll-opened
                  sys
                  (assoc poll :poll/description "")
                  [member])
                 [:email/messages 0 :text]))
 
   (spit "plain-email.html"
-        (get-in (build-new-poll-opened
+        (get-in (messages/build-new-poll-opened
                  sys
                  (assoc poll :poll/description "")
                  [member])
@@ -300,7 +178,7 @@
          "\n++++\n"
          (tmpl/gig-updated-email-plain sys gig2 [:gig/status])))
 
-  (:email/messages (build-gig-created-email sys gig [member]))
+  (:email/messages (messages/build-gig-created-email sys gig [member]))
 
   (tmpl/payload-for-attendance env (:gig/gig-id gig) (:member/member-id
                                                       (q/member-by-email db "CHANGEME")) :plan/definitely)
