@@ -7,18 +7,16 @@
    [app.schemas :as s]
    [com.brunobonacci.mulog :as μ]
    [s-exp.drip :as drip]
-   [taoensso.nippy :as nippy]
-   [tarayo.core :as tarayo])
-  (:import [java.util Base64]))
+   [tarayo.core :as tarayo]))
 
 (def email-queue-name "email-send-queue")
 
 (defn track-email-error!  [email attempt result throwable]
   (μ/log ::email-error
          :message (or (:message result) (ex-message throwable) "Error occured in email-worker")
-         :extra {:email email
+         :extra {:email   email
                  :attempt attempt
-                 :result result}
+                 :result  result}
          :ex throwable))
 
 (defn- lettermint-client-config [config]
@@ -51,20 +49,20 @@
                    messages)))
 
 (defn- dry-run-summary [message]
-  {:batch? (:email/batch? message)
-   :email-id (:email/email-id message)
+  {:batch?        (:email/batch? message)
+   :email-id      (:email/email-id message)
    :message-count (count (:email/messages message))
-   :recipients (mapv :to (:email/messages message))})
+   :recipients    (mapv :to (:email/messages message))})
 
 (defn lettermint-handler [{:keys [lettermint]} message]
   (if (:demo-mode? lettermint)
     (do
       (tap> {:lettermint/dry-run (dry-run-summary message)})
-      {:mode :demo-mode
+      {:mode   :demo-mode
        :result :email-sent})
-    (let [client-config (lettermint-client-config lettermint)
-          messages (mapv #(lettermint-message lettermint %)
-                         (:email/messages message))
+    (let [client-config   (lettermint-client-config lettermint)
+          messages        (mapv #(lettermint-message lettermint %)
+                                (:email/messages message))
           request-options {:idempotency-key
                            (str (:email/email-id message))}]
       (ensure-valid-lettermint-request! client-config messages)
@@ -89,12 +87,12 @@
     (assert smtp)
     (assert from)
     (tarayo/send! (tarayo/connect smtp)
-                  {:from   from
-                   :to (or dev-mode-override-recipient nil) ;; (or dev-mode-override-recipient (first (:email/tos message)))
+                  {:from    from
+                   :to      (or dev-mode-override-recipient nil) ;; (or dev-mode-override-recipient (first (:email/tos message)))
                    :subject (:email/subject message)
-                   :body (into [] (concat [{:content-type "text/html" :content (:email/body-html message)}
-                                           {:content-type "text/plain" :content (:email/body-plain message)}]
-                                          (format-attachments (:email/attachments message))))})))
+                   :body    (into [] (concat [{:content-type "text/html" :content (:email/body-html message)}
+                                              {:content-type "text/plain" :content (:email/body-plain message)}]
+                                             (format-attachments (:email/attachments message))))})))
 
 (defn handler
   [sys message attempt]
@@ -121,9 +119,15 @@
       (track-email-error! message attempt nil e)
       {:status :error})))
 
-(defn- prepare-job-email [sys args]
-  (if (= #{:payload} (set (keys args)))
-    (nippy/thaw (.decode (Base64/getDecoder) ^String (:payload args)))
+(defn- map-attachment-content [f email]
+  ;; Nested byte arrays are not EDN. Only attachment bytes need conversion.
+  (cond-> email
+    (seq (:email/attachments email))
+    (update :email/attachments #(mapv (fn [attachment] (update attachment :content f)) %))))
+
+(defn- prepare-job-email [sys {:keys [prepared-email] :as args}]
+  (if prepared-email
+    (map-attachment-content byte-array prepared-email)
     (mailers/prepare! sys args)))
 
 (defn job-handler [sys client {:keys [id args attempt]}]
@@ -138,9 +142,9 @@
                        (if permanent?
                          {:status :error}
                          (throw (ex-info "Retryable email preparation failure" {:job-id id}))))))
-        result (if (:status prepared)
-                 prepared
-                 (handler sys (:message prepared) attempt))]
+        result   (if (:status prepared)
+                   prepared
+                   (handler sys (:message prepared) attempt))]
     (case (:status result)
       :success (drip/complete-job client id)
       :error (drip/discard-job client id)
@@ -149,10 +153,10 @@
 (defn start! [{:keys [job-queue] :as sys}]
   (μ/log ::email-worker-starting)
   (drip/start-worker!
-   {:client (:client job-queue)
-    :registry {"send-email" (partial job-handler sys)}
-    :queues [email-queue-name]
-    :concurrency 1
+   {:client         (:client job-queue)
+    :registry       {"send-email" (partial job-handler sys)}
+    :queues         [email-queue-name]
+    :concurrency    1
     :retry-policies {"send-email" (drip/constant-retry-policy 5000)}}))
 
 (defn stop! [worker]
@@ -165,9 +169,8 @@
                    nil
                    QueuedEmailMessage
                    email))
-  ;; JSON alone loses namespaced keys, UUIDs, instants, and attachment bytes.
   (drip/insert-job client "send-email"
-                   {:payload (.encodeToString (Base64/getEncoder) (nippy/freeze email))}
+                   {:prepared-email (map-attachment-content vec email)}
                    :queue email-queue-name
                    :max-attempts 25))
 
@@ -175,14 +178,14 @@
   "Queues a named mailer from a successful transaction report without rendering.
 
   `sys` supplies `:job-queue`, `:datomic-conn`, and `:current-locale`.
-  `arguments` must satisfy the registered mailer's JSON-compatible contract."
+  `arguments` must satisfy the registered mailer's EDN contract."
   [{:keys [job-queue datomic-conn current-locale]} tx-result mailer arguments]
-  (let [invocation {:version 1
-                    :mailer mailer
+  (let [invocation {:version   1
+                    :mailer    mailer
                     :arguments arguments
-                    :source-t (mailers/source-t datomic-conn tx-result)
-                    :email-id (str (random-uuid))
-                    :locale (name (or current-locale :en))}]
+                    :source-t  (mailers/source-t datomic-conn tx-result)
+                    :email-id  (random-uuid)
+                    :locale    (or current-locale :en)}]
     (mailers/validate! invocation)
     (drip/insert-job (:client job-queue) "send-email" invocation
                      :queue email-queue-name

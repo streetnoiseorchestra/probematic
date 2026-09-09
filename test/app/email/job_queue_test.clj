@@ -9,12 +9,11 @@
             [clojure.test :refer [deftest is testing]]
             [integrant.core :as ig]
             [s-exp.drip :as drip]
-            [taoensso.nippy :as nippy])
-  (:import [java.util Base64]))
+            [tarayo.core :as tarayo]))
 
 (defn with-queue [f]
-  (let [dir (.toFile (java.nio.file.Files/createTempDirectory
-                      "email-jobs" (make-array java.nio.file.attribute.FileAttribute 0)))
+  (let [dir   (.toFile (java.nio.file.Files/createTempDirectory
+                        "email-jobs" (make-array java.nio.file.attribute.FileAttribute 0)))
         queue (job-queue/start! {:filename (str (io/file dir "jobs.sqlite"))})]
     (try
       (f queue)
@@ -37,14 +36,13 @@
                        fixtures/batch-queued-email
                        (email/build-smtp-email
                         "ada@example.test" "Hello" "<p>Hello</p>" "Hello"
-                        [{:filename "report.pdf" :content-type "application/pdf"
-                          :content (byte-array [0 1 -1 127])}])]]
-        (let [job (email/queue-email! {:job-queue queue} message)
-              stored (drip/get-job client (:id job))
-              decoded (nippy/thaw (.decode (Base64/getDecoder)
-                                           ^String (get-in stored [:args :payload])))]
-          (is (= {:kind "send-email" :queue worker/email-queue-name
-                  :max-attempts 25 :state :available}
+                        [{:filename "report.pdf"              :content-type "application/pdf"
+                          :content  (byte-array [0 1 -1 127])}])]]
+        (let [job     (email/queue-email! {:job-queue queue} message)
+              stored  (drip/get-job client (:id job))
+              decoded (get-in stored [:args :prepared-email])]
+          (is (= {:kind         "send-email" :queue worker/email-queue-name
+                  :max-attempts 25           :state :available}
                  (select-keys stored [:kind :queue :max-attempts :state])))
           (is (= (dissoc message :email/attachments)
                  (dissoc decoded :email/attachments)))
@@ -61,7 +59,7 @@
 (deftest real-worker-completes-demo-email
   (with-queue
     (fn [{:keys [client] :as queue}]
-      (let [job (email/queue-email! {:job-queue queue} fixtures/single-queued-email)
+      (let [job     (email/queue-email! {:job-queue queue} fixtures/single-queued-email)
             running (worker/start! {:job-queue queue :lettermint {:demo-mode? true}})]
         (try
           (is (= {:state :completed :attempt 1}
@@ -75,13 +73,13 @@
       (with-queue
         (fn [{:keys [client] :as queue}]
           (with-redefs [lettermint/send-email! (fn [& _] response)]
-            (let [job (worker/queue-mail! queue fixtures/single-queued-email)
+            (let [job     (worker/queue-mail! queue fixtures/single-queued-email)
                   running (worker/start!
-                           {:job-queue queue
-                            :lettermint {:from "sender@example.test"
-                                         :project-api-token fixtures/test-token
+                           {:job-queue  queue
+                            :lettermint {:from                    "sender@example.test"
+                                         :project-api-token       fixtures/test-token
                                          :testing-addresses-only? false
-                                         :timeout-ms 2000}})]
+                                         :timeout-ms              2000}})]
               (try
                 (let [failed (await-state client (:id job) expected-state)]
                   (is (= {:state expected-state :attempt 1}
@@ -98,9 +96,34 @@
   (let [config (:ig/system (system/config {:profile :test}))]
     (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
       (is (= (ig/ref :app.ig/job-queue) (get-in config [component :job-queue]))))
-    (is (= {:datomic (ig/ref :app.ig/datomic-db)
+    (is (= {:datomic    (ig/ref :app.ig/datomic-db)
             :i18n-langs (ig/ref :app.ig/i18n-langs)}
            (select-keys (:app.ig/email-worker config) [:datomic :i18n-langs])))
     (is (not (contains? config :app.ig/redis)))
     (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
       (is (not (contains? (get config component) :redis))))))
+
+(deftest prepared-attachment-bytes-reach-smtp-through-edn-storage
+  (with-queue
+    (fn [{:keys [client] :as queue}]
+      (let [message    (email/build-smtp-email
+                        "ada@example.test" "Report" "<p>Report</p>" "Report"
+                        [{:filename "report.pdf"              :content-type "application/pdf"
+                          :content  (byte-array [0 1 -1 127])}])
+            job        (worker/queue-mail! queue message)
+            deliveries (atom [])]
+        (with-redefs [tarayo/connect (fn [_] ::smtp-connection)
+                      tarayo/send!   (fn [_ email] (swap! deliveries conj email) {})]
+          (let [running (worker/start!
+                         {:job-queue queue
+                          :env       {:smtp-sno {:from                        "sender@example.test"
+                                                 :dev-mode-override-recipient "ada@example.test"}}})]
+            (try
+              (is (= {:state :completed :attempt 1}
+                     (select-keys (await-state client (:id job) :completed) [:state :attempt])))
+              (is (= 1 (count @deliveries)))
+              (let [attachment (last (:body (first @deliveries)))]
+                (is (= {:filename "report.pdf" :content-type "application/pdf" :content [0 1 -1 127]}
+                       (update attachment :content vec)))
+                (is (bytes? (:content attachment))))
+              (finally (worker/stop! running)))))))))

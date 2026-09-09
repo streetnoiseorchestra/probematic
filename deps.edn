@@ -57,10 +57,10 @@
         com.datomic/peer                               {:mvn/version "1.0.7622"}
         org.xerial/sqlite-jdbc                         {:mvn/version "3.53.1.0"}
         com.s-exp/drip                                {:git/url "https://github.com/outskirtslabs/dollop"
-                                                       :git/sha "b33b95efba8be2fa55810bc69379a59ba57236f5"
+                                                       :git/sha "a0814df80ab3e7d5ec7029c981ffe27ed258b8d4"
                                                        :deps/root "modules/drip"}
         com.s-exp/drip-ui                             {:git/url "https://github.com/outskirtslabs/dollop"
-                                                       :git/sha "b33b95efba8be2fa55810bc69379a59ba57236f5"
+                                                       :git/sha "a0814df80ab3e7d5ec7029c981ffe27ed258b8d4"
                                                        :deps/root "modules/drip-ui"}
         andersmurphy/sqlite4clj                        {:git/url "https://github.com/andersmurphy/sqlite4clj"
                                                         :git/sha "f1224bbe701533605f30c9ffbe0e2a6a0b7c085a"}
