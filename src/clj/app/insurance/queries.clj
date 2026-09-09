@@ -381,6 +381,28 @@
                           vec)
                      [])}))
 
+(defn member-notification-data
+  "Returns one recipient's payment notice data from the supplied snapshot."
+  [db policy-id sender-id member-id]
+  (let [data (notification-data db policy-id sender-id)]
+    (assoc data :member-data
+           (some #(when (= member-id (get-in % [:member :member/member-id])) %)
+                 (:members-data data)))))
+
+(defn survey-notification-data
+  "Returns the selected recipients and reminder content from a survey snapshot."
+  [db survey-id sender-id member-ids]
+  (let [survey     (q/retrieve-survey db survey-id)
+        responses  (:insurance.survey/responses survey)
+        most-items (when (seq responses)
+                     (apply max-key (comp count :insurance.survey.response/coverage-reports) responses))]
+    {:policy      (:insurance.survey/policy survey)
+     :sender-name (:member/name (q/retrieve-member db sender-id))
+     :members     (mapv #(q/retrieve-member db %) member-ids)
+     :email-data  {:closes-at                    (:insurance.survey/closes-at survey)
+                   :member-most-instruments      (:insurance.survey.response/member most-items)
+                   :member-most-instrument-count (count (:insurance.survey.response/coverage-reports most-items))}}))
+
 (defn select-members
   [members-data member-ids]
   (let [selected (filterv #(contains? member-ids

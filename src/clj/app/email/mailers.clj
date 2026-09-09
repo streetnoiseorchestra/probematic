@@ -2,10 +2,14 @@
   "Prepares named email invocations without delivering them."
   (:require
    [app.email.domain :as domain]
+   [app.email.messages :as messages]
+   [app.insurance.queries :as insurance-queries]
+   [app.poll.queries :as poll-queries]
    [app.email.templates :as tmpl]
    [app.i18n :as i18n]
    [app.queries :as q]
    [app.schemas :as s]
+   [clojure.data :as data]
    [datomic.api :as d]))
 
 (defn build-gig-updated-email
@@ -30,14 +34,74 @@
                       {:email/permanent? true :email/reason :missing-gig-data})))
     (build-gig-updated-email context gig members edited-attrs)))
 
+(defn gig-committed-update
+  "Prepares an explicitly requested notification from the committed gig change."
+  [{:keys [db db-before] :as context} {:keys [gig-id] :as arguments}]
+  (let [before  (q/retrieve-gig db-before gig-id)
+        after   (q/retrieve-gig db gig-id)
+        changed (keys (apply merge (take 2 (data/diff before after))))]
+    (if (seq changed)
+      (gig-updated context (assoc arguments :edited-attrs (vec (sort changed))))
+      ::skip)))
+
+(defn gig-created [{:keys [db] :as context} {:keys [gig-id member-ids]}]
+  (messages/build-gig-created-email context (q/retrieve-gig db gig-id)
+                                    (mapv #(q/retrieve-member db %) member-ids)))
+
+(defn gig-reminder [{:keys [db] :as context} {:keys [gig-id member-ids]}]
+  (messages/build-gig-reminder-email context (q/retrieve-gig db gig-id)
+                                     (mapv #(q/retrieve-member db %) member-ids)))
+
+(defn poll-opened [{:keys [db] :as context} {:keys [poll-id member-ids]}]
+  (messages/build-new-poll-opened context (poll-queries/retrieve-poll db poll-id)
+                                  (mapv #(q/retrieve-member db %) member-ids)))
+
+(defn insurance-debt [{:keys [db] :as context} {:keys [policy-id sender-id member-id]}]
+  (let [{:keys [sender-name time-range member-data]}
+        (insurance-queries/member-notification-data db policy-id sender-id member-id)]
+    (when-not member-data
+      (throw (ex-info "Payment notification snapshot has no recipient data"
+                      {:email/permanent? true :email/reason :missing-payment-data})))
+    (first (messages/build-insurance-debt-notification-emails context sender-name time-range [member-data]))))
+
+(defn survey-reminder [{:keys [db] :as context} {:keys [survey-id sender-id member-ids]}]
+  (let [{:keys [policy sender-name members email-data]}
+        (insurance-queries/survey-notification-data db survey-id sender-id member-ids)]
+    (messages/build-survey-notifications context sender-name policy members email-data)))
+
+(defn job
+  "Returns a durable mailer intent for a Nexus transaction's `:jobs` option.
+
+  Nexus replaces the generated email id; the log consumer supplies `:source-t`.
+  Neither preparing this intent nor committing it means the email was delivered."
+  [state mailer arguments]
+  ["send-email"
+   {:version  1            :mailer mailer                           :arguments arguments
+    :email-id :db/gen-uuid :locale (or (:current-locale state) :en)}
+   {:queue "email-send-queue" :max-attempts 25}])
+
+(def ^:private member-ids-schema
+  [:and [:vector {:min 1 :max 500} :uuid]
+   [:fn #(= (count %) (count (distinct %)))]])
+
 (def registry
-  {::gig-updated
+  {::gig-committed-update
+   {:prepare   gig-committed-update
+    :arguments [:map [:gig-id :uuid] [:member-ids member-ids-schema]]}
+   ::gig-updated
    {:prepare   gig-updated
-    :arguments [:map
-                [:gig-id :uuid]
-                [:member-ids [:and [:vector {:min 1 :max 500} :uuid]
-                              [:fn #(= (count %) (count (distinct %)))]]]
-                [:edited-attrs [:vector {:min 1} :qualified-keyword]]]}})
+    :arguments [:map [:gig-id :uuid] [:member-ids member-ids-schema]
+                [:edited-attrs [:vector {:min 1} :qualified-keyword]]]}
+   ::gig-created
+   {:prepare gig-created :arguments [:map [:gig-id :uuid] [:member-ids member-ids-schema]]}
+   ::gig-reminder
+   {:prepare gig-reminder :arguments [:map [:gig-id :uuid] [:member-ids member-ids-schema]]}
+   ::poll-opened
+   {:prepare poll-opened :arguments [:map [:poll-id :uuid] [:member-ids member-ids-schema]]}
+   ::insurance-debt
+   {:prepare insurance-debt :arguments [:map [:policy-id :uuid] [:sender-id :uuid] [:member-id :uuid]]}
+   ::survey-reminder
+   {:prepare survey-reminder :arguments [:map [:survey-id :uuid] [:sender-id :uuid] [:member-ids member-ids-schema]]}})
 
 (def ^:private envelope-schema
   [:map
@@ -87,6 +151,8 @@
 (defn prepare!
   "Reconstructs an invocation from its source snapshot and prepares its message.
 
+  An explicitly conditional mailer may return `::skip` for a no-op notification.
+
   Snapshot synchronization is bounded to one second per attempt. Storage failures
   remain retryable; invalid inputs and invalid prepared messages are permanent."
   [{:keys [datomic i18n-langs env]} {:keys [source-t email-id locale arguments] :as invocation}]
@@ -94,12 +160,13 @@
         observed (deref (d/sync (:conn datomic) source-t) 1000 nil)]
     (when-not (and observed (>= (d/basis-t observed) source-t))
       (throw (ex-info "Email source snapshot is not yet available" {})))
-    (let [context {:db       (d/as-of observed source-t)
-                   :env      env
-                   :tr       (i18n/tr-with i18n-langs [locale])
-                   :email-id email-id}
+    (let [context {:db        (d/as-of observed source-t)
+                   :db-before (d/as-of observed (dec source-t))
+                   :env       env
+                   :tr        (i18n/tr-with i18n-langs [locale])
+                   :email-id  email-id}
           message (prepare context arguments)]
-      (when-not (s/valid? domain/QueuedEmailMessage message)
+      (when-not (or (= ::skip message) (s/valid? domain/QueuedEmailMessage message))
         (throw (ex-info "Invalid prepared email"
                         {:email/permanent? true :email/reason :invalid-prepared-email})))
-      message)))
+      (if (= ::skip message) message (assoc message :email/email-id email-id)))))

@@ -132,7 +132,8 @@
 
 (defn job-handler [sys client {:keys [id args attempt]}]
   (let [prepared (try
-                   {:message (prepare-job-email sys args)}
+                   (let [message (prepare-job-email sys args)]
+                     (if (= ::mailers/skip message) {:status :skipped} {:message message}))
                    (catch Exception e
                      (let [permanent? (:email/permanent? (ex-data e))]
                        (μ/log ::email-preparation-failed
@@ -147,6 +148,7 @@
                    (handler sys (:message prepared) attempt))]
     (case (:status result)
       :success (drip/complete-job client id)
+      :skipped (drip/complete-job client id)
       :error (drip/discard-job client id)
       :retry (throw (ex-info "Retryable email delivery failure" {:job-id id})))))
 

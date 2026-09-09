@@ -2,6 +2,9 @@
   (:require
    [app.email :as email]
    [app.email.email-worker :as worker]
+   [app.email.mailers :as mailers]
+   [app.jobs.log-dispatch :as log-dispatch]
+   [app.nexus :as nexus]
    [app.email.email-worker-test :as provider-fixtures]
    [app.email.job-queue-test :as queue-fixtures]
    [app.email.lettermint :as lettermint]
@@ -317,3 +320,35 @@
                      (mapv (fn [{:keys [messages options]}] {:recipients (mapv :to messages) :options options})
                            @deliveries)))
               (finally (worker/stop! running)))))))))
+
+(deftest log-dispatched-gig-mail-keeps-its-snapshot-and-skips-no-op-edits
+  (queue-fixtures/with-queue
+    (fn [{:keys [client] :as queue}]
+      (let [conn       (seed!)
+            sys        (runtime queue conn)
+            intent     (mailers/job {:current-locale :de} ::mailers/gig-committed-update
+                                    {:gig-id gig-id :member-ids [ada-id grace-id]})
+            deliveries (atom [])]
+        (log-dispatch/initialize! conn client (d/basis-t (d/db conn)))
+        (nexus/db-transact-fx {} {:system sys :request {}}
+                              [[[[:db/add [:gig/gig-id gig-id] :gig/title "Committed concert"]
+                                 [:db/add [:gig/gig-id gig-id] :gig/location "Committed hall"]]
+                                {:jobs [intent]}]])
+        (let [source-t (d/basis-t (d/db conn))]
+          (nexus/db-transact-fx {} {:system sys :request {}} [[[] {:jobs [intent]}]])
+          (change-live-data! conn)
+          (log-dispatch/dispatch-pending! conn client 128)
+          (let [jobs       (drip/list-jobs client {})
+                invocation (:args (first (filter #(= source-t (get-in % [:args :source-t])) jobs)))]
+            (is (= 2 (count jobs)))
+            (with-redefs [lettermint/send-emails!
+                          (fn [_ messages options]
+                            (swap! deliveries conj {:messages messages :options options})
+                            {:result :email-sent})]
+              (let [running (worker/start! sys)]
+                (try
+                  (doseq [job jobs]
+                    (is (= :completed (:state (queue-fixtures/await-state client (:id job) :completed)))))
+                  (is (= 1 (count @deliveries)))
+                  (assert-original-delivery invocation (first @deliveries))
+                  (finally (worker/stop! running)))))))))))
