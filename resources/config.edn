@@ -107,6 +107,7 @@
                                                        ;; Opt in only for local validation until the effect audit is complete.
                                                        :enabled?     false
                                                        :datomic      #ig/ref :app.ig/datomic-db
+                                                       :auxiliary    #ig/ref :app.ig/auxiliary
                                                        :write-runner #ig/ref :app.ig/write-runner
                                                        :job-queue    #ig/ref :app.ig/job-queue
                                                        :cutover-t    nil
