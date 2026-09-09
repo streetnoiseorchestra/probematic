@@ -142,6 +142,14 @@
            :db                 (d/db (-> system :datomic :conn))
            :page-state         (request-page-state request)
            :current-user-roles (current-user-roles request)}
+    (get-in system [:frame-loop :durable-jobs?])
+    (assoc :durable-jobs? true
+           :current-locale (or (:current-locale request) :en)
+           :job-origin {:tab-id    (datastar/request-tab-id request)
+                        :token     (::datastar/state-token request)
+                        :action-id (::action-id request)
+                        :member-id (current-member-id request)
+                        :locale    (or (:current-locale request) :en)})
     (:env system) (assoc :env (:env system))
     (current-member-id request) (assoc :current-member-id (current-member-id request))))
 
@@ -267,7 +275,7 @@
     {:status 503 :headers {} :body ""}
     (if-let [request (datastar/assoc-connection-token runtime request)]
       (if ((::game/submit! runtime)
-           {:request (assoc (dissoc request :body) ::audit-action (ffirst actions))
+           {:request (assoc (dissoc request :body) ::audit-action (ffirst actions) ::action-id (random-uuid))
             :actions actions})
         {:status 204 :headers {} :body ""}
         {:status 503 :headers {} :body ""})
@@ -277,6 +285,8 @@
   "Evaluates one accepted action and executes its effects on the writer thread."
   [nexus system runtime {:keys [request actions]}]
   (try
+    (when-let [action-id (::action-id request)]
+      (datastar/mark-action! runtime request action-id))
     (let [conn    (get-in system [:datomic :conn])
           request (assoc request :db (d/db conn) :datomic-conn conn)
           result  (nexus/dispatch nexus {:system (or (:system request) system) :request request}

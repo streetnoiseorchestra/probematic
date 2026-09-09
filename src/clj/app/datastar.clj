@@ -402,6 +402,15 @@
              (update clients tab-id f)
              clients))))
 
+(defn mark-action!
+  "Records the current action on its original connection.
+
+  Durable completion feedback can use this id to avoid redirecting a tab after
+  a later action. Call on the writer before evaluating the action."
+  [runtime request action-id]
+  (update-frame-client! runtime (request-tab-id request) (::state-token request)
+                        #(assoc % :action-id action-id)))
+
 (defn queue-sse-events!
   "Validates `events` and appends them to the originating connection's pending SSE
   messages. A render worker sends them in order during a later render phase;
@@ -474,7 +483,7 @@
     (if @(:stopped? runtime)
       {:status 503 :headers {} :body ""}
       (let [tab-id    (or (request-tab-id request) (str (random-uuid)))
-            token     (Object.)
+            token     (random-uuid)
             member-id (get-in request [:app/session :session/member :member/member-id])
             clients   (:clients runtime)
             conns     ^ConcurrentHashMap (::game/conns runtime)]
