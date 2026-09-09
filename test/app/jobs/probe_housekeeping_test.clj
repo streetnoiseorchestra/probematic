@@ -7,8 +7,10 @@
    [app.test-common :as tc]
    [app.write-runner :as writer]
    [app.write-runner-test :as fixtures]
+   [chime.core :as chime]
    [clojure.test :refer [deftest is use-fixtures]]
    [datomic.api :as d]
+   [ol.jobs-util :as jobs]
    [tick.core :as t])
   (:import [java.util.concurrent ConcurrentHashMap]))
 
@@ -46,3 +48,25 @@
               (#'probes/probe-housekeeping-job system nil)
               (is (= (d/basis-t db) (d/basis-t (d/db conn))))))
           (finally (deliver release true)))))))
+
+(deftest rehearsal-notification-schedule-belongs-to-the-shutdown-registry
+  (let [before   (set (map :id @jobs/schedules))
+        handles  (atom #{})
+        chime-at chime/chime-at]
+    (try
+      ;; Retain real handles so a failed registration assertion cannot leak a timer.
+      (with-redefs [chime/chime-at (fn [& args]
+                                     (let [handle (apply chime-at args)]
+                                       (swap! handles conj handle)
+                                       handle))]
+        (t/with-clock (t/instant "2099-01-01T00:00:00Z")
+          ((probes/make-probe-housekeeping-job {}) {:job/frequency [1 :days] :job/initial-delay [1 :days]})))
+      (let [created (remove #(contains? before (:id %)) @jobs/schedules)]
+        (is (= 2 (count created)))
+        (doseq [{:keys [id]} created] (jobs/stop-schedule id))
+        (is (every? #(realized? (:closeable %)) created))
+        (is (= before (set (map :id @jobs/schedules)))))
+      (finally
+        (doseq [handle @handles] (.close ^java.lang.AutoCloseable handle))
+        (doseq [{:keys [id]} (remove #(contains? before (:id %)) @jobs/schedules)]
+          (jobs/stop-schedule id))))))

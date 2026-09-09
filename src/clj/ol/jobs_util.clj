@@ -27,9 +27,10 @@
 
    :name - Name for this schedule
    :handler - Handler fn to be called at the schedule
-   :frequency - Duration between calls
+   :frequency - Duration between calls, unless :times is supplied
    Optional keys:
    :start-at - An inst to start the schedule
+   :times - Explicit sequence of times instead of a fixed frequency
 
    Example:
 
@@ -38,13 +39,11 @@
      :frequency (t/new-duration 10 :seconds)
      :start-at (time-from-now (t/new-duration 5 :seconds)))
    "
-  [& {:keys [name handler frequency start-at]
+  [& {:keys [name handler frequency start-at times]
       :or   {start-at (t/now)}}]
   (let [schedule-id (nano-id)
         schedule    (chime/chime-at
-                     (chime/periodic-seq
-                      start-at
-                      frequency)
+                     (or times (chime/periodic-seq start-at frequency))
                      (fn [time] (handler time)))]
     (swap! schedules conj {:id         schedule-id
                            :name       name

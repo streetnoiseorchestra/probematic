@@ -7,7 +7,6 @@
    [app.probeplan :as probeplan]
    [app.queries :as q]
    [app.write-runner :as writer]
-   [chime.core :as chime]
    [com.yetanalytics.squuid :as sq]
    [app.datomic.shim :as datomic]
    [ol.jobs-util :as jobs]
@@ -106,8 +105,10 @@
         next-wednesdays-at-10-pm
         (->> (iterate #(t/>> % (t/new-period 1 :days)) first-run)
              (filter (comp #{t/WEDNESDAY} t/day-of-week)))]
-    (chime/chime-at next-wednesdays-at-10-pm
-                    (fn [_] (notify-rehearsal-leader! system)))))
+    (jobs/create-schedule :name ::rehearsal-leader-notify
+                          :times next-wednesdays-at-10-pm
+                          :start-at first-run
+                          :handler (fn [_] (notify-rehearsal-leader! system)))))
 
 (defn make-probe-housekeeping-job
   [system]
