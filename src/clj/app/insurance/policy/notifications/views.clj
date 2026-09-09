@@ -92,12 +92,13 @@
                                     sort
                                     vec)
         result                 (get-in req [:page-state actions/form-key :result])
-        sent?                  (= :sent (:status result))
+        queued?                (= :queued (:status result))
+        submitted?             (contains? #{:sent :queued} (:status result))
         toolbar-actions        (cond
                                  (not authorized?)
                                  []
 
-                                 sent?
+                                 submitted?
                                  [[button/Button {:appearance "filled"
                                                   :variant    "brand"
                                                   :href       (urls/link-policy policy)}
@@ -144,15 +145,16 @@
                        :role       "alert"}
           [:i18n/tr :insurance/payment-error-not-allowed]]
 
-         sent?
+         submitted?
          (ui2/section-card
-          {:title [:i18n/tr :insurance/payment-notifications-sent-title]}
+          {:title [:i18n/tr (if queued? :insurance/payment-notifications-queued-title
+                                :insurance/payment-notifications-sent-title)]}
           [:wa-callout {:appearance "outlined"
                         :variant    "success"
                         :role       "status"
                         :aria-live  "polite"}
-           [:i18n/tr :insurance/payment-notifications-sent
-            {:count (:count-sent result)}]])
+           [:i18n/tr (if queued? :insurance/payment-notifications-queued :insurance/payment-notifications-sent)
+            {:count (if queued? (:count-queued result) (:count-sent result))}]])
 
          :else
          [:form {:id             "insurance-payment-notifications-form"

@@ -437,6 +437,13 @@ no-private-payments-title = No payments to request
 no-private-payments = No private instrument payments need to be requested for this policy.
 payment-email-preview-title = Email preview
 payment-email-preview-subtitle = This example uses the first selected member’s instruments and total.
+payment-notifications-queued-title = Notifications queued
+# $count (Number) - Number of recipients with committed notification intents; delivery is still pending.
+payment-notifications-queued =
+    { $count ->
+        [one] One payment notification is queued for delivery.
+       *[other] { $count } payment notifications are queued for delivery.
+    }
 payment-notifications-sent-title = Notifications sent
 payment-notifications-sent =
     { $count ->

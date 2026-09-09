@@ -437,6 +437,13 @@ no-private-payments-title = Keine Zahlungen anzufordern
 no-private-payments = Für diese Police müssen keine Zahlungen für private Instrumente angefordert werden.
 payment-email-preview-title = E-Mail-Vorschau
 payment-email-preview-subtitle = Dieses Beispiel verwendet die Instrumente und den Gesamtbetrag des ersten ausgewählten Mitglieds.
+payment-notifications-queued-title = Benachrichtigungen vorgemerkt
+# $count (Number) - Anzahl der Empfänger mit gespeicherter Versandanforderung; die Zustellung steht noch aus.
+payment-notifications-queued =
+    { $count ->
+        [one] Eine Zahlungsbenachrichtigung ist zum Versand vorgemerkt.
+       *[other] { $count } Zahlungsbenachrichtigungen sind zum Versand vorgemerkt.
+    }
 payment-notifications-sent-title = Benachrichtigungen gesendet
 payment-notifications-sent =
     { $count ->
