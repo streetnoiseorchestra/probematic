@@ -5,7 +5,9 @@
    [app.members.invite.workflows :as workflows]
    [app.write-runner :as writer]
    [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
-   [datomic.api :as d]))
+   [datomic.api :as d]
+   [s-exp.drip :as drip]
+   [tick.core :as t]))
 
 (defn- accepted-attempt? [state claim-generation]
   (domain/accepted-invitation?
@@ -47,3 +49,26 @@
           (if (accepted-attempt? (read-state) claim-generation)
             :accepted
             (throw e)))))))
+
+(defn handle! [resources client {:keys [id args]}]
+  (case (resume! resources args)
+    :retry (throw (ex-info "Invitation setup is not yet complete" {:reason :invitation-retry}))
+    :operator-required (drip/discard-job client id)
+    (:accepted :pending :superseded) (drip/complete-job client id)))
+
+(defn start! [system]
+  (let [resources {:datomic-conn (get-in system [:datomic :conn])
+                   :write-runner (get-in system [:frame-loop :write-runner])
+                   :clock        t/inst
+                   :keycloak     (:keycloak system)}]
+    (drip/start-worker!
+     {:client         (get-in system [:job-queue :client])
+      :registry       {"accept-invitation" (partial handle! resources)}
+      :queues         ["invitation-setup"]
+      :concurrency    1
+      :poll-interval  100
+      :retry-policies {"accept-invitation" (drip/constant-retry-policy 5000)}})))
+
+(defn stop! [worker]
+  (when-not (drip/stop-worker! worker :drain true)
+    (throw (ex-info "Invitation worker did not stop" {}))))
