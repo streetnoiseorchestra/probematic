@@ -95,7 +95,7 @@
       (shim req)
       (if-let [runtime (get-in req [:system :frame-loop])]
         (d*/render-in-frame! runtime
-                            #(full-frame-response render-fn opts (assoc req :db (:db %))))
+                             #(full-frame-response render-fn opts (assoc req :db (:db %))))
         (full-page-response render-fn opts req)))))
 
 (defn- action-query-params [req]

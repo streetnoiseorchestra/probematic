@@ -1177,7 +1177,7 @@
                                                                          :attendance/updated]}])
                  :attendance/_gig
                 ;; (group-by #(-> % :attendance/section :section/name))
-               )
+                 )
         plans   (attendances-for-gig db "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww")
         members (active-members db)
         no-plan]

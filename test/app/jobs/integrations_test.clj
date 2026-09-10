@@ -70,7 +70,7 @@
             requests (atom 0)
             server   (http/run-server (fn [_] {:status (if (= 1 (swap! requests inc)) 503 200) :body "CMS response"})
                                       {:ip "127.0.0.1" :port 0})
-            system   {:frame-loop runtime                                                                                     :job-queue {:client client} :datomic {:conn conn}
+            system   {:frame-loop runtime                                                                                           :job-queue {:client client} :datomic {:conn conn}
                       :env        {:ig/system {:app.ig/profile :prod}
                                    :cms       {:token "test-token" :cms-url (str "http://127.0.0.1:" (:local-port (meta server)))}}}]
         (try

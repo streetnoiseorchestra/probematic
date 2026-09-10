@@ -128,7 +128,7 @@
                                               [name (str value)]))
                                           (l/select "input[type=hidden]" form))))
             sort-url      (:href (l/attrs (l/select-one "a.wa-link-plain" view)))]
-        (is (= {:search        "Casey"                                          :filter "active"
+        (is (= {:search        "Casey"                                                         :filter "active"
                 :search-hidden {"filter-preset" "active" "sort-field" "name"
                                 "sort-order"    "asc"    "page"       "1"    "page-size" "10"}
                 :filter-hidden {"search"     "Casey" "sort-field" "name"

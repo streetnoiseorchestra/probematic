@@ -181,7 +181,7 @@
         handler  (routes/default-handler system)
         sessions (session/init! tc/*sqlite-db* {:expire-secs 3600})
         request  (fn [sid method uri site]
-                   (handler {:uri     uri                        :request-method method
+                   (handler {:uri     uri                                :request-method method
                              :headers {"cookie"         (str "sid=" sid)
                                        "sec-fetch-site" site}}))]
     (try

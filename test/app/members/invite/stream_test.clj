@@ -70,7 +70,7 @@
           (let [ca (open-http (str base "/a"))
                 cb (open-http (str base "/b"))]
             (try
-              (with-open [ba ^InputStream (.getInputStream ca)
+              (with-open [ba  ^InputStream (.getInputStream ca)
                           _bb ^InputStream (.getInputStream cb)]
                 (is (= 200 (.getResponseCode ca)))
                 (is (= 200 (.getResponseCode cb)))
