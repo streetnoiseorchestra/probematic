@@ -4,6 +4,9 @@
    [app.datomic.shim :as datomic]
    [app.email :as email]
    [app.email.messages :as messages]
+   [app.email.mailers :as mailers]
+   [app.jobs.log-dispatch :as log-dispatch]
+   [app.write-runner :as writer]
    [app.i18n :as i18n]
    [app.keycloak :as keycloak]
    [app.members.invite.cells]
@@ -176,23 +179,29 @@
   ([req invite-code]
    (resend-invitation! default-invitation-deps req invite-code))
   ([deps req invite-code]
-   (let [deps (merge default-invitation-deps deps)
-         now  ((:now deps))]
-     (when-let [{:member/keys [member-id
-                               invite-expires-at
-                               invite-status]}
-                (members.queries/invitation-state-by-code
-                 (db-from-req req)
-                 invite-code)]
-       (when (and (= :member.invite.status/pending invite-status)
-                  invite-expires-at
-                  (t/> invite-expires-at now))
-         (μ/log ::resend-member-invite)
-         (queue-invitation!
-          deps
-          req
-          (q/retrieve-member (db-from-req req) member-id)
-          invite-code))))))
+   (let [deps       (merge default-invitation-deps deps)
+         frame-loop (get-in req [:system :frame-loop])
+         resend!
+         (fn []
+           (let [db  (db-from-req req)
+                 now ((:now deps))
+                 {:member/keys [member-id invite-expires-at invite-status]}
+                 (members.queries/invitation-state-by-code db invite-code)]
+             (when (and (= :member.invite.status/pending invite-status)
+                        invite-expires-at (t/> invite-expires-at now))
+               (μ/log ::resend-member-invite)
+               (if (:durable-jobs? frame-loop)
+                 (let [job (assoc-in (mailers/job {:current-locale (or (:current-locale req) :de)}
+                                                  ::mailers/member-invitation {:member-id member-id})
+                                     [1 :email-id] (random-uuid))]
+                   (datomic/transact (conn-from-req req)
+                                     {:tx-data (conj (log-dispatch/intent-tx [job])
+                                                     {:db/id        "datomic.tx"        :audit/action ::resend-member-invite
+                                                      :audit/origin :app.origin/browser})}))
+                 (queue-invitation! deps req (q/retrieve-member db member-id) invite-code)))))]
+     (if (:durable-jobs? frame-loop)
+       (writer/call! (:write-runner frame-loop) resend!)
+       (resend!)))))
 
 (defn delete-invitation!
   "Revokes the pending invitation currently identified by `invite-code`."

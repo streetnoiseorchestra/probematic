@@ -28,16 +28,18 @@
               member-id (get-in created [:member-invite/member :member/member-id])]
           (is (= :created (:member-invite/persist-status created)))
           (is (true? (:member-invite/email-queued? created)))
+          (is (map? (effects/resend-invitation! deps req "original-test-bearer")))
           (is (= "replacement-test-bearer"
                  (effects/reissue-invitation! (assoc deps :now (constantly #inst "2026-08-16T00:00:00Z")
                                                      :random-code (constantly "replacement-test-bearer"))
                                               req "original-test-bearer")))
+          (is (nil? (effects/resend-invitation! deps req "original-test-bearer")))
           (is (= :conflict (:member-invite/persist-status (effects/invite-member! deps req invitations/member-invite-form))))
           (writer/call! (:write-runner runtime) (constantly nil))
           (let [jobs (sort-by #(get-in % [:args :source-t]) (drip/list-jobs client {}))]
-            (is (= 2 (count jobs)))
+            (is (= 3 (count jobs)))
             (is (empty? @queued))
-            (doseq [[job bearer] (map vector jobs ["original-test-bearer" "replacement-test-bearer"])]
+            (doseq [[job bearer] (map vector jobs ["original-test-bearer" "original-test-bearer" "replacement-test-bearer"])]
               (let [invocation (:args job)
                     source     (d/entity (d/db conn) (d/t->tx (:source-t invocation)))
                     message    (mailers/prepare! mail-system invocation)]
