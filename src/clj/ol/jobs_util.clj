@@ -6,6 +6,7 @@
    [tick.core :as t]))
 (declare stop-all-schedules)
 (defonce schedules (atom []))
+(defonce accepting-schedules? (atom true))
 
 (defn time-from-now
   "A time from now in duration
@@ -41,24 +42,27 @@
    "
   [& {:keys [name handler frequency start-at times]
       :or   {start-at (t/now)}}]
-  (let [schedule-id (nano-id)
-        gate        (Object.)
-        stopping?   (atom false)]
-    (locking gate
-      (let [schedule (chime/chime-at
-                      (or times (chime/periodic-seq start-at frequency))
-                      (fn [time]
-                        (locking gate
-                          (when-not @stopping? (handler time))))
-                      {:on-finished #(swap! schedules (fn [entries] (filterv (fn [entry] (not= schedule-id (:id entry))) entries)))})]
-        (when-not (realized? schedule)
-          (swap! schedules conj {:id         schedule-id
-                                 :name       name
-                                 :frequency  frequency
-                                 :started-at start-at
-                                 :gate       gate
-                                 :stopping?  stopping?
-                                 :closeable  schedule}))))))
+  (locking schedules
+    (when-not @accepting-schedules?
+      (throw (ex-info "Job scheduler is stopped" {})))
+    (let [schedule-id (nano-id)
+          gate        (Object.)
+          stopping?   (atom false)]
+      (locking gate
+        (let [schedule (chime/chime-at
+                        (or times (chime/periodic-seq start-at frequency))
+                        (fn [time]
+                          (locking gate
+                            (when-not @stopping? (handler time))))
+                        {:on-finished #(swap! schedules (fn [entries] (filterv (fn [entry] (not= schedule-id (:id entry))) entries)))})]
+          (when-not (realized? schedule)
+            (swap! schedules conj {:id         schedule-id
+                                   :name       name
+                                   :frequency  frequency
+                                   :started-at start-at
+                                   :gate       gate
+                                   :stopping?  stopping?
+                                   :closeable  schedule})))))))
 
 (defn stop-schedule
   "Stop a running schedule based on it's id"
@@ -72,8 +76,13 @@
 (defn stop-all-schedules
   "Stop all running schedules"
   []
-  (doseq [schedule @schedules]
-    (stop-schedule (:id schedule))))
+  (let [entries (locking schedules
+                  (reset! accepting-schedules? false)
+                  @schedules)]
+    (doseq [{:keys [stopping?]} entries]
+      (when stopping? (reset! stopping? true)))
+    (doseq [{:keys [id]} entries]
+      (stop-schedule id))))
 
 (defn current-schedules
   []
@@ -100,6 +109,10 @@
     (create-schedule :handler handler :times [start-at] :start-at start-at)))
 
 (defn start-jobs [jobs-def jobs-config]
+  (locking schedules
+    (when (and (not @accepting-schedules?) (seq @schedules))
+      (throw (ex-info "Job scheduler is still draining" {})))
+    (reset! accepting-schedules? true))
   (run!
    (fn [job-key]
      (if-let [job-fn (get jobs-def job-key)]
