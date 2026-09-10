@@ -56,6 +56,24 @@
                   (deliver release true)
                   (bfs/delete-if-exists (:tempfile upload)))))))))))
 
+(deftest prepared-profile-can-commit-after-the-upload-tempfile-is-deleted
+  (writer-fixtures/with-runtime
+    (fn [runtime _ conn]
+      (profile-fixtures/with-temp-filestore
+        (fn [store]
+          (let [member-id (random-uuid)
+                system    {:datomic {:conn conn} :filestore store :frame-loop runtime}]
+            (writer/call! (:write-runner runtime)
+                          #(deref (d/transact conn [{:member/member-id member-id}])))
+            (let [upload   (profile-fixtures/avatar-upload "prepared-profile")
+                  before-t (d/basis-t (d/db conn))
+                  prepared (effects/prepare-profile! system {:member-id     member-id :profile        profile-fixtures/profile
+                                                             :avatar-upload upload    :sync-keycloak? false})]
+              (is (not (bfs/exists? (:tempfile upload))))
+              (is (= before-t (d/basis-t (d/db conn))))
+              (is (= :saved (:status (effects/save-prepared-profile! system prepared))))
+              (is (some? (:member/avatar (d/entity (d/db conn) [:member/member-id member-id])))))))))))
+
 (deftest profile-save-reads-current-identity-after-upload-preparation
   (writer-fixtures/with-runtime
     (fn [runtime _ conn]

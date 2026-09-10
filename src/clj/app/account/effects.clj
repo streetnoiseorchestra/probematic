@@ -91,46 +91,66 @@
                (log-dispatch/intent-tx
                 [(identity-jobs/job params member-id keycloak-id {:metadata? true})])))))))
 
-(defn save-profile!
-  "Persists one validated profile and optional avatar upload atomically.
+(defn prepare-profile!
+  "Stores avatar bytes and returns profile parameters for [[save-prepared-profile!]].
 
-  The upload's stripped original and four fixed renditions are stored before a
-  single Datomic transaction attaches their metadata to the authenticated
-  member.
-  Avatar changes use last-write-wins semantics.
-  The temporary multipart file is deleted on success and failure.
+  Deletes the multipart tempfile on success and failure. Does not write Datomic.
+  Call outside the application writer. A later rejected save can leave
+  unreferenced content-addressed files; preparation is not a business commit.
 
-  Options:
-
-  | key                   | description
-  |-----------------------|-------------
-  | `:member-id`          | Authenticated member UUID
-  | `:profile`            | Validated normalized profile map
-  | `:avatar-upload`      | Optional multipart file metadata and tempfile
-  | `:sync-keycloak?`     | Request identity synchronization; durable mode queues it atomically with the profile |"
-  [system {:keys [member-id profile avatar-upload sync-keycloak?] :as params}]
-  (let [conn     (-> system :datomic :conn)
-        tempfile (:tempfile avatar-upload)
-        durable? (get-in system [:frame-loop :durable-jobs?])]
-    (assert conn "profile persistence requires a Datomic connection")
+  | Key | Description |
+  | --- | --- |
+  | `:profile` | Normalized profile, including `:avatar-removed?` |
+  | `:avatar-upload` | Server-parsed multipart file and metadata, if present |"
+  [system {:keys [profile avatar-upload] :as params}]
+  (let [tempfile (:tempfile avatar-upload)]
     (try
-      (let [stored-avatar (when (and avatar-upload (not (:avatar-removed? profile)))
-                            (filestore.controller/store-avatar!
-                             {:filestore (:filestore system)}
-                             {:file-name (:filename avatar-upload)
-                              :file      tempfile
-                              :mime-type (:mime-type avatar-upload)}))
-            persist!      (fn [] @(d/transact conn (save-tx (d/db conn) params stored-avatar durable?)))
-            tx-result     (if-let [control (get-in system [:frame-loop :write-runner])]
-                            (writer/call! control persist!)
-                            (persist!))]
-        (when (and sync-keycloak? (not durable?))
-          (members.effects/update-keycloak-meta!
-           {:system system :datomic-conn conn} member-id))
-        {:status :saved :tx-result tx-result})
+      (assoc params ::stored-avatar
+             (when (and avatar-upload (not (:avatar-removed? profile)))
+               (filestore.controller/store-avatar!
+                {:filestore (:filestore system)}
+                {:file-name (:filename avatar-upload)
+                 :file      tempfile
+                 :mime-type (:mime-type avatar-upload)})))
       (finally
         (when tempfile
           (bfs/delete-if-exists tempfile))))))
+
+(defn save-prepared-profile!
+  "Commits parameters returned by [[prepare-profile!]] using writer-current state.
+
+  Does not read the upload tempfile. Identity synchronization intent commits
+  with the profile in durable mode; legacy synchronization follows the commit.
+  Returns `{:status :saved :tx-result report}` only after the commit."
+  [system {:keys [member-id sync-keycloak?] :as params}]
+  (when-not (contains? params ::stored-avatar)
+    (throw (ex-info "Profile upload has not been prepared" {})))
+  (let [conn     (-> system :datomic :conn)
+        durable? (get-in system [:frame-loop :durable-jobs?])
+        persist! (fn [] @(d/transact conn (save-tx (d/db conn) params (::stored-avatar params) durable?)))]
+    (assert conn "profile persistence requires a Datomic connection")
+    (let [tx-result (if-let [control (get-in system [:frame-loop :write-runner])]
+                      (writer/call! control persist!)
+                      (persist!))]
+      (when (and sync-keycloak? (not durable?))
+        (members.effects/update-keycloak-meta!
+         {:system system :datomic-conn conn} member-id))
+      {:status :saved :tx-result tx-result})))
+
+(defn save-profile!
+  "Prepares an upload and synchronously commits one validated profile.
+
+  See [[prepare-profile!]] and [[save-prepared-profile!]] for the separate
+  preparation and persistence boundaries. Avatar changes are last-write-wins.
+
+  | Key | Description |
+  | --- | --- |
+  | `:member-id` | Authenticated member UUID |
+  | `:profile` | Validated normalized profile |
+  | `:avatar-upload` | Optional server-parsed multipart file and metadata |
+  | `:sync-keycloak?` | Request identity synchronization after persistence |"
+  [system params]
+  (save-prepared-profile! system (prepare-profile! system params)))
 
 (defn discard-upload-fx
   "Deletes a rejected multipart upload tempfile, if present."
