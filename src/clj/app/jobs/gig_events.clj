@@ -7,10 +7,9 @@
    [app.discourse :as discourse]
    [app.email :as email]
    [app.errors :as errors]
-   [chime.core :as chime]
+   [ol.jobs-util :as jobs]
    [clojure.data]
-   [app.datomic.shim :as datomic]
-   [tick.core :as t]))
+   [app.datomic.shim :as datomic]))
 
 (defn update-system
   [{:keys [system]}]
@@ -49,13 +48,14 @@
 
 (defn exec-later
   [fn-name & args]
-  (chime/chime-at [(t/>> (t/instant) (t/new-duration 1 :seconds))]
-                  (fn [_]
-                    (try
-                      (apply fn-name args)
-                      (catch Throwable e
-                        (tap> e)
-                        (errors/report-error! e))))))
+  (jobs/make-one-shot-job
+   (fn [_]
+     (try
+       (apply fn-name args)
+       (catch Throwable e
+         (tap> e)
+         (errors/report-error! e))))
+   [1 :seconds]))
 
 (defn trigger-gig-details-edited
   [req notify? takeover-topic? {:keys [gig-before gig] :as transact-result}]

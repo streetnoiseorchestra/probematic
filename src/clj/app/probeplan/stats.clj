@@ -5,7 +5,7 @@
    [app.util :as util]
    [app.datomic.shim :as datomic]
    [tick.core :as t]
-   [chime.core :as chime]))
+   [ol.jobs-util :as jobs]))
 
 (defn days-since [d as-of]
   (t/days
@@ -49,9 +49,7 @@
                           (calc-stats (datomic/db conn))}))
 
 (defn calc-play-stats-in-bg! [conn]
-  (chime/chime-at [(t/>> (t/instant) (t/new-duration 5 :seconds))]
-                  (fn [_]
-                    (calc-and-save-play-stats! conn)))
+  (jobs/make-one-shot-job (fn [_] (calc-and-save-play-stats! conn)) [5 :seconds])
   nil)
 
 (comment
