@@ -67,3 +67,14 @@ invite-accept-create-subtitle = You're only a few steps away from your new SNO I
 invite-accept-create-account = Create account
 invite-accept-created-title = Your SNO ID was created!
 invite-accept-created-subtitle = Welcome :) Please login using your new SNO ID.
+
+## Durable account setup
+invite-setup-creating-title = Your account is being created
+invite-setup-accepted-title = Your account is ready
+invite-setup-accepted-body = We’ll take you to sign in.
+invite-setup-continue = Continue to sign in
+invite-setup-retry-title = Account setup couldn’t finish
+invite-setup-retry-body = Please try again.
+invite-setup-retry = Try again
+invite-setup-help-title = Account setup needs help
+invite-setup-help-body = Please contact the person who invited you.

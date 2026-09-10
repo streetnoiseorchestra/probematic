@@ -67,3 +67,14 @@ invite-accept-create-subtitle = Du bist nur noch wenige Schritte von deiner neue
 invite-accept-create-account = Konto erstellen
 invite-accept-created-title = Deine SNO-ID wurde erstellt!
 invite-accept-created-subtitle = Herzlich willkommen! :) Bitte meldest du dich mit deiner neuen SNO-ID an.
+
+## Dauerhafte Kontoeinrichtung
+invite-setup-creating-title = Dein Konto wird erstellt
+invite-setup-accepted-title = Dein Konto ist bereit
+invite-setup-accepted-body = Du wirst zur Anmeldung weitergeleitet.
+invite-setup-continue = Weiter zur Anmeldung
+invite-setup-retry-title = Dein Konto konnte noch nicht eingerichtet werden
+invite-setup-retry-body = Bitte versuche es noch einmal.
+invite-setup-retry = Erneut versuchen
+invite-setup-help-title = Bei der Kontoeinrichtung brauchen wir Hilfe
+invite-setup-help-body = Bitte kontaktiere die Person, die dich eingeladen hat.
