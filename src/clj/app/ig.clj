@@ -19,6 +19,7 @@
             [app.game-loop.storage :as frame-storage]
             [app.jobs.log-dispatch :as log-dispatch]
             [app.jobs.identity :as identity-jobs]
+            [app.jobs.invitations :as invitation-jobs]
             [app.jobs.integrations :as integrations]
             [app.jobs.play-stats :as play-stats]
             [app.jobs.policy-mail :as policy-mail]
@@ -157,6 +158,12 @@
 
 (defmethod ig/init-key ::job-maintenance [_ {:keys [job-queue]}]
   (drip/start-maintenance-worker! {:client (:client job-queue) :queues []}))
+
+(defmethod ig/init-key ::invitation-worker [_ {:keys [frame-loop] :as system}]
+  (when (:durable-jobs? frame-loop) (invitation-jobs/start! system)))
+
+(defmethod ig/halt-key! ::invitation-worker [_ worker]
+  (when worker (invitation-jobs/stop! worker)))
 
 (defmethod ig/init-key ::identity-worker [_ {:keys [frame-loop] :as system}]
   (when (:durable-jobs? frame-loop) (identity-jobs/start! system)))

@@ -1,19 +1,33 @@
 (ns app.jobs.invitations-test
   (:require
    [app.game-loop :as game]
+   [app.ig]
    [app.jobs.invitations :as invitations]
    [app.members.invite.cells-test :as cells]
    [app.members.invite.domain :as domain]
    [app.members.invite.workflows :as acceptance]
    [app.members.invite.workflows-test :as workflows]
+   [app.system :as system]
    [app.test-common :as tc]
    [app.write-runner :as writer]
    [app.write-runner-test :as fixtures]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]
+   [integrant.core :as ig]
    [s-exp.drip :as drip]))
 
 (use-fixtures :each tc/with-released-test-connections)
+
+(deftest invitation-worker-follows-durable-runtime-and-resource-dependencies
+  (let [config (:ig/system (system/config {:profile :test}))]
+    (is (= {:frame-loop (ig/ref :app.ig/frame-loop)
+            :datomic    (ig/ref :app.ig/datomic-db)
+            :keycloak   (ig/ref :app.ig/keycloak)
+            :job-queue  (ig/ref :app.ig/job-queue)}
+           (:app.ig/invitation-worker config))))
+  (is (nil? (ig/init-key :app.ig/invitation-worker {})))
+  (is (nil? (ig/init-key :app.ig/invitation-worker {:frame-loop {:durable-jobs? false}})))
+  (is (nil? (ig/halt-key! :app.ig/invitation-worker nil))))
 
 (defn with-claim [f]
   (fixtures/with-runtime
@@ -154,7 +168,7 @@
             (let [job    (drip/insert-job client "accept-invitation"
                                           {:member-id member-id :claim-generation 2}
                                           {:queue "invitation-setup" :max-attempts 2})
-                  worker (invitations/start! system)]
+                  worker (ig/init-key :app.ig/invitation-worker system)]
               (try
                 (let [finished (await-job-state client (:id job) expected)]
                   (is (= expected (:state finished)))
@@ -164,7 +178,7 @@
                     :compensate (is (= cells/pending (:status (domain/invitation-state (d/db conn) member-id))))
                     :unsafe (is (true? (get-in @(:state keycloak) [:users "unsafe-user" :enabled?])))
                     (is (empty? (:users @(:state keycloak))))))
-                (finally (invitations/stop! worker))))))))))
+                (finally (ig/halt-key! :app.ig/invitation-worker worker))))))))))
 
 (deftest worker-restart-recovers-a-lost-create-response-without-creating-again
   (fixtures/with-runtime

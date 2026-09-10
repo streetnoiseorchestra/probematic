@@ -53,143 +53,147 @@
                            :style-src   #join [#ref [:app-base-url] " " #ref [:discourse :forum-url] " https://early.webawesome.com 'self' 'unsafe-inline'"]
                            :connect-src "'self'"
                            :frame-src   #join [#ref [:app-base-url] " https://" #ref [:nextcloud :host] " 'self'"]}
- :ig/system               {:app.ig/profile         #profile {:prod :prod
-                                                             :dev  :dev
-                                                             :demo :demo
-                                                             :test :test}
-                           :app.ig/console-logging {:pretty? #profile {:prod false
-                                                                       :dev  true
-                                                                       :test true
-                                                                       :demo true}}
-                           :app.ig/openobserve     #merge [#ref [:secrets :openobserve]
-                                                           {:enabled?    #profile {:prod true
-                                                                                   :dev  false
-                                                                                   :test false
-                                                                                   :demo false}
-                                                            :data-stream #profile {:prod "snorga_prod_logs"
-                                                                                   :dev  "snorga_dev_logs"
-                                                                                   :test "snorga_test_logs"}}]
+ :ig/system               {:app.ig/profile             #profile {:prod :prod
+                                                                 :dev  :dev
+                                                                 :demo :demo
+                                                                 :test :test}
+                           :app.ig/console-logging     {:pretty? #profile {:prod false
+                                                                           :dev  true
+                                                                           :test true
+                                                                           :demo true}}
+                           :app.ig/openobserve         #merge [#ref [:secrets :openobserve]
+                                                               {:enabled?    #profile {:prod true
+                                                                                       :dev  false
+                                                                                       :test false
+                                                                                       :demo false}
+                                                                :data-stream #profile {:prod "snorga_prod_logs"
+                                                                                       :dev  "snorga_dev_logs"
+                                                                                       :test "snorga_test_logs"}}]
 
-                           :app.ig/env                {:profile         #ig/ref :app.ig/profile
-                                                       :console-logging #ig/ref :app.ig/console-logging
-                                                       :openobserve     #ig/ref :app.ig/openobserve}
-                           :app.ig/nrepl-server       {:port #long #or [#env NREPL_PORT
-                                                                        #profile {:prod 7000
-                                                                                  :dev  -1
-                                                                                  :test -1
-                                                                                  :demo -1}]
-                                                       :bind #or [#env NREPL_HOST "127.0.0.1"]}
-                           :app.server/http-kit       {:options {:port     #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
-                                                                 :ip       #or [#env HTTP_BIND_HOST "127.0.0.1"]
-                                                                 :max-line 16384}
-                                                       :env     #ig/ref :app.ig/env
-                                                       :handler #ig/ref :app.ig/handler}
-                           :app.ig/handler            {:env                   #ig/ref :app.ig/env
-                                                       :i18n-langs            #ig/ref :app.ig/i18n-langs
-                                                       :profile               #ig/ref :app.ig/profile ;needed?
-                                                       :oauth2                #ig/ref :app.ig/oauth2
-                                                       :datomic               #ig/ref :app.ig/datomic-db
-                                                       :webdav                #ig/ref :app.ig/webdav-sardine
-                                                       :keycloak              #ig/ref :app.ig/keycloak
-                                                       :job-queue             #ig/ref :app.ig/job-queue
-                                                       :auxiliary             #ig/ref :app.ig/auxiliary
-                                                       :calendar              #ig/ref :app.ig/calendar
-                                                       :filestore             #ig/ref :app.ig/filestore
-                                                       :nexus                 #ig/ref :app.ig/nexus
-                                                       :frame-loop            #ig/ref :app.ig/frame-loop
-                                                       :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult
-                                                       :icon-sprites          #ig/ref :app.icons/sprites}
-                           :app.datastar/refresh-mult {:datomic #ig/ref :app.ig/datomic-db}
-                           :app.ig/nexus              {}
-                           :app.ig/write-runner       {:profile  #ig/ref :app.ig/profile
-                                                       :enabled? #ref [:ig/system :app.ig/frame-loop :enabled?]}
-                           :app.ig/frame-loop         {:profile      #ig/ref :app.ig/profile
+                           :app.ig/env                 {:profile         #ig/ref :app.ig/profile
+                                                        :console-logging #ig/ref :app.ig/console-logging
+                                                        :openobserve     #ig/ref :app.ig/openobserve}
+                           :app.ig/nrepl-server        {:port #long #or [#env NREPL_PORT
+                                                                         #profile {:prod 7000
+                                                                                   :dev  -1
+                                                                                   :test -1
+                                                                                   :demo -1}]
+                                                        :bind #or [#env NREPL_HOST "127.0.0.1"]}
+                           :app.server/http-kit        {:options {:port     #long #or [#env HTTP_PORT #profile {:dev 6161 :test 6162} 6160]
+                                                                  :ip       #or [#env HTTP_BIND_HOST "127.0.0.1"]
+                                                                  :max-line 16384}
+                                                        :env     #ig/ref :app.ig/env
+                                                        :handler #ig/ref :app.ig/handler}
+                           :app.ig/handler             {:env                   #ig/ref :app.ig/env
+                                                        :i18n-langs            #ig/ref :app.ig/i18n-langs
+                                                        :profile               #ig/ref :app.ig/profile ;needed?
+                                                        :oauth2                #ig/ref :app.ig/oauth2
+                                                        :datomic               #ig/ref :app.ig/datomic-db
+                                                        :webdav                #ig/ref :app.ig/webdav-sardine
+                                                        :keycloak              #ig/ref :app.ig/keycloak
+                                                        :job-queue             #ig/ref :app.ig/job-queue
+                                                        :auxiliary             #ig/ref :app.ig/auxiliary
+                                                        :calendar              #ig/ref :app.ig/calendar
+                                                        :filestore             #ig/ref :app.ig/filestore
+                                                        :nexus                 #ig/ref :app.ig/nexus
+                                                        :frame-loop            #ig/ref :app.ig/frame-loop
+                                                        :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult
+                                                        :icon-sprites          #ig/ref :app.icons/sprites}
+                           :app.datastar/refresh-mult  {:datomic #ig/ref :app.ig/datomic-db}
+                           :app.ig/nexus               {}
+                           :app.ig/write-runner        {:profile  #ig/ref :app.ig/profile
+                                                        :enabled? #ref [:ig/system :app.ig/frame-loop :enabled?]}
+                           :app.ig/frame-loop          {:profile      #ig/ref :app.ig/profile
                                                        ;; Opt in only for local validation until the effect audit is complete.
-                                                       :enabled?     false
-                                                       :datomic      #ig/ref :app.ig/datomic-db
-                                                       :auxiliary    #ig/ref :app.ig/auxiliary
-                                                       :write-runner #ig/ref :app.ig/write-runner
-                                                       :job-queue    #ig/ref :app.ig/job-queue
-                                                       :cutover-t    nil
-                                                       :nexus        #ig/ref :app.ig/nexus}
-                           :app.icons/sprites         {}
-                           :app.ig/oauth2             {:env #ig/ref :app.ig/env}
-                           :ol.ig/jobs                {:job-defs #ig/ref :app.ig.jobs/definitions
-                                                       :env      #ig/ref :app.ig/env}
-                           :app.ig/gigo-client        {:env #ig/ref :app.ig/env}
-                           :app.ig/datomic-db         {:client {:server-type :datomic-local
-                                                                :system      "app"
-                                                                :db-name     "probematic"
-                                                                :env         #ig/ref :app.ig/env
-                                                                :storage-dir #or [#env DATOMIC_DB_STORAGE_DIR
-                                                                                  #profile {;; :dev  #envf ["%s/datomic.data" PWD]
-                                                                                            :dev  #envf ["%s/datomic.data.restored" PWD]
-                                                                                            :test #envf ["%s/datomic.test.data" PWD]
-                                                                                            :demo #envf ["%s/datomic.demo.data" PWD]}]}
-                                                       :peer   {:db-uri #or [#env DATOMIC_URI
-                                                                             #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]}}
-                           :app.ig/job-maintenance    {:job-queue  #ig/ref :app.ig/job-queue
-                                                       :frame-loop #ig/ref :app.ig/frame-loop}
-                           :app.ig/job-queue          {:write-runner #ig/ref :app.ig/write-runner
-                                                       :filename     #or [#env PROBEMATIC_SQLITE_JOB_QUEUE
-                                                                          #profile {:dev  #envf ["%s/data.dev/jobs.sqlite" PWD]
-                                                                                    :test #envf ["%s/data.test/jobs.sqlite" PWD]
-                                                                                    :demo #envf ["%s/data.demo/jobs.sqlite" PWD]
-                                                                                    :prod "/data/jobs.sqlite"}]}
-                           :app.ig/auxiliary          {:filename #or [#env PROBEMATIC_SQLITE_AUXILIARY
-                                                                      #profile {:dev  #envf ["%s/data.dev/auxiliary.sqlite" PWD]
-                                                                                :test #envf ["%s/data.dev/test-auxiliary.sqlite" PWD]
-                                                                                :demo #envf ["%s/data.dev/demo-auxiliary.sqlite" PWD]
-                                                                                :prod "/data/auxiliary.sqlite"}]
-                                                       :config   {:pragma        {:foreign_keys true
-                                                                                  :cache_size   -8192}
-                                                                  :writer-pragma {:cache_size -32768}}}
+                                                        :enabled?     false
+                                                        :datomic      #ig/ref :app.ig/datomic-db
+                                                        :auxiliary    #ig/ref :app.ig/auxiliary
+                                                        :write-runner #ig/ref :app.ig/write-runner
+                                                        :job-queue    #ig/ref :app.ig/job-queue
+                                                        :cutover-t    nil
+                                                        :nexus        #ig/ref :app.ig/nexus}
+                           :app.icons/sprites          {}
+                           :app.ig/oauth2              {:env #ig/ref :app.ig/env}
+                           :ol.ig/jobs                 {:job-defs #ig/ref :app.ig.jobs/definitions
+                                                        :env      #ig/ref :app.ig/env}
+                           :app.ig/gigo-client         {:env #ig/ref :app.ig/env}
+                           :app.ig/datomic-db          {:client {:server-type :datomic-local
+                                                                 :system      "app"
+                                                                 :db-name     "probematic"
+                                                                 :env         #ig/ref :app.ig/env
+                                                                 :storage-dir #or [#env DATOMIC_DB_STORAGE_DIR
+                                                                                   #profile {;; :dev  #envf ["%s/datomic.data" PWD]
+                                                                                             :dev  #envf ["%s/datomic.data.restored" PWD]
+                                                                                             :test #envf ["%s/datomic.test.data" PWD]
+                                                                                             :demo #envf ["%s/datomic.demo.data" PWD]}]}
+                                                        :peer   {:db-uri #or [#env DATOMIC_URI
+                                                                              #profile {:dev "datomic:sql://app?jdbc:sqlite:data.dev/datomic/data/datomic-sqlite.db"}]}}
+                           :app.ig/job-maintenance     {:job-queue  #ig/ref :app.ig/job-queue
+                                                        :frame-loop #ig/ref :app.ig/frame-loop}
+                           :app.ig/job-queue           {:write-runner #ig/ref :app.ig/write-runner
+                                                        :filename     #or [#env PROBEMATIC_SQLITE_JOB_QUEUE
+                                                                           #profile {:dev  #envf ["%s/data.dev/jobs.sqlite" PWD]
+                                                                                     :test #envf ["%s/data.test/jobs.sqlite" PWD]
+                                                                                     :demo #envf ["%s/data.demo/jobs.sqlite" PWD]
+                                                                                     :prod "/data/jobs.sqlite"}]}
+                           :app.ig/auxiliary           {:filename #or [#env PROBEMATIC_SQLITE_AUXILIARY
+                                                                       #profile {:dev  #envf ["%s/data.dev/auxiliary.sqlite" PWD]
+                                                                                 :test #envf ["%s/data.dev/test-auxiliary.sqlite" PWD]
+                                                                                 :demo #envf ["%s/data.dev/demo-auxiliary.sqlite" PWD]
+                                                                                 :prod "/data/auxiliary.sqlite"}]
+                                                        :config   {:pragma        {:foreign_keys true
+                                                                                   :cache_size   -8192}
+                                                                   :writer-pragma {:cache_size -32768}}}
 
-                           :app.ig/i18n-langs         {}
-                           :app.ig/lettermint         {:env #ig/ref :app.ig/env}
-                           :app.ig/play-stats-worker  {:frame-loop #ig/ref :app.ig/frame-loop
-                                                       :datomic    #ig/ref :app.ig/datomic-db
-                                                       :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/policy-mail-worker {:frame-loop #ig/ref :app.ig/frame-loop
-                                                       :datomic    #ig/ref :app.ig/datomic-db
-                                                       :env        #ig/ref :app.ig/env
-                                                       :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                       :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/identity-worker    {:frame-loop #ig/ref :app.ig/frame-loop
-                                                       :datomic    #ig/ref :app.ig/datomic-db
-                                                       :keycloak   #ig/ref :app.ig/keycloak
-                                                       :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                       :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/integrations-worker {:frame-loop #ig/ref :app.ig/frame-loop
-                                                        :datomic #ig/ref :app.ig/datomic-db
-                                                        :env #ig/ref :app.ig/env
-                                                        :calendar #ig/ref :app.ig/calendar
+                           :app.ig/i18n-langs          {}
+                           :app.ig/lettermint          {:env #ig/ref :app.ig/env}
+                           :app.ig/play-stats-worker   {:frame-loop #ig/ref :app.ig/frame-loop
+                                                        :datomic    #ig/ref :app.ig/datomic-db
+                                                        :job-queue  #ig/ref :app.ig/job-queue}
+                           :app.ig/policy-mail-worker  {:frame-loop #ig/ref :app.ig/frame-loop
+                                                        :datomic    #ig/ref :app.ig/datomic-db
+                                                        :env        #ig/ref :app.ig/env
                                                         :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                        :job-queue #ig/ref :app.ig/job-queue}
-                           :app.ig/email-worker       {:env        #ig/ref :app.ig/env
-                                                       :frame-loop #ig/ref :app.ig/frame-loop
-                                                       :datomic    #ig/ref :app.ig/datomic-db
-                                                       :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                       :job-queue  #ig/ref :app.ig/job-queue
-                                                       :lettermint #ig/ref :app.ig/lettermint}
-                           :app.ig/webdav-sardine     {:env #ig/ref :app.ig/env}
-                           :app.ig/keycloak           {:env #ig/ref :app.ig/env}
-                           :app.ig/calendar           {:env #ig/ref :app.ig/env}
-                           :app.ig/filestore          {:env #ig/ref :app.ig/env}
-                           :app.ig.jobs/definitions   {:env        #ig/ref :app.ig/env
-                                                       :frame-loop #ig/ref :app.ig/frame-loop
-                                                       :gigo       #ig/ref :app.ig/gigo-client
-                                                       :datomic    #ig/ref :app.ig/datomic-db
-                                                       :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                       :job-queue  #ig/ref :app.ig/job-queue
-                                                       :calendar   #ig/ref :app.ig/calendar
-                                                       :filestore  #ig/ref :app.ig/filestore}}
- :jobs {#_#_:job/sync-songs     {:job/frequency     [60 :minutes]
-                                 :job/initial-delay [2 :minutes]}
-        :job/probe-housekeeping {:job/frequency     [10 :minutes]
-                                 :job/initial-delay [2 :minutes]}
-        :job/poll-housekeeping  {:job/frequency     [3 :minutes]
-                                 :job/initial-delay [2 :minutes]}
-        :job/reminders          {:job/frequency     [1 :hours]
-                                 :job/initial-delay [2 :minutes]}
-        :job/avatar-cutover     {:job/initial-delay [30 :seconds]}}}
+                                                        :job-queue  #ig/ref :app.ig/job-queue}
+                           :app.ig/invitation-worker   {:frame-loop #ig/ref :app.ig/frame-loop
+                                                        :datomic    #ig/ref :app.ig/datomic-db
+                                                        :keycloak   #ig/ref :app.ig/keycloak
+                                                        :job-queue  #ig/ref :app.ig/job-queue}
+                           :app.ig/identity-worker     {:frame-loop #ig/ref :app.ig/frame-loop
+                                                        :datomic    #ig/ref :app.ig/datomic-db
+                                                        :keycloak   #ig/ref :app.ig/keycloak
+                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                        :job-queue  #ig/ref :app.ig/job-queue}
+                           :app.ig/integrations-worker {:frame-loop #ig/ref :app.ig/frame-loop
+                                                        :datomic    #ig/ref :app.ig/datomic-db
+                                                        :env        #ig/ref :app.ig/env
+                                                        :calendar   #ig/ref :app.ig/calendar
+                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                        :job-queue  #ig/ref :app.ig/job-queue}
+                           :app.ig/email-worker        {:env        #ig/ref :app.ig/env
+                                                        :frame-loop #ig/ref :app.ig/frame-loop
+                                                        :datomic    #ig/ref :app.ig/datomic-db
+                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                        :job-queue  #ig/ref :app.ig/job-queue
+                                                        :lettermint #ig/ref :app.ig/lettermint}
+                           :app.ig/webdav-sardine      {:env #ig/ref :app.ig/env}
+                           :app.ig/keycloak            {:env #ig/ref :app.ig/env}
+                           :app.ig/calendar            {:env #ig/ref :app.ig/env}
+                           :app.ig/filestore           {:env #ig/ref :app.ig/env}
+                           :app.ig.jobs/definitions    {:env        #ig/ref :app.ig/env
+                                                        :frame-loop #ig/ref :app.ig/frame-loop
+                                                        :gigo       #ig/ref :app.ig/gigo-client
+                                                        :datomic    #ig/ref :app.ig/datomic-db
+                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                        :job-queue  #ig/ref :app.ig/job-queue
+                                                        :calendar   #ig/ref :app.ig/calendar
+                                                        :filestore  #ig/ref :app.ig/filestore}}
+ :jobs                    {#_#_:job/sync-songs     {:job/frequency     [60 :minutes]
+                                                    :job/initial-delay [2 :minutes]}
+                           :job/probe-housekeeping                                   {:job/frequency     [10 :minutes]
+                                                                                      :job/initial-delay [2 :minutes]}
+                           :job/poll-housekeeping                                    {:job/frequency     [3 :minutes]
+                                                                                      :job/initial-delay [2 :minutes]}
+                           :job/reminders                                            {:job/frequency     [1 :hours]
+                                                                                      :job/initial-delay [2 :minutes]}
+                           :job/avatar-cutover                                       {:job/initial-delay [30 :seconds]}}}
