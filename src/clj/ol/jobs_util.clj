@@ -42,28 +42,32 @@
   [& {:keys [name handler frequency start-at times]
       :or   {start-at (t/now)}}]
   (let [schedule-id (nano-id)
-        schedule    (chime/chime-at
-                     (or times (chime/periodic-seq start-at frequency))
-                     (fn [time] (handler time)))]
-    (swap! schedules conj {:id         schedule-id
-                           :name       name
-                           :frequency  frequency
-                           :started-at start-at
-                           :closeable  schedule})))
+        gate        (Object.)
+        stopping?   (atom false)]
+    (locking gate
+      (let [schedule (chime/chime-at
+                      (or times (chime/periodic-seq start-at frequency))
+                      (fn [time]
+                        (locking gate
+                          (when-not @stopping? (handler time))))
+                      {:on-finished #(swap! schedules (fn [entries] (filterv (fn [entry] (not= schedule-id (:id entry))) entries)))})]
+        (when-not (realized? schedule)
+          (swap! schedules conj {:id         schedule-id
+                                 :name       name
+                                 :frequency  frequency
+                                 :started-at start-at
+                                 :gate       gate
+                                 :stopping?  stopping?
+                                 :closeable  schedule}))))))
 
 (defn stop-schedule
   "Stop a running schedule based on it's id"
   [schedule-id]
-  (let [matched-schedule (first (filter
-                                 (fn [{:keys [id]}] (= id schedule-id))
-                                 @schedules))]
-    (when matched-schedule
-      (let [^java.lang.AutoCloseable closeable (:closeable matched-schedule)
-            updated-schedules                  (filter (fn [schedule]
-                                                         (not (= schedule matched-schedule)))
-                                                       @schedules)]
-        (.close closeable)
-        (reset! schedules updated-schedules)))))
+  (when-let [{:keys [gate stopping? closeable]} (first (filter #(= schedule-id (:id %)) @schedules))]
+    (when stopping? (reset! stopping? true))
+    (when gate (locking gate nil))
+    (.close ^java.lang.AutoCloseable closeable)
+    (swap! schedules (fn [entries] (filterv #(not= schedule-id (:id %)) entries)))))
 
 (defn stop-all-schedules
   "Stop all running schedules"
@@ -92,22 +96,8 @@
   `[30 :seconds]`.
   The completed schedule removes itself from the live schedule registry."
   [handler initial-delay]
-  (let [schedule-id (nano-id)
-        start-at    (time-from-now (apply t/new-duration initial-delay))
-        schedule
-        (chime/chime-at
-         [start-at]
-         (fn [time]
-           (try
-             (handler time)
-             (finally
-               (swap! schedules
-                      (fn [entries]
-                        (remove #(= schedule-id (:id %)) entries)))))))]
-    (swap! schedules conj {:id         schedule-id
-                           :name       nil
-                           :started-at start-at
-                           :closeable  schedule})))
+  (let [start-at (time-from-now (apply t/new-duration initial-delay))]
+    (create-schedule :handler handler :times [start-at] :start-at start-at)))
 
 (defn start-jobs [jobs-def jobs-config]
   (run!
