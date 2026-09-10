@@ -251,6 +251,24 @@
         {:member-invite/revoke-status :revoked
          :member-invite/state         (state-after report member-id)}))))
 
+(defn claim-invitation!
+  "Commits a guarded claim, with durable intent when requested by server resources."
+  [{:keys [datomic-conn clock] :as resources} data]
+  (let [member-id (:member/member-id data)
+        claim-tx  (if (:durable-jobs? resources) jobs/claim-tx domain/claim-tx)
+        plan      #(claim-tx (d/db datomic-conn)
+                             {:member-id       member-id
+                              :state           (:member-invite/state data)
+                              :requested-at    (:member-invite/requested-at data)
+                              :transitioned-at (clock)})
+        report    (transact-plan resources plan)]
+    (if (= transaction-conflict report)
+      {:member-invite/claim-status :conflict}
+      (let [state (state-after report member-id)]
+        {:member-invite/claim-status       :claimed
+         :member-invite/attempt-generation (:generation state)
+         :member-invite/state              state}))))
+
 (cell/defcell :member-invite/claim!
   {:doc    "Changes a current, unexpired invitation from pending to accepting."
    :input  [:map
@@ -263,22 +281,7 @@
                         [:member-invite/attempt-generation pos-int?]
                         [:member-invite/state ::domain/invitation-state]]
              :conflict [:map [:member-invite/claim-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock] :as resources} data]
-    (let [member-id (:member/member-id data)
-          claim-tx  (if (:durable-jobs? resources) jobs/claim-tx domain/claim-tx)
-          plan      #(claim-tx
-                      (d/db datomic-conn)
-                      {:member-id       member-id
-                       :state           (:member-invite/state data)
-                       :requested-at    (:member-invite/requested-at data)
-                       :transitioned-at (clock)})
-          report    (transact-plan resources plan)]
-      (if (= transaction-conflict report)
-        {:member-invite/claim-status :conflict}
-        (let [state (state-after report member-id)]
-          {:member-invite/claim-status       :claimed
-           :member-invite/attempt-generation (:generation state)
-           :member-invite/state              state})))))
+  (fn [resources data] (claim-invitation! resources data)))
 
 (cell/defcell :member-invite/read-keycloak-profile
   {:doc    "Reads the member name, email address, and username needed by Keycloak."
