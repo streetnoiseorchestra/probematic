@@ -13,6 +13,34 @@
 
 (use-fixtures :each tc/with-released-test-connections)
 
+(deftest topic-persistence-does-not-resurrect-a-deleted-gig-or-overwrite-a-new-link
+  (doseq [change [:deleted :relinked]]
+    (fixtures/with-runtime
+      (fn [runtime _ conn]
+        (let [{:keys [gig-id]} (writer/call! (:write-runner runtime)
+                                             #(gigs/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days))))
+              db               (d/db conn)
+              eid              (d/entid db [:gig/gig-id gig-id])
+              entered          (promise)
+              release          (promise)
+              system           {:frame-loop runtime                                                              :datomic {:conn conn} :db db
+                                :env        {:app-base-url "https://example.test" :discourse {:username "test"}}}]
+          (with-redefs [discourse/request! (fn [& _] (deliver entered true) @release {:id 42})]
+            (try
+              (let [result (future (discourse/create-topic-for-gig! system gig-id))]
+                (is (= true (deref entered 5000 ::timeout)))
+                (writer/call! (:write-runner runtime)
+                              #(deref (d/transact conn [(if (= :deleted change)
+                                                          [:db/retractEntity eid]
+                                                          [:db/add eid :forum.topic/topic-id "99"])])))
+                (let [before-t (d/basis-t (d/db conn))]
+                  (deliver release true)
+                  (is (nil? (deref result 5000 ::timeout)))
+                  (is (= before-t (d/basis-t (d/db conn))))
+                  (is (= (when (= :relinked change) "99")
+                         (:forum.topic/topic-id (d/entity (d/db conn) eid))))))
+              (finally (deliver release true)))))))))
+
 (deftest topic-creation-persists-on-the-writer-and-recovers-an-existing-remote-topic
   (fixtures/with-runtime
     (fn [runtime _ conn]

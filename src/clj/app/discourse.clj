@@ -302,7 +302,8 @@ GO TO SNORGA!!
   "Ensures a topic exists and records its id, returning the transaction report.
 
   An external-id lookup recovers a prior accepted creation before retrying the
-  local write. Remote requests remain outside the application writer."
+  local write. Remote requests remain outside the application writer.
+  Returns `nil` if the gig was deleted or its topic link changed during the request."
   [{:keys [env db] :as sys} gig-id]
   (let [gig      (-> (q/retrieve-gig db gig-id)
                      (summarize-attendance sys)
@@ -313,8 +314,12 @@ GO TO SNORGA!!
                                       {:method      :post
                                        :url         "/posts.json"
                                        :form-params (form-params-for-gig env gig)}))))
-        persist! #(datomic/transact (-> sys :datomic :conn)
-                                    {:tx-data [[:db/add (d/ref gig) :forum.topic/topic-id topic-id]]})]
+        persist! (fn []
+                   (let [conn    (get-in sys [:datomic :conn])
+                         current (q/retrieve-gig (datomic/db conn) gig-id)]
+                     (when (and current (= (:forum.topic/topic-id gig) (:forum.topic/topic-id current)))
+                       (datomic/transact conn
+                                         {:tx-data [[:db/add (d/ref current) :forum.topic/topic-id topic-id]]}))))]
     (if-let [control (get-in sys [:frame-loop :write-runner])]
       (writer/call! control persist!)
       (persist!))))
