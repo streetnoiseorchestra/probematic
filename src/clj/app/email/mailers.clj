@@ -4,6 +4,7 @@
    [app.email.domain :as domain]
    [app.email.messages :as messages]
    [app.insurance.queries :as insurance-queries]
+   [app.members.queries :as members-queries]
    [app.poll.queries :as poll-queries]
    [app.email.templates :as tmpl]
    [app.i18n :as i18n]
@@ -72,6 +73,14 @@
         (insurance-queries/survey-notification-data db survey-id sender-id member-ids)]
     (messages/build-survey-notifications context sender-name policy members email-data)))
 
+(defn member-invitation [{:keys [db] :as context} {:keys [member-id]}]
+  (let [member (members-queries/invitation-state-by-member-id db member-id)]
+    (when-not (and (= :member.invite.status/pending (:member/invite-status member))
+                   (seq (:member/invite-code member)))
+      (throw (ex-info "Invitation snapshot has no pending bearer"
+                      {:email/permanent? true :email/reason :missing-invitation-data})))
+    (messages/build-new-user-invite context member (:member/invite-code member))))
+
 (defn job
   "Returns a durable mailer intent for a Nexus transaction's `:jobs` option.
 
@@ -105,6 +114,8 @@
    {:prepare poll-opened :arguments [:map [:poll-id :uuid] [:member-ids member-ids-schema]]}
    ::insurance-debt
    {:prepare insurance-debt :arguments [:map [:policy-id :uuid] [:sender-id :uuid] [:member-id :uuid]]}
+   ::member-invitation
+   {:prepare member-invitation :arguments [:map [:member-id :uuid]]}
    ::survey-reminder
    {:prepare survey-reminder :arguments [:map [:survey-id :uuid] [:sender-id :uuid] [:member-ids member-ids-schema]]}})
 

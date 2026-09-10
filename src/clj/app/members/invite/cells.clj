@@ -1,6 +1,8 @@
 (ns app.members.invite.cells
   "Mycelium cells for member invitations and account setup."
   (:require
+   [app.email.mailers :as mailers]
+   [app.jobs.log-dispatch :as log-dispatch]
    [app.members.invite.domain :as domain]
    [app.schemas :as s]
    [app.write-runner :as writer]
@@ -36,6 +38,14 @@
 (defn- state-after [report member-id]
   (domain/invitation-state (:db-after report) member-id))
 
+(defn- invitation-plan [{:keys [durable-jobs? current-locale]} member-id plan]
+  (if (and plan durable-jobs?)
+    (let [job (assoc-in (mailers/job {:current-locale (or current-locale :de)}
+                                     ::mailers/member-invitation {:member-id member-id})
+                        [1 :email-id] (random-uuid))]
+      (update plan :tx-data into (log-dispatch/intent-tx [job])))
+    plan))
+
 (cell/defcell :member-invite/create-invited-member!
   {:doc   "Creates the member, ledger, and first pending invitation in one Datomic transaction."
    :input [:map
@@ -58,14 +68,14 @@
           code       (random-code)
           expires-at (domain/invitation-expiry issued-at)
           ledger-id  (random-uuid)
-          plan       #(domain/create-invited-member-tx
-                       form
-                       {:code            code
-                        :expires-at      expires-at
-                        :transitioned-at issued-at}
-                       member-id
-                       ledger-id
-                       current-member-id)
+          plan       #(invitation-plan resources member-id (domain/create-invited-member-tx
+                                                            form
+                                                            {:code            code
+                                                             :expires-at      expires-at
+                                                             :transitioned-at issued-at}
+                                                            member-id
+                                                            ledger-id
+                                                            current-member-id))
           report     (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/persist-status :conflict}
@@ -75,16 +85,17 @@
          :member-invite/state          (domain/invitation-state (:db-after report) member-id)}))))
 
 (cell/defcell :member-invite/queue-invitation-email!
-  {:doc    "Builds the invitation email and adds it to the application's email queue."
+  {:doc    "Reports the committed durable email intent, or builds and queues the email when durable jobs are disabled."
    :input  [:map
             [:member-invite/member ::domain/invited-member]
             [:member-invite/code ::s/non-blank-string]]
    :output [:map [:member-invite/email-queued? [:= true]]]}
-  (fn [{:keys [build-invitation-email queue-email!]} data]
-    (queue-email!
-     (build-invitation-email
-      (:member-invite/member data)
-      (:member-invite/code data)))
+  (fn [{:keys [durable-jobs? build-invitation-email queue-email!]} data]
+    (when-not durable-jobs?
+      (queue-email!
+       (build-invitation-email
+        (:member-invite/member data)
+        (:member-invite/code data))))
     {:member-invite/email-queued? true}))
 
 (cell/defcell :member-invite/read-admin-state
@@ -181,13 +192,13 @@
           member-id (:member/member-id data)
           code      (random-code)
           plan
-          #(domain/reissue-tx
-            (d/db datomic-conn)
-            {:member-id       member-id
-             :state           (:member-invite/state data)
-             :code            code
-             :expires-at      (domain/invitation-expiry issued-at)
-             :transitioned-at issued-at})
+          #(invitation-plan resources member-id (domain/reissue-tx
+                                                 (d/db datomic-conn)
+                                                 {:member-id       member-id
+                                                  :state           (:member-invite/state data)
+                                                  :code            code
+                                                  :expires-at      (domain/invitation-expiry issued-at)
+                                                  :transitioned-at issued-at}))
           report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/reissue-status :conflict}

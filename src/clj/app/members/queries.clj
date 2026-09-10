@@ -103,6 +103,12 @@
                        invitation-state-pattern)
             normalize-invitation-status)))
 
+(defn invitation-state-by-member-id
+  "Returns invitation state, including the bearer, from the supplied `db` snapshot."
+  [db member-id]
+  (some-> (d/find-by db :member/member-id member-id (conj invitation-state-pattern :member/email))
+          normalize-invitation-status))
+
 (defn acceptance-invitation
   "Returns the HTTP-boundary invitation projection valid at `now`.
 

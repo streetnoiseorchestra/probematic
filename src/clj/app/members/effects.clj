@@ -52,6 +52,8 @@
   (let [email-system (email-sys req)]
     {:datomic-conn      (conn-from-req req)
      :write-runner      (get-in req [:system :frame-loop :write-runner])
+     :durable-jobs?     (get-in req [:system :frame-loop :durable-jobs?])
+     :current-locale    (:current-locale req)
      :clock             (:now deps)
      :random-code       (:random-code deps)
      :random-uuid       (:random-uuid deps)
