@@ -19,8 +19,9 @@
             entered    (promise)
             release    (promise)
             planned-on (promise)
-            resources  {:datomic-conn conn                                                                    :write-runner (:write-runner runtime)
-                        :clock        #(do (deliver planned-on (Thread/currentThread)) cells/transitioned-at)}]
+            resources  {:datomic-conn  conn                                                                    :write-runner (:write-runner runtime)
+                        :durable-jobs? true
+                        :clock         #(do (deliver planned-on (Thread/currentThread)) cells/transitioned-at)}]
         (writer/call! (:write-runner runtime)
                       #(cells/seed-invitation! conn member-id {:status cells/pending :generation 1
                                                                :code   "test-bearer" :expiry     cells/expires-at}))

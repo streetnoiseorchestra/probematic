@@ -4,6 +4,7 @@
    [app.email.mailers :as mailers]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.members.invite.domain :as domain]
+   [app.members.invite.jobs :as jobs]
    [app.schemas :as s]
    [app.write-runner :as writer]
    [datomic.api :as d]
@@ -264,7 +265,8 @@
              :conflict [:map [:member-invite/claim-status [:= :conflict]]]}]}
   (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
-          plan      #(domain/claim-tx
+          claim-tx  (if (:durable-jobs? resources) jobs/claim-tx domain/claim-tx)
+          plan      #(claim-tx
                       (d/db datomic-conn)
                       {:member-id       member-id
                        :state           (:member-invite/state data)
