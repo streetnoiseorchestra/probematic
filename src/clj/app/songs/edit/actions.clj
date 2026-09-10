@@ -1,7 +1,9 @@
 (ns app.songs.edit.actions
   (:require
+   [app.config :as config]
    [app.discourse :as discourse]
    [app.form :as form]
+   [app.jobs.integrations :as integrations]
    [app.jobs.play-stats :as play-stats]
    [app.nexus.actions :as support]
    [app.queries :as q]
@@ -81,7 +83,7 @@
                    error]))))
 
 (defn update-song-action
-  [{:keys [db tr]} signals]
+  [{:keys [db tr durable-jobs? env]} signals]
   (let [params  (normalize-form (form-params signals))
         song-id (util/ensure-uuid! (:song-id params))
         song    (q/retrieve-song db song-id)
@@ -96,8 +98,9 @@
        [:app.datastar/assoc-state [:song-edit] (assoc params :_error errors)]]
       [[:db/transact
         (update-song-tx-data params)
-        {:transact-w-nils? true
-         :on-success       [[:app.songs/trigger-song-edited song-id]]}]
+        (cond-> {:transact-w-nils? true}
+          (not durable-jobs?) (assoc :on-success [[:app.songs/trigger-song-edited song-id]])
+          (and durable-jobs? (config/prod-mode? env)) (assoc :jobs [(integrations/song-job song-id)]))]
        [:app.datastar/respond-sse
         [[:app.datastar.sse/redirect (urls/link-song song-id)]]]])))
 

@@ -32,6 +32,23 @@
 (defn seed-song! [conn song]
   @(d/transact conn [song]))
 
+(deftest durable-song-edit-test
+  (tc/with-released-test-connections
+    (fn []
+      (let [{:keys [conn] :as system} (new-system)
+            song-id                   (random-uuid)]
+        (seed-song! conn {:song/song-id song-id :song/title "Old title" :song/active? true})
+        (doseq [profile [:prod :dev]]
+          (let [state            (assoc (state-for system) :durable-jobs? true :env {:ig/system {:app.ig/profile profile}})
+                [effect tx opts] (first (actions/update-song-action state {:song-id (str song-id) :title "New title" :active? true}))]
+            (is (= :db/transact effect))
+            (is (= "New title" (:song/title (first tx))))
+            (is (true? (:transact-w-nils? opts)))
+            (is (nil? (:on-success opts)))
+            (is (= (when (= :prod profile)
+                     [["sync-song" {:song-id song-id} {:queue "integrations" :max-attempts 25}]])
+                   (:jobs opts)))))))))
+
 (deftest update-song-action-test
   (testing "updates an existing song and clears blank optional fields"
     (let [{:keys [conn] :as system} (new-system)
