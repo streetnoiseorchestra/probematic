@@ -63,7 +63,8 @@
     (when (and job-queue (nil? write-runner))
       (throw (ex-info "Frame loop requires the job queue's write runner" {})))
     (let [control (or write-runner (writer/create))
-          hooks   (frame-storage/render-hooks (get-in system [:datomic :conn]) {})
+          hooks   (frame-storage/render-hooks (get-in system [:datomic :conn])
+                                              (if job-queue {:jobs (:db job-queue)} {}))
           clients (atom {})
           pool    (frame-loop/start-render-pool {:pool-size 2})]
       (try

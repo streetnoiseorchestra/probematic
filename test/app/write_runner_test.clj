@@ -1,11 +1,13 @@
 (ns app.write-runner-test
   (:require
    [app.game-loop :as game]
+   [app.game-loop.storage :as storage]
    [app.ig]
    [app.job-queue :as queue]
    [app.nexus :as nexus]
    [app.test-common :as tc]
    [app.write-runner :as writer]
+   [babashka.fs :as fs]
    [clojure.test :refer [deftest is use-fixtures]]
    [datomic.api :as d]
    [integrant.core :as ig]
@@ -17,16 +19,59 @@
 (defn with-runtime [f]
   (let [{:keys [conn]} (tc/new-system "write-runner")
         control        (writer/create)
-        job-queue      (queue/start! {:filename ":memory:" :write-runner control})]
+        dir            (fs/create-temp-dir {:prefix "write-runner-"})]
     (try
-      (let [runtime (ig/init-key :app.ig/frame-loop
-                                 {:profile      :dev                    :enabled?  true
-                                  :datomic      {:conn conn}            :nexus     (nexus/nexus)
-                                  :write-runner control                 :job-queue job-queue
-                                  :cutover-t    (d/basis-t (d/db conn))})]
-        (try (f runtime (:client job-queue) conn)
-             (finally (ig/halt-key! :app.ig/frame-loop runtime))))
-      (finally (queue/stop! job-queue)))))
+      (let [job-queue (queue/start! {:filename (str (fs/path dir "jobs.sqlite"))
+                                     :config   {:pool-size 4}                    :write-runner control})]
+        (try
+          (let [runtime (ig/init-key :app.ig/frame-loop
+                                     {:profile      :dev                    :enabled?  true
+                                      :datomic      {:conn conn}            :nexus     (nexus/nexus)
+                                      :write-runner control                 :job-queue job-queue
+                                      :cutover-t    (d/basis-t (d/db conn))})]
+            (try (f runtime (:client job-queue) conn)
+                 (finally (ig/halt-key! :app.ig/frame-loop runtime))))
+          (finally (queue/stop! job-queue))))
+      (finally (fs/delete-tree dir)))))
+
+(deftest frame-job-readers-return-after-render-error-before-next-write-and-close
+  (let [pool
+        (with-runtime
+          (fn [runtime client _]
+            (let [read-pool (get-in client [:pool :reader :conn-pool])
+                  observed  (atom {})
+                  entered   (promise)
+                  release   (promise)
+                  control   (:write-runner runtime)]
+              (try
+                (writer/call!
+                 control
+                 #(doseq [id [:reader-a :reader-b]]
+                    (.put ^ConcurrentHashMap (::game/conns runtime) id
+                          (fn [frame]
+                            (let [tx (get-in frame [::storage/read-dbs :jobs])]
+                              (swap! observed assoc id {:identity (System/identityHashCode tx)
+                                                        :jobs     (vec (drip/list-jobs! client tx {}))})
+                              (when (= 2 (count @observed)) (deliver entered true)))
+                            @release
+                            (when (= :reader-a id) (throw (ex-info "test-render-failure" {})))))))
+                (is (= true (deref entered 5000 ::timeout)))
+                (is (= 2 (count (set (map :identity (vals @observed))))))
+                (is (every? empty? (map :jobs (vals @observed))))
+                (is (= 2 (.size ^java.util.concurrent.BlockingQueue read-pool)))
+                (let [queued (future (drip/insert-job client "after-readers" {}))]
+                  (is (= ::waiting (deref queued 100 ::waiting)))
+                  (is (empty? (drip/list-jobs client {})))
+                  (doseq [id [:reader-a :reader-b]] (.remove ^ConcurrentHashMap (::game/conns runtime) id))
+                  (deliver release true)
+                  (is (= "after-readers" (:kind (deref queued 5000 {}))))
+                  (writer/call! control (constantly nil))
+                  (is (= 4 (.size ^java.util.concurrent.BlockingQueue read-pool))))
+                read-pool
+                (finally
+                  (doseq [id [:reader-a :reader-b]] (.remove ^ConcurrentHashMap (::game/conns runtime) id))
+                  (deliver release true))))))]
+    (is (zero? (.size ^java.util.concurrent.BlockingQueue pool)))))
 
 (deftest background-transactions-wait-for-the-render-barrier
   (with-runtime
