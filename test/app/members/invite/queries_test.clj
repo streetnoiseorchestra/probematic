@@ -29,6 +29,10 @@
                                         :requested-at     cells/requested-at  :transitioned-at cells/transitioned-at
                                         :keycloak-user-id "test-created-user"}))))
 
+(defn status-for-code [{:keys [conn client]} code now]
+  (storage/with-read-dbs {:jobs tc/*sqlite-db*}
+    #(queries/status-for-code (d/db conn) client (:jobs %) now code)))
+
 (defn status [{:keys [conn client member-id]}]
   (let [db (d/db conn)]
     (storage/with-read-dbs {:jobs tc/*sqlite-db*}
@@ -100,3 +104,34 @@
       (transition! context domain/claim-tx)
       (log/dispatch-pending! conn client 100)
       (is (= :operator-required (status context))))))
+
+(deftest bearer-status-is-narrow-and-revalidated-on-each-frame
+  (with-invitation
+    (fn [{:keys [conn member-id] :as context}]
+      (let [other-id (random-uuid)
+            expected {:status :pending :member {:member/member-id member-id :member/email "alice@example.com"}}]
+        @(d/transact conn [{:member/member-id        other-id               :member/name              "Other Member"
+                            :member/email            "other@example.com"    :member/username          "other.member"
+                            :member/invite-status    cells/pending          :member/invite-generation 1
+                            :member/invite-code      "other-private-bearer" :member/invite-expires-at cells/expires-at
+                            :member/invite-status-at cells/issued-at}])
+        (is (= expected (status-for-code context "status-test-bearer" cells/requested-at)))
+        (is (= {:status :pending :member {:member/member-id other-id :member/email "other@example.com"}}
+               (status-for-code context "other-private-bearer" cells/requested-at)))
+        (doseq [code [nil "" "unknown"]]
+          (is (= {:status :unavailable} (status-for-code context code cells/requested-at))))
+        (is (= {:status :unavailable} (status-for-code context "status-test-bearer" cells/expires-at)))
+        (transition! context domain/revoke-tx)
+        (is (= {:status :unavailable} (status-for-code context "status-test-bearer" cells/requested-at)))))))
+
+(deftest claimed-and-completed-bearers-survive-pending-expiry
+  (with-invitation
+    (fn [{:keys [conn client member-id] :as context}]
+      (transition! context jobs/claim-tx)
+      (log/dispatch-pending! conn client 100)
+      (is (= {:status :creating :member {:member/member-id member-id :member/email "alice@example.com"}}
+             (status-for-code context "status-test-bearer" cells/expires-at)))
+      (doseq [plan [domain/begin-create-tx domain/link-keycloak-user-tx domain/finalize-tx]]
+        (transition! context plan))
+      (is (= {:status :accepted :member {:member/member-id member-id :member/email "alice@example.com"}}
+             (status-for-code context "status-test-bearer" cells/expires-at))))))

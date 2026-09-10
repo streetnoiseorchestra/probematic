@@ -3,6 +3,7 @@
   (:require
    [app.jobs.log-dispatch :as log-dispatch]
    [app.members.invite.domain :as domain]
+   [app.members.queries :as members]
    [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
    [datomic.api :as d]
    [s-exp.drip :as drip]))
@@ -55,3 +56,18 @@
             :creating)
           :operator-required))
       :unavailable)))
+
+(>defn status-for-code
+  "Authorizes the bearer against this frame and returns status plus minimal member data.
+
+  Recheck on every render. Revoked, replaced, or expired pending capabilities
+  return only unavailable. A completed receipt remains valid for the login link.
+  No job arguments, bearer, session, or account-access grant is returned."
+  [db client tx now invite-code]
+  [:any :any :any :any [:maybe :string] => :map]
+  (if-let [invitation (or (members/accepted-invitation-by-code db invite-code)
+                          (members/acceptance-invitation db now invite-code))]
+    (let [member (select-keys (:member invitation) [:member/member-id :member/email])]
+      {:status (setup-status db client tx (:member/member-id member))
+       :member member})
+    {:status :unavailable}))
