@@ -123,6 +123,9 @@
 
 (defn- normalize-avatar-upload [avatar]
   (when (map? avatar)
+    (when-not (instance? java.io.File (:tempfile avatar))
+      (throw (ex-info "Avatar upload requires a server-parsed multipart file"
+                      {:app/error-type :app.error.type/validation})))
     {:filename  (or (form/trim-value (:filename avatar)) "")
      :mime-type (or (form/trim-value (:mime-type avatar)) "")
      :size      (:size avatar)
