@@ -3,6 +3,7 @@
   (:require
    [app.members.invite.domain :as domain]
    [app.schemas :as s]
+   [app.write-runner :as writer]
    [datomic.api :as d]
    [mycelium.cell :as cell]))
 
@@ -18,15 +19,19 @@
                    (:app/error-code (ex-data %))))
    (take-while some? (iterate ex-cause exception))))
 
-(defn- transact-plan [conn plan]
-  (if-not plan
-    transaction-conflict
-    (try
-      @(d/transact conn (:tx-data plan))
-      (catch Throwable exception
-        (if (conflict-failure? exception)
-          transaction-conflict
-          (throw exception))))))
+(defn- transact-plan [{:keys [datomic-conn write-runner]} plan-fn]
+  (let [transact! (fn []
+                    (if-let [plan (plan-fn)]
+                      (try
+                        @(d/transact datomic-conn (:tx-data plan))
+                        (catch Throwable exception
+                          (if (conflict-failure? exception)
+                            transaction-conflict
+                            (throw exception))))
+                      transaction-conflict))]
+    (if write-runner
+      (writer/call! write-runner transact!)
+      (transact!))))
 
 (defn- state-after [report member-id]
   (domain/invitation-state (:db-after report) member-id))
@@ -46,22 +51,22 @@
      :conflict
      [:map
       [:member-invite/persist-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock random-code random-uuid current-member-id]} data]
+  (fn [{:keys [clock random-code random-uuid current-member-id] :as resources} data]
     (let [issued-at  (clock)
           form       (:member-invite data)
           member-id  (random-uuid)
           code       (random-code)
           expires-at (domain/invitation-expiry issued-at)
           ledger-id  (random-uuid)
-          plan       (domain/create-invited-member-tx
-                      form
-                      {:code            code
-                       :expires-at      expires-at
-                       :transitioned-at issued-at}
-                      member-id
-                      ledger-id
-                      current-member-id)
-          report     (transact-plan datomic-conn plan)]
+          plan       #(domain/create-invited-member-tx
+                       form
+                       {:code            code
+                        :expires-at      expires-at
+                        :transitioned-at issued-at}
+                       member-id
+                       ledger-id
+                       current-member-id)
+          report     (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/persist-status :conflict}
         {:member-invite/persist-status :created
@@ -171,19 +176,19 @@
       [:member-invite/state ::domain/invitation-state]]
      :conflict
      [:map [:member-invite/reissue-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock random-code]} data]
+  (fn [{:keys [datomic-conn clock random-code] :as resources} data]
     (let [issued-at (clock)
           member-id (:member/member-id data)
           code      (random-code)
           plan
-          (domain/reissue-tx
-           (d/db datomic-conn)
-           {:member-id       member-id
-            :state           (:member-invite/state data)
-            :code            code
-            :expires-at      (domain/invitation-expiry issued-at)
-            :transitioned-at issued-at})
-          report    (transact-plan datomic-conn plan)]
+          #(domain/reissue-tx
+            (d/db datomic-conn)
+            {:member-id       member-id
+             :state           (:member-invite/state data)
+             :code            code
+             :expires-at      (domain/invitation-expiry issued-at)
+             :transitioned-at issued-at})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/reissue-status :conflict}
         {:member-invite/reissue-status :reissued
@@ -220,15 +225,15 @@
       [:member-invite/state ::domain/invitation-state]]
      :conflict
      [:map [:member-invite/revoke-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock]} data]
+  (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
           plan
-          (domain/revoke-tx
-           (d/db datomic-conn)
-           {:member-id       member-id
-            :state           (:member-invite/state data)
-            :transitioned-at (clock)})
-          report    (transact-plan datomic-conn plan)]
+          #(domain/revoke-tx
+            (d/db datomic-conn)
+            {:member-id       member-id
+             :state           (:member-invite/state data)
+             :transitioned-at (clock)})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/revoke-status :conflict}
         {:member-invite/revoke-status :revoked
@@ -246,15 +251,15 @@
                         [:member-invite/attempt-generation pos-int?]
                         [:member-invite/state ::domain/invitation-state]]
              :conflict [:map [:member-invite/claim-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock]} data]
+  (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
-          plan      (domain/claim-tx
-                     (d/db datomic-conn)
-                     {:member-id       member-id
-                      :state           (:member-invite/state data)
-                      :requested-at    (:member-invite/requested-at data)
-                      :transitioned-at (clock)})
-          report    (transact-plan datomic-conn plan)]
+          plan      #(domain/claim-tx
+                      (d/db datomic-conn)
+                      {:member-id       member-id
+                       :state           (:member-invite/state data)
+                       :requested-at    (:member-invite/requested-at data)
+                       :transitioned-at (clock)})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/claim-status :conflict}
         (let [state (state-after report member-id)]
@@ -288,14 +293,14 @@
                         [:keycloak/user-attributes ::domain/marker-attributes]
                         [:keycloak/user-spec ::domain/keycloak-user-spec]]
              :conflict [:map [:member-invite/create-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock]} data]
+  (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
-          plan      (domain/begin-create-tx
-                     (d/db datomic-conn)
-                     {:member-id       member-id
-                      :state           (:member-invite/state data)
-                      :transitioned-at (clock)})
-          report    (transact-plan datomic-conn plan)]
+          plan      #(domain/begin-create-tx
+                      (d/db datomic-conn)
+                      {:member-id       member-id
+                       :state           (:member-invite/state data)
+                       :transitioned-at (clock)})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/create-status :conflict}
         (let [state      (state-after report member-id)
@@ -340,15 +345,15 @@
                         [:member-invite/state ::domain/invitation-state]
                         [:keycloak/enabled? [:= true]]]
              :conflict [:map [:member-invite/link-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock]} data]
+  (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
-          plan      (domain/link-keycloak-user-tx
-                     (d/db datomic-conn)
-                     {:member-id        member-id
-                      :state            (:member-invite/state data)
-                      :keycloak-user-id (:keycloak/user-id data)
-                      :transitioned-at  (clock)})
-          report    (transact-plan datomic-conn plan)]
+          plan      #(domain/link-keycloak-user-tx
+                      (d/db datomic-conn)
+                      {:member-id        member-id
+                       :state            (:member-invite/state data)
+                       :keycloak-user-id (:keycloak/user-id data)
+                       :transitioned-at  (clock)})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/link-status :conflict}
         (let [state (state-after report member-id)]
@@ -391,16 +396,16 @@
       [:member-invite/state ::domain/invitation-state]]
      :conflict
      [:map [:member-invite/finalize-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock]} data]
+  (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
           plan
-          (domain/finalize-tx
-           (d/db datomic-conn)
-           {:member-id        member-id
-            :state            (:member-invite/state data)
-            :keycloak-user-id (:keycloak/user-id data)
-            :transitioned-at  (clock)})
-          report    (transact-plan datomic-conn plan)]
+          #(domain/finalize-tx
+            (d/db datomic-conn)
+            {:member-id        member-id
+             :state            (:member-invite/state data)
+             :keycloak-user-id (:keycloak/user-id data)
+             :transitioned-at  (clock)})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/finalize-status :conflict}
         {:member-invite/finalize-status :finalized
@@ -420,15 +425,15 @@
       [:member-invite/state ::domain/invitation-state]]
      :conflict
      [:map [:member-invite/compensation-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock]} data]
+  (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
           plan
-          (domain/begin-compensation-tx
-           (d/db datomic-conn)
-           {:member-id       member-id
-            :state           (:member-invite/state data)
-            :transitioned-at (clock)})
-          report    (transact-plan datomic-conn plan)]
+          #(domain/begin-compensation-tx
+            (d/db datomic-conn)
+            {:member-id       member-id
+             :state           (:member-invite/state data)
+             :transitioned-at (clock)})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/compensation-status :conflict}
         (let [state (state-after report member-id)]
@@ -466,15 +471,15 @@
       [:member-invite/state ::domain/invitation-state]]
      :conflict
      [:map [:member-invite/release-status [:= :conflict]]]}]}
-  (fn [{:keys [datomic-conn clock]} data]
+  (fn [{:keys [datomic-conn clock] :as resources} data]
     (let [member-id (:member/member-id data)
           plan
-          (domain/release-tx
-           (d/db datomic-conn)
-           {:member-id       member-id
-            :state           (:member-invite/state data)
-            :transitioned-at (clock)})
-          report    (transact-plan datomic-conn plan)]
+          #(domain/release-tx
+            (d/db datomic-conn)
+            {:member-id       member-id
+             :state           (:member-invite/state data)
+             :transitioned-at (clock)})
+          report    (transact-plan resources plan)]
       (if (= transaction-conflict report)
         {:member-invite/release-status :conflict}
         {:member-invite/release-status :released

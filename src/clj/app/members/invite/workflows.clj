@@ -322,6 +322,7 @@
            (let [result
                  (accept-or-recover!
                   {:datomic-conn datomic-conn
+                   :write-runner (get-in req [:system :frame-loop :write-runner])
                    :clock        now
                    :keycloak     (keycloak/kc-from-req req)}
                   {:member/member-id                  member-id

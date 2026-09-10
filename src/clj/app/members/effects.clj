@@ -51,6 +51,7 @@
 (defn- invitation-workflow-resources [deps req]
   (let [email-system (email-sys req)]
     {:datomic-conn      (conn-from-req req)
+     :write-runner      (get-in req [:system :frame-loop :write-runner])
      :clock             (:now deps)
      :random-code       (:random-code deps)
      :random-uuid       (:random-uuid deps)
