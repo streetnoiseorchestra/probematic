@@ -22,8 +22,9 @@
 
   Startup writes run directly under the lifecycle lock. Once started, calls from
   background threads enqueue work and wait; calls on the writer execute directly.
-  Full or closed admission throws without executing the work. Never call from a
-  render callback: rendering must finish before the writer can process the queue."
+  Full or closed admission throws with `:app/error-type ::admission-rejected`
+  without executing the work. Never call from a render callback: rendering must
+  finish before the writer can process the queue."
   [control work]
   [Control ifn? => :any]
   (let [[status value]
@@ -35,9 +36,9 @@
               (= :running phase)
               (let [result (promise)]
                 (when-not (submit! {::work work ::result result})
-                  (throw (ex-info "Writer admission is full or closed" {})))
+                  (throw (ex-info "Writer admission is full or closed" {:app/error-type ::admission-rejected})))
                 [:pending result])
-              :else (throw (ex-info "Writer is stopped" {})))))
+              :else (throw (ex-info "Writer is stopped" {:app/error-type ::admission-rejected})))))
         [status value] (if (= :pending status) @value [status value])]
     (if (= :error status) (throw value) value)))
 

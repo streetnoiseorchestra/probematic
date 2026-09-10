@@ -9,6 +9,7 @@
    [app.rand-human-id :as human-id]
    [app.routes.errors :as errors]
    [app.schemas :as schemas]
+   [app.write-runner :as writer]
    [clojure.string :as str]
    [com.brunobonacci.mulog :as μ]
    [app.datomic.shim :as d]
@@ -98,6 +99,9 @@
 
                      {:app/error-type [:= :app.error.type/authentication-failure]}
                      errors/unauthorized-error
+
+                     {:app/error-type [:= ::writer/admission-rejected]}
+                     (fn [_ _] {:status 503 :headers {} :body ""})
 
                      :app.interceptors.errors/default                                    errors/unknown-error}}))
 
