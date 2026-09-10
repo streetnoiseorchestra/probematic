@@ -1,5 +1,7 @@
 (ns app.jobs.probe-housekeeping-test
   (:require
+   [app.email.mailers :as mailers]
+   [app.i18n :as i18n]
    [app.game-loop :as game]
    [app.gigs.domain :as gigs]
    [app.jobs.probe-housekeeping :as probes]
@@ -11,10 +13,50 @@
    [clojure.test :refer [deftest is use-fixtures]]
    [datomic.api :as d]
    [ol.jobs-util :as jobs]
+   [s-exp.drip :as drip]
    [tick.core :as t])
   (:import [java.util.concurrent ConcurrentHashMap]))
 
 (use-fixtures :each tc/with-released-test-connections)
+
+(deftest rehearsal-mail-intent-waits-for-the-writer-and-retains-its-recipient-snapshot
+  (fixtures/with-runtime
+    (fn [runtime client conn]
+      (let [gig-id    (random-uuid)
+            member-id (random-uuid)
+            entered   (promise)
+            release   (promise)
+            system    {:frame-loop runtime                                :datomic    {:conn conn}
+                       :env        {:app-base-url "https://example.test"} :i18n-langs (i18n/read-langs)}]
+        (writer/call! (:write-runner runtime)
+                      #(deref (d/transact conn [{:member/member-id member-id :member/name "Leader" :member/email "leader@example.test"}])))
+        (writer/call! (:write-runner runtime)
+                      #(deref (d/transact conn [(gigs/gig->db {:gig/gig-id            gig-id                        :gig/title  "Rehearsal"
+                                                               :gig/gig-type          :gig.type/probe               :gig/status :gig.status/confirmed
+                                                               :gig/date              (t/date)
+                                                               :gig/rehearsal-leader1 [:member/member-id member-id]
+                                                               :gig/rehearsal-leader2 [:member/member-id member-id]})])))
+        (try
+          (.put ^ConcurrentHashMap (::game/conns runtime) :barrier
+                (fn [_] (deliver entered true) @release))
+          (is (= true (deref entered 5000 ::timeout)))
+          (let [result (future (probes/notify-rehearsal-leader! system))]
+            (is (= ::waiting (deref result 250 ::waiting)))
+            (deliver release true)
+            (is (map? (deref result 5000 ::timeout)))
+            (writer/call! (:write-runner runtime) (constantly nil))
+            (let [jobs       (drip/list-jobs client {})
+                  invocation (:args (first jobs))]
+              (is (= 1 (count jobs)))
+              (is (= ::mailers/rehearsal-leader (:mailer invocation)))
+              (is (= {:gig-id gig-id :member-id member-id} (:arguments invocation)))
+              (writer/call! (:write-runner runtime)
+                            #(deref (d/transact conn [[:db/add [:member/member-id member-id] :member/email "later@example.test"]])))
+              (let [message (mailers/prepare! system invocation)]
+                (is (= ["leader@example.test"] (get-in message [:email/messages 0 :to])))
+                (is (= (:email-id invocation) (:email/email-id message)))
+                (is (string? (get-in message [:email/messages 0 :text]))))))
+          (finally (deliver release true)))))))
 
 (deftest rehearsal-maintenance-waits-for-the-writer-and-preserves-leader-rotation
   (fixtures/with-runtime

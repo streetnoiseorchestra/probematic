@@ -52,6 +52,9 @@
   (messages/build-gig-reminder-email context (q/retrieve-gig db gig-id)
                                      (mapv #(q/retrieve-member db %) member-ids)))
 
+(defn rehearsal-leader [{:keys [db] :as context} {:keys [gig-id member-id]}]
+  (messages/build-rehearsal-leader-email context (q/retrieve-gig db gig-id) (q/retrieve-member db member-id)))
+
 (defn poll-opened [{:keys [db] :as context} {:keys [poll-id member-ids]}]
   (messages/build-new-poll-opened context (poll-queries/retrieve-poll db poll-id)
                                   (mapv #(q/retrieve-member db %) member-ids)))
@@ -96,6 +99,8 @@
    {:prepare gig-created :arguments [:map [:gig-id :uuid] [:member-ids member-ids-schema]]}
    ::gig-reminder
    {:prepare gig-reminder :arguments [:map [:gig-id :uuid] [:member-ids member-ids-schema]]}
+   ::rehearsal-leader
+   {:prepare rehearsal-leader :arguments [:map [:gig-id :uuid] [:member-id :uuid]]}
    ::poll-opened
    {:prepare poll-opened :arguments [:map [:poll-id :uuid] [:member-ids member-ids-schema]]}
    ::insurance-debt

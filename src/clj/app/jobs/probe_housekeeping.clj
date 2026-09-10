@@ -2,6 +2,8 @@
   (:require
    [app.datomic :as d]
    [app.email :as email]
+   [app.email.mailers :as mailers]
+   [app.nexus :as nexus]
    [app.errors :as errors]
    [app.gigs.domain :as domain]
    [app.probeplan :as probeplan]
@@ -77,20 +79,29 @@
       (errors/report-error! e))))
 
 (defn notify-rehearsal-leader!
-  [{:keys [datomic] :as system}]
+  [{:keys [datomic frame-loop] :as system}]
   (try
-    (let [conn       (:conn datomic)
-          db         (datomic/db conn)
-          next-probe (q/next-probe db)]
-      (if (= (:gig/date next-probe) (t/date))
-        (do
-          (when (:gig/rehearsal-leader1 next-probe)
-            (email/send-rehearsal-leader-email! system next-probe (:gig/rehearsal-leader1 next-probe)))
-          (when (:gig/rehearsal-leader2 next-probe)
-            (email/send-rehearsal-leader-email! system next-probe (:gig/rehearsal-leader2 next-probe))))
-        (throw (ex-info  "notify rehearsal leaders condition failed!"
-                         {:probe-date   (:gig/date next-probe)
-                          :current-date (t/date)}))))
+    (let [notify! (fn []
+                    (let [conn       (:conn datomic)
+                          next-probe (q/next-probe (datomic/db conn))
+                          leaders    (distinct (keep #(get next-probe %) [:gig/rehearsal-leader1 :gig/rehearsal-leader2]))]
+                      (when-not (= (:gig/date next-probe) (t/date))
+                        (throw (ex-info "notify rehearsal leaders condition failed!"
+                                        {:probe-date (:gig/date next-probe) :current-date (t/date)})))
+                      (if (:durable-jobs? frame-loop)
+                        (when (seq leaders)
+                          (let [intents (mapv #(mailers/job {:current-locale :de} ::mailers/rehearsal-leader
+                                                            {:gig-id (:gig/gig-id next-probe) :member-id (:member/member-id %)})
+                                              leaders)]
+                            (datomic/transact conn
+                                              {:tx-data (conj (nexus/batch-transactions [[[] {:jobs intents}]])
+                                                              {:db/id        "datomic.tx"    :audit/action ::notify-rehearsal-leader
+                                                               :audit/origin :app.origin/job})})))
+                        (doseq [leader leaders]
+                          (email/send-rehearsal-leader-email! system next-probe leader)))))]
+      (if (:durable-jobs? frame-loop)
+        (writer/call! (:write-runner frame-loop) notify!)
+        (notify!)))
     (catch Throwable e
       (errors/report-error! e))))
 

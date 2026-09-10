@@ -7,12 +7,7 @@
    [app.i18n :as i18n]
    [app.poll.queries :as poll.queries]
    [app.queries :as q]
-   [app.ui2 :as ui2]
-   [app.urls :as url]
    [app.datomic.shim :as datomic]))
-
-(defn- gig-date-plain [{:gig/keys [date end-date]}]
-  (ui2/format-date-range {:current-locale :de} :compact-with-weekday date end-date))
 
 (defn queue-email! [sys email]
   (email-worker/queue-mail! (:job-queue sys) email))
@@ -93,13 +88,7 @@
   (assert leader-member)
   (let [tr  (i18n/tr-with i18n-langs [:de])
         sys {:tr tr :env env :job-queue job-queue}]
-    (queue-email! sys
-                  (messages/build-generic-email sys
-                                                (:member/email leader-member)
-                                                (tr [:email/subject-log-plays])
-                                                (tr [:email/body-log-plays] {:gig-date (gig-date-plain gig)})
-                                                (tr [:email/cta-log-plays])
-                                                (url/absolute-link-gig-log-plays env (:gig/gig-id gig))))))
+    (queue-email! sys (messages/build-rehearsal-leader-email sys gig leader-member))))
 
 (defn send-insurance-debt-notifications! [req sender-name time-range member-data]
   (let [sys    (sys-from-req req)

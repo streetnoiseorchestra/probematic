@@ -1,6 +1,7 @@
 (ns app.email.messages
   "Builds email messages without enqueuing or delivering them."
   (:require [app.email.templates :as tmpl]
+            [app.ui2 :as ui2]
             [app.urls :as url]
             [app.util :as util]
             [com.yetanalytics.squuid :as sq]
@@ -69,6 +70,15 @@
   (build-email to-email subject
                (tmpl/generic-email-html sys body-text cta-text cta-url)
                (tmpl/generic-email-plain sys body-text cta-text cta-url)))
+
+(defn build-rehearsal-leader-email [{:keys [tr env] :as context} gig leader]
+  (build-generic-email context (:member/email leader)
+                       (tr [:email/subject-log-plays])
+                       (tr [:email/body-log-plays]
+                           {:gig-date (ui2/format-date-range {:current-locale :de} :compact-with-weekday
+                                                             (:gig/date gig) (:gig/end-date gig))})
+                       (tr [:email/cta-log-plays])
+                       (url/absolute-link-gig-log-plays env (:gig/gig-id gig))))
 
 (defn build-insurance-debt-notification-emails [{:keys [tr] :as sys} sender-name time-range member-data]
   (assert tr)
