@@ -48,14 +48,17 @@
 
 (defn exec-later
   [fn-name & args]
-  (jobs/make-one-shot-job
-   (fn [_]
-     (try
-       (apply fn-name args)
-       (catch Throwable e
-         (tap> e)
-         (errors/report-error! e))))
-   [1 :seconds]))
+  (let [schedule (last
+                  (jobs/make-one-shot-job
+                   (fn [_]
+                     (try
+                       (apply fn-name args)
+                       (catch Throwable e
+                         (tap> e)
+                         (errors/report-error! e))))
+                   [1 :seconds]))]
+    (reify java.lang.AutoCloseable
+      (close [_] (jobs/stop-schedule (:id schedule))))))
 
 (defn trigger-gig-details-edited
   [req notify? takeover-topic? {:keys [gig-before gig] :as transact-result}]
