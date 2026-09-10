@@ -160,6 +160,8 @@
 
 (defn save-profile-fx
   "Persists a validated profile save."
-  [_coeffects {:keys [system]} params]
-  (save-profile! system params)
+  [_coeffects {:keys [system request]} params]
+  (if-let [prepared (::prepared-profile request)]
+    (save-prepared-profile! system (merge prepared params))
+    (save-profile! system params))
   nil)

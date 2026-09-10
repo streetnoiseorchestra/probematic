@@ -226,7 +226,9 @@
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"server-parsed multipart"
          (actions/save-profile-action
-          {} {:avatar-upload {:filename "avatar.jpg" :mime-type "image/jpeg" :size 1 :tempfile tempfile}})))))
+          {} {:prepared-profile?                    true
+              :app.account.effects/prepared-profile {:app.account.effects/stored-avatar nil}
+              :avatar-upload                        {:filename "avatar.jpg" :mime-type "image/jpeg" :size 1 :tempfile tempfile}})))))
 
 (deftest save-profile-validates-upload-metadata-before-dispatch
   (let [{:keys [conn] :as system} (tc/new-system "account-profile-upload-validation")]

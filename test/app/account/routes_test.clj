@@ -83,9 +83,9 @@
 
 (deftest multipart-profile-route-adapts-form-data-to-the-qualified-action
   (let [handler  (support/public-fn
-                  'app.account.routes/profile-save-handler)
+                  'app.account.http/profile-actions)
         tempfile (java.io.File. "/tmp/account-route-avatar.png")]
-    (is (fn? handler) "app.account.routes/profile-save-handler should exist")
+    (is (fn? handler) "app.account.http/profile-actions should exist")
     (when handler
       (is (= [[:app.account.actions/save-profile
                {:account-profile

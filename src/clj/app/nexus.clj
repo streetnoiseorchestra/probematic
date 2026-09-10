@@ -150,6 +150,7 @@
                         :action-id (::action-id request)
                         :member-id (current-member-id request)
                         :locale    (or (:current-locale request) :en)})
+    (::account.effects/prepared-profile request) (assoc :prepared-profile? true)
     (:env system) (assoc :env (:env system))
     (current-member-id request) (assoc :current-member-id (current-member-id request))))
 
