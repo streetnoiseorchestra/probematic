@@ -52,7 +52,7 @@ So here we provide functions to store the content and generate datoms for use in
         file-txs                                                                  (domain/txs-new-file file-tempid file-name (fix-mime-type mime-type actual-mime-type) size hash)
         image-txs                                                                 (domain/txs-new-image image-tempid file-tempid width height)]
 
-    (filestore/put! filestore prepared)
+    (filestore/put-sync! filestore prepared)
     {:image-tempid image-tempid
      :file-tempid  file-tempid
      :tx-data      (concat file-txs image-txs)}))
