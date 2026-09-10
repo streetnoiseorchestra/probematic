@@ -351,6 +351,21 @@
   (and (current-status? accepted data)
        (not (str/blank? (get-in data [:member-invite/state :keycloak-id])))))
 
+(defn resumable-acceptance-attempt?
+  "Returns whether `state` is an unfinished phase of the specified claim.
+
+  `claim-generation` is the generation committed by [[claim-tx]], not the
+  changing generation of the current phase. Compensation can start before or
+  after creation. Pending, accepted, revoked, and later attempts are not resumable."
+  [{:keys [status generation]} claim-generation]
+  (and (pos-int? claim-generation)
+       (case status
+         :member.invite.status/accepting (= generation claim-generation)
+         :member.invite.status/creating (= generation (inc claim-generation))
+         :member.invite.status/activating (= generation (+ claim-generation 2))
+         :member.invite.status/compensating (contains? #{(inc claim-generation) (+ claim-generation 2)} generation)
+         false)))
+
 (defn- expected-attempt-user?
   [member-id generation user]
   (let [expected (attempt-markers member-id generation)]
