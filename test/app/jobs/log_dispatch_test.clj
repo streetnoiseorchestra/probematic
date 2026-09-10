@@ -20,6 +20,32 @@
 (defn transact-jobs! [conn jobs]
   (d/basis-t (:db-after @(d/transact conn (log/intent-tx jobs)))))
 
+(deftest checked-cursor-distinguishes-pending-work-from-consumed-or-pruned-work
+  (let [{:keys [conn]} (tc/new-system "log-read-cursor")
+        client         (client!)
+        historical-t   (transact-jobs! conn [["historical" {} {}]])]
+    (log/initialize! conn client historical-t)
+    (let [source-t (transact-jobs! conn [["current" {} {}]])
+          snapshot (d/db conn)]
+      (sqlite/with-read-tx [tx (:reader tc/*sqlite-db*)]
+        (is (true? (log/processed-through? snapshot tx historical-t)))
+        (is (false? (log/processed-through? snapshot tx source-t))))
+      (log/dispatch-pending! conn client 100)
+      (doseq [job (drip/list-jobs client {})]
+        (drip/delete-job client (:id job)))
+      (sqlite/with-read-tx [tx (:reader tc/*sqlite-db*)]
+        (is (true? (log/processed-through? snapshot tx source-t)))
+        (is (empty? (drip/list-jobs! client tx {}))))
+      (transact-jobs! conn [["later" {} {}]])
+      (log/dispatch-pending! conn client 100)
+      (sqlite/with-read-tx [tx (:reader tc/*sqlite-db*)]
+        (is (thrown-with-msg? Exception #"Log cursor does not match the source database"
+                              (log/processed-through? snapshot tx source-t))))
+      (let [{other :conn} (tc/new-system "log-read-other-source")]
+        (sqlite/with-read-tx [tx (:reader tc/*sqlite-db*)]
+          (is (thrown-with-msg? Exception #"Log cursor does not match the source database"
+                                (log/processed-through? (d/db other) tx source-t))))))))
+
 (deftest nexus-commits-job-intent-with-the-business-change
   (let [{:keys [conn]} (tc/new-system "log-nexus")
         client         (client!)

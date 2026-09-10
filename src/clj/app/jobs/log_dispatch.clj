@@ -61,6 +61,16 @@
                     {:cursor-t last-t :basis-t basis-t})))
   last-t)
 
+(>defn processed-through?
+  "Returns whether the checked log cursor has passed `source-t`.
+
+  Uses a borrowed SQLite transaction and its matching Datomic snapshot. Includes
+  explicit cutover history; this does not promise that a job still exists after
+  retention. The cursor must be initialized and belong to the same source."
+  [db tx source-t]
+  [:any :any nat-int? => :boolean]
+  (>= (check-source! (cursor tx) (source-id db) (d/basis-t db)) source-t))
+
 (>defn initialize!
   "Initializes the log cursor in the job database before the frame loop starts.
 
