@@ -228,12 +228,11 @@
                   (d/db conn)
                   [:member/member-id invited-member-id])
           status (:member/invite-status member)]
-      (is (= {:queued [{:to "alice@example.com" :code "initial-code"}
-                       {:to "alice@example.com" :code "replacement-code"}]
+      (is (= {:queued []                            :job-count 2
               :status :member.invite.status/revoked
               :code   nil
               :expiry nil}
-             {:queued @queued
+             {:queued @queued                                          :job-count (count (tc/committed-jobs conn))
               :status (if (keyword? status) status (:db/ident status))
               :code   (:member/invite-code member)
               :expiry (:member/invite-expires-at member)})))))
@@ -292,7 +291,7 @@
               :invitation-generation   1
               :invitation-status       pending
               :remaining-generated-ids []
-              :queued                  [{:to "alice@example.com" :code "original-code"}]}
+              :queued                  []              :job-count 1}
              {:first-status            (:member-invite/persist-status first-result)
               :second-status           (:member-invite/persist-status second-result)
               :created-member-id
@@ -311,7 +310,7 @@
               :invitation-status
               (if (keyword? status) status (:db/ident status))
               :remaining-generated-ids @generated-ids
-              :queued                  @queued})))))
+              :queued                  @queued                                       :job-count (count (tc/committed-jobs conn))})))))
 
 (deftest explicit-acceptance-workflow-creates-and-enables-the-account-test
   (let [{:keys [conn member-id]} (tc/new-system "invite-accept-workflow")

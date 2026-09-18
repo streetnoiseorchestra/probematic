@@ -3,11 +3,9 @@
 
   Profile validation remains in [[app.account.actions]].
   This namespace owns uploaded file preparation, the atomic Datomic write, and
-  the optional identity-provider synchronization. With durable jobs enabled, its
-  intent commits with the profile; otherwise synchronization runs after commit."
+  optional identity-provider synchronization intent, committed with the profile."
   (:require
    [app.filestore.controller :as filestore.controller]
-   [app.members.effects :as members.effects]
    [app.jobs.identity :as identity-jobs]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.write-runner :as writer]
@@ -70,7 +68,7 @@
           (conj [:db/retractEntity current-avatar-eid]))))))
 
 (defn- save-tx
-  [db {:keys [member-id profile avatar-upload sync-keycloak?] :as params} stored-avatar durable?]
+  [db {:keys [member-id profile avatar-upload sync-keycloak?] :as params} stored-avatar]
   (let [member             (d/entity db [:member/member-id member-id])
         current-avatar-eid (some-> member :member/avatar :db/id)
         keycloak-id        (:member/keycloak-id member)
@@ -83,13 +81,12 @@
                                                    (avatar-file-eids db current-avatar-eid))
                                  [[:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]))]
     (into [[:member.invite/transact-profile-if-not-in-flight member-id profile-data]]
-          (when durable?
-            (concat
-             [{:db/id        "datomic.tx"        :audit/action :app.account.actions/save-profile
-               :audit/origin :app.origin/browser}]
-             (when (and sync-keycloak? keycloak-id)
-               (log-dispatch/intent-tx
-                [(identity-jobs/job params member-id keycloak-id {:metadata? true})])))))))
+          (concat
+           [{:db/id        "datomic.tx"        :audit/action :app.account.actions/save-profile
+             :audit/origin :app.origin/browser}]
+           (when (and sync-keycloak? keycloak-id)
+             (log-dispatch/intent-tx
+              [(identity-jobs/job params member-id keycloak-id {:metadata? true})]))))))
 
 (defn prepare-profile!
   "Stores avatar bytes and returns profile parameters for [[save-prepared-profile!]].
@@ -120,21 +117,17 @@
   "Commits parameters returned by [[prepare-profile!]] using writer-current state.
 
   Does not read the upload tempfile. Identity synchronization intent commits
-  with the profile in durable mode; legacy synchronization follows the commit.
+  with the profile.
   Returns `{:status :saved :tx-result report}` only after the commit."
-  [system {:keys [member-id sync-keycloak?] :as params}]
+  [system params]
   (when-not (contains? params ::stored-avatar)
     (throw (ex-info "Profile upload has not been prepared" {})))
   (let [conn     (-> system :datomic :conn)
-        durable? (get-in system [:frame-loop :durable-jobs?])
-        persist! (fn [] @(d/transact conn (save-tx (d/db conn) params (::stored-avatar params) durable?)))]
+        persist! (fn [] @(d/transact conn (save-tx (d/db conn) params (::stored-avatar params))))]
     (assert conn "profile persistence requires a Datomic connection")
     (let [tx-result (if-let [control (get-in system [:frame-loop :write-runner])]
                       (writer/call! control persist!)
                       (persist!))]
-      (when (and sync-keycloak? (not durable?))
-        (members.effects/update-keycloak-meta!
-         {:system system :datomic-conn conn} member-id))
       {:status :saved :tx-result tx-result})))
 
 (defn save-profile!

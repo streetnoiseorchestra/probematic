@@ -61,12 +61,11 @@
        (:played/play-id current-play) (assoc :played/play-id (:played/play-id current-play))
        (nil? (:played/play-id current-play)) (assoc :played/play-id :db/gen-uuid))]))
 
-(defn persist-play-effect [{:keys [db durable-jobs?] :as state} gig-id song-id rating emphasis]
+(defn persist-play-effect [{:keys [db] :as state} gig-id song-id rating emphasis]
   [:db/transact
    (play-tx-data db gig-id song-id rating emphasis)
-   (cond-> (integrations/gig-update-options state (util/ensure-uuid! gig-id) :plays)
-     durable-jobs? (update :jobs (fnil conj []) play-stats/job)
-     (not durable-jobs?) (update :on-success #(into [[:app.gigs/recalc-play-stats]] %)))])
+   (update (integrations/gig-update-options state (util/ensure-uuid! gig-id) :plays)
+           :jobs (fnil conj []) play-stats/job)])
 
 (defn update-rating-action [state {:keys [gig-log-plays]}]
   (let [{:keys [gig-id song-id rating emphasis]} gig-log-plays]

@@ -141,15 +141,13 @@
            :tr                 (:tr request)
            :db                 (d/db (-> system :datomic :conn))
            :page-state         (request-page-state request)
-           :current-user-roles (current-user-roles request)}
-    (get-in system [:frame-loop :durable-jobs?])
-    (assoc :durable-jobs? true
-           :current-locale (or (:current-locale request) :en)
-           :job-origin {:tab-id    (datastar/request-tab-id request)
-                        :token     (::datastar/state-token request)
-                        :action-id (::action-id request)
-                        :member-id (current-member-id request)
-                        :locale    (or (:current-locale request) :en)})
+           :current-user-roles (current-user-roles request)
+           :current-locale     (or (:current-locale request) :en)
+           :job-origin         {:tab-id    (datastar/request-tab-id request)
+                                :token     (::datastar/state-token request)
+                                :action-id (::action-id request)
+                                :member-id (current-member-id request)
+                                :locale    (or (:current-locale request) :en)}}
     (::account.effects/prepared-profile request) (assoc :prepared-profile? true)
     (:env system) (assoc :env (:env system))
     (current-member-id request) (assoc :current-member-id (current-member-id request))))
@@ -245,34 +243,10 @@
 (defn set-keycloak-account-enabled-fx [_ {req :request} member-id enabled?]
   (members.effects/set-keycloak-account-enabled! req member-id enabled?))
 
-(defn dispatch-actions
-  [nexus system {:keys [request response]} on-error]
-  (let [empty-response {:status 204 :headers {} :body ""}
-        result         (nexus/dispatch nexus
-                                       {:system system :request request}
-                                       {:request request}
-                                       response)]
-    (if-let [error (->> (:errors result) (keep :err) first)]
-      (do
-        (on-error error)
-        empty-response)
-      (try
-        (if-let [response (result-response result)]
-          (if (datastar/sse-response-plan? response)
-            (let [sse-response
-                  (datastar/respond-sse request
-                                        (datastar/sse-response-events response))]
-              (if (response? sse-response) sse-response empty-response))
-            response)
-          empty-response)
-        (catch Exception error
-          (on-error error)
-          empty-response)))))
-
 (defn queue-actions!
   "Admits an action request without evaluating Nexus or waiting for a commit."
   [runtime request actions]
-  (if @(:stopped? runtime)
+  (if (or (nil? runtime) @(:stopped? runtime))
     {:status 503 :headers {} :body ""}
     (if-let [request (datastar/assoc-connection-token runtime request)]
       (if ((::game/submit! runtime)
@@ -318,24 +292,6 @@
        [[:app.datastar.sse/merge-signals {:loading false :targetid false}]
         [:app.datastar.sse/execute-script
          (str "window.alert(" (datastar/->signals ((:tr request) [:error/unknown-title])) ");")]]))))
-
-(defn nexus-interceptor
-  "Dispatch Nexus action vectors returned by a Reitit route handler.
-  attach a Nexus state snapshot to the request, dispatch action vectors, and
-  pass normal Ring responses through unchanged."
-  ([nexus system]
-   (nexus-interceptor nexus system nil))
-  ([nexus system {:keys [on-error] :or {on-error #(throw %)}}]
-   {:name  ::nexus-interceptor
-    :enter (fn [ctx]
-             ctx
-             #_(update ctx :request assoc :nexus/state
-                       (system->state system (:request ctx))))
-    :leave (fn [{:keys [response] :as ctx}]
-             (if (vector? response)
-               (assoc ctx :response
-                      (dispatch-actions nexus system ctx on-error))
-               ctx))}))
 
 (defn nexus []
   {:nexus/system->state system->state

@@ -22,9 +22,7 @@
           {:keys [poll-id]}        (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})]
       (is (= [[:db/transact
                [[:db/add (pts/poll-ref poll-id) :poll/poll-status :poll.status/open]]
-               {}]
-              [:app.poll/send-poll-opened poll-id]
-              support/clear-loading]
+               {:jobs [] :on-success [support/clear-loading]}]]
              (actions/open-poll-action
               (pts/action-state conn member-id)
               (pts/poll-detail-signals poll-id)))))))

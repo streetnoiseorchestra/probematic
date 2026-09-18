@@ -55,7 +55,7 @@
       (is (= gig-id (get-in result [:gig :gig/gig-id])))
       (is (= member-id (get-in result [:member :member/member-id])))
       (is (= :plan/definitely-not (:attendance/plan attendance)))
-      (is (= [[gig-id :attendance]] @edited_))))
+      (is (empty? @edited_))))
 
   (testing "does not change attendance for a past-gig answer"
     (let [{:keys [conn]}             (tc/new-system "gig-answer-link-past")

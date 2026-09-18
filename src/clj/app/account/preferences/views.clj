@@ -146,5 +146,3 @@
                        :type       "submit"
                        :form       form-id}
         [:i18n/tr :account-settings/preferences-save]]]])))
-
-(d*/refresh-all!)

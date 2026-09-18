@@ -38,16 +38,12 @@
       (invalid [:poll-detail] (tr [:polls/open-hint]))
 
       :else
-      (if (:durable-jobs? state)
-        (let [member-ids (q/active-member-ids db)]
-          [[:db/transact tx-data
-            {:jobs       (if (seq member-ids)
-                           [(mailers/job state ::mailers/poll-opened {:poll-id poll-id :member-ids member-ids})]
-                           [])
-             :on-success [support/clear-loading]}]])
-        [[:db/transact tx-data {}]
-         [:app.poll/send-poll-opened poll-id]
-         support/clear-loading]))))
+      (let [member-ids (q/active-member-ids db)]
+        [[:db/transact tx-data
+          {:jobs       (if (seq member-ids)
+                         [(mailers/job state ::mailers/poll-opened {:poll-id poll-id :member-ids member-ids})]
+                         [])
+           :on-success [support/clear-loading]}]]))))
 
 (defn close-poll-action [{:keys [now]} signals]
   (let [poll-id (poll-id-from signals :poll-detail)]

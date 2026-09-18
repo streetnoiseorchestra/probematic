@@ -69,5 +69,3 @@
        (gigs.ui/gig-section req {:title         selected-year
                                  :empty-message [:i18n/tr :gigs/no-recent]
                                  :gigs          gigs})]])))
-
-(d*/refresh-all!)

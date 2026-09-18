@@ -302,5 +302,3 @@
        (policies-table req policies)
        (for [policy policies]
          (policy-remove-dialog req policy))]])))
-
-(d*/refresh-all!)

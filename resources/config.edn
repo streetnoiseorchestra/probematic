@@ -97,16 +97,10 @@
                                                         :filestore             #ig/ref :app.ig/filestore
                                                         :nexus                 #ig/ref :app.ig/nexus
                                                         :frame-loop            #ig/ref :app.ig/frame-loop
-                                                        :datastar-refresh-mult #ig/ref :app.datastar/refresh-mult
                                                         :icon-sprites          #ig/ref :app.icons/sprites}
-                           :app.datastar/refresh-mult  {:datomic #ig/ref :app.ig/datomic-db}
                            :app.ig/nexus               {}
-                           :app.ig/write-runner        {:profile  #ig/ref :app.ig/profile
-                                                        :enabled? #ref [:ig/system :app.ig/frame-loop :enabled?]}
-                           :app.ig/frame-loop          {:profile      #ig/ref :app.ig/profile
-                                                       ;; Opt in only for local validation until the effect audit is complete.
-                                                        :enabled?     false
-                                                        :datomic      #ig/ref :app.ig/datomic-db
+                           :app.ig/write-runner        {}
+                           :app.ig/frame-loop          {:datomic      #ig/ref :app.ig/datomic-db
                                                         :auxiliary    #ig/ref :app.ig/auxiliary
                                                         :write-runner #ig/ref :app.ig/write-runner
                                                         :job-queue    #ig/ref :app.ig/job-queue

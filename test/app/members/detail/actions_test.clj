@@ -596,22 +596,22 @@
                           :member/phone     "+431111111"
                           :member/section   [:section/name "Trumpets"]
                           :member/active?   false})
-      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
-                              edited-member-id
-                              [{:db/id          [:member/member-id edited-member-id]
-                                :member/name    "Alice Admin"
-                                :member/nick    "ally"
-                                :member/email   "alice@example.com"
-                                :member/phone   "+43677123456"
-                                :member/section [:section/name "Trumpets"]
-                                :member/active? true}]]
-                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? true}]
-              support/clear-loading
-              [:app.datastar/assoc-state [:member-detail :contact] false]]
-             (actions/update-contact-action
-              (assoc (state-for system) :tr tr)
-              (contact-signals edited-member-id {}))))))
+      (let [[preserve [_ tx opts]] (actions/update-contact-action
+                                    (assoc (state-for system) :tr tr)
+                                    (contact-signals edited-member-id {}))]
+        (is (= :app.datastar/assoc-state (first preserve)))
+        (is (= [[:member.invite/transact-profile-if-not-in-flight
+                 edited-member-id
+                 [{:db/id          [:member/member-id edited-member-id]
+                   :member/name    "Alice Admin"                        :member/nick    "ally"
+                   :member/email   "alice@example.com"                  :member/phone   "+43677123456"
+                   :member/section [:section/name "Trumpets"]           :member/active? true}]]
+                [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+               tx))
+        (is (= {:transact-w-nils? true                                                          :jobs []
+                :on-success       [support/clear-loading
+                                   [:app.datastar/assoc-state [:member-detail :contact] false]]}
+               opts)))))
 
   (testing "returns validation error for a cleared nick"
     (let [{:keys [conn] :as system} (new-system)
@@ -650,23 +650,26 @@
                           :member/keycloak-id "kc-123"
                           :member/section     [:section/name "Trumpets"]
                           :member/active?     false})
-      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
-                              edited-member-id
-                              [{:db/id          [:member/member-id edited-member-id]
-                                :member/name    "Alice Admin"
-                                :member/nick    "ally"
-                                :member/email   "alice@example.com"
-                                :member/phone   "+43677123456"
-                                :member/section [:section/name "Trumpets"]
-                                :member/active? true}]]
-                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? true}]
-              [:app.members/update-keycloak-meta edited-member-id]
-              support/clear-loading
-              [:app.datastar/assoc-state [:member-detail :contact] false]]
-             (actions/update-contact-action
-              (assoc (state-for system) :tr tr)
-              (contact-signals edited-member-id {}))))))
+      (is (= [:db/transact [[:member.invite/transact-profile-if-not-in-flight
+                             edited-member-id
+                             [{:db/id          [:member/member-id edited-member-id]
+                               :member/name    "Alice Admin"
+                               :member/nick    "ally"
+                               :member/email   "alice@example.com"
+                               :member/phone   "+43677123456"
+                               :member/section [:section/name "Trumpets"]
+                               :member/active? true}]]
+                            [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+              {:transact-w-nils? true
+               :jobs             [["sync-member-identity"
+                                   {:member-id edited-member-id                  :keycloak-id "kc-123"
+                                    :changes   {:metadata? true :enabled? false} :origin      nil}
+                                   {:queue "identity-sync" :max-attempts 25}]]
+               :on-success       [support/clear-loading
+                                  [:app.datastar/assoc-state [:member-detail :contact] false]]}]
+             (second (actions/update-contact-action
+                      (assoc (state-for system) :tr tr)
+                      (contact-signals edited-member-id {})))))))
 
   (testing "admin updates username, keycloak id, and SNO ID enabled state from the contact form"
     (let [{:keys [conn member-id] :as system} (new-system)
@@ -681,31 +684,34 @@
                           :member/keycloak-id "kc-123"
                           :member/section     [:section/name "Trumpets"]
                           :member/active?     true})
-      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
-                              edited-member-id
-                              [{:db/id           [:member/member-id edited-member-id]
-                                :member/name     "Alice Admin"
-                                :member/nick     "ally"
-                                :member/email    "alice@example.com"
-                                :member/phone    "+43677123456"
-                                :member/section  [:section/name "Trumpets"]
-                                :member/active?  true
-                                :member/username "alice.new"}]]
-                             [:member/set-keycloak-id
-                              edited-member-id
-                              "kc-456"]
-                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? true}]
-              [:app.members/update-keycloak-meta edited-member-id]
-              [:app.members/set-keycloak-account-enabled edited-member-id false]
-              support/clear-loading
-              [:app.datastar/assoc-state [:member-detail :contact] false]]
-             (actions/update-contact-action
-              (assoc (admin-state-for system) :tr tr)
-              (contact-signals edited-member-id {:username                "Alice.New  "
-                                                 :keycloak-id             "kc-456"
-                                                 :sno-id-enabled          false
-                                                 :sno-id-enabled-original true}))))))
+      (is (= [:db/transact [[:member.invite/transact-profile-if-not-in-flight
+                             edited-member-id
+                             [{:db/id           [:member/member-id edited-member-id]
+                               :member/name     "Alice Admin"
+                               :member/nick     "ally"
+                               :member/email    "alice@example.com"
+                               :member/phone    "+43677123456"
+                               :member/section  [:section/name "Trumpets"]
+                               :member/active?  true
+                               :member/username "alice.new"}]]
+                            [:member/set-keycloak-id
+                             edited-member-id
+                             "kc-456"]
+                            [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
+                            [:db/add [:member/member-id edited-member-id] :member/keycloak-enabled-request false]]
+              {:transact-w-nils? true
+               :jobs             [["sync-member-identity"
+                                   {:member-id edited-member-id                 :keycloak-id "kc-456"
+                                    :changes   {:metadata? true :enabled? true} :origin      nil}
+                                   {:queue "identity-sync" :max-attempts 25}]]
+               :on-success       [support/clear-loading
+                                  [:app.datastar/assoc-state [:member-detail :contact] false]]}]
+             (second (actions/update-contact-action
+                      (assoc (admin-state-for system) :tr tr)
+                      (contact-signals edited-member-id {:username                "Alice.New  "
+                                                         :keycloak-id             "kc-456"
+                                                         :sno-id-enabled          false
+                                                         :sno-id-enabled-original true})))))))
 
   (testing "non-admin contact updates ignore submitted SNO ID fields"
     (let [{:keys [conn member-id] :as system} (new-system)
@@ -720,26 +726,29 @@
                           :member/keycloak-id "kc-123"
                           :member/section     [:section/name "Trumpets"]
                           :member/active?     true})
-      (is (= [[:db/transact [[:member.invite/transact-profile-if-not-in-flight
-                              edited-member-id
-                              [{:db/id          [:member/member-id edited-member-id]
-                                :member/name    "Alice Admin"
-                                :member/nick    "ally"
-                                :member/email   "alice@example.com"
-                                :member/phone   "+43677123456"
-                                :member/section [:section/name "Trumpets"]
-                                :member/active? true}]]
-                             [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? true}]
-              [:app.members/update-keycloak-meta edited-member-id]
-              support/clear-loading
-              [:app.datastar/assoc-state [:member-detail :contact] false]]
-             (actions/update-contact-action
-              (assoc (state-for system) :tr tr)
-              (contact-signals edited-member-id {:username                "malicious"
-                                                 :keycloak-id             "kc-456"
-                                                 :sno-id-enabled          false
-                                                 :sno-id-enabled-original true}))))))
+      (is (= [:db/transact [[:member.invite/transact-profile-if-not-in-flight
+                             edited-member-id
+                             [{:db/id          [:member/member-id edited-member-id]
+                               :member/name    "Alice Admin"
+                               :member/nick    "ally"
+                               :member/email   "alice@example.com"
+                               :member/phone   "+43677123456"
+                               :member/section [:section/name "Trumpets"]
+                               :member/active? true}]]
+                            [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
+              {:transact-w-nils? true
+               :jobs             [["sync-member-identity"
+                                   {:member-id edited-member-id                  :keycloak-id "kc-123"
+                                    :changes   {:metadata? true :enabled? false} :origin      nil}
+                                   {:queue "identity-sync" :max-attempts 25}]]
+               :on-success       [support/clear-loading
+                                  [:app.datastar/assoc-state [:member-detail :contact] false]]}]
+             (second (actions/update-contact-action
+                      (assoc (state-for system) :tr tr)
+                      (contact-signals edited-member-id {:username                "malicious"
+                                                         :keycloak-id             "kc-456"
+                                                         :sno-id-enabled          false
+                                                         :sno-id-enabled-original true})))))))
 
   (testing "admin contact updates validate duplicate usernames"
     (let [{:keys [conn] :as system} (new-system)
@@ -863,7 +872,7 @@
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
           (is (thrown? Throwable
-                       @(d/transact conn (-> effects first second))))
+                       @(d/transact conn (-> effects second second))))
           (is (= {:member/name     "Alice Old"
                   :member/email    "old@example.com"
                   :member/username "alice.old"}
@@ -900,7 +909,7 @@
                (assoc (admin-state-for system) :tr tr)
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
-          @(d/transact conn (-> effects first second))
+          @(d/transact conn (-> effects second second))
           (is (= {:member/name     "Alice Admin"
                   :member/email    "alice@example.com"
                   :member/username "alice.new"}
@@ -950,7 +959,7 @@
                    :generation 1
                    :expires-at expires-at})))
           (is (thrown? Throwable
-                       @(d/transact conn (-> effects first second))))
+                       @(d/transact conn (-> effects second second))))
           (is (= {:member/name          "Alice Old"
                   :member/email         "old@example.com"
                   :member/username      "alice.old"
@@ -984,7 +993,7 @@
                (assoc (admin-state-for system) :tr tr)
                (contact-signals edited-member-id
                                 {:username "Alice.New"}))]
-          @(d/transact conn (-> effects first second))
+          @(d/transact conn (-> effects second second))
           (is (= {:member-invite/claim-status       :claimed
                   :member-invite/attempt-generation 2
                   :member-invite/state

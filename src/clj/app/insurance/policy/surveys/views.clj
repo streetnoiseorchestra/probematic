@@ -387,5 +387,3 @@
           [:i18n/tr :insurance/survey-error-not-allowed]])]
       (when authorized?
         (survey-dialogs req active-survey))])))
-
-(d*/refresh-all!)

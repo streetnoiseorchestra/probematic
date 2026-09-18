@@ -1,6 +1,5 @@
 (ns app.insurance.coverage.views
   (:require
-   [app.datastar :as d*]
    [app.insurance.queries :as queries]
    [app.insurance.ui :as insurance-ui]
    [app.ui2 :as ui2]
@@ -52,5 +51,3 @@
                                                 :policy   policy})
         (insurance-ui/comments-aside)]
        (insurance-ui/history-section req coverage)]])))
-
-(d*/refresh-all!)

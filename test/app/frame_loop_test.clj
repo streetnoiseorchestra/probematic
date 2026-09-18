@@ -9,10 +9,31 @@
    [app.test-common :as tc]
    [clojure.test :refer [deftest is use-fixtures]]
    [datomic.api :as d]
+   [app.job-queue :as queue]
+   [app.write-runner :as writer]
+   [babashka.fs :as fs]
    [integrant.core :as ig])
   (:import [java.util.concurrent ConcurrentHashMap]))
 
-(use-fixtures :each tc/with-released-test-connections)
+(def ^:dynamic *control* nil)
+(def ^:dynamic *queue* nil)
+
+(use-fixtures :each tc/with-released-test-connections
+  (fn [f]
+    (let [control (writer/create)
+          dir     (fs/create-temp-dir {:prefix "frame-test-"})]
+      (try
+        (let [jobs (queue/start! {:filename (str (fs/path dir "jobs.sqlite"))
+                                  :config   {:pool-size 4}                    :write-runner control})]
+          (try (binding [*control* control *queue* jobs] (f))
+               (finally (queue/stop! jobs))))
+        (finally (fs/delete-tree dir))))))
+
+(defn start-runtime! [system options]
+  (ig/init-key :app.ig/frame-loop
+               (merge system options
+                      {:write-runner *control*                                           :job-queue *queue*
+                       :cutover-t    (d/basis-t (d/db (get-in system [:datomic :conn])))})))
 
 (defn request [system member-id tab-id action signals]
   {:system      system
@@ -28,7 +49,7 @@
         tab-id                   (str (random-uuid))
         token                    (Object.)
         system                   {:datomic {:conn conn} :nexus (nexus/nexus)}
-        runtime                  (ig/init-key :app.ig/frame-loop (assoc system :profile :dev :enabled? true :queue-capacity 2))
+        runtime                  (start-runtime! system {:queue-capacity 2})
         system                   (assoc system :frame-loop runtime)
         entered                  (promise)
         release                  (promise)
@@ -120,7 +141,7 @@
                                      (assoc-in [:nexus/actions ::rejected]
                                                (fn [_ _] (throw (ex-info "Expected action rejection" {})))))
         system                   {:datomic {:conn conn} :nexus config}
-        runtime                  (ig/init-key :app.ig/frame-loop (assoc system :profile :dev :enabled? true))
+        runtime                  (start-runtime! system {})
         system                   (assoc system :frame-loop runtime :env {:frame-test? true})
         delivered                (promise)]
     (try

@@ -111,28 +111,18 @@
       [(confirmation-transaction current-member-id (:policy context))])))
 
 (defn send-and-confirm-changes-action
-  [{:keys [db tr durable-jobs? job-origin]} signals]
+  [{:keys [db tr job-origin]} signals]
   (let [params  (normalize-form signals)
         context (policy-context db (:policy-id params))
         errors  (delivery-errors tr (:policy context) params)]
     (if (seq errors)
       (failure-effects params errors)
-      (if durable-jobs?
-        [[:app.datastar/assoc-state [form-key] params]
-         [:db/transact []
-          {:jobs [[email-job-kind
-                   {:effect-id :db/gen-uuid                                                          :origin job-origin
-                    :mail      (assoc (dissoc params :preview-type) :policy-id (:policy-id context))}
-                   {:queue "policy-mail" :max-attempts 25}]]}]]
-        [[:app.insurance/send-policy-changes
-          (-> params
-              (dissoc :preview-type)
-              (assoc :policy-id (:policy-id context)
-                     :on-success [[::confirm-sent
-                                   {form-key {:policy-id (str (:policy-id context))}}]
-                                  [:app.datastar/respond-sse
-                                   [[:app.datastar.sse/redirect
-                                     (urls/link-policy (:policy-id context))]]]]))]]))))
+      [[:app.datastar/assoc-state [form-key] params]
+       [:db/transact []
+        {:jobs [[email-job-kind
+                 {:effect-id :db/gen-uuid                                                          :origin job-origin
+                  :mail      (assoc (dissoc params :preview-type) :policy-id (:policy-id context))}
+                 {:queue "policy-mail" :max-attempts 25}]]}]])))
 
 (defn preview-attachment-action
   [{:keys [db tr]} signals]

@@ -161,5 +161,3 @@
         (avatar-section req member state)
         (profile-fields req state)
         (security-section req)]]])))
-
-(d*/refresh-all!)

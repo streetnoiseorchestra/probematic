@@ -2,6 +2,7 @@
   (:require
    [app.gigs.detail.actions :as actions]
    [app.gigs.domain :as domain]
+   [app.nexus.actions :as support]
    [app.queries :as q]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
@@ -64,8 +65,7 @@
    :attendance/updated    :db/now
    :attendance/section    [:section/name "flute"]})
 
-(defn edited-effect [gig-id]
-  {:on-success [[:app.gigs/trigger-gig-edited gig-id :attendance]]})
+(defn edited-effect [_gig-id] {})
 
 (deftest update-attendance-plan-action-test
   (testing "creates an attendance entity when the member has no attendance yet"
@@ -261,15 +261,12 @@
                                 :next-member-id    (str next-member-id)
                                 :next-comment      ""}}))))))
 
-(deftest send-reminder-to-all-action-test
-  (let [gig-id #uuid "01844740-3eed-856d-84c1-c26f07068210"
-        now    #inst "2026-04-28T10:00:00.000-00:00"]
-    (is (= [[:app.gigs/send-reminder-to-all gig-id]
-            [:app.datastar/assoc-state
-             [:gig-detail :attendance :remind-all-sent-at]
-             now]]
+(deftest send-reminder-to-all-with-no-recipients-does-not-queue-mail
+  (let [{:keys [conn]} (tc/new-system "empty-gig-reminders")
+        gig-id         (random-uuid)]
+    (is (= [support/clear-loading]
            (actions/send-reminder-to-all-action
-            {:tr tr :now now}
+            {:db (d/db conn) :tr tr :now #inst "2026-04-28T10:00:00Z"}
             {:gig-attendance {:gig-id (str gig-id)}})))))
 
 (deftest toggle-attendance-committed-action-test

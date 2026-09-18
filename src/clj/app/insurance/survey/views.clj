@@ -635,5 +635,3 @@
        (html/script "/js/insurance-survey-motion.js" :type "module")
        #_(when dev?
            (html/script "/js/insurance-survey-animation-lab.js" :type "module"))]])))
-
-(d*/refresh-all!)

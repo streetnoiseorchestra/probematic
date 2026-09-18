@@ -2,7 +2,7 @@
   (:require
    [lookup.core :as l]
    [app.datomic.system :as datomic.system]
-   [app.nexus :as app-nexus]
+   [clojure.edn :as edn]
    [app.sqlite :as sqlite]
    [datomic.api :as d]))
 
@@ -39,11 +39,10 @@
       {:conn      conn
        :member-id member-id})))
 
-(defn dispatch-with-nexus [handler nexus-config system req]
-  (let [interceptor (app-nexus/nexus-interceptor nexus-config system)
-        ctx         ((:enter interceptor) {:request req})
-        response    (handler (:request ctx))]
-    (:response ((:leave interceptor) (assoc ctx :response response)))))
+(defn committed-jobs [conn]
+  (into []
+        (mapcat (comp :jobs edn/read-string second))
+        (sort-by first (d/q '[:find ?tx ?jobs :where [?tx :audit/jobs ?jobs]] (d/db conn)))))
 
 (defn select-attribute
   [selector path data]

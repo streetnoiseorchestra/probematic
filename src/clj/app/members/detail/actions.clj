@@ -213,21 +213,16 @@
                             current-user-admin?
                             (conj [:member/set-keycloak-id member-id (:keycloak-id contact)]))
                           current-member-id)]
-        (if (:durable-jobs? state)
-          [[:app.datastar/assoc-state [:member-detail :contact] contact]
-           [:db/transact
-            (cond-> tx-data
-              (and keycloak-id enabled?)
-              (conj [:db/add member-ref :member/keycloak-enabled-request (:sno-id-enabled contact)]))
-            {:transact-w-nils? true
-             :jobs             (if (and keycloak-id (or sync? enabled?))
-                                 [(identity-jobs/job state member-id keycloak-id {:metadata? (boolean sync?) :enabled? (boolean enabled?)})]
-                                 [])
-             :on-success       [support/clear-loading clear-contact]}]]
-          (cond-> [[:db/transact tx-data {:transact-w-nils? true}]]
-            sync? (conj [:app.members/update-keycloak-meta member-id])
-            enabled? (conj [:app.members/set-keycloak-account-enabled member-id (:sno-id-enabled contact)])
-            true (conj support/clear-loading clear-contact)))))))
+        [[:app.datastar/assoc-state [:member-detail :contact] contact]
+         [:db/transact
+          (cond-> tx-data
+            (and keycloak-id enabled?)
+            (conj [:db/add member-ref :member/keycloak-enabled-request (:sno-id-enabled contact)]))
+          {:transact-w-nils? true
+           :jobs             (if (and keycloak-id (or sync? enabled?))
+                               [(identity-jobs/job state member-id keycloak-id {:metadata? (boolean sync?) :enabled? (boolean enabled?)})]
+                               [])
+           :on-success       [support/clear-loading clear-contact]}]]))))
 
 (defn- date->db-inst [date]
   (t/inst (t/in (t/at date (t/midnight)) "UTC")))

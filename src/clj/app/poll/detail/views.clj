@@ -226,5 +226,3 @@
        (close-dialog req poll))
       (throw (ex-info "Poll not found" {:app/error-type :app.error.type/not-found
                                         :poll/poll-id   poll-id})))))
-
-(d*/refresh-all!)

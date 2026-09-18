@@ -236,5 +236,3 @@
         (invite-accept req)
 
         (throw exception)))))
-
-(d*/refresh-all!)

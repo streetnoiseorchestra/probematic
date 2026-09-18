@@ -291,5 +291,3 @@
        (members-table page-state members)
        (pagination-controls page-state pagination)
        (invitations-panel req invitations)]])))
-
-(d*/refresh-all!)

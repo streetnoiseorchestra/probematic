@@ -120,8 +120,7 @@
                  :gig/description       nil
                  :gig/post-gig-plans    nil
                  :forum.topic/topic-id  nil}]
-               {:transact-w-nils? true
-                :on-success       [[:app.gigs/trigger-gig-details-edited gig-id true false]]}]
+               {:transact-w-nils? true}]
               [:app.datastar/respond-sse
                [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]
              (actions/update-gig-action
@@ -262,7 +261,7 @@
       (is (= "Street Gig" (:gig/title tx)))
       (is (= :gig.type/gig (:gig/gig-type tx)))
       (is (= :gig.status/confirmed (:gig/status tx)))
-      (is (= {:on-success [[:app.gigs/trigger-gig-created gig-id true true]]}
+      (is (= {}
              opts))
       (is (= [:app.datastar/respond-sse
               [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]
@@ -312,7 +311,7 @@
                [[:db/retractEntity [:setlist/gig [:gig/gig-id gig-id]]]
                 [:db/retractEntity [:probeplan/gig [:gig/gig-id gig-id]]]
                 [:db/retractEntity [:gig/gig-id gig-id]]]
-               {:on-success [[:app.gigs/trigger-gig-deleted gig-id false]]}]
+               {:jobs []}]
               [:app.datastar/respond-sse
                [[:app.datastar.sse/redirect (urls/link-gigs-home)]]]]
              (actions/delete-gig-action

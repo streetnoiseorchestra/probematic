@@ -2,7 +2,6 @@
   (:require
    [app.datomic :as d]
    [app.datomic.shim :as datomic]
-   [app.datastar :as d*]
    [app.insurance.domain :as domain]
    [app.insurance.exporters :as exporters]
    [app.queries :as q]
@@ -1382,5 +1381,3 @@
      :groups               (grouped-rows (:group filters) rows)
      :totals               (workbench-totals visible-rows)
      :editable?            (policy-editable? policy)}))
-
-(d*/refresh-all!)

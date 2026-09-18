@@ -228,8 +228,7 @@
          data)]
     (is (= {:member-invite/email-queued? true}
            (output result)))
-    (is (= [{:to "alice@example.com" :code "email-code"}]
-           @queued))))
+    (is (empty? @queued))))
 
 (deftest admin-check-cells-return-domain-decisions-test
   (let [state {:status creating :generation 3}]

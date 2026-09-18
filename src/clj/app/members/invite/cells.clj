@@ -39,8 +39,8 @@
 (defn- state-after [report member-id]
   (domain/invitation-state (:db-after report) member-id))
 
-(defn- invitation-plan [{:keys [durable-jobs? current-locale]} member-id plan]
-  (if (and plan durable-jobs?)
+(defn- invitation-plan [{:keys [current-locale]} member-id plan]
+  (if plan
     (let [job (assoc-in (mailers/job {:current-locale (or current-locale :de)}
                                      ::mailers/member-invitation {:member-id member-id})
                         [1 :email-id] (random-uuid))]
@@ -86,17 +86,12 @@
          :member-invite/state          (domain/invitation-state (:db-after report) member-id)}))))
 
 (cell/defcell :member-invite/queue-invitation-email!
-  {:doc    "Reports the committed durable email intent, or builds and queues the email when durable jobs are disabled."
+  {:doc    "Reports the invitation email intent committed with the invitation."
    :input  [:map
             [:member-invite/member ::domain/invited-member]
             [:member-invite/code ::s/non-blank-string]]
    :output [:map [:member-invite/email-queued? [:= true]]]}
-  (fn [{:keys [durable-jobs? build-invitation-email queue-email!]} data]
-    (when-not durable-jobs?
-      (queue-email!
-       (build-invitation-email
-        (:member-invite/member data)
-        (:member-invite/code data))))
+  (fn [_resources _data]
     {:member-invite/email-queued? true}))
 
 (cell/defcell :member-invite/read-admin-state
@@ -252,10 +247,10 @@
          :member-invite/state         (state-after report member-id)}))))
 
 (defn claim-invitation!
-  "Commits a guarded claim, with durable intent when requested by server resources."
+  "Commits a guarded claim with durable setup intent."
   [{:keys [datomic-conn clock] :as resources} data]
   (let [member-id (:member/member-id data)
-        claim-tx  (if (:durable-jobs? resources) jobs/claim-tx domain/claim-tx)
+        claim-tx  jobs/claim-tx
         plan      #(claim-tx (d/db datomic-conn)
                              {:member-id       member-id
                               :state           (:member-invite/state data)

@@ -323,5 +323,3 @@
          (upload/upload-script)))
       (throw (ex-info "Instrument coverage not found" {:app/error-type                  :app.error.type/not-found
                                                        :instrument.coverage/coverage-id coverage-id})))))
-
-(d*/refresh-all!)

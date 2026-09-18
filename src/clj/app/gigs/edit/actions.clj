@@ -198,15 +198,13 @@
       [support/clear-loading
        [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]
       (let [gig-tx-data (update-gig-tx-data params)
-            member-ids  (when (and (:durable-jobs? state) notify? (config/prod-mode? (:env state)))
+            member-ids  (when (and notify? (config/prod-mode? (:env state)))
                           (q/active-member-ids db))]
         (tap> [:gig-tx-data gig-tx-data])
         [[:db/transact
           gig-tx-data
           (cond-> {:transact-w-nils? true}
-            (not (:durable-jobs? state))
-            (assoc :on-success [[:app.gigs/trigger-gig-details-edited gig-id notify? takeover-topic?]])
-            (and (:durable-jobs? state) (config/prod-mode? (:env state)))
+            (config/prod-mode? (:env state))
             (assoc :jobs [(integrations/gig-job gig-id {:operation :updated :takeover-topic? takeover-topic?})])
             (seq member-ids)
             (update :jobs conj (mailers/job state ::mailers/gig-committed-update
@@ -225,14 +223,12 @@
        [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]
       (let [gig-id     (sq/generate-squuid)
             params     (assoc params :gig-id (str gig-id))
-            member-ids (when (and (:durable-jobs? state) notify? (config/prod-mode? (:env state)))
+            member-ids (when (and notify? (config/prod-mode? (:env state)))
                          (q/active-member-ids db))]
         [[:db/transact
           (create-gig-tx-data params)
           (cond-> {}
-            (not (:durable-jobs? state))
-            (assoc :on-success [[:app.gigs/trigger-gig-created gig-id notify? thread?]])
-            (and (:durable-jobs? state) (config/prod-mode? (:env state)))
+            (config/prod-mode? (:env state))
             (assoc :jobs [(integrations/gig-job gig-id {:operation :created :thread? thread?})])
             (seq member-ids)
             (update :jobs conj (mailers/job state ::mailers/gig-created {:gig-id gig-id :member-ids member-ids})))]
@@ -276,12 +272,10 @@
       (let [{:keys [tx-data recalc-play-stats?]} (delete-gig-tx-data db gig-id)]
         [[:db/transact
           tx-data
-          (if (:durable-jobs? state)
-            {:jobs (cond-> []
-                     recalc-play-stats? (conj play-stats/job)
-                     (config/prod-mode? (:env state))
-                     (conj (integrations/gig-job gig-id {:operation :deleted})))}
-            {:on-success [[:app.gigs/trigger-gig-deleted gig-id recalc-play-stats?]]})]
+          {:jobs (cond-> []
+                   recalc-play-stats? (conj play-stats/job)
+                   (config/prod-mode? (:env state))
+                   (conj (integrations/gig-job gig-id {:operation :deleted})))}]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-gigs-home)]]]]))))
 

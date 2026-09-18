@@ -307,5 +307,3 @@ window.DiscourseEmbed = %s;
          (remind-all-dialog req gig-id)))
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id})))))
-
-(d*/refresh-all!)

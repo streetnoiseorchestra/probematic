@@ -302,5 +302,3 @@
   (if (http.util/path-param req :song-id)
     (edit-page req)
     (create-page req)))
-
-(d*/refresh-all!)

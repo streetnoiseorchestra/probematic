@@ -42,8 +42,7 @@
 (defn params [m]
   {:gig-setlist m})
 
-(defn edited-effect [gig-id]
-  {:on-success [[:app.gigs/trigger-gig-edited gig-id :setlist]]})
+(defn edited-effect [_gig-id] {})
 
 (defn tx-effect [gig-id tx-data]
   [:db/transact tx-data (edited-effect gig-id)])

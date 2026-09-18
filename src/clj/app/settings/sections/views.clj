@@ -235,5 +235,3 @@
         {:title    title
          :subtitle [:i18n/tr :band-settings/section-page-subtitle]}]
        (sections-panel req)]])))
-
-(d*/refresh-all!)

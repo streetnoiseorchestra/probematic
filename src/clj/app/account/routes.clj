@@ -7,7 +7,6 @@
    [app.account.notifications.views :as notifications.views]
    [app.account.preferences.views :as preferences.views]
    [app.account.profile.views :as profile.views]
-   [app.nexus :as nexus]
    [app.routes.datastar :as ds]
    [reitit.ring.malli :as reitit.ring.malli]))
 
@@ -29,8 +28,7 @@
                     :path      "/account-settings/on-a-break"
                     :page      #'break.views/page})
    ["/account-settings/profile/save"
-    {:name         ::save-profile
-     :interceptors [(nexus/nexus-interceptor (:nexus system) system)]
+    {:name ::save-profile
      :post
      {:parameters
       {:multipart

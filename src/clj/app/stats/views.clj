@@ -276,5 +276,3 @@
        (charts-section req stats)
        (methodology)
        (member-table req (:per-member-stats stats))]])))
-
-(d*/refresh-all!)

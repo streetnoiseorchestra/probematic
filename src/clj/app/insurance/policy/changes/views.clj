@@ -193,5 +193,3 @@
                        ::actions/confirm-changes
                        [:i18n/tr :insurance/confirm-skip-send]
                        false)]])))
-
-(d*/refresh-all!)

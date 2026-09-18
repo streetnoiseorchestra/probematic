@@ -237,5 +237,3 @@
          (plan.views/page-summary :gigs/log-plays)
          (plays-list req gig-id rows repertoire-filter)
          (plan.views/pop-helper-script)]]))))
-
-(d*/refresh-all!)

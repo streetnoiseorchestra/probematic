@@ -349,5 +349,3 @@
         data   (queries/dashboard-data db member)]
     (ui2/datastar-page*
      (home-content req member data))))
-
-(d*/refresh-all!)

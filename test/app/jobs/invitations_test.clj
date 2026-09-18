@@ -25,8 +25,7 @@
             :keycloak   (ig/ref :app.ig/keycloak)
             :job-queue  (ig/ref :app.ig/job-queue)}
            (:app.ig/invitation-worker config))))
-  (is (nil? (ig/init-key :app.ig/invitation-worker {})))
-  (is (nil? (ig/init-key :app.ig/invitation-worker {:frame-loop {:durable-jobs? false}})))
+  (is (thrown? Exception (ig/init-key :app.ig/invitation-worker {})))
   (is (nil? (ig/halt-key! :app.ig/invitation-worker nil))))
 
 (defn with-claim [f]

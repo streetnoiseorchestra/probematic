@@ -28,26 +28,25 @@
                            :tempfile  (:tempfile avatar)})}]]))
 
 (defn save-profile
-  "Prepares multipart content before queue admission; retains legacy dispatch when disabled."
+  "Prepares multipart content before queue admission and removes request tempfiles."
   [system request]
-  (let [actions (profile-actions request)]
-    (if-let [runtime (:frame-loop system)]
-      (try
-        (if @(:stopped? runtime)
-          {:status 503 :headers {} :body ""}
-          (let [{:keys [account-profile avatar-upload]} (second (first actions))
-                prepared                                (effects/prepare-profile!
-                                                         system {:profile       account-profile
-                                                                 :avatar-upload (when (and avatar-upload (nil? (actions/avatar-error avatar-upload)))
-                                                                                  avatar-upload)})]
-            (nexus/queue-actions! runtime
-                                  (-> request
-                                      (dissoc :params :form-params :multipart-params)
-                                      (assoc :system system
-                                             :parameters {:multipart {:tab-id (get-in request [:parameters :multipart :tab-id])}}
-                                             ::effects/prepared-profile (update prepared :avatar-upload dissoc :tempfile)))
-                                  (update-in actions [0 1 :avatar-upload] #(when % (dissoc % :tempfile))))))
-        (finally
-          (when-let [file (get-in request [:parameters :multipart :avatar :tempfile])]
-            (fs/delete-if-exists file))))
-      actions)))
+  (let [actions (profile-actions request)
+        runtime (:frame-loop system)]
+    (try
+      (if (or (nil? runtime) @(:stopped? runtime))
+        {:status 503 :headers {} :body ""}
+        (let [{:keys [account-profile avatar-upload]} (second (first actions))
+              prepared                                (effects/prepare-profile!
+                                                       system {:profile       account-profile
+                                                               :avatar-upload (when (and avatar-upload (nil? (actions/avatar-error avatar-upload)))
+                                                                                avatar-upload)})]
+          (nexus/queue-actions! runtime
+                                (-> request
+                                    (dissoc :params :form-params :multipart-params)
+                                    (assoc :system system
+                                           :parameters {:multipart {:tab-id (get-in request [:parameters :multipart :tab-id])}}
+                                           ::effects/prepared-profile (update prepared :avatar-upload dissoc :tempfile)))
+                                (update-in actions [0 1 :avatar-upload] #(when % (dissoc % :tempfile))))))
+      (finally
+        (when-let [file (get-in request [:parameters :multipart :avatar :tempfile])]
+          (fs/delete-if-exists file))))))

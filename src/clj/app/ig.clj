@@ -53,48 +53,42 @@
   [_ _config]
   (app-nexus/nexus))
 
-(defmethod ig/init-key ::write-runner [_ {:keys [profile enabled?]}]
-  (when (and enabled? (= :dev profile)) (writer/create)))
+(defmethod ig/init-key ::write-runner [_ _]
+  (writer/create))
 
 (defmethod ig/halt-key! ::write-runner [_ control]
   (when control (writer/close! control)))
 
-(defmethod ig/init-key ::frame-loop [_ {:keys [profile enabled? write-runner job-queue cutover-t] :as system}]
-  (when (and enabled? (= :dev profile))
-    (when (and job-queue (nil? write-runner))
-      (throw (ex-info "Frame loop requires the job queue's write runner" {})))
-    (let [control (or write-runner (writer/create))
-          hooks   (frame-storage/render-hooks (get-in system [:datomic :conn])
-                                              (if job-queue {:jobs (:db job-queue)} {}))
-          clients (atom {})
-          pool    (frame-loop/start-render-pool {:pool-size 2})]
-      (try
-        (when job-queue
-          (log-dispatch/initialize! (get-in system [:datomic :conn]) (:client job-queue) cutover-t))
-        (writer/start!
-         control
-         #(frame-loop/start-batch-loop!
-           {::frame-loop/conns       (java.util.concurrent.ConcurrentHashMap.)
-            ::frame-loop/render-pool pool
-            :write-runner            control
-            :durable-jobs?           (boolean job-queue)
-            :clients                 clients                                   :stopped? (atom false)}
-           (assoc (merge hooks (select-keys system [:queue-capacity :batch-size :batch-tick-ms]))
-                  :capture-frame (fn [ctx]
-                                   (locking clients
-                                     (assoc ((:capture-frame hooks) ctx)
-                                            :clients @clients :page-state @app.datastar/!page-state)))
-                  :process-batch! (fn [runtime batch]
-                                    (doseq [action batch]
-                                      (if (::writer/work action)
-                                        (writer/execute! action)
-                                        (app-nexus/process-queued! (:nexus system) system runtime action)))
-                                    (when job-queue
-                                      (log-dispatch/dispatch-pending!
-                                       (get-in system [:datomic :conn]) (:client job-queue) 128))))))
-        (catch Exception e
-          (.close ^java.util.concurrent.ExecutorService pool)
-          (throw e))))))
+(defmethod ig/init-key ::frame-loop [_ {:keys [write-runner job-queue cutover-t] :as system}]
+  (assert write-runner "Frame loop requires a write runner")
+  (assert job-queue "Frame loop requires a job queue")
+  (let [hooks   (frame-storage/render-hooks (get-in system [:datomic :conn]) {:jobs (:db job-queue)})
+        clients (atom {})
+        pool    (frame-loop/start-render-pool {:pool-size 2})]
+    (try
+      (log-dispatch/initialize! (get-in system [:datomic :conn]) (:client job-queue) cutover-t)
+      (writer/start!
+       write-runner
+       #(frame-loop/start-batch-loop!
+         {::frame-loop/conns       (java.util.concurrent.ConcurrentHashMap.)
+          ::frame-loop/render-pool pool
+          :write-runner            write-runner
+          :clients                 clients                                   :stopped? (atom false)}
+         (assoc (merge hooks (select-keys system [:queue-capacity :batch-size :batch-tick-ms]))
+                :capture-frame (fn [ctx]
+                                 (locking clients
+                                   (assoc ((:capture-frame hooks) ctx)
+                                          :clients @clients :page-state @app.datastar/!page-state)))
+                :process-batch! (fn [runtime batch]
+                                  (doseq [action batch]
+                                    (if (::writer/work action)
+                                      (writer/execute! action)
+                                      (app-nexus/process-queued! (:nexus system) system runtime action)))
+                                  (log-dispatch/dispatch-pending!
+                                   (get-in system [:datomic :conn]) (:client job-queue) 128)))))
+      (catch Exception e
+        (.close ^java.util.concurrent.ExecutorService pool)
+        (throw e)))))
 
 (defmethod ig/halt-key! ::frame-loop [_ runtime]
   (when runtime
@@ -159,32 +153,32 @@
 (defmethod ig/init-key ::job-maintenance [_ {:keys [job-queue]}]
   (drip/start-maintenance-worker! {:client (:client job-queue) :queues []}))
 
-(defmethod ig/init-key ::invitation-worker [_ {:keys [frame-loop] :as system}]
-  (when (:durable-jobs? frame-loop) (invitation-jobs/start! system)))
+(defmethod ig/init-key ::invitation-worker [_ system]
+  (invitation-jobs/start! system))
 
 (defmethod ig/halt-key! ::invitation-worker [_ worker]
   (when worker (invitation-jobs/stop! worker)))
 
-(defmethod ig/init-key ::identity-worker [_ {:keys [frame-loop] :as system}]
-  (when (:durable-jobs? frame-loop) (identity-jobs/start! system)))
+(defmethod ig/init-key ::identity-worker [_ system]
+  (identity-jobs/start! system))
 
 (defmethod ig/halt-key! ::identity-worker [_ worker]
   (when worker (identity-jobs/stop! worker)))
 
-(defmethod ig/init-key ::integrations-worker [_ {:keys [frame-loop] :as system}]
-  (when (:durable-jobs? frame-loop) (integrations/start! system)))
+(defmethod ig/init-key ::integrations-worker [_ system]
+  (integrations/start! system))
 
 (defmethod ig/halt-key! ::integrations-worker [_ worker]
   (when worker (integrations/stop! worker)))
 
-(defmethod ig/init-key ::play-stats-worker [_ {:keys [frame-loop] :as system}]
-  (when (:durable-jobs? frame-loop) (play-stats/start! system)))
+(defmethod ig/init-key ::play-stats-worker [_ system]
+  (play-stats/start! system))
 
 (defmethod ig/halt-key! ::play-stats-worker [_ worker]
   (when worker (play-stats/stop! worker)))
 
-(defmethod ig/init-key ::policy-mail-worker [_ {:keys [frame-loop] :as system}]
-  (when (:durable-jobs? frame-loop) (policy-mail/start! system)))
+(defmethod ig/init-key ::policy-mail-worker [_ system]
+  (policy-mail/start! system))
 
 (defmethod ig/halt-key! ::policy-mail-worker [_ worker]
   (when worker (policy-mail/stop! worker)))

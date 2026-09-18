@@ -83,7 +83,7 @@
                    error]))))
 
 (defn update-song-action
-  [{:keys [db tr durable-jobs? env]} signals]
+  [{:keys [db tr env]} signals]
   (let [params  (normalize-form (form-params signals))
         song-id (util/ensure-uuid! (:song-id params))
         song    (q/retrieve-song db song-id)
@@ -99,8 +99,7 @@
       [[:db/transact
         (update-song-tx-data params)
         (cond-> {:transact-w-nils? true}
-          (not durable-jobs?) (assoc :on-success [[:app.songs/trigger-song-edited song-id]])
-          (and durable-jobs? (config/prod-mode? env)) (assoc :jobs [(integrations/song-job song-id)]))]
+          (config/prod-mode? env) (assoc :jobs [(integrations/song-job song-id)]))]
        [:app.datastar/respond-sse
         [[:app.datastar.sse/redirect (urls/link-song song-id)]]]])))
 
@@ -131,7 +130,7 @@
                                       [[:db/retractEntity song-ref]]))}))
 
 (defn delete-song-action
-  [{:keys [db tr durable-jobs?]} signals]
+  [{:keys [db tr]} signals]
   (let [params  (form-params signals)
         song-id (util/ensure-uuid! (or (:song-id params) (:targetid params)))
         song    (q/retrieve-song db song-id)]
@@ -143,10 +142,7 @@
       (let [{:keys [tx-data recalc-play-stats?]} (delete-song-tx-data db song-id)]
         [[:db/transact
           tx-data
-          (if durable-jobs?
-            {:jobs (if recalc-play-stats? [play-stats/job] [])}
-            {:on-success (when recalc-play-stats?
-                           [[:app.songs/recalc-play-stats]])})]
+          {:jobs (if recalc-play-stats? [play-stats/job] [])}]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-songs-home)]]]]))))
 

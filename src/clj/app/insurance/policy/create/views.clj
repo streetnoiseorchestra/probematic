@@ -85,5 +85,3 @@
            (field form-state :effective-until [:i18n/tr :insurance/effective-until] {:type "date" :required true})]
           (field form-state :base-factor [:i18n/tr :insurance/premium-base-factor]
                  {:type "number" :min "0" :step "any" :required true})])]]])))
-
-(d*/refresh-all!)

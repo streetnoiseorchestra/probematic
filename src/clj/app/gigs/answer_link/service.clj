@@ -82,41 +82,37 @@
   ([req]
    (submit-answer! default-deps req))
   ([deps {:keys [db datomic-conn] :as req}]
-   (let [deps                (merge default-deps deps)
-         decrypt-answer      (:decrypt-answer deps)
-         transact!           (:transact! deps)
-         trigger-gig-edited! (:trigger-gig-edited! deps)
-         answer              (decrypt-answer req (answer-token req))
-         member-id           (util/ensure-uuid! (:member/member-id answer))
-         gig-id              (util/ensure-uuid! (:gig/gig-id answer))
-         reminder?           (:reminder answer)
-         plan                (:attendance/plan answer)
-         plan-kw             (str->plan plan)
-         control             (get-in req [:system :frame-loop :write-runner])
-         durable?            (get-in req [:system :frame-loop :durable-jobs?])
-         jobs                (:jobs (integrations/gig-update-options {:durable-jobs? durable? :env (:env req)} gig-id :attendance))
-         submit!             (fn []
-                               (let [db     (if control (datomic/db datomic-conn) db)
-                                     gig    (q/retrieve-gig db gig-id)
-                                     member (q/retrieve-member db member-id)]
-                                 (assert gig)
-                                 (assert member)
-                                 (when-not reminder?
-                                   (assert plan-kw (str "Unknown answer-link attendance plan: " plan)))
-                                 (cond
-                                   reminder?
-                                   (do
-                                     (transact! datomic-conn {:tx-data (reminder-tx-data db gig-id member-id 2)})
-                                     {:gig gig :member member :reminder? true})
+   (let [deps           (merge default-deps deps)
+         decrypt-answer (:decrypt-answer deps)
+         transact!      (:transact! deps)
+         answer         (decrypt-answer req (answer-token req))
+         member-id      (util/ensure-uuid! (:member/member-id answer))
+         gig-id         (util/ensure-uuid! (:gig/gig-id answer))
+         reminder?      (:reminder answer)
+         plan           (:attendance/plan answer)
+         plan-kw        (str->plan plan)
+         control        (get-in req [:system :frame-loop :write-runner])
+         jobs           (:jobs (integrations/gig-update-options {:env (:env req)} gig-id :attendance))
+         submit!        (fn []
+                          (let [db     (if control (datomic/db datomic-conn) db)
+                                gig    (q/retrieve-gig db gig-id)
+                                member (q/retrieve-member db member-id)]
+                            (assert gig)
+                            (assert member)
+                            (when-not reminder?
+                              (assert plan-kw (str "Unknown answer-link attendance plan: " plan)))
+                            (cond
+                              reminder?
+                              (do
+                                (transact! datomic-conn {:tx-data (reminder-tx-data db gig-id member-id 2)})
+                                {:gig gig :member member :reminder? true})
 
-                                   (domain/in-future? gig)
-                                   (let [tx-data (cond-> (attendance-plan-tx-data db gig-id member-id plan-kw)
-                                                   (seq jobs) (into (log-dispatch/intent-tx jobs)))
-                                         report  (transact! datomic-conn {:tx-data tx-data})]
-                                     {:gig (q/retrieve-gig (:db-after report) gig-id) :member member})
+                              (domain/in-future? gig)
+                              (let [tx-data (cond-> (attendance-plan-tx-data db gig-id member-id plan-kw)
+                                              (seq jobs) (into (log-dispatch/intent-tx jobs)))
+                                    report  (transact! datomic-conn {:tx-data tx-data})]
+                                {:gig (q/retrieve-gig (:db-after report) gig-id) :member member})
 
-                                   :else nil)))
-         result              (if control (writer/call! control submit!) (submit!))]
-     (when (and result (not reminder?) (not durable?))
-       (trigger-gig-edited! req gig-id :attendance))
+                              :else nil)))
+         result         (if control (writer/call! control submit!) (submit!))]
      result)))

@@ -35,9 +35,8 @@
 (defn params [m]
   {:gig-log-plays m})
 
-(defn edited-effect [gig-id]
-  {:on-success [[:app.gigs/recalc-play-stats]
-                [:app.gigs/trigger-gig-edited gig-id :plays]]})
+(defn edited-effect [_gig-id]
+  {:jobs [["refresh-play-stats" {} {:queue "play-stats" :max-attempts 25}]]})
 
 (defn tx-effect [gig-id tx-data]
   [:db/transact tx-data (edited-effect gig-id)])

@@ -93,10 +93,8 @@
   (fn [req]
     (if *use-page-shim?*
       (shim req)
-      (if-let [runtime (get-in req [:system :frame-loop])]
-        (d*/render-in-frame! runtime
-                             #(full-frame-response render-fn opts (assoc req :db (:db %))))
-        (full-page-response render-fn opts req)))))
+      (d*/render-in-frame! (get-in req [:system :frame-loop])
+                           #(full-frame-response render-fn opts (assoc req :db (:db %)))))))
 
 (defn- action-query-params [req]
   (or (get-in req [:parameters :query])
@@ -128,16 +126,11 @@
        :headers {}
        :body    (str "No such action registered for " action-key)}
 
-      (get-in req [:system :frame-loop])
-      (nexus/queue-actions! (get-in req [:system :frame-loop]) req [[action-key (action-body req)]])
-
       :else
-      [[action-key (action-body req)]])))
+      (nexus/queue-actions! (get-in req [:system :frame-loop]) req [[action-key (action-body req)]]))))
 
-(defn act-route [system]
-  ["/act" {:name         ::act
-           :interceptors [(nexus/nexus-interceptor (:nexus system) system)]
-           :post         {:handler act-handler}}])
+(defn act-route [_system]
+  ["/act" {:name ::act :post {:handler act-handler}}])
 
 (defn- wrap-render-fn [render-fn]
   (fn [req]
@@ -152,7 +145,5 @@
                          extra-head (assoc :extra-head extra-head))
         child-routes   (into [["" {:get  (initial-get-handler page route-data)
                                    :post (fn [req]
-                                           (if-let [runtime (get-in req [:system :frame-loop])]
-                                             ((d*/frame-render-handler runtime wrapped-render) req)
-                                             ((d*/render-handler wrapped-render) req)))}]])]
+                                           ((d*/frame-render-handler (get-in req [:system :frame-loop]) wrapped-render) req))}]])]
     (into [path route-data] child-routes)))

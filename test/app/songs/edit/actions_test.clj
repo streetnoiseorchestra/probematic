@@ -69,8 +69,7 @@
                  :song/origin              nil
                  :song/lyrics              "Lyrics"
                  :forum.topic/topic-id     nil}]
-               {:transact-w-nils? true
-                :on-success       [[:app.songs/trigger-song-edited song-id]]}]
+               {:transact-w-nils? true}]
               [:app.datastar/respond-sse
                [[:app.datastar.sse/redirect (str "/song/" song-id)]]]]
              (actions/update-song-action

@@ -2,12 +2,9 @@
   (:require
    [app.datastar :as datastar]
    [app.datomic.shim :as datomic]
-   [app.email :as email]
-   [app.email.messages :as messages]
    [app.email.mailers :as mailers]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.write-runner :as writer]
-   [app.i18n :as i18n]
    [app.keycloak :as keycloak]
    [app.members.invite.cells]
    [app.members.invite.workflows :as invite.workflows]
@@ -19,11 +16,9 @@
    [tick.core :as t]))
 
 (def default-invitation-deps
-  {:now                   t/inst
-   :random-code           #(crypto/rand-string 32)
-   :random-uuid           random-uuid
-   :build-new-user-invite messages/build-new-user-invite
-   :queue-email!          email/queue-email!})
+  {:now         t/inst
+   :random-code #(crypto/rand-string 32)
+   :random-uuid random-uuid})
 
 (defn- conn-from-req [req]
   (or (:datomic-conn req)
@@ -32,41 +27,17 @@
 (defn- db-from-req [req]
   (datomic/db (conn-from-req req)))
 
-(defn- tr-from-req [req]
-  (or (:tr req)
-      (i18n/tr-with (get-in req [:system :i18n-langs]) [:de])))
-
-(defn- email-sys [req]
-  {:tr           (tr-from-req req)
-   :env          (get-in req [:system :env])
-   :i18n-langs   (get-in req [:system :i18n-langs])
-   :job-queue    (get-in req [:system :job-queue])
-   :datomic-conn (conn-from-req req)})
-
-(defn- queue-invitation! [deps req member invite-code]
-  ((:queue-email! deps)
-   (email-sys req)
-   ((:build-new-user-invite deps) (email-sys req) member invite-code)))
-
 (defn- current-member-id [req]
   (get-in req [:app/session :session/member :member/member-id]))
 
 (defn- invitation-workflow-resources [deps req]
-  (let [email-system (email-sys req)]
-    {:datomic-conn      (conn-from-req req)
-     :write-runner      (get-in req [:system :frame-loop :write-runner])
-     :durable-jobs?     (get-in req [:system :frame-loop :durable-jobs?])
-     :current-locale    (:current-locale req)
-     :clock             (:now deps)
-     :random-code       (:random-code deps)
-     :random-uuid       (:random-uuid deps)
-     :current-member-id (current-member-id req)
-     :build-invitation-email
-     (fn [member code]
-       ((:build-new-user-invite deps) email-system member code))
-     :queue-email!
-     (fn [message]
-       ((:queue-email! deps) email-system message))}))
+  {:datomic-conn      (conn-from-req req)
+   :write-runner      (get-in req [:system :frame-loop :write-runner])
+   :current-locale    (:current-locale req)
+   :clock             (:now deps)
+   :random-code       (:random-code deps)
+   :random-uuid       (:random-uuid deps)
+   :current-member-id (current-member-id req)})
 
 (defn invite-member!
   "Creates an invited member and returns the invitation workflow result.
@@ -190,17 +161,15 @@
              (when (and (= :member.invite.status/pending invite-status)
                         invite-expires-at (t/> invite-expires-at now))
                (μ/log ::resend-member-invite)
-               (if (:durable-jobs? frame-loop)
-                 (let [job (assoc-in (mailers/job {:current-locale (or (:current-locale req) :de)}
-                                                  ::mailers/member-invitation {:member-id member-id})
-                                     [1 :email-id] (random-uuid))]
-                   (datomic/transact (conn-from-req req)
-                                     {:tx-data (conj (log-dispatch/intent-tx [job])
-                                                     {:db/id        "datomic.tx"        :audit/action ::resend-member-invite
-                                                      :audit/origin :app.origin/browser})}))
-                 (queue-invitation! deps req (q/retrieve-member db member-id) invite-code)))))]
-     (if (:durable-jobs? frame-loop)
-       (writer/call! (:write-runner frame-loop) resend!)
+               (let [job (assoc-in (mailers/job {:current-locale (or (:current-locale req) :de)}
+                                                ::mailers/member-invitation {:member-id member-id})
+                                   [1 :email-id] (random-uuid))]
+                 (datomic/transact (conn-from-req req)
+                                   {:tx-data (conj (log-dispatch/intent-tx [job])
+                                                   {:db/id        "datomic.tx"        :audit/action ::resend-member-invite
+                                                    :audit/origin :app.origin/browser})})))))]
+     (if-let [control (:write-runner frame-loop)]
+       (writer/call! control resend!)
        (resend!)))))
 
 (defn delete-invitation!

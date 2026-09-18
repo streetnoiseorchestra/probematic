@@ -1,6 +1,5 @@
 (ns app.settings.index.views
   (:require
-   [app.datastar :as d*]
    [app.ui2 :as ui2]
    [app.ui2.page-header :as page-header]
    [app.ui2.avatar :as avatar]
@@ -51,5 +50,3 @@
                           :icon  "trumpet"
                           :title [:i18n/tr :band-settings/section-title]
                           :body  [:i18n/tr :band-settings/section-page-subtitle]})]]))
-
-(d*/refresh-all!)

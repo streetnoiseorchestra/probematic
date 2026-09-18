@@ -193,5 +193,3 @@
                 sender-name
                 time-range
                 sample-data)]]))])]])))
-
-(d*/refresh-all!)

@@ -214,5 +214,3 @@
              :data-on:submit "evt.preventDefault();"}
       (status-card req member state)]
      (explanation req))))
-
-(d*/refresh-all!)
