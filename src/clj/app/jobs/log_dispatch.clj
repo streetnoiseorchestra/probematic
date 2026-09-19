@@ -1,7 +1,7 @@
 (ns app.jobs.log-dispatch
   "Copies committed job intent from Datomic into Dollop's SQLite database."
   (:require
-   [clojure.edn :as edn]
+   [fast-edn.core :as edn]
    [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
    [datomic.api :as d]
    [malli.core :as m]

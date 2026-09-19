@@ -163,3 +163,28 @@
              (log/intent-tx jobs))))
     (is (= [] (log/intent-tx [])))
     (is (thrown? Exception (log/intent-tx [["notify" {:f identity} {}]])))))
+
+(deftest persisted-intent-values-remain-readable
+  (let [{:keys [conn]} (tc/new-system "log-edn-values")
+        jobs           [["notify" {:id     #uuid "00000000-0000-0000-0000-000000000001"
+                                   :at     #inst "2026-09-19"
+                                   :values [nil true false :a/b "Grüße\n\"" #{:x} '(1 2) 1M 2N]} {}]]
+        text           (pr-str {:version 1 :jobs jobs})
+        report         @(d/transact conn [{:db/id "datomic.tx" :audit/jobs text}])]
+    (is (= jobs (#'log/transaction-jobs (:db-after report) (d/basis-t (:db-after report)))))
+    (is (= text (:audit/jobs (first (log/intent-tx jobs)))))))
+
+(deftest malformed-persisted-intent-does-not-advance-cursor
+  (doseq [text ["{:version 1 :jobs [" "#unknown/tag {}" "{:version 2 :jobs []}"]]
+    (tc/with-sqlite-db
+      (fn []
+        (let [{:keys [conn]} (tc/new-system "log-bad-edn")
+              client         (client!)
+              _              (log/initialize! conn client (d/basis-t (d/db conn)))
+              before         (log/dispatch-pending! conn client 100)
+              report         @(d/transact conn [{:db/id "datomic.tx" :audit/jobs text}])]
+          (is (thrown? Exception (log/dispatch-pending! conn client 100)))
+          (is (empty? (drip/list-jobs client {})))
+          (sqlite/with-read-tx [tx (:reader tc/*sqlite-db*)]
+            (is (true? (log/processed-through? (:db-after report) tx before)))
+            (is (false? (log/processed-through? (:db-after report) tx (d/basis-t (:db-after report)))))))))))

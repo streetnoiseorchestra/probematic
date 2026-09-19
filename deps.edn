@@ -23,6 +23,7 @@
          com.github.oliyh/martian-httpkit               {:mvn/version "0.1.30"}
         ;; Data
          aero/aero                                      {:mvn/version "1.1.6"}
+         io.github.tonsky/fast-edn                      {:mvn/version "1.2.0"}
          metosin/malli                                  {:mvn/version "0.20.1"}
          luminus-transit/luminus-transit                {:mvn/version "0.1.6" :exclusions [com.cognitect/transit-clj]}
          metosin/muuntaja                               {:mvn/version "0.6.11"}
