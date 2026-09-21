@@ -31,12 +31,130 @@
    [starfederation.datastar.clojure.adapter.common :as d*com]
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
    [starfederation.datastar.clojure.api :as d*]
+   [starfederation.datastar.clojure.expressions :refer [->js ->js-str]]
    [tick.core :as t])
   (:import
    [java.util.concurrent ConcurrentHashMap]))
 
 (defn ->signals [m]
   (j/write-value-as-string m))
+
+;; Pending interactions: submission, admission, and committed-frame acknowledgment.
+
+(defn interaction-key
+  "Returns a stable key from a policy's scope and UUID target fields."
+  [{:keys [scope targets]} params]
+  (str (name scope) ":"
+       (str/join ":" (map (fn [k]
+                            (or (some-> (get params k) str parse-uuid)
+                                (throw (ex-info "Missing interaction target" {:status 400 :target k}))))
+                          targets))))
+
+(defn request-interaction
+  "Validates optional interaction metadata against the registered policy and connection."
+  [policies action signals token]
+  (when-let [{:keys [key revision conn-id]} (:interaction signals)]
+    (let [policy (get policies action)]
+      (when-not (and policy
+                     (integer? revision) (<= 1 revision 9007199254740991)
+                     (= key (interaction-key policy (get signals (:signals policy)))))
+        (throw (ex-info "Invalid interaction" {:status 400})))
+      (when-not (= conn-id (str token))
+        (throw (ex-info "Replaced interaction connection" {:status 409})))
+      {:key key :revision revision :replace? (:replace? policy)})))
+
+(defn interaction-decision
+  "Returns :execute or a terminal outcome for a connection-scoped submission.
+
+  Retain only the latest revision/outcome per interaction key. Older setters
+  are superseded. Older non-setters are explicitly rejected because their
+  history is unknown; they must not execute again or silently succeed.
+  Call and record the execution outcome on the single writer."
+  [ledger {:keys [key revision replace?]}]
+  (let [latest (get ledger key)]
+    (cond
+      (or (nil? latest) (> revision (:revision latest))) :execute
+      (= revision (:revision latest)) (:outcome latest)
+      replace? :superseded
+      :else :rejected)))
+
+(defn pending-expr [key]
+  ;; `in` tracks sparse key changes through Datastar's Proxy; Object.hasOwn does not.
+  (->js (js* "(~{} in ~{})" ~key $_pending)))
+
+(defn blocked-expr [{:keys [block group]} key]
+  (let [busy? (case block
+                :self (pending-expr key)
+                :group (->js ($_busy ~(name group)))
+                false)]
+    (->js (or $_interrupted (not $_conn-id) ~busy?))))
+
+(defn submit-js
+  "Builds a Datastar submission with frozen arguments and sparse pending state.
+
+  `values` maps argument keys to trusted JavaScript expressions, not user input."
+  [url {:keys [signals group] :as policy} params values]
+  (let [key       (interaction-key policy params)
+        arguments (merge (update-vals params #(if (uuid? %) (str %) %))
+                         (update-vals values #(->js (expr/raw ~%))))]
+    (->js-str
+     (when (not ~(blocked-expr policy key))
+       (set! $_failed false)
+       (set! $_next (+ $_next 1))
+       (let [revision $_next
+             args     ~arguments
+             payload  {"tab-id" $tab-id :interaction {:key ~key :revision revision :conn-id $_conn-id}}]
+         (aset $_pending ~key {:revision revision :group ~(name group) :args args})
+         (aset payload ~(name signals) args)
+         (@post ~url {:requestCancellation "disabled" :retry "never" :payload payload}))))))
+
+(defn page-attrs
+  "Initializes private bookkeeping once and computes each exclusion group once."
+  [policies]
+  (merge
+   {:data-signals__ifmissing (->signals
+                              {:_next          0
+                               :_pending       {}
+                               :_conn-id       ""
+                               :_frame-conn-id ""
+                               :_stream-ended  false
+                               :_acks          []
+                               :_interrupted   false
+                               :_failed        false})
+    :data-effect
+    (->js-str
+     (when (and $_conn-id (!== $_conn-id $_frame-conn-id) (> (.-length (Object.keys $_pending)) 0))
+       (set! $_interrupted true)
+       (set! $_pending {}))
+     (set! $_conn-id $_frame-conn-id)
+     (when $_conn-id (set! $_stream-ended false))
+     (.forEach $_acks
+               (fn [a]
+                 (when (and (Object.hasOwn $_pending a.key)
+                            (=== (.-revision (aget $_pending a.key)) a.revision))
+                   (js-delete $_pending a.key)
+                   (when (.includes ["failed" "rejected"] a.outcome)
+                     (set! $_failed true))))))
+    :data-on:datastar-fetch
+    (->js-str
+     (when (and (=== evt.detail.el.id "long-lived-sse")
+                (.includes ["finished" "error" "retrying" "retries-failed"] evt.detail.type))
+       (when (> (.-length (Object.keys $_pending)) 0)
+         (set! $_interrupted true)
+         (set! $_pending {}))
+       (set! $_frame-conn-id "")
+       (set! $_stream-ended true))
+     (when (and (evt.detail.el.hasAttribute "data-interaction")
+                (.includes ["error" "retrying" "retries-failed"] evt.detail.type)
+                (> (.-length (Object.keys $_pending)) 0))
+       (set! $_interrupted true)
+       (set! $_pending {})))}
+   (into {} (for [group (distinct (keep #(when (= :group (:block %)) (:group %)) (vals policies)))]
+              [(keyword (str "data-computed:_busy" (name group)))
+               ;; Keep the callback expression-only: Datastar's computed parser
+               ;; splits on semicolons inside function bodies.
+               (str "Object.values($_pending).some(p => p.group === "
+                    (j/write-value-as-string (name group)) ")")]))))
 
 #_(def patch-elements! d*/patch-elements!)
 (def patch-signals! d*/patch-signals!)
@@ -146,7 +264,7 @@
   (let [client    (get @(:clients runtime) (request-tab-id request))
         member-id (get-in request [:app/session :session/member :member/member-id])]
     (when (and member-id client (= member-id (:member-id client)))
-      (assoc request ::state-token (:token client)))))
+      (assoc request ::state-token (:token client) ::ledger (:interactions client)))))
 
 (defn- update-frame-client! [runtime tab-id token f]
   (swap! (:clients runtime)
@@ -222,14 +340,14 @@
       (let [client (get (:clients frame) tab-id)]
         (when (= token (:token client))
           ;; HTML and compression run here; sending does not wait for delivery.
-          (render-html! frame)
-          (loop [[[revision events] & remaining] (:events client)]
-            (when revision
-              (when (every? #(emit-sse-event! sse %) events)
-                (update-frame-client!
-                 runtime tab-id token
-                 #(update % :events (fn [pending] (filterv (fn [[id]] (> id revision)) pending))))
-                (recur remaining)))))))))
+          (when (render-html! frame)
+            (loop [[[revision events] & remaining] (:events client)]
+              (when revision
+                (when (every? #(emit-sse-event! sse %) events)
+                  (update-frame-client!
+                   runtime tab-id token
+                   #(update % :events (fn [pending] (filterv (fn [[id]] (> id revision)) pending))))
+                  (recur remaining))))))))))
 
 (defn frame-render-handler [runtime render-fn]
   (fn [request]
@@ -254,9 +372,10 @@
                     (when old ((:close! old)))
                     (swap! !page-state assoc tab-id {::created (t/instant) ::state-token token})
                     (swap! clients assoc tab-id
-                           {:token  token                                                      :member-id member-id :revision 0
-                            :events [[0 [[:app.datastar.sse/merge-signals {:tab-id tab-id}]]]]
-                            :close! #(d*/close-sse! sse)})
+                           {:token        token                                                                                  :member-id member-id :revision 0
+                            :interactions (atom {})
+                            :events       [[0 [[:app.datastar.sse/merge-signals {:tab-id tab-id :_frame-conn-id (str token)}]]]]
+                            :close!       #(d*/close-sse! sse)})
                     (.put conns tab-id (frame-connection-render runtime request tab-id token sse render-fn)))))))
           hk-gen/on-close
           (fn [_ _]

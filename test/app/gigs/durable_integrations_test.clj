@@ -41,4 +41,6 @@
             (is (= (cond-> [(integrations/gig-job gig-id {:operation :updated})]
                      stats? (conj play-stats/job))
                    (:jobs opts)))
-            (is (nil? (:on-success opts)))))))))
+            (is (= (when (:gig-attendance signals)
+                     [[:app.datastar/assoc-state attendance/attendance-error-path nil]])
+                   (:on-success opts)))))))))

@@ -1,5 +1,9 @@
 ### Gigs, rehearsals, meetings, and attendance
 
+interaction-interrupted = The connection was interrupted. Some changes may have been saved. Reload the page before continuing.
+interaction-reload = Reload page
+interaction-failed = The action could not finish. Check the current values before trying again.
+
 title = Gigs & Rehearsals
 navigation-label = Gigs
 dashboard = Gigs dashboard

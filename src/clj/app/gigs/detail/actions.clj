@@ -4,7 +4,6 @@
    [app.form :as form]
    [app.gigs.domain :as domain]
    [app.jobs.integrations :as integrations]
-   [app.nexus.actions :as support]
    [app.queries :as q]
    [app.util :as util]
    [clojure.string :as str]))
@@ -28,8 +27,7 @@
    :member-id (some-> member-id util/ensure-uuid!)})
 
 (defn- invalid [message]
-  [support/clear-loading
-   [:app.datastar/assoc-state attendance-error-path {:error message}]])
+  [[:app.datastar/assoc-state attendance-error-path {:error message}]])
 
 (defn- invalid-plan [{:keys [tr]}]
   (invalid (tr [:error/gig-attendance-invalid-plan])))
@@ -56,7 +54,8 @@
    [:db/add (attendance-ref gig-id member-id) :attendance/updated :db/now]])
 
 (defn- transact-attendance-effect [state gig-id tx-data]
-  [:db/transact tx-data (integrations/gig-update-options state gig-id :attendance)])
+  [:db/transact tx-data (assoc (integrations/gig-update-options state gig-id :attendance)
+                               :on-success [[:app.datastar/assoc-state attendance-error-path nil]])])
 
 (defn update-attendance-plan-action [{:keys [db] :as state} signals]
   (let [{:keys [plan] :as params}  (:gig-attendance signals)
@@ -118,7 +117,7 @@
     (if tx-data
       [(transact-attendance-effect state gig-id tx-data)
        close-edit]
-      [support/clear-loading close-edit])))
+      [close-edit])))
 
 (defn switch-attendance-comment-action [{:keys [db] :as state} signals]
   (let [{:keys [comment comment-gig-id comment-member-id next-comment next-gig-id next-member-id]} (:gig-attendance signals)
@@ -153,9 +152,68 @@
       [[:db/transact []
         {:jobs       [(mailers/job (assoc state :current-locale :de) ::mailers/gig-reminder
                                    {:gig-id gig-id :member-ids member-ids})]
-         :on-success [[:app.datastar/assoc-state remind-all-queued-at-path now]
-                      support/clear-loading]}]]
-      [support/clear-loading])))
+         :on-success [[:app.datastar/assoc-state remind-all-queued-at-path now]]}]]
+      [])))
+
+(def interaction-policies
+  {::update-attendance-plan
+   {:scope    :plan
+    :targets  [:gig-id :member-id]
+    :signals  :gig-attendance
+    :group    :plans
+    :block    :none
+    :replace? true}
+
+   ::update-attendance-motivation
+   {:scope    :motivation
+    :targets  [:gig-id :member-id]
+    :signals  :gig-attendance
+    :group    :motivations
+    :block    :self
+    :replace? true}
+
+   ::open-attendance-comment
+   {:scope   :comment-open
+    :targets [:gig-id :member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::close-attendance-comment
+   {:scope   :comment-close
+    :targets [:gig-id :member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::update-attendance-comment
+   {:scope   :comment-update
+    :targets [:gig-id :member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::switch-attendance-comment
+   {:scope   :comment-switch
+    :targets [:gig-id :comment-member-id :next-member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::toggle-attendance-committed
+   {:scope    :filter
+    :targets  [:gig-id]
+    :signals  :gig-attendance
+    :group    :filters
+    :block    :self
+    :replace? true}
+
+   ::send-reminder-to-all
+   {:scope   :reminder
+    :targets [:gig-id]
+    :signals :gig-attendance
+    :group   :reminders
+    :block   :self}})
 
 (def actions
   {::update-attendance-plan       #'update-attendance-plan-action

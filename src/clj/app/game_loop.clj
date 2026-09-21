@@ -18,14 +18,19 @@
   `render-fn` takes the frame context and returns serialized HTML.
   `send-fn` must not block; it returns true when the transport accepts the
   HTML. A rejected send is retried on a later tick. Create one callback
-  per connection; this does not wait for browser acknowledgement."
+  per connection; this does not wait for browser acknowledgement.
+
+  The callback returns true for unchanged HTML or an accepted send, so
+  frame feedback can follow either path. A rejected send returns nil."
   [render-fn send-fn]
   (let [last-hash (volatile! nil)]
     (fn [ctx]
       (let [html (render-fn ctx)
             h    (hash html)]
-        (when (and (not= @last-hash h) (send-fn html))
-          (vreset! last-hash h))))))
+        (or (= @last-hash h)
+            (when (send-fn html)
+              (vreset! last-hash h)
+              true))))))
 
 (defn render-frame!
   "Captures one frame, runs worker-scoped callbacks, and waits for cleanup.

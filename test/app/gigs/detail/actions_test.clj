@@ -2,7 +2,6 @@
   (:require
    [app.gigs.detail.actions :as actions]
    [app.gigs.domain :as domain]
-   [app.nexus.actions :as support]
    [app.queries :as q]
    [app.test-common :as tc]
    [clojure.test :refer [deftest is testing]]
@@ -65,7 +64,8 @@
    :attendance/updated    :db/now
    :attendance/section    [:section/name "flute"]})
 
-(defn edited-effect [_gig-id] {})
+(defn edited-effect [_gig-id]
+  {:on-success [[:app.datastar/assoc-state [:gig-detail :attendance :_error] nil]]})
 
 (deftest update-attendance-plan-action-test
   (testing "creates an attendance entity when the member has no attendance yet"
@@ -94,8 +94,7 @@
   (testing "invalid plan values do not transact"
     (let [{:keys [conn]}             (tc/new-system "gig-attendance-plan-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state
+      (is (= [[:app.datastar/assoc-state
                [:gig-detail :attendance :_error]
                {:error "Invalid attendance plan."}]]
              (actions/update-attendance-plan-action
@@ -129,8 +128,7 @@
   (testing "invalid motivation values do not transact"
     (let [{:keys [conn]}             (tc/new-system "gig-attendance-motivation-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state
+      (is (= [[:app.datastar/assoc-state
                [:gig-detail :attendance :_error]
                {:error "Invalid attendance motivation."}]]
              (actions/update-attendance-motivation-action
@@ -199,8 +197,7 @@
   (testing "does not create an attendance entity for a blank comment"
     (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-nop")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state
+      (is (= [[:app.datastar/assoc-state
                [:gig-detail :attendance :comment-edit]
                nil]]
              (actions/update-attendance-comment-action
@@ -264,7 +261,7 @@
 (deftest send-reminder-to-all-with-no-recipients-does-not-queue-mail
   (let [{:keys [conn]} (tc/new-system "empty-gig-reminders")
         gig-id         (random-uuid)]
-    (is (= [support/clear-loading]
+    (is (= []
            (actions/send-reminder-to-all-action
             {:db (d/db conn) :tr tr :now #inst "2026-04-28T10:00:00Z"}
             {:gig-attendance {:gig-id (str gig-id)}})))))

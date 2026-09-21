@@ -8,6 +8,7 @@
    [app.jobs.log-dispatch :as log-dispatch]
    [app.file-browser.actions]
    [app.gigs.actions]
+   [app.gigs.detail.actions :as gig-detail]
    [app.gigs.effects :as gigs.effects]
    [app.insurance.actions]
    [app.insurance.effects :as insurance.effects]
@@ -249,15 +250,23 @@
   (if (or (nil? runtime) @(:stopped? runtime))
     {:status 503 :headers {} :body ""}
     (if-let [request (datastar/assoc-connection-token runtime request)]
-      (if ((::game/submit! runtime)
-           {:request (assoc (dissoc request :body) ::audit-action (ffirst actions) ::action-id (random-uuid))
-            :actions actions})
-        {:status 204 :headers {} :body ""}
-        {:status 503 :headers {} :body ""})
+      (try
+        (let [[action signals] (first actions)
+              interaction      (datastar/request-interaction
+                                (get-in request [:system :nexus ::datastar/policies])
+                                action signals (::datastar/state-token request))
+              request          (cond-> (assoc (dissoc request :body) ::audit-action action ::action-id (random-uuid))
+                                 interaction (assoc ::datastar/submission interaction))]
+          (if ((::game/submit! runtime) {:request request :actions actions})
+            {:status 204 :headers {} :body ""}
+            {:status 503 :headers {} :body ""}))
+        (catch clojure.lang.ExceptionInfo e
+          (if-let [status (:status (ex-data e))]
+            {:status status :headers {} :body ""}
+            (throw e))))
       {:status 409 :headers {} :body ""})))
 
-(defn process-queued!
-  "Evaluates one accepted action and executes its effects on the writer thread."
+(defn- dispatch-queued!
   [nexus system runtime {:keys [request actions]}]
   (try
     (when-let [action-id (::action-id request)]
@@ -285,17 +294,39 @@
             :else
             (throw (ex-info "Queued action cannot own a finite HTTP response"
                             {:action (ffirst actions) :status (:status response)}))))))
+    true
     (catch Exception error
       (errors/report-error! error {:action (ffirst actions)})
+      (when-not (::datastar/submission request)
+        (datastar/queue-sse-events!
+         runtime request
+         [[:app.datastar.sse/merge-signals {:loading false :targetid false}]
+          [:app.datastar.sse/execute-script
+           (str "window.alert(" (datastar/->signals ((:tr request) [:error/unknown-title])) ");")]]))
+      false)))
+
+(defn process-queued!
+  "Resolves one admitted action on the writer and acknowledges it after frame rendering."
+  [nexus system runtime {:keys [request] :as work}]
+  (if-let [submission (::datastar/submission request)]
+    (let [ledger   (::datastar/ledger request)
+          decision (datastar/interaction-decision @ledger submission)
+          outcome  (if (= :execute decision)
+                     (if (dispatch-queued! nexus system runtime work) :completed :failed)
+                     decision)]
+      (when (= :execute decision)
+        (swap! ledger assoc (:key submission)
+               {:revision (:revision submission) :outcome outcome}))
       (datastar/queue-sse-events!
        runtime request
-       [[:app.datastar.sse/merge-signals {:loading false :targetid false}]
-        [:app.datastar.sse/execute-script
-         (str "window.alert(" (datastar/->signals ((:tr request) [:error/unknown-title])) ");")]]))))
+       [[:app.datastar.sse/merge-signals
+         {:_acks [(assoc (select-keys submission [:key :revision]) :outcome (name outcome))]}]]))
+    (dispatch-queued! nexus system runtime work)))
 
 (defn nexus []
   {:nexus/system->state system->state
    :nexus/interceptors  [strategies/fail-fast]
+   ::datastar/policies  gig-detail/interaction-policies
    :nexus/effects       {:db/transact                                  (with-meta db-transact-fx {:nexus/batch true})
                          :app.account/save-profile                     account.effects/save-profile-fx
                          :app.account/discard-upload                   account.effects/discard-upload-fx
