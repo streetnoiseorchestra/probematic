@@ -24,7 +24,6 @@
                                               :thumbnail-opts {:thumbnail-mode :thumbnail-down :width 600 :height 600 :format :webp :quality 70}
                                               ;; for downloading
                                               :full-opts      {:thumbnail-mode :thumbnail-down :width 1500 :height 1500 :format :jpeg :quality 80}}}
- :smtp-sno                #ref [:secrets :smtp-sno]
  :cms                     #ref [:secrets :cms]
  :keycloak                #ref [:secrets :keycloak]
  :discourse               {:api-key   #ref [:secrets :discourse :api-key]

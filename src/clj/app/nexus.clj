@@ -336,7 +336,6 @@
                          :app.datastar/assoc-state                     assoc-page-state-fx
                          :app.datastar/merge-state                     merge-page-state-fx
                          :app.datastar/respond-sse                     (with-meta respond-sse-fx {:nexus/batch true})
-                         :app.insurance/send-policy-changes            insurance.effects/send-policy-changes-fx
                          :app.insurance/send-payment-notifications     insurance.effects/send-payment-notifications-fx
                          :app.insurance/send-survey-notifications      insurance.effects/send-survey-notifications-fx
                          :app.gigs/trigger-gig-details-edited          gigs.effects/trigger-gig-details-edited-fx

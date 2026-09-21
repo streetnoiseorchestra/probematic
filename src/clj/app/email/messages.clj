@@ -3,7 +3,6 @@
   (:require [app.email.templates :as tmpl]
             [app.ui2 :as ui2]
             [app.urls :as url]
-            [app.util :as util]
             [com.yetanalytics.squuid :as sq]
             [tick.core :as t]))
 
@@ -17,16 +16,6 @@
 (defn build-email [to subject body-html body-plain]
   (assert subject)
   (build-lettermint-email false [(lettermint-message to subject body-html body-plain)]))
-
-(defn build-smtp-email
-  ([to subject body-html body-plain]
-   (build-smtp-email to subject body-html body-plain nil))
-  ([to subject body-html body-plain attachments]
-   (assert subject)
-   (util/remove-nils
-    {:email/sender     :band-smtp           :email/batch?    false     :email/attachments attachments
-     :email/email-id   (sq/generate-squuid) :email/tos       [to]      :email/subject     subject
-     :email/body-plain body-plain           :email/body-html body-html :email/created-at  (t/inst)})))
 
 (defn build-batch-emails [tos subject body-html body-plain]
   (assert subject)
@@ -89,9 +78,9 @@
          (let [args    (tmpl/build-insurance-debt-args sys member private-coverages sender-name time-range private-cost-total)
                subject (tr [:insurance/payment-email-subject]
                            {:member-name (:member/name member) :time-range time-range})]
-           (build-smtp-email (:member/email member) subject
-                             (tmpl/insurance-debt-html sys args)
-                             (tmpl/insurance-debt-plain sys args))))
+           (build-email (:member/email member) subject
+                        (tmpl/insurance-debt-html sys args)
+                        (tmpl/insurance-debt-plain sys args))))
        member-data))
 
 (defn build-survey-notifications [{:keys [tr env] :as sys} sender-name policy members email-data]

@@ -51,7 +51,9 @@
             (is (= 1 (count jobs)))
             (is (= ::mailers/insurance-debt (:mailer invocation)))
             (is (= source-t (:source-t invocation)))
-            (is (= [original-email] (:email/tos message)))
+            (is (= :lettermint (:email/sender message)))
+            (is (= [original-email]
+                   (get-in message [:email/messages 0 :to])))
             (is (= (:email-id invocation) (:email/email-id message)))))))))
 
 (deftest survey-reminder-uses-current-recipient-details

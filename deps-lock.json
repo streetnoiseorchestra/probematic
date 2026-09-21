@@ -3904,12 +3904,6 @@
     "tongue/tongue/0.2.6/tongue-0.2.6.pom": {
       "sha256": "1ffd3e50366e35b50874149bf893349eedebc6b7a7dec8735375611114c13b66"
     },
-    "toyokumo/tarayo/0.2.8/tarayo-0.2.8.jar": {
-      "sha256": "12e5027b4decf1d1ed6b3ae2ff714643b0678d2214119eff666645f087c55ef6"
-    },
-    "toyokumo/tarayo/0.2.8/tarayo-0.2.8.pom": {
-      "sha256": "89fb6ee2925d466680969d24c6f7f593076de0a9b93a46ac51a79c4fd42cc2f8"
-    },
     "uwcpdx/bean-dip/0.7.6/bean-dip-0.7.6.jar": {
       "sha256": "f25fd875165d89a01c3af8fd0071e0882e0171d5b38c6a2ef49ae34e3e48523d"
     },

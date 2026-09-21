@@ -2,10 +2,7 @@
   (:require
    [app.datastar :as d*]
    [app.email :as email]
-   [app.errors :as errors]
-   [app.insurance.exporters :as exporters]
-   [app.queries :as q]
-   [datomic.api :as d]))
+   [app.errors :as errors]))
 
 (defn- ordered-dispatch!
   [dispatch actions]
@@ -13,23 +10,6 @@
     (when-let [error (some-> result :errors first :err)]
       (throw error))
     result))
-
-(defn send-policy-changes-fx
-  [{:keys [dispatch]} {:keys [request system]}
-   {:keys [attachment-filename-changes attachment-filename-new body on-success
-           policy-id recipient subject]}]
-  (let [db     (or (:db request) (some-> system :datomic :conn d/db))
-        policy (q/retrieve-policy db policy-id)
-        smtp   (-> system :env :smtp-sno)]
-    (exporters/send-email! policy
-                           smtp
-                           (:from smtp)
-                           recipient
-                           subject
-                           body
-                           attachment-filename-new
-                           attachment-filename-changes)
-    (ordered-dispatch! dispatch on-success)))
 
 (defn send-payment-notifications-fx
   [{:keys [dispatch]} {request :request}
