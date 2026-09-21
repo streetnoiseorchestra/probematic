@@ -11,6 +11,7 @@
    [app.i18n :as i18n]
    [app.job-queue :as job-queue]
    [app.jobs.gig-events :as gig-events]
+   [app.jobs.worker :as jobs-worker]
    [app.queries :as q]
    [app.test-common :as tc]
    [clojure.java.io :as io]
@@ -117,7 +118,7 @@
                         (if (= 1 (count @deliveries))
                           {:error :provider :retry? true}
                           {:result :email-sent}))]
-          (let [running (worker/start! sys)]
+          (let [running (jobs-worker/start! sys)]
             (try
               (is (= {:state :retryable :attempt 1}
                      (select-keys (queue-fixtures/await-state client (:id job) :retryable) [:state :attempt])))
@@ -130,7 +131,7 @@
               (is (= 2 (count @deliveries)))
               (is (apply = @deliveries))
               (is (= invocation (:args (drip/get-job client (:id job)))))
-              (finally (worker/stop! running)))))))))
+              (finally (jobs-worker/stop! running)))))))))
 
 (deftest prepared-and-deferred-jobs-survive-queue-restart
   (let [dir    (.toFile (java.nio.file.Files/createTempDirectory
@@ -154,7 +155,7 @@
           (change-live-data! conn)
           (with-redefs [lettermint/send-emails! deliver!
                         lettermint/send-email!  (fn [config message options] (deliver! config [message] options))]
-            (let [running (worker/start! (runtime queue conn))]
+            (let [running (jobs-worker/start! (runtime queue conn))]
               (try
                 (doseq [job jobs]
                   (let [stored (queue-fixtures/await-state (:client queue) (:id job) :completed)]
@@ -168,7 +169,7 @@
                            :text "Hello Ada."         :from    "sender@example.test"}]
                          (:messages (get by-id (str provider-fixtures/email-id)))))
                   (is (contains? (:args prepared) :prepared-email)))
-                (finally (worker/stop! running)))))
+                (finally (jobs-worker/stop! running)))))
           (finally (job-queue/stop! queue))))
       (finally (doseq [file (reverse (file-seq dir))] (io/delete-file file))))))
 
@@ -193,13 +194,13 @@
                      (assoc-in valid [:arguments :gig-id] (random-uuid))]]
         (with-redefs [lettermint/send-emails! (fn [& args] (swap! calls conj args) {:result :email-sent})]
           (let [jobs    (mapv #(drip/insert-job client "send-email" % :queue worker/email-queue-name) invalid)
-                running (worker/start! sys)]
+                running (jobs-worker/start! sys)]
             (try
               (doseq [job jobs]
                 (is (= {:state :discarded :attempt 1}
                        (select-keys (queue-fixtures/await-state client (:id job) :discarded) [:state :attempt]))))
               (is (empty? @calls))
-              (finally (worker/stop! running)))))))))
+              (finally (jobs-worker/stop! running)))))))))
 
 (deftest uncommitted-and-filtered-sources-are-not-enqueued
   (queue-fixtures/with-queue
@@ -241,7 +242,7 @@
         (with-redefs [lettermint/send-emails! (fn [_ messages options]
                                                 (swap! deliveries conj {:messages messages :options options})
                                                 {:result :email-sent})]
-          (let [running (worker/start! sys)]
+          (let [running (jobs-worker/start! sys)]
             (try
               (is (= {:state :retryable :attempt 1 :args invocation}
                      (select-keys (queue-fixtures/await-state client (:id job) :retryable) [:state :attempt :args])))
@@ -264,7 +265,7 @@
                 (is (= {:state :discarded :attempt 2}
                        (select-keys (queue-fixtures/await-state client (:id unavailable) :discarded) [:state :attempt])))
                 (is (= 1 (count @deliveries))))
-              (finally (worker/stop! running)))))))))
+              (finally (jobs-worker/stop! running)))))))))
 
 (deftest removal-only-edits-are-deferred-and-demo-mode-still-completes
   (queue-fixtures/with-queue
@@ -277,12 +278,12 @@
             deliveries (atom [])]
         (is (= [:gig/location] (get-in job [:args :arguments :edited-attrs])))
         (with-redefs [lettermint/send-emails! (fn [& args] (swap! deliveries conj args))]
-          (let [running (worker/start! sys)]
+          (let [running (jobs-worker/start! sys)]
             (try
               (is (= {:state :completed :attempt 1}
                      (select-keys (queue-fixtures/await-state client (:id job) :completed) [:state :attempt])))
               (is (empty? @deliveries))
-              (finally (worker/stop! running)))))))))
+              (finally (jobs-worker/stop! running)))))))))
 
 (deftest notification-opt-out-does-not-enqueue
   (queue-fixtures/with-queue
@@ -311,7 +312,7 @@
         (with-redefs [lettermint/send-emails! (fn [_ messages options]
                                                 (swap! deliveries conj {:messages messages :options options})
                                                 {:result :email-sent})]
-          (let [running (worker/start! sys)]
+          (let [running (jobs-worker/start! sys)]
             (try
               (is (= {:state :completed :attempt 1 :args invocation}
                      (select-keys (queue-fixtures/await-state client (:id job) :completed) [:state :attempt :args])))
@@ -319,7 +320,7 @@
                        :options    {:idempotency-key (str (:email-id invocation))}}]
                      (mapv (fn [{:keys [messages options]}] {:recipients (mapv :to messages) :options options})
                            @deliveries)))
-              (finally (worker/stop! running)))))))))
+              (finally (jobs-worker/stop! running)))))))))
 
 (deftest log-dispatched-gig-mail-keeps-its-snapshot-and-skips-no-op-edits
   (queue-fixtures/with-queue
@@ -345,10 +346,10 @@
                           (fn [_ messages options]
                             (swap! deliveries conj {:messages messages :options options})
                             {:result :email-sent})]
-              (let [running (worker/start! sys)]
+              (let [running (jobs-worker/start! sys)]
                 (try
                   (doseq [job jobs]
                     (is (= :completed (:state (queue-fixtures/await-state client (:id job) :completed)))))
                   (is (= 1 (count @deliveries)))
                   (assert-original-delivery invocation (first @deliveries))
-                  (finally (worker/stop! running)))))))))))
+                  (finally (jobs-worker/stop! running)))))))))))

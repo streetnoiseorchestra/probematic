@@ -6,6 +6,7 @@
    [app.game-loop :as game]
    [app.gigs.answer-link.service-test :as gigs]
    [app.jobs.integrations :as integrations]
+   [app.jobs.worker :as jobs-worker]
    [app.nexus :as nexus]
    [app.queries :as q]
    [app.test-common :as tc]
@@ -48,7 +49,7 @@
                       caldav/update-gig-event!              (partial record! :update-calendar)
                       caldav/delete-gig-event!              (partial record! :delete-calendar)]
           (let [jobs   (drip/list-jobs client {})
-                worker (integrations/start! system)]
+                worker (jobs-worker/start! system)]
             (try
               (is (= 3 (count jobs)))
               (is (= 1 (count (set (map #(get-in % [:args :source-t]) jobs)))))
@@ -61,7 +62,7 @@
                                    [:delete-topic deleted-id nil [] false]
                                    [:delete-calendar deleted-id nil [] false]])
                      (frequencies @calls)))
-              (finally (integrations/stop! worker)))))))))
+              (finally (jobs-worker/stop! worker)))))))))
 
 (deftest cms-http-failure-is-retried-before-completing-the-job
   (fixtures/with-runtime
@@ -85,5 +86,5 @@
             (try
               (is (= :completed (:state (queue-fixtures/await-state client (:id job) :completed))))
               (is (= 2 @requests))
-              (finally (integrations/stop! worker))))
+              (finally (drip/stop-worker! worker :drain true))))
           (finally (server)))))))

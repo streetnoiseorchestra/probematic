@@ -20,15 +20,3 @@
                            :audit/action ::refresh
                            :audit/origin :app.origin/job})))))
   (drip/complete-job client id))
-
-(defn start! [system]
-  (drip/start-worker!
-   {:client         (get-in system [:job-queue :client])
-    :registry       {"refresh-play-stats" (partial handle! system)}
-    :queues         ["play-stats"]
-    :concurrency    1
-    :retry-policies {"refresh-play-stats" (drip/constant-retry-policy 5000)}}))
-
-(defn stop! [worker]
-  (when-not (drip/stop-worker! worker :drain true)
-    (throw (ex-info "Play statistics worker did not stop" {}))))

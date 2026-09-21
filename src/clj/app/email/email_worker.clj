@@ -152,19 +152,6 @@
       :error (drip/discard-job client id)
       :retry (throw (ex-info "Retryable email delivery failure" {:job-id id})))))
 
-(defn start! [{:keys [job-queue] :as sys}]
-  (μ/log ::email-worker-starting)
-  (drip/start-worker!
-   {:client         (:client job-queue)
-    :registry       {"send-email" (partial job-handler sys)}
-    :queues         [email-queue-name]
-    :concurrency    1
-    :retry-policies {"send-email" (drip/constant-retry-policy 5000)}}))
-
-(defn stop! [worker]
-  (when-not (drip/stop-worker! worker :drain true)
-    (throw (ex-info "Email worker did not stop" {}))))
-
 (defn queue-mail! [{:keys [client]} email]
   (when-not (s/valid? QueuedEmailMessage email)
     (s/throw-error "Invalid queued email message."

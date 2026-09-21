@@ -5,6 +5,7 @@
             [app.email.lettermint :as lettermint]
             [app.email.messages :as messages]
             [app.job-queue :as job-queue]
+            [app.jobs.worker :as jobs-worker]
             [app.system :as system]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
@@ -61,11 +62,11 @@
   (with-queue
     (fn [{:keys [client] :as queue}]
       (let [job     (email/queue-email! {:job-queue queue} fixtures/single-queued-email)
-            running (worker/start! {:job-queue queue :lettermint {:demo-mode? true}})]
+            running (jobs-worker/start! {:job-queue queue :lettermint {:demo-mode? true}})]
         (try
           (is (= {:state :completed :attempt 1}
                  (select-keys (await-state client (:id job) :completed) [:state :attempt])))
-          (finally (worker/stop! running)))))))
+          (finally (jobs-worker/stop! running)))))))
 
 (deftest real-worker-retries-and-discards-provider-failures
   (doseq [[response expected-state] [[{:error :provider :retry? true} :retryable]
@@ -75,7 +76,7 @@
         (fn [{:keys [client] :as queue}]
           (with-redefs [lettermint/send-email! (fn [& _] response)]
             (let [job     (worker/queue-mail! queue fixtures/single-queued-email)
-                  running (worker/start!
+                  running (jobs-worker/start!
                            {:job-queue  queue
                             :lettermint {:from                    "sender@example.test"
                                          :project-api-token       fixtures/test-token
@@ -91,17 +92,23 @@
                     (is (= {:state :discarded :attempt 2}
                            (select-keys (await-state client (:id job) :discarded)
                                         [:state :attempt])))))
-                (finally (worker/stop! running))))))))))
+                (finally (jobs-worker/stop! running))))))))))
 
 (deftest email-producers-and-worker-share-the-queue-component
-  (let [config (:ig/system (system/config {:profile :test}))]
-    (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
+  (let [config  (:ig/system (system/config {:profile :test}))
+        workers (:app.ig/job-worker config)]
+    (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/job-worker]]
       (is (= (ig/ref :app.ig/job-queue) (get-in config [component :job-queue]))))
-    (is (= {:datomic    (ig/ref :app.ig/datomic-db)
-            :i18n-langs (ig/ref :app.ig/i18n-langs)}
-           (select-keys (:app.ig/email-worker config) [:datomic :i18n-langs])))
+    (is (= {:calendar   (ig/ref :app.ig/calendar)
+            :datomic    (ig/ref :app.ig/datomic-db)
+            :frame-loop (ig/ref :app.ig/frame-loop)
+            :i18n-langs (ig/ref :app.ig/i18n-langs)
+            :keycloak   (ig/ref :app.ig/keycloak)
+            :lettermint (ig/ref :app.ig/lettermint)}
+           (select-keys workers
+                        [:calendar :datomic :frame-loop :i18n-langs :keycloak :lettermint])))
     (is (not (contains? config :app.ig/redis)))
-    (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/email-worker]]
+    (doseq [component [:app.ig/handler :app.ig.jobs/definitions :app.ig/job-worker]]
       (is (not (contains? (get config component) :redis))))))
 
 (deftest prepared-attachment-bytes-reach-smtp-through-edn-storage
@@ -115,7 +122,7 @@
             deliveries (atom [])]
         (with-redefs [tarayo/connect (fn [_] ::smtp-connection)
                       tarayo/send!   (fn [_ email] (swap! deliveries conj email) {})]
-          (let [running (worker/start!
+          (let [running (jobs-worker/start!
                          {:job-queue queue
                           :env       {:smtp-sno {:from                        "sender@example.test"
                                                  :dev-mode-override-recipient "ada@example.test"}}})]
@@ -127,4 +134,4 @@
                 (is (= {:filename "report.pdf" :content-type "application/pdf" :content [0 1 -1 127]}
                        (update attachment :content vec)))
                 (is (bytes? (:content attachment))))
-              (finally (worker/stop! running)))))))))
+              (finally (jobs-worker/stop! running)))))))))

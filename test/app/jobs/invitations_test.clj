@@ -3,6 +3,7 @@
    [app.game-loop :as game]
    [app.ig]
    [app.jobs.invitations :as invitations]
+   [app.jobs.worker :as jobs-worker]
    [app.members.invite.cells-test :as cells]
    [app.members.invite.domain :as domain]
    [app.members.invite.workflows :as acceptance]
@@ -18,15 +19,16 @@
 
 (use-fixtures :each tc/with-released-test-connections)
 
-(deftest invitation-worker-follows-durable-runtime-and-resource-dependencies
+(deftest shared-worker-follows-durable-runtime-and-resource-dependencies
   (let [config (:ig/system (system/config {:profile :test}))]
     (is (= {:frame-loop (ig/ref :app.ig/frame-loop)
             :datomic    (ig/ref :app.ig/datomic-db)
             :keycloak   (ig/ref :app.ig/keycloak)
             :job-queue  (ig/ref :app.ig/job-queue)}
-           (:app.ig/invitation-worker config))))
-  (is (thrown? Exception (ig/init-key :app.ig/invitation-worker {})))
-  (is (nil? (ig/halt-key! :app.ig/invitation-worker nil))))
+           (select-keys (:app.ig/job-worker config)
+                        [:frame-loop :datomic :keycloak :job-queue]))))
+  (is (thrown? Exception (ig/init-key :app.ig/job-worker {})))
+  (is (nil? (ig/halt-key! :app.ig/job-worker nil))))
 
 (defn with-claim [f]
   (fixtures/with-runtime
@@ -167,7 +169,7 @@
             (let [job    (drip/insert-job client "accept-invitation"
                                           {:member-id member-id :claim-generation 2}
                                           {:queue "invitation-setup" :max-attempts 2})
-                  worker (ig/init-key :app.ig/invitation-worker system)]
+                  worker (ig/init-key :app.ig/job-worker system)]
               (try
                 (let [finished (await-job-state client (:id job) expected)]
                   (is (= expected (:state finished)))
@@ -177,7 +179,7 @@
                     :compensate (is (= cells/pending (:status (domain/invitation-state (d/db conn) member-id))))
                     :unsafe (is (true? (get-in @(:state keycloak) [:users "unsafe-user" :enabled?])))
                     (is (empty? (:users @(:state keycloak))))))
-                (finally (ig/halt-key! :app.ig/invitation-worker worker))))))))))
+                (finally (ig/halt-key! :app.ig/job-worker worker))))))))))
 
 (deftest worker-restart-recovers-a-lost-create-response-without-creating-again
   (fixtures/with-runtime
@@ -198,12 +200,12 @@
                                                 :code   "restart-test-bearer" :expiry     cells/expires-at}))
         (let [job          (drip/insert-job client "accept-invitation" {:member-id member-id :claim-generation 2}
                                             {:queue "invitation-setup" :max-attempts 2})
-              first-worker (invitations/start! system)]
+              first-worker (jobs-worker/start! system)]
           (try
             (is (= :retryable (:state (await-job-state client (:id job) :retryable))))
             (is (= cells/creating (:status (domain/invitation-state (d/db conn) member-id))))
-            (finally (invitations/stop! first-worker)))
-          (let [restarted-worker (invitations/start! system)]
+            (finally (jobs-worker/stop! first-worker)))
+          (let [restarted-worker (jobs-worker/start! system)]
             (try
               (let [finished (await-job-state client (:id job) :completed)]
                 (is (= :completed (:state finished)))
@@ -211,4 +213,4 @@
                 (is (= 1 @create-count))
                 (is (= 1 (count (:users @(:state keycloak)))))
                 (is (= cells/accepted (:status (domain/invitation-state (d/db conn) member-id)))))
-              (finally (invitations/stop! restarted-worker)))))))))
+              (finally (jobs-worker/stop! restarted-worker)))))))))

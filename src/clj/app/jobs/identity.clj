@@ -44,15 +44,3 @@
     (catch Exception e
       (when (= 1 attempt) (feedback/failure! system (:origin args)))
       (throw e))))
-
-(defn start! [system]
-  (drip/start-worker!
-   {:client         (get-in system [:job-queue :client])
-    :registry       {"sync-member-identity" (partial handle! system)}
-    :queues         ["identity-sync"]
-    :concurrency    1
-    :retry-policies {"sync-member-identity" (drip/constant-retry-policy 5000)}}))
-
-(defn stop! [worker]
-  (when-not (drip/stop-worker! worker :drain true)
-    (throw (ex-info "Identity worker did not stop" {}))))

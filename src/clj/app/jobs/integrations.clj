@@ -45,17 +45,3 @@
                 (cms/sync-song! system (:song-id args)))
         :all-songs (cms/sync-all-songs! system))))
   (drip/complete-job client id))
-
-(defn start! [system]
-  (drip/start-worker! {:client         (get-in system [:job-queue :client])
-                       :queues         ["integrations"]
-                       :concurrency    1
-                       :poll-interval  100
-                       :retry-interval 5000
-                       :registry       {"sync-gig"       (partial handle! system :gig)
-                                        "sync-song"      (partial handle! system :song)
-                                        "sync-all-songs" (partial handle! system :all-songs)}}))
-
-(defn stop! [worker]
-  (when-not (drip/stop-worker! worker :drain true)
-    (throw (ex-info "Integration worker did not stop" {}))))

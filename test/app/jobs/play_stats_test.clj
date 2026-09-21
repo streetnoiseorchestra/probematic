@@ -2,7 +2,7 @@
   (:require
    [app.gigs.domain :as gig-domain]
    [app.gigs.log-plays.actions :as plays]
-   [app.jobs.play-stats :as play-stats]
+   [app.jobs.worker :as jobs-worker]
    [app.nexus :as nexus]
    [app.test-common :as tc]
    [app.write-runner :as writer]
@@ -36,8 +36,9 @@
            ;; The refresh must include this newer state, not just its source transaction.
            @(d/transact conn [[:db/add [:played/gig+song (pr-str [gig-id song-id])]
                                :played/rating :play-rating/bad]])))
-        (let [worker (play-stats/start! {:frame-loop runtime      :job-queue {:client client}
-                                         :datomic    {:conn conn}})]
+        (let [worker (jobs-worker/start! {:frame-loop runtime
+                                          :job-queue  {:client client}
+                                          :datomic    {:conn conn}})]
           (try
             (is (true?
                  (loop [remaining 500]
@@ -49,4 +50,4 @@
             (let [song (d/entity (d/db conn) [:song/song-id song-id])]
               (is (= 1 (:song/total-rating-bad song)))
               (is (= 0 (:song/total-rating-good song))))
-            (finally (play-stats/stop! worker))))))))
+            (finally (jobs-worker/stop! worker))))))))

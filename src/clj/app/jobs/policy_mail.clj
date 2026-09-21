@@ -2,7 +2,6 @@
   "Sends a committed policy snapshot before confirming the changes it contained."
   (:require [app.insurance.domain :as domain]
             [app.insurance.exporters :as exporters]
-            [app.insurance.policy.changes.actions :as actions]
             [app.jobs.feedback :as feedback]
             [app.queries :as q]
             [app.urls :as urls]
@@ -75,15 +74,3 @@
     (catch Exception e
       (when (= 1 attempt) (feedback/failure! system (:origin args)))
       (throw e))))
-
-(defn start! [system]
-  (drip/start-worker!
-   {:client         (get-in system [:job-queue :client])
-    :registry       {actions/email-job-kind (partial handle! system)}
-    :queues         ["policy-mail"]
-    :concurrency    1
-    :retry-policies {actions/email-job-kind (drip/constant-retry-policy 5000)}}))
-
-(defn stop! [worker]
-  (when-not (drip/stop-worker! worker :drain true)
-    (throw (ex-info "Policy mail worker did not stop" {}))))

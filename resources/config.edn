@@ -141,35 +141,14 @@
 
                            :app.ig/i18n-langs          {}
                            :app.ig/lettermint          {:env #ig/ref :app.ig/env}
-                           :app.ig/play-stats-worker   {:frame-loop #ig/ref :app.ig/frame-loop
-                                                        :datomic    #ig/ref :app.ig/datomic-db
-                                                        :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/policy-mail-worker  {:frame-loop #ig/ref :app.ig/frame-loop
-                                                        :datomic    #ig/ref :app.ig/datomic-db
-                                                        :env        #ig/ref :app.ig/env
-                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                        :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/invitation-worker   {:frame-loop #ig/ref :app.ig/frame-loop
-                                                        :datomic    #ig/ref :app.ig/datomic-db
-                                                        :keycloak   #ig/ref :app.ig/keycloak
-                                                        :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/identity-worker     {:frame-loop #ig/ref :app.ig/frame-loop
-                                                        :datomic    #ig/ref :app.ig/datomic-db
-                                                        :keycloak   #ig/ref :app.ig/keycloak
-                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                        :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/integrations-worker {:frame-loop #ig/ref :app.ig/frame-loop
-                                                        :datomic    #ig/ref :app.ig/datomic-db
-                                                        :env        #ig/ref :app.ig/env
-                                                        :calendar   #ig/ref :app.ig/calendar
-                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                        :job-queue  #ig/ref :app.ig/job-queue}
-                           :app.ig/email-worker        {:env        #ig/ref :app.ig/env
-                                                        :frame-loop #ig/ref :app.ig/frame-loop
-                                                        :datomic    #ig/ref :app.ig/datomic-db
-                                                        :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                        :job-queue  #ig/ref :app.ig/job-queue
-                                                        :lettermint #ig/ref :app.ig/lettermint}
+                           :app.ig/job-worker           {:calendar   #ig/ref :app.ig/calendar
+                                                         :datomic    #ig/ref :app.ig/datomic-db
+                                                         :env        #ig/ref :app.ig/env
+                                                         :frame-loop #ig/ref :app.ig/frame-loop
+                                                         :i18n-langs #ig/ref :app.ig/i18n-langs
+                                                         :job-queue  #ig/ref :app.ig/job-queue
+                                                         :keycloak   #ig/ref :app.ig/keycloak
+                                                         :lettermint #ig/ref :app.ig/lettermint}
                            :app.ig/webdav-sardine      {:env #ig/ref :app.ig/env}
                            :app.ig/keycloak            {:env #ig/ref :app.ig/env}
                            :app.ig/calendar            {:env #ig/ref :app.ig/env}

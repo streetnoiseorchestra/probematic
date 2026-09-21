@@ -6,7 +6,6 @@
             [app.config :as config]
             [app.datomic.system :as datomic]
             [app.sqlite :as sqlite]
-            [app.email.email-worker :as email-worker]
             [app.email.lettermint :as lettermint]
             [app.errors :as error]
             [app.filestore :as filestore]
@@ -16,11 +15,7 @@
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
             [app.game-loop.lifecycle :as frame-lifecycle]
-            [app.jobs.identity :as identity-jobs]
-            [app.jobs.invitations :as invitation-jobs]
-            [app.jobs.integrations :as integrations]
-            [app.jobs.play-stats :as play-stats]
-            [app.jobs.policy-mail :as policy-mail]
+            [app.jobs.worker :as job-worker]
             [app.write-runner :as writer]
             [s-exp.drip :as drip]
             [app.nexus :as app-nexus]
@@ -115,35 +110,11 @@
 (defmethod ig/init-key ::job-maintenance [_ {:keys [job-queue]}]
   (drip/start-maintenance-worker! {:client (:client job-queue) :queues []}))
 
-(defmethod ig/init-key ::invitation-worker [_ system]
-  (invitation-jobs/start! system))
+(defmethod ig/init-key ::job-worker [_ system]
+  (job-worker/start! system))
 
-(defmethod ig/halt-key! ::invitation-worker [_ worker]
-  (when worker (invitation-jobs/stop! worker)))
-
-(defmethod ig/init-key ::identity-worker [_ system]
-  (identity-jobs/start! system))
-
-(defmethod ig/halt-key! ::identity-worker [_ worker]
-  (when worker (identity-jobs/stop! worker)))
-
-(defmethod ig/init-key ::integrations-worker [_ system]
-  (integrations/start! system))
-
-(defmethod ig/halt-key! ::integrations-worker [_ worker]
-  (when worker (integrations/stop! worker)))
-
-(defmethod ig/init-key ::play-stats-worker [_ system]
-  (play-stats/start! system))
-
-(defmethod ig/halt-key! ::play-stats-worker [_ worker]
-  (when worker (play-stats/stop! worker)))
-
-(defmethod ig/init-key ::policy-mail-worker [_ system]
-  (policy-mail/start! system))
-
-(defmethod ig/halt-key! ::policy-mail-worker [_ worker]
-  (when worker (policy-mail/stop! worker)))
+(defmethod ig/halt-key! ::job-worker [_ worker]
+  (job-worker/stop! worker))
 
 (defmethod ig/halt-key! ::job-maintenance [_ maintenance]
   (when-not (drip/stop-maintenance-worker! maintenance)
@@ -167,14 +138,6 @@
 
 (defmethod ig/init-key ::lettermint [_ system]
   (lettermint/start-component! system))
-
-(defmethod ig/init-key ::email-worker
-  [_ sys]
-  (email-worker/start! sys))
-
-(defmethod ig/halt-key! ::email-worker
-  [_ sys]
-  (email-worker/stop! sys))
 
 (defmethod ig/init-key ::oauth2
   [_ sys]
