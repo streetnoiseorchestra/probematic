@@ -15,9 +15,7 @@
             [app.job-queue :as job-queue]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
-            [app.game-loop :as frame-loop]
-            [app.game-loop.storage :as frame-storage]
-            [app.jobs.log-dispatch :as log-dispatch]
+            [app.game-loop.lifecycle :as frame-lifecycle]
             [app.jobs.identity :as identity-jobs]
             [app.jobs.invitations :as invitation-jobs]
             [app.jobs.integrations :as integrations]
@@ -28,13 +26,11 @@
             [app.nexus :as app-nexus]
             [app.routes :as routes]
             [app.sardine :as sardine]
-            [app.schemas :as s]
             [com.brunobonacci.mulog :as μ]
             [integrant.core :as ig]
             [nrepl.server :as nrepl]
             [ol.jobs.ig]
-            [app.system :as system]
-            [app.datastar]))
+            [app.system :as system]))
 (defmethod ig/init-key ::profile [_ profile]
   profile)
 
@@ -57,48 +53,14 @@
   (writer/create))
 
 (defmethod ig/halt-key! ::write-runner [_ control]
-  (when control (writer/close! control)))
+  (when control
+    (writer/close! control)))
 
-(defmethod ig/init-key ::frame-loop [_ {:keys [write-runner job-queue cutover-t] :as system}]
-  (assert write-runner "Frame loop requires a write runner")
-  (assert job-queue "Frame loop requires a job queue")
-  (let [hooks   (frame-storage/render-hooks (get-in system [:datomic :conn]) {:jobs (:db job-queue)})
-        clients (atom {})
-        pool    (frame-loop/start-render-pool {:pool-size 2})]
-    (try
-      (log-dispatch/initialize! (get-in system [:datomic :conn]) (:client job-queue) cutover-t)
-      (writer/start!
-       write-runner
-       #(frame-loop/start-batch-loop!
-         {::frame-loop/conns       (java.util.concurrent.ConcurrentHashMap.)
-          ::frame-loop/render-pool pool
-          :write-runner            write-runner
-          :clients                 clients                                   :stopped? (atom false)}
-         (assoc (merge hooks (select-keys system [:queue-capacity :batch-size :batch-tick-ms]))
-                :capture-frame (fn [ctx]
-                                 (locking clients
-                                   (assoc ((:capture-frame hooks) ctx)
-                                          :clients @clients :page-state @app.datastar/!page-state)))
-                :process-batch! (fn [runtime batch]
-                                  (doseq [action batch]
-                                    (if (::writer/work action)
-                                      (writer/execute! action)
-                                      (app-nexus/process-queued! (:nexus system) system runtime action)))
-                                  (log-dispatch/dispatch-pending!
-                                   (get-in system [:datomic :conn]) (:client job-queue) 128)))))
-      (catch Exception e
-        (.close ^java.util.concurrent.ExecutorService pool)
-        (throw e)))))
+(defmethod ig/init-key ::frame-loop [_ system]
+  (frame-lifecycle/start! system))
 
 (defmethod ig/halt-key! ::frame-loop [_ runtime]
-  (when runtime
-    (let [clients (:clients runtime)]
-      (locking clients (reset! (:stopped? runtime) true)))
-    (writer/close! (:write-runner runtime))
-    ((::frame-loop/stop! runtime))
-    (try
-      (doseq [client (vals @(:clients runtime))] ((:close! client)))
-      (finally (.close ^java.util.concurrent.ExecutorService (::frame-loop/render-pool runtime))))))
+  (frame-lifecycle/stop! runtime))
 
 (defmethod ig/init-key :app.ig.router/routes
   [_ system]
@@ -203,15 +165,8 @@
   [_ {:keys [client]}]
   (sardine/shutdown client))
 
-(defmethod ig/init-key ::lettermint
-  [_ {:keys [env]}]
-  (let [runtime-config (:lettermint env)]
-    (when-not (s/valid? lettermint/RuntimeConfig runtime-config)
-      (s/throw-error "Invalid Lettermint runtime configuration."
-                     nil
-                     lettermint/RuntimeConfig
-                     (dissoc runtime-config :project-api-token)))
-    runtime-config))
+(defmethod ig/init-key ::lettermint [_ system]
+  (lettermint/start-component! system))
 
 (defmethod ig/init-key ::email-worker
   [_ sys]
