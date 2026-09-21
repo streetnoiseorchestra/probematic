@@ -1,6 +1,7 @@
 (ns app.members.effects
   (:require
    [app.datastar :as datastar]
+   [app.datomic :as db]
    [app.datomic.shim :as datomic]
    [app.email.mailers :as mailers]
    [app.jobs.log-dispatch :as log-dispatch]
@@ -30,14 +31,18 @@
 (defn- current-member-id [req]
   (get-in req [:app/session :session/member :member/member-id]))
 
-(defn- invitation-workflow-resources [deps req]
-  {:datomic-conn      (conn-from-req req)
-   :write-runner      (get-in req [:system :frame-loop :write-runner])
-   :current-locale    (:current-locale req)
-   :clock             (:now deps)
-   :random-code       (:random-code deps)
-   :random-uuid       (:random-uuid deps)
-   :current-member-id (current-member-id req)})
+(defn- invitation-workflow-resources [deps req default-action]
+  (let [member-id (current-member-id req)]
+    {:datomic-conn      (conn-from-req req)
+     :write-runner      (get-in req [:system :frame-loop :write-runner])
+     :current-locale    (:current-locale req)
+     :clock             (:now deps)
+     :random-code       (:random-code deps)
+     :random-uuid       (:random-uuid deps)
+     :current-member-id member-id
+     :audit             (cond-> {:audit/action (or (:app.nexus/audit-action req) default-action)
+                                 :audit/origin :app.origin/browser}
+                          member-id (assoc :audit/user [:member/member-id member-id]))}))
 
 (defn invite-member!
   "Creates an invited member and returns the invitation workflow result.
@@ -53,7 +58,7 @@
          result
          (myc/run-compiled
           invite.workflows/invite-member-wf
-          (invitation-workflow-resources deps req)
+          (invitation-workflow-resources deps req ::invite-member)
           {:member-invite member-invite})]
      (when (myc/error? result)
        (throw (ex-info "Member invitation workflow failed"
@@ -101,7 +106,7 @@
          (let [result
                (myc/run-compiled
                 invite.workflows/reissue-invitation-wf
-                (invitation-workflow-resources deps req)
+                (invitation-workflow-resources deps req ::reissue-invitation)
                 {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
@@ -133,7 +138,7 @@
          (let [result
                (myc/run-compiled
                 invite.workflows/reissue-invitation-wf
-                (invitation-workflow-resources deps req)
+                (invitation-workflow-resources deps req ::reissue-invitation)
                 {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
@@ -164,10 +169,12 @@
                (let [job (assoc-in (mailers/job {:current-locale (or (:current-locale req) :de)}
                                                 ::mailers/member-invitation {:member-id member-id})
                                    [1 :email-id] (random-uuid))]
-                 (datomic/transact (conn-from-req req)
-                                   {:tx-data (conj (log-dispatch/intent-tx [job])
-                                                   {:db/id        "datomic.tx"        :audit/action ::resend-member-invite
-                                                    :audit/origin :app.origin/browser})})))))]
+                 (db/transact (conn-from-req req)
+                              {:tx-data (log-dispatch/intent-tx [job])
+                               :audit   {:audit/action ::resend-member-invite
+                                         :audit/origin :app.origin/browser
+                                         :audit/user   (when-let [actor-id (current-member-id req)]
+                                                         [:member/member-id actor-id])}})))))]
      (if-let [control (:write-runner frame-loop)]
        (writer/call! control resend!)
        (resend!)))))
@@ -187,7 +194,7 @@
          (let [result
                (myc/run-compiled
                 invite.workflows/revoke-invitation-wf
-                (invitation-workflow-resources deps req)
+                (invitation-workflow-resources deps req ::delete-invitation)
                 {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)

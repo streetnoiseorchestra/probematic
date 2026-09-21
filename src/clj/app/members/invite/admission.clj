@@ -29,7 +29,8 @@
          (if-let [{:keys [member-id invite-status]} (members/acceptance-invitation db requested-at invite-code)]
            (if (= :member.invite.status/pending invite-status)
              (let [result (cells/claim-invitation!
-                           resources
+                           (assoc resources :audit {:audit/action ::request-setup
+                                                    :audit/origin :app.origin/browser})
                            {:member/member-id           member-id
                             :member-invite/state        (domain/invitation-state db member-id)
                             :member-invite/requested-at requested-at})]

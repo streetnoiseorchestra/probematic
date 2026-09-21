@@ -46,7 +46,8 @@
                                                                         :mime-type content-type})
             instrument-txs                 (domain/txs-add-instrument-image req instrument-id image-tempid)
             tx-data                        (concat tx-data instrument-txs)]
-        (d/transact-wrapper! req {:tx-data tx-data}))
+        (d/transact-wrapper! req {:tx-data tx-data
+                                  :audit   {:audit/action ::upload-instrument-image}}))
       (finally
         (when-let [working-file @working-file_]
           (fs/delete-if-exists working-file))

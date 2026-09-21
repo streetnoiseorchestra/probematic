@@ -2,6 +2,7 @@
   (:require
    [app.datastar :as datastar]
    [app.ig]
+   [app.gigs.detail.actions :as gig-actions]
    [app.nexus :as app-nexus]
    [app.system]
    [app.test-common :as tc]
@@ -254,6 +255,35 @@
     (is (= [[:test/on-success team-id]]
            (first @dispatched_)))
     (is (some? (-> @dispatched_ second :tx-result :db-after)))))
+
+(deftest db-transact-fx-adds-the-authenticated-actor
+  (let [{:keys [conn]} (tc/new-system "nexus-audit-actor")
+        actor-id       (random-uuid)
+        target-id      (random-uuid)
+        gig-id         (random-uuid)
+        attendance-id  (pr-str [gig-id target-id])
+        _              @(d/transact conn [{:member/member-id actor-id}
+                                          {:member/member-id target-id}
+                                          {:gig/gig-id gig-id}])
+        report         (app-nexus/db-transact-fx
+                        {}
+                        {:system  {:datomic {:conn conn}}
+                         :request {:app/session
+                                   {:session/member {:member/member-id actor-id}}
+                                   ::app-nexus/audit-action ::gig-actions/update-attendance-plan}}
+                        [[[{:attendance/gig+member attendance-id
+                            :attendance/gig        [:gig/gig-id gig-id]
+                            :attendance/member     [:member/member-id target-id]
+                            :attendance/plan       :plan/definitely}]
+                          {}]])
+        db             (:db-after report)
+        audit          (d/entity db (d/t->tx (d/basis-t db)))
+        attendance     (d/entity db [:attendance/gig+member attendance-id])]
+    (is (= actor-id (-> audit :audit/user :member/member-id)))
+    (is (= ::gig-actions/update-attendance-plan (:audit/action audit)))
+    (is (= :app.origin/browser (:audit/origin audit)))
+    (is (= target-id (-> attendance :attendance/member :member/member-id)))
+    (is (not= actor-id target-id))))
 
 (deftest db-transact-fx-dispatches-matching-on-error-actions
   (let [{:keys [conn]} (tc/new-system "nexus-db-transact-on-error")

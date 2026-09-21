@@ -1,6 +1,7 @@
 (ns app.discourse-writer-test
   (:require
    [app.discourse :as discourse]
+   [app.datomic :as datomic]
    [app.game-loop :as game]
    [app.gigs.answer-link.service-test :as gigs]
    [app.test-common :as tc]
@@ -46,6 +47,15 @@
     (fn [runtime _ conn]
       (let [{:keys [gig-id]} (writer/call! (:write-runner runtime)
                                            #(gigs/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days))))
+            actor-id         (random-uuid)
+            _                @(d/transact conn [{:member/member-id actor-id}])
+            source-t         (-> (datomic/transact
+                                  conn
+                                  {:tx-data [{:team/team-id (random-uuid)
+                                              :team/name    "Source change"}]
+                                   :audit   {:audit/user [:member/member-id actor-id]}})
+                                 :db-after
+                                 d/basis-t)
             system           {:frame-loop runtime                                                              :datomic {:conn conn} :db (d/db conn)
                               :env        {:app-base-url "https://example.test" :discourse {:username "test"}}}
             entered          (promise)
@@ -65,7 +75,7 @@
             (.put ^ConcurrentHashMap (::game/conns runtime) :barrier
                   (fn [_] (deliver entered true) @release))
             (is (= true (deref entered 5000 ::timeout)))
-            (let [result (future (discourse/create-topic-for-gig! system gig-id))]
+            (let [result (future (discourse/create-topic-for-gig! system gig-id source-t))]
               (is (= true (deref posted 5000 ::timeout)))
               (is (= ::waiting (deref result 1000 ::waiting)))
               (is (nil? (:forum.topic/topic-id (d/entity (d/db conn) [:gig/gig-id gig-id]))))
@@ -73,7 +83,16 @@
               (is (map? (deref result 5000 ::timeout))))
             (writer/call! (:write-runner runtime)
                           #(deref (d/transact conn [[:db/retract [:gig/gig-id gig-id] :forum.topic/topic-id "42"]])))
-            (discourse/create-topic-for-gig! system gig-id)
+            (discourse/create-topic-for-gig! system gig-id source-t)
             (is (= 1 @posts))
             (is (= "42" (:forum.topic/topic-id (d/entity (d/db conn) [:gig/gig-id gig-id]))))
+            (is (= actor-id
+                   (d/q '[:find ?member-id .
+                          :in $ ?action
+                          :where
+                          [?tx :audit/action ?action]
+                          [?tx :audit/user ?member]
+                          [?member :member/member-id ?member-id]]
+                        (d/db conn)
+                        :app.discourse/create-topic-for-gig)))
             (finally (deliver release true))))))))

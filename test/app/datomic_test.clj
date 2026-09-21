@@ -35,18 +35,41 @@
         success        (datomic/transact
                         conn
                         {:tx-data [{:member/nick "unique-nick"}]})
-        failure        (datomic/transact
+        audited        (datomic/transact
                         conn
-                        {:tx-data [{:member/nick "unique-nick"}]})]
+                        {:tx-data [{:member/nick "audited-nick"}
+                                   {:db/id "datomic.tx" :audit/jobs "intent"}]
+                         :audit   {:audit/action ::background-write
+                                   :audit/origin :app.origin/job}})
+        audit          (d/entity (:db-after audited)
+                                 (d/t->tx (d/basis-t (:db-after audited))))]
     (testing "returns the transaction report on success"
       (is (contains? success :db-after))
       (is (datomic/db-ok? success)))
 
-    (testing "normalizes Datomic uniqueness failures"
-      (is (datomic/db-error? failure))
-      (is (datomic/unique-error? failure))
-      (is (some? (:exception failure)))
-      (is (string? (:msg failure))))))
+    (testing "adds trusted background metadata and preserves job intents"
+      (is (= ::background-write (:audit/action audit)))
+      (is (= :app.origin/job (:audit/origin audit)))
+      (is (= "intent" (:audit/jobs audit)))
+      (is (nil? (:audit/user audit))))
+
+    (testing "throws Datomic uniqueness failures"
+      (is (thrown? Exception
+                   (datomic/transact conn
+                                     {:tx-data [{:member/nick "unique-nick"}]}))))))
+
+(deftest source-audit-user-test
+  (let [{:keys [conn member-id]} (tc/new-system "datomic-source-audit-user")
+        report                   (datomic/transact
+                                  conn
+                                  {:tx-data [{:team/team-id (random-uuid)
+                                              :team/name    "Audited team"}]
+                                   :audit   {:audit/user [:member/member-id member-id]}})
+        source-t                 (d/basis-t (:db-after report))]
+    (is (= [:member/member-id member-id]
+           (datomic/source-audit-user conn source-t)))
+    @(d/transact conn [[:db/retractEntity [:member/member-id member-id]]])
+    (is (nil? (datomic/source-audit-user conn source-t)))))
 
 (deftest transact-wrapper!-test
   (let [{:keys [conn member-id]} (tc/new-system "datomic-transact-wrapper")
@@ -56,10 +79,13 @@
                                   {:tx-data [[:db/add
                                               [:member/member-id member-id]
                                               :member/name
-                                              "Ada"]]}
+                                              "Ada"]]
+                                   :audit   {:audit/action ::wrapper-write}}
                                   "Updated profile")
         db                       (d/db conn)
-        audit                    (d/q '[:find (pull ?tx [:audit/comment
+        audit                    (d/q '[:find (pull ?tx [:audit/action
+                                                         :audit/comment
+                                                         :audit/origin
                                                          {:audit/user [:member/member-id]}]) .
                                         :in $ ?comment
                                         :where [?tx :audit/comment ?comment]]
@@ -70,13 +96,11 @@
              (d/pull db [:member/name] [:member/member-id member-id]))))
 
     (testing "records the authenticated member and optional comment on the transaction"
-      (is (= {:audit/comment "Updated profile"
+      (is (= {:audit/action  ::wrapper-write
+              :audit/comment "Updated profile"
+              :audit/origin  :app.origin/browser
               :audit/user    {:member/member-id member-id}}
-             audit)))
-
-    (testing "omits a comment datom when no comment is supplied"
-      (is (= [[:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-             (datomic/audit-txs req nil))))))
+             audit)))))
 
 (deftest entity-history-test
   (let [{:keys [conn member-id]} (tc/new-system "datomic-entity-history")

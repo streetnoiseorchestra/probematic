@@ -1,5 +1,6 @@
 (ns app.jobs.poll-housekeeping
   (:require
+   [app.datomic :as db]
    [app.datomic.shim :as datomic]
    [app.errors :as errors]
    [app.poll.queries :as queries]
@@ -18,10 +19,10 @@
                                    [:db/add [:poll/poll-id poll-id] :poll/closes-at (t/inst now)]])
                                 (queries/expired-open-polls (datomic/db conn) now))]
                    (when (seq tx-data)
-                     (datomic/transact conn {:tx-data (conj (vec tx-data)
-                                                            {:db/id        "datomic.tx"
-                                                             :audit/action ::close-expired-polls
-                                                             :audit/origin :app.origin/job})}))))]
+                     (db/transact conn
+                                  {:tx-data (vec tx-data)
+                                   :audit   {:audit/action ::close-expired-polls
+                                             :audit/origin :app.origin/job}}))))]
     (if-let [control (:write-runner frame-loop)]
       (writer/call! control close!)
       (close!))))

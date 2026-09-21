@@ -48,7 +48,9 @@
   [conn probes]
   (let [probe-dates (find-probe-dates (- minimum-gigs (count probes)) probes)
         txs         (take maximum-create (map newprobe-tx probe-dates))]
-    (datomic/transact conn {:tx-data txs})))
+    (d/transact conn {:tx-data txs
+                      :audit   {:audit/action ::create-probes
+                                :audit/origin :app.origin/job}})))
 
 (defn assign-rehearsal-leaders!
   [conn]
@@ -58,7 +60,10 @@
         last-leader2 (:gig/rehearsal-leader2 prev-probe)
         next-leader1 (:gig/rehearsal-leader1 next-probe)]
     (when (and (some? last-leader2)  (nil? next-leader1))
-      (datomic/transact conn {:tx-data [[:db/add (d/ref next-probe) :gig/rehearsal-leader1 (d/ref last-leader2)]]}))))
+      (d/transact conn
+                  {:tx-data [[:db/add (d/ref next-probe) :gig/rehearsal-leader1 (d/ref last-leader2)]]
+                   :audit   {:audit/action ::assign-rehearsal-leaders
+                             :audit/origin :app.origin/job}}))))
 
 (defn- probe-housekeeping-job
   [{:keys [datomic] :as system} _]
@@ -93,10 +98,10 @@
            (let [intents (mapv #(mailers/job {:current-locale :de} ::mailers/rehearsal-leader
                                              {:gig-id (:gig/gig-id next-probe) :member-id (:member/member-id %)})
                                leaders)]
-             (datomic/transact conn
-                               {:tx-data (conj (nexus/batch-transactions [[[] {:jobs intents}]])
-                                               {:db/id        "datomic.tx"    :audit/action ::notify-rehearsal-leader
-                                                :audit/origin :app.origin/job})}))))))
+             (d/transact conn
+                         {:tx-data (nexus/batch-transactions [[[] {:jobs intents}]])
+                          :audit   {:audit/action ::notify-rehearsal-leader
+                                    :audit/origin :app.origin/job}}))))))
     (catch Throwable e
       (errors/report-error! e))))
 

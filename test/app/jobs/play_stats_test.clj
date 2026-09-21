@@ -2,6 +2,7 @@
   (:require
    [app.gigs.domain :as gig-domain]
    [app.gigs.log-plays.actions :as plays]
+   [app.jobs.play-stats :as play-stats]
    [app.jobs.worker :as jobs-worker]
    [app.nexus :as nexus]
    [app.test-common :as tc]
@@ -47,7 +48,54 @@
                      (when (pos? remaining)
                        (Thread/sleep 10)
                        (recur (dec remaining)))))))
-            (let [song (d/entity (d/db conn) [:song/song-id song-id])]
+            (let [db         (d/db conn)
+                  song       (d/entity db [:song/song-id song-id])
+                  audit-user (d/q '[:find ?member-id .
+                                    :in $ ?action
+                                    :where
+                                    [?tx :audit/action ?action]
+                                    [?tx :audit/user ?member]
+                                    [?member :member/member-id ?member-id]]
+                                  db
+                                  :app.jobs.play-stats/refresh)]
               (is (= 1 (:song/total-rating-bad song)))
-              (is (= 0 (:song/total-rating-good song))))
+              (is (= 0 (:song/total-rating-good song)))
+              (is (nil? audit-user)))
+            (finally (jobs-worker/stop! worker))))))))
+
+(deftest play-statistics-job-retains-the-source-transaction-actor
+  (with-runtime
+    (fn [runtime client conn]
+      (let [actor-id (random-uuid)
+            control  (:write-runner runtime)]
+        (writer/call!
+         control
+         (fn []
+           @(d/transact conn [{:member/member-id actor-id}])
+           (nexus/db-transact-fx
+            {}
+            {:system  {:datomic {:conn conn}}
+             :request {:app/session         {:session/member {:member/member-id actor-id}}
+                       ::nexus/audit-action ::request-play-statistics}}
+            [[[] {:jobs [play-stats/job]}]])))
+        (let [worker (jobs-worker/start! {:frame-loop runtime
+                                          :job-queue  {:client client}
+                                          :datomic    {:conn conn}})]
+          (try
+            (is (true?
+                 (loop [remaining 500]
+                   (if (= :completed (:state (first (drip/list-jobs client {:kind "refresh-play-stats"}))))
+                     true
+                     (when (pos? remaining)
+                       (Thread/sleep 10)
+                       (recur (dec remaining)))))))
+            (is (= actor-id
+                   (d/q '[:find ?member-id .
+                          :in $ ?action
+                          :where
+                          [?tx :audit/action ?action]
+                          [?tx :audit/user ?member]
+                          [?member :member/member-id ?member-id]]
+                        (d/db conn)
+                        :app.jobs.play-stats/refresh)))
             (finally (jobs-worker/stop! worker))))))))

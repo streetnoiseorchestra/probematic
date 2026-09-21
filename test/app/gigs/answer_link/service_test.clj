@@ -44,17 +44,25 @@
   (testing "creates attendance from an encrypted future-gig answer"
     (let [{:keys [conn]}             (tc/new-system "gig-answer-link-attendance")
           {:keys [gig-id member-id]} (seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days)))
+          actor-id                   (random-uuid)
+          _                          @(d/transact conn [{:member/member-id actor-id}])
           edited_                    (atom [])
           result                     (service/submit-answer!
                                       (assoc deps :trigger-gig-edited! (fn [_req gig-id edit-type]
                                                                          (swap! edited_ conj [gig-id edit-type])))
-                                      (req conn {:gig/gig-id       gig-id
-                                                 :member/member-id member-id
-                                                 :attendance/plan  :plan/definitely-not}))
+                                      (assoc-in
+                                       (req conn {:gig/gig-id       gig-id
+                                                  :member/member-id member-id
+                                                  :attendance/plan  :plan/definitely-not})
+                                       [:app/session :session/member]
+                                       {:member/member-id actor-id}))
+          audit                      (d/entity (d/db conn) (d/t->tx (d/basis-t (d/db conn))))
           attendance                 (q/attendance-for-gig (d/db conn) gig-id member-id)]
       (is (= gig-id (get-in result [:gig :gig/gig-id])))
       (is (= member-id (get-in result [:member :member/member-id])))
       (is (= :plan/definitely-not (:attendance/plan attendance)))
+      (is (= actor-id (-> audit :audit/user :member/member-id)))
+      (is (not= actor-id member-id))
       (is (empty? @edited_))))
 
   (testing "does not change attendance for a past-gig answer"
@@ -75,7 +83,8 @@
                                       (req conn {:gig/gig-id       gig-id
                                                  :member/member-id member-id
                                                  :reminder         true}))
-          reminder                   (q/gig-reminder-for (d/db conn) gig-id member-id)]
+          reminder                   (q/gig-reminder-for (d/db conn) gig-id member-id)
+          audit                      (d/entity (d/db conn) (d/t->tx (d/basis-t (d/db conn))))]
       (service/submit-answer!
        deps
        (req conn {:gig/gig-id       gig-id
@@ -84,6 +93,7 @@
       (let [reset-reminder (q/gig-reminder-for (d/db conn) gig-id member-id)]
         (is (= gig-id (get-in result [:gig :gig/gig-id])))
         (is (= member-id (get-in result [:member :member/member-id])))
+        (is (nil? (:audit/user audit)))
         (is (= :reminder-status/pending (:reminder/reminder-status reset-reminder)))
         (is (= :reminder-type/gig-attendance (:reminder/reminder-type reset-reminder)))
         (is (= (:reminder/reminder-id reminder)

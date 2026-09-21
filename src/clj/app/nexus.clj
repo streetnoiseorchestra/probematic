@@ -2,6 +2,7 @@
   (:require
    [app.account.actions]
    [app.account.effects :as account.effects]
+   [app.datomic :as datomic]
    [app.datastar :as datastar]
    [app.errors :as errors]
    [app.game-loop :as game]
@@ -186,12 +187,14 @@
   (let [conn (-> system :datomic :conn)
         _    (assert conn "Nexus :db/transact requires a Datomic connection")]
     (try
-      (let [tx-data         (cond-> (batch-transactions transact-actions)
-                              (::audit-action request)
-                              (conj {:db/id        "datomic.tx"
-                                     :audit/action (::audit-action request)
-                                     :audit/origin :app.origin/browser}))
-            result          @(d/transact conn tx-data)
+      (let [member-id       (current-member-id request)
+            result          (datomic/transact
+                             conn
+                             {:tx-data (batch-transactions transact-actions)
+                              :audit   {:audit/action (::audit-action request)
+                                        :audit/origin :app.origin/browser
+                                        :audit/user   (when member-id
+                                                        [:member/member-id member-id])}})
             actions         (vec (on-success-actions transact-actions))
             dispatch-result (when (seq actions)
                               (dispatch actions {:tx-result result}))]

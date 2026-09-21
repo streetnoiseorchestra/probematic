@@ -4,7 +4,6 @@
    [app.queries :as q]
    [app.util :as util]
    [clojure.string :as str]
-   [app.datomic.shim :as datomic]
    [keycloak.admin :as admin]
    [keycloak.deployment :as keycloak]
    [keycloak.user :as user]
@@ -90,7 +89,9 @@
   "Attaches :member/keycloak-id to all members whose email address matches exactly to a keycloak user.
   Will also update the :member/username field for matched"
   [{:keys [datomic-conn] :as sys}]
-  (datomic/transact datomic-conn {:tx-data (find-members-matches sys)}))
+  (d/transact datomic-conn {:tx-data (find-members-matches sys)
+                            :audit   {:audit/action ::match-members-to-keycloak
+                                      :audit/origin :app.origin/system}}))
 
 (defn link-user-edit
   "Return a string containing the URL to edit a user in the keycloak admin console."

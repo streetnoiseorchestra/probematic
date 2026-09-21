@@ -23,7 +23,7 @@
 
 (def sync-all-songs-job ["sync-all-songs" {} {:queue "integrations" :max-attempts 25}])
 
-(defn- sync-gig! [system {:keys [gig-id operation thread? takeover-topic?]}]
+(defn- sync-gig! [system {:keys [gig-id operation source-t thread? takeover-topic?]}]
   (case operation
     :deleted (do
                (discourse/maybe-delete-topic-for-gig! system gig-id)
@@ -31,8 +31,8 @@
     (:created :updated)
     (when (q/retrieve-gig (:db system) gig-id)
       (if (= :created operation)
-        (when thread? (discourse/create-topic-for-gig! system gig-id))
-        (discourse/update-topic-for-gig! system gig-id (boolean takeover-topic?)))
+        (when thread? (discourse/create-topic-for-gig! system gig-id source-t))
+        (discourse/update-topic-for-gig! system gig-id (boolean takeover-topic?) source-t))
       (caldav/update-gig-event! system gig-id))))
 
 (defn handle! [system kind client {:keys [id args]}]

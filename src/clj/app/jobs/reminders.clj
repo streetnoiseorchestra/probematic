@@ -1,5 +1,6 @@
 (ns app.jobs.reminders
   (:require
+   [app.datomic :as db]
    [app.datomic.shim :as datomic]
    [app.email.mailers :as mailers]
    [app.errors :as errors]
@@ -63,11 +64,10 @@
                                          :reminder-ids (mapv :reminder-id group)}))
                          to-send)]
        (when (seq tx-data)
-         (datomic/transact conn
-                           {:tx-data (conj (nexus/batch-transactions [[tx-data {:jobs intents}]])
-                                           {:db/id        "datomic.tx"
-                                            :audit/action ::queue-due-reminders
-                                            :audit/origin :app.origin/job})}))))))
+         (db/transact conn
+                      {:tx-data (nexus/batch-transactions [[tx-data {:jobs intents}]])
+                       :audit   {:audit/action ::queue-due-reminders
+                                 :audit/origin :app.origin/job}}))))))
 
 (defn send-reminders!
   ([system _]

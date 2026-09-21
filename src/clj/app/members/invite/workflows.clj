@@ -324,7 +324,9 @@
                   {:datomic-conn datomic-conn
                    :write-runner (get-in req [:system :frame-loop :write-runner])
                    :clock        now
-                   :keycloak     (keycloak/kc-from-req req)}
+                   :keycloak     (keycloak/kc-from-req req)
+                   :audit        {:audit/action ::setup-account
+                                  :audit/origin :app.origin/browser}}
                   {:member/member-id                  member-id
                    :member-invite/resolved-generation invite-generation
                    :member-invite/requested-at        requested-at

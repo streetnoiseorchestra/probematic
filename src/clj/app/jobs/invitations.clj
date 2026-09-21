@@ -50,7 +50,9 @@
             (throw e)))))))
 
 (defn handle! [resources client {:keys [id args]}]
-  (case (resume! resources args)
+  (case (resume! (assoc resources :audit {:audit/action ::resume-invitation
+                                          :audit/origin :app.origin/job})
+                 args)
     :retry (throw (ex-info "Invitation setup is not yet complete" {:reason :invitation-retry}))
     :operator-required (drip/discard-job client id)
     (:accepted :pending :superseded) (drip/complete-job client id)))

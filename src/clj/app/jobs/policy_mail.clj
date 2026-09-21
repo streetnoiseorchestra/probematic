@@ -1,6 +1,7 @@
 (ns app.jobs.policy-mail
   "Sends a committed policy snapshot before confirming the changes it contained."
   (:require [app.insurance.domain :as domain]
+            [app.datomic :as datomic]
             [app.insurance.exporters :as exporters]
             [app.jobs.feedback :as feedback]
             [app.queries :as q]
@@ -55,16 +56,20 @@
          (fn []
            (let [current-db (d/db conn)]
              (when-not (d/entid current-db receipt)
-               @(d/transact
-                 conn
-                 (cond-> (into [{:app.external-effect/id effect-id}
-                                {:db/id        "datomic.tx"    :audit/action ::confirm-delivered
-                                 :audit/origin :app.origin/job}]
-                               (confirmation-tx sent
-                                                (when (d/entid current-db [:insurance.policy/policy-id policy-id])
-                                                  (q/retrieve-policy current-db policy-id))))
-                   (and (:member-id origin) (d/entid current-db [:member/member-id (:member-id origin)]))
-                   (conj [:db/add "datomic.tx" :audit/user [:member/member-id (:member-id origin)]])))))))))))
+               (datomic/transact
+                conn
+                {:tx-data
+                 (into [{:app.external-effect/id effect-id}]
+                       (confirmation-tx
+                        sent
+                        (when (d/entid current-db [:insurance.policy/policy-id policy-id])
+                          (q/retrieve-policy current-db policy-id))))
+                 :audit
+                 (cond-> {:audit/action ::confirm-delivered
+                          :audit/origin :app.origin/job}
+                   (and (:member-id origin)
+                        (d/entid current-db [:member/member-id (:member-id origin)]))
+                   (assoc :audit/user [:member/member-id (:member-id origin)]))})))))))))
 
 (defn handle! [system client {:keys [id args attempt]}]
   (try

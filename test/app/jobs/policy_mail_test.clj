@@ -16,12 +16,16 @@
   (runner-test/with-runtime
     (fn [runtime _ conn]
       (let [policy-id  (random-uuid)
+            actor-id   (random-uuid)
             control    (:write-runner runtime)
             system     {:frame-loop runtime :datomic {:conn conn} :env {:smtp-sno {}}}
             args       (writer/call! control
                                      (fn []
                                        (insurance-test/seed-policy! conn policy-id)
-                                       {:effect-id (random-uuid)                                                                   :source-t (d/basis-t (d/db conn))
+                                       @(d/transact conn [{:member/member-id actor-id}])
+                                       {:effect-id (random-uuid)
+                                        :origin    {:member-id actor-id}
+                                        :source-t  (d/basis-t (d/db conn))
                                         :mail      {:policy-id                   policy-id     :recipient "insurance@example.test"
                                                     :subject                     "Changes"     :body      "Attached"
                                                     :attachment-filename-new     "new.xls"
@@ -66,6 +70,16 @@
             (deliver release true)
             (is (= :done (deref done 5000 ::timeout)))
             (is (some? (d/entid (d/db conn) receipt)))
+            (is (= {:audit/action ::mail/confirm-delivered
+                    :audit/origin :app.origin/job
+                    :audit/user   {:member/member-id actor-id}}
+                   (d/q '[:find (pull ?tx [:audit/action
+                                           :audit/origin
+                                           {:audit/user [:member/member-id]}]) .
+                          :in $ ?effect-id
+                          :where [?effect :app.external-effect/id ?effect-id ?tx]]
+                        (d/db conn)
+                        (:effect-id args))))
             (is (= :insurance.policy.status/active (:insurance.policy/status (d/entity (d/db conn) policy-ref))))
             (is (= "Later name" (:insurance.policy/name (d/entity (d/db conn) policy-ref))))
             (mail/deliver! system args)

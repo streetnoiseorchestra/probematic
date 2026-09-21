@@ -45,8 +45,9 @@
          (map util/remove-nils))))
 
 (defn calc-and-save-play-stats! [conn]
-  (datomic/transact conn {:tx-data
-                          (calc-stats (datomic/db conn))}))
+  (d/transact conn {:tx-data (calc-stats (datomic/db conn))
+                    :audit   {:audit/action ::calc-and-save-play-stats
+                              :audit/origin :app.origin/job}}))
 
 (defn calc-play-stats-in-bg! [conn]
   (jobs/make-one-shot-job (fn [_] (calc-and-save-play-stats! conn)) [5 :seconds])

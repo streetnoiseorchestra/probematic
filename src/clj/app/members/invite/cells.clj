@@ -1,6 +1,7 @@
 (ns app.members.invite.cells
   "Mycelium cells for member invitations and account setup."
   (:require
+   [app.datomic :as datomic]
    [app.email.mailers :as mailers]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.members.invite.domain :as domain]
@@ -22,11 +23,13 @@
                    (:app/error-code (ex-data %))))
    (take-while some? (iterate ex-cause exception))))
 
-(defn- transact-plan [{:keys [datomic-conn write-runner]} plan-fn]
+(defn- transact-plan [{:keys [audit datomic-conn write-runner]} plan-fn]
   (let [transact! (fn []
                     (if-let [plan (plan-fn)]
                       (try
-                        @(d/transact datomic-conn (:tx-data plan))
+                        (datomic/transact datomic-conn
+                                          {:tx-data (:tx-data plan)
+                                           :audit   (or audit {})})
                         (catch Throwable exception
                           (if (conflict-failure? exception)
                             transaction-conflict

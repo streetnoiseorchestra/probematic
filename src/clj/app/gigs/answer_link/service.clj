@@ -1,6 +1,7 @@
 (ns app.gigs.answer-link.service
   (:require
    [app.config :as config]
+   [app.datomic :as db]
    [app.datomic.shim :as datomic]
    [app.gigs.domain :as domain]
    [app.jobs.gig-events :as gig.events]
@@ -75,7 +76,7 @@
 
 (def default-deps
   {:decrypt-answer      decrypt-answer
-   :transact!           datomic/transact
+   :transact!           db/transact
    :trigger-gig-edited! gig.events/trigger-gig-edited})
 
 (defn submit-answer!
@@ -86,6 +87,11 @@
          decrypt-answer (:decrypt-answer deps)
          transact!      (:transact! deps)
          answer         (decrypt-answer req (answer-token req))
+         actor-id       (get-in req [:app/session :session/member :member/member-id])
+         audit          (fn [action]
+                          (cond-> {:audit/action action
+                                   :audit/origin :app.origin/browser}
+                            actor-id (assoc :audit/user [:member/member-id actor-id])))
          member-id      (util/ensure-uuid! (:member/member-id answer))
          gig-id         (util/ensure-uuid! (:gig/gig-id answer))
          reminder?      (:reminder answer)
@@ -104,13 +110,17 @@
                             (cond
                               reminder?
                               (do
-                                (transact! datomic-conn {:tx-data (reminder-tx-data db gig-id member-id 2)})
+                                (transact! datomic-conn
+                                           {:tx-data (reminder-tx-data db gig-id member-id 2)
+                                            :audit   (audit ::submit-reminder)})
                                 {:gig gig :member member :reminder? true})
 
                               (domain/in-future? gig)
                               (let [tx-data (cond-> (attendance-plan-tx-data db gig-id member-id plan-kw)
                                               (seq jobs) (into (log-dispatch/intent-tx jobs)))
-                                    report  (transact! datomic-conn {:tx-data tx-data})]
+                                    report  (transact! datomic-conn
+                                                       {:tx-data tx-data
+                                                        :audit   (audit ::submit-attendance)})]
                                 {:gig (q/retrieve-gig (:db-after report) gig-id) :member member})
 
                               :else nil)))

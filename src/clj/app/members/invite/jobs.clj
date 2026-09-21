@@ -18,5 +18,5 @@
   [db {:keys [member-id] :as params}]
   (when-let [plan (domain/claim-tx db params)]
     (update plan :tx-data into
-            (into [{:db/id "datomic.tx" :audit/action ::claim :audit/origin :app.origin/browser}]
-                  (log-dispatch/intent-tx [(acceptance-job member-id (get-in plan [:state :generation]))])))))
+            (log-dispatch/intent-tx
+             [(acceptance-job member-id (get-in plan [:state :generation]))]))))

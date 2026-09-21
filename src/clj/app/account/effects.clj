@@ -5,6 +5,7 @@
   This namespace owns uploaded file preparation, the atomic Datomic write, and
   optional identity-provider synchronization intent, committed with the profile."
   (:require
+   [app.datomic :as datomic]
    [app.filestore.controller :as filestore.controller]
    [app.jobs.identity :as identity-jobs]
    [app.jobs.log-dispatch :as log-dispatch]
@@ -78,15 +79,11 @@
                                  (avatar-change-tx member-id current-avatar-eid
                                                    (when-not (:avatar-removed? profile) avatar-upload)
                                                    (:avatar-removed? profile) stored-avatar
-                                                   (avatar-file-eids db current-avatar-eid))
-                                 [[:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]))]
+                                                   (avatar-file-eids db current-avatar-eid))))]
     (into [[:member.invite/transact-profile-if-not-in-flight member-id profile-data]]
-          (concat
-           [{:db/id        "datomic.tx"        :audit/action :app.account.actions/save-profile
-             :audit/origin :app.origin/browser}]
-           (when (and sync-keycloak? keycloak-id)
-             (log-dispatch/intent-tx
-              [(identity-jobs/job params member-id keycloak-id {:metadata? true})]))))))
+          (when (and sync-keycloak? keycloak-id)
+            (log-dispatch/intent-tx
+             [(identity-jobs/job params member-id keycloak-id {:metadata? true})])))))
 
 (defn prepare-profile!
   "Stores avatar bytes and returns profile parameters for [[save-prepared-profile!]].
@@ -123,7 +120,13 @@
   (when-not (contains? params ::stored-avatar)
     (throw (ex-info "Profile upload has not been prepared" {})))
   (let [conn     (-> system :datomic :conn)
-        persist! (fn [] @(d/transact conn (save-tx (d/db conn) params (::stored-avatar params))))]
+        persist! (fn []
+                   (datomic/transact
+                    conn
+                    {:tx-data (save-tx (d/db conn) params (::stored-avatar params))
+                     :audit   {:audit/action :app.account.actions/save-profile
+                               :audit/origin :app.origin/browser
+                               :audit/user   [:member/member-id (:member-id params)]}}))]
     (assert conn "profile persistence requires a Datomic connection")
     (let [tx-result (if-let [control (get-in system [:frame-loop :write-runner])]
                       (writer/call! control persist!)

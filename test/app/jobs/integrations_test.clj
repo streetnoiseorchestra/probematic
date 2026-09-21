@@ -48,20 +48,67 @@
                       discourse/maybe-delete-topic-for-gig! (partial record! :delete-topic)
                       caldav/update-gig-event!              (partial record! :update-calendar)
                       caldav/delete-gig-event!              (partial record! :delete-calendar)]
-          (let [jobs   (drip/list-jobs client {})
-                worker (jobs-worker/start! system)]
+          (let [jobs     (drip/list-jobs client {})
+                source-t (get-in (first jobs) [:args :source-t])
+                worker   (jobs-worker/start! system)]
             (try
               (is (= 3 (count jobs)))
               (is (= 1 (count (set (map #(get-in % [:args :source-t]) jobs)))))
               (doseq [job jobs]
                 (is (= :completed (:state (queue-fixtures/await-state client (:id job) :completed)))))
-              (is (= (frequencies [[:create-topic gig-id "Latest title" [] false]
-                                   [:update-topic gig-id "Latest title" [true] false]
+              (is (= (frequencies [[:create-topic gig-id "Latest title" [source-t] false]
+                                   [:update-topic gig-id "Latest title" [true source-t] false]
                                    [:update-calendar gig-id "Latest title" [] false]
                                    [:update-calendar gig-id "Latest title" [] false]
                                    [:delete-topic deleted-id nil [] false]
                                    [:delete-calendar deleted-id nil [] false]])
                      (frequencies @calls)))
+              (finally (jobs-worker/stop! worker)))))))))
+(deftest updated-gig-topic-fallback-retains-the-source-transaction-actor
+  (fixtures/with-runtime
+    (fn [runtime client conn]
+      (let [{:keys [gig-id]} (writer/call! (:write-runner runtime)
+                                           #(gigs/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days))))
+            actor-id         (random-uuid)
+            system           {:frame-loop runtime
+                              :job-queue  {:client client}
+                              :datomic    {:conn conn}
+                              :env        {:ig/system    {:app.ig/profile :prod}
+                                           :app-base-url "https://example.test"
+                                           :discourse    {:username "test"}}}]
+        (writer/call!
+         (:write-runner runtime)
+         (fn []
+           @(d/transact conn [{:member/member-id actor-id}])
+           (nexus/db-transact-fx
+            {}
+            {:system  system
+             :request {:app/session         {:session/member {:member/member-id actor-id}}
+                       ::nexus/audit-action ::edit-gig}}
+            [[[] {:jobs [(integrations/gig-job
+                          gig-id
+                          {:operation :updated :takeover-topic? true})]}]])))
+        (writer/call! (:write-runner runtime) (constantly nil))
+        (with-redefs [discourse/request!
+                      (fn [_ {:keys [method]}]
+                        (case method
+                          :get (throw (ex-info "Not found" {:resp {:status 404}}))
+                          :post {:topic_id 42}))
+                      caldav/update-gig-event! (fn [& _] nil)]
+          (let [job    (first (drip/list-jobs client {:kind "sync-gig"}))
+                worker (jobs-worker/start! system)]
+            (try
+              (is (= :completed (:state (queue-fixtures/await-state client (:id job) :completed))))
+              (is (= "42" (:forum.topic/topic-id (d/entity (d/db conn) [:gig/gig-id gig-id]))))
+              (is (= actor-id
+                     (d/q '[:find ?member-id .
+                            :in $ ?action
+                            :where
+                            [?tx :audit/action ?action]
+                            [?tx :audit/user ?member]
+                            [?member :member/member-id ?member-id]]
+                          (d/db conn)
+                          :app.discourse/create-topic-for-gig)))
               (finally (jobs-worker/stop! worker)))))))))
 
 (deftest cms-http-failure-is-retried-before-completing-the-job

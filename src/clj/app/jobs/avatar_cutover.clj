@@ -1,6 +1,7 @@
 (ns app.jobs.avatar-cutover
   "Sequential cutover from Discourse avatar templates to managed avatars."
   (:require
+   [app.datomic :as datomic]
    [app.filestore.controller :as filestore.controller]
    [app.write-runner :as writer]
    [babashka.fs :as bfs]
@@ -92,13 +93,17 @@
               :file      (:tempfile upload)
               :mime-type (:mime-type upload)})
             persist!                       (fn []
-                                             @(d/transact
-                                               conn
+                                             (datomic/transact
+                                              conn
+                                              {:tx-data
                                                (into (vec tx-data)
                                                      [[:db.fn/cas [:member/member-id member-id]
                                                        :member/avatar-template template template]
                                                       [:db.fn/cas [:member/member-id member-id]
-                                                       :member/avatar nil image-tempid]])))]
+                                                       :member/avatar nil image-tempid]])
+                                               :audit
+                                               {:audit/action ::cutover-avatar
+                                                :audit/origin :app.origin/system}}))]
         (if-let [control (get-in system [:frame-loop :write-runner])]
           (writer/call! control persist!)
           (persist!)))

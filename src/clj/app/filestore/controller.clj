@@ -1,7 +1,6 @@
 (ns app.filestore.controller
   (:require
    [app.datomic :as d]
-   [app.datomic.shim :as datomic]
    [app.filestore :as filestore]
    [app.filestore.domain :as domain]
    [app.filestore.image :as img]
@@ -209,7 +208,14 @@ So here we provide functions to store the content and generate datoms for use in
             rendition-id                                  (sq/generate-squuid)
             rendition-txs                                 (domain/txs-new-rendition rendition-id rendition-tempid rendition-file-tempid parent-image width height filter-spec)
             txs                                           (concat file-txs rendition-txs)
-            persist!                                      #(datomic/transact datomic-conn {:tx-data txs})]
+            member-id                                     (get-in req [:app/session :session/member :member/member-id])
+            persist!                                      #(d/transact
+                                                            datomic-conn
+                                                            {:tx-data txs
+                                                             :audit   {:audit/action ::create-rendition
+                                                                       :audit/origin :app.origin/browser
+                                                                       :audit/user   (when member-id
+                                                                                       [:member/member-id member-id])}})]
         (filestore/put-sync! filestore prepared)
         (let [{:keys [db-after]} (if-let [control (get-in req [:system :frame-loop :write-runner])]
                                    (writer/call! control persist!)

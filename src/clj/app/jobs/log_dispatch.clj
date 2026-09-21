@@ -1,6 +1,7 @@
 (ns app.jobs.log-dispatch
   "Copies committed job intent from Datomic into Dollop's SQLite database."
   (:require
+   [app.datomic :as datomic]
    [fast-edn.core :as edn]
    [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
    [datomic.api :as d]
@@ -42,11 +43,10 @@
   (or (source-id (d/db conn))
       (let [id (random-uuid)]
         (try
-          @(d/transact conn
-                       [[:db.fn/cas :app.log/source :app.log/source-id nil id]
-                        {:db/id        "datomic.tx"
-                         :audit/action ::initialize
-                         :audit/origin :app.origin/system}])
+          (datomic/transact conn
+                            {:tx-data [[:db.fn/cas :app.log/source :app.log/source-id nil id]]
+                             :audit   {:audit/action ::initialize
+                                       :audit/origin :app.origin/system}})
           id
           (catch Exception e
             ;; Another initializer may have won the compare-and-swap.
