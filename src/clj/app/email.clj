@@ -56,10 +56,7 @@
      (assoc (sys-from-req req) :current-locale (:current-locale req))
      tx-result
      ::mailers/gig-updated
-     {:gig-id       gig-id
-      :member-ids   (mapv :member/member-id
-                          (sort-by :member/member-id (q/active-members (:db-after tx-result))))
-      :edited-attrs (vec (sort edited-attrs))})))
+     {:gig-id gig-id :edited-attrs (vec (sort edited-attrs))})))
 
 (defn send-poll-opened! [req poll-id]
   (let [db      (datomic/db (:datomic-conn req))

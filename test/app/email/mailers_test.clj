@@ -79,19 +79,19 @@
                      {:member/member-id (random-uuid)      :member/name    "New member"
                       :member/email     "new@example.test" :member/active? true}]))
 
-(defn- assert-original-delivery [invocation {:keys [messages options]}]
-  (is (= {:recipients [["ada@example.test"] ["grace@example.test"]]
-          :subjects   ["Gig-Bearbeitung: Committed concert" "Gig-Bearbeitung: Committed concert"]
-          :options    {:idempotency-key (str (:email-id invocation))}}
-         {:recipients (mapv :to messages)
-          :subjects   (mapv :subject messages)
-          :options    options}))
+(defn- assert-current-recipient-delivery
+  [invocation {:keys [messages options]}]
+  (is (= #{["later@example.test"] ["new@example.test"]}
+         (set (map :to messages))))
+  (is (= ["Gig-Bearbeitung: Committed concert" "Gig-Bearbeitung: Committed concert"]
+         (mapv :subject messages)))
+  (is (= {:idempotency-key (str (:email-id invocation))} options))
   (doseq [{:keys [html text]} messages]
     (is (every? #(str/includes? % "Committed hall") [html text]))
     (is (not-any? #(str/includes? % "Later") [html text])))
   (is (= 1 (count (distinct (map #(select-keys % [:html :text]) messages))))))
 
-(deftest committed-gig-update-retains-snapshot-and-identity-on-retry
+(deftest committed-gig-update-uses-current-recipients-and-freezes-retry
   (queue-fixtures/with-queue
     (fn [{:keys [client] :as queue}]
       (let [conn       (seed!)
@@ -102,12 +102,13 @@
             job        (notify-edit! req report)
             invocation (:args (drip/get-job client (:id job)))
             deliveries (atom [])]
-        (is (= {:version   1                                          :mailer :app.email.mailers/gig-updated
+        (is (= {:version   2
+                :mailer    :app.email.mailers/gig-updated
                 :arguments {:gig-id       gig-id
-                            :member-ids   [ada-id grace-id]
                             :edited-attrs [:gig/location :gig/title]}
                 :source-t  (d/basis-t (:db-after report))
-                :email-id  (:email-id invocation)                     :locale :de}
+                :email-id  (:email-id invocation)
+                :locale    :de}
                invocation))
         (is (uuid? (:email-id invocation)))
         (is (= {:kind "send-email" :queue worker/email-queue-name :max-attempts 25 :state :available}
@@ -121,13 +122,16 @@
           (let [running (jobs-worker/start! sys)]
             (try
               (is (= {:state :retryable :attempt 1}
-                     (select-keys (queue-fixtures/await-state client (:id job) :retryable) [:state :attempt])))
-              (assert-original-delivery invocation (first @deliveries))
+                     (select-keys (queue-fixtures/await-state client (:id job) :retryable)
+                                  [:state :attempt])))
+              (assert-current-recipient-delivery invocation (first @deliveries))
+              (is (contains? (:metadata (drip/get-job client (:id job))) :email/prepared))
               @(d/transact conn [[:db/add [:gig/gig-id gig-id] :gig/location "Newest hall"]
                                  [:db/add [:member/member-id ada-id] :member/email "newest@example.test"]])
               (drip/retry-job client (:id job))
               (is (= {:state :completed :attempt 2}
-                     (select-keys (queue-fixtures/await-state client (:id job) :completed) [:state :attempt])))
+                     (select-keys (queue-fixtures/await-state client (:id job) :completed)
+                                  [:state :attempt])))
               (is (= 2 (count @deliveries)))
               (is (apply = @deliveries))
               (is (= invocation (:args (drip/get-job client (:id job)))))
@@ -164,7 +168,8 @@
                 (let [[deferred prepared] jobs
                       by-id               (into {} (map (juxt #(get-in % [:options :idempotency-key]) identity)) @deliveries)]
                   (is (= 2 (count @deliveries)))
-                  (assert-original-delivery (:args deferred) (get by-id (str (get-in deferred [:args :email-id]))))
+                  (assert-current-recipient-delivery (:args deferred)
+                                                     (get by-id (str (get-in deferred [:args :email-id]))))
                   (is (= [{:to   ["ada@example.test"] :subject "Hello Ada"           :html "<p>Hello Ada.</p>"
                            :text "Hello Ada."         :from    "sender@example.test"}]
                          (:messages (get by-id (str provider-fixtures/email-id)))))
@@ -186,7 +191,6 @@
                      (assoc valid :version 99)
                      (assoc-in valid [:arguments :gig-id] "invalid")
                      (assoc-in valid [:arguments :edited-attrs] [])
-                     (assoc-in valid [:arguments :member-ids] [(random-uuid)])
                      (assoc-in valid [:arguments :member-ids] [ada-id ada-id])
                      (assoc valid :email-id "invalid")
                      (dissoc valid :source-t)
@@ -295,7 +299,7 @@
                      (request sys (d/db conn)) false false (event-report (edit! conn)))]
           (is (empty? (drip/list-jobs client {}))))))))
 
-(deftest open-edn-invocations-preserve-types-and-extra-fields
+(deftest version-one-retries-preserve-the-stored-recipient-snapshot
   (queue-fixtures/with-queue
     (fn [{:keys [client] :as queue}]
       (let [conn       (seed!)
@@ -306,7 +310,8 @@
                         {:gig-id gig-id                                          :member-ids [ada-id] :edited-attrs [:gig/title]
                          :extra  {:a/uuid (random-uuid) :a/set #{:a/one :a/two}}})
             _          (drip/cancel-job client (:id initial))
-            invocation (assoc (:args initial) :extra :app/extra)
+            invocation (assoc (:args initial) :version 1 :extra :app/extra)
+            _changed   (change-live-data! conn)
             job        (drip/insert-job client "send-email" invocation :queue worker/email-queue-name)
             deliveries (atom [])]
         (with-redefs [lettermint/send-emails! (fn [_ messages options]
@@ -316,9 +321,10 @@
             (try
               (is (= {:state :completed :attempt 1 :args invocation}
                      (select-keys (queue-fixtures/await-state client (:id job) :completed) [:state :attempt :args])))
-              (is (= [{:recipients [["ada@example.test"]]
+              (is (= [{:recipients #{["ada@example.test"]}
                        :options    {:idempotency-key (str (:email-id invocation))}}]
-                     (mapv (fn [{:keys [messages options]}] {:recipients (mapv :to messages) :options options})
+                     (mapv (fn [{:keys [messages options]}]
+                             {:recipients (set (map :to messages)) :options options})
                            @deliveries)))
               (finally (jobs-worker/stop! running)))))))))
 
@@ -351,5 +357,5 @@
                   (doseq [job jobs]
                     (is (= :completed (:state (queue-fixtures/await-state client (:id job) :completed)))))
                   (is (= 1 (count @deliveries)))
-                  (assert-original-delivery invocation (first @deliveries))
+                  (assert-current-recipient-delivery invocation (first @deliveries))
                   (finally (jobs-worker/stop! running)))))))))))

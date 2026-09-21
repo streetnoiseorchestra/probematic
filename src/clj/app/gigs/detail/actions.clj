@@ -145,15 +145,13 @@
                                                                         show-committed))]
     [[:app.datastar/assoc-state show-committed-path show-committed?]]))
 
-(defn send-reminder-to-all-action [{:keys [db now] :as state} signals]
-  (let [gig-id     (util/ensure-uuid! (get-in signals [:gig-attendance :gig-id]))
-        member-ids (q/gig-reminder-member-ids db gig-id)]
-    (if (seq member-ids)
-      [[:db/transact []
-        {:jobs       [(mailers/job (assoc state :current-locale :de) ::mailers/gig-reminder
-                                   {:gig-id gig-id :member-ids member-ids})]
-         :on-success [[:app.datastar/assoc-state remind-all-queued-at-path now]]}]]
-      [])))
+(defn send-reminder-to-all-action
+  [{:keys [now] :as state} signals]
+  (let [gig-id (util/ensure-uuid! (get-in signals [:gig-attendance :gig-id]))]
+    [[:db/transact []
+      {:jobs       [(mailers/job (assoc state :current-locale :de) ::mailers/gig-reminder
+                                 {:gig-id gig-id})]
+       :on-success [[:app.datastar/assoc-state remind-all-queued-at-path now]]}]]))
 
 (def interaction-policies
   {::update-attendance-plan

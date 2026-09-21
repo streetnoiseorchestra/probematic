@@ -69,8 +69,7 @@
                        :env {:ig/system {:app.ig/profile :prod}})
           opts  (get-in (actions/update-gig-action state (valid-signals gig-id)) [0 2])]
       (is (= [(integrations/gig-job gig-id {:operation :updated :takeover-topic? false})
-              (mailers/job state ::mailers/gig-committed-update
-                           {:gig-id gig-id :member-ids [member-id]})]
+              (mailers/job state ::mailers/gig-committed-update {:gig-id gig-id})]
              (:jobs opts)))
       (is (nil? (:on-success opts)))
       (is (= [(integrations/gig-job gig-id {:operation :updated :takeover-topic? false})]

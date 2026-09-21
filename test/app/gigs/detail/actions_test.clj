@@ -258,13 +258,21 @@
                                 :next-member-id    (str next-member-id)
                                 :next-comment      ""}}))))))
 
-(deftest send-reminder-to-all-with-no-recipients-does-not-queue-mail
-  (let [{:keys [conn]} (tc/new-system "empty-gig-reminders")
-        gig-id         (random-uuid)]
-    (is (= []
-           (actions/send-reminder-to-all-action
-            {:db (d/db conn) :tr tr :now #inst "2026-04-28T10:00:00Z"}
-            {:gig-attendance {:gig-id (str gig-id)}})))))
+(deftest send-reminder-to-all-defers-empty-recipient-decision
+  (let [{:keys [conn]}  (tc/new-system "empty-gig-reminders")
+        gig-id          (random-uuid)
+        now             #inst "2026-04-28T10:00:00Z"
+        [[_ tx opts]]   (actions/send-reminder-to-all-action
+                         {:db (d/db conn) :tr tr :now now}
+                         {:gig-attendance {:gig-id (str gig-id)}})
+        [[kind args _]] (:jobs opts)]
+    (is (= [] tx))
+    (is (= "send-email" kind))
+    (is (= :app.email.mailers/gig-reminder (:mailer args)))
+    (is (= {:gig-id gig-id} (:arguments args)))
+    (is (= [[:app.datastar/assoc-state
+             [:gig-detail :attendance :remind-all-queued-at] now]]
+           (:on-success opts)))))
 
 (deftest toggle-attendance-committed-action-test
   (is (= [[:app.datastar/assoc-state

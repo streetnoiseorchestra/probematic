@@ -197,23 +197,21 @@
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]
-      (let [gig-tx-data (update-gig-tx-data params)
-            member-ids  (when (and notify? (config/prod-mode? (:env state)))
-                          (q/active-member-ids db))]
+      (let [gig-tx-data (update-gig-tx-data params)]
         (tap> [:gig-tx-data gig-tx-data])
         [[:db/transact
           gig-tx-data
           (cond-> {:transact-w-nils? true}
             (config/prod-mode? (:env state))
             (assoc :jobs [(integrations/gig-job gig-id {:operation :updated :takeover-topic? takeover-topic?})])
-            (seq member-ids)
+            (and notify? (config/prod-mode? (:env state)))
             (update :jobs conj (mailers/job state ::mailers/gig-committed-update
-                                            {:gig-id gig-id :member-ids member-ids})))]
+                                            {:gig-id gig-id})))]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]))))
 
 (defn create-gig-action
-  [{:keys [db tr] :as state} signals]
+  [{:keys [tr] :as state} signals]
   (let [params  (normalize-form (form-params signals))
         errors  (with-generic-top-error tr (validation-errors {:tr tr} params))
         notify? (form/normalize-bool (:notify? params))
@@ -221,17 +219,15 @@
     (if (seq errors)
       [support/clear-loading
        [:app.datastar/assoc-state [:gig-edit] (assoc params :_error errors)]]
-      (let [gig-id     (sq/generate-squuid)
-            params     (assoc params :gig-id (str gig-id))
-            member-ids (when (and notify? (config/prod-mode? (:env state)))
-                         (q/active-member-ids db))]
+      (let [gig-id (sq/generate-squuid)
+            params (assoc params :gig-id (str gig-id))]
         [[:db/transact
           (create-gig-tx-data params)
           (cond-> {}
             (config/prod-mode? (:env state))
             (assoc :jobs [(integrations/gig-job gig-id {:operation :created :thread? thread?})])
-            (seq member-ids)
-            (update :jobs conj (mailers/job state ::mailers/gig-created {:gig-id gig-id :member-ids member-ids})))]
+            (and notify? (config/prod-mode? (:env state)))
+            (update :jobs conj (mailers/job state ::mailers/gig-created {:gig-id gig-id})))]
          [:app.datastar/respond-sse
           [[:app.datastar.sse/redirect (urls/link-gig gig-id)]]]]))))
 

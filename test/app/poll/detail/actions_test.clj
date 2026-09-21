@@ -17,15 +17,20 @@
   (get-in (second effects) [2 :_error :_top :error]))
 
 (deftest open-poll-action-test
-  (testing "opens a draft poll and returns the poll-opened email effect"
+  (testing "opens a draft poll and returns the deferred poll-opened email effect"
     (let [{:keys [conn member-id]} (tc/new-system "poll-open-action")
-          {:keys [poll-id]}        (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})]
-      (is (= [[:db/transact
-               [[:db/add (pts/poll-ref poll-id) :poll/poll-status :poll.status/open]]
-               {:jobs [] :on-success [support/clear-loading]}]]
-             (actions/open-poll-action
-              (pts/action-state conn member-id)
-              (pts/poll-detail-signals poll-id)))))))
+          {:keys [poll-id]}        (pts/seed-poll! conn member-id {:poll/poll-status :poll.status/draft})
+          [[effect tx opts]]       (actions/open-poll-action
+                                    (pts/action-state conn member-id)
+                                    (pts/poll-detail-signals poll-id))
+          [[kind args options]]    (:jobs opts)]
+      (is (= :db/transact effect))
+      (is (= [[:db/add (pts/poll-ref poll-id) :poll/poll-status :poll.status/open]] tx))
+      (is (= "send-email" kind))
+      (is (= :app.email.mailers/poll-opened (:mailer args)))
+      (is (= {:poll-id poll-id} (:arguments args)))
+      (is (= {:queue "email-send-queue" :max-attempts 25} options))
+      (is (= [support/clear-loading] (:on-success opts))))))
 
 (deftest close-poll-action-test
   (testing "closes an open poll and stores the close time"

@@ -43,7 +43,8 @@
        (reduce group-processed-reminders
                {:to-cancel #{} :to-send {}})))
 
-(defn- queue-due-reminders! [system as-of]
+(defn- queue-due-reminders!
+  [system as-of]
   (writer/call!
    (get-in system [:frame-loop :write-runner])
    (fn []
@@ -58,13 +59,14 @@
                       [:db/add [:reminder/reminder-id reminder-id] :reminder/reminder-status :reminder-status/queued]))
            intents (mapv (fn [[gig-id group]]
                            (mailers/job {:current-locale :de} ::mailers/gig-reminder
-                                        {:gig-id     gig-id
-                                         :member-ids (vec (distinct (map #(get-in % [:member :member/member-id]) group)))}))
+                                        {:gig-id       gig-id
+                                         :reminder-ids (mapv :reminder-id group)}))
                          to-send)]
        (when (seq tx-data)
          (datomic/transact conn
                            {:tx-data (conj (nexus/batch-transactions [[tx-data {:jobs intents}]])
-                                           {:db/id        "datomic.tx"    :audit/action ::queue-due-reminders
+                                           {:db/id        "datomic.tx"
+                                            :audit/action ::queue-due-reminders
                                             :audit/origin :app.origin/job})}))))))
 
 (defn send-reminders!

@@ -331,10 +331,10 @@
           (result-effects {:status :empty})
           [[:db/transact []
             {:jobs       [(mailers/job state ::mailers/survey-reminder
-                                       {:survey-id  (:insurance.survey/survey-id survey)
-                                        :sender-id  current-member-id
-                                        :member-ids (mapv #(get-in % [:insurance.survey.response/member :member/member-id]) incomplete)})]
-             :on-success (result-effects {:status :queued :count-queued (count incomplete)})}]])))))
+                                       {:survey-id (:insurance.survey/survey-id survey)
+                                        :sender-id current-member-id})]
+             :on-success (result-effects {:status       :queued
+                                          :count-queued (count incomplete)})}]])))))
 
 (def actions
   {::close-survey     #'close-survey-action

@@ -387,7 +387,7 @@
     (is (= [] tx))
     (is (= "send-email" kind))
     (is (= :app.email.mailers/survey-reminder (:mailer args)))
-    (is (= {:survey-id survey-id :sender-id member-id :member-ids [member-id]} (:arguments args)))
+    (is (= {:survey-id survey-id :sender-id member-id} (:arguments args)))
     (is (= "email-send-queue" (:queue options)))
     (is (= [support/clear-loading
             [:app.datastar/assoc-state [:insurance-survey-admin :result] {:status :queued :count-queued 1}]]

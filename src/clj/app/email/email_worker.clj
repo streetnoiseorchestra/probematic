@@ -125,14 +125,22 @@
     (seq (:email/attachments email))
     (update :email/attachments #(mapv (fn [attachment] (update attachment :content f)) %))))
 
-(defn- prepare-job-email [sys {:keys [prepared-email] :as args}]
-  (if prepared-email
+(defn- prepare-job-email
+  [sys client {:keys [id args metadata]}]
+  (if-let [prepared-email (or (:prepared-email args) (:email/prepared metadata))]
     (map-attachment-content byte-array prepared-email)
-    (mailers/prepare! sys args)))
+    (let [message (mailers/prepare! sys args)]
+      (when-not (= ::mailers/skip message)
+        (drip/update-job client id
+                         {:metadata (assoc metadata
+                                           :email/prepared
+                                           (map-attachment-content vec message))}))
+      message)))
 
-(defn job-handler [sys client {:keys [id args attempt]}]
+(defn job-handler
+  [sys client {:keys [id attempt] :as job}]
   (let [prepared (try
-                   (let [message (prepare-job-email sys args)]
+                   (let [message (prepare-job-email sys client job)]
                      (if (= ::mailers/skip message) {:status :skipped} {:message message}))
                    (catch Exception e
                      (let [permanent? (:email/permanent? (ex-data e))]
@@ -169,7 +177,7 @@
   `sys` supplies `:job-queue`, `:datomic-conn`, and `:current-locale`.
   `arguments` must satisfy the registered mailer's EDN contract."
   [{:keys [job-queue datomic-conn current-locale]} tx-result mailer arguments]
-  (let [invocation {:version   1
+  (let [invocation {:version   2
                     :mailer    mailer
                     :arguments arguments
                     :source-t  (mailers/source-t datomic-conn tx-result)
