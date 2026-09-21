@@ -17,8 +17,11 @@
   (fixtures/with-runtime
     (fn [runtime client conn]
       (let [member-id (random-uuid)
-            resources {:datomic-conn conn                               :write-runner (:write-runner runtime)
-                       :clock        (constantly cells/transitioned-at)}]
+            resources {:datomic-conn conn
+                       :write-runner (:write-runner runtime)
+                       :clock        (constantly cells/transitioned-at)
+                       :audit        {:audit/action ::jobs/claim
+                                      :audit/origin :app.origin/browser}}]
         (writer/call! (:write-runner runtime)
                       #(cells/seed-invitation! conn member-id
                                                {:status cells/pending        :generation 1
