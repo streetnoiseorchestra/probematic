@@ -169,7 +169,7 @@
       (let [thrown   (try
                        (worker/start! {:job-queue {:client ::client}})
                        nil
-                       (catch Throwable error
+                       (catch Exception error
                          error))
             failures (:incomplete-worker-shutdowns (ex-data thrown))]
         (is (= 3 @start-count))

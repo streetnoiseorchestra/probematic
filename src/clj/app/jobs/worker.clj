@@ -39,14 +39,14 @@
      policy-actions/email-job-kind (partial policy-mail/handle! system)
      "send-email"                  (partial email/job-handler system)}))
 
-(defn- shutdown-failures [workers]
+(defn- stop-workers! [workers]
   (reduce
    (fn [failures worker]
      (try
        (if (true? (drip/stop-worker! worker :drain true))
          failures
          (conj failures {:worker worker}))
-       (catch Throwable error
+       (catch Exception error
          (conj failures {:worker worker
                          :error  error}))))
    []
@@ -68,8 +68,8 @@
       (doseq [queue queues]
         (vswap! started conj (drip/start-worker! (assoc opts :queues [queue]))))
       @started
-      (catch Throwable error
-        (let [failures (shutdown-failures (rseq @started))]
+      (catch Exception error
+        (let [failures (stop-workers! (rseq @started))]
           (if (seq failures)
             (throw (ex-info "Job workers failed to start and cleanup did not complete"
                             {:incomplete-worker-shutdowns failures}
@@ -80,6 +80,6 @@
   "Drains and stops `workers`, or does nothing when it is absent."
   [workers]
   (when workers
-    (when-let [failures (not-empty (shutdown-failures workers))]
+    (when-let [failures (not-empty (stop-workers! workers))]
       (throw (ex-info "Job workers did not stop"
                       {:incomplete-worker-shutdowns failures})))))

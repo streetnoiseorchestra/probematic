@@ -148,7 +148,7 @@
       (do
         (track-email-error! message attempt (s/explain-human QueuedEmailMessage message) nil)
         {:status :error}))
-    (catch Throwable e
+    (catch Exception e
       (tap> e)
       (track-email-error! message attempt nil e)
       {:status :error})))
