@@ -10,6 +10,7 @@
 
 (defn state-for [{:keys [conn]} page-state]
   {:db         (d/db conn)
+   :env        {:ig/system {:app.ig/profile :prod}}
    :page-state page-state})
 
 (defn seed-song-and-section! [conn song-id]
@@ -57,7 +58,8 @@
                  :sheet-music/section  [:section/name "Trumpets"]
                  :sheet-music/title    "Bella Ciao Trumpet.pdf"
                  :file/webdav-path     "Noten - Scores/Bella Ciao/Bella Ciao Trumpet.pdf"}]
-               {:on-success [[:app.songs/trigger-song-edited song-id]]}]
+               {:jobs [["sync-song" {:song-id song-id}
+                        {:queue "start-within-15m" :max-attempts 25}]]}]
               [:app.datastar/assoc-state [:file-browser :song-sheet-music] nil]
               [:app.datastar/respond-sse
                [[:app.datastar.sse/merge-signals
@@ -80,10 +82,18 @@
             {:file-browser {:picker-id "song-sheet-music"}})))))
 
 (deftest remove-sheet-music-action-test
-  (is (= [[:db/transact
-           [[:db/retractEntity [:sheet-music/sheet-id #uuid "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]]]
-           {:on-success [[:app.songs/trigger-song-edited #uuid "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"]]}]]
-         (actions/remove-sheet-music-action
-          {}
-          {:file-browser {:song-id  "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-                          :sheet-id "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}}))))
+  (let [song-id  #uuid "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+        sheet-id #uuid "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        signals  {:file-browser {:song-id (str song-id) :sheet-id (str sheet-id)}}]
+    (is (= [[:db/transact
+             [[:db/retractEntity [:sheet-music/sheet-id sheet-id]]]
+             {:jobs [["sync-song" {:song-id song-id}
+                      {:queue "start-within-15m" :max-attempts 25}]]}]]
+           (actions/remove-sheet-music-action
+            {:env {:ig/system {:app.ig/profile :prod}}}
+            signals)))
+    (is (= {}
+           (get-in (actions/remove-sheet-music-action
+                    {:env {:ig/system {:app.ig/profile :dev}}}
+                    signals)
+                   [0 2])))))

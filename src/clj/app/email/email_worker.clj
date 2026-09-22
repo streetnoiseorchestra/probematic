@@ -209,20 +209,3 @@
                    {:prepared-email (map-attachment-content vec email)}
                    :queue email-queue-name
                    :max-attempts 25))
-
-(defn queue-mailer!
-  "Queues a named mailer from a successful transaction report without rendering.
-
-  `sys` supplies `:job-queue`, `:datomic-conn`, and `:current-locale`.
-  `arguments` must satisfy the registered mailer's EDN contract."
-  [{:keys [job-queue datomic-conn current-locale]} tx-result mailer arguments]
-  (let [invocation {:version   2
-                    :mailer    mailer
-                    :arguments arguments
-                    :source-t  (mailers/source-t datomic-conn tx-result)
-                    :email-id  (random-uuid)
-                    :locale    (or current-locale :en)}]
-    (mailers/validate! invocation)
-    (drip/insert-job (:client job-queue) "send-email" invocation
-                     :queue email-queue-name
-                     :max-attempts 25)))

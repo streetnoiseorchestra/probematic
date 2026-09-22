@@ -163,21 +163,13 @@
                     :app.datastar/open-form
                     :app.datastar/close-form
                     :app.datastar/redirect}))
-    (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-details-edited))
-    (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-created))
-    (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-deleted))
-    (is (contains? (:nexus/effects nexus-config) :app.gigs/trigger-gig-edited))
-    (is (contains? (:nexus/effects nexus-config) :app.gigs/recalc-play-stats))
-    (is (contains? (:nexus/effects nexus-config) :app.gigs/send-reminder-to-all))
-    (is (contains? (:nexus/effects nexus-config) :app.songs/trigger-sync-all-songs))
     (is (contains? (:nexus/effects nexus-config) :app.members/invite-member))
     (is (contains? (:nexus/effects nexus-config) :app.members/set-keycloak-account-enabled))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/reissue-invitation))
     (is (contains? (:nexus/effects nexus-config)
                    :app.members.index/reissue-revoked-invitation))
-    (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))
-    (is (contains? (:nexus/effects nexus-config) :app.poll/send-poll-opened))))
+    (is (contains? (:nexus/effects nexus-config) :app.members.index/delete-invitation))))
 
 (deftest system-config-wires-nexus-into-the-handler-system
   (let [cfg (app.system/system-config {:profile :test})]

@@ -1,4 +1,6 @@
-(ns app.songs.index.actions)
+(ns app.songs.index.actions
+  (:require
+   [app.jobs.integrations :as integrations]))
 
 (def valid-repertoire-filters
   #{"all" "current" "old"})
@@ -25,7 +27,7 @@
 
 (defn force-sync-songs-action
   [_state _signals]
-  [[:app.songs/trigger-sync-all-songs]])
+  [[:db/transact [] {:jobs [integrations/sync-all-songs-job]}]])
 
 (def actions
   {::set-search-phrase     #'set-search-phrase-action

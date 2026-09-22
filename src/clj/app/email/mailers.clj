@@ -224,29 +224,6 @@
                       {:email/permanent? true :email/reason :invalid-invocation})))
     prepare))
 
-(defn source-t
-  "Returns the t of a committed Peer transaction report.
-
-  Rejects database filters and uncommitted transaction reports. The report must
-  come directly from the successful transaction, not a reconstructed request map."
-  [conn {:keys [db-after tx-data]}]
-  (when-not (and (instance? datomic.Database db-after)
-                 (not (d/is-filtered db-after))
-                 (not (.isHistory ^datomic.Database db-after))
-                 (nil? (d/as-of-t db-after))
-                 (nil? (d/since-t db-after))
-                 (seq tx-data))
-    (throw (ex-info "Email requires a committed transaction report" {:email/permanent? true})))
-  (let [t         (d/basis-t db-after)
-        committed (d/db conn)
-        logged    (when (<= t (d/basis-t committed))
-                    (first (d/tx-range (d/log conn) t (inc t))))]
-    (when-not (and (= (.id ^datomic.Database db-after) (.id ^datomic.Database committed))
-                   (= t (:t logged))
-                   (= (set tx-data) (set (:data logged))))
-      (throw (ex-info "Email source transaction is not committed" {:email/permanent? true})))
-    t))
-
 (defn prepare!
   "Reconstructs historical content and current recipients, then prepares a message.
 

@@ -28,6 +28,9 @@
 (deftest force-sync-songs-action-test
   (let [action (get actions/actions ::actions/force-sync-songs)]
     (is (some? action))
-    (is (= [[:app.songs/trigger-sync-all-songs]]
+    (is (= [[:db/transact
+             []
+             {:jobs [["sync-all-songs" {}
+                      {:queue "start-within-15m" :max-attempts 25}]]}]]
            (when action
              (action {} {}))))))

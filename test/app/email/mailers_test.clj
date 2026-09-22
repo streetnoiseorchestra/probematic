@@ -1,18 +1,15 @@
 (ns app.email.mailers-test
   (:require
-   [app.email :as email]
    [app.email.email-worker :as worker]
-   [app.email.mailers :as mailers]
-   [app.jobs.log-dispatch :as log-dispatch]
-   [app.nexus :as nexus]
    [app.email.email-worker-test :as provider-fixtures]
    [app.email.job-queue-test :as queue-fixtures]
    [app.email.lettermint :as lettermint]
+   [app.email.mailers :as mailers]
    [app.i18n :as i18n]
    [app.job-queue :as job-queue]
-   [app.jobs.gig-events :as gig-events]
+   [app.jobs.log-dispatch :as log-dispatch]
    [app.jobs.worker :as jobs-worker]
-   [app.queries :as q]
+   [app.nexus :as nexus]
    [app.test-common :as tc]
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -51,24 +48,19 @@
                 :testing-addresses-only? false
                 :timeout-ms              2000}})
 
-(defn- request [sys db]
-  {:system sys :db db :datomic-conn (get-in sys [:datomic :conn]) :current-locale :de})
+(defn- notify-edit! [sys tx-data]
+  (let [conn   (get-in sys [:datomic :conn])
+        client (get-in sys [:job-queue :client])
+        intent (mailers/job {:current-locale :de} ::mailers/gig-committed-update
+                            {:gig-id gig-id :member-ids [ada-id grace-id]})]
+    (log-dispatch/initialize! conn client (d/basis-t (d/db conn)))
+    (nexus/db-transact-fx {} {:system sys :request {}} [[tx-data {:jobs [intent]}]])
+    (log-dispatch/dispatch-pending! conn client 128)
+    (first (drip/list-jobs client {:state :available}))))
 
-(defn- event-report [report]
-  (assoc report
-         :gig-before (q/retrieve-gig (:db-before report) gig-id)
-         :gig (q/retrieve-gig (:db-after report) gig-id)))
-
-(defn- notify-edit! [req report]
-  ;; Close the real timer before forum/calendar work runs. Email enqueueing is
-  ;; synchronous; no email, queue, database, or rendering function is replaced.
-  (with-open [^java.lang.AutoCloseable _scheduled
-              (gig-events/trigger-gig-details-edited req true false (event-report report))]
-    (first (drip/list-jobs (get-in req [:system :job-queue :client]) {:state :available}))))
-
-(defn- edit! [conn]
-  @(d/transact conn [[:db/add [:gig/gig-id gig-id] :gig/title "Committed concert"]
-                     [:db/add [:gig/gig-id gig-id] :gig/location "Committed hall"]]))
+(def ^:private edit-tx-data
+  [[:db/add [:gig/gig-id gig-id] :gig/title "Committed concert"]
+   [:db/add [:gig/gig-id gig-id] :gig/location "Committed hall"]])
 
 (defn- change-live-data! [conn]
   @(d/transact conn [[:db/add [:gig/gig-id gig-id] :gig/title "Later concert"]
@@ -96,17 +88,15 @@
     (fn [{:keys [client] :as queue}]
       (let [conn       (seed!)
             sys        (runtime queue conn)
-            req        (request sys (d/db conn))
-            report     (edit! conn)
+            job        (notify-edit! sys edit-tx-data)
+            source-t   (d/basis-t (d/db conn))
             _          (change-live-data! conn)
-            job        (notify-edit! req report)
             invocation (:args (drip/get-job client (:id job)))
             deliveries (atom [])]
         (is (= {:version   2
-                :mailer    :app.email.mailers/gig-updated
-                :arguments {:gig-id       gig-id
-                            :edited-attrs [:gig/location :gig/title]}
-                :source-t  (d/basis-t (:db-after report))
+                :mailer    :app.email.mailers/gig-committed-update
+                :arguments {:gig-id gig-id :member-ids [ada-id grace-id]}
+                :source-t  source-t
                 :email-id  (:email-id invocation)
                 :locale    :de}
                invocation))
@@ -146,7 +136,7 @@
       (let [jobs       (let [queue (job-queue/start! config)]
                          (try
                            (let [sys      (runtime queue conn)
-                                 job      (notify-edit! (request sys (d/db conn)) (edit! conn))
+                                 job      (notify-edit! sys edit-tx-data)
                                  prepared (worker/queue-mail! queue provider-fixtures/single-queued-email)]
                              [job prepared])
                            (finally (job-queue/stop! queue))))
@@ -183,19 +173,17 @@
     (fn [{:keys [client] :as queue}]
       (let [conn    (seed!)
             sys     (runtime queue conn)
-            job     (notify-edit! (request sys (d/db conn)) (edit! conn))
+            job     (notify-edit! sys edit-tx-data)
             valid   (:args job)
             _       (drip/cancel-job client (:id job))
             calls   (atom [])
             invalid [(assoc valid :mailer "clojure.core/eval")
                      (assoc valid :version 99)
                      (assoc-in valid [:arguments :gig-id] "invalid")
-                     (assoc-in valid [:arguments :edited-attrs] [])
                      (assoc-in valid [:arguments :member-ids] [ada-id ada-id])
                      (assoc valid :email-id "invalid")
                      (dissoc valid :source-t)
-                     {:payload "retired-format"}
-                     (assoc-in valid [:arguments :gig-id] (random-uuid))]]
+                     {:payload "retired-format"}]]
         (with-redefs [lettermint/send-emails! (fn [& args] (swap! calls conj args) {:result :email-sent})]
           (let [jobs    (mapv #(drip/insert-job client "send-email" % :queue worker/email-queue-name) invalid)
                 running (jobs-worker/start! sys)]
@@ -206,38 +194,12 @@
               (is (empty? @calls))
               (finally (jobs-worker/stop! running)))))))))
 
-(deftest uncommitted-and-filtered-sources-are-not-enqueued
-  (queue-fixtures/with-queue
-    (fn [{:keys [client] :as queue}]
-      (let [conn         (seed!)
-            sys          (runtime queue conn)
-            req          (request sys (d/db conn))
-            report       (edit! conn)
-            db           (:db-after report)
-            hypothetical (d/with db [[:db/add [:gig/gig-id gig-id] :gig/title "Uncommitted"]])
-            _            (change-live-data! conn)
-            arguments    {:gig-id gig-id :member-ids [ada-id grace-id] :edited-attrs [:gig/title]}
-            producer     {:job-queue queue :datomic-conn conn :current-locale :de}]
-        (doseq [source [hypothetical
-                        (assoc report :db-after (d/as-of db (d/basis-t db)))
-                        (assoc report :db-after (d/since db 1000))
-                        (assoc report :db-after (d/filter db (fn [_ _] true)))
-                        (assoc report :db-after (d/history db))]]
-          (is (thrown? Exception (worker/queue-mailer! producer source :app.email.mailers/gig-updated arguments))))
-        (doseq [invalid [(assoc arguments :gig-id "invalid")
-                         (assoc arguments :edited-attrs [])
-                         (assoc arguments :member-ids (mapv (fn [_] (random-uuid)) (range 501)))]]
-          (is (thrown? Exception (worker/queue-mailer! producer report :app.email.mailers/gig-updated invalid))))
-        (is (thrown? Exception (worker/queue-mailer! producer report "unknown" arguments)))
-        (is (nil? (email/send-gig-updated! req report gig-id [])))
-        (is (empty? (drip/list-jobs client {})))))))
-
 (deftest unobserved-snapshots-retry-and-can-recover
   (queue-fixtures/with-queue
     (fn [{:keys [client] :as queue}]
       (let [conn       (seed!)
             sys        (runtime queue conn)
-            initial    (notify-edit! (request sys (d/db conn)) (edit! conn))
+            initial    (notify-edit! sys edit-tx-data)
             _          (drip/cancel-job client (:id initial))
             target-t   (d/next-t (d/db conn))
             invocation (assoc (:args initial) :source-t target-t)
@@ -276,11 +238,13 @@
     (fn [{:keys [client] :as queue}]
       (let [conn       (seed!)
             sys        (assoc-in (runtime queue conn) [:lettermint :demo-mode?] true)
-            req        (request sys (d/db conn))
-            report     @(d/transact conn [[:db/retract [:gig/gig-id gig-id] :gig/location "Original hall"]])
-            job        (notify-edit! req report)
+            job        (notify-edit! sys
+                                     [[:db/retract [:gig/gig-id gig-id]
+                                       :gig/location "Original hall"]])
             deliveries (atom [])]
-        (is (= [:gig/location] (get-in job [:args :arguments :edited-attrs])))
+        (is (= {:mailer    ::mailers/gig-committed-update
+                :arguments {:gig-id gig-id :member-ids [ada-id grace-id]}}
+               (select-keys (:args job) [:mailer :arguments])))
         (with-redefs [lettermint/send-emails! (fn [& args] (swap! deliveries conj args))]
           (let [running (jobs-worker/start! sys)]
             (try
@@ -289,28 +253,20 @@
               (is (empty? @deliveries))
               (finally (jobs-worker/stop! running)))))))))
 
-(deftest notification-opt-out-does-not-enqueue
-  (queue-fixtures/with-queue
-    (fn [{:keys [client] :as queue}]
-      (let [conn (seed!)
-            sys  (runtime queue conn)]
-        (with-open [^java.lang.AutoCloseable _scheduled
-                    (gig-events/trigger-gig-details-edited
-                     (request sys (d/db conn)) false false (event-report (edit! conn)))]
-          (is (empty? (drip/list-jobs client {}))))))))
-
 (deftest version-one-retries-preserve-the-stored-recipient-snapshot
   (queue-fixtures/with-queue
     (fn [{:keys [client] :as queue}]
       (let [conn       (seed!)
             sys        (runtime queue conn)
-            initial    (worker/queue-mailer!
-                        {:job-queue queue :datomic-conn conn :current-locale :de}
-                        (edit! conn) :app.email.mailers/gig-updated
-                        {:gig-id gig-id                                          :member-ids [ada-id] :edited-attrs [:gig/title]
-                         :extra  {:a/uuid (random-uuid) :a/set #{:a/one :a/two}}})
+            initial    (notify-edit! sys edit-tx-data)
             _          (drip/cancel-job client (:id initial))
-            invocation (assoc (:args initial) :version 1 :extra :app/extra)
+            invocation (-> (:args initial)
+                           (assoc :version 1
+                                  :mailer ::mailers/gig-updated
+                                  :arguments {:gig-id       gig-id
+                                              :member-ids   [ada-id]
+                                              :edited-attrs [:gig/title]}
+                                  :extra :app/extra))
             _changed   (change-live-data! conn)
             job        (drip/insert-job client "send-email" invocation :queue worker/email-queue-name)
             deliveries (atom [])]

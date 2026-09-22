@@ -5,22 +5,19 @@
    [app.datomic :as datomic]
    [app.datastar :as datastar]
    [app.errors :as errors]
-   [app.game-loop :as game]
-   [app.jobs.log-dispatch :as log-dispatch]
    [app.file-browser.actions]
+   [app.game-loop :as game]
    [app.gigs.actions]
    [app.gigs.detail.actions :as gig-detail]
-   [app.gigs.effects :as gigs.effects]
    [app.insurance.actions]
    [app.insurance.effects :as insurance.effects]
+   [app.jobs.log-dispatch :as log-dispatch]
    [app.members.actions]
    [app.members.effects :as members.effects]
-   [app.probeplan.actions]
    [app.poll.actions]
-   [app.poll.effects :as poll.effects]
+   [app.probeplan.actions]
    [app.settings.actions]
    [app.songs.actions]
-   [app.songs.effects :as songs.effects]
    [clojure.walk :as walk]
    [com.yetanalytics.squuid :as sq]
    [datomic.api :as d]
@@ -338,23 +335,13 @@
                          :app.datastar/respond-sse                     (with-meta respond-sse-fx {:nexus/batch true})
                          :app.insurance/send-payment-notifications     insurance.effects/send-payment-notifications-fx
                          :app.insurance/send-survey-notifications      insurance.effects/send-survey-notifications-fx
-                         :app.gigs/trigger-gig-details-edited          gigs.effects/trigger-gig-details-edited-fx
-                         :app.gigs/trigger-gig-created                 gigs.effects/trigger-gig-created-fx
-                         :app.gigs/trigger-gig-deleted                 gigs.effects/trigger-gig-deleted-fx
-                         :app.gigs/trigger-gig-edited                  gigs.effects/trigger-gig-edited-fx
-                         :app.gigs/recalc-play-stats                   gigs.effects/recalc-play-stats-fx
-                         :app.gigs/send-reminder-to-all                gigs.effects/send-reminder-to-all-fx
-                         :app.songs/trigger-song-edited                songs.effects/trigger-song-edited-fx
-                         :app.songs/trigger-sync-all-songs             songs.effects/trigger-sync-all-songs-fx
-                         :app.songs/recalc-play-stats                  songs.effects/recalc-play-stats-fx
                          :app.members/invite-member                    members.effects/invite-member-fx
                          :app.members/update-keycloak-meta             update-keycloak-meta-fx
                          :app.members/set-keycloak-account-enabled     set-keycloak-account-enabled-fx
                          :app.members.index/resend-invitation          resend-invitation-fx
                          :app.members.index/reissue-invitation         reissue-invitation-fx
                          :app.members.index/reissue-revoked-invitation reissue-revoked-invitation-fx
-                         :app.members.index/delete-invitation          delete-invitation-fx
-                         :app.poll/send-poll-opened                    poll.effects/send-poll-opened-fx}
+                         :app.members.index/delete-invitation          delete-invitation-fx}
    :nexus/actions       (merge app.account.actions/actions
                                app.settings.actions/actions
                                app.members.actions/actions
