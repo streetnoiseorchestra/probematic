@@ -6,7 +6,6 @@
             [app.config :as config]
             [app.datomic.system :as datomic]
             [app.sqlite :as sqlite]
-            [app.email.email-worker :as email-worker]
             [app.email.lettermint :as lettermint]
             [app.errors :as error]
             [app.filestore :as filestore]
@@ -15,16 +14,18 @@
             [app.job-queue :as job-queue]
             [app.jobs :as jobs]
             [app.keycloak :as keycloak]
+            [app.game-loop.lifecycle :as frame-lifecycle]
+            [app.jobs.worker :as job-worker]
+            [app.write-runner :as writer]
+            [s-exp.drip :as drip]
             [app.nexus :as app-nexus]
             [app.routes :as routes]
             [app.sardine :as sardine]
-            [app.schemas :as s]
             [com.brunobonacci.mulog :as μ]
             [integrant.core :as ig]
             [nrepl.server :as nrepl]
             [ol.jobs.ig]
-            [app.system :as system]
-            [app.datastar]))
+            [app.system :as system]))
 (defmethod ig/init-key ::profile [_ profile]
   profile)
 
@@ -42,6 +43,19 @@
 (defmethod ig/init-key ::nexus
   [_ _config]
   (app-nexus/nexus))
+
+(defmethod ig/init-key ::write-runner [_ _]
+  (writer/create))
+
+(defmethod ig/halt-key! ::write-runner [_ control]
+  (when control
+    (writer/close! control)))
+
+(defmethod ig/init-key ::frame-loop [_ system]
+  (frame-lifecycle/start! system))
+
+(defmethod ig/halt-key! ::frame-loop [_ runtime]
+  (frame-lifecycle/stop! runtime))
 
 (defmethod ig/init-key :app.ig.router/routes
   [_ system]
@@ -93,6 +107,19 @@
   [_ config]
   (job-queue/start! config))
 
+(defmethod ig/init-key ::job-maintenance [_ {:keys [job-queue]}]
+  (drip/start-maintenance-worker! {:client (:client job-queue) :queues []}))
+
+(defmethod ig/init-key ::job-worker [_ system]
+  (job-worker/start! system))
+
+(defmethod ig/halt-key! ::job-worker [_ worker]
+  (job-worker/stop! worker))
+
+(defmethod ig/halt-key! ::job-maintenance [_ maintenance]
+  (when-not (drip/stop-maintenance-worker! maintenance)
+    (throw (ex-info "Job queue maintenance did not stop" {}))))
+
 (defmethod ig/halt-key! ::job-queue
   [_ queue]
   (job-queue/stop! queue))
@@ -109,23 +136,8 @@
   [_ {:keys [client]}]
   (sardine/shutdown client))
 
-(defmethod ig/init-key ::lettermint
-  [_ {:keys [env]}]
-  (let [runtime-config (:lettermint env)]
-    (when-not (s/valid? lettermint/RuntimeConfig runtime-config)
-      (s/throw-error "Invalid Lettermint runtime configuration."
-                     nil
-                     lettermint/RuntimeConfig
-                     (dissoc runtime-config :project-api-token)))
-    runtime-config))
-
-(defmethod ig/init-key ::email-worker
-  [_ sys]
-  (email-worker/start! sys))
-
-(defmethod ig/halt-key! ::email-worker
-  [_ sys]
-  (email-worker/stop! sys))
+(defmethod ig/init-key ::lettermint [_ system]
+  (lettermint/start-component! system))
 
 (defmethod ig/init-key ::oauth2
   [_ sys]

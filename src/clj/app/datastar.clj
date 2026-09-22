@@ -21,28 +21,140 @@
 (ns app.datastar
   (:require
    [app.brotli :as br]
-   [app.errors :as error]
-   [app.html :as html]
+   [app.game-loop :as game]
    [app.urls :as urls]
-   [app.util :as util]
    [buddy.core.codecs :as codecs]
    [camel-snake-kebab.core :as csk]
-   [chime.core :as chime]
-   [clojure.core.async :as a]
    [clojure.string :as str]
    [com.fulcrologic.guardrails.malli.core :refer [=> >defn]]
-   [datomic.api :as d]
-   [integrant.core :as ig]
    [jsonista.core :as j]
    [starfederation.datastar.clojure.adapter.common :as d*com]
    [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
    [starfederation.datastar.clojure.api :as d*]
+   [starfederation.datastar.clojure.expressions :refer [->js ->js-str]]
    [tick.core :as t])
   (:import
-   [java.util.concurrent BlockingQueue]))
+   [java.util.concurrent ConcurrentHashMap]))
 
 (defn ->signals [m]
   (j/write-value-as-string m))
+
+;; Pending interactions: submission, admission, and committed-frame acknowledgment.
+
+(defn interaction-key
+  "Returns a stable key from a policy's scope and UUID target fields."
+  [{:keys [scope targets]} params]
+  (str (name scope) ":"
+       (str/join ":" (map (fn [k]
+                            (or (some-> (get params k) str parse-uuid)
+                                (throw (ex-info "Missing interaction target" {:status 400 :target k}))))
+                          targets))))
+
+(defn request-interaction
+  "Validates optional interaction metadata against the registered policy and connection."
+  [policies action signals token]
+  (when-let [{:keys [key revision conn-id]} (:interaction signals)]
+    (let [policy (get policies action)]
+      (when-not (and policy
+                     (integer? revision) (<= 1 revision 9007199254740991)
+                     (= key (interaction-key policy (get signals (:signals policy)))))
+        (throw (ex-info "Invalid interaction" {:status 400})))
+      (when-not (= conn-id (str token))
+        (throw (ex-info "Replaced interaction connection" {:status 409})))
+      {:key key :revision revision :replace? (:replace? policy)})))
+
+(defn interaction-decision
+  "Returns :execute or a terminal outcome for a connection-scoped submission.
+
+  Retain only the latest revision/outcome per interaction key. Older setters
+  are superseded. Older non-setters are explicitly rejected because their
+  history is unknown; they must not execute again or silently succeed.
+  Call and record the execution outcome on the single writer."
+  [ledger {:keys [key revision replace?]}]
+  (let [latest (get ledger key)]
+    (cond
+      (or (nil? latest) (> revision (:revision latest))) :execute
+      (= revision (:revision latest)) (:outcome latest)
+      replace? :superseded
+      :else :rejected)))
+
+(defn pending-expr [key]
+  ;; `in` tracks sparse key changes through Datastar's Proxy; Object.hasOwn does not.
+  (->js (js* "(~{} in ~{})" ~key $_pending)))
+
+(defn blocked-expr [{:keys [block group]} key]
+  (let [busy? (case block
+                :self (pending-expr key)
+                :group (->js ($_busy ~(name group)))
+                false)]
+    (->js (or $_interrupted (not $_conn-id) ~busy?))))
+
+(defn submit-js
+  "Builds a Datastar submission with frozen arguments and sparse pending state.
+
+  `values` maps argument keys to trusted JavaScript expressions, not user input."
+  [url {:keys [signals group] :as policy} params values]
+  (let [key       (interaction-key policy params)
+        arguments (merge (update-vals params #(if (uuid? %) (str %) %))
+                         (update-vals values #(->js (expr/raw ~%))))]
+    (->js-str
+     (when (not ~(blocked-expr policy key))
+       (set! $_failed false)
+       (set! $_next (+ $_next 1))
+       (let [revision $_next
+             args     ~arguments
+             payload  {"tab-id" $tab-id :interaction {:key ~key :revision revision :conn-id $_conn-id}}]
+         (aset $_pending ~key {:revision revision :group ~(name group) :args args})
+         (aset payload ~(name signals) args)
+         (@post ~url {:requestCancellation "disabled" :retry "never" :payload payload}))))))
+
+(defn page-attrs
+  "Initializes private bookkeeping once and computes each exclusion group once."
+  [policies]
+  (merge
+   {:data-signals__ifmissing (->signals
+                              {:_next          0
+                               :_pending       {}
+                               :_conn-id       ""
+                               :_frame-conn-id ""
+                               :_stream-ended  false
+                               :_acks          []
+                               :_interrupted   false
+                               :_failed        false})
+    :data-effect
+    (->js-str
+     (when (and $_conn-id (!== $_conn-id $_frame-conn-id) (> (.-length (Object.keys $_pending)) 0))
+       (set! $_interrupted true)
+       (set! $_pending {}))
+     (set! $_conn-id $_frame-conn-id)
+     (when $_conn-id (set! $_stream-ended false))
+     (.forEach $_acks
+               (fn [a]
+                 (when (and (Object.hasOwn $_pending a.key)
+                            (=== (.-revision (aget $_pending a.key)) a.revision))
+                   (js-delete $_pending a.key)
+                   (when (.includes ["failed" "rejected"] a.outcome)
+                     (set! $_failed true))))))
+    :data-on:datastar-fetch
+    (->js-str
+     (when (and (=== evt.detail.el.id "long-lived-sse")
+                (.includes ["finished" "error" "retrying" "retries-failed"] evt.detail.type))
+       (when (> (.-length (Object.keys $_pending)) 0)
+         (set! $_interrupted true)
+         (set! $_pending {}))
+       (set! $_frame-conn-id "")
+       (set! $_stream-ended true))
+     (when (and (evt.detail.el.hasAttribute "data-interaction")
+                (.includes ["error" "retrying" "retries-failed"] evt.detail.type)
+                (> (.-length (Object.keys $_pending)) 0))
+       (set! $_interrupted true)
+       (set! $_pending {})))}
+   (into {} (for [group (distinct (keep #(when (= :group (:block %)) (:group %)) (vals policies)))]
+              [(keyword (str "data-computed:_busy" (name group)))
+               ;; Keep the callback expression-only: Datastar's computed parser
+               ;; splits on semicolons inside function bodies.
+               (str "Object.values($_pending).some(p => p.group === "
+                    (j/write-value-as-string (name group)) ")")]))))
 
 #_(def patch-elements! d*/patch-elements!)
 (def patch-signals! d*/patch-signals!)
@@ -58,15 +170,6 @@
   [data]
   (codecs/bytes->b64-str (.getBytes (str (hash data)))))
 
-(defn throttle [<in-ch msec]
-  (let [;; No buffer on the out-ch as the in-ch should be buffered
-        <out-ch (a/chan)]
-    (util/thread
-      (util/while-some [event (a/<!! <in-ch)]
-                       (a/>!! <out-ch event)
-                       (Thread/sleep ^long msec)))
-    <out-ch))
-
 (def !page-state (atom {}))
 
 (defn request-tab-id
@@ -80,236 +183,22 @@
   "Updates the transient page state addressed by the request's tab signal."
   [req f]
   (if-let [tab-id (request-tab-id req)]
-    (swap! !page-state update tab-id (fn [state]
-                                       (-> state
-                                           (f)
-                                           (assoc ::modified (t/instant)))))
+    (swap! !page-state
+           (fn [pages]
+             (let [state (get pages tab-id)]
+               (if (and (::state-token req)
+                        (not= (::state-token req) (::state-token state)))
+                 pages
+                 (assoc pages tab-id (-> state (f) (assoc ::modified (t/instant))))))))
     (throw (ex-info "No tab-id in request" {}))))
 
-(defn init-tab-state! [<ch tab-id]
-  (swap! !page-state assoc tab-id {::created (t/instant)})
-  (add-watch !page-state tab-id (fn [watch-key _ _ _]
-                                  (when-not (a/>!! <ch [])
-                                    (remove-watch !page-state watch-key)))))
-
-(defn remove-tab-state!
-  [tab-id]
-  (swap! !page-state dissoc tab-id)
-  (remove-watch !page-state tab-id))
-
-(def stale-threshold (t/new-duration 1 :hours))
-
-(defn stale? [now created modified]
-  (t/> (t/between (or modified created) now) stale-threshold))
-
-(defn clean-stale-page-state
-  "Removes tab-ids that are stale, where stale is defined as not having been modified or created in the last 24 hours."
-  [page-state]
-  (let [now (t/instant)]
-    (reduce-kv (fn [acc tab-id {:keys [::created ::modified]}]
-                 (if (stale? now created modified)
-                   (dissoc acc tab-id)
-                   acc))
-               page-state
-               page-state)))
-
-(defn clean-stale-watches!
-  "Removes watches for tab-ids that are no longer in the page state."
-  []
-  (let [watches       (-> (.getWatches ^clojure.lang.IRef !page-state) keys)
-        stale-watches (remove #(clojure.core/get @!page-state %) watches)]
-    (doseq [watch-key stale-watches]
-      (remove-watch !page-state watch-key))))
-
-(defn start-clean-page-state-job
-  "Starts a job that cleans stale page state every 10 seconds."
-  []
-  (chime/chime-at (chime/periodic-seq (t/instant)
-                                      (t/new-duration 60 :seconds))
-                  (fn [_]
-                    (swap! !page-state clean-stale-page-state)
-                    (clean-stale-watches!))))
-
-(comment
-  (refresh-all!)
-  (reset! !page-state {})
-  (name (keyword (str (random-uuid))))
-  @!page-state                          ;; rcf
-  (swap! !page-state update "1a874961-16c7-40d8-9b44-b83273a82afa" assoc ::created 0)
-  (swap! !page-state update "1a874961-16c7-40d8-9b44-b83273a82afa" dissoc :current-edit-id)
-  (swap! !page-state dissoc "c9222db8-78ce-4919-9f2f-28bfc1aac41f")
-  (let [watch-key :fake]
-    (add-watch !page-state watch-key (fn [watch-key _ _ _])))
-  (-> !page-state .getWatches keys)
-  (clean-stale-watches!)
-
-  (swap! !page-state clean-stale-page-state)
-  ;;
-  )
-
-(html/->str (html/->str [:div "wut"]))
-(defn wrap-req [req tab-id]
-  (-> req
-      (assoc :request-method :get)
-      (assoc :page-state (clojure.core/get @!page-state tab-id {}))
-      (assoc :db (d/db (:datomic-conn req)))))
+(defn remove-tab-state! [tab-id]
+  (swap! !page-state dissoc tab-id))
 
 (def brotli-write-profile
   {d*com/wrap-output-stream (fn [os] (-> os br/->brotli-os d*com/->os-writer))
    d*com/content-encoding   "br"
    d*com/write!             (d*com/->write-with-temp-buffer!)})
-
-(defn render-handler [render-fn & {:keys [on-close on-open wrap-req] :or {wrap-req wrap-req} :as _opts}]
-  (fn handler [req]
-    (assert (::refresh-mult req))
-    (let [tab-id  (or (-> req :body-params :tab-id)
-                      (str (random-uuid)))
-          ;; Dropping buffer is used here as we don't want a slow handler
-          ;; blocking other handlers. Mult distributes each event to all
-          ;; taps in parallel and synchronously, i.e. each tap must
-          ;; accept before the next item is distributed.
-          <ch     (a/tap (::refresh-mult req) (a/chan (a/dropping-buffer 1)))
-          ;; Ensures at least one render on connect
-          _       (a/>!! <ch :refresh-event)
-          ;; poison pill for work cancelling
-          <cancel (a/chan)]
-      (hk-gen/->sse-response  req
-                              {:headers             {"X-Accel-Buffering" "no"
-                                                     "Cache-Control"     "no-cache"}
-                               hk-gen/on-open
-                               (fn hk-on-open [sse-gen]
-                                 (init-tab-state! <ch tab-id)
-                                 (util/thread
-                                   (try
-                                     (d*/patch-signals! sse-gen (j/write-value-as-string {:tab-id tab-id}))
-                                     (loop [req            (wrap-req req tab-id)
-                                            last-view-hash (get-in req [:headers "last-event-id"])]
-                                       (a/alt!!
-                                         [<cancel] (do (a/close! <ch)
-                                                       (a/close! <cancel))
-                                         [<ch]
-                                         (let [req           (wrap-req req tab-id)
-                                               new-view      (error/try-log req (render-fn req))
-                                               new-view-hash (digest new-view)]
-                                           ;; (tap> [:render :change? (not= last-view-hash new-view-hash) :error? (nil? new-view)])
-                                           ;; only send an event if the view has changed
-                                           (when (and new-view (not= last-view-hash new-view-hash))
-                                             (d*/patch-elements! sse-gen new-view
-                                                                 (cond-> {d*/id new-view-hash}
-                                                                   last-view-hash
-                                                                   (assoc d*/use-view-transition true))))
-                                           (recur req new-view-hash))
-                                         ;; we want work cancelling to have higher priority
-                                         :priority true))
-                                     (catch Throwable t
-                                       (error/report-error! t req))
-                                     (finally
-                                       (d*/close-sse! sse-gen))))
-                                 (when on-open (on-open req)))
-                               hk-gen/on-close
-                               (fn hk-on-close [_ _]
-                                 (try
-                                   (remove-tab-state! tab-id)
-                                   (a/>!! <cancel :cancel)
-                                   (when on-close (on-close req))
-                                   (catch Throwable t
-                                     (error/report-error! t req)
-                                     nil)))
-                               hk-gen/write-profile brotli-write-profile}))))
-(defonce ^:private refresh-ch_ (atom nil))
-
-(defn refresh-all! [& args]
-  (when-let [<refresh-ch @refresh-ch_]
-    (a/>!! <refresh-ch (or args []))))
-
-(defn- install-report-queue
-  "On a separate thread, take values from the `tx-report-queue` over `conn` and
-  put them onto channel `c`. "
-  [conn c]
-  (a/thread
-    (try
-      (let [^BlockingQueue queue (d/tx-report-queue conn)]
-        (while true
-          (let [report (.take queue)]
-            (a/>!! c report))))
-      (catch InterruptedException _)
-      (catch Exception e
-        (tap> [:datomic-tx-queue-ex e])
-        (throw e)))))
-
-(defn react-on-datomic-tx! [{:keys [db-conn buffer-size]
-                             :or   {buffer-size 1}}]
-  (assert db-conn)
-  (let [tx-report-ch (a/chan (a/sliding-buffer buffer-size))]
-    (install-report-queue db-conn tx-report-ch)
-    {:db-conn      db-conn
-     :tx-report-ch tx-report-ch}))
-
-(defn stop-react-datomic-tx [{:keys [db-conn tx-report-ch]}]
-  (a/close! tx-report-ch)
-  (d/remove-tx-report-queue db-conn))
-
-(defn start-refresh-mult [db-conn {:keys [max-refresh-ms on-refresh]
-                                   :or   {max-refresh-ms 100}}]
-  (assert db-conn)
-  (let [<refresh-ch  (a/chan (a/dropping-buffer 1))
-        _            (reset! refresh-ch_ <refresh-ch)
-        refresh-mult (-> (throttle <refresh-ch max-refresh-ms)
-                         (a/pipe
-                          (a/chan 1
-                                  (map
-                                   (fn [args]
-                                     ;; (tap> :render)
-                                     ;; cache is only invalidate at most
-                                     ;; every X msec and only if state has change
-                                     ;; (cache/invalidate-cache!)
-                                     ;; run on-refresh
-                                     (when (and on-refresh (seq args))
-                                       (apply on-refresh args))
-                                     ;; No point sending the args past here
-                                     :refresh-event))))
-                         a/mult)
-        datomic      (react-on-datomic-tx! {:db-conn db-conn})]
-
-    (a/go-loop [ch (:tx-report-ch datomic)]
-      (when-let [tx (a/<! ch)]
-        (refresh-all! tx)
-        (recur ch)))
-
-    {::<refresh-ch    <refresh-ch
-     ::chime-schedule (start-clean-page-state-job)
-     ::refresh-mult   refresh-mult
-     ::datomic        datomic}))
-
-(defn stop-refresh-mult [{::keys [datomic <refresh-ch chime-schedule refresh-mult]}]
-  (when refresh-mult
-    (a/untap-all refresh-mult))
-  (when <refresh-ch
-    (prn "CLOSE REFRESH-CH")
-    (a/close! <refresh-ch)
-    (reset! refresh-ch_ nil))
-  (when chime-schedule
-    (prn "CLOSE chime -schedule")
-    (.close ^java.lang.AutoCloseable chime-schedule))
-  (when datomic
-    (prn "CLOSE datomic react")
-    (stop-react-datomic-tx datomic)))
-
-(defn datastar-refresh-interceptor [sys]
-  (let [refresh-mult (get-in sys [:datastar-refresh-mult ::refresh-mult])]
-    (assert refresh-mult)
-    {:name  ::refresh-ch-interceptor
-     :enter (fn [ctx]
-              (assoc-in ctx [:request ::refresh-mult] refresh-mult))}))
-
-(defn- respond-and-close [request on-open & {:keys [on-close]}]
-  (hk-gen/->sse-response request
-                         {hk-gen/on-open  (fn [sse-gen]
-                                            (try
-                                              (on-open sse-gen)
-                                              (finally
-                                                (d*/close-sse! sse-gen))))
-                          hk-gen/on-close on-close}))
 
 (def ^:private sse-event-kinds
   #{:app.datastar.sse/execute-script
@@ -352,20 +241,6 @@
       :app.datastar.sse/redirect
       (d*/redirect! sse-gen payload opts))))
 
-(defn respond-sse
-  "Emits `events` in order through one finite SSE response, then closes it.
-
-  `events` must be a vector of event vectors in the form `[kind payload]` or
-  `[kind payload opts]`, where `opts` is an optional map. Supported kinds are
-  `:app.datastar.sse/execute-script`, `:app.datastar.sse/merge-signals`,
-  `:app.datastar.sse/patch-elements`, `:app.datastar.sse/redirect`, and
-  `:app.datastar.sse/remove-signals`."
-  [request events]
-  (validate-sse-events! events)
-  (respond-and-close request
-                     (fn [sse-gen]
-                       (run! #(emit-sse-event! sse-gen %) events))))
-
 (defn sse-response-plan
   "Creates a validated ordered SSE response plan for the Nexus HTTP boundary."
   [events]
@@ -382,13 +257,133 @@
   [response-plan]
   (::sse-events response-plan))
 
-(defmethod ig/init-key ::refresh-mult
-  [_ sys]
-  (start-refresh-mult (-> sys :datomic :conn) {}))
+(defn assoc-connection-token
+  "Returns `request` with its connection token if the authenticated member owns
+  the active connection. Otherwise returns nil."
+  [runtime request]
+  (let [client    (get @(:clients runtime) (request-tab-id request))
+        member-id (get-in request [:app/session :session/member :member/member-id])]
+    (when (and member-id client (= member-id (:member-id client)))
+      (assoc request ::state-token (:token client) ::ledger (:interactions client)))))
 
-(defmethod ig/halt-key! ::refresh-mult
-  [_ i]
-  (stop-refresh-mult i))
+(defn- update-frame-client! [runtime tab-id token f]
+  (swap! (:clients runtime)
+         (fn [clients]
+           (if (= token (get-in clients [tab-id :token]))
+             (update clients tab-id f)
+             clients))))
+
+(defn mark-action!
+  "Records the current action on its original connection.
+
+  Durable completion feedback can use this id to avoid redirecting a tab after
+  a later action. Call on the writer before evaluating the action."
+  [runtime request action-id]
+  (update-frame-client! runtime (request-tab-id request) (::state-token request)
+                        #(assoc % :action-id action-id)))
+
+(defn queue-sse-events!
+  "Validates `events` and appends them to the originating connection's pending SSE
+  messages. A render worker sends them in order during a later render phase;
+  this function does not send them or wait for delivery.
+
+  Queued actions use this to return feedback through the existing SSE connection
+  after `/act` has returned. The connection is identified by the tab ID and token
+  in `request`. Discards events if that connection has closed or been replaced.
+  Throws for invalid events, even if the connection no longer exists."
+  [runtime request events]
+  (validate-sse-events! events)
+  (when (seq events)
+    (update-frame-client!
+     runtime (request-tab-id request) (::state-token request)
+     (fn [client]
+       (let [revision (inc (:revision client))]
+         (-> client
+             (assoc :revision revision)
+             (update :events conj [revision events])))))))
+
+(defn render-in-frame!
+  "Runs `render!` on a render worker with a captured frame and returns its result.
+
+  Initial page GET requests use this to produce full HTML from the committed
+  frame database. The calling HTTP request thread waits up to five seconds.
+  Action requests (`POST /act`) do not use this function or wait for execution.
+
+  Returns a Ring 503 response if `runtime` is stopped or the wait times out.
+  Rethrows exceptions from `render!` on the calling thread. Removes the temporary
+  render callback on exit; a timeout does not cancel rendering already in progress."
+  [runtime render!]
+  (if (or (nil? runtime) @(:stopped? runtime))
+    {:status 503 :headers {} :body ""}
+    (let [id     (Object.)
+          result (promise)
+          conns  ^ConcurrentHashMap (::game/conns runtime)]
+      (try
+        (.put conns id (fn [frame]
+                         (when-not (realized? result)
+                           (deliver result (try (render! frame) (catch Exception e e))))))
+        (let [value (deref result 5000 ::timeout)]
+          (cond
+            (= ::timeout value) {:status 503 :headers {} :body ""}
+            (instance? Exception value) (throw value)
+            :else value))
+        (finally (.remove conns id))))))
+
+(defn- frame-connection-render [runtime request tab-id token sse render-fn]
+  (let [render-html!
+        (game/render-callback
+         (fn [frame]
+           (render-fn (assoc request :request-method :get :db (:db frame)
+                             :page-state (get (:page-state frame) tab-id {}))))
+         #(d*/patch-elements! sse % {d*/id (digest %)}))]
+    (fn [frame]
+      (let [client (get (:clients frame) tab-id)]
+        (when (= token (:token client))
+          ;; HTML and compression run here; sending does not wait for delivery.
+          (when (render-html! frame)
+            (loop [[[revision events] & remaining] (:events client)]
+              (when revision
+                (when (every? #(emit-sse-event! sse %) events)
+                  (update-frame-client!
+                   runtime tab-id token
+                   #(update % :events (fn [pending] (filterv (fn [[id]] (> id revision)) pending))))
+                  (recur remaining))))))))))
+
+(defn frame-render-handler [runtime render-fn]
+  (fn [request]
+    (if (or (nil? runtime) @(:stopped? runtime))
+      {:status 503 :headers {} :body ""}
+      (let [tab-id    (or (request-tab-id request) (str (random-uuid)))
+            token     (random-uuid)
+            member-id (get-in request [:app/session :session/member :member/member-id])
+            clients   (:clients runtime)
+            conns     ^ConcurrentHashMap (::game/conns runtime)]
+        (hk-gen/->sse-response
+         request
+         {:headers             {"X-Accel-Buffering" "no" "Cache-Control" "no-cache"}
+          hk-gen/write-profile brotli-write-profile
+          hk-gen/on-open
+          (fn [sse]
+            (locking clients
+              (let [old (get @clients tab-id)]
+                (if (or @(:stopped? runtime) (and old (not= member-id (:member-id old))))
+                  (d*/close-sse! sse)
+                  (do
+                    (when old ((:close! old)))
+                    (swap! !page-state assoc tab-id {::created (t/instant) ::state-token token})
+                    (swap! clients assoc tab-id
+                           {:token        token                                                                                  :member-id member-id :revision 0
+                            :interactions (atom {})
+                            :events       [[0 [[:app.datastar.sse/merge-signals {:tab-id tab-id :_frame-conn-id (str token)}]]]]
+                            :close!       #(d*/close-sse! sse)})
+                    (.put conns tab-id (frame-connection-render runtime request tab-id token sse render-fn)))))))
+          hk-gen/on-close
+          (fn [_ _]
+            (locking clients
+              (when (= token (get-in @clients [tab-id :token]))
+                (.remove conns tab-id)
+                (swap! clients dissoc tab-id)
+                (remove-tab-state! tab-id))))})))))
 
 (def camelCaseMapper
   (j/object-mapper

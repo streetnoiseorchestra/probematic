@@ -1,5 +1,7 @@
 (ns app.gigs.log-plays.actions
   (:require
+   [app.jobs.integrations :as integrations]
+   [app.jobs.play-stats :as play-stats]
    [app.queries :as queries]
    [app.util :as util]))
 
@@ -59,24 +61,24 @@
        (:played/play-id current-play) (assoc :played/play-id (:played/play-id current-play))
        (nil? (:played/play-id current-play)) (assoc :played/play-id :db/gen-uuid))]))
 
-(defn persist-play-effect [db gig-id song-id rating emphasis]
+(defn persist-play-effect [{:keys [db] :as state} gig-id song-id rating emphasis]
   [:db/transact
    (play-tx-data db gig-id song-id rating emphasis)
-   {:on-success [[:app.gigs/recalc-play-stats]
-                 [:app.gigs/trigger-gig-edited (util/ensure-uuid! gig-id) :plays]]}])
+   (update (integrations/gig-update-options state (util/ensure-uuid! gig-id) :plays)
+           :jobs (fnil conj []) play-stats/job)])
 
-(defn update-rating-action [{:keys [db]} {:keys [gig-log-plays]}]
+(defn update-rating-action [state {:keys [gig-log-plays]}]
   (let [{:keys [gig-id song-id rating emphasis]} gig-log-plays]
-    [(persist-play-effect db gig-id song-id rating emphasis)]))
+    [(persist-play-effect state gig-id song-id rating emphasis)]))
 
-(defn toggle-intensive-action [{:keys [db]} {:keys [gig-log-plays]}]
+(defn toggle-intensive-action [state {:keys [gig-log-plays]}]
   (let [{:keys [gig-id song-id rating emphasis]} gig-log-plays
         rating                                   (normalize-rating rating)
         current                                  (normalize-emphasis emphasis)
         emphasis*                                (if (= intensive-emphasis current)
                                                    default-emphasis
                                                    intensive-emphasis)]
-    [(persist-play-effect db gig-id song-id rating emphasis*)]))
+    [(persist-play-effect state gig-id song-id rating emphasis*)]))
 
 (defn set-repertoire-filter-action [_state {:keys [gig-log-plays]}]
   (let [{:keys [repertoire-filter]} gig-log-plays]

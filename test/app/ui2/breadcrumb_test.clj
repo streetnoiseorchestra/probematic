@@ -333,6 +333,49 @@
     (is (empty? (l/select "[data-on:wa-select]" view)))
     (is (empty? (l/select ico/Icon popover)))))
 
+(deftest responsive-popover-ids-are-stable-across-renders
+  (let [attrs         {::breadcrumb/max-items   [1 2]
+                       ::breadcrumb/mobile-mode :trail}
+        ids           (fn []
+                        (->> (breadcrumb-view attrs six-items)
+                             (l/select button/Button)
+                             (mapv #(-> % l/attrs :id))))
+        first-render  (ids)
+        second-render (ids)]
+    (is (= ["sno-breadcrumb-mobile-collapse-trigger"
+            "sno-breadcrumb-desktop-collapse-trigger"]
+           first-render
+           second-render))))
+
+(deftest explicit-breadcrumb-ids-namespace-popover-ids
+  (let [attrs {::breadcrumb/max-items   [1 2]
+               ::breadcrumb/mobile-mode :trail}
+        ids   (fn []
+                (let [view     [:div
+                                (breadcrumb-view (assoc attrs :id "owner's-breadcrumb")
+                                                 six-items)
+                                (breadcrumb-view (assoc attrs :id "secondary\\breadcrumb")
+                                                 six-items)]
+                      triggers (l/select button/Button view)
+                      popovers (l/select :wa-popover view)]
+                  {:trigger-ids (mapv #(-> % l/attrs :id) triggers)
+                   :popover-ids (mapv #(-> % l/attrs :id) popovers)
+                   :popover-for (mapv #(-> % l/attrs :for) popovers)}))
+        expected
+        {:trigger-ids ["owner's-breadcrumb-mobile-collapse-trigger"
+                       "owner's-breadcrumb-desktop-collapse-trigger"
+                       "secondary\\breadcrumb-mobile-collapse-trigger"
+                       "secondary\\breadcrumb-desktop-collapse-trigger"]
+         :popover-ids ["owner's-breadcrumb-mobile-collapse-popover"
+                       "owner's-breadcrumb-desktop-collapse-popover"
+                       "secondary\\breadcrumb-mobile-collapse-popover"
+                       "secondary\\breadcrumb-desktop-collapse-popover"]
+         :popover-for ["owner's-breadcrumb-mobile-collapse-trigger"
+                       "owner's-breadcrumb-desktop-collapse-trigger"
+                       "secondary\\breadcrumb-mobile-collapse-trigger"
+                       "secondary\\breadcrumb-desktop-collapse-trigger"]}]
+    (is (= expected (ids) (ids)))))
+
 (deftest responsive-popovers-have-distinct-connected-triggers
   (let [view         (breadcrumb-view {::breadcrumb/max-items   [1 2]
                                        ::breadcrumb/mobile-mode :trail}
@@ -371,11 +414,9 @@
                 :aria-haspopup "dialog"}
                (select-keys (l/attrs trigger)
                             [:aria-controls :aria-expanded :aria-haspopup])))
-        (is (= (str "document.getElementById('" trigger-id
-                    "').setAttribute('aria-expanded', 'true')")
+        (is (= "el.previousElementSibling.setAttribute('aria-expanded', 'true')"
                (-> popover l/attrs :data-on:wa-show)))
-        (is (= (str "document.getElementById('" trigger-id
-                    "').setAttribute('aria-expanded', 'false')")
+        (is (= "el.previousElementSibling.setAttribute('aria-expanded', 'false')"
                (-> popover l/attrs :data-on:wa-hide)))))))
 
 (deftest invalid-collapse-and-mobile-options-fail-at-the-component-boundary

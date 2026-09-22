@@ -62,6 +62,16 @@
          "non-demo mode requires a project API token and from address"}
     runtime-credentials-present?]])
 
+(defn start-component!
+  "Validates and returns the Integrant-owned Lettermint runtime configuration."
+  [{:keys [env]}]
+  (let [runtime-config (:lettermint env)]
+    (when-not (s/valid? RuntimeConfig runtime-config)
+      (s/throw-error "Invalid Lettermint runtime configuration."
+                     nil
+                     RuntimeConfig
+                     (dissoc runtime-config :project-api-token)))
+    runtime-config))
 (def ClientConfig
   [:map {:name ::client-config}
    [:project-api-token ::s/non-blank-string]

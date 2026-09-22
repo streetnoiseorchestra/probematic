@@ -596,5 +596,3 @@
          (coverage-mix-section req dashboard)]
         [:aside {:class "leading-none wa-grid wa-align-items-start" :style "--min-column-size: 30ch;"}
          (recent-changes-section dashboard)]]]])))
-
-(d*/refresh-all!)

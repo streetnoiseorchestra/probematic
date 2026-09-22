@@ -496,6 +496,9 @@
    (map first)
    (map #(update % :member/section :section/name))))
 
+(defn active-member-ids [db]
+  (->> (active-members db) (map :member/member-id) sort vec))
+
 (defn attendance-for-gig
   "Return the member's attendance for the gig"
   [db gig-id member-id]
@@ -563,6 +566,13 @@
               (assoc as :section/position (-> (retrieve-section-by-name db (:section/name as))
                                               :section/position))))
        (sort-by :section/position)))
+
+(defn gig-reminder-member-ids
+  "Returns IDs of active members who have not responded, in attendance-list order."
+  [db gig-id]
+  (->> (attendance-plans-by-section-for-gig db (attendance-for-gig-with-all-active-members db gig-id) :no-response?)
+       (mapcat :members)
+       (mapv #(get-in % [:attendance/member :member/member-id]))))
 
 (defn section-for-member [db member-id]
   (->
@@ -1167,7 +1177,7 @@
                                                                          :attendance/updated]}])
                  :attendance/_gig
                 ;; (group-by #(-> % :attendance/section :section/name))
-               )
+                 )
         plans   (attendances-for-gig db "ag1zfmdpZy1vLW1hdGljcjMLEgRCYW5kIghiYW5kX2tleQwLEgRCYW5kGICAgMD9ycwLDAsSA0dpZxiAgMD81q7OCww")
         members (active-members db)
         no-plan]

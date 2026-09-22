@@ -108,17 +108,10 @@
      policy
      output)))
 
-(defn send-email!
-  [policy smtp-params from to subject body attachment-filename-new
-   attachment-filename-changes]
-  ;; TODO: Abstract delivery when exporters require different mechanisms.
-  (harmonia/send-email!
+(defn generate-attachments!
+  [policy attachment-filename-new attachment-filename-changes]
+  (harmonia/generate-attachments!
    generate-changeset!
    policy
-   smtp-params
-   from
-   to
-   subject
-   body
    attachment-filename-new
    attachment-filename-changes))

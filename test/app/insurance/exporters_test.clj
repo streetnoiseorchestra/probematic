@@ -218,3 +218,30 @@
       (is (= [0xD0 0xCF 0x11 0xE0]
              (mapv #(bit-and 0xff %)
                    (take 4 (.toByteArray output))))))))
+
+(deftest policy-email-attachment-generation-test
+  (let [calls  (atom [])
+        policy {:insurance.policy/policy-id (random-uuid)}]
+    (with-redefs [exporters/generate-changeset!
+                  (fn [scope received-policy output]
+                    (swap! calls conj [scope received-policy])
+                    (.write ^ByteArrayOutputStream output
+                            (byte-array [(if (= #{:instrument.coverage.change/new} scope)
+                                           1
+                                           2)]))
+                    output)]
+      (let [attachments (exporters/generate-attachments!
+                         policy
+                         "new.xls"
+                         "changes.xls")]
+        (is (= [[#{:instrument.coverage.change/new} policy]
+                [#{:instrument.coverage.change/changed
+                   :instrument.coverage.change/removed} policy]]
+               @calls))
+        (is (= [{:filename     "new.xls"
+                 :content-type "application/vnd.ms-excel"
+                 :content      [1]}
+                {:filename     "changes.xls"
+                 :content-type "application/vnd.ms-excel"
+                 :content      [2]}]
+               (mapv #(update % :content vec) attachments)))))))

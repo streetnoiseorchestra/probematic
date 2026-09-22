@@ -6,6 +6,7 @@
    [app.members.invite.workflows :as workflows]
    [app.schemas :as s]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [malli.core :as m]
@@ -105,7 +106,10 @@
       invitation)]))
 
 (defn run-workflow [workflow resources input]
-  (myc/run-workflow workflow resources input workflow-options))
+  (myc/run-workflow workflow
+                    (update resources :write-runner #(or % (writer/create)))
+                    input
+                    workflow-options))
 
 (deftest workflow-manifests-have-local-ids-plain-docs-and-inline-schemas-test
   (doseq [workflow all-workflows]
@@ -228,12 +232,11 @@
                   (d/db conn)
                   [:member/member-id invited-member-id])
           status (:member/invite-status member)]
-      (is (= {:queued [{:to "alice@example.com" :code "initial-code"}
-                       {:to "alice@example.com" :code "replacement-code"}]
+      (is (= {:queued []                            :job-count 2
               :status :member.invite.status/revoked
               :code   nil
               :expiry nil}
-             {:queued @queued
+             {:queued @queued                                          :job-count (count (tc/committed-jobs conn))
               :status (if (keyword? status) status (:db/ident status))
               :code   (:member/invite-code member)
               :expiry (:member/invite-expires-at member)})))))
@@ -292,7 +295,7 @@
               :invitation-generation   1
               :invitation-status       pending
               :remaining-generated-ids []
-              :queued                  [{:to "alice@example.com" :code "original-code"}]}
+              :queued                  []              :job-count 1}
              {:first-status            (:member-invite/persist-status first-result)
               :second-status           (:member-invite/persist-status second-result)
               :created-member-id
@@ -311,7 +314,7 @@
               :invitation-status
               (if (keyword? status) status (:db/ident status))
               :remaining-generated-ids @generated-ids
-              :queued                  @queued})))))
+              :queued                  @queued                                       :job-count (count (tc/committed-jobs conn))})))))
 
 (deftest explicit-acceptance-workflow-creates-and-enables-the-account-test
   (let [{:keys [conn member-id]} (tc/new-system "invite-accept-workflow")
@@ -747,7 +750,8 @@
   {:db           (d/db conn)
    :datomic-conn conn
    :params       {:invite-code invite-code}
-   :system       {:keycloak {:adapter :fake}}})
+   :system       {:write-runner (writer/create)
+                  :keycloak     {:adapter :fake}}})
 
 (defn thrown-reason [f]
   (try

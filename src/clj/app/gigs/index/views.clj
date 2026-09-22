@@ -1,6 +1,5 @@
 (ns app.gigs.index.views
   (:require
-   [app.datastar :as d*]
    [app.gigs.queries :as queries]
    [app.gigs.ui :as gigs.ui]
    [app.ui2 :as ui2]
@@ -42,5 +41,3 @@
         (gigs.ui/gig-section req {:title         [:i18n/tr :gigs/past]
                                   :empty-message [:i18n/tr :gigs/no-recent]
                                   :gigs          past-gigs})]]])))
-
-(d*/refresh-all!)

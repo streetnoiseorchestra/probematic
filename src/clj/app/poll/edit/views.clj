@@ -293,5 +293,3 @@
   (if-let [poll-id (request-poll-id req)]
     (edit-page req poll-id)
     (create-page req)))
-
-(d*/refresh-all!)

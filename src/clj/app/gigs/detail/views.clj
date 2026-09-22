@@ -154,8 +154,9 @@
          (t/>> (t/instant sent-at) (t/new-duration 24 :hours)))))
 
 (defn- remind-all-menu-item [{:keys [page-state] :as req}]
-  (let [sent-at   (get-in page-state actions/remind-all-sent-at-path)
-        recent?   (recent-reminder? sent-at)
+  (let [queued-at (get-in page-state actions/remind-all-queued-at-path)
+        at        (or queued-at (get-in page-state actions/remind-all-sent-at-path))
+        recent?   (recent-reminder? at)
         dialog-id "gig-detail-remind-all-dialog"]
     [:wa-dropdown-item {:data-dialog (str "open " dialog-id)}
      (when recent?
@@ -164,9 +165,10 @@
                   :slot         "icon"}])
      [:i18n/tr :gigs/remind-all]
      (when recent?
-       [:span {:slot "details"}
-        [:i18n/tr :gigs/reminded-all-at
-         {:time (ui2/format-date-time req :medium sent-at)}]])]))
+       [:span {:slot  "details"
+               :style {:display "inline-block" :white-space "normal" :max-inline-size "12em"}}
+        [:i18n/tr (if queued-at :gigs/reminders-queued-at :gigs/reminded-all-at)
+         {:time (ui2/format-date-time req :medium at)}]])]))
 
 (defn- toolbar-action [href label]
   [button/Button {:appearance "outlined"
@@ -220,13 +222,18 @@
                    :appearance  "outlined"
                    :data-dialog "close"}
     [:i18n/tr :action/cancel]]
-   [button/Button {:slot          "footer"
-                   :appearance    "filled"
-                   :variant       "brand"
-                   :data-dialog   "close"
-                   :data-on:click (attendance.ui/action-js req
-                                                           ::actions/send-reminder-to-all
-                                                           {:gig-id gig-id})}
+   [button/Button
+    (merge
+     (attendance.ui/interaction-attrs req
+                                      ::actions/send-reminder-to-all
+                                      {:gig-id gig-id})
+     {:slot          "footer"
+      :appearance    "filled"
+      :variant       "brand"
+      :data-dialog   "close"
+      :data-on:click (attendance.ui/action-js req
+                                              ::actions/send-reminder-to-all
+                                              {:gig-id gig-id})})
     [:i18n/tr :gigs/remind-all-dialog-confirm]]])
 
 (defn- attendance-actions [req archived? show-committed?]
@@ -236,7 +243,7 @@
                             :size       "s"}
                            (attendance.ui/action-attrs req
                                                        ::actions/toggle-attendance-committed
-                                                       {:show-committed (not show-committed?)}))
+                                                       {:gig-id (:gig-id req) :show-committed (not show-committed?)}))
       (if show-committed?
         [:i18n/tr :gigs/show-all-attendance]
         [:i18n/tr :gigs/show-committed-attendance])]]))
@@ -288,22 +295,32 @@ window.DiscourseEmbed = %s;
      [:script {:type "text/javascript"}
       (discourse-embed-script forum-url topic-id)])))
 
-(defn page [{:keys [db] :as req}]
+(defn page [{:keys [db page-state] :as req}]
   (let [gig-id (http.util/path-param-uuid! req :gig/gig-id)
-        gig    (q/retrieve-gig db gig-id)]
+        gig    (q/retrieve-gig db gig-id)
+        req    (assoc req :gig-id gig-id ::d*/enabled? true)]
     (if gig
-      (ui2/datastar-page*
+      [:main (merge (ui2/datastar-main-attrs {})
+                    (d*/page-attrs actions/interaction-policies))
        [page-surface/PageSurface {::page-surface/toolbar (gig-toolbar req gig)}
         [:div {:class        "wa-stack wa-gap-2xl"
                :data-signals (d*/->signals (attendance.ui/attendance-signals req))}
+         [:wa-callout {:variant   "warning"
+                       :data-show "$_interrupted || $_stream-ended"
+                       :role      "alert"}
+          [:p [:i18n/tr :gigs/interaction-interrupted]]
+          [button/Button {:href (urls/link-gig gig-id) :appearance "outlined"}
+           [:i18n/tr :gigs/interaction-reload]]]
+         [:wa-callout {:variant "danger" :data-show "$_failed" :role "alert"}
+          [:i18n/tr :gigs/interaction-failed]]
+         (when-let [error (get-in page-state (conj actions/attendance-error-path :error))]
+           [:wa-callout {:variant "danger" :role "alert"} error])
          (gig-summary gig)
          (gig-info-section req gig)
          (planned-songs-section req gig)
          (attendance-section req gig)
          (discourse-comments-section req gig)]]
        (when-not (domain/gig-archived? gig)
-         (remind-all-dialog req gig-id)))
+         (remind-all-dialog req gig-id))]
       (throw (ex-info "Gig not found" {:app/error-type :app.error.type/not-found
                                        :gig/gig-id     gig-id})))))
-
-(d*/refresh-all!)

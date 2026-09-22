@@ -2,20 +2,21 @@
   (:require
    [app.account.actions]
    [app.account.effects :as account.effects]
+   [app.datomic :as datomic]
    [app.datastar :as datastar]
+   [app.errors :as errors]
    [app.file-browser.actions]
+   [app.game-loop :as game]
    [app.gigs.actions]
-   [app.gigs.effects :as gigs.effects]
+   [app.gigs.detail.actions :as gig-detail]
    [app.insurance.actions]
-   [app.insurance.effects :as insurance.effects]
+   [app.jobs.log-dispatch :as log-dispatch]
    [app.members.actions]
    [app.members.effects :as members.effects]
-   [app.probeplan.actions]
    [app.poll.actions]
-   [app.poll.effects :as poll.effects]
+   [app.probeplan.actions]
    [app.settings.actions]
    [app.songs.actions]
-   [app.songs.effects :as songs.effects]
    [clojure.walk :as walk]
    [com.yetanalytics.squuid :as sq]
    [datomic.api :as d]
@@ -103,20 +104,24 @@
 
   - :db/now becomes one Instant shared by the batch
   - :db/gen-uuid becomes a fresh squuid at each occurrence
-  - [:db/gen-uuid k] becomes one stable squuid per k within the batch"
+  - [:db/gen-uuid k] becomes one stable squuid per k within the batch.
+
+  Transaction options may include `:jobs`, a vector of Dollop job specifications.
+  Their intent is stored in the same Datomic transaction. Named UUID markers
+  are shared between the business data and job arguments."
   ([transact-actions] (batch-transactions transact-actions unique-attrs))
   ([transact-actions unique-attrs]
-   (let [generated-value-replacer (generated-value-replacer)]
-     (->> (reduce (fn [acc [txs opts]]
-                    (let [txs (walk/prewalk generated-value-replacer txs)
-                          txs (if (:transact-w-nils? opts)
-                                (prepare-tx-with-retractions txs unique-attrs)
-                                txs)]
-                      (into acc txs)))
-                  []
-                  transact-actions)
-          (distinct)
-          (vec)))))
+   (let [replace-value (generated-value-replacer)
+         [tx-data jobs]
+         (reduce (fn [[tx-data jobs] [txs opts]]
+                   (let [[txs new-jobs] (walk/prewalk replace-value [txs (:jobs opts)])
+                         txs            (if (:transact-w-nils? opts)
+                                          (prepare-tx-with-retractions txs unique-attrs)
+                                          txs)]
+                     [(into tx-data txs) (into jobs new-jobs)]))
+                 [[] []]
+                 transact-actions)]
+     (into (vec (distinct tx-data)) (log-dispatch/intent-tx jobs)))))
 
 (defn current-member-id [request]
   (get-in request [:app/session :session/member :member/member-id]))
@@ -134,7 +139,14 @@
            :tr                 (:tr request)
            :db                 (d/db (-> system :datomic :conn))
            :page-state         (request-page-state request)
-           :current-user-roles (current-user-roles request)}
+           :current-user-roles (current-user-roles request)
+           :current-locale     (or (:current-locale request) :en)
+           :job-origin         {:tab-id    (datastar/request-tab-id request)
+                                :token     (::datastar/state-token request)
+                                :action-id (::action-id request)
+                                :member-id (current-member-id request)
+                                :locale    (or (:current-locale request) :en)}}
+    (::account.effects/prepared-profile request) (assoc :prepared-profile? true)
     (:env system) (assoc :env (:env system))
     (current-member-id request) (assoc :current-member-id (current-member-id request))))
 
@@ -167,11 +179,18 @@
   (some-> dispatch-result result-responses single-response))
 
 (defn ^:nexus/batch db-transact-fx
-  [{:keys [dispatch]} {:keys [system]} transact-actions]
+  [{:keys [dispatch]} {:keys [system request]} transact-actions]
   (let [conn (-> system :datomic :conn)
         _    (assert conn "Nexus :db/transact requires a Datomic connection")]
     (try
-      (let [result          @(d/transact conn (batch-transactions transact-actions))
+      (let [member-id       (current-member-id request)
+            result          (datomic/transact
+                             conn
+                             {:tx-data (batch-transactions transact-actions)
+                              :audit   {:audit/action (::audit-action request)
+                                        :audit/origin :app.origin/browser
+                                        :audit/user   (when member-id
+                                                        [:member/member-id member-id])}})
             actions         (vec (on-success-actions transact-actions))
             dispatch-result (when (seq actions)
                               (dispatch actions {:tx-result result}))]
@@ -218,83 +237,100 @@
 (defn delete-invitation-fx [_ {req :request} invite-code]
   (members.effects/delete-invitation! req invite-code))
 
-(defn update-keycloak-meta-fx [_ {req :request} member-id]
-  (members.effects/update-keycloak-meta! req member-id))
-
-(defn set-keycloak-account-enabled-fx [_ {req :request} member-id enabled?]
-  (members.effects/set-keycloak-account-enabled! req member-id enabled?))
-
-(defn dispatch-actions
-  [nexus system {:keys [request response]} on-error]
-  (let [empty-response {:status 204 :headers {} :body ""}
-        result         (nexus/dispatch nexus
-                                       {:system system :request request}
-                                       {:request request}
-                                       response)]
-    (if-let [error (->> (:errors result) (keep :err) first)]
-      (do
-        (on-error error)
-        empty-response)
+(defn queue-actions!
+  "Admits an action request without evaluating Nexus or waiting for a commit."
+  [runtime request actions]
+  (if (or (nil? runtime) @(:stopped? runtime))
+    {:status 503 :headers {} :body ""}
+    (if-let [request (datastar/assoc-connection-token runtime request)]
       (try
-        (if-let [response (result-response result)]
-          (if (datastar/sse-response-plan? response)
-            (let [sse-response
-                  (datastar/respond-sse request
-                                        (datastar/sse-response-events response))]
-              (if (response? sse-response) sse-response empty-response))
-            response)
-          empty-response)
-        (catch Exception error
-          (on-error error)
-          empty-response)))))
+        (let [[action signals] (first actions)
+              interaction      (datastar/request-interaction
+                                (get-in request [:system :nexus ::datastar/policies])
+                                action signals (::datastar/state-token request))
+              request          (cond-> (assoc (dissoc request :body) ::audit-action action ::action-id (random-uuid))
+                                 interaction (assoc ::datastar/submission interaction))]
+          (if ((::game/submit! runtime) {:request request :actions actions})
+            {:status 204 :headers {} :body ""}
+            {:status 503 :headers {} :body ""}))
+        (catch clojure.lang.ExceptionInfo e
+          (if-let [status (:status (ex-data e))]
+            {:status status :headers {} :body ""}
+            (throw e))))
+      {:status 409 :headers {} :body ""})))
 
-(defn nexus-interceptor
-  "Dispatch Nexus action vectors returned by a Reitit route handler.
-  attach a Nexus state snapshot to the request, dispatch action vectors, and
-  pass normal Ring responses through unchanged."
-  ([nexus system]
-   (nexus-interceptor nexus system nil))
-  ([nexus system {:keys [on-error] :or {on-error #(throw %)}}]
-   {:name  ::nexus-interceptor
-    :enter (fn [ctx]
-             ctx
-             #_(update ctx :request assoc :nexus/state
-                       (system->state system (:request ctx))))
-    :leave (fn [{:keys [response] :as ctx}]
-             (if (vector? response)
-               (assoc ctx :response
-                      (dispatch-actions nexus system ctx on-error))
-               ctx))}))
+(defn- dispatch-queued!
+  [nexus system runtime {:keys [request actions]}]
+  (try
+    (when-let [action-id (::action-id request)]
+      (datastar/mark-action! runtime request action-id))
+    (let [conn    (get-in system [:datomic :conn])
+          request (assoc request :db (d/db conn) :datomic-conn conn)
+          result  (nexus/dispatch nexus {:system (or (:system request) system) :request request}
+                                  {:request request} actions)]
+      (if-let [error (->> (:errors result) (keep :err) first)]
+        (throw error)
+        (when-let [response (result-response result)]
+          (cond
+            (datastar/sse-response-plan? response)
+            (datastar/queue-sse-events! runtime request (datastar/sse-response-events response))
+
+            (= 204 (:status response)) nil
+
+            (and (#{301 302 303 307 308} (:status response))
+                 (or (get-in response [:headers "Location"]) (get-in response [:headers "location"])))
+            (datastar/queue-sse-events!
+             runtime request
+             [[:app.datastar.sse/redirect
+               (or (get-in response [:headers "Location"]) (get-in response [:headers "location"]))]])
+
+            :else
+            (throw (ex-info "Queued action cannot own a finite HTTP response"
+                            {:action (ffirst actions) :status (:status response)}))))))
+    true
+    (catch Exception error
+      (errors/report-error! error {:action (ffirst actions)})
+      (when-not (::datastar/submission request)
+        (datastar/queue-sse-events!
+         runtime request
+         [[:app.datastar.sse/merge-signals {:loading false :targetid false}]
+          [:app.datastar.sse/execute-script
+           (str "window.alert(" (datastar/->signals ((:tr request) [:error/unknown-title])) ");")]]))
+      false)))
+
+(defn process-queued!
+  "Resolves one admitted action on the writer and acknowledges it after frame rendering."
+  [nexus system runtime {:keys [request] :as work}]
+  (if-let [submission (::datastar/submission request)]
+    (let [ledger   (::datastar/ledger request)
+          decision (datastar/interaction-decision @ledger submission)
+          outcome  (if (= :execute decision)
+                     (if (dispatch-queued! nexus system runtime work) :completed :failed)
+                     decision)]
+      (when (= :execute decision)
+        (swap! ledger assoc (:key submission)
+               {:revision (:revision submission) :outcome outcome}))
+      (datastar/queue-sse-events!
+       runtime request
+       [[:app.datastar.sse/merge-signals
+         {:_acks [(assoc (select-keys submission [:key :revision]) :outcome (name outcome))]}]]))
+    (dispatch-queued! nexus system runtime work)))
 
 (defn nexus []
   {:nexus/system->state system->state
    :nexus/interceptors  [strategies/fail-fast]
+   ::datastar/policies  gig-detail/interaction-policies
    :nexus/effects       {:db/transact                                  (with-meta db-transact-fx {:nexus/batch true})
                          :app.account/save-profile                     account.effects/save-profile-fx
                          :app.account/discard-upload                   account.effects/discard-upload-fx
                          :app.datastar/assoc-state                     assoc-page-state-fx
                          :app.datastar/merge-state                     merge-page-state-fx
                          :app.datastar/respond-sse                     (with-meta respond-sse-fx {:nexus/batch true})
-                         :app.insurance/send-policy-changes            insurance.effects/send-policy-changes-fx
-                         :app.insurance/send-payment-notifications     insurance.effects/send-payment-notifications-fx
-                         :app.insurance/send-survey-notifications      insurance.effects/send-survey-notifications-fx
-                         :app.gigs/trigger-gig-details-edited          gigs.effects/trigger-gig-details-edited-fx
-                         :app.gigs/trigger-gig-created                 gigs.effects/trigger-gig-created-fx
-                         :app.gigs/trigger-gig-deleted                 gigs.effects/trigger-gig-deleted-fx
-                         :app.gigs/trigger-gig-edited                  gigs.effects/trigger-gig-edited-fx
-                         :app.gigs/recalc-play-stats                   gigs.effects/recalc-play-stats-fx
-                         :app.gigs/send-reminder-to-all                gigs.effects/send-reminder-to-all-fx
-                         :app.songs/trigger-song-edited                songs.effects/trigger-song-edited-fx
-                         :app.songs/trigger-sync-all-songs             songs.effects/trigger-sync-all-songs-fx
-                         :app.songs/recalc-play-stats                  songs.effects/recalc-play-stats-fx
                          :app.members/invite-member                    members.effects/invite-member-fx
-                         :app.members/update-keycloak-meta             update-keycloak-meta-fx
-                         :app.members/set-keycloak-account-enabled     set-keycloak-account-enabled-fx
                          :app.members.index/resend-invitation          resend-invitation-fx
                          :app.members.index/reissue-invitation         reissue-invitation-fx
                          :app.members.index/reissue-revoked-invitation reissue-revoked-invitation-fx
-                         :app.members.index/delete-invitation          delete-invitation-fx
-                         :app.poll/send-poll-opened                    poll.effects/send-poll-opened-fx}
+                         :app.members.index/delete-invitation          delete-invitation-fx}
    :nexus/actions       (merge app.account.actions/actions
                                app.settings.actions/actions
                                app.members.actions/actions

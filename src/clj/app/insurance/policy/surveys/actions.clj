@@ -1,5 +1,6 @@
 (ns app.insurance.policy.surveys.actions
   (:require
+   [app.email.mailers :as mailers]
    [app.form :as form]
    [app.insurance.domain :as domain]
    [app.insurance.queries :as queries]
@@ -313,43 +314,27 @@
 
 (defn send-reminders-action
   [{:keys [current-member-id db now tr] :as state} signals]
-  (let [{:keys [policy policy-id] :as context} (action-context state signals)
-        survey                                 (survey-target db signals)
-        error-key                              (mutation-error-key
-                                                context
-                                                survey
-                                                (queries/survey-belongs-to-policy? survey policy-id)
-                                                (:insurance.survey/closed-at survey)
-                                                (not (domain/survey-open-at? now survey)))]
+  (let [{:keys [policy-id] :as context} (action-context state signals)
+        survey                          (survey-target db signals)
+        error-key                       (mutation-error-key
+                                         context
+                                         survey
+                                         (queries/survey-belongs-to-policy? survey policy-id)
+                                         (:insurance.survey/closed-at survey)
+                                         (not (domain/survey-open-at? now survey)))]
     (if error-key
       (result-effects {:status :error :message (tr [error-key])})
       (let [responses  (:insurance.survey/responses survey)
             incomplete (filterv #(nil? (:insurance.survey.response/completed-at %))
-                                responses)
-            most-items (when (seq responses)
-                         (apply max-key
-                                (comp count
-                                      :insurance.survey.response/coverage-reports)
-                                responses))]
+                                responses)]
         (if (empty? incomplete)
           (result-effects {:status :empty})
-          [[:app.insurance/send-survey-notifications
-            {:email-data      {:closes-at
-                               (:insurance.survey/closes-at survey)
-                               :member-most-instruments
-                               (:insurance.survey.response/member most-items)
-                               :member-most-instrument-count
-                               (count (:insurance.survey.response/coverage-reports
-                                       most-items))}
-             :failure-message (tr [:insurance/survey-reminders-failed])
-             :members         (mapv :insurance.survey.response/member incomplete)
-             :policy          policy
-             :result-path     [form-key :result]
-             :sender-name     (:member/name
-                               (q/retrieve-member db current-member-id))
-             :success         {:status     :sent
-                               :count-sent (count incomplete)}}]
-           support/clear-loading])))))
+          [[:db/transact []
+            {:jobs       [(mailers/job state ::mailers/survey-reminder
+                                       {:survey-id (:insurance.survey/survey-id survey)
+                                        :sender-id current-member-id})]
+             :on-success (result-effects {:status       :queued
+                                          :count-queued (count incomplete)})}]])))))
 
 (def actions
   {::close-survey     #'close-survey-action

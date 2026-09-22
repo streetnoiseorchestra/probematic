@@ -1,15 +1,15 @@
 (ns app.email.email-worker
   (:require
-   [app.config :as config]
    [app.email.domain :refer [QueuedEmailMessage]]
    [app.email.lettermint :as lettermint]
    [app.email.mailers :as mailers]
    [app.schemas :as s]
    [com.brunobonacci.mulog :as μ]
-   [s-exp.drip :as drip]
-   [tarayo.core :as tarayo]))
+   [s-exp.drip :as drip])
+  (:import
+   [java.util Base64]))
 
-(def email-queue-name "email-send-queue")
+(def email-queue-name "start-within-2m")
 
 (defn track-email-error!  [email attempt result throwable]
   (μ/log ::email-error
@@ -25,10 +25,24 @@
                 :testing-addresses-only?
                 :timeout-ms]))
 
-(defn- lettermint-message [config message]
-  (cond-> (assoc message :from (:from config))
+(defn- with-runtime-fields [config message]
+  (cond-> message
+    (some? (:from config))
+    (assoc :from (:from config))
+
     (some? (:route config))
     (assoc :route (:route config))))
+
+(defn- lettermint-message [config freeze-runtime? message]
+  (if freeze-runtime?
+    message
+    (with-runtime-fields config message)))
+
+(defn- freeze-lettermint-envelope [config email]
+  (-> email
+      (assoc :email/freeze-runtime? true)
+      (update :email/messages
+              #(mapv (partial with-runtime-fields config) %))))
 
 (defn- ensure-valid-lettermint-request! [client-config messages]
   (when-not (s/valid? lettermint/ClientConfig client-config)
@@ -61,7 +75,10 @@
       {:mode   :demo-mode
        :result :email-sent})
     (let [client-config   (lettermint-client-config lettermint)
-          messages        (mapv #(lettermint-message lettermint %)
+          messages        (mapv #(lettermint-message
+                                  lettermint
+                                  (:email/freeze-runtime? message)
+                                  %)
                                 (:email/messages message))
           request-options {:idempotency-key
                            (str (:email/email-id message))}]
@@ -74,25 +91,42 @@
                                 (first messages)
                                 request-options)))))
 
-(defn format-attachments [attachments]
-  (map (fn [{:keys [content content-type filename]}]
-         {:content      content
-          :content-type content-type
-          :filename     filename})
-       attachments))
+(defn- encode-attachment [{:keys [content] :as attachment}]
+  (assoc attachment
+         :content
+         (.encodeToString (Base64/getEncoder)
+                          (if (bytes? content)
+                            content
+                            (byte-array content)))))
 
-(defn band-smtp-handler [sys message]
+(defn- legacy-envelope->lettermint [config message]
   (assert (not (:email/batch? message)))
-  (let [{:keys [from dev-mode-override-recipient] :as smtp} (config/band-smtp (:env sys))]
-    (assert smtp)
-    (assert from)
-    (tarayo/send! (tarayo/connect smtp)
-                  {:from    from
-                   :to      (or dev-mode-override-recipient nil) ;; (or dev-mode-override-recipient (first (:email/tos message)))
-                   :subject (:email/subject message)
-                   :body    (into [] (concat [{:content-type "text/html" :content (:email/body-html message)}
-                                              {:content-type "text/plain" :content (:email/body-plain message)}]
-                                             (format-attachments (:email/attachments message))))})))
+  (let [attachments (:email/attachments message)]
+    (freeze-lettermint-envelope
+     config
+     {:email/sender   :lettermint
+      :email/email-id (:email/email-id message)
+      :email/batch?   false
+      :email/messages
+      [(cond-> {:to      (:email/tos message)
+                :subject (:email/subject message)
+                :html    (:email/body-html message)
+                :text    (:email/body-plain message)}
+         (seq attachments)
+         (assoc :attachments
+                (mapv encode-attachment attachments)))]})))
+
+(defn- legacy-envelope-handler [sys message]
+  (lettermint-handler
+   sys
+   (legacy-envelope->lettermint (:lettermint sys) message)))
+
+(defn- freeze-provider-envelope [{:keys [lettermint]} message]
+  (if (:email/freeze-runtime? message)
+    message
+    (case (:email/sender message)
+      :lettermint (freeze-lettermint-envelope lettermint message)
+      :band-smtp (legacy-envelope->lettermint lettermint message))))
 
 (defn handler
   [sys message attempt]
@@ -101,7 +135,7 @@
     (if (s/valid? QueuedEmailMessage message)
       (let [sender (case (:email/sender message)
                      :lettermint lettermint-handler
-                     :band-smtp band-smtp-handler)
+                     :band-smtp legacy-envelope-handler)
             result (sender sys message)]
         (tap> {:email-send result})
         (if (:error result)
@@ -114,7 +148,7 @@
       (do
         (track-email-error! message attempt (s/explain-human QueuedEmailMessage message) nil)
         {:status :error}))
-    (catch Throwable e
+    (catch Exception e
       (tap> e)
       (track-email-error! message attempt nil e)
       {:status :error})))
@@ -125,14 +159,28 @@
     (seq (:email/attachments email))
     (update :email/attachments #(mapv (fn [attachment] (update attachment :content f)) %))))
 
-(defn- prepare-job-email [sys {:keys [prepared-email] :as args}]
-  (if prepared-email
-    (map-attachment-content byte-array prepared-email)
-    (mailers/prepare! sys args)))
+(defn- prepare-job-email
+  [sys client {:keys [id args metadata]}]
+  (let [stored  (or (:email/prepared metadata)
+                    (:prepared-email args))
+        message (if stored
+                  (map-attachment-content byte-array stored)
+                  (mailers/prepare! sys args))]
+    (if (= ::mailers/skip message)
+      message
+      (let [prepared (freeze-provider-envelope sys message)]
+        (when (not= prepared (:email/prepared metadata))
+          (drip/update-job client id
+                           {:metadata (assoc metadata
+                                             :email/prepared
+                                             prepared)}))
+        prepared))))
 
-(defn job-handler [sys client {:keys [id args attempt]}]
+(defn job-handler
+  [sys client {:keys [id attempt] :as job}]
   (let [prepared (try
-                   {:message (prepare-job-email sys args)}
+                   (let [message (prepare-job-email sys client job)]
+                     (if (= ::mailers/skip message) {:status :skipped} {:message message}))
                    (catch Exception e
                      (let [permanent? (:email/permanent? (ex-data e))]
                        (μ/log ::email-preparation-failed
@@ -147,21 +195,9 @@
                    (handler sys (:message prepared) attempt))]
     (case (:status result)
       :success (drip/complete-job client id)
+      :skipped (drip/complete-job client id)
       :error (drip/discard-job client id)
       :retry (throw (ex-info "Retryable email delivery failure" {:job-id id})))))
-
-(defn start! [{:keys [job-queue] :as sys}]
-  (μ/log ::email-worker-starting)
-  (drip/start-worker!
-   {:client         (:client job-queue)
-    :registry       {"send-email" (partial job-handler sys)}
-    :queues         [email-queue-name]
-    :concurrency    1
-    :retry-policies {"send-email" (drip/constant-retry-policy 5000)}}))
-
-(defn stop! [worker]
-  (when-not (drip/stop-worker! worker :drain true)
-    (throw (ex-info "Email worker did not stop" {}))))
 
 (defn queue-mail! [{:keys [client]} email]
   (when-not (s/valid? QueuedEmailMessage email)
@@ -173,20 +209,3 @@
                    {:prepared-email (map-attachment-content vec email)}
                    :queue email-queue-name
                    :max-attempts 25))
-
-(defn queue-mailer!
-  "Queues a named mailer from a successful transaction report without rendering.
-
-  `sys` supplies `:job-queue`, `:datomic-conn`, and `:current-locale`.
-  `arguments` must satisfy the registered mailer's EDN contract."
-  [{:keys [job-queue datomic-conn current-locale]} tx-result mailer arguments]
-  (let [invocation {:version   1
-                    :mailer    mailer
-                    :arguments arguments
-                    :source-t  (mailers/source-t datomic-conn tx-result)
-                    :email-id  (random-uuid)
-                    :locale    (or current-locale :en)}]
-    (mailers/validate! invocation)
-    (drip/insert-job (:client job-queue) "send-email" invocation
-                     :queue email-queue-name
-                     :max-attempts 25)))

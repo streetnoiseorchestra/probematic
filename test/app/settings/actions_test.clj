@@ -156,18 +156,20 @@
 (deftest team-actions-test
   (testing "creates a new team"
     (let [{:keys [member-id] :as system} (new-system)]
-      (is (= [[:db/transact [{:team/team-id :db/gen-uuid
+      (is (= [[:app.datastar/merge-state [:team-create] {:team-name "Booking"}]
+              [:db/transact [{:team/team-id :db/gen-uuid
                               :team/name    "Booking"}
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? false}]
-              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state [:team-create] false]]
+               {:transact-w-nils? false
+                :on-success       [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
+                                   [:app.datastar/assoc-state [:team-create] false]]}]]
              (team-actions/create-team-action
               (state-for system)
               {:team-create {:team-name "Booking"}})))))
 
   (testing "returns a validation error when the team name is blank"
-    (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
+    (is (= [[:app.datastar/merge-state [:team-create] {:team-name ""}]
+            [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
             [:app.datastar/assoc-state [:team-create :error :team-name]
              {:error "Team name is required."}]]
            (team-actions/create-team-action
@@ -178,7 +180,8 @@
     (let [{:keys [conn] :as system} (new-system)]
       (seed-team! conn {:team-id   (random-uuid)
                         :team-name "Booking"})
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
+      (is (= [[:app.datastar/merge-state [:team-create] {:team-name "Booking"}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:team-create]
                {:team-name "Booking"
@@ -194,12 +197,13 @@
       (seed-team! (:conn system) {:team-id   team-id
                                   :team-name "Old Team"
                                   :team-type :team.type/insurance})
-      (is (= [[:db/transact [[:db/add [:team/team-id team-id] :team/name "New Team"]
+      (is (= [[:app.datastar/merge-state [:team] {:team-name " New Team " :team-type nil}]
+              [:db/transact [[:db/add [:team/team-id team-id] :team/name "New Team"]
                              [:db/retract [:team/team-id team-id] :team/team-type :team.type/insurance]
                              [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]]
-               {:transact-w-nils? false}]
-              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state [:team] false]]
+               {:transact-w-nils? false
+                :on-success       [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
+                                   [:app.datastar/assoc-state [:team] false]]}]]
              (team-actions/update-team-action
               (state-for system)
               {:team {:team-id   (str team-id)
@@ -214,7 +218,8 @@
                         :team-type :team.type/insurance})
       (seed-team! conn {:team-id   (random-uuid)
                         :team-name "Taken"})
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
+      (is (= [[:app.datastar/merge-state [:team] {:team-name "Taken" :team-type "insurance"}]
+              [:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
               [:app.datastar/merge-state
                [:team]
                {:team-name "Taken"

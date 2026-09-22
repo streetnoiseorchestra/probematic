@@ -1,12 +1,13 @@
 (ns app.jobs.probe-housekeeping
   (:require
    [app.datomic :as d]
-   [app.email :as email]
+   [app.email.mailers :as mailers]
+   [app.nexus :as nexus]
    [app.errors :as errors]
    [app.gigs.domain :as domain]
    [app.probeplan :as probeplan]
    [app.queries :as q]
-   [chime.core :as chime]
+   [app.write-runner :as writer]
    [com.yetanalytics.squuid :as sq]
    [app.datomic.shim :as datomic]
    [ol.jobs-util :as jobs]
@@ -43,13 +44,15 @@
     :gig/end-time  (t/time "22:00")
     :gig/contact   [:member/gigo-key "ag1zfmdpZy1vLW1hdGljchMLEgZNZW1iZXIYgICA6K70hwoM"]}))
 
-(defn create-probes!
+(defn- create-probes!
   [conn probes]
   (let [probe-dates (find-probe-dates (- minimum-gigs (count probes)) probes)
         txs         (take maximum-create (map newprobe-tx probe-dates))]
-    (datomic/transact conn {:tx-data txs})))
+    (d/transact conn {:tx-data txs
+                      :audit   {:audit/action ::create-probes
+                                :audit/origin :app.origin/job}})))
 
-(defn assign-rehearsal-leaders!
+(defn- assign-rehearsal-leaders!
   [conn]
   (let [db           (datomic/db conn)
         prev-probe   (q/previous-probe db)
@@ -57,38 +60,47 @@
         last-leader2 (:gig/rehearsal-leader2 prev-probe)
         next-leader1 (:gig/rehearsal-leader1 next-probe)]
     (when (and (some? last-leader2)  (nil? next-leader1))
-      (datomic/transact conn {:tx-data [[:db/add (d/ref next-probe) :gig/rehearsal-leader1 (d/ref last-leader2)]]}))))
+      (d/transact conn
+                  {:tx-data [[:db/add (d/ref next-probe) :gig/rehearsal-leader1 (d/ref last-leader2)]]
+                   :audit   {:audit/action ::assign-rehearsal-leaders
+                             :audit/origin :app.origin/job}}))))
 
 (defn- probe-housekeeping-job
-  [{:keys [datomic] :as _system} _]
+  [{:keys [datomic] :as system} _]
   (try
-    (let [conn       (:conn datomic)
-          probes     (q/next-probes (datomic/db conn) q/gig-detail-pattern)
-          num-probes (count probes)]
-      (when (< num-probes minimum-gigs)
-        (create-probes! conn probes))
-      (assign-rehearsal-leaders! conn)
-      :done)
-    (catch Throwable e
+    (let [maintain! (fn []
+                      (let [conn   (:conn datomic)
+                            probes (q/next-probes (datomic/db conn) q/gig-detail-pattern)]
+                        (when (< (count probes) minimum-gigs)
+                          (create-probes! conn probes))
+                        (assign-rehearsal-leaders! conn)
+                        :done))]
+      (writer/call! system maintain!))
+    (catch Exception e
       (tap> e)
       (errors/report-error! e))))
 
 (defn notify-rehearsal-leader!
   [{:keys [datomic] :as system}]
   (try
-    (let [conn       (:conn datomic)
-          db         (datomic/db conn)
-          next-probe (q/next-probe db)]
-      (if (= (:gig/date next-probe) (t/date))
-        (do
-          (when (:gig/rehearsal-leader1 next-probe)
-            (email/send-rehearsal-leader-email! system next-probe (:gig/rehearsal-leader1 next-probe)))
-          (when (:gig/rehearsal-leader2 next-probe)
-            (email/send-rehearsal-leader-email! system next-probe (:gig/rehearsal-leader2 next-probe))))
-        (throw (ex-info  "notify rehearsal leaders condition failed!"
-                         {:probe-date   (:gig/date next-probe)
-                          :current-date (t/date)}))))
-    (catch Throwable e
+    (writer/call!
+     system
+     (fn []
+       (let [conn       (:conn datomic)
+             next-probe (q/next-probe (datomic/db conn))
+             leaders    (distinct (keep #(get next-probe %) [:gig/rehearsal-leader1 :gig/rehearsal-leader2]))]
+         (when-not (= (:gig/date next-probe) (t/date))
+           (throw (ex-info "notify rehearsal leaders condition failed!"
+                           {:probe-date (:gig/date next-probe) :current-date (t/date)})))
+         (when (seq leaders)
+           (let [intents (mapv #(mailers/job {:current-locale :de} ::mailers/rehearsal-leader
+                                             {:gig-id (:gig/gig-id next-probe) :member-id (:member/member-id %)})
+                               leaders)]
+             (d/transact conn
+                         {:tx-data (nexus/batch-transactions [[[] {:jobs intents}]])
+                          :audit   {:audit/action ::notify-rehearsal-leader
+                                    :audit/origin :app.origin/job}}))))))
+    (catch Exception e
       (errors/report-error! e))))
 
 (defn- start-rehearsal-leader-notify!
@@ -102,30 +114,13 @@
         next-wednesdays-at-10-pm
         (->> (iterate #(t/>> % (t/new-period 1 :days)) first-run)
              (filter (comp #{t/WEDNESDAY} t/day-of-week)))]
-    (chime/chime-at next-wednesdays-at-10-pm
-                    (fn [_] (notify-rehearsal-leader! system)))))
+    (jobs/create-schedule :name ::rehearsal-leader-notify
+                          :times next-wednesdays-at-10-pm
+                          :start-at first-run
+                          :handler (fn [_] (notify-rehearsal-leader! system)))))
 
 (defn make-probe-housekeeping-job
   [system]
   (fn [{:job/keys [frequency initial-delay]}]
     (start-rehearsal-leader-notify! system)
     (jobs/make-repeating-job (partial probe-housekeeping-job system) frequency initial-delay)))
-
-(comment
-  (do
-    (require '[integrant.repl.state :as state])
-    (def conn (-> state/system :app.ig/datomic-db :conn))
-    (def db  (datomic/db conn))
-    (def system {:datomic    {:conn conn}
-                 :job-queue  (-> state/system :app.ig/job-queue)
-                 :i18n-langs (-> state/system :app.ig/i18n-langs)
-                 :env        (-> state/system :app.ig/env)})) ;; rcf
-
-  (probe-housekeeping-job {:conn conn} nil)
-
-  (email/send-rehearsal-leader-email! system (q/next-probe db) (q/member-by-email db "me@caseylink.com"))
-
-  (assign-rehearsal-leaders! conn)
-  (notify-rehearsal-leader! system)
-  ;;
-  )

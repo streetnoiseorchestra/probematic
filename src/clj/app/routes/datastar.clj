@@ -58,7 +58,7 @@
     (compression/accepts-gzip? req)   :gzip
     :else                             :identity))
 
-(defn- precompressed-shim-response [req precompressed]
+(defn- precompressed-response [req precompressed]
   (let [encoding (accepted-shim-encoding req)
         body     (get precompressed encoding)
         headers  (cond-> {"Content-Type"   "text/html"
@@ -72,18 +72,29 @@
 
 (defn shim [req]
   #_(layout/app-shell req nil)
-  (precompressed-shim-response req (cached-precompressed-shim req)))
+  (precompressed-response req (cached-precompressed-shim req)))
 
 (defn- full-page-response [render-fn opts req]
   {:status  200
    :headers {"Content-Type" "text/html"}
    :body    (layout2/datastar-page-html req opts (render-fn req))})
 
+(defn- full-frame-response [render-fn opts req]
+  (let [html     (:body (full-page-response render-fn opts req))
+        bytes    (.getBytes ^String html StandardCharsets/UTF_8)
+        encoding (accepted-shim-encoding req)]
+    (precompressed-response req
+                            {encoding (case encoding
+                                        :br (brotli-bytes bytes)
+                                        :gzip (gzip-bytes bytes)
+                                        bytes)})))
+
 (defn- initial-get-handler [render-fn opts]
   (fn [req]
     (if *use-page-shim?*
       (shim req)
-      (full-page-response render-fn opts req))))
+      (d*/render-in-frame! (get-in req [:system :frame-loop])
+                           #(full-frame-response render-fn opts (assoc req :db (:db %)))))))
 
 (defn- action-query-params [req]
   (or (get-in req [:parameters :query])
@@ -116,12 +127,10 @@
        :body    (str "No such action registered for " action-key)}
 
       :else
-      [[action-key (action-body req)]])))
+      (nexus/queue-actions! (get-in req [:system :frame-loop]) req [[action-key (action-body req)]]))))
 
-(defn act-route [system]
-  ["/act" {:name         ::act
-           :interceptors [(nexus/nexus-interceptor (:nexus system) system)]
-           :post         {:handler act-handler}}])
+(defn act-route [_system]
+  ["/act" {:name ::act :post {:handler act-handler}}])
 
 (defn- wrap-render-fn [render-fn]
   (fn [req]
@@ -135,5 +144,6 @@
         route-data     (cond-> (merge {:name page-name} route-data)
                          extra-head (assoc :extra-head extra-head))
         child-routes   (into [["" {:get  (initial-get-handler page route-data)
-                                   :post (d*/render-handler wrapped-render)}]])]
+                                   :post (fn [req]
+                                           ((d*/frame-render-handler (get-in req [:system :frame-loop]) wrapped-render) req))}]])]
     (into [path route-data] child-routes)))

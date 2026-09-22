@@ -6,6 +6,7 @@
    [app.interceptors.session :as sut]
    [app.session :as session]
    [app.sqlite :as sqlite]
+   [app.write-runner :as writer]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [reitit.http :as http]
@@ -13,6 +14,10 @@
    [reitit.ring :as ring]
    [sqlite4clj.core :as sql]
    [tick.core :as t]))
+
+(defn- session-options []
+  {:expire-secs  60
+   :write-runner (writer/create)})
 
 (defn- app [interceptors handler]
   (http/ring-handler
@@ -96,10 +101,11 @@
   (with-db
     (fn [db]
       (let [interceptors (auth/session-interceptors
-                          {:auxiliary db
-                           :env       {:ig/system      {:app.ig/profile :prod}
-                                       :session-config {:session-ttl-s 60
-                                                        :cookie-attrs  {:same-site :strict :http-only true :path "/"}}}})
+                          {:auxiliary    db
+                           :write-runner (writer/create)
+                           :env          {:ig/system      {:app.ig/profile :prod}
+                                          :session-config {:session-ttl-s 60
+                                                           :cookie-attrs  {:same-site :strict :http-only true :path "/"}}}})
             data         {:session/email "member@example.com" :session/roles #{:admin}}
             save         (app interceptors (constantly {:status 200 :app/session data}))
             read         (app interceptors (fn [req] {:status 200 :body (:app/session req)}))
@@ -120,7 +126,7 @@
   (with-db
     (fn [db]
       (let [handler (app [(sut/session-cookie-interceptor)
-                          (sut/session-data-interceptor db {:expire-secs 60})]
+                          (sut/session-data-interceptor db (session-options))]
                          (fn [req] {:status 200 :body (:app/session req)}))]
         (is (= [{} [0]] [(:body (handler (request :get nil)))
                          (sql/q (:reader db) ["SELECT count(*) FROM http_sessions"])]))))))
@@ -128,11 +134,11 @@
 (deftest unknown-and-expired-ids-cannot-fixate-new-sessions
   (with-db
     (fn [db]
-      (let [db      (session/init! db {:expire-secs 60})
+      (let [db      (session/init! db (session-options))
             expired (t/with-clock (t/instant "2026-01-01T00:00:00Z")
                       (session/write-session! db nil {:old true}))
             handler (app [(sut/session-cookie-interceptor)
-                          (sut/session-data-interceptor db {:expire-secs 60})]
+                          (sut/session-data-interceptor db (session-options))]
                          (constantly {:status 200 :app/session {:authenticated true}}))]
         (doseq [old-sid ["attacker-chosen" expired]]
           (let [response (handler (request :get old-sid))
@@ -145,11 +151,11 @@
   (doseq [replacement [::omitted {:updated true}]]
     (with-db
       (fn [db]
-        (let [db       (session/init! db {:expire-secs 60})
+        (let [db       (session/init! db (session-options))
               original {:original true}
               old-sid  (session/write-session! db nil original)
               handler  (app [(sut/session-cookie-interceptor)
-                             (sut/session-data-interceptor db {:expire-secs 60})]
+                             (sut/session-data-interceptor db (session-options))]
                             (constantly (cond-> {:status 200 :app/sid "rotated"}
                                           (not= ::omitted replacement) (assoc :app/session replacement))))
               response (handler (request :post old-sid))]
@@ -160,7 +166,7 @@
 (deftest data-interceptor-works-without-cookie-layer
   (with-db
     (fn [db]
-      (let [handler  (app [(sut/session-data-interceptor db {:expire-secs 60})]
+      (let [handler  (app [(sut/session-data-interceptor db (session-options))]
                           (fn [req] {:status 200 :body (:app/session req) :app/session {}}))
             response (handler (assoc (request :get nil) :app/sid "untrusted"))]
         (is (= [{} {} false nil]
@@ -170,10 +176,10 @@
 (deftest explicit-nil-id-deletes-data-and-cookie
   (with-db
     (fn [db]
-      (let [db       (session/init! db {:expire-secs 60})
+      (let [db       (session/init! db (session-options))
             sid      (session/write-session! db nil {:authenticated true})
             handler  (app [(sut/session-cookie-interceptor)
-                           (sut/session-data-interceptor db {:expire-secs 60})]
+                           (sut/session-data-interceptor db (session-options))]
                           (constantly {:status 200 :app/sid nil}))
             response (handler (request :post sid))]
         (is (= [{"sid" ""} nil]

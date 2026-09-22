@@ -80,27 +80,20 @@
               [[:app.datastar.sse/redirect (urls/link-policy policy-id)]]]
              redirect)))))
 
-(deftest send-and-confirm-changes-action-test
-  (testing "email delivery is one ordered effect with confirmation as its continuation"
-    (let [{:keys [policy-id state]} (fixture)
-          [effect]                  (actions/send-and-confirm-changes-action
-                                     state
-                                     (signals policy-id))
-          [_ payload]               effect]
-      (is (= :app.insurance/send-policy-changes (first effect)))
-      (is (= {:policy-id                   policy-id
-              :recipient                   "Insurer <insurance@example.test>"
-              :subject                     "Policy update"
-              :body                        "Please find the updates attached."
-              :attachment-filename-new     "new.xls"
-              :attachment-filename-changes "changes.xls"
-              :on-success                  [[::actions/confirm-sent
-                                             {:insurance-policy-changes
-                                              {:policy-id (str policy-id)}}]
-                                            [:app.datastar/respond-sse
-                                             [[:app.datastar.sse/redirect
-                                               (urls/link-policy policy-id)]]]]}
-             payload)))))
+(deftest durable-send-does-not-confirm-or-redirect-on-enqueue
+  (let [{:keys [policy-id state]} (fixture)
+        origin                    {:tab-id "policy-tab" :token (random-uuid) :member-id (:current-member-id state)}
+        effects                   (actions/send-and-confirm-changes-action
+                                   (assoc state :job-origin origin)
+                                   (signals policy-id))
+        [kind args opts]          (first (get-in effects [1 2 :jobs]))]
+    (is (= [:app.datastar/assoc-state :db/transact] (mapv first effects)))
+    (is (= [] (get-in effects [1 1])))
+    (is (= actions/email-job-kind kind))
+    (is (= {:effect-id :db/gen-uuid                                                                 :origin origin
+            :mail      (assoc (:insurance-policy-changes (signals policy-id)) :policy-id policy-id)}
+           args))
+    (is (= {:queue "start-within-2m" :max-attempts 25} opts))))
 
 (deftest exporter-configuration-guards-delivery-actions-test
   (testing "send and preview reject absent, unknown, and incomplete exporters"

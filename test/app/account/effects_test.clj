@@ -5,6 +5,7 @@
    [app.filestore :as filestore]
    [app.queries :as queries]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [babashka.fs :as bfs]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
@@ -65,6 +66,13 @@
                                         :filestore.file/file-id]))
                       images)}))
 
+(defn app-system
+  ([conn]
+   {:datomic      {:conn conn}
+    :write-runner (writer/create)})
+  ([conn store]
+   (assoc (app-system conn) :filestore store)))
+
 (defn metadata-retracted? [db {:keys [image-ids file-ids]}]
   (and (every? #(nil? (d/entid db [:image/image-id %])) image-ids)
        (every? #(nil? (d/entid db [:filestore.file/file-id %])) file-ids)))
@@ -83,8 +91,7 @@
             (bfs/copy jpeg-path tempfile {:replace-existing true})
             (let [result
                   (save-profile!
-                   {:datomic   {:conn conn}
-                    :filestore store}
+                   (app-system conn store)
                    {:member-id      member-id
                     :profile        profile
                     :avatar-upload  {:filename  "portrait.jpg"
@@ -129,8 +136,7 @@
                                        :image/height   160}})
             (let [result
                   (save-profile!
-                   {:datomic   {:conn conn}
-                    :filestore store}
+                   (app-system conn store)
                    {:member-id      member-id
                     :profile        (assoc profile
                                            :avatar-removed? true
@@ -154,7 +160,7 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "profile-effect-cleanup")
-                system                   {:datomic {:conn conn} :filestore store}]
+                system                   (app-system conn store)]
             (seed-member! conn member-id {})
             (save-profile! system
                            {:member-id      member-id
@@ -193,7 +199,7 @@
       (with-temp-filestore
         (fn [store]
           (let [{:keys [conn member-id]} (tc/new-system "profile-effect-remove-wins")
-                system                   {:datomic {:conn conn} :filestore store}]
+                system                   (app-system conn store)]
             (seed-member! conn member-id {})
             (save-profile! system
                            {:member-id      member-id
@@ -236,8 +242,7 @@
             (bfs/copy jpeg-path tempfile {:replace-existing true})
             (let [result
                   (save-profile!
-                   {:datomic   {:conn conn}
-                    :filestore store}
+                   (app-system conn store)
                    {:member-id      member-id
                     :profile        profile
                     :avatar-upload  {:filename  "last-write.jpg"
@@ -270,7 +275,7 @@
                          #inst "2026-07-16T08:05:00.000-00:00"})
           (is (thrown? Throwable
                        (save-profile!
-                        {:datomic {:conn conn}}
+                        (app-system conn)
                         {:member-id      member-id
                          :profile        profile
                          :avatar-upload  nil
@@ -294,7 +299,7 @@
           (is (= :saved
                  (:status
                   (save-profile!
-                   {:datomic {:conn conn}}
+                   (app-system conn)
                    {:member-id      member-id
                     :profile        profile
                     :avatar-upload  nil

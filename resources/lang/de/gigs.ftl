@@ -1,5 +1,9 @@
 ### Gigs, Proben, Treffen und Anwesenheit
 
+interaction-interrupted = Die Verbindung wurde unterbrochen. Einige Änderungen wurden möglicherweise gespeichert. Lade die Seite neu, bevor du fortfährst.
+interaction-reload = Seite neu laden
+interaction-failed = Die Aktion konnte nicht abgeschlossen werden. Prüfe die aktuellen Werte, bevor du es erneut versuchst.
+
 title = Gigs & Proben
 navigation-label = Gigs
 dashboard = Gig-Übersicht
@@ -21,6 +25,8 @@ setlist = Setliste
 remind-all = Alle erinnern
 # $time (String) - Lokalisierte Zeit, zu der die Erinnerung versendet wurde.
 reminded-all-at = Erinnert um { $time }
+# $time (String) - Lokalisierte Zeit der gespeicherten Versandanforderung, nicht der Zustellung.
+reminders-queued-at = Erinnerungen vorgemerkt: { $time }
 
 ### Gig-Details
 

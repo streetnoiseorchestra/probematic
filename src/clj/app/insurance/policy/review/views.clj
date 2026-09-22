@@ -315,5 +315,3 @@
            (review-aside)]
           (insurance-ui/history-section req selected))
          (queue-card review))]])))
-
-(d*/refresh-all!)

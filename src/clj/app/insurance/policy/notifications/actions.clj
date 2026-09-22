@@ -1,5 +1,6 @@
 (ns app.insurance.policy.notifications.actions
   (:require
+   [app.email.mailers :as mailers]
    [app.insurance.queries :as queries]
    [app.ledger.domain :as ledger.domain]
    [app.nexus.actions :as support]
@@ -54,7 +55,7 @@
        vec))
 
 (defn send-notifications-action
-  [{:keys [current-member-id db tr]} signals]
+  [{:keys [current-member-id db tr] :as state} signals]
   (let [params     (signal-key signals)
         policy-id  (try
                      (some-> (:policyId params) util/ensure-uuid!)
@@ -98,21 +99,16 @@
                            :message (tr [:insurance/select-payment-members])})
 
           :else
-          [[:app.insurance/send-payment-notifications
-            {:tx-data         (support/with-audit
-                                (transaction-tx-data
-                                 db
-                                 policy-id
-                                 (:insurance.policy/name (:policy data))
+          (let [tx-data (support/with-audit
+                          (transaction-tx-data db policy-id (:insurance.policy/name (:policy data)) to-send)
+                          current-member-id)]
+            [[:db/transact tx-data
+              {:jobs       (mapv (fn [{:keys [member]}]
+                                   (mailers/job state ::mailers/insurance-debt
+                                                {:policy-id policy-id                  :sender-id current-member-id
+                                                 :member-id (:member/member-id member)}))
                                  to-send)
-                                current-member-id)
-             :sender-name     (:sender-name data)
-             :time-range      (:time-range data)
-             :members-data    to-send
-             :result-path     [form-key :result]
-             :success         {:status :sent :count-sent (count to-send)}
-             :failure-message (tr [:insurance/send-payment-notifications-failed])}]
-           support/clear-loading])))))
+               :on-success (result-effects {:status :queued :count-queued (count to-send)})}]]))))))
 
 (def actions
   {::send-notifications #'send-notifications-action})

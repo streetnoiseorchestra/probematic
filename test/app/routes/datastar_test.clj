@@ -5,14 +5,13 @@
    [app.gigs.routes :as gigs.routes]
    [app.insurance.routes :as insurance.routes]
    [app.members.routes :as members.routes]
-   [app.nexus :as app-nexus]
    [app.probeplan.routes :as probeplan.routes]
    [app.poll.routes :as poll.routes]
    [app.routes.datastar :as dsr]
    [app.settings.routes :as settings.routes]
    [app.songs.routes :as songs.routes]
    [app.stats.routes :as stats.routes]
-   [app.test-common :as tc]
+   [app.write-runner-test :as fixtures]
    [app.urls :as urls]
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
@@ -45,30 +44,32 @@
       (instance? java.io.InputStream body) (slurp body)
       :else (str body))))
 
-(defn page-get-response []
+(defn page-get-response [runtime]
   (let [[_path _route-data [_child-path child-data]]
         (dsr/page-routes {:page-name ::toggle-fixture
                           :path      "/toggle-fixture"
                           :page      #'page})]
     (try
-      ((:get child-data) test-req)
+      ((:get child-data) (assoc-in test-req [:system :frame-loop] runtime))
       (catch IllegalArgumentException _exception
         {:status ::unresolved-translation}))))
 
 (deftest page-get-can-render-full-page-when-shim-disabled
-  (binding [dsr/*use-page-shim?* false]
-    (let [response (page-get-response)
-          body     (response-body-string response)]
-      (is (= {:status          200
-              :content-type    "text/html"
-              :contains-page?  true
-              :contains-sse?   true
-              :contains-morph? true}
-             {:status          (:status response)
-              :content-type    (get-in response [:headers "Content-Type"])
-              :contains-page?  (str/includes? body "Translated Datastar toggle fixture")
-              :contains-sse?   (str/includes? body "long-lived-sse")
-              :contains-morph? (str/includes? body "id=\"morph\"")})))))
+  (fixtures/with-runtime
+    (fn [runtime _client _conn]
+      (binding [dsr/*use-page-shim?* false]
+        (let [response (page-get-response runtime)
+              body     (response-body-string response)]
+          (is (= {:status          200
+                  :content-type    "text/html"
+                  :contains-page?  true
+                  :contains-sse?   true
+                  :contains-morph? true}
+                 {:status          (:status response)
+                  :content-type    (get-in response [:headers "Content-Type"])
+                  :contains-page?  (str/includes? body "Translated Datastar toggle fixture")
+                  :contains-sse?   (str/includes? body "long-lived-sse")
+                  :contains-morph? (str/includes? body "id=\"morph\"")})))))))
 
 (deftest datastar-patch-rendering-resolves-translation-data-test
   (is (true?
@@ -159,35 +160,12 @@
            {:route-name (get-in match [:data :app.route/name])
             :page-name  (get-in match [:data :name])}))))
 
-(deftest act-handler-dispatches-the-registered-action-from-query-params
-  (let [calls  (atom [])
-        config {:nexus/system->state identity
-                :nexus/effects       {::record  (fn [_ctx _system data]
-                                                  (swap! calls conj [:record data])
-                                                  nil)
-                                      ::respond (fn [_ctx _system data]
-                                                  (swap! calls conj [:respond data])
-                                                  {:status 200
-                                                   :body   data})}
-                :nexus/actions       {::ping (fn [_state body]
-                                               [[::record body]
-                                                [::respond {:ok true}]])}}
+(deftest act-handler-rejects-a-registered-action-without-a-runtime
+  (let [config {:nexus/actions {::ping (fn [_ _] (throw (ex-info "must not run" {})))}}
         req    {:system       {:nexus config}
                 :query-params (datastar/action-query-params ::ping)
                 :body-params  {:received true}}]
-    (is (= [[::ping {:received true}]]
-           (dsr/act-handler req)))
-    (is (= [[::ping {:received     true
-                     :query-params {"q" "Wedding"}}]]
-           (dsr/act-handler
-            (assoc req :query-params (assoc (datastar/action-query-params ::ping)
-                                            "q" "Wedding")))))
-    (is (= {:status 200
-            :body   {:ok true}}
-           (tc/dispatch-with-nexus dsr/act-handler config (:system req) req)))
-    (is (= [[:record {:received true}]
-            [:respond {:ok true}]]
-           @calls))))
+    (is (= 503 (:status (dsr/act-handler req))))))
 
 (deftest act-route-installs-nexus-as-route-interceptor
   (let [config             {:nexus/system->state identity
@@ -195,8 +173,7 @@
         [_path route-data] (dsr/act-route {:nexus config})]
     (is (= :app.routes.datastar/act (:name route-data)))
     (is (nil? (:middleware route-data)))
-    (is (= [::app-nexus/nexus-interceptor]
-           (mapv :name (:interceptors route-data))))))
+    (is (empty? (:interceptors route-data)))))
 
 (deftest act-helper-builds-url-from-the-named-act-route
   (let [config {:nexus/system->state identity

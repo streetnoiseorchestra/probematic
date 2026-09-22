@@ -17,6 +17,7 @@
     [:to [:vector {:min 1
                    :max 1}
           ::s/email-address]]
+    [:reply-to {:optional true} [:vector {:min 1} ::s/email-address]]
     [:subject ::s/non-blank-string]
     [:html ::s/non-blank-string]
     [:text ::s/non-blank-string]]

@@ -174,5 +174,3 @@
         {:title    title
          :subtitle [:i18n/tr :band-settings/travel-discount-page-subtitle]}]
        (travel-discount-types req)]])))
-
-(d*/refresh-all!)

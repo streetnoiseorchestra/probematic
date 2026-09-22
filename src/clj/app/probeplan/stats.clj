@@ -1,11 +1,9 @@
 (ns app.probeplan.stats
   (:require
-   [app.probeplan.domain :as domain]
    [app.datomic :as d]
+   [app.probeplan.domain :as domain]
    [app.util :as util]
-   [app.datomic.shim :as datomic]
-   [tick.core :as t]
-   [chime.core :as chime]))
+   [tick.core :as t]))
 
 (defn days-since [d as-of]
   (t/days
@@ -43,31 +41,3 @@
          (map util/remove-nils)
          (map domain/stat-tx)
          (map util/remove-nils))))
-
-(defn calc-and-save-play-stats! [conn]
-  (datomic/transact conn {:tx-data
-                          (calc-stats (datomic/db conn))}))
-
-(defn calc-play-stats-in-bg! [conn]
-  (chime/chime-at [(t/>> (t/instant) (t/new-duration 5 :seconds))]
-                  (fn [_]
-                    (calc-and-save-play-stats! conn)))
-  nil)
-
-(comment
-  (do
-    (require '[integrant.repl.state :as state])
-    (def env (:app.ig/env state/system))
-    (def conn (-> state/system :app.ig/datomic-db :conn))
-    (def db  (datomic/db conn))) ;; rcf
-
-  (d/find-all db :played/song [{:played/song [:song/title]}])
-  (def today (t/at (t/today) (t/midnight)))
-  (fetch-plays db today)
-  (calc-stats db)
-
-  (calc-and-save-play-stats! conn)
-  (calc-play-stats-in-bg! conn)
-
-  ;;
-  )

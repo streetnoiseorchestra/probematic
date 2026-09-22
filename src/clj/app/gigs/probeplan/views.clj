@@ -162,5 +162,3 @@
          (song-choices req gig-id songs repertoire-filter selected-songs)
          (selected-songs-list req gig-id selected-songs)
          (plan.views/pop-helper-script)]]))))
-
-(d*/refresh-all!)

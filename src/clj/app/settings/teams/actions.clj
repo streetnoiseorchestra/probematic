@@ -21,27 +21,24 @@
 (defn create-team-action
   [{:keys [db current-member-id]} {:keys [team-create]}]
   (let [{:keys [team-name]} team-create]
-    (cond
-      (str/blank? team-name)
-      [support/clear-loading
-       [:app.datastar/assoc-state [:team-create :error :team-name]
-        {:error "Team name is required."}]]
+    (into [[:app.datastar/merge-state [:team-create] (select-keys team-create [:team-name])]]
+          (cond
+            (str/blank? team-name)
+            [support/clear-loading
+             [:app.datastar/assoc-state [:team-create :error :team-name]
+              {:error "Team name is required."}]]
 
-      (team-name-taken? db team-name)
-      [support/clear-loading
-       [:app.datastar/merge-state
-        [:team-create]
-        {:team-name team-name
-         :error     {:team-name
-                     {:error (format "Team named '%s' already exists." team-name)}}}]]
+            (team-name-taken? db team-name)
+            [support/clear-loading
+             [:app.datastar/merge-state [:team-create]
+              {:team-name team-name
+               :error     {:team-name {:error (format "Team named '%s' already exists." team-name)}}}]]
 
-      :else
-      (let [tx-data (support/with-audit [{:team/team-id :db/gen-uuid
-                                          :team/name    team-name}]
-                      current-member-id)]
-        [[:db/transact tx-data {:transact-w-nils? false}]
-         support/clear-loading
-         clear-team-create]))))
+            :else
+            (let [tx-data (support/with-audit [{:team/team-id :db/gen-uuid :team/name team-name}]
+                            current-member-id)]
+              [[:db/transact tx-data {:transact-w-nils? false
+                                      :on-success       [support/clear-loading clear-team-create]}]])))))
 
 (defn update-team-action
   [{:keys [db current-member-id]} {:keys [team]}]
@@ -51,33 +48,31 @@
         team-ref          [:team/team-id team-id]
         current-team      (d/entity db team-ref)
         current-team-type (:team/team-type current-team)]
-    (cond
-      (str/blank? team-name)
-      [support/clear-loading
-       [:app.datastar/assoc-state [:team :error :team-name]
-        {:error "Team name is required."}]]
+    (into [[:app.datastar/merge-state [:team] (select-keys team [:team-name :team-type])]]
+          (cond
+            (str/blank? team-name)
+            [support/clear-loading
+             [:app.datastar/assoc-state [:team :error :team-name]
+              {:error "Team name is required."}]]
 
-      (support/lookup-taken-by-other? db [:team/name team-name] team-ref)
-      [support/clear-loading
-       [:app.datastar/merge-state
-        [:team]
-        {:team-name team-name
-         :error     {:team-name
-                     {:error (format "Team named '%s' already exists." team-name)}}}]]
+            (support/lookup-taken-by-other? db [:team/name team-name] team-ref)
+            [support/clear-loading
+             [:app.datastar/merge-state [:team]
+              {:team-name team-name
+               :error     {:team-name {:error (format "Team named '%s' already exists." team-name)}}}]]
 
-      :else
-      (let [tx-data (support/with-audit
-                      (concat
-                       (when (not= team-name (:team/name current-team))
-                         [[:db/add team-ref :team/name team-name]])
-                       (when team-type
-                         [[:db/add team-ref :team/team-type team-type]])
-                       (when (and (nil? team-type) current-team-type)
-                         [[:db/retract team-ref :team/team-type current-team-type]]))
-                      current-member-id)]
-        [[:db/transact tx-data {:transact-w-nils? false}]
-         support/clear-loading
-         clear-team]))))
+            :else
+            (let [tx-data (support/with-audit
+                            (concat
+                             (when (not= team-name (:team/name current-team))
+                               [[:db/add team-ref :team/name team-name]])
+                             (when team-type
+                               [[:db/add team-ref :team/team-type team-type]])
+                             (when (and (nil? team-type) current-team-type)
+                               [[:db/retract team-ref :team/team-type current-team-type]]))
+                            current-member-id)]
+              [[:db/transact tx-data {:transact-w-nils? false
+                                      :on-success       [support/clear-loading clear-team]}]])))))
 
 (defn delete-team-action
   [{:keys [current-member-id]} {:keys [targetid]}]

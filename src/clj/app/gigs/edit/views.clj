@@ -355,5 +355,3 @@
   (if (http.util/path-param req :gig/gig-id)
     (edit-page req)
     (create-page req)))
-
-(d*/refresh-all!)

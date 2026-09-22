@@ -110,7 +110,7 @@
                                            (when-not (str/blank? pay-deal)
                                              {:name (tr [:gigs/pay-deal]) :value pay-deal})
                                     ;;
-                                    ])}))
+                                           ])}))
 (defn gig-created-email-html
   [{:keys [tr env] :as sys} gig member reminder?]
   (let [gig-id              (:gig/gig-id gig)

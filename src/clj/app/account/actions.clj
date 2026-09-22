@@ -121,14 +121,19 @@
                    [:account-profile :_error field]
                    (get errors field)]))))
 
-(defn- normalize-avatar-upload [avatar]
+(defn- normalize-avatar-upload [avatar prepared?]
   (when (map? avatar)
+    (when-not (or prepared? (instance? java.io.File (:tempfile avatar)))
+      (throw (ex-info "Avatar upload requires a server-parsed multipart file"
+                      {:app/error-type :app.error.type/validation})))
     {:filename  (or (form/trim-value (:filename avatar)) "")
      :mime-type (or (form/trim-value (:mime-type avatar)) "")
      :size      (:size avatar)
      :tempfile  (:tempfile avatar)}))
 
-(defn- avatar-error [{:keys [filename mime-type size]}]
+(defn avatar-error
+  "Returns an upload metadata error, or nil when its name, type, and size are valid."
+  [{:keys [filename mime-type size]}]
   (cond
     (str/blank? filename)
     {:error [:i18n/tr :account-settings/error-avatar-name]}
@@ -184,10 +189,10 @@
    :_feedback       [:i18n/tr :account-settings/profile-saved-feedback]})
 
 (defn save-profile-action
-  [{:keys [db current-member-id]}
+  [{:keys [db current-member-id job-origin prepared-profile?]}
    {:keys [account-profile avatar-upload]}]
   (let [profile       (normalize-profile account-profile)
-        avatar-upload (normalize-avatar-upload avatar-upload)
+        avatar-upload (normalize-avatar-upload avatar-upload prepared-profile?)
         member        (when (and db current-member-id)
                         (d/entity db [:member/member-id current-member-id]))]
     (if-not (:db/id member)
@@ -203,10 +208,11 @@
         (if (seq errors)
           (discard-upload (profile-error-effects profile errors) avatar-upload)
           [[:app.account/save-profile
-            {:member-id      current-member-id
-             :profile        profile
-             :avatar-upload  avatar-upload
-             :sync-keycloak? (keycloak-sync-required? member)}]
+            (cond-> {:member-id      current-member-id
+                     :profile        profile
+                     :avatar-upload  avatar-upload
+                     :sync-keycloak? (keycloak-sync-required? member)}
+              job-origin (assoc :job-origin job-origin))]
            [:app.datastar/assoc-state
             [:account-profile]
             saved-profile-state]

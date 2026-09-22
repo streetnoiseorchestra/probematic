@@ -1,7 +1,9 @@
 (ns app.jobs.avatar-cutover
   "Sequential cutover from Discourse avatar templates to managed avatars."
   (:require
+   [app.datomic :as datomic]
    [app.filestore.controller :as filestore.controller]
+   [app.write-runner :as writer]
    [babashka.fs :as bfs]
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -89,14 +91,20 @@
              {:filestore (:filestore system)}
              {:file-name (:filename upload)
               :file      (:tempfile upload)
-              :mime-type (:mime-type upload)})]
-        @(d/transact
-          conn
-          (into (vec tx-data)
-                [[:db.fn/cas [:member/member-id member-id]
-                  :member/avatar-template template template]
-                 [:db.fn/cas [:member/member-id member-id]
-                  :member/avatar nil image-tempid]])))
+              :mime-type (:mime-type upload)})
+            persist!                       (fn []
+                                             (datomic/transact
+                                              conn
+                                              {:tx-data
+                                               (into (vec tx-data)
+                                                     [[:db.fn/cas [:member/member-id member-id]
+                                                       :member/avatar-template template template]
+                                                      [:db.fn/cas [:member/member-id member-id]
+                                                       :member/avatar nil image-tempid]])
+                                               :audit
+                                               {:audit/action ::cutover-avatar
+                                                :audit/origin :app.origin/system}}))]
+        (writer/call! system persist!))
       (finally
         (bfs/delete-if-exists (:tempfile upload))))))
 
@@ -122,7 +130,7 @@
        (try
          (migrate-member! system member-id template)
          (update result :migrated inc)
-         (catch Throwable exception
+         (catch Exception exception
            (if (cas-failure? exception)
              (do
                (μ/log ::avatar-cutover-conflict :member-id member-id)

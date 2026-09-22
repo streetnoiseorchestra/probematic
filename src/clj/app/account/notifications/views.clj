@@ -265,5 +265,3 @@
       (delivery-card req state)
       (timing-card req state)
       (support/feedback state)])))
-
-(d*/refresh-all!)

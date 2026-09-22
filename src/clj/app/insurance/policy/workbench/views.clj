@@ -1745,5 +1745,3 @@
        (workbench-toolbar req workbench)
        (bulk-action-bar req workbench)
        (rows-section workbench)]])))
-
-(d*/refresh-all!)

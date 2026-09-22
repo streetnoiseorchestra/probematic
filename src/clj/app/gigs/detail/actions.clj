@@ -1,8 +1,9 @@
 (ns app.gigs.detail.actions
   (:require
+   [app.email.mailers :as mailers]
    [app.form :as form]
    [app.gigs.domain :as domain]
-   [app.nexus.actions :as support]
+   [app.jobs.integrations :as integrations]
    [app.queries :as q]
    [app.util :as util]
    [clojure.string :as str]))
@@ -11,6 +12,7 @@
 (def comment-edit-path [:gig-detail :attendance :comment-edit])
 (def show-committed-path [:gig-detail :attendance :show-committed?])
 (def remind-all-sent-at-path [:gig-detail :attendance :remind-all-sent-at])
+(def remind-all-queued-at-path [:gig-detail :attendance :remind-all-queued-at])
 
 (defn- str->plan [plan]
   (when (seq (str plan))
@@ -25,8 +27,7 @@
    :member-id (some-> member-id util/ensure-uuid!)})
 
 (defn- invalid [message]
-  [support/clear-loading
-   [:app.datastar/assoc-state attendance-error-path {:error message}]])
+  [[:app.datastar/assoc-state attendance-error-path {:error message}]])
 
 (defn- invalid-plan [{:keys [tr]}]
   (invalid (tr [:error/gig-attendance-invalid-plan])))
@@ -52,8 +53,9 @@
   [[:db/add (attendance-ref gig-id member-id) attr value]
    [:db/add (attendance-ref gig-id member-id) :attendance/updated :db/now]])
 
-(defn- transact-attendance-effect [gig-id tx-data]
-  [:db/transact tx-data {:on-success [[:app.gigs/trigger-gig-edited gig-id :attendance]]}])
+(defn- transact-attendance-effect [state gig-id tx-data]
+  [:db/transact tx-data (assoc (integrations/gig-update-options state gig-id :attendance)
+                               :on-success [[:app.datastar/assoc-state attendance-error-path nil]])])
 
 (defn update-attendance-plan-action [{:keys [db] :as state} signals]
   (let [{:keys [plan] :as params}  (:gig-attendance signals)
@@ -64,7 +66,7 @@
       (let [tx-data (if (attendance db gig-id member-id)
                       (update-attendance-tx gig-id member-id :attendance/plan plan-kw)
                       [(create-attendance-tx db gig-id member-id {:attendance/plan plan-kw})])]
-        [(transact-attendance-effect gig-id tx-data)]))))
+        [(transact-attendance-effect state gig-id tx-data)]))))
 
 (defn update-attendance-motivation-action [{:keys [db] :as state} signals]
   (let [{:keys [motivation] :as params} (:gig-attendance signals)
@@ -75,7 +77,7 @@
       (let [tx-data (if (attendance db gig-id member-id)
                       (update-attendance-tx gig-id member-id :attendance/motivation motivation-kw)
                       [(create-attendance-tx db gig-id member-id {:attendance/motivation motivation-kw})])]
-        [(transact-attendance-effect gig-id tx-data)]))))
+        [(transact-attendance-effect state gig-id tx-data)]))))
 
 (defn open-attendance-comment-action [_state signals]
   (let [{:keys [comment] :as params} (:gig-attendance signals)
@@ -107,17 +109,17 @@
       :else
       [(create-attendance-tx db gig-id member-id {:attendance/comment comment})])))
 
-(defn update-attendance-comment-action [{:keys [db]} signals]
+(defn update-attendance-comment-action [{:keys [db] :as state} signals]
   (let [{:keys [comment] :as params} (:gig-attendance signals)
         {:keys [gig-id member-id]}   (ids params)
         tx-data                      (comment-tx-data db gig-id member-id comment)
         close-edit                   [:app.datastar/assoc-state comment-edit-path nil]]
     (if tx-data
-      [(transact-attendance-effect gig-id tx-data)
+      [(transact-attendance-effect state gig-id tx-data)
        close-edit]
-      [support/clear-loading close-edit])))
+      [close-edit])))
 
-(defn switch-attendance-comment-action [{:keys [db]} signals]
+(defn switch-attendance-comment-action [{:keys [db] :as state} signals]
   (let [{:keys [comment comment-gig-id comment-member-id next-comment next-gig-id next-member-id]} (:gig-attendance signals)
         comment-gig-id                                                                             (util/ensure-uuid! comment-gig-id)
         comment-member-id                                                                          (util/ensure-uuid! comment-member-id)
@@ -133,7 +135,7 @@
                                                                                                     [[:app.datastar.sse/merge-signals
                                                                                                       {:gig-attendance {:switching-comment false}}]]]]
     (cond-> []
-      tx-data (conj (transact-attendance-effect comment-gig-id tx-data))
+      tx-data (conj (transact-attendance-effect state comment-gig-id tx-data))
       true    (conj open-next clear-switching))))
 
 (defn toggle-attendance-committed-action [_state signals]
@@ -143,11 +145,73 @@
                                                                         show-committed))]
     [[:app.datastar/assoc-state show-committed-path show-committed?]]))
 
-(defn send-reminder-to-all-action [{:keys [now]} signals]
-  (let [{:keys [gig-id]} (:gig-attendance signals)
-        gig-id           (util/ensure-uuid! gig-id)]
-    [[:app.gigs/send-reminder-to-all gig-id]
-     [:app.datastar/assoc-state remind-all-sent-at-path now]]))
+(defn send-reminder-to-all-action
+  [{:keys [now] :as state} signals]
+  (let [gig-id (util/ensure-uuid! (get-in signals [:gig-attendance :gig-id]))]
+    [[:db/transact []
+      {:jobs       [(mailers/job (assoc state :current-locale :de) ::mailers/gig-reminder
+                                 {:gig-id gig-id})]
+       :on-success [[:app.datastar/assoc-state remind-all-queued-at-path now]]}]]))
+
+(def interaction-policies
+  {::update-attendance-plan
+   {:scope    :plan
+    :targets  [:gig-id :member-id]
+    :signals  :gig-attendance
+    :group    :plans
+    :block    :none
+    :replace? true}
+
+   ::update-attendance-motivation
+   {:scope    :motivation
+    :targets  [:gig-id :member-id]
+    :signals  :gig-attendance
+    :group    :motivations
+    :block    :self
+    :replace? true}
+
+   ::open-attendance-comment
+   {:scope   :comment-open
+    :targets [:gig-id :member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::close-attendance-comment
+   {:scope   :comment-close
+    :targets [:gig-id :member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::update-attendance-comment
+   {:scope   :comment-update
+    :targets [:gig-id :member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::switch-attendance-comment
+   {:scope   :comment-switch
+    :targets [:gig-id :comment-member-id :next-member-id]
+    :signals :gig-attendance
+    :group   :comments
+    :block   :group}
+
+   ::toggle-attendance-committed
+   {:scope    :filter
+    :targets  [:gig-id]
+    :signals  :gig-attendance
+    :group    :filters
+    :block    :self
+    :replace? true}
+
+   ::send-reminder-to-all
+   {:scope   :reminder
+    :targets [:gig-id]
+    :signals :gig-attendance
+    :group   :reminders
+    :block   :self}})
 
 (def actions
   {::update-attendance-plan       #'update-attendance-plan-action

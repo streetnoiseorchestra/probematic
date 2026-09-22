@@ -221,6 +221,15 @@
            {:account-profile valid-profile})
           [0 1 :sync-keycloak?])))))
 
+(deftest save-profile-rejects-client-supplied-upload-paths
+  (doseq [tempfile ["/tmp/client-supplied-path" {:path "/tmp/client-supplied-path"} nil]]
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"server-parsed multipart"
+         (actions/save-profile-action
+          {} {:prepared-profile?                    true
+              :app.account.effects/prepared-profile {:app.account.effects/stored-avatar nil}
+              :avatar-upload                        {:filename "avatar.jpg" :mime-type "image/jpeg" :size 1 :tempfile tempfile}})))))
+
 (deftest save-profile-validates-upload-metadata-before-dispatch
   (let [{:keys [conn] :as system} (tc/new-system "account-profile-upload-validation")]
     (seed-member! conn (:member-id system))

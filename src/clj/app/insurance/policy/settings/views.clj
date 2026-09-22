@@ -1126,5 +1126,3 @@
                                                             [breadcrumb/BreadcrumbItem [:i18n/tr :insurance/policy-settings]]]
                                                            :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
       (settings-page-content req settings)])))
-
-(d*/refresh-all!)

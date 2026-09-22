@@ -2,8 +2,11 @@
   (:refer-clojure :exclude [ref])
   (:require
    [app.auth :as auth]
+   [app.audit :as audit]
+   [app.write-runner :as writer]
    [com.yetanalytics.squuid :as sq]
    [app.datomic.shim :as d]
+   [datomic.api :as peer]
    [medley.core :as m])
   (:import
    [java.util UUID]))
@@ -30,25 +33,34 @@
              [?tx :db/txInstant]]
            db))))
 
-(defn transact [conn opts]
-  (try
-    (d/transact conn opts)
-    (catch clojure.lang.ExceptionInfo e
-      {:error     (ex-data e)
-       :exception e
-       :msg       (ex-message e)})
-    (catch java.util.concurrent.ExecutionException e
-      (let [cause (ex-cause e)]
-        (if-let [error (ex-data cause)]
-          {:error     error
-           :exception cause
-           :msg       (ex-message cause)}
-          (throw e))))))
+(defn- audit-options [opts metadata]
+  (-> opts
+      (assoc :tx-data (audit/with-metadata (:tx-data opts) metadata))
+      (dissoc :audit)))
 
-(defn audit-txs [req comment]
-  (filterv #(some? %)
-           [[:db/add "datomic.tx" :audit/user [:member/member-id (:member/member-id (auth/get-current-member req))]]
-            (when comment [:db/add "datomic.tx" :audit/comment comment])]))
+(defn transact
+  "Commits `opts` through the application transaction boundary.
+
+  `:tx-data` contains Datomic transaction data. Optional `:audit` contains trusted
+  transaction metadata. Explicit and trusted audit values must agree. Returns the
+  transaction report and throws when Datomic rejects the transaction."
+  [conn opts]
+  (d/transact conn (audit-options opts (or (:audit opts) {}))))
+
+(defn source-audit-user
+  "Returns the current member lookup ref recorded on source transaction `source-t`.
+
+  Returns `nil` when the source has no actor or that member is no longer present."
+  [conn source-t]
+  (when source-t
+    (let [db        (d/db conn)
+          member-id (get-in (d/pull (d/as-of db source-t)
+                                    '[{:audit/user [:member/member-id]}]
+                                    (peer/t->tx source-t))
+                            [:audit/user :member/member-id])
+          user-ref  [:member/member-id member-id]]
+      (when (and member-id (d/entid db user-ref))
+        user-ref))))
 
 (defn transact-wrapper!
   ([req opts]
@@ -56,7 +68,15 @@
   ([{:keys [datomic-conn] :as req} opts comment]
    (assert datomic-conn "datomic-conn is required")
    (assert (map? opts) "opts must be a map")
-   (d/transact datomic-conn (update opts :tx-data concat (audit-txs req comment)))))
+   (let [member-id (some-> (auth/get-current-member req) :member/member-id)
+         tx-data   (audit/with-metadata (:tx-data opts) (or (:audit opts) {}))
+         tx-data   (audit/with-metadata
+                     tx-data
+                     {:audit/comment comment
+                      :audit/origin  :app.origin/browser
+                      :audit/user    (when member-id [:member/member-id member-id])})
+         opts      (assoc (dissoc opts :audit) :tx-data tx-data)]
+     (writer/call! (:system req) #(transact datomic-conn opts)))))
 
 (defn expand-audit-user [db {:audit/keys [user] :as audit}]
   (assoc-in audit [:audit/member] (d/pull db [:member/member-id :member/username :member/name :member/nick] (:db/id user))))

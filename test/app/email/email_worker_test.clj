@@ -157,6 +157,29 @@
                {:request       (first @requests)
                 :worker-result result}))))))
 
+(deftest worker-preserves-frozen-runtime-fields
+  (with-http-server
+    (json-response 202
+                   {"message_id" "frozen-message-id"
+                    "status"     "queued"})
+    (fn [{:keys [requests]}]
+      (let [email  (-> single-queued-email
+                       (assoc :email/freeze-runtime? true)
+                       (assoc-in [:email/messages 0 :from]
+                                 "Frozen <frozen@example.test>")
+                       (assoc-in [:email/messages 0 :route] "frozen-route"))
+            result (worker/handler
+                    (worker-system {:from  "changed@example.test"
+                                    :route "changed-route"})
+                    email
+                    1)]
+        (is (= {:from   "Frozen <frozen@example.test>"
+                :route  "frozen-route"
+                :status :success}
+               {:from   (get-in (first @requests) [:body "from"])
+                :route  (get-in (first @requests) [:body "route"])
+                :status (:status result)}))))))
+
 (deftest worker-sends-a-complete-message-batch
   (with-http-server
     (json-response 202

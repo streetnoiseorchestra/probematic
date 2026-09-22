@@ -1068,6 +1068,36 @@
  {:db/ident       :audit/comment
   :db/cardinality :db.cardinality/one
   :db/valueType   :db.type/string}
+
+ {:db/ident       :app.external-effect/id
+  :db/doc         "Receipt for a completed external operation and its committed application follow-up; delivery before the receipt may still be retried after a crash."
+  :db/cardinality :db.cardinality/one
+  :db/unique      :db.unique/identity
+  :db/valueType   :db.type/uuid}
+
+ {:db/ident       :audit/action
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/keyword}
+ {:db/ident       :audit/origin
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/keyword}
+ {:db/ident       :audit/notify?
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/boolean}
+ {:db/ident       :audit/jobs
+  :db/doc         "Versioned EDN job intent committed with the business change."
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/string}
+ {:db/ident       :app.log/source-id
+  :db/doc         "Persistent database identity for the Datomic log consumer."
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/uuid}
+ {:db/ident :app.log/source}
+ {:db/ident       :member/keycloak-enabled-request
+  :db/doc         "Most recently requested Keycloak enabled state; not a claim about remote completion."
+  :db/cardinality :db.cardinality/one
+  :db/valueType   :db.type/boolean}
+
 ;;;; Reminder Schema
  {:db/ident       :reminder/reminder-id
   :db/doc         "The id of this reminder"
@@ -1096,7 +1126,7 @@
   :db/cardinality :db.cardinality/one}
 
  {:db/ident       :reminder/reminder-status
-  :db/doc         "The status of the reminder, whether its pending, sent, errored, or cancelled"
+  :db/doc         "The reminder status: pending, queued for delivery, sent, errored, or cancelled."
   :db/valueType   :db.type/keyword
   :db/cardinality :db.cardinality/one}
 

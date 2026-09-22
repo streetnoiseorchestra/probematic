@@ -53,29 +53,20 @@
               :authorized?     (:authorized? data)
               :time-range      (:time-range data)})))
 
-    (testing "the action returns one ordered ledger-and-email effect"
-      (let [[effect response] (actions/send-notifications-action
-                               state
-                               {:insurancePayments
-                                {:policyId  (str policy-id)
-                                 :memberIds [(str member-id)]}})
-            [_ payload]       effect]
-        (is (= :app.insurance/send-payment-notifications (first effect)))
-        (is (= {:member-ids  [member-id]
-                :sender-name "Ada"
-                :time-range  "2026 - 2026"
-                :success     {:status :sent :count-sent 1}
-                :result-path [:insurance-payments :result]}
-               {:member-ids  (mapv #(get-in % [:member :member/member-id])
-                                   (:members-data payload))
-                :sender-name (:sender-name payload)
-                :time-range  (:time-range payload)
-                :success     (:success payload)
-                :result-path (:result-path payload)}))
-        (is (seq (:tx-data payload)))
-        (is (= [:db/add "datomic.tx" :audit/user [:member/member-id member-id]]
-               (last (:tx-data payload))))
-        (is (= support/clear-loading response)))))
+    (testing "ledger data and email intent share one transaction"
+      (let [[[_ tx opts]]         (actions/send-notifications-action
+                                   state {:insurancePayments {:policyId  (str policy-id)
+                                                              :memberIds [(str member-id)]}})
+            [[kind args options]] (:jobs opts)]
+        (is (= "send-email" kind))
+        (is (= :app.email.mailers/insurance-debt (:mailer args)))
+        (is (= {:policy-id policy-id :sender-id member-id :member-id member-id} (:arguments args)))
+        (is (= "start-within-2m" (:queue options)))
+        (is (seq tx))
+        (is (= [:db/add "datomic.tx" :audit/user [:member/member-id member-id]] (last tx)))
+        (is (= [support/clear-loading
+                [:app.datastar/assoc-state [:insurance-payments :result] {:status :queued :count-queued 1}]]
+               (:on-success opts))))))
 
   (testing "a non-insurance-team member cannot send payment notifications"
     (let [{:keys [conn member-id outsider-id policy-id]} (fixture)
@@ -87,9 +78,7 @@
                                                            {:policyId  (str policy-id)
                                                             :memberIds [(str member-id)]}})]
       (is (= support/clear-loading (first effects)))
-      (is (= :error (get-in effects [1 2 :status])))
-      (is (not-any? #(= :app.insurance/send-payment-notifications (first %))
-                    effects))))
+      (is (= :error (get-in effects [1 2 :status])))))
 
   (testing "a forged selection with an unavailable private cost is rejected"
     (let [{:keys [conn member-id policy-id]} (fixture)
@@ -114,5 +103,4 @@
                        :memberIds [(str member-id)]}})]
         (is (= support/clear-loading (first effects)))
         (is (= :app.datastar/assoc-state (first (second effects))))
-        (is (= :error (get-in effects [1 2 :status])))
-        (is (not-any? #(= :app.insurance/send-payment-notifications (first %)) effects))))))
+        (is (= :error (get-in effects [1 2 :status])))))))

@@ -861,5 +861,3 @@
                      (member-ledger-panel req member))
           (tab-panel active-tab "insurance"
                      (member-insurance-panel req member))])]])))
-
-(d*/refresh-all!)

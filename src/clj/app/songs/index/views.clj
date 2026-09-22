@@ -127,5 +127,3 @@
          :subtitle [:i18n/tr :repertoire/song-count {:count (count songs)}]}]
        (collection-controls req page-state)
        (songs-list req songs)]])))
-
-(d*/refresh-all!)

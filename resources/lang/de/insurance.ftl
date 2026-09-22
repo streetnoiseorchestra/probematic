@@ -137,6 +137,12 @@ survey-send-reminders = Erinnerungen senden
 survey-send-reminders-title = Erinnerungen zur Versicherungsumfrage senden?
 survey-send-reminders-body = Alle Mitglieder, die diese Umfrage noch nicht abgeschlossen haben, erhalten eine Erinnerung per E-Mail.
 survey-reminders-confirm = Erinnerungen senden
+# $count (Number) - Anzahl ausgewählter Empfänger; die Erinnerungen sind vorgemerkt, noch nicht zugestellt.
+survey-reminders-queued =
+    { $count ->
+        [one] Eine Erinnerung ist zum Versand vorgemerkt.
+       *[other] { $count } Erinnerungen sind zum Versand vorgemerkt.
+    }
 survey-reminders-sent =
     { $count ->
         [one] Eine Erinnerung wurde gesendet.
@@ -437,6 +443,13 @@ no-private-payments-title = Keine Zahlungen anzufordern
 no-private-payments = Für diese Police müssen keine Zahlungen für private Instrumente angefordert werden.
 payment-email-preview-title = E-Mail-Vorschau
 payment-email-preview-subtitle = Dieses Beispiel verwendet die Instrumente und den Gesamtbetrag des ersten ausgewählten Mitglieds.
+payment-notifications-queued-title = Benachrichtigungen vorgemerkt
+# $count (Number) - Anzahl der Empfänger mit gespeicherter Versandanforderung; die Zustellung steht noch aus.
+payment-notifications-queued =
+    { $count ->
+        [one] Eine Zahlungsbenachrichtigung ist zum Versand vorgemerkt.
+       *[other] { $count } Zahlungsbenachrichtigungen sind zum Versand vorgemerkt.
+    }
 payment-notifications-sent-title = Benachrichtigungen gesendet
 payment-notifications-sent =
     { $count ->

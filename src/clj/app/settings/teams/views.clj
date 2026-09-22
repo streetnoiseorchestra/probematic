@@ -250,5 +250,3 @@
         {:title    title
          :subtitle [:i18n/tr :band-settings/team-page-subtitle]}]
        (teams-panel req)]])))
-
-(d*/refresh-all!)

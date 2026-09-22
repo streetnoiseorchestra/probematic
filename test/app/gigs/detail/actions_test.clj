@@ -64,8 +64,8 @@
    :attendance/updated    :db/now
    :attendance/section    [:section/name "flute"]})
 
-(defn edited-effect [gig-id]
-  {:on-success [[:app.gigs/trigger-gig-edited gig-id :attendance]]})
+(defn edited-effect [_gig-id]
+  {:on-success [[:app.datastar/assoc-state [:gig-detail :attendance :_error] nil]]})
 
 (deftest update-attendance-plan-action-test
   (testing "creates an attendance entity when the member has no attendance yet"
@@ -94,8 +94,7 @@
   (testing "invalid plan values do not transact"
     (let [{:keys [conn]}             (tc/new-system "gig-attendance-plan-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state
+      (is (= [[:app.datastar/assoc-state
                [:gig-detail :attendance :_error]
                {:error "Invalid attendance plan."}]]
              (actions/update-attendance-plan-action
@@ -129,8 +128,7 @@
   (testing "invalid motivation values do not transact"
     (let [{:keys [conn]}             (tc/new-system "gig-attendance-motivation-invalid")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state
+      (is (= [[:app.datastar/assoc-state
                [:gig-detail :attendance :_error]
                {:error "Invalid attendance motivation."}]]
              (actions/update-attendance-motivation-action
@@ -199,8 +197,7 @@
   (testing "does not create an attendance entity for a blank comment"
     (let [{:keys [conn]}             (tc/new-system "gig-attendance-comment-nop")
           {:keys [gig-id member-id]} (seed-gig-member! conn)]
-      (is (= [[:app.datastar/respond-sse [[:app.datastar.sse/merge-signals {:loading false :targetid false}]]]
-              [:app.datastar/assoc-state
+      (is (= [[:app.datastar/assoc-state
                [:gig-detail :attendance :comment-edit]
                nil]]
              (actions/update-attendance-comment-action
@@ -261,16 +258,21 @@
                                 :next-member-id    (str next-member-id)
                                 :next-comment      ""}}))))))
 
-(deftest send-reminder-to-all-action-test
-  (let [gig-id #uuid "01844740-3eed-856d-84c1-c26f07068210"
-        now    #inst "2026-04-28T10:00:00.000-00:00"]
-    (is (= [[:app.gigs/send-reminder-to-all gig-id]
-            [:app.datastar/assoc-state
-             [:gig-detail :attendance :remind-all-sent-at]
-             now]]
-           (actions/send-reminder-to-all-action
-            {:tr tr :now now}
-            {:gig-attendance {:gig-id (str gig-id)}})))))
+(deftest send-reminder-to-all-defers-empty-recipient-decision
+  (let [{:keys [conn]}  (tc/new-system "empty-gig-reminders")
+        gig-id          (random-uuid)
+        now             #inst "2026-04-28T10:00:00Z"
+        [[_ tx opts]]   (actions/send-reminder-to-all-action
+                         {:db (d/db conn) :tr tr :now now}
+                         {:gig-attendance {:gig-id (str gig-id)}})
+        [[kind args _]] (:jobs opts)]
+    (is (= [] tx))
+    (is (= "send-email" kind))
+    (is (= :app.email.mailers/gig-reminder (:mailer args)))
+    (is (= {:gig-id gig-id} (:arguments args)))
+    (is (= [[:app.datastar/assoc-state
+             [:gig-detail :attendance :remind-all-queued-at] now]]
+           (:on-success opts)))))
 
 (deftest toggle-attendance-committed-action-test
   (is (= [[:app.datastar/assoc-state

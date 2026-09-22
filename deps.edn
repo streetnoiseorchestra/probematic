@@ -15,7 +15,7 @@
          dev.data-star.clojure/sdk                      {:mvn/version "1.0.0-RC11"}
          dev.data-star.clojure/http-kit                 {:mvn/version "1.0.0-RC11"}
          datastar/expressions                           {:git/url "https://github.com/ramblurr/datastar-expressions/"
-                                                         :git/sha "4b2ce91807666cafe6f22f879f2c8e08755a131e"}
+                                                         :git/sha "77a9d0667965fba2c99bea01bb5838df4d567a29"}
          org.flatland/ordered                           {:mvn/version "1.15.12"}
         ;; for Discourse integration
          clj-commons/clj-yaml                           {:mvn/version "1.0.29"}
@@ -23,6 +23,7 @@
          com.github.oliyh/martian-httpkit               {:mvn/version "0.1.30"}
         ;; Data
          aero/aero                                      {:mvn/version "1.1.6"}
+         io.github.tonsky/fast-edn                      {:mvn/version "1.2.0"}
          metosin/malli                                  {:mvn/version "0.20.1"}
          luminus-transit/luminus-transit                {:mvn/version "0.1.6" :exclusions [com.cognitect/transit-clj]}
          metosin/muuntaja                               {:mvn/version "0.6.11"}
@@ -59,10 +60,10 @@
          com.datomic/peer                               {:mvn/version "1.0.7622"}
          org.xerial/sqlite-jdbc                         {:mvn/version "3.53.1.0"}
          com.s-exp/drip                                 {:git/url   "https://github.com/outskirtslabs/dollop"
-                                                         :git/sha   "7ffb710bee8ca56d3f5285f2073c0341a12bb1d8"
+                                                         :git/sha   "4ef90f4bb887400b588d8571d71acaf8b286929e"
                                                          :deps/root "modules/drip"}
          com.s-exp/drip-ui                              {:git/url   "https://github.com/outskirtslabs/dollop"
-                                                         :git/sha   "7ffb710bee8ca56d3f5285f2073c0341a12bb1d8"
+                                                         :git/sha   "4ef90f4bb887400b588d8571d71acaf8b286929e"
                                                          :deps/root "modules/drip-ui"}
          andersmurphy/sqlite4clj                        {:git/url "https://github.com/Ramblurr/sqlite4clj"
                                                          :git/sha "64547865b8dcbec8dbd1e2f6278ac9f6f9b2d458"}
@@ -74,8 +75,6 @@
          buddy/buddy-core                               {:mvn/version "1.12.0-430"}
          buddy/buddy-sign                               {:mvn/version "3.6.1-359"}
          keycloak-clojure/keycloak-clojure              {:mvn/version "1.31.5"}
-         ;; SMTP Email
-         toyokumo/tarayo                                {:mvn/version "0.2.8"}
          ;; Util
          selmer/selmer                                  {:mvn/version "1.13.1"}
          dev.weavejester/medley                         {:mvn/version "1.10.0"}

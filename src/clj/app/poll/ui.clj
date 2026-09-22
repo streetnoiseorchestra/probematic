@@ -160,5 +160,3 @@
   (merge {:data-id     id
           :data-action (d*/act req action)}
          (loading-attrs id)))
-
-(d*/refresh-all!)

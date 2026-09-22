@@ -1,5 +1,6 @@
 (ns app.poll.detail.actions
   (:require
+   [app.email.mailers :as mailers]
    [app.nexus.actions :as support]
    [app.poll.queries :as queries]
    [app.urls :as urls]
@@ -24,9 +25,11 @@
   [support/clear-loading
    [:app.datastar/assoc-state path {:_error {:_top {:error message}}}]])
 
-(defn open-poll-action [{:keys [db tr]} signals]
+(defn open-poll-action
+  [{:keys [db tr] :as state} signals]
   (let [poll-id (poll-id-from signals :poll-detail)
-        poll    (queries/retrieve-poll db poll-id)]
+        poll    (queries/retrieve-poll db poll-id)
+        tx-data [[:db/add (poll-ref poll-id) :poll/poll-status :poll.status/open]]]
     (cond
       (nil? poll)
       (invalid [:poll-detail] (tr [:polls/error-not-found]))
@@ -35,11 +38,9 @@
       (invalid [:poll-detail] (tr [:polls/open-hint]))
 
       :else
-      [[:db/transact
-        [[:db/add (poll-ref poll-id) :poll/poll-status :poll.status/open]]
-        {}]
-       [:app.poll/send-poll-opened poll-id]
-       support/clear-loading])))
+      [[:db/transact tx-data
+        {:jobs       [(mailers/job state ::mailers/poll-opened {:poll-id poll-id})]
+         :on-success [support/clear-loading]}]])))
 
 (defn close-poll-action [{:keys [now]} signals]
   (let [poll-id (poll-id-from signals :poll-detail)]

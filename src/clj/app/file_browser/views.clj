@@ -208,5 +208,3 @@
                                :state         picker
                                :title         [:i18n/tr :files/choose-file]
                                :select-action ::actions/select-file})]])))
-
-(d*/refresh-all!)

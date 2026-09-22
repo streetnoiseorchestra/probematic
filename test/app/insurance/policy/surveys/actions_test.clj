@@ -278,9 +278,7 @@
                                  (assoc (survey-signals policy-id {})
                                         :targetid (str survey-id)))]
         (is (= support/clear-loading (first effects)))
-        (is (= :error (get-in effects [1 2 :status])))
-        (is (not-any? #(= :app.insurance/send-survey-notifications (first %))
-                      effects))))))
+        (is (= :error (get-in effects [1 2 :status])))))))
 
 (deftest update-closes-at-rejects-invalid-survey-state
   (let [{:keys [conn coverage-id member-id policy-id state]} (fixture)
@@ -379,15 +377,16 @@
          {:coverage-ids [coverage-id]
           :member-id    member-id
           :policy-id    policy-id})
-        [effect response]                                    (actions/send-reminders-action
+        [[effect tx opts]]                                   (actions/send-reminders-action
                                                               (assoc state :db (d/db conn))
-                                                              (assoc (survey-signals policy-id {})
-                                                                     :targetid (str survey-id)))
-        [_ payload]                                          effect]
-    (is (= :app.insurance/send-survey-notifications (first effect)))
-    (is (= [member-id]
-           (mapv :member/member-id (:members payload))))
-    (is (= "Ada" (:sender-name payload)))
-    (is (= [:insurance-survey-admin :result] (:result-path payload)))
-    (is (= {:status :sent :count-sent 1} (:success payload)))
-    (is (= support/clear-loading response))))
+                                                              (assoc (survey-signals policy-id {}) :targetid (str survey-id)))
+        [[kind args options]]                                (:jobs opts)]
+    (is (= :db/transact effect))
+    (is (= [] tx))
+    (is (= "send-email" kind))
+    (is (= :app.email.mailers/survey-reminder (:mailer args)))
+    (is (= {:survey-id survey-id :sender-id member-id} (:arguments args)))
+    (is (= "start-within-2m" (:queue options)))
+    (is (= [support/clear-loading
+            [:app.datastar/assoc-state [:insurance-survey-admin :result] {:status :queued :count-queued 1}]]
+           (:on-success opts)))))

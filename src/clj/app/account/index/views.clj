@@ -108,5 +108,3 @@
              (map directory-row)
              directory-items)]
       (apps-card req app-state)])))
-
-(d*/refresh-all!)

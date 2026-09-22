@@ -47,6 +47,8 @@
      (case status
        :created [:i18n/tr :insurance/survey-created]
        :closed  [:i18n/tr :insurance/survey-closed]
+       :queued  [:i18n/tr :insurance/survey-reminders-queued
+                 {:count (:count-queued result)}]
        :sent    [:i18n/tr :insurance/survey-reminders-sent
                  {:count (:count-sent result)}]
        :empty   [:i18n/tr :insurance/survey-reminders-empty]
@@ -385,5 +387,3 @@
           [:i18n/tr :insurance/survey-error-not-allowed]])]
       (when authorized?
         (survey-dialogs req active-survey))])))
-
-(d*/refresh-all!)

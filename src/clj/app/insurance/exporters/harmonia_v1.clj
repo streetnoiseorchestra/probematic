@@ -1,7 +1,6 @@
 (ns app.insurance.exporters.harmonia-v1
   (:require
    [dk.ative.docjure.spreadsheet :as excel]
-   [tarayo.core :as tarayo]
    [tick.core :as t])
   (:import
    [java.io ByteArrayOutputStream]
@@ -170,28 +169,21 @@
      :label-key :insurance/exporter-role-unattended-building
      :required? true}]})
 
-(defn send-email!
-  [generate-changeset! policy smtp-params from to subject body
-   attachment-filename-new attachment-filename-changes]
-  (with-open [conn (tarayo/connect smtp-params)]
-    (let [new-items-output-stream     (ByteArrayOutputStream.)
-          changed-items-output-stream (ByteArrayOutputStream.)]
-      (generate-changeset! #{:instrument.coverage.change/new}
-                           policy
-                           new-items-output-stream)
-      (generate-changeset! #{:instrument.coverage.change/changed
-                             :instrument.coverage.change/removed}
-                           policy
-                           changed-items-output-stream)
-      (tarayo/send!
-       conn
-       {:from    from
-        :to      to
-        :subject subject
-        :body    [{:content body}
-                  {:content      (.toByteArray new-items-output-stream)
-                   :content-type "application/vnd.ms-excel"
-                   :filename     attachment-filename-new}
-                  {:content      (.toByteArray changed-items-output-stream)
-                   :content-type "application/vnd.ms-excel"
-                   :filename     attachment-filename-changes}]}))))
+(defn generate-attachments!
+  [generate-changeset! policy attachment-filename-new
+   attachment-filename-changes]
+  (let [new-items-output-stream     (ByteArrayOutputStream.)
+        changed-items-output-stream (ByteArrayOutputStream.)]
+    (generate-changeset! #{:instrument.coverage.change/new}
+                         policy
+                         new-items-output-stream)
+    (generate-changeset! #{:instrument.coverage.change/changed
+                           :instrument.coverage.change/removed}
+                         policy
+                         changed-items-output-stream)
+    [{:content      (.toByteArray new-items-output-stream)
+      :content-type "application/vnd.ms-excel"
+      :filename     attachment-filename-new}
+     {:content      (.toByteArray changed-items-output-stream)
+      :content-type "application/vnd.ms-excel"
+      :filename     attachment-filename-changes}]))

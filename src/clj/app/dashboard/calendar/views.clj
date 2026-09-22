@@ -1,6 +1,5 @@
 (ns app.dashboard.calendar.views
   (:require
-   [app.datastar :as d*]
    [app.ui2 :as ui2]
    [app.ui2.card :as card]
    [app.ui2.page-header :as page-header]
@@ -21,5 +20,3 @@
                :src    "https://data.streetnoise.at/apps/calendar/embed/yRFYYPnQkasfa8nk/listMonth/now"
                :width  "100%"
                :height "1000"}]]]))
-
-(d*/refresh-all!)

@@ -18,6 +18,9 @@
    :alias    ::breadcrumb
    :schema
    [:map {}
+    [:id {:optional true
+          :doc      "Optional DOM id used as the collapse-control prefix. Set distinct ids only when multiple collapsing breadcrumbs share a document."}
+     :string]
     [::separator {:optional true
                   :default  :nav-arrow-right
                   :doc      "The separator to use between breadcrumb items. Set to nil to render no separator."}
@@ -134,10 +137,9 @@
     [(collapse-label expanded "expanded-label")
      (collapse-label compact "compact-label")]))
 
-(defn- collapse-popover [positions hidden-counts]
-  (let [trigger-id (str "sno-breadcrumb-collapse-" (random-uuid))
-        popover-id (str trigger-id "-popover")
-        trigger    (str "document.getElementById('" trigger-id "')")]
+(defn- collapse-popover [id-scope positions hidden-counts]
+  (let [trigger-id (str id-scope "-collapse-trigger")
+        popover-id (str id-scope "-collapse-popover")]
     [:span {:class "control"}
      (into [button/Button {:id            trigger-id
                            :appearance    "plain"
@@ -154,9 +156,9 @@
                    :placement     "bottom-start"
                    :without-arrow true
                    :data-on:wa-show
-                   (str trigger ".setAttribute('aria-expanded', 'true')")
+                   "el.previousElementSibling.setAttribute('aria-expanded', 'true')"
                    :data-on:wa-hide
-                   (str trigger ".setAttribute('aria-expanded', 'false')")}
+                   "el.previousElementSibling.setAttribute('aria-expanded', 'false')"}
       (into [:ol {:class "popover-list"
                   :role  "list"}]
             (map (fn [{:keys [child variant-class]}]
@@ -169,7 +171,7 @@
   {:child      (nth items idx)
    :separator? (pos? idx)})
 
-(defn- visible-positions [items max-items items-before-collapse]
+(defn- visible-positions [items max-items items-before-collapse id-scope]
   (if-not (and max-items (> (count items) max-items))
     (mapv #(item-position items %) (range (count items)))
     (let [trailing-count (- max-items items-before-collapse)
@@ -181,6 +183,7 @@
        (mapv #(item-position items %) leading)
        (concat
         [{:child      (collapse-popover
+                       id-scope
                        (mapv (fn [idx] {:child (nth items idx)}) collapsed)
                        {:compact  (count collapsed)
                         :expanded (count collapsed)})
@@ -199,7 +202,7 @@
        :collapsed (set (range items-before-collapse trailing-start))})))
 
 (defn- adaptive-positions
-  [items compact-max expanded-max items-before-collapse]
+  [items compact-max expanded-max items-before-collapse id-scope]
   (let [item-count         (count items)
         compact            (collapse-projection item-count
                                                 compact-max
@@ -227,6 +230,7 @@
         collapse-position  (when collapse?
                              {:child
                               (collapse-popover
+                               id-scope
                                (mapv
                                 (fn [idx]
                                   {:child (nth items idx)
@@ -309,20 +313,23 @@
                         [:div])
                       contents)))))
          positions)))
-
-(defn- breadcrumb-list [items max-items items-before-collapse separator variant-class]
+(defn- breadcrumb-list [items max-items items-before-collapse separator variant-class instance-id]
   (breadcrumb-list-from-positions
-   (visible-positions items max-items items-before-collapse)
+   (visible-positions items
+                      max-items
+                      items-before-collapse
+                      (str instance-id "-" (or variant-class "trail")))
    separator
    variant-class))
 
 (defn- adaptive-breadcrumb-list
-  [items compact-max expanded-max items-before-collapse separator]
+  [items compact-max expanded-max items-before-collapse separator instance-id]
   (breadcrumb-list-from-positions
    (adaptive-positions items
                        compact-max
                        expanded-max
-                       items-before-collapse)
+                       items-before-collapse
+                       (str instance-id "-desktop"))
    separator
    "desktop"))
 
@@ -358,6 +365,7 @@
         items                 (if (seq items)
                                 (update items (dec (count items)) mark-current-page)
                                 items)
+        instance-id           (or (:id attrs) "sno-breadcrumb")
         mobile-parent         (when (and (= :parent mobile-mode)
                                          (> (count items) 1))
                                 (mobile-parent (nth items (- (count items) 2))))
@@ -372,7 +380,8 @@
                                                          (first max-items)
                                                          items-before-collapse
                                                          separator
-                                                         "mobile"))
+                                                         "mobile"
+                                                         instance-id))
 
                                   true
                                   (conj (adaptive-breadcrumb-list
@@ -380,14 +389,16 @@
                                          (first max-items)
                                          (second max-items)
                                          items-before-collapse
-                                         separator)))
+                                         separator
+                                         instance-id)))
 
                                 (= :trail mobile-mode)
                                 [(breadcrumb-list items
                                                   max-items
                                                   items-before-collapse
                                                   separator
-                                                  nil)]
+                                                  nil
+                                                  instance-id)]
 
                                 :else
                                 (cond-> []
@@ -400,7 +411,8 @@
                                          max-items
                                          items-before-collapse
                                          separator
-                                         "desktop"))))]
+                                         "desktop"
+                                         instance-id))))]
     (cc/compile
      (into
       [:nav (uic/merge-attrs attrs

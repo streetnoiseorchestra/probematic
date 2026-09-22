@@ -4,6 +4,7 @@
    [app.filestore :as filestore]
    [app.queries :as queries]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [babashka.fs :as bfs]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
@@ -76,11 +77,12 @@
                  conn last-id
                  (str "http://127.0.0.1:" port "/last/{size}.jpg"))
                 (is (= {:processed 3 :migrated 2 :failed 1 :conflicted 0}
-                       (cutover! {:datomic   {:conn conn}
-                                  :filestore store
-                                  :env       {:discourse {:forum-url
-                                                          (str "http://127.0.0.1:"
-                                                               port)}}})))
+                       (cutover! {:datomic      {:conn conn}
+                                  :write-runner (writer/create)
+                                  :filestore    store
+                                  :env          {:discourse {:forum-url
+                                                             (str "http://127.0.0.1:"
+                                                                  port)}}})))
                 (let [db (d/db conn)]
                   (is (uuid? (avatar-id db first-id)))
                   (is (nil? (avatar-id db failed-id)))
@@ -104,12 +106,13 @@
                        @requests))
                 (testing "a second run is a no-op for migrated members but retries failures"
                   (let [before (count @requests)
-                        result (cutover! {:datomic   {:conn conn}
-                                          :filestore store
-                                          :env       {:discourse
-                                                      {:forum-url
-                                                       (str "http://127.0.0.1:"
-                                                            port)}}})]
+                        result (cutover! {:datomic      {:conn conn}
+                                          :write-runner (writer/create)
+                                          :filestore    store
+                                          :env          {:discourse
+                                                         {:forum-url
+                                                          (str "http://127.0.0.1:"
+                                                               port)}}})]
                     (is (= {:processed  1
                             :migrated   0
                             :failed     1
@@ -148,11 +151,12 @@
                         :migrated   0
                         :failed     0
                         :conflicted 1}
-                       (cutover! {:datomic   {:conn conn}
-                                  :filestore store
-                                  :env       {:discourse
-                                              {:forum-url
-                                               (str "http://127.0.0.1:" port)}}})))
+                       (cutover! {:datomic      {:conn conn}
+                                  :write-runner (writer/create)
+                                  :filestore    store
+                                  :env          {:discourse
+                                                 {:forum-url
+                                                  (str "http://127.0.0.1:" port)}}})))
                 (is (= newer-avatar-id
                        (avatar-id (d/db conn) member-id)))))))))))
 

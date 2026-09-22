@@ -4,7 +4,6 @@
    [app.auth :as auth]
    [app.config :as config]
    [app.dashboard.routes :as dashboard]
-   [app.datastar :as ds]
    [app.everything.routes :as everything]
    [app.file-browser.routes :as file-browser]
    [app.gigs.routes :as gigs]
@@ -34,8 +33,7 @@
                                       [(interceptors/system-interceptor system)
                                        (interceptors/datomic-interceptor system)
                                        (interceptors/filestore-interceptor system)
-                                       (interceptors/current-user-interceptor system)
-                                       (ds/datastar-refresh-interceptor system)]))}
+                                       (interceptors/current-user-interceptor system)]))}
 
    (icons/routes (:icon-sprites system))
 

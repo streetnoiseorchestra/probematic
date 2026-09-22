@@ -4,8 +4,23 @@
                  com.fulcrologic.guardrails.core/>defn             clojure.core/defn
                  com.fulcrologic.guardrails.malli.core/>def        clojure.spec.alpha/def
                  com.fulcrologic.guardrails.malli.core/>defn       clojure.core/defn
+                 s-exp.drip/with-tx                               clojure.core/with-open
                  starfederation.datastar.clojure.utils/transient-> clojure.core/->
                  starfederation.datastar.clojure.utils/def-clone   clojure.core/def}
+ :config-in-call
+ {starfederation.datastar.clojure.expressions/->expr
+  {:linters {:type-mismatch {:level :off}
+             :unused-binding {:level :off}}}
+  starfederation.datastar.clojure.expressions/->js-str
+  {:linters {:unresolved-symbol {:level :off}
+             :unresolved-namespace {:level :off}
+             :type-mismatch {:level :off}
+             :unused-binding {:level :off}}}
+  starfederation.datastar.clojure.expressions/->js
+  {:linters {:unresolved-symbol {:level :off}
+             :unresolved-namespace {:level :off}
+             :type-mismatch {:level :off}
+             :unused-binding {:level :off}}}}
  :linters       {;; :unused-value        {:level :off}
                  ;; :unused-binding      {:level :off}
                  :not-a-function            {:skip-args [starfederation.datastar.clojure.expressions/->expr

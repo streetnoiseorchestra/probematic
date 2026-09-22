@@ -50,6 +50,60 @@
       (assoc :accepted-code-digest
              (:member/invite-accepted-code-digest member)))))
 
+(deftest acceptance-attempt-guard-rejects-terminal-and-unrelated-generations
+  (is (= [true true true true true false false false false false false]
+         (mapv #(domain/resumable-acceptance-attempt? % 2)
+               [{:status accepting :generation 2}
+                {:status creating :generation 3}
+                {:status activating :generation 4}
+                {:status compensating :generation 3}
+                {:status compensating :generation 4}
+                {:status pending :generation 4}
+                {:status accepted :generation 5}
+                {:status revoked :generation 5}
+                {:status accepting :generation 5}
+                {:status creating :generation 6}
+                nil])))
+  (is (false? (domain/resumable-acceptance-attempt? {:status accepting :generation 2} nil))))
+
+(deftest acceptance-attempt-guard-follows-real-transitions-without-adopting-a-new-claim
+  (tc/with-released-test-connections
+    (fn []
+      (doseq [path [:compensate-before-create :compensate-after-create :accept]]
+        (testing (name path)
+          (let [{:keys [conn member-id]} (tc/new-system "invite-attempt-guard")
+                state                    #(domain/invitation-state (d/db conn) member-id)
+                transition!              (fn [plan-fn]
+                                           (apply-plan! conn
+                                                        (plan-fn (d/db conn) {:member-id        member-id           :state           (state)
+                                                                              :requested-at     requested-at        :transitioned-at transitioned-at
+                                                                              :keycloak-user-id "test-created-user"}))
+                                           (state))]
+            (seed-member! conn member-id)
+            @(d/transact conn [{:member/member-id         member-id  :member/invite-status pending
+                                :member/invite-generation 1          :member/invite-code   "attempt-guard-code"
+                                :member/invite-expires-at expires-at}])
+            (let [claim-generation (:generation (transition! domain/claim-tx))]
+              (is (true? (domain/resumable-acceptance-attempt? (state) claim-generation)))
+              (when (not= :compensate-before-create path)
+                (transition! domain/begin-create-tx)
+                (is (true? (domain/resumable-acceptance-attempt? (state) claim-generation))))
+              (if (= :accept path)
+                (do
+                  (transition! domain/link-keycloak-user-tx)
+                  (is (true? (domain/resumable-acceptance-attempt? (state) claim-generation)))
+                  (transition! domain/finalize-tx)
+                  (is (= accepted (:status (state))))
+                  (is (false? (domain/resumable-acceptance-attempt? (state) claim-generation))))
+                (do
+                  (transition! domain/begin-compensation-tx)
+                  (is (true? (domain/resumable-acceptance-attempt? (state) claim-generation)))
+                  (transition! domain/release-tx)
+                  (is (false? (domain/resumable-acceptance-attempt? (state) claim-generation)))
+                  (let [next-claim (:generation (transition! domain/claim-tx))]
+                    (is (false? (domain/resumable-acceptance-attempt? (state) claim-generation)))
+                    (is (true? (domain/resumable-acceptance-attempt? (state) next-claim)))))))))))))
+
 (deftest domain-registry-resolves-invitation-schemas-test
   (is (true?
        (m/validate

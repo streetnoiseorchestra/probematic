@@ -1,25 +1,23 @@
 (ns app.members.effects
   (:require
    [app.datastar :as datastar]
+   [app.datomic :as db]
    [app.datomic.shim :as datomic]
-   [app.email :as email]
-   [app.i18n :as i18n]
-   [app.keycloak :as keycloak]
+   [app.email.mailers :as mailers]
+   [app.jobs.log-dispatch :as log-dispatch]
+   [app.write-runner :as writer]
    [app.members.invite.cells]
    [app.members.invite.workflows :as invite.workflows]
    [app.members.queries :as members.queries]
-   [app.queries :as q]
    [app.util.crypto :as crypto]
    [com.brunobonacci.mulog :as μ]
    [mycelium.core :as myc]
    [tick.core :as t]))
 
 (def default-invitation-deps
-  {:now                   t/inst
-   :random-code           #(crypto/rand-string 32)
-   :random-uuid           random-uuid
-   :build-new-user-invite email/build-new-user-invite
-   :queue-email!          email/queue-email!})
+  {:now         t/inst
+   :random-code #(crypto/rand-string 32)
+   :random-uuid random-uuid})
 
 (defn- conn-from-req [req]
   (or (:datomic-conn req)
@@ -28,38 +26,21 @@
 (defn- db-from-req [req]
   (datomic/db (conn-from-req req)))
 
-(defn- tr-from-req [req]
-  (or (:tr req)
-      (i18n/tr-with (get-in req [:system :i18n-langs]) [:de])))
-
-(defn- email-sys [req]
-  {:tr           (tr-from-req req)
-   :env          (get-in req [:system :env])
-   :i18n-langs   (get-in req [:system :i18n-langs])
-   :job-queue    (get-in req [:system :job-queue])
-   :datomic-conn (conn-from-req req)})
-
-(defn- queue-invitation! [deps req member invite-code]
-  ((:queue-email! deps)
-   (email-sys req)
-   ((:build-new-user-invite deps) (email-sys req) member invite-code)))
-
 (defn- current-member-id [req]
   (get-in req [:app/session :session/member :member/member-id]))
 
-(defn- invitation-workflow-resources [deps req]
-  (let [email-system (email-sys req)]
+(defn- invitation-workflow-resources [deps req default-action]
+  (let [member-id (current-member-id req)]
     {:datomic-conn      (conn-from-req req)
+     :write-runner      (get-in req [:system :write-runner])
+     :current-locale    (:current-locale req)
      :clock             (:now deps)
      :random-code       (:random-code deps)
      :random-uuid       (:random-uuid deps)
-     :current-member-id (current-member-id req)
-     :build-invitation-email
-     (fn [member code]
-       ((:build-new-user-invite deps) email-system member code))
-     :queue-email!
-     (fn [message]
-       ((:queue-email! deps) email-system message))}))
+     :current-member-id member-id
+     :audit             (cond-> {:audit/action (or (:app.nexus/audit-action req) default-action)
+                                 :audit/origin :app.origin/browser}
+                          member-id (assoc :audit/user [:member/member-id member-id]))}))
 
 (defn invite-member!
   "Creates an invited member and returns the invitation workflow result.
@@ -75,7 +56,7 @@
          result
          (myc/run-compiled
           invite.workflows/invite-member-wf
-          (invitation-workflow-resources deps req)
+          (invitation-workflow-resources deps req ::invite-member)
           {:member-invite member-invite})]
      (when (myc/error? result)
        (throw (ex-info "Member invitation workflow failed"
@@ -123,7 +104,7 @@
          (let [result
                (myc/run-compiled
                 invite.workflows/reissue-invitation-wf
-                (invitation-workflow-resources deps req)
+                (invitation-workflow-resources deps req ::reissue-invitation)
                 {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
@@ -155,7 +136,7 @@
          (let [result
                (myc/run-compiled
                 invite.workflows/reissue-invitation-wf
-                (invitation-workflow-resources deps req)
+                (invitation-workflow-resources deps req ::reissue-invitation)
                 {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
@@ -173,22 +154,25 @@
    (resend-invitation! default-invitation-deps req invite-code))
   ([deps req invite-code]
    (let [deps (merge default-invitation-deps deps)
-         now  ((:now deps))]
-     (when-let [{:member/keys [member-id
-                               invite-expires-at
-                               invite-status]}
-                (members.queries/invitation-state-by-code
-                 (db-from-req req)
-                 invite-code)]
-       (when (and (= :member.invite.status/pending invite-status)
-                  invite-expires-at
-                  (t/> invite-expires-at now))
-         (μ/log ::resend-member-invite)
-         (queue-invitation!
-          deps
-          req
-          (q/retrieve-member (db-from-req req) member-id)
-          invite-code))))))
+         resend!
+         (fn []
+           (let [db  (db-from-req req)
+                 now ((:now deps))
+                 {:member/keys [member-id invite-expires-at invite-status]}
+                 (members.queries/invitation-state-by-code db invite-code)]
+             (when (and (= :member.invite.status/pending invite-status)
+                        invite-expires-at (t/> invite-expires-at now))
+               (μ/log ::resend-member-invite)
+               (let [job (assoc-in (mailers/job {:current-locale (or (:current-locale req) :de)}
+                                                ::mailers/member-invitation {:member-id member-id})
+                                   [1 :email-id] (random-uuid))]
+                 (db/transact (conn-from-req req)
+                              {:tx-data (log-dispatch/intent-tx [job])
+                               :audit   {:audit/action ::resend-member-invite
+                                         :audit/origin :app.origin/browser
+                                         :audit/user   (when-let [actor-id (current-member-id req)]
+                                                         [:member/member-id actor-id])}})))))]
+     (writer/call! (:system req) resend!))))
 
 (defn delete-invitation!
   "Revokes the pending invitation currently identified by `invite-code`."
@@ -205,7 +189,7 @@
          (let [result
                (myc/run-compiled
                 invite.workflows/revoke-invitation-wf
-                (invitation-workflow-resources deps req)
+                (invitation-workflow-resources deps req ::delete-invitation)
                 {:member/member-id                  member-id
                  :member-invite/resolved-generation invite-generation})]
            (when (myc/error? result)
@@ -216,15 +200,3 @@
              {:outcome    :revoked
               :generation (get-in result
                                   [:member-invite/state :generation])})))))))
-
-(defn update-keycloak-meta! [req member-id]
-  (when-let [member (q/retrieve-member (db-from-req req) member-id)]
-    (when (:member/keycloak-id member)
-      (keycloak/update-user-meta! (get-in req [:system :keycloak]) member))))
-
-(defn set-keycloak-account-enabled! [req member-id enabled?]
-  (when-let [member (q/retrieve-member (db-from-req req) member-id)]
-    (when (:member/keycloak-id member)
-      (if enabled?
-        (keycloak/unlock-account! (get-in req [:system :keycloak]) member)
-        (keycloak/lock-account! (get-in req [:system :keycloak]) member)))))

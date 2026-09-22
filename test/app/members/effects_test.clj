@@ -2,6 +2,7 @@
   (:require
    [app.members.effects :as effects]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d])
   (:import
@@ -42,10 +43,11 @@
 
 (defn request [conn]
   {:datomic-conn conn
-   :system       {:datomic    {:conn conn}
-                  :job-queue  :fake-job-queue
-                  :env        {}
-                  :i18n-langs {}}})
+   :system       {:datomic      {:conn conn}
+                  :write-runner (writer/create)
+                  :job-queue    :fake-job-queue
+                  :env          {}
+                  :i18n-langs   {}}})
 
 (defn fake-deps [queued]
   {:now         (constantly issued-at)
@@ -114,8 +116,8 @@
                 :invitation-generation   1
                 :invitation-status       pending
                 :remaining-generated-ids []
-                :queued                  [{:member-id first-member-id
-                                           :code      "original-code"}]}
+                :job-members             [first-member-id]
+                :queued                  []}
                {:first-status            (:member-invite/persist-status first-result)
                 :second-status           (:member-invite/persist-status second-result)
                 :created-member-id
@@ -134,6 +136,7 @@
                 :invitation-status
                 (if (keyword? status) status (:db/ident status))
                 :remaining-generated-ids @generated-ids_
+                :job-members             (mapv #(get-in % [1 :arguments :member-id]) (tc/committed-jobs conn))
                 :queued                  @queued_}))))))
 
 (deftest invite-member-effect-rejects-creation-without-an-invitation-test
@@ -190,8 +193,8 @@
             :code       "same-code"
             :expiry     expires-at}
            (invitation conn member-id)))
-    (is (= [{:member-id member-id :code "same-code"}]
-           @queued))))
+    (is (= [member-id] (mapv #(get-in % [1 :arguments :member-id]) (tc/committed-jobs conn))))
+    (is (empty? @queued))))
 
 (deftest reissue-rotates-the-bearer-and-queues-the-new-code-test
   (let [{:keys [conn member-id]} (tc/new-system "member-invitation-reissue-effect")
@@ -215,9 +218,8 @@
             :code       "generated-code"
             :expiry     expires-at}
            (invitation conn member-id)))
-    (is (= [{:member-id member-id
-             :code      "generated-code"}]
-           @queued))))
+    (is (= [member-id] (mapv #(get-in % [1 :arguments :member-id]) (tc/committed-jobs conn))))
+    (is (empty? @queued))))
 
 (deftest replayed-reissue-cannot-rotate-the-newer-bearer-test
   (let [{:keys [conn member-id]} (tc/new-system "member-invitation-reissue-replay")
@@ -249,9 +251,8 @@
             :code       "new-code"
             :expiry     expires-at}
            (invitation conn member-id)))
-    (is (= [{:member-id member-id
-             :code      "new-code"}]
-           @queued))))
+    (is (= [member-id] (mapv #(get-in % [1 :arguments :member-id]) (tc/committed-jobs conn))))
+    (is (empty? @queued))))
 
 (deftest revoked-reissue-creates-a-new-bearer-and-queues-one-email-test
   (let [{:keys [conn member-id]} (tc/new-system
@@ -276,9 +277,8 @@
                 :code       "generated-code"
                 :expiry     expires-at}
                (invitation conn member-id)))
-        (is (= [{:member-id member-id
-                 :code      "generated-code"}]
-               @queued)))
+        (is (= [member-id] (mapv #(get-in % [1 :arguments :member-id]) (tc/committed-jobs conn))))
+        (is (empty? @queued)))
       (is false "The revoked invitation reissue effect is not implemented"))))
 
 (deftest revoked-reissue-stale-generation-is-a-no-op-test
@@ -346,9 +346,9 @@
         (seed! conn member-id)
         (is (= "generated-code"
                (reissue! deps (request conn) member-id)))
-        (is (= [{:email new-email
-                 :code  "generated-code"}]
-               @queued))))))
+        (is (= new-email (:member/email (d/entity (d/db conn) [:member/member-id member-id]))))
+        (is (= [member-id] (mapv #(get-in % [1 :arguments :member-id]) (tc/committed-jobs conn))))
+        (is (empty? @queued))))))
 
 (deftest concurrent-revoked-reissue-has-one-transition-and-one-email-test
   (let [{:keys [conn member-id]} (tc/new-system
@@ -389,9 +389,8 @@
           (is (= pending (:status state)))
           (is (= 10 (:generation state)))
           (is (= expires-at (:expiry state)))
-          (is (= [{:member-id member-id
-                   :code      (:code state)}]
-                 @queued))))
+          (is (= [member-id] (mapv #(get-in % [1 :arguments :member-id]) (tc/committed-jobs conn))))
+          (is (empty? @queued))))
       (is false "The revoked invitation reissue effect is not implemented"))))
 
 (deftest reissue-refuses-a-current-unexpired-invitation-test

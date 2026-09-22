@@ -3,6 +3,7 @@
    [app.auth :as auth]
    [app.form :as form]
    [app.ledger.domain :as ledger.domain]
+   [app.jobs.identity :as identity-jobs]
    [app.members.domain :as members.domain]
    [app.queries :as q]
    [app.nexus.actions :as support]
@@ -203,26 +204,25 @@
        [:app.datastar/assoc-state
         [:member-detail :contact]
         (assoc contact :_error errors)]]
-      (cond-> [[:db/transact
-                (support/with-audit (cond-> [[:member.invite/transact-profile-if-not-in-flight
-                                              member-id
-                                              [(contact-tx current-user-admin?
-                                                           member-id
-                                                           contact)]]]
-                                      current-user-admin?
-                                      (conj [:member/set-keycloak-id
-                                             member-id
-                                             (:keycloak-id contact)]))
-                  current-member-id)
-                {:transact-w-nils? true}]]
-        (keycloak-sync-needed? current-user-admin? current-member contact)
-        (conj [:app.members/update-keycloak-meta member-id])
-
-        (and current-user-admin? (keycloak-enabled-changed? contact))
-        (conj [:app.members/set-keycloak-account-enabled member-id (:sno-id-enabled contact)])
-
-        true
-        (conj support/clear-loading clear-contact)))))
+      (let [sync?       (keycloak-sync-needed? current-user-admin? current-member contact)
+            enabled?    (and current-user-admin? (keycloak-enabled-changed? contact))
+            keycloak-id (if current-user-admin? (:keycloak-id contact) (:member/keycloak-id current-member))
+            tx-data     (support/with-audit
+                          (cond-> [[:member.invite/transact-profile-if-not-in-flight
+                                    member-id [(contact-tx current-user-admin? member-id contact)]]]
+                            current-user-admin?
+                            (conj [:member/set-keycloak-id member-id (:keycloak-id contact)]))
+                          current-member-id)]
+        [[:app.datastar/assoc-state [:member-detail :contact] contact]
+         [:db/transact
+          (cond-> tx-data
+            (and keycloak-id enabled?)
+            (conj [:db/add member-ref :member/keycloak-enabled-request (:sno-id-enabled contact)]))
+          {:transact-w-nils? true
+           :jobs             (if (and keycloak-id (or sync? enabled?))
+                               [(identity-jobs/job state member-id keycloak-id {:metadata? (boolean sync?) :enabled? (boolean enabled?)})]
+                               [])
+           :on-success       [support/clear-loading clear-contact]}]]))))
 
 (defn- date->db-inst [date]
   (t/inst (t/in (t/at date (t/midnight)) "UTC")))

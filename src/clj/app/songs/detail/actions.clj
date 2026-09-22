@@ -1,6 +1,8 @@
 (ns app.songs.detail.actions
   (:require
+   [app.config :as config]
    [app.file-browser.actions :as file-browser.actions]
+   [app.jobs.integrations :as integrations]
    [app.queries :as q]
    [app.util :as util]
    [babashka.fs :as fs]
@@ -28,7 +30,7 @@
     :file/webdav-path     selected-path}])
 
 (defn add-sheet-music-action
-  [{:keys [db page-state]} signals]
+  [{:keys [db page-state] :as state} signals]
   (let [picker-id     (picker-key signals)
         picker        (get-in page-state [:file-browser picker-id])
         selected-path (selected-path signals)
@@ -37,20 +39,24 @@
     (if (and selected-path song-id section-name (q/retrieve-song db song-id))
       [[:db/transact
         (add-sheet-music-tx-data song-id section-name selected-path)
-        {:on-success [[:app.songs/trigger-song-edited song-id]]}]
+        (cond-> {}
+          (config/prod-mode? (:env state))
+          (assoc :jobs [(integrations/song-job song-id)]))]
        [:app.datastar/assoc-state [:file-browser picker-id] nil]
        file-browser.actions/clear-file-browser-signals]
       [file-browser.actions/clear-file-browser-signals])))
 
 (defn remove-sheet-music-action
-  [_state signals]
+  [state signals]
   (let [song-id  (util/ensure-uuid! (or (get-in signals [:file-browser :song-id])
                                         (get-in signals [:song-detail :song-id])))
         sheet-id (util/ensure-uuid! (or (get-in signals [:file-browser :sheet-id])
                                         (:targetid signals)))]
     [[:db/transact
       [[:db/retractEntity [:sheet-music/sheet-id sheet-id]]]
-      {:on-success [[:app.songs/trigger-song-edited song-id]]}]]))
+      (cond-> {}
+        (config/prod-mode? (:env state))
+        (assoc :jobs [(integrations/song-job song-id)]))]]))
 
 (def actions
   {::add-sheet-music    #'add-sheet-music-action

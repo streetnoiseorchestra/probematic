@@ -1,6 +1,5 @@
 (ns app.everything.views
   (:require
-   [app.datastar :as d*]
    [app.ui2 :as ui2]
    [app.ui2.breadcrumb :as breadcrumb]
    [app.ui2.icon :as ico]
@@ -138,5 +137,3 @@
       [:div {:class "groups wa-stack wa-gap-xl"}]
       (map group)
       groups)]]))
-
-(d*/refresh-all!)

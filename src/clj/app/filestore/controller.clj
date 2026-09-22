@@ -1,12 +1,12 @@
 (ns app.filestore.controller
   (:require
    [app.datomic :as d]
-   [app.datomic.shim :as datomic]
    [app.filestore :as filestore]
    [app.filestore.domain :as domain]
    [app.filestore.image :as img]
    [app.queries :as q]
    [app.util :as util]
+   [app.write-runner :as writer]
    [babashka.fs :as bfs]
    [com.yetanalytics.squuid :as sq]))
 
@@ -51,7 +51,7 @@ So here we provide functions to store the content and generate datoms for use in
         file-txs                                                                  (domain/txs-new-file file-tempid file-name (fix-mime-type mime-type actual-mime-type) size hash)
         image-txs                                                                 (domain/txs-new-image image-tempid file-tempid width height)]
 
-    (filestore/put! filestore prepared)
+    (filestore/put-sync! filestore prepared)
     {:image-tempid image-tempid
      :file-tempid  file-tempid
      :tx-data      (concat file-txs image-txs)}))
@@ -195,22 +195,32 @@ So here we provide functions to store the content and generate datoms for use in
         suffix (format "-%s-%dx%d" (name thumbnail-mode) width height)]
     (str base suffix ext)))
 
-(defn create-rendition! [{:keys [datomic-conn filestore]} parent-image filter-spec]
+(defn create-rendition! [{:keys [datomic-conn filestore] :as req} parent-image filter-spec]
   (assert parent-image "parent-image required")
-  (let [rendition-tempid                              (d/tempid)
-        rendition-file-tempid                         (d/tempid)
-        {:keys [out-file ext mime-type]}              (img/process-thumbnail (assoc filter-spec :input (-load-image filestore parent-image)))
-        _                                             (assert mime-type "mime-type required")
-        rendition-filename                            (build-rendition-filename parent-image filter-spec ext)
-        {:keys [size hash width height] :as prepared} (filestore/prepare-image! out-file)
-        file-txs                                      (domain/txs-new-file rendition-file-tempid rendition-filename mime-type size hash)
-        rendition-id                                  (sq/generate-squuid)
-        rendition-txs                                 (domain/txs-new-rendition rendition-id rendition-tempid rendition-file-tempid parent-image width height filter-spec)
-        txs                                           (concat file-txs rendition-txs)
-        {:keys [db-after]}                            (datomic/transact datomic-conn {:tx-data txs})]
-    (filestore/put-sync! filestore prepared)
-    (bfs/delete-if-exists out-file)
-    (q/retrieve-image db-after rendition-id)))
+  (let [{:keys [out-file ext mime-type]} (img/process-thumbnail (assoc filter-spec :input (-load-image filestore parent-image)))]
+    (try
+      (assert mime-type "mime-type required")
+      (let [rendition-tempid                              (d/tempid)
+            rendition-file-tempid                         (d/tempid)
+            rendition-filename                            (build-rendition-filename parent-image filter-spec ext)
+            {:keys [size hash width height] :as prepared} (filestore/prepare-image! out-file)
+            file-txs                                      (domain/txs-new-file rendition-file-tempid rendition-filename mime-type size hash)
+            rendition-id                                  (sq/generate-squuid)
+            rendition-txs                                 (domain/txs-new-rendition rendition-id rendition-tempid rendition-file-tempid parent-image width height filter-spec)
+            txs                                           (concat file-txs rendition-txs)
+            member-id                                     (get-in req [:app/session :session/member :member/member-id])
+            persist!                                      #(d/transact
+                                                            datomic-conn
+                                                            {:tx-data txs
+                                                             :audit   {:audit/action ::create-rendition
+                                                                       :audit/origin :app.origin/browser
+                                                                       :audit/user   (when member-id
+                                                                                       [:member/member-id member-id])}})]
+        (filestore/put-sync! filestore prepared)
+        (let [{:keys [db-after]} (writer/call! (:system req) persist!)]
+          (q/retrieve-image db-after rendition-id)))
+      (finally
+        (bfs/delete-if-exists out-file)))))
 
 (defn load-image-rendition
   "Load the rendition matching the filter spec for the image, will create the rendition on-the-fly if it doesn't exist yet."

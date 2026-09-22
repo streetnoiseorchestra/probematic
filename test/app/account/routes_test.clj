@@ -6,6 +6,7 @@
    [app.i18n :as i18n]
    [app.routes :as app-routes]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [app.urls]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [reitit.core :as r]
@@ -83,9 +84,9 @@
 
 (deftest multipart-profile-route-adapts-form-data-to-the-qualified-action
   (let [handler  (support/public-fn
-                  'app.account.routes/profile-save-handler)
+                  'app.account.http/profile-actions)
         tempfile (java.io.File. "/tmp/account-route-avatar.png")]
-    (is (fn? handler) "app.account.routes/profile-save-handler should exist")
+    (is (fn? handler) "app.account.http/profile-actions should exist")
     (when handler
       (is (= [[:app.account.actions/save-profile
                {:account-profile
@@ -140,13 +141,14 @@
     (let [{:keys [conn]} (tc/new-system "account-authenticated-routes")
           branch         (authenticated-branch
                           (app-routes/routes
-                           {:env        {:ig/system      {:app.ig/profile :test}
-                                         :session-config {:session-ttl-s 3600
-                                                          :cookie-attrs  {}}}
-                            :i18n-langs (i18n/read-langs)
-                            :datomic    {:conn conn}
-                            :filestore  {}
-                            :auxiliary  tc/*sqlite-db*
+                           {:env          {:ig/system      {:app.ig/profile :test}
+                                           :session-config {:session-ttl-s 3600
+                                                            :cookie-attrs  {}}}
+                            :i18n-langs   (i18n/read-langs)
+                            :datomic      {:conn conn}
+                            :write-runner (writer/create)
+                            :filestore    {}
+                            :auxiliary    tc/*sqlite-db*
                             :datastar-refresh-mult
                             {::datastar/refresh-mult ::refresh-mult}}))
           paths          (into #{}

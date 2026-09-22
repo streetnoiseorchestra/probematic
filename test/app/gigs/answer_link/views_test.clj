@@ -18,6 +18,15 @@
     (is (= 200 status))
     (is (str/includes? body "Your answer has been submitted - thanks!"))))
 
+(deftest malformed-answer-link-renders-the-invalid-page
+  (let [env                   {:app-secret-key "answer-link-view-test-secret"}
+        {:keys [status body]} (views/answer-link {:env    env
+                                                  :params {:answer "not-an-encrypted-answer"}
+                                                  :system {:env env}
+                                                  :tr     tr})]
+    (is (= 200 status))
+    (is (str/includes? body "Sorry, the invitation code has expired."))))
+
 (deftest answer-link-success-page-redirects-to-gig-detail-test
   (let [gig-id                (UUID/randomUUID)
         {:keys [status body]} (#'views/success-page {:tr tr} {:gig/gig-id gig-id})]

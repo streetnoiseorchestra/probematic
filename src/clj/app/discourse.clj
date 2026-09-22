@@ -6,6 +6,7 @@
    [app.queries :as q]
    [app.ui2 :as ui2]
    [app.urls :as url]
+   [app.write-runner :as writer]
    [clojure.set :as set]
    [clojure.string :as str]
    [app.datomic.shim :as datomic]
@@ -50,7 +51,7 @@
    :member/discourse-id (str id)
    :member/nick         username})
 
-(defn sync-avatars! [{:keys [env conn]}]
+(defn sync-avatars! [{:keys [env conn] :as ctx}]
   (let [db                                   (datomic/db conn)
         {:keys [api-key username forum-url]} (:discourse env)
         m                                    (martian-http/bootstrap-openapi url-discourse-open-api {:server-url   forum-url
@@ -64,7 +65,10 @@
                                               (map #(update % :member/email str/lower-case)))
         joined                               (set/join user-list members {:email :member/email})
         txs                                  (map discourse-member-tx joined)]
-    (d/transact conn {:tx-data txs})))
+    (writer/call! ctx
+                  #(d/transact conn {:tx-data txs
+                                     :audit   {:audit/action ::sync-members
+                                               :audit/origin :app.origin/system}}))))
 (defn wrap-auth [req {:keys [discourse]}]
   (-> req
       (assoc-in [:headers "Api-Key"] (:api-key discourse))
@@ -207,7 +211,7 @@ GO TO SNORGA!!
     (request! env
               {:method :get
                :url    (format "/t/external_id/%s.json" gig-id)})
-    (catch Throwable e
+    (catch Exception e
       (if (= 404 (-> (ex-data e) :resp :status))
         nil
         (throw e)))))
@@ -298,41 +302,60 @@ GO TO SNORGA!!
                  :extra    (when (= :probeplan.emphasis/intensive emphasis) " (intensive)")})
               (q/planned-songs-for-gig db (:gig/gig-id gig)))))
 (defn create-topic-for-gig!
-  "Creates a new topic for the gig, returns the topic id."
-  [{:keys [env db] :as sys} gig-id]
-  (let [gig (-> (q/retrieve-gig db gig-id)
-                (summarize-attendance sys)
-                (planned-songs sys))
-        topic-id
-        (str (:topic_id (request! env
-                                  {:method      :post
-                                   :url         "/posts.json"
-                                   :form-params (form-params-for-gig env gig)})))]
-    (datomic/transact (-> sys :datomic :conn) {:tx-data [[:db/add (d/ref gig)
-                                                          :forum.topic/topic-id topic-id]]})))
+  "Ensures a topic exists and records its ID, returning the transaction report.
+
+  An external-ID lookup recovers a prior accepted creation before retrying the
+  local write. Remote requests remain outside the application writer. When
+  `source-t` identifies an existing member actor, the local write retains that actor.
+  Returns `nil` if the gig was deleted or its topic link changed during the request."
+  ([sys gig-id]
+   (create-topic-for-gig! sys gig-id nil))
+  ([{:keys [env db] :as sys} gig-id source-t]
+   (let [gig      (-> (q/retrieve-gig db gig-id)
+                      (summarize-attendance sys)
+                      (planned-songs sys))
+         topic-id
+         (str (or (:id (topic-for-gig sys gig-id))
+                  (:topic_id (request! env
+                                       {:method      :post
+                                        :url         "/posts.json"
+                                        :form-params (form-params-for-gig env gig)}))))
+         persist! (fn []
+                    (let [conn       (get-in sys [:datomic :conn])
+                          current    (q/retrieve-gig (datomic/db conn) gig-id)
+                          audit-user (d/source-audit-user conn source-t)]
+                      (when (and current (= (:forum.topic/topic-id gig) (:forum.topic/topic-id current)))
+                        (d/transact conn
+                                    {:tx-data [[:db/add (d/ref current) :forum.topic/topic-id topic-id]]
+                                     :audit   (cond-> {:audit/action ::create-topic-for-gig
+                                                       :audit/origin :app.origin/job}
+                                                audit-user (assoc :audit/user audit-user))}))))]
+     (writer/call! sys persist!))))
 
 (defn we-own-topic? [our-username topic]
   (= (-> topic :details :created_by :username) our-username))
 
 (defn update-topic-for-gig!
-  [{:keys [env db] :as sys} gig-id takeover-topic?]
-  (assert db)
-  (assert env)
-  (assert gig-id)
-  (let [gig   (-> (q/retrieve-gig db gig-id)
-                  (summarize-attendance sys)
-                  (planned-songs sys))
-        topic (topic-for-gig {:env env} (:gig/gig-id gig))]
-    (cond
-      (and (not topic) takeover-topic?)
-      (create-topic-for-gig! sys gig-id)
-      ;; create topic
-      (or (we-own-topic? (-> env :discourse :username) topic) takeover-topic?)
-      (when-let [post-id (:id (first-post-for-topic topic))]
-        (update-topic-for-gig env gig topic)
-        (update-post-for-gig env gig post-id)
-        (reset-bump-date! env (:id topic)))
-      :else nil)))
+  ([sys gig-id takeover-topic?]
+   (update-topic-for-gig! sys gig-id takeover-topic? nil))
+  ([{:keys [env db] :as sys} gig-id takeover-topic? source-t]
+   (assert db)
+   (assert env)
+   (assert gig-id)
+   (let [gig   (-> (q/retrieve-gig db gig-id)
+                   (summarize-attendance sys)
+                   (planned-songs sys))
+         topic (topic-for-gig {:env env} (:gig/gig-id gig))]
+     (cond
+       (and (not topic) takeover-topic?)
+       (create-topic-for-gig! sys gig-id source-t)
+       ;; create topic
+       (or (we-own-topic? (-> env :discourse :username) topic) takeover-topic?)
+       (when-let [post-id (:id (first-post-for-topic topic))]
+         (update-topic-for-gig env gig topic)
+         (update-post-for-gig env gig post-id)
+         (reset-bump-date! env (:id topic)))
+       :else nil))))
 
 (defn parse-topic-id [v]
   (if-let [[_ topic-id] (re-matches #".*/(\d+)+ *$" v)]

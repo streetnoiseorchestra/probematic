@@ -1,10 +1,17 @@
 (ns app.jobs.sync-songs
   (:require
-   [app.cms :as cms]
+   [app.datomic :as db]
+   [app.jobs.integrations :as integrations]
+   [app.jobs.log-dispatch :as log-dispatch]
+   [app.write-runner :as writer]
    [ol.jobs-util :as jobs]))
 
-(defn song-sync-job [system _]
-  (cms/sync-all-songs! system))
+(defn song-sync-job [{:keys [datomic] :as system} _]
+  (writer/call! system
+                #(db/transact (:conn datomic)
+                              {:tx-data (log-dispatch/intent-tx [integrations/sync-all-songs-job])
+                               :audit   {:audit/action ::song-sync
+                                         :audit/origin :app.origin/job}})))
 
 (defn make-songs-sync-job [system]
   (fn [{:job/keys [frequency initial-delay]}]

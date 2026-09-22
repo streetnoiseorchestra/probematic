@@ -229,5 +229,3 @@
          (ui2/empty-state
           [:i18n/tr :probeplan/empty-title]
           [:i18n/tr :probeplan/empty-body]))]])))
-
-(d*/refresh-all!)

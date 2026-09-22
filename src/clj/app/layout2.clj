@@ -82,7 +82,9 @@
        "?v="
        (cache-buster req (str "public/" path))))
 
-(defn- public-script [req path & extra]
+(defn public-script
+  "Returns a cache-busted deferred script tag for a public asset."
+  [req path & extra]
   [:script (merge {:src   (asset-url req path)
                    :defer true}
                   (apply hash-map extra))])

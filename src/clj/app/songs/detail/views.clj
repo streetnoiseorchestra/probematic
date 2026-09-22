@@ -323,5 +323,3 @@ window.DiscourseEmbed = %s;
          (discourse-comments-section req song)]])
       (throw (ex-info "Song not found" {:app/error-type :app.error.type/not-found
                                         :song/song-id   song-id})))))
-
-(d*/refresh-all!)

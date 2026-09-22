@@ -591,5 +591,3 @@
                                         [:i18n/tr :action/save]]]
                                       :aria-label               [:i18n/tr :insurance/toolbar-label]}]}
           (coverage-page-content req policy instrument redirect)])))))
-
-(d*/refresh-all!)

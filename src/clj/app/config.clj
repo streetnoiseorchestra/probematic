@@ -81,9 +81,6 @@
 (defn band-bank-info [env]
   (-> env :band-bank-info))
 
-(defn band-smtp [env]
-  (-> env :smtp-sno))
-
 (defn external-insurance-policy [env]
   (-> env :insurance :insurance-policy))
 
