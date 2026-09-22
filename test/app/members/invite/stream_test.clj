@@ -41,7 +41,7 @@
             tab-id      (str (random-uuid))
             observed    (atom {})
             expiry      (t/inst (t/>> (t/instant) (t/new-duration 1 :hours)))
-            system      {:frame-loop runtime :job-queue {:client client}}
+            system      {:frame-loop runtime :write-runner (:write-runner runtime) :job-queue {:client client}}
             stop-server (server/run-server
                          (fn [request]
                            (stream/response
@@ -55,7 +55,7 @@
                          {:ip "127.0.0.1" :port 0})
             base        (str "http://127.0.0.1:" (:local-port (meta stop-server)))]
         (try
-          (writer/call! (:write-runner runtime)
+          (writer/call! runtime
                         #(deref (d/transact conn
                                             (mapv (fn [[id label code]]
                                                     {:member/member-id         id                         :member/name              label                         :member/username label
@@ -86,7 +86,7 @@
                                runtime {:body-params {:tab-id id}
                                         :app/session {:session/member {:member/member-id actor}}})))
                     (is (not (contains? @datastar/!page-state id)))))
-                (writer/call! (:write-runner runtime)
+                (writer/call! runtime
                               #(deref (d/transact conn (:tx-data (domain/revoke-tx
                                                                   (d/db conn)
                                                                   {:member-id       a        :state (domain/invitation-state (d/db conn) a)

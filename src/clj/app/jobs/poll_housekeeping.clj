@@ -9,24 +9,21 @@
    [ol.jobs-util :as jobs]
    [tick.core :as t]))
 
-(defn close-expired-polls! [{:keys [datomic frame-loop]} now]
-  (let [conn    (:conn datomic)
-        control (:write-runner frame-loop)
-        close!  (fn []
-                  (let [tx-data (mapcat
-                                 (fn [{:poll/keys [poll-id]}]
-                                   (μ/log ::closing-poll :poll-id poll-id :now now)
-                                   [[:db/add [:poll/poll-id poll-id] :poll/poll-status :poll.status/closed]
-                                    [:db/add [:poll/poll-id poll-id] :poll/closes-at (t/inst now)]])
-                                 (queries/expired-open-polls (datomic/db conn) now))]
-                    (when (seq tx-data)
-                      (db/transact conn
-                                   {:tx-data (vec tx-data)
-                                    :audit   {:audit/action ::close-expired-polls
-                                              :audit/origin :app.origin/job}}))))]
-    (when-not control
-      (throw (ex-info "Poll housekeeping requires the application writer" {})))
-    (writer/call! control close!)))
+(defn close-expired-polls! [{:keys [datomic] :as system} now]
+  (let [conn   (:conn datomic)
+        close! (fn []
+                 (let [tx-data (mapcat
+                                (fn [{:poll/keys [poll-id]}]
+                                  (μ/log ::closing-poll :poll-id poll-id :now now)
+                                  [[:db/add [:poll/poll-id poll-id] :poll/poll-status :poll.status/closed]
+                                   [:db/add [:poll/poll-id poll-id] :poll/closes-at (t/inst now)]])
+                                (queries/expired-open-polls (datomic/db conn) now))]
+                   (when (seq tx-data)
+                     (db/transact conn
+                                  {:tx-data (vec tx-data)
+                                   :audit   {:audit/action ::close-expired-polls
+                                             :audit/origin :app.origin/job}}))))]
+    (writer/call! system close!)))
 
 (defn- poll-housekeeping-job [system _]
   (try

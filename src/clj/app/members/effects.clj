@@ -32,7 +32,7 @@
 (defn- invitation-workflow-resources [deps req default-action]
   (let [member-id (current-member-id req)]
     {:datomic-conn      (conn-from-req req)
-     :write-runner      (get-in req [:system :frame-loop :write-runner])
+     :write-runner      (get-in req [:system :write-runner])
      :current-locale    (:current-locale req)
      :clock             (:now deps)
      :random-code       (:random-code deps)
@@ -153,8 +153,7 @@
   ([req invite-code]
    (resend-invitation! default-invitation-deps req invite-code))
   ([deps req invite-code]
-   (let [deps    (merge default-invitation-deps deps)
-         control (get-in req [:system :frame-loop :write-runner])
+   (let [deps (merge default-invitation-deps deps)
          resend!
          (fn []
            (let [db  (db-from-req req)
@@ -173,9 +172,7 @@
                                          :audit/origin :app.origin/browser
                                          :audit/user   (when-let [actor-id (current-member-id req)]
                                                          [:member/member-id actor-id])}})))))]
-     (when-not control
-       (throw (ex-info "Invitation resend requires the application writer" {})))
-     (writer/call! control resend!))))
+     (writer/call! (:system req) resend!))))
 
 (defn delete-invitation!
   "Revokes the pending invitation currently identified by `invite-code`."

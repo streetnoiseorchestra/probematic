@@ -32,7 +32,7 @@
 (defn invite-accept-post [req]
   (let [code   (views/form-invite-code req)
         result (admission/request-setup! {:datomic-conn (:datomic-conn req)
-                                          :write-runner (get-in req [:system :frame-loop :write-runner])
+                                          :write-runner (get-in req [:system :write-runner])
                                           :clock        t/inst}
                                          code)]
     (if (contains? #{:creating :accepted} (:status result))

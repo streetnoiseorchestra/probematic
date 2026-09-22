@@ -29,7 +29,7 @@
 
 (defn- authenticated-request [conn member-id]
   {:datomic-conn conn
-   :system       {:frame-loop {:write-runner (writer/create)}}
+   :system       {:write-runner (writer/create)}
    :app/session  {:session/member {:member/member-id member-id}}})
 
 (deftest transact-test

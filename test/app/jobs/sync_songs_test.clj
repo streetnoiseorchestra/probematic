@@ -22,12 +22,12 @@
           (.put ^ConcurrentHashMap (::game/conns runtime) :barrier
                 (fn [_] (deliver entered true) @release))
           (is (= true (deref entered 5000 ::timeout)))
-          (let [result (future (sync-songs/song-sync-job {:frame-loop runtime :datomic {:conn conn}} nil))]
+          (let [result (future (sync-songs/song-sync-job {:write-runner (:write-runner runtime) :datomic {:conn conn}} nil))]
             (is (= ::waiting (deref result 250 ::waiting)))
             (is (= before-t (d/basis-t (d/db conn))))
             (deliver release true)
             (is (map? (deref result 5000 ::timeout)))
-            (writer/call! (:write-runner runtime) (constantly nil))
+            (writer/call! runtime (constantly nil))
             (let [jobs     (drip/list-jobs client {})
                   source-t (get-in jobs [0 :args :source-t])
                   tx       (when source-t (d/entity (d/db conn) (d/t->tx source-t)))]

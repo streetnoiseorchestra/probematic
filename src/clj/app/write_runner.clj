@@ -15,32 +15,36 @@
   "Executes one accepted background operation on the writer and releases its caller."
   [{::keys [work result]}]
   [[:map [::work ifn?] [::result :any]] => :any]
-  (deliver result (try [:ok (work)] (catch Throwable e [:error e]))))
+  (deliver result (try [:ok (work)] (catch Exception e [:error e]))))
 
 (>defn call!
-  "Runs `work` and returns its result, or throws its exception.
+  "Runs `work` through the writer in `ctx` and returns its result.
 
-  Startup writes run directly under the lifecycle lock. Once started, calls from
-  background threads enqueue work and wait; calls on the writer execute directly.
-  Full or closed admission throws with `:app/error-type ::admission-rejected`
-  without executing the work. Never call from a render callback: rendering must
-  finish before the writer can process the queue."
-  [control work]
-  [Control ifn? => :any]
-  (let [[status value]
-        (locking control
-          (let [{:keys [phase thread submit!]} @control]
-            (cond
-              (identical? thread (Thread/currentThread)) [:ok (work)]
-              (= :starting phase) [:ok (work)]
-              (= :running phase)
-              (let [result (promise)]
-                (when-not (submit! {::work work ::result result})
-                  (throw (ex-info "Writer admission is full or closed" {:app/error-type ::admission-rejected})))
-                [:pending result])
-              :else (throw (ex-info "Writer is stopped" {:app/error-type ::admission-rejected})))))
-        [status value] (if (= :pending status) @value [status value])]
-    (if (= :error status) (throw value) value)))
+  `ctx` must contain a top-level `:write-runner` control from [[create]].
+  Missing or invalid controls throw before work runs. Work exceptions propagate.
+  Startup writes run under the lifecycle lock. Once started, background calls
+  enqueue work and wait; calls on the writer execute directly.
+  Full or closed admission throws with `:app/error-type ::admission-rejected`.
+  Never call from a render callback: rendering must finish before queued writes."
+  [ctx work]
+  [:map ifn? => :any]
+  (let [control (:write-runner ctx)]
+    (when-not (instance? clojure.lang.Atom control)
+      (throw (ex-info "Writer context requires :write-runner" {:app/error-type ::invalid-context})))
+    (let [[status value]
+          (locking control
+            (let [{:keys [phase thread submit!]} @control]
+              (cond
+                (identical? thread (Thread/currentThread)) [:ok (work)]
+                (= :starting phase) [:ok (work)]
+                (= :running phase)
+                (let [result (promise)]
+                  (when-not (submit! {::work work ::result result})
+                    (throw (ex-info "Writer admission is full or closed" {:app/error-type ::admission-rejected})))
+                  [:pending result])
+                :else (throw (ex-info "Writer is stopped" {:app/error-type ::admission-rejected})))))
+          [status value] (if (= :pending status) @value [status value])]
+      (if (= :error status) (throw value) value))))
 
 (>defn start!
   "Starts the loop with `start-loop!` after all direct startup writes finish.

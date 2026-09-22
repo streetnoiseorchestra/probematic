@@ -120,7 +120,6 @@
   (when-not (contains? params ::stored-avatar)
     (throw (ex-info "Profile upload has not been prepared" {})))
   (let [conn     (-> system :datomic :conn)
-        control  (get-in system [:frame-loop :write-runner])
         persist! (fn []
                    (datomic/transact
                     conn
@@ -129,10 +128,8 @@
                                :audit/origin :app.origin/browser
                                :audit/user   [:member/member-id (:member-id params)]}}))]
     (assert conn "Profile persistence requires a Datomic connection")
-    (when-not control
-      (throw (ex-info "Profile persistence requires the application writer" {})))
     {:status    :saved
-     :tx-result (writer/call! control persist!)}))
+     :tx-result (writer/call! system persist!)}))
 
 (defn save-profile!
   "Prepares an upload and synchronously commits one validated profile.

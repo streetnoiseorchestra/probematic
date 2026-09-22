@@ -21,7 +21,7 @@
     (fn [runtime client conn]
       (let [{:keys [actor-id gig-id member-id]}
             (writer/call!
-             (:write-runner runtime)
+             runtime
              (fn []
                (let [ids      (answers/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days)))
                      actor-id (random-uuid)]
@@ -33,10 +33,10 @@
                                    :attendance/plan  :plan/definitely})
                 (assoc-in [:app/session :session/member] {:member/member-id actor-id})
                 (assoc-in [:env :ig/system :app.ig/profile] :prod)
-                (assoc-in [:system :frame-loop] runtime))
+                (assoc-in [:system :write-runner] (:write-runner runtime)))
             entered                             (promise)
             release                             (promise)]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(deref (d/transact conn [{:db/id "new-section" :section/name "saxophones"}
                                                 [:db/add [:member/member-id member-id] :member/section "new-section"]])))
         (try
@@ -63,7 +63,7 @@
                                  [?actor :member/member-id ?actor-id]]
                                db
                                (:db/id attendance))))))
-            (writer/call! (:write-runner runtime) (constantly nil))
+            (writer/call! runtime (constantly nil))
             (let [jobs (drip/list-jobs client {})]
               (is (= [{:gig-id gig-id :operation :updated}]
                      (mapv #(select-keys (:args %) [:gig-id :operation]) jobs)))

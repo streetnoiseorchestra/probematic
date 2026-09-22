@@ -37,7 +37,7 @@
 
 (defn handle! [system kind client {:keys [id args]}]
   (when (config/prod-mode? (:env system))
-    (let [system (assoc system :db (writer/call! (get-in system [:frame-loop :write-runner])
+    (let [system (assoc system :db (writer/call! system
                                                  #(d/db (get-in system [:datomic :conn]))))]
       (case kind
         :gig (sync-gig! system args)

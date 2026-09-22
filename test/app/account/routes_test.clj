@@ -141,14 +141,14 @@
     (let [{:keys [conn]} (tc/new-system "account-authenticated-routes")
           branch         (authenticated-branch
                           (app-routes/routes
-                           {:env        {:ig/system      {:app.ig/profile :test}
-                                         :session-config {:session-ttl-s 3600
-                                                          :cookie-attrs  {}}}
-                            :i18n-langs (i18n/read-langs)
-                            :datomic    {:conn conn}
-                            :frame-loop {:write-runner (writer/create)}
-                            :filestore  {}
-                            :auxiliary  tc/*sqlite-db*
+                           {:env          {:ig/system      {:app.ig/profile :test}
+                                           :session-config {:session-ttl-s 3600
+                                                            :cookie-attrs  {}}}
+                            :i18n-langs   (i18n/read-langs)
+                            :datomic      {:conn conn}
+                            :write-runner (writer/create)
+                            :filestore    {}
+                            :auxiliary    tc/*sqlite-db*
                             :datastar-refresh-mult
                             {::datastar/refresh-mult ::refresh-mult}}))
           paths          (into #{}

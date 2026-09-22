@@ -26,13 +26,13 @@
                 (deliver downloaded true)
                 {:status 200 :headers {"content-type" "image/jpeg"} :body (avatars/jpeg-bytes)})
               (fn [port]
-                (writer/call! (:write-runner runtime)
+                (writer/call! runtime
                               #(avatars/seed-cutover-member! conn member-id (str "http://127.0.0.1:" port "/avatar/{size}.jpg")))
                 (try
                   (.put ^ConcurrentHashMap (::game/conns runtime) :barrier
                         (fn [_] (deliver entered true) @release))
                   (is (= true (deref entered 5000 ::timeout)))
-                  (let [result (future (cutover/cutover-avatars! {:frame-loop runtime :datomic {:conn conn} :filestore store}))]
+                  (let [result (future (cutover/cutover-avatars! {:write-runner (:write-runner runtime) :datomic {:conn conn} :filestore store}))]
                     (is (= true (deref downloaded 5000 ::timeout)))
                     (is (= ::waiting (deref result 2000 ::waiting)))
                     (is (nil? (avatars/avatar-id (d/db conn) member-id)))

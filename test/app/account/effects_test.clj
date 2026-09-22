@@ -68,8 +68,8 @@
 
 (defn app-system
   ([conn]
-   {:datomic    {:conn conn}
-    :frame-loop {:write-runner (writer/create)}})
+   {:datomic      {:conn conn}
+    :write-runner (writer/create)})
   ([conn store]
    (assoc (app-system conn) :filestore store)))
 

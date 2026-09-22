@@ -31,7 +31,7 @@
                 tab-id      (str (random-uuid))
                 token       (random-uuid)
                 parsed-file (atom nil)
-                system      {:datomic    {:conn conn}      :frame-loop runtime                              :filestore store
+                system      {:datomic    {:conn conn}      :frame-loop runtime                              :write-runner (:write-runner runtime) :filestore store
                              :nexus      (nexus/nexus)     :env        {:ig/system {:app.ig/profile :test}}
                              :i18n-langs (i18n/read-langs)}
                 handler     (http/ring-handler
@@ -50,7 +50,7 @@
                                (handler (assoc request :app/session {:session/member {:member/member-id member-id}})))
                              {:ip "127.0.0.1" :port 0})]
             (try
-              (writer/call! (:write-runner runtime)
+              (writer/call! runtime
                             #(deref (d/transact conn [{:member/member-id member-id :member/name "Before"}])))
               (swap! (:clients runtime) assoc tab-id {:member-id member-id :token token :revision 0 :events [] :close! (constantly nil)})
               (swap! datastar/!page-state assoc tab-id {::datastar/state-token token})
@@ -112,7 +112,7 @@
           (is (= before-t (d/basis-t (d/db conn))))
           (is (empty? (get-in @(:clients runtime) [tab-id :events])))
           (deliver release true)
-          (writer/call! (:write-runner runtime) (constantly nil))
+          (writer/call! runtime (constantly nil))
           (let [member (d/entity (d/db conn) [:member/member-id member-id])]
             (is (= "Ada" (:member/name member)))
             (is (some? (:member/avatar member))))
@@ -126,7 +126,7 @@
       (fn [{:keys [runtime conn tab-id parsed-file url]}]
         (let [before-t (d/basis-t (d/db conn))]
           (is (= {:status 204 :body ""} (select-keys (post-profile! url tab-id fields) [:status :body :error])))
-          (writer/call! (:write-runner runtime) (constantly nil))
+          (writer/call! runtime (constantly nil))
           (is (and @parsed-file (not (fs/exists? @parsed-file))))
           (is (= before-t (d/basis-t (d/db conn))))
           (is (= (get fields :name "Ada") (get-in @datastar/!page-state [tab-id :account-profile :name])))

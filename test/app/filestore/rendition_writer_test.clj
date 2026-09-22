@@ -28,12 +28,12 @@
               (fs/copy avatars/jpeg-path upload {:replace-existing true})
               (let [{:keys [image-id tx-data]} (controller/store-avatar!
                                                 {:filestore store} {:file-name "portrait.jpg" :file (fs/file upload) :mime-type "image/jpeg"})]
-                (writer/call! (:write-runner runtime) #(deref (d/transact conn tx-data)))
+                (writer/call! runtime #(deref (d/transact conn tx-data)))
                 (.put ^ConcurrentHashMap (::game/conns runtime) :barrier
                       (fn [_] (deliver entered true) @release))
                 (is (= true (deref entered 5000 ::timeout)))
                 (let [result (future (controller/create-rendition!
-                                      {:datomic-conn conn :filestore store :system {:frame-loop runtime}}
+                                      {:datomic-conn conn :filestore store :system {:write-runner (:write-runner runtime)}}
                                       (q/retrieve-image (d/db conn) image-id) filter-spec))]
                   (is (= ::waiting (deref result 2000 ::waiting)))
                   (is (empty? (q/retrieve-renditions-for (d/db conn) image-id (domain/encode-filter-spec filter-spec))))

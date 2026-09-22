@@ -97,6 +97,7 @@
                                                      :filestore    #ig/ref :app.ig/filestore
                                                      :nexus        #ig/ref :app.ig/nexus
                                                      :frame-loop   #ig/ref :app.ig/frame-loop
+                                                     :write-runner #ig/ref :app.ig/write-runner
                                                      :icon-sprites #ig/ref :app.icons/sprites}
                            :app.ig/nexus            {}
                            :app.ig/write-runner     {}
@@ -141,26 +142,28 @@
 
                            :app.ig/i18n-langs       {}
                            :app.ig/lettermint       {:env #ig/ref :app.ig/env}
-                           :app.ig/job-worker       {:calendar   #ig/ref :app.ig/calendar
-                                                     :datomic    #ig/ref :app.ig/datomic-db
-                                                     :env        #ig/ref :app.ig/env
-                                                     :frame-loop #ig/ref :app.ig/frame-loop
-                                                     :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                     :job-queue  #ig/ref :app.ig/job-queue
-                                                     :keycloak   #ig/ref :app.ig/keycloak
-                                                     :lettermint #ig/ref :app.ig/lettermint}
+                           :app.ig/job-worker       {:calendar     #ig/ref :app.ig/calendar
+                                                     :datomic      #ig/ref :app.ig/datomic-db
+                                                     :env          #ig/ref :app.ig/env
+                                                     :frame-loop   #ig/ref :app.ig/frame-loop
+                                                     :write-runner #ig/ref :app.ig/write-runner
+                                                     :i18n-langs   #ig/ref :app.ig/i18n-langs
+                                                     :job-queue    #ig/ref :app.ig/job-queue
+                                                     :keycloak     #ig/ref :app.ig/keycloak
+                                                     :lettermint   #ig/ref :app.ig/lettermint}
                            :app.ig/webdav-sardine   {:env #ig/ref :app.ig/env}
                            :app.ig/keycloak         {:env #ig/ref :app.ig/env}
                            :app.ig/calendar         {:env #ig/ref :app.ig/env}
                            :app.ig/filestore        {:env #ig/ref :app.ig/env}
-                           :app.ig.jobs/definitions {:env        #ig/ref :app.ig/env
-                                                     :frame-loop #ig/ref :app.ig/frame-loop
-                                                     :gigo       #ig/ref :app.ig/gigo-client
-                                                     :datomic    #ig/ref :app.ig/datomic-db
-                                                     :i18n-langs #ig/ref :app.ig/i18n-langs
-                                                     :job-queue  #ig/ref :app.ig/job-queue
-                                                     :calendar   #ig/ref :app.ig/calendar
-                                                     :filestore  #ig/ref :app.ig/filestore}}
+                           :app.ig.jobs/definitions {:env          #ig/ref :app.ig/env
+                                                     :frame-loop   #ig/ref :app.ig/frame-loop
+                                                     :write-runner #ig/ref :app.ig/write-runner
+                                                     :gigo         #ig/ref :app.ig/gigo-client
+                                                     :datomic      #ig/ref :app.ig/datomic-db
+                                                     :i18n-langs   #ig/ref :app.ig/i18n-langs
+                                                     :job-queue    #ig/ref :app.ig/job-queue
+                                                     :calendar     #ig/ref :app.ig/calendar
+                                                     :filestore    #ig/ref :app.ig/filestore}}
  :jobs                    {#_#_:job/sync-songs     {:job/frequency     [60 :minutes]
                                                     :job/initial-delay [2 :minutes]}
                            :job/probe-housekeeping                                   {:job/frequency     [10 :minutes]

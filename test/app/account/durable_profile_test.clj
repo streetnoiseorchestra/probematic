@@ -42,7 +42,7 @@
                                        n))]
                       (is (< 0 accepted 2048)))))
                 (let [error (try
-                              (effects/save-profile! {:datomic {:conn conn} :filestore store :frame-loop runtime}
+                              (effects/save-profile! {:datomic {:conn conn} :filestore store :write-runner (:write-runner runtime)}
                                                      {:member-id     member-id :profile        profile-fixtures/profile
                                                       :avatar-upload upload    :sync-keycloak? false})
                               (catch Exception error error))]
@@ -62,8 +62,8 @@
       (profile-fixtures/with-temp-filestore
         (fn [store]
           (let [member-id (random-uuid)
-                system    {:datomic {:conn conn} :filestore store :frame-loop runtime}]
-            (writer/call! (:write-runner runtime)
+                system    {:datomic {:conn conn} :filestore store :write-runner (:write-runner runtime)}]
+            (writer/call! runtime
                           #(deref (d/transact conn [{:member/member-id member-id}])))
             (let [upload   (profile-fixtures/avatar-upload "prepared-profile")
                   before-t (d/basis-t (d/db conn))
@@ -80,12 +80,11 @@
       (profile-fixtures/with-temp-filestore
         (fn [store]
           (let [member-id     (random-uuid)
-                control       (:write-runner runtime)
                 prepared      (promise)
                 release       (promise)
                 result        (promise)
                 store-avatar! filestore/store-avatar!]
-            (writer/call! control
+            (writer/call! runtime
                           #(deref (d/transact conn [{:member/member-id   member-id
                                                      :member/name        "Ada"
                                                      :member/email       "ada@example.test"
@@ -101,13 +100,13 @@
                   (deliver result
                            (try
                              (effects/save-profile!
-                              {:datomic {:conn conn} :filestore store :frame-loop runtime}
+                              {:datomic {:conn conn} :filestore store :write-runner (:write-runner runtime)}
                               {:member-id      member-id                                           :profile profile-fixtures/profile
                                :avatar-upload  (profile-fixtures/avatar-upload "current-identity")
                                :sync-keycloak? true})
                              (catch Throwable e e))))
                 (is (= true (deref prepared 5000 ::timeout)))
-                (writer/call! control
+                (writer/call! runtime
                               #(deref (d/transact conn [[:db/add [:member/member-id member-id]
                                                          :member/keycloak-id "replacement-link"]])))
                 (deliver release true)

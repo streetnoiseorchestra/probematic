@@ -16,15 +16,14 @@
 (deftest scheduled-poll-closing-waits-for-the-writer
   (fixtures/with-runtime
     (fn [runtime _ conn]
-      (let [control   (:write-runner runtime)
-            member-id (random-uuid)
+      (let [member-id (random-uuid)
             now       (t/instant "2026-06-17T18:00:00Z")
-            system    {:datomic {:conn conn} :frame-loop runtime}
+            system    {:datomic {:conn conn} :write-runner (:write-runner runtime)}
             entered   (promise)
             release   (promise)
             result    (promise)
             poll-ids  (writer/call!
-                       control
+                       runtime
                        (fn []
                          @(d/transact conn [{:member/member-id member-id}])
                          (mapv (fn [attrs] (:poll-id (polls/seed-poll! conn member-id attrs)))

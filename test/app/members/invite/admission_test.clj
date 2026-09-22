@@ -18,7 +18,7 @@
       (let [member-id (random-uuid)
             resources {:datomic-conn conn                            :write-runner (:write-runner runtime)
                        :clock        (constantly cells/requested-at)}]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(cells/seed-invitation! conn member-id
                                                {:status cells/pending           :generation 1
                                                 :code   "admission-test-bearer" :expiry     cells/expires-at}))
@@ -26,7 +26,7 @@
 
 (deftest concurrent-admission-commits-one-claim-without-a-keycloak-adapter
   (with-pending-invitation
-    (fn [{:keys [datomic-conn write-runner] :as resources} client member-id]
+    (fn [{:keys [datomic-conn] :as resources} client member-id]
       (let [before (d/basis-t (d/db datomic-conn))]
         (doseq [code [nil "" "wrong-bearer"]]
           (is (= {:status :unavailable} (admission/request-setup! resources code))))
@@ -36,13 +36,13 @@
       (let [requests (mapv (fn [_] (future (admission/request-setup! resources "admission-test-bearer"))) (range 8))]
         (is (= (vec (repeat 8 {:status :creating :member-id member-id}))
                (mapv #(deref % 5000 ::timeout) requests))))
-      (writer/call! write-runner (constantly nil))
+      (writer/call! resources (constantly nil))
       (is (= {:status cells/accepting :generation 2 :expires-at cells/expires-at}
              (domain/invitation-state (d/db datomic-conn) member-id)))
       (is (= 1 (count (drip/list-jobs client {}))))
       (is (= {:member-id member-id :claim-generation 2}
              (dissoc (:args (first (drip/list-jobs client {}))) :source-t)))
-      (writer/call! write-runner
+      (writer/call! resources
                     #(doseq [plan-fn [domain/begin-create-tx domain/link-keycloak-user-tx domain/finalize-tx]]
                        @(d/transact datomic-conn
                                     (:tx-data (plan-fn (d/db datomic-conn)
@@ -56,11 +56,11 @@
 
 (deftest admission-rechecks-the-bearer-after-writer-queue-wait
   (with-pending-invitation
-    (fn [{:keys [datomic-conn write-runner] :as resources} client member-id]
+    (fn [{:keys [datomic-conn] :as resources} client member-id]
       (let [entered    (promise)
             release    (promise)
             revocation (future
-                         (writer/call! write-runner
+                         (writer/call! resources
                                        #(do
                                           (deliver entered true)
                                           @release
@@ -81,8 +81,8 @@
 
 (deftest admission-does-not-adopt-an-in-flight-legacy-claim
   (with-pending-invitation
-    (fn [{:keys [datomic-conn write-runner] :as resources} client member-id]
-      (writer/call! write-runner
+    (fn [{:keys [datomic-conn] :as resources} client member-id]
+      (writer/call! resources
                     #(deref (d/transact datomic-conn
                                         (:tx-data (domain/claim-tx
                                                    (d/db datomic-conn)

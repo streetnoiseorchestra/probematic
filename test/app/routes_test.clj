@@ -29,7 +29,7 @@
      :i18n-langs   (i18n/read-langs)
      :oauth2       {}
      :datomic      {:conn conn}
-     :frame-loop   {:write-runner (writer/create)}
+     :write-runner (writer/create)
      :webdav       {}
      :auxiliary    tc/*sqlite-db*
      :filestore    {}

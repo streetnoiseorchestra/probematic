@@ -18,19 +18,19 @@
   (doseq [change [:deleted :relinked]]
     (fixtures/with-runtime
       (fn [runtime _ conn]
-        (let [{:keys [gig-id]} (writer/call! (:write-runner runtime)
+        (let [{:keys [gig-id]} (writer/call! runtime
                                              #(gigs/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days))))
               db               (d/db conn)
               eid              (d/entid db [:gig/gig-id gig-id])
               entered          (promise)
               release          (promise)
-              system           {:frame-loop runtime                                                              :datomic {:conn conn} :db db
-                                :env        {:app-base-url "https://example.test" :discourse {:username "test"}}}]
+              system           {:write-runner (:write-runner runtime)                                              :datomic {:conn conn} :db db
+                                :env          {:app-base-url "https://example.test" :discourse {:username "test"}}}]
           (with-redefs [discourse/request! (fn [& _] (deliver entered true) @release {:id 42})]
             (try
               (let [result (future (discourse/create-topic-for-gig! system gig-id))]
                 (is (= true (deref entered 5000 ::timeout)))
-                (writer/call! (:write-runner runtime)
+                (writer/call! runtime
                               #(deref (d/transact conn [(if (= :deleted change)
                                                           [:db/retractEntity eid]
                                                           [:db/add eid :forum.topic/topic-id "99"])])))
@@ -45,7 +45,7 @@
 (deftest topic-creation-persists-on-the-writer-and-recovers-an-existing-remote-topic
   (fixtures/with-runtime
     (fn [runtime _ conn]
-      (let [{:keys [gig-id]} (writer/call! (:write-runner runtime)
+      (let [{:keys [gig-id]} (writer/call! runtime
                                            #(gigs/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days))))
             actor-id         (random-uuid)
             _                @(d/transact conn [{:member/member-id actor-id}])
@@ -56,8 +56,8 @@
                                    :audit   {:audit/user [:member/member-id actor-id]}})
                                  :db-after
                                  d/basis-t)
-            system           {:frame-loop runtime                                                              :datomic {:conn conn} :db (d/db conn)
-                              :env        {:app-base-url "https://example.test" :discourse {:username "test"}}}
+            system           {:write-runner (:write-runner runtime)                                              :datomic {:conn conn} :db (d/db conn)
+                              :env          {:app-base-url "https://example.test" :discourse {:username "test"}}}
             entered          (promise)
             release          (promise)
             posted           (promise)
@@ -81,7 +81,7 @@
               (is (nil? (:forum.topic/topic-id (d/entity (d/db conn) [:gig/gig-id gig-id]))))
               (deliver release true)
               (is (map? (deref result 5000 ::timeout))))
-            (writer/call! (:write-runner runtime)
+            (writer/call! runtime
                           #(deref (d/transact conn [[:db/retract [:gig/gig-id gig-id] :forum.topic/topic-id "42"]])))
             (discourse/create-topic-for-gig! system gig-id source-t)
             (is (= 1 @posts))

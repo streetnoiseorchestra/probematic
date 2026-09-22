@@ -22,14 +22,14 @@
             member-ids      [(random-uuid) (random-uuid)]
             other-member-id (random-uuid)
             reminder-ids    (vec (repeatedly 501 random-uuid))
-            system          {:frame-loop runtime
-                             :datomic    {:conn conn}
-                             :job-queue  {:client client}
-                             :i18n-langs (i18n/read-langs)
-                             :env        {:app-base-url   "https://example.test"
-                                          :app-secret-key "reminder-test-secret"}}]
+            system          {:write-runner (:write-runner runtime)
+                             :datomic      {:conn conn}
+                             :job-queue    {:client client}
+                             :i18n-langs   (i18n/read-langs)
+                             :env          {:app-base-url   "https://example.test"
+                                            :app-secret-key "reminder-test-secret"}}]
         (writer/call!
-         (:write-runner runtime)
+         runtime
          (fn []
            @(d/transact conn
                         (into [(gigs/gig->db {:gig/gig-id   gig-id
@@ -67,7 +67,7 @@
                          (d/entity db [:reminder/reminder-id %]))
                        reminder-ids)))
           (is (string? (:audit/jobs tx))))
-        (writer/call! (:write-runner runtime) (constantly nil))
+        (writer/call! runtime (constantly nil))
         (let [jobs       (drip/list-jobs client {})
               invocation (:args (first jobs))]
           (is (= 1 (count jobs)))

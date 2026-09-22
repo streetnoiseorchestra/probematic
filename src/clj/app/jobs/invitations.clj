@@ -19,12 +19,12 @@
   Reads and local transitions use the writer. Keycloak calls run on the caller.
   Returns a safe outcome keyword; exceptions remain retryable by the job runner.
   A verified committed receipt wins over an ambiguous final workflow response."
-  [{:keys [datomic-conn write-runner clock] :as resources}
+  [{:keys [datomic-conn clock] :as resources}
    {:keys [member-id claim-generation]}]
   [[:map [:datomic-conn :any] [:write-runner writer/Control] [:clock ifn?] [:keycloak :map]]
    [:map [:member-id uuid?] [:claim-generation pos-int?]]
    => [:enum :accepted :pending :retry :operator-required :superseded]]
-  (let [read-state #(writer/call! write-runner (fn [] (domain/invitation-state (d/db datomic-conn) member-id)))
+  (let [read-state #(writer/call! resources (fn [] (domain/invitation-state (d/db datomic-conn) member-id)))
         state      (read-state)]
     (cond
       (accepted-attempt? state claim-generation) :accepted

@@ -26,11 +26,11 @@
             member-id (random-uuid)
             entered   (promise)
             release   (promise)
-            system    {:frame-loop runtime                                :datomic    {:conn conn}
-                       :env        {:app-base-url "https://example.test"} :i18n-langs (i18n/read-langs)}]
-        (writer/call! (:write-runner runtime)
+            system    {:write-runner (:write-runner runtime)                :datomic    {:conn conn}
+                       :env          {:app-base-url "https://example.test"} :i18n-langs (i18n/read-langs)}]
+        (writer/call! runtime
                       #(deref (d/transact conn [{:member/member-id member-id :member/name "Leader" :member/email "leader@example.test"}])))
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(deref (d/transact conn [(gigs/gig->db {:gig/gig-id            gig-id                        :gig/title  "Rehearsal"
                                                                :gig/gig-type          :gig.type/probe               :gig/status :gig.status/confirmed
                                                                :gig/date              (t/date)
@@ -44,13 +44,13 @@
             (is (= ::waiting (deref result 250 ::waiting)))
             (deliver release true)
             (is (map? (deref result 5000 ::timeout)))
-            (writer/call! (:write-runner runtime) (constantly nil))
+            (writer/call! runtime (constantly nil))
             (let [jobs       (drip/list-jobs client {})
                   invocation (:args (first jobs))]
               (is (= 1 (count jobs)))
               (is (= ::mailers/rehearsal-leader (:mailer invocation)))
               (is (= {:gig-id gig-id :member-id member-id} (:arguments invocation)))
-              (writer/call! (:write-runner runtime)
+              (writer/call! runtime
                             #(deref (d/transact conn [[:db/add [:member/member-id member-id] :member/email "later@example.test"]])))
               (let [message (mailers/prepare! system invocation)]
                 (is (= ["leader@example.test"] (get-in message [:email/messages 0 :to])))
@@ -64,9 +64,9 @@
       (let [member-id (random-uuid)
             entered   (promise)
             release   (promise)
-            system    {:frame-loop runtime :datomic {:conn conn}}]
+            system    {:write-runner (:write-runner runtime) :datomic {:conn conn}}]
         (writer/call!
-         (:write-runner runtime)
+         runtime
          (fn []
            @(d/transact conn [{:member/member-id member-id                                          :member/name "Rehearsal contact"
                                :member/gigo-key  "ag1zfmdpZy1vLW1hdGljchMLEgZNZW1iZXIYgICA6K70hwoM"}])

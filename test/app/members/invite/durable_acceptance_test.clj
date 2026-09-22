@@ -22,7 +22,7 @@
                        :clock        (constantly cells/transitioned-at)
                        :audit        {:audit/action ::jobs/claim
                                       :audit/origin :app.origin/browser}}]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(cells/seed-invitation! conn member-id
                                                {:status cells/pending        :generation 1
                                                 :code   "secret-test-bearer" :expiry     cells/expires-at}))
@@ -45,7 +45,7 @@
             (is (true? (:pass? retry)))
             (is (= :conflict (get-in retry [:output :member-invite/claim-status])))
             (is (= (d/basis-t db) (d/basis-t (d/db conn)))))
-          (writer/call! (:write-runner runtime) (constantly nil))
+          (writer/call! runtime (constantly nil))
           (let [queued (drip/list-jobs client {})]
             (is (= 1 (count queued)))
             (is (= {:member-id member-id :claim-generation 2 :source-t (d/tx->t claim-tx)}

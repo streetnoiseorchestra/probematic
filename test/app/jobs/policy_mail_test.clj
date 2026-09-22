@@ -21,16 +21,15 @@
     (fn [runtime _ conn]
       (let [policy-id  (random-uuid)
             actor-id   (random-uuid)
-            control    (:write-runner runtime)
-            system     {:frame-loop runtime
-                        :datomic    {:conn conn}
-                        :env        {:insurance {:email-reply-to "insurance@example.test"}}
-                        :lettermint {:from                    "sender@example.test"
-                                     :project-api-token       "policy-mail-test-token"
-                                     :testing-addresses-only? false
-                                     :timeout-ms              2000}}
+            system     {:write-runner (:write-runner runtime)
+                        :datomic      {:conn conn}
+                        :env          {:insurance {:email-reply-to "insurance@example.test"}}
+                        :lettermint   {:from                    "sender@example.test"
+                                       :project-api-token       "policy-mail-test-token"
+                                       :testing-addresses-only? false
+                                       :timeout-ms              2000}}
             args       (writer/call!
-                        control
+                        runtime
                         (fn []
                           (insurance-test/seed-policy! conn policy-id)
                           @(d/transact conn [{:member/member-id actor-id}])
@@ -85,14 +84,14 @@
             (writer/close! closed)
             (is (thrown-with-msg? Exception #"stopped"
                                   (mail/deliver!
-                                   (assoc-in system [:frame-loop :write-runner] closed)
+                                   (assoc system :write-runner closed)
                                    args)))
             (is (= 2 (count @deliveries)))
             (is (nil? (d/entid (d/db conn) receipt)))
             (is (= :insurance.policy.status/draft
                    (:insurance.policy/status (d/entity (d/db conn) policy-ref)))))
           (writer/call!
-           control
+           runtime
            #(deref (d/transact conn
                                [[:db/add policy-ref
                                  :insurance.policy/name
@@ -154,14 +153,13 @@
   (runner-test/with-runtime
     (fn [runtime _ conn]
       (let [policy-id   (random-uuid)
-            control     (:write-runner runtime)
-            system      {:frame-loop runtime
-                         :datomic    {:conn conn}
-                         :env        {:insurance {:email-reply-to "insurance@example.test"}}
-                         :lettermint {:from  "frozen@example.test"
-                                      :route "policy"}}
+            system      {:write-runner (:write-runner runtime)
+                         :datomic      {:conn conn}
+                         :env          {:insurance {:email-reply-to "insurance@example.test"}}
+                         :lettermint   {:from  "frozen@example.test"
+                                        :route "policy"}}
             args        (writer/call!
-                         control
+                         runtime
                          (fn []
                            (insurance-test/seed-policy! conn policy-id)
                            {:effect-id (random-uuid)
@@ -216,7 +214,7 @@
                Exception
                #"stopped"
                (mail/handle!
-                (assoc-in system [:frame-loop :write-runner] closed)
+                (assoc system :write-runner closed)
                 ::client
                 {:id job-id :args args :attempt 1 :metadata nil})))
           (is (nil? (d/entid (d/db conn)

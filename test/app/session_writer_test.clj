@@ -18,6 +18,16 @@
     (is (= (ig/ref :app.ig/auxiliary) (get-in config [:app.ig/frame-loop :auxiliary])))
     (is (= (ig/ref :app.ig/frame-loop) (get-in config [:app.ig.jobs/definitions :frame-loop])))))
 
+(deftest http-and-jobs-share-the-direct-writer-and-retain-frame-loop-dependencies
+  (let [config (:ig/system (system/config {:profile :test}))]
+    (doseq [component [:app.ig/handler :app.ig/job-worker :app.ig.jobs/definitions]]
+      (is (= {:write-runner (ig/ref :app.ig/write-runner)
+              :frame-loop   (ig/ref :app.ig/frame-loop)}
+             (select-keys (get config component) [:write-runner :frame-loop]))))
+    (doseq [component [:app.ig/frame-loop :app.ig/job-queue]]
+      (is (= (ig/ref :app.ig/write-runner)
+             (get-in config [component :write-runner]))))))
+
 (deftest session-rotation-and-deletion-use-the-owned-writer
   (fixtures/with-runtime
     (fn [runtime _ _]

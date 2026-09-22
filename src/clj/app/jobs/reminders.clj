@@ -47,7 +47,7 @@
 (defn- queue-due-reminders!
   [system as-of]
   (writer/call!
-   (get-in system [:frame-loop :write-runner])
+   system
    (fn []
      (let [conn    (get-in system [:datomic :conn])
            db      (datomic/db conn)

@@ -23,26 +23,26 @@
 (deftest gig-integrations-retain-options-and-deletion-ids-and-read-current-state
   (fixtures/with-runtime
     (fn [runtime client conn]
-      (let [{:keys [gig-id]} (writer/call! (:write-runner runtime)
+      (let [{:keys [gig-id]} (writer/call! runtime
                                            #(gigs/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days))))
             deleted-id       (random-uuid)
             calls            (atom [])
             record!          (fn [operation system id & options]
                                (swap! calls conj [operation id (:gig/title (q/retrieve-gig (:db system) id))
                                                   (vec options) (identical? (::game/thread runtime) (Thread/currentThread))]))
-            system           {:frame-loop runtime                              :job-queue {:client client} :datomic {:conn conn}
-                              :env        {:ig/system {:app.ig/profile :prod}}}]
-        (writer/call! (:write-runner runtime)
+            system           {:write-runner (:write-runner runtime)              :job-queue {:client client} :datomic {:conn conn}
+                              :env          {:ig/system {:app.ig/profile :prod}}}]
+        (writer/call! runtime
                       #(deref (d/transact conn [{:gig/gig-id deleted-id :gig/title "Delete me"}])))
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(nexus/db-transact-fx {} {:system system :request {}}
                                              [[[[:db/retractEntity [:gig/gig-id deleted-id]]]
                                                {:jobs [(integrations/gig-job gig-id {:operation :created :thread? true})
                                                        (integrations/gig-job gig-id {:operation :updated :takeover-topic? true})
                                                        (integrations/gig-job deleted-id {:operation :deleted})]}]]))
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(deref (d/transact conn [[:db/add [:gig/gig-id gig-id] :gig/title "Latest title"]])))
-        (writer/call! (:write-runner runtime) (constantly nil))
+        (writer/call! runtime (constantly nil))
         (with-redefs [discourse/create-topic-for-gig!       (partial record! :create-topic)
                       discourse/update-topic-for-gig!       (partial record! :update-topic)
                       discourse/maybe-delete-topic-for-gig! (partial record! :delete-topic)
@@ -67,17 +67,17 @@
 (deftest updated-gig-topic-fallback-retains-the-source-transaction-actor
   (fixtures/with-runtime
     (fn [runtime client conn]
-      (let [{:keys [gig-id]} (writer/call! (:write-runner runtime)
+      (let [{:keys [gig-id]} (writer/call! runtime
                                            #(gigs/seed-gig-member! conn (t/>> (t/date) (t/new-period 7 :days))))
             actor-id         (random-uuid)
-            system           {:frame-loop runtime
-                              :job-queue  {:client client}
-                              :datomic    {:conn conn}
-                              :env        {:ig/system    {:app.ig/profile :prod}
-                                           :app-base-url "https://example.test"
-                                           :discourse    {:username "test"}}}]
+            system           {:write-runner (:write-runner runtime)
+                              :job-queue    {:client client}
+                              :datomic      {:conn conn}
+                              :env          {:ig/system    {:app.ig/profile :prod}
+                                             :app-base-url "https://example.test"
+                                             :discourse    {:username "test"}}}]
         (writer/call!
-         (:write-runner runtime)
+         runtime
          (fn []
            @(d/transact conn [{:member/member-id actor-id}])
            (nexus/db-transact-fx
@@ -88,7 +88,7 @@
             [[[] {:jobs [(integrations/gig-job
                           gig-id
                           {:operation :updated :takeover-topic? true})]}]])))
-        (writer/call! (:write-runner runtime) (constantly nil))
+        (writer/call! runtime (constantly nil))
         (with-redefs [discourse/request!
                       (fn [_ {:keys [method]}]
                         (case method
@@ -118,15 +118,15 @@
             requests (atom 0)
             server   (http/run-server (fn [_] {:status (if (= 1 (swap! requests inc)) 503 200) :body "CMS response"})
                                       {:ip "127.0.0.1" :port 0})
-            system   {:frame-loop runtime                                                                                           :job-queue {:client client} :datomic {:conn conn}
-                      :env        {:ig/system {:app.ig/profile :prod}
-                                   :cms       {:token "test-token" :cms-url (str "http://127.0.0.1:" (:local-port (meta server)))}}}]
+            system   {:write-runner (:write-runner runtime)                                                                           :job-queue {:client client} :datomic {:conn conn}
+                      :env          {:ig/system {:app.ig/profile :prod}
+                                     :cms       {:token "test-token" :cms-url (str "http://127.0.0.1:" (:local-port (meta server)))}}}]
         (try
-          (writer/call! (:write-runner runtime)
+          (writer/call! runtime
                         #(nexus/db-transact-fx {} {:system system :request {}}
                                                [[[{:song/song-id song-id :song/title "Outbox song" :song/active? true}]
                                                  {:jobs [(integrations/song-job song-id)]}]]))
-          (writer/call! (:write-runner runtime) (constantly nil))
+          (writer/call! runtime (constantly nil))
           (let [job    (first (drip/list-jobs client {}))
                 worker (drip/start-worker! {:client   client                                                    :queues ["start-within-15m"] :poll-interval 10 :retry-interval 10
                                             :registry {"sync-song" (partial integrations/handle! system :song)}})]

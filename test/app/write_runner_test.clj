@@ -34,6 +34,38 @@
           (finally (queue/stop! job-queue))))
       (finally (fs/delete-tree dir)))))
 
+(deftest contexts-require-a-direct-writer-before-running-work
+  (let [control (writer/create)
+        ran?    (atom false)]
+    (try
+      (doseq [ctx [{}
+                   {:write-runner nil}
+                   {:write-runner :invalid}
+                   {:frame-loop {:write-runner control}}
+                   {:system {:write-runner control}}]]
+        (let [error (try
+                      (writer/call! ctx #(reset! ran? true))
+                      (catch Exception error error))]
+          (is (= {:app/error-type ::writer/invalid-context} (ex-data error)))
+          (is (false? @ran?))))
+      (is (thrown? Exception (writer/call! control #(reset! ran? true))))
+      (is (false? @ran?))
+      (finally (writer/close! control)))))
+
+(deftest startup-context-runs-work-and-closed-context-rejects-it
+  (let [control (writer/create)
+        ctx     {:write-runner control :request-id "startup"}
+        ran?    (atom false)]
+    (try
+      (is (identical? (Thread/currentThread) (writer/call! ctx #(Thread/currentThread))))
+      (writer/close! control)
+      (let [error (try
+                    (writer/call! ctx #(reset! ran? true))
+                    (catch Exception error error))]
+        (is (= {:app/error-type ::writer/admission-rejected} (ex-data error)))
+        (is (false? @ran?)))
+      (finally (writer/close! control)))))
+
 (deftest frame-job-readers-return-after-render-error-before-next-write-and-close
   (let [pool
         (with-runtime
@@ -41,11 +73,10 @@
             (let [read-pool (get-in client [:pool :reader :conn-pool])
                   observed  (atom {})
                   entered   (promise)
-                  release   (promise)
-                  control   (:write-runner runtime)]
+                  release   (promise)]
               (try
                 (writer/call!
-                 control
+                 runtime
                  #(doseq [id [:reader-a :reader-b]]
                     (.put ^ConcurrentHashMap (::game/conns runtime) id
                           (fn [frame]
@@ -65,7 +96,7 @@
                   (doseq [id [:reader-a :reader-b]] (.remove ^ConcurrentHashMap (::game/conns runtime) id))
                   (deliver release true)
                   (is (= "after-readers" (:kind (deref queued 5000 {}))))
-                  (writer/call! control (constantly nil))
+                  (writer/call! runtime (constantly nil))
                   (is (= 4 (.size ^java.util.concurrent.BlockingQueue read-pool))))
                 read-pool
                 (finally
@@ -95,11 +126,11 @@
           (deliver release true)
           (is (identical? (::game/thread runtime) (deref result 5000 ::timeout)))
           (is (= ["after-render"] (mapv :kind (drip/list-jobs client {}))))
-          (is (= :nested (writer/call! control #(writer/call! control (constantly :nested)))))
+          (is (= :nested (writer/call! runtime #(writer/call! runtime (constantly :nested)))))
           (is (identical? failure
-                          (try (writer/call! control #(throw failure))
+                          (try (writer/call! runtime #(throw failure))
                                (catch Exception e e))))
-          (is (= :still-running (writer/call! control (constantly :still-running))))
+          (is (= :still-running (writer/call! runtime (constantly :still-running))))
           (writer/close! control)
           (is (thrown-with-msg? Exception #"stopped"
                                 (drip/insert-job client "not-accepted" {})))
@@ -119,7 +150,7 @@
                                           (deliver finished (:id job)))}})]
         (try
           (writer/call!
-           (:write-runner runtime)
+           runtime
            #(nexus/db-transact-fx
              {} {:system {:datomic {:conn conn}} :request {}}
              [[[{:team/team-id (random-uuid) :team/name "Committed with intent"}]

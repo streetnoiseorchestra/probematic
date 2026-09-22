@@ -38,7 +38,7 @@
             resources {:datomic-conn  conn                            :write-runner (:write-runner runtime)
                        :clock         (constantly cells/requested-at) :keycloak     (:adapter keycloak)
                        :durable-jobs? true}]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(cells/seed-invitation! conn member-id
                                                {:status cells/pending          :generation 1
                                                 :code   "recovery-test-bearer" :expiry     cells/expires-at}))
@@ -80,7 +80,7 @@
     (fn [_ resources job keycloak]
       (let [conn      (:datomic-conn resources)
             member-id (:member-id job)]
-        (writer/call! (:write-runner resources)
+        (writer/call! resources
                       #(deref (d/transact conn
                                           (:tx-data (domain/begin-create-tx
                                                      (d/db conn)
@@ -96,7 +96,7 @@
     (fn [_ resources job keycloak]
       (let [conn      (:datomic-conn resources)
             member-id (:member-id job)]
-        (writer/call! (:write-runner resources)
+        (writer/call! resources
                       #(doseq [plan-fn [domain/begin-compensation-tx domain/release-tx domain/claim-tx]]
                          @(d/transact conn (:tx-data (plan-fn (d/db conn)
                                                               {:member-id    member-id          :state           (domain/invitation-state (d/db conn) member-id)
@@ -115,7 +115,7 @@
             member-id (:member-id job)
             user      {:id       "unexpected-enabled-user" :username   "alice.example"                      :email "alice@example.com"
                        :enabled? true                      :attributes (domain/attempt-markers member-id 3)}]
-        (writer/call! (:write-runner resources)
+        (writer/call! resources
                       #(deref (d/transact conn (:tx-data (domain/begin-create-tx
                                                           (d/db conn)
                                                           {:member-id       member-id             :state (domain/invitation-state (d/db conn) member-id)
@@ -156,9 +156,9 @@
         (fn [runtime client conn]
           (let [member-id (random-uuid)
                 keycloak  (workflows/fake-keycloak)
-                system    {:datomic   {:conn conn}     :frame-loop runtime
-                           :job-queue {:client client} :keycloak   (:adapter keycloak)}]
-            (writer/call! (:write-runner runtime)
+                system    {:datomic   {:conn conn}     :write-runner (:write-runner runtime)
+                           :job-queue {:client client} :keycloak     (:adapter keycloak)}]
+            (writer/call! runtime
                           #(cells/seed-invitation! conn member-id
                                                    {:status status               :generation generation
                                                     :code   "worker-test-bearer" :expiry     cells/expires-at}))
@@ -188,13 +188,13 @@
             keycloak     (workflows/fake-keycloak)
             create!      (get-in keycloak [:adapter :create-user!])
             create-count (atom 0)
-            system       {:datomic  {:conn conn}                                           :frame-loop runtime :job-queue {:client client}
+            system       {:datomic  {:conn conn}                                           :write-runner (:write-runner runtime) :job-queue {:client client}
                           :keycloak (assoc (:adapter keycloak) :create-user!
                                            (fn [spec]
                                              (swap! create-count inc)
                                              (create! spec)
                                              (throw (ex-info "Lost create response" {}))))}]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(cells/seed-invitation! conn member-id
                                                {:status cells/accepting       :generation 2
                                                 :code   "restart-test-bearer" :expiry     cells/expires-at}))

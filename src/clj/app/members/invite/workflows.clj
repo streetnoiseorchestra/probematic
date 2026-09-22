@@ -322,7 +322,7 @@
            (let [result
                  (accept-or-recover!
                   {:datomic-conn datomic-conn
-                   :write-runner (get-in req [:system :frame-loop :write-runner])
+                   :write-runner (get-in req [:system :write-runner])
                    :clock        now
                    :keycloak     (keycloak/kc-from-req req)
                    :audit        {:audit/action ::setup-account

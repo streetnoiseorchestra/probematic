@@ -18,7 +18,7 @@
             action-id (random-uuid)
             client    {:token token :member-id member-id :revision 0 :events [] :action-id action-id}
             origin    (edn/read-string (pr-str {:tab-id tab :token token :member-id member-id :locale :en :action-id action-id}))
-            system    {:frame-loop runtime :i18n-langs (i18n/read-langs)}]
+            system    {:frame-loop runtime :write-runner (:write-runner runtime) :i18n-langs (i18n/read-langs)}]
         (swap! (:clients runtime) assoc tab client)
         (feedback/failure! system (assoc origin :member-id (random-uuid)))
         (is (empty? (get-in @(:clients runtime) [tab :events])))

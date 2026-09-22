@@ -36,8 +36,8 @@
   {:datomic-conn conn
    :db           (d/db conn)
    :filestore    filestore
-   :system       {:env        {:app-base-url "https://example.test"}
-                  :frame-loop {:write-runner (writer/create)}}
+   :system       {:env          {:app-base-url "https://example.test"}
+                  :write-runner (writer/create)}
    :app/session  {:session/member {:member/member-id member-id}}
    :parameters   {:path      {:instrument-id instrument-id}
                   :multipart {:file {:filename     "test upload.jpg"

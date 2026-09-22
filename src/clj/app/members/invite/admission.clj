@@ -14,13 +14,13 @@
   Repeated requests do not enqueue another attempt. In-flight legacy attempts
   are left unchanged for status/recovery policy to classify. The result contains
   no bearer, authentication grant, or account profile. Writer rejection propagates."
-  [{:keys [datomic-conn write-runner clock] :as resources} invite-code]
+  [{:keys [datomic-conn clock] :as resources} invite-code]
   [[:map [:datomic-conn :any] [:write-runner writer/Control] [:clock ifn?]]
    [:maybe :string]
    => [:map [:status [:enum :accepted :creating :retry :unavailable]]
        [:member-id {:optional true} uuid?]]]
   (writer/call!
-   write-runner
+   resources
    (fn []
      (let [db           (d/db datomic-conn)
            requested-at (clock)]

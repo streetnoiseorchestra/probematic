@@ -5,11 +5,11 @@
             [app.i18n :as i18n]
             [app.write-runner :as writer]))
 
-(defn- with-origin! [frame-loop origin f]
+(defn- with-origin! [{:keys [frame-loop] :as system} origin f]
   (when (and frame-loop (:tab-id origin) (:token origin))
     (try
       (writer/call!
-       (:write-runner frame-loop)
+       system
        (fn []
          (let [request (datastar/assoc-connection-token
                         frame-loop
@@ -29,9 +29,9 @@
   `origin` contains only server-captured tab, connection, member, and locale data.
   It grants no authority to change business data. Feedback failure must not hide
   the original job error or prevent Dollop from retrying it."
-  [{:keys [frame-loop i18n-langs]} origin]
+  [{:keys [i18n-langs] :as system} origin]
   (with-origin!
-    frame-loop origin
+    system origin
     (fn [runtime request]
       (let [tr (i18n/tr-with i18n-langs [(:locale origin)])]
         (datastar/queue-sse-events!
@@ -42,7 +42,7 @@
 
 (defn redirect!
   "Queues a post-completion redirect only for the original live connection."
-  [{:keys [frame-loop]} origin uri]
-  (with-origin! frame-loop origin
+  [system origin uri]
+  (with-origin! system origin
     (fn [runtime request]
       (datastar/queue-sse-events! runtime request [[:app.datastar.sse/redirect uri]]))))

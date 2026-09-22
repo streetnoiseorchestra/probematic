@@ -56,14 +56,11 @@
   (let [command (request->command req)]
     (if (:error command)
       command
-      (let [conn    (:datomic-conn req)
-            control (get-in req [:system :frame-loop :write-runner])]
+      (let [conn (:datomic-conn req)]
         (when-not conn
           (throw (ex-info "Answer-link submission requires a Datomic connection" {})))
-        (when-not control
-          (throw (ex-info "Answer-link submission requires the application writer" {})))
         (writer/call!
-         control
+         (:system req)
          (fn []
            (execute-plan!
             conn

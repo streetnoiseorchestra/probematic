@@ -19,10 +19,10 @@
     (fn [runtime client conn]
       (let [queued      (atom [])
             deps        (assoc (invitations/fake-deps queued) :random-code (constantly "original-test-bearer"))
-            req         (assoc-in (invitations/request conn) [:system :frame-loop] runtime)
+            req         (assoc-in (invitations/request conn) [:system :write-runner] (:write-runner runtime))
             mail-system {:datomic {:conn conn}                           :i18n-langs (i18n/read-langs)
                          :env     {:app-base-url "https://example.test"}}]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(deref (d/transact conn [{:section/name "Sopran" :section/active? true :section/position 1}])))
         (let [created   (effects/invite-member! deps req invitations/member-invite-form)
               member-id (get-in created [:member-invite/member :member/member-id])]
@@ -35,7 +35,7 @@
                                               req "original-test-bearer")))
           (is (nil? (effects/resend-invitation! deps req "original-test-bearer")))
           (is (= :conflict (:member-invite/persist-status (effects/invite-member! deps req invitations/member-invite-form))))
-          (writer/call! (:write-runner runtime) (constantly nil))
+          (writer/call! runtime (constantly nil))
           (let [jobs (sort-by #(get-in % [:args :source-t]) (drip/list-jobs client {}))]
             (is (= 3 (count jobs)))
             (is (empty? @queued))

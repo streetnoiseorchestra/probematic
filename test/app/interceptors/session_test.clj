@@ -101,11 +101,11 @@
   (with-db
     (fn [db]
       (let [interceptors (auth/session-interceptors
-                          {:auxiliary  db
-                           :frame-loop {:write-runner (writer/create)}
-                           :env        {:ig/system      {:app.ig/profile :prod}
-                                        :session-config {:session-ttl-s 60
-                                                         :cookie-attrs  {:same-site :strict :http-only true :path "/"}}}})
+                          {:auxiliary    db
+                           :write-runner (writer/create)
+                           :env          {:ig/system      {:app.ig/profile :prod}
+                                          :session-config {:session-ttl-s 60
+                                                           :cookie-attrs  {:same-site :strict :http-only true :path "/"}}}})
             data         {:session/email "member@example.com" :session/roles #{:admin}}
             save         (app interceptors (constantly {:status 200 :app/session data}))
             read         (app interceptors (fn [req] {:status 200 :body (:app/session req)}))

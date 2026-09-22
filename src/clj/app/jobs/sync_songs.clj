@@ -6,8 +6,8 @@
    [app.write-runner :as writer]
    [ol.jobs-util :as jobs]))
 
-(defn song-sync-job [{:keys [frame-loop datomic]} _]
-  (writer/call! (:write-runner frame-loop)
+(defn song-sync-job [{:keys [datomic] :as system} _]
+  (writer/call! system
                 #(db/transact (:conn datomic)
                               {:tx-data (log-dispatch/intent-tx [integrations/sync-all-songs-job])
                                :audit   {:audit/action ::song-sync

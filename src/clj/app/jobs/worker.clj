@@ -27,7 +27,7 @@
 
 (defn- registry [system]
   (let [invitation-resources {:datomic-conn (get-in system [:datomic :conn])
-                              :write-runner (get-in system [:frame-loop :write-runner])
+                              :write-runner (:write-runner system)
                               :clock        t/inst
                               :keycloak     (:keycloak system)}]
     {"accept-invitation"           (partial invitations/handle! invitation-resources)

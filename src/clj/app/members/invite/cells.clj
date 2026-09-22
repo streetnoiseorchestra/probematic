@@ -23,7 +23,7 @@
                    (:app/error-code (ex-data %))))
    (take-while some? (iterate ex-cause exception))))
 
-(defn- transact-plan [{:keys [audit datomic-conn write-runner]} plan-fn]
+(defn- transact-plan [{:keys [audit datomic-conn] :as resources} plan-fn]
   (let [transact! (fn []
                     (if-let [plan (plan-fn)]
                       (try
@@ -35,9 +35,7 @@
                             transaction-conflict
                             (throw exception))))
                       transaction-conflict))]
-    (when-not write-runner
-      (throw (ex-info "Invitation transactions require the application writer" {})))
-    (writer/call! write-runner transact!)))
+    (writer/call! resources transact!)))
 
 (defn- state-after [report member-id]
   (domain/invitation-state (:db-after report) member-id))

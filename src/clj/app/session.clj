@@ -13,11 +13,7 @@
                    sid (instant/get-epoch-second (t/instant))]))))
 
 (defn- write! [db f]
-  (let [control (:write-runner db)
-        work    #(sql/with-write-tx [conn (:writer db)] (f conn))]
-    (when-not control
-      (throw (ex-info "Session writes require the application writer" {})))
-    (writer/call! control work)))
+  (writer/call! db #(sql/with-write-tx [conn (:writer db)] (f conn))))
 
 (defn delete-session! [db sid]
   (when sid
@@ -52,8 +48,6 @@
   on writes. The caller owns the database lifecycle."
   [db {:keys [expire-secs write-runner]}]
   {:pre [(pos-int? expire-secs)]}
-  (when-not write-runner
-    (throw (ex-info "Session initialization requires the application writer" {})))
   (let [db (assoc db :expire-secs expire-secs :write-runner write-runner)]
     (write! db
             (fn [conn]

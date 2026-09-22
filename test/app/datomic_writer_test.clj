@@ -19,9 +19,9 @@
             entered    (promise)
             release    (promise)
             req        {:datomic-conn conn
-                        :system       {:frame-loop runtime}
+                        :system       {:write-runner (:write-runner runtime)}
                         :app/session  {:session/member {:member/member-id member-id}}}]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(deref (d/transact conn [{:member/member-id member-id :member/name "Before"}])))
         (try
           (.put ^ConcurrentHashMap (::game/conns runtime) :barrier

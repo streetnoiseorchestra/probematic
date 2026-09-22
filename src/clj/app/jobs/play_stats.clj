@@ -11,7 +11,7 @@
 
 (defn handle! [system client {:keys [id args]}]
   (writer/call!
-   (get-in system [:frame-loop :write-runner])
+   system
    (fn []
      (let [conn       (get-in system [:datomic :conn])
            audit-user (datomic/source-audit-user conn (:source-t args))]

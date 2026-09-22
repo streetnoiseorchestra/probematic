@@ -32,7 +32,7 @@
             url         (str "http://127.0.0.1:" (:local-port (meta stop-server)))
             member-id   (random-uuid)
             code        (str (random-uuid))
-            system      {:datomic    {:conn conn}                                           :frame-loop runtime :job-queue {:client queue-client}
+            system      {:datomic    {:conn conn}                                           :frame-loop runtime :write-runner (:write-runner runtime) :job-queue {:client queue-client}
                          :i18n-langs (i18n/read-langs)
                          :env        {:app-base-url url :ig/system {:app.ig/profile :test}}}]
         (try
@@ -48,7 +48,7 @@
                      (icons/routes nil)])
                    (ring/create-resource-handler {:path "/"})
                    {:executor sieppari/executor}))
-          (writer/call! (:write-runner runtime)
+          (writer/call! runtime
                         #(deref (d/transact conn [{:member/member-id         member-id                                             :member/name             "Invitation Browser"
                                                    :member/username          "invitation.browser"                                  :member/email            "invitation-browser@example.test"
                                                    :member/invite-code       code                                                  :member/invite-status    :member.invite.status/pending
@@ -66,7 +66,7 @@
         (is (= 303 (:status response)))
         (is (= location (get-in response [:headers :location])))
         (is (= :member.invite.status/accepting (:status (domain/invitation-state (d/db conn) member-id))))
-        (writer/call! (:write-runner runtime) (constantly nil))
+        (writer/call! runtime (constantly nil))
         (is (= 1 (count (drip/list-jobs client {}))))
         (is (= 200 (:status @(client/get (str url location)))))
         (is (= 200 (:status @(client/get (str url "/js/invitation-status.js")))))

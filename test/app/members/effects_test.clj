@@ -43,11 +43,11 @@
 
 (defn request [conn]
   {:datomic-conn conn
-   :system       {:datomic    {:conn conn}
-                  :frame-loop {:write-runner (writer/create)}
-                  :job-queue  :fake-job-queue
-                  :env        {}
-                  :i18n-langs {}}})
+   :system       {:datomic      {:conn conn}
+                  :write-runner (writer/create)
+                  :job-queue    :fake-job-queue
+                  :env          {}
+                  :i18n-langs   {}}})
 
 (defn fake-deps [queued]
   {:now         (constantly issued-at)

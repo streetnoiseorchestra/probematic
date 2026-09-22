@@ -100,7 +100,7 @@
                            :result    result
                            :retry?    (boolean (:retry? result))})))
         (writer/call!
-         (get-in system [:frame-loop :write-runner])
+         system
          (fn []
            (let [current-db (d/db conn)]
              (when-not (d/entid current-db receipt)

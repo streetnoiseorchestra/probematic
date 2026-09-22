@@ -68,44 +68,38 @@
 (defn- probe-housekeeping-job
   [{:keys [datomic] :as system} _]
   (try
-    (let [control   (get-in system [:frame-loop :write-runner])
-          maintain! (fn []
+    (let [maintain! (fn []
                       (let [conn   (:conn datomic)
                             probes (q/next-probes (datomic/db conn) q/gig-detail-pattern)]
                         (when (< (count probes) minimum-gigs)
                           (create-probes! conn probes))
                         (assign-rehearsal-leaders! conn)
                         :done))]
-      (when-not control
-        (throw (ex-info "Probe housekeeping requires the application writer" {})))
-      (writer/call! control maintain!))
+      (writer/call! system maintain!))
     (catch Exception e
       (tap> e)
       (errors/report-error! e))))
 
 (defn notify-rehearsal-leader!
-  [{:keys [datomic frame-loop]}]
+  [{:keys [datomic] :as system}]
   (try
-    (let [control (:write-runner frame-loop)]
-      (when-not control
-        (throw (ex-info "Rehearsal-leader notification requires the application writer" {})))
-      (writer/call!
-       control
-       (fn []
-         (let [conn       (:conn datomic)
-               next-probe (q/next-probe (datomic/db conn))
-               leaders    (distinct (keep #(get next-probe %) [:gig/rehearsal-leader1 :gig/rehearsal-leader2]))]
-           (when-not (= (:gig/date next-probe) (t/date))
-             (throw (ex-info "notify rehearsal leaders condition failed!"
-                             {:probe-date (:gig/date next-probe) :current-date (t/date)})))
-           (when (seq leaders)
-             (let [intents (mapv #(mailers/job {:current-locale :de} ::mailers/rehearsal-leader
-                                               {:gig-id (:gig/gig-id next-probe) :member-id (:member/member-id %)})
-                                 leaders)]
-               (d/transact conn
-                           {:tx-data (nexus/batch-transactions [[[] {:jobs intents}]])
-                            :audit   {:audit/action ::notify-rehearsal-leader
-                                      :audit/origin :app.origin/job}})))))))
+    (writer/call!
+     system
+     (fn []
+       (let [conn       (:conn datomic)
+             next-probe (q/next-probe (datomic/db conn))
+             leaders    (distinct (keep #(get next-probe %) [:gig/rehearsal-leader1 :gig/rehearsal-leader2]))]
+         (when-not (= (:gig/date next-probe) (t/date))
+           (throw (ex-info "notify rehearsal leaders condition failed!"
+                           {:probe-date (:gig/date next-probe) :current-date (t/date)})))
+         (when (seq leaders)
+           (let [intents (mapv #(mailers/job {:current-locale :de} ::mailers/rehearsal-leader
+                                             {:gig-id (:gig/gig-id next-probe) :member-id (:member/member-id %)})
+                               leaders)]
+             (d/transact conn
+                         {:tx-data (nexus/batch-transactions [[[] {:jobs intents}]])
+                          :audit   {:audit/action ::notify-rehearsal-leader
+                                    :audit/origin :app.origin/job}}))))))
     (catch Exception e
       (errors/report-error! e))))
 

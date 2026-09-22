@@ -750,8 +750,8 @@
   {:db           (d/db conn)
    :datomic-conn conn
    :params       {:invite-code invite-code}
-   :system       {:frame-loop {:write-runner (writer/create)}
-                  :keycloak   {:adapter :fake}}})
+   :system       {:write-runner (writer/create)
+                  :keycloak     {:adapter :fake}}})
 
 (defn thrown-reason [f]
   (try

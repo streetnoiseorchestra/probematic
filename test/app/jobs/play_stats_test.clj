@@ -19,10 +19,9 @@
   (with-runtime
     (fn [runtime client conn]
       (let [gig-id  (random-uuid)
-            song-id (random-uuid)
-            control (:write-runner runtime)]
+            song-id (random-uuid)]
         (writer/call!
-         control
+         runtime
          (fn []
            @(d/transact conn
                         [(gig-domain/gig->db {:gig/gig-id   gig-id                                 :gig/title  "Rehearsal"
@@ -37,9 +36,9 @@
            ;; The refresh must include this newer state, not just its source transaction.
            @(d/transact conn [[:db/add [:played/gig+song (pr-str [gig-id song-id])]
                                :played/rating :play-rating/bad]])))
-        (let [worker (jobs-worker/start! {:frame-loop runtime
-                                          :job-queue  {:client client}
-                                          :datomic    {:conn conn}})]
+        (let [worker (jobs-worker/start! {:write-runner (:write-runner runtime)
+                                          :job-queue    {:client client}
+                                          :datomic      {:conn conn}})]
           (try
             (is (true?
                  (loop [remaining 500]
@@ -66,10 +65,9 @@
 (deftest play-statistics-job-retains-the-source-transaction-actor
   (with-runtime
     (fn [runtime client conn]
-      (let [actor-id (random-uuid)
-            control  (:write-runner runtime)]
+      (let [actor-id (random-uuid)]
         (writer/call!
-         control
+         runtime
          (fn []
            @(d/transact conn [{:member/member-id actor-id}])
            (nexus/db-transact-fx
@@ -78,9 +76,9 @@
              :request {:app/session         {:session/member {:member/member-id actor-id}}
                        ::nexus/audit-action ::request-play-statistics}}
             [[[] {:jobs [play-stats/job]}]])))
-        (let [worker (jobs-worker/start! {:frame-loop runtime
-                                          :job-queue  {:client client}
-                                          :datomic    {:conn conn}})]
+        (let [worker (jobs-worker/start! {:write-runner (:write-runner runtime)
+                                          :job-queue    {:client client}
+                                          :datomic      {:conn conn}})]
           (try
             (is (true?
                  (loop [remaining 500]

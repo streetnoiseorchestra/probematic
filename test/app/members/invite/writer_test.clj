@@ -22,7 +22,7 @@
             resources  {:datomic-conn  conn                                                                    :write-runner (:write-runner runtime)
                         :durable-jobs? true
                         :clock         #(do (deliver planned-on (Thread/currentThread)) cells/transitioned-at)}]
-        (writer/call! (:write-runner runtime)
+        (writer/call! runtime
                       #(cells/seed-invitation! conn member-id {:status cells/pending :generation 1
                                                                :code   "test-bearer" :expiry     cells/expires-at}))
         (let [input    {:member/member-id    member-id                                       :member-invite/requested-at cells/requested-at
