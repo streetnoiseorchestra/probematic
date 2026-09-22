@@ -128,7 +128,7 @@
                                                  {:jobs [(integrations/song-job song-id)]}]]))
           (writer/call! (:write-runner runtime) (constantly nil))
           (let [job    (first (drip/list-jobs client {}))
-                worker (drip/start-worker! {:client   client                                                    :queues ["integrations"] :poll-interval 10 :retry-interval 10
+                worker (drip/start-worker! {:client   client                                                    :queues ["start-within-15m"] :poll-interval 10 :retry-interval 10
                                             :registry {"sync-song" (partial integrations/handle! system :song)}})]
             (try
               (is (= :completed (:state (queue-fixtures/await-state client (:id job) :completed))))

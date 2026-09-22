@@ -9,7 +9,7 @@
   (:import
    [java.util Base64]))
 
-(def email-queue-name "email-send-queue")
+(def email-queue-name "start-within-2m")
 
 (defn track-email-error!  [email attempt result throwable]
   (μ/log ::email-error

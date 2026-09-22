@@ -29,7 +29,7 @@
       (is (= "send-email" kind))
       (is (= :app.email.mailers/poll-opened (:mailer args)))
       (is (= {:poll-id poll-id} (:arguments args)))
-      (is (= {:queue "email-send-queue" :max-attempts 25} options))
+      (is (= {:queue "start-within-2m" :max-attempts 25} options))
       (is (= [support/clear-loading] (:on-success opts))))))
 
 (deftest close-poll-action-test

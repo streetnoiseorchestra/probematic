@@ -157,7 +157,7 @@
   ["send-email"
    {:version  2            :mailer mailer                           :arguments arguments
     :email-id :db/gen-uuid :locale (or (:current-locale state) :en)}
-   {:queue "email-send-queue" :max-attempts 25}])
+   {:queue "start-within-2m" :max-attempts 25}])
 
 (def ^:private member-ids-schema
   [:and [:vector {:min 1 :max 500} :uuid]

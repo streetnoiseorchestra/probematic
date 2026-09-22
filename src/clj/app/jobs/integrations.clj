@@ -11,7 +11,7 @@
    [s-exp.drip :as drip]))
 
 (defn gig-job [gig-id options]
-  ["sync-gig" (assoc options :gig-id gig-id) {:queue "integrations" :max-attempts 25}])
+  ["sync-gig" (assoc options :gig-id gig-id) {:queue "start-within-15m" :max-attempts 25}])
 
 (defn gig-update-options [state gig-id _trigger]
   (if (config/prod-mode? (:env state))
@@ -19,9 +19,9 @@
     {}))
 
 (defn song-job [song-id]
-  ["sync-song" {:song-id song-id} {:queue "integrations" :max-attempts 25}])
+  ["sync-song" {:song-id song-id} {:queue "start-within-15m" :max-attempts 25}])
 
-(def sync-all-songs-job ["sync-all-songs" {} {:queue "integrations" :max-attempts 25}])
+(def sync-all-songs-job ["sync-all-songs" {} {:queue "start-within-15m" :max-attempts 25}])
 
 (defn- sync-gig! [system {:keys [gig-id operation source-t thread? takeover-topic?]}]
   (case operation

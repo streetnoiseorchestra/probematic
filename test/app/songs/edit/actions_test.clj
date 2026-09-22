@@ -46,7 +46,7 @@
             (is (true? (:transact-w-nils? opts)))
             (is (nil? (:on-success opts)))
             (is (= (when (= :prod profile)
-                     [["sync-song" {:song-id song-id} {:queue "integrations" :max-attempts 25}]])
+                     [["sync-song" {:song-id song-id} {:queue "start-within-15m" :max-attempts 25}]])
                    (:jobs opts)))))))))
 
 (deftest update-song-action-test

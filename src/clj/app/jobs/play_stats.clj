@@ -7,7 +7,7 @@
             [s-exp.drip :as drip]))
 
 (def job
-  ["refresh-play-stats" {} {:queue "play-stats" :max-attempts 25}])
+  ["refresh-play-stats" {} {:queue "start-within-15m" :max-attempts 25}])
 
 (defn handle! [system client {:keys [id args]}]
   (writer/call!

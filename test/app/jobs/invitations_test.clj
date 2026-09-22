@@ -168,7 +168,7 @@
                       :attributes (domain/attempt-markers member-id 3)}))
             (let [job    (drip/insert-job client "accept-invitation"
                                           {:member-id member-id :claim-generation 2}
-                                          {:queue "invitation-setup" :max-attempts 2})
+                                          {:queue "start-within-15s" :max-attempts 2})
                   worker (ig/init-key :app.ig/job-worker system)]
               (try
                 (let [finished (await-job-state client (:id job) expected)]
@@ -199,7 +199,7 @@
                                                {:status cells/accepting       :generation 2
                                                 :code   "restart-test-bearer" :expiry     cells/expires-at}))
         (let [job          (drip/insert-job client "accept-invitation" {:member-id member-id :claim-generation 2}
-                                            {:queue "invitation-setup" :max-attempts 2})
+                                            {:queue "start-within-15s" :max-attempts 2})
               first-worker (jobs-worker/start! system)]
           (try
             (is (= :retryable (:state (await-job-state client (:id job) :retryable))))

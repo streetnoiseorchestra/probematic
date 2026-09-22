@@ -664,7 +664,7 @@
                :jobs             [["sync-member-identity"
                                    {:member-id edited-member-id                  :keycloak-id "kc-123"
                                     :changes   {:metadata? true :enabled? false} :origin      nil}
-                                   {:queue "identity-sync" :max-attempts 25}]]
+                                   {:queue "start-within-15s" :max-attempts 25}]]
                :on-success       [support/clear-loading
                                   [:app.datastar/assoc-state [:member-detail :contact] false]]}]
              (second (actions/update-contact-action
@@ -703,7 +703,7 @@
                :jobs             [["sync-member-identity"
                                    {:member-id edited-member-id                 :keycloak-id "kc-456"
                                     :changes   {:metadata? true :enabled? true} :origin      nil}
-                                   {:queue "identity-sync" :max-attempts 25}]]
+                                   {:queue "start-within-15s" :max-attempts 25}]]
                :on-success       [support/clear-loading
                                   [:app.datastar/assoc-state [:member-detail :contact] false]]}]
              (second (actions/update-contact-action
@@ -740,7 +740,7 @@
                :jobs             [["sync-member-identity"
                                    {:member-id edited-member-id                  :keycloak-id "kc-123"
                                     :changes   {:metadata? true :enabled? false} :origin      nil}
-                                   {:queue "identity-sync" :max-attempts 25}]]
+                                   {:queue "start-within-15s" :max-attempts 25}]]
                :on-success       [support/clear-loading
                                   [:app.datastar/assoc-state [:member-detail :contact] false]]}]
              (second (actions/update-contact-action

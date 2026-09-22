@@ -16,7 +16,7 @@
   [:map uuid? :string :map => [:vector :any]]
   ["sync-member-identity"
    {:member-id member-id :keycloak-id keycloak-id :changes changes :origin (:job-origin state)}
-   {:queue "identity-sync" :max-attempts 25}])
+   {:queue "start-within-15s" :max-attempts 25}])
 
 (>defn sync-member!
   "Applies the latest committed member values, not an old job's field values.

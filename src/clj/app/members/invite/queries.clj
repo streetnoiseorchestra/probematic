@@ -20,7 +20,7 @@
 (defn- matching-job [client tx member-id claim-generation]
   (loop [after nil]
     (let [page (drip/list-jobs! client tx
-                                (cond-> {:kind "accept-invitation" :queue "invitation-setup" :limit 100}
+                                (cond-> {:kind "accept-invitation" :queue "start-within-15s" :limit 100}
                                   after (assoc :after after)))]
       (or (some #(when (= {:member-id member-id :claim-generation claim-generation}
                           (select-keys (:args %) [:member-id :claim-generation])) %)

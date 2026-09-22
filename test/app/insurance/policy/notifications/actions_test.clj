@@ -61,7 +61,7 @@
         (is (= "send-email" kind))
         (is (= :app.email.mailers/insurance-debt (:mailer args)))
         (is (= {:policy-id policy-id :sender-id member-id :member-id member-id} (:arguments args)))
-        (is (= "email-send-queue" (:queue options)))
+        (is (= "start-within-2m" (:queue options)))
         (is (seq tx))
         (is (= [:db/add "datomic.tx" :audit/user [:member/member-id member-id]] (last tx)))
         (is (= [support/clear-loading

@@ -93,7 +93,7 @@
     (is (= {:effect-id :db/gen-uuid                                                                 :origin origin
             :mail      (assoc (:insurance-policy-changes (signals policy-id)) :policy-id policy-id)}
            args))
-    (is (= {:queue "policy-mail" :max-attempts 25} opts))))
+    (is (= {:queue "start-within-2m" :max-attempts 25} opts))))
 
 (deftest exporter-configuration-guards-delivery-actions-test
   (testing "send and preview reject absent, unknown, and incomplete exporters"

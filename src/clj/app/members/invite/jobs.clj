@@ -8,7 +8,7 @@
   "Returns a setup job correlated with the generation committed by the claim."
   [member-id claim-generation]
   ["accept-invitation" {:member-id member-id :claim-generation claim-generation}
-   {:queue "invitation-setup" :max-attempts 25}])
+   {:queue "start-within-15s" :max-attempts 25}])
 
 (defn claim-tx
   "Returns [[app.members.invite.domain/claim-tx]] with atomic setup intent.

@@ -122,7 +122,7 @@
         {:jobs [[email-job-kind
                  {:effect-id :db/gen-uuid                                                          :origin job-origin
                   :mail      (assoc (dissoc params :preview-type) :policy-id (:policy-id context))}
-                 {:queue "policy-mail" :max-attempts 25}]]}]])))
+                 {:queue "start-within-2m" :max-attempts 25}]]}]])))
 
 (defn preview-attachment-action
   [{:keys [db tr]} signals]

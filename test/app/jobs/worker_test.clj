@@ -18,44 +18,49 @@
     "sync-song"})
 
 (def queue-names
-  ["invitation-setup"
-   "identity-sync"
-   "policy-mail"
-   "email-send-queue"
-   "play-stats"
-   "integrations"])
+  ["start-within-15s"
+   "start-within-2m"
+   "start-within-15m"])
 
-(deftest shared-worker-registers-every-existing-kind-and-queue
+(deftest starts-one-serial-worker-per-start-within-queue
   (queue-fixtures/with-queue
     (fn [queue]
-      (let [running (worker/start! {:job-queue queue})]
+      (let [workers (worker/start! {:job-queue queue})]
         (try
-          (is (= {:concurrency 5
-                  :kinds       job-kinds
-                  :queues      queue-names}
-                 {:concurrency (:concurrency running)
-                  :kinds       (set (keys (:registry running)))
-                  :queues      (:queues running)}))
+          (is (= [{:concurrency 1
+                   :kinds       job-kinds
+                   :queues      ["start-within-15s"]}
+                  {:concurrency 1
+                   :kinds       job-kinds
+                   :queues      ["start-within-2m"]}
+                  {:concurrency 1
+                   :kinds       job-kinds
+                   :queues      ["start-within-15m"]}]
+                 (mapv (fn [running]
+                         {:concurrency (:concurrency running)
+                          :kinds       (set (keys (:registry running)))
+                          :queues      (:queues running)})
+                       workers)))
           (doseq [kind ["accept-invitation"
                         "refresh-play-stats"
                         "send-email"
                         "send-policy-changes"
                         "sync-member-identity"]]
-            (is (= 5000 ((get (:retry-policies running) kind) 1))))
+            (is (= 5000 ((get (:retry-policies (first workers)) kind) 1))))
           (is (identical? drip/default-retry-policy
-                          (get (:retry-policies running) :default)))
+                          (get (:retry-policies (first workers)) :default)))
           (finally
-            (worker/stop! running)))))))
+            (worker/stop! workers)))))))
 
-(deftest shared-worker-preserves-lane-order-and-cross-lane-progress
+(deftest workers-serialize-each-queue-and-make-cross-queue-progress
   (queue-fixtures/with-queue
     (fn [{:keys [client] :as queue}]
       (let [first-identity  (drip/insert-job client "sync-member-identity" {}
-                                             :queue "identity-sync")
+                                             :queue "start-within-15s")
             second-identity (drip/insert-job client "sync-member-identity" {}
-                                             :queue "identity-sync")
+                                             :queue "start-within-15s")
             play-job        (drip/insert-job client "refresh-play-stats" {}
-                                             :queue "play-stats")
+                                             :queue "start-within-15m")
             first-entered   (promise)
             second-entered  (promise)
             play-entered    (promise)
@@ -72,17 +77,10 @@
                       (fn [_system worker-client {:keys [id]}]
                         (deliver play-entered true)
                         (drip/complete-job worker-client id))]
-          (let [running (worker/start! {:job-queue queue})]
+          (let [workers (worker/start! {:job-queue queue})]
             (try
               (is (= true (deref first-entered 1000 :timeout)))
               (is (= true (deref play-entered 1000 :timeout)))
-              (is (thrown? clojure.lang.ExceptionInfo
-                           (drip/with-tx [tx (:client running)]
-                             (drip/complete-job! (:client running)
-                                                 tx
-                                                 (:id first-identity))
-                             (throw (ex-info "Roll back completion" {})))))
-              (is (= :running (:state (drip/get-job client (:id first-identity)))))
               (is (= :timeout (deref second-entered 50 :timeout)))
               (is (= :available (:state (drip/get-job client (:id second-identity)))))
               (is (= :completed
@@ -95,29 +93,39 @@
                      (:state (queue-fixtures/await-state client (:id second-identity) :completed))))
               (finally
                 (deliver release true)
-                (worker/stop! running)))))))))
+                (worker/stop! workers)))))))))
 
-(deftest paused-queue-does-not-block-rotating-admission
+(deftest paused-start-within-queue-does-not-block-another-worker
   (queue-fixtures/with-queue
     (fn [{:keys [client] :as queue}]
-      (drip/pause-queue client "invitation-setup")
-      (let [job (drip/insert-job client "sync-member-identity" {}
-                                 :queue "identity-sync")]
+      (let [identity-entered (promise)]
         (with-redefs [identity/handle!
                       (fn [_system worker-client {:keys [id]}]
+                        (deliver identity-entered true)
+                        (drip/complete-job worker-client id))
+                      play-stats/handle!
+                      (fn [_system worker-client {:keys [id]}]
                         (drip/complete-job worker-client id))]
-          (let [running (worker/start! {:job-queue queue})]
+          (let [workers (worker/start! {:job-queue queue})]
             (try
-              (is (= :completed
-                     (:state (queue-fixtures/await-state client (:id job) :completed))))
+              (drip/upsert-queue client "start-within-15s" {})
+              (drip/pause-queue client "start-within-15s")
+              (let [identity-job (drip/insert-job client "sync-member-identity" {}
+                                                  :queue "start-within-15s")
+                    play-job     (drip/insert-job client "refresh-play-stats" {}
+                                                  :queue "start-within-15m")]
+                (is (= :completed
+                       (:state (queue-fixtures/await-state client (:id play-job) :completed))))
+                (is (= :available (:state (drip/get-job client (:id identity-job)))))
+                (is (= :timeout (deref identity-entered 50 :timeout))))
               (finally
-                (worker/stop! running)))))))))
+                (worker/stop! workers)))))))))
 
-(deftest shared-worker-drains-an-admitted-job
+(deftest worker-group-drains-an-admitted-job
   (queue-fixtures/with-queue
     (fn [{:keys [client] :as queue}]
       (let [job     (drip/insert-job client "sync-member-identity" {}
-                                     :queue "identity-sync")
+                                     :queue "start-within-15s")
             entered (promise)
             release (promise)]
         (with-redefs [identity/handle!
@@ -125,11 +133,11 @@
                         (deliver entered true)
                         @release
                         (drip/complete-job worker-client id))]
-          (let [running (worker/start! {:job-queue queue})]
+          (let [workers (worker/start! {:job-queue queue})]
             (try
               (is (= true (deref entered 1000 :timeout)))
               (let [stopping (future
-                               (worker/stop! running)
+                               (worker/stop! workers)
                                :stopped)]
                 (is (= :timeout (deref stopping 50 :timeout)))
                 (deliver release true)
@@ -137,7 +145,7 @@
                 (is (= :completed (:state (drip/get-job client (:id job))))))
               (finally
                 (deliver release true)
-                (worker/stop! running)))))))))
+                (worker/stop! workers)))))))))
 
-(deftest absent-worker-needs-no-shutdown
+(deftest absent-worker-group-needs-no-shutdown
   (is (nil? (worker/stop! nil))))

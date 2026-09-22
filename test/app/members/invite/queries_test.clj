@@ -58,7 +58,7 @@
         (drip/delete-job client (:id job))
         (is (= :operator-required (status context))))
       (drip/insert-job client "accept-invitation" {:member-id member-id :claim-generation 5}
-                       {:queue "invitation-setup"})
+                       {:queue "start-within-15s"})
       (is (= :operator-required (status context))))))
 
 (deftest query-finds-the-correct-claim-beyond-the-first-job-page
@@ -68,7 +68,7 @@
       (log/dispatch-pending! conn client 100)
       (dotimes [_ 101]
         (drip/insert-job client "accept-invitation" {:member-id (random-uuid) :claim-generation 2}
-                         {:queue "invitation-setup"}))
+                         {:queue "start-within-15s"}))
       (is (= :creating (status context))))))
 
 (deftest receipt-wins-over-failed-or-pruned-job-state
