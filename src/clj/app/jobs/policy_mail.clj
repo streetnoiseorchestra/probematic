@@ -62,6 +62,7 @@
                      attachment-filename-new
                      attachment-filename-changes)
         message     (cond-> {:to          [(recipient-address recipient)]
+                             :reply-to    [(get-in system [:env :insurance :email-reply-to])]
                              :subject     subject
                              :text        body
                              :attachments (mapv encode-attachment attachments)}

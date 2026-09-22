@@ -13,6 +13,13 @@
   {:email/sender   :lettermint          :email/batch?   batch?
    :email/email-id (sq/generate-squuid) :email/messages messages :email/created-at (t/inst)})
 
+(defn- with-insurance-reply-to [sys email]
+  (let [reply-to (get-in sys [:env :insurance :email-reply-to])]
+    (update email :email/messages
+            #(mapv (fn [message]
+                     (assoc message :reply-to [reply-to]))
+                   %))))
+
 (defn build-email [to subject body-html body-plain]
   (assert subject)
   (build-lettermint-email false [(lettermint-message to subject body-html body-plain)]))
@@ -78,19 +85,23 @@
          (let [args    (tmpl/build-insurance-debt-args sys member private-coverages sender-name time-range private-cost-total)
                subject (tr [:insurance/payment-email-subject]
                            {:member-name (:member/name member) :time-range time-range})]
-           (build-email (:member/email member) subject
-                        (tmpl/insurance-debt-html sys args)
-                        (tmpl/insurance-debt-plain sys args))))
+           (with-insurance-reply-to
+             sys
+             (build-email (:member/email member) subject
+                          (tmpl/insurance-debt-html sys args)
+                          (tmpl/insurance-debt-plain sys args)))))
        member-data))
 
 (defn build-survey-notifications [{:keys [tr env] :as sys} sender-name policy members email-data]
   (let [url (url/absolute-link-insurance-survey-start env (:insurance.policy/policy-id policy))]
-    (build-batch-emails
-     (mapv :member/email members)
-     (tr [:insurance/survey-email-subject])
-     (tmpl/generic-email-html sys (tmpl/insurance-survey-created-email-html-body tr email-data) (tr [:insurance/survey-email-start]) url
-                              {:sign-off [:p (tr [:email/sign-off-personal]) [:br] sender-name
-                                          [:br] (tr [:insurance/email-team-name])]})
-     (tmpl/generic-email-plain sys (tmpl/insurance-survey-created-email-plain-body tr email-data) (tr [:insurance/survey-email-start]) url
-                               {:sign-off (str (tr [:email/sign-off-personal]) "\n" sender-name
-                                               "\n" (tr [:insurance/email-team-name]))}))))
+    (with-insurance-reply-to
+      sys
+      (build-batch-emails
+       (mapv :member/email members)
+       (tr [:insurance/survey-email-subject])
+       (tmpl/generic-email-html sys (tmpl/insurance-survey-created-email-html-body tr email-data) (tr [:insurance/survey-email-start]) url
+                                {:sign-off [:p (tr [:email/sign-off-personal]) [:br] sender-name
+                                            [:br] (tr [:insurance/email-team-name])]})
+       (tmpl/generic-email-plain sys (tmpl/insurance-survey-created-email-plain-body tr email-data) (tr [:insurance/survey-email-start]) url
+                                 {:sign-off (str (tr [:email/sign-off-personal]) "\n" sender-name
+                                                 "\n" (tr [:insurance/email-team-name]))})))))

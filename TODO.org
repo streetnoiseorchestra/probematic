@@ -94,6 +94,10 @@
 ** TODO Jump Menu: make current-page aware (with aria)
 * 2026 Prod Launch Checklist
 ** TODO ensure redis email queue is empty
+** TODO ensure no active new member invitations
+* 2026 post d* things-todo
+** TODO hookup lettermint webhooks to catch bounces and surface delivery problems
+** TODO use lettermint test emails
 * 2026 post d* cool new features
 ** TODO full game loop w/ batch renders
 ** TODO cross-store bridge with datomic d/log and d/tx-range

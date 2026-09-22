@@ -21,7 +21,8 @@
 
 (defn- mail-system [conn]
   {:datomic    {:conn conn}
-   :env        {:app-base-url "https://example.test"}
+   :env        {:app-base-url "https://example.test"
+                :insurance    {:email-reply-to "insurance@example.test"}}
    :i18n-langs (i18n/read-langs)})
 
 (deftest payment-charge-and-notification-share-the-source-transaction
@@ -54,6 +55,8 @@
             (is (= :lettermint (:email/sender message)))
             (is (= [original-email]
                    (get-in message [:email/messages 0 :to])))
+            (is (= ["insurance@example.test"]
+                   (get-in message [:email/messages 0 :reply-to])))
             (is (= (:email-id invocation) (:email/email-id message)))))))))
 
 (deftest survey-reminder-uses-current-recipient-details
@@ -81,6 +84,8 @@
           (is (= 1 (count jobs)))
           (is (= ::mailers/survey-reminder (:mailer invocation)))
           (is (= [["later@example.test"]] (mapv :to (:email/messages message))))
+          (is (= [["insurance@example.test"]]
+                 (mapv :reply-to (:email/messages message))))
           (is (= (:email-id invocation) (:email/email-id message))))))))
 
 (deftest survey-reminder-skips-responses-completed-before-execution

@@ -13,7 +13,8 @@
 
 (def test-env
   {:app-base-url   "https://example.test"
-   :app-secret-key test-secret})
+   :app-secret-key test-secret
+   :insurance      {:email-reply-to "insurance@example.test"}})
 
 (defn- tr [message & arguments]
   (str (first message)
@@ -142,16 +143,19 @@
       members)))
 
   (testing "insurance survey notification"
-    (assert-shared-body-batch
-     (messages/build-survey-notifications
-      test-system
-      "Linus"
-      {:insurance.policy/policy-id
-       #uuid "01982163-3da9-7500-953b-d4642732fc3f"}
-      members
-      {:closes-at                    (t/instant "2099-09-30T20:00:00Z")
-       :member-most-instrument-count 0
-       :member-most-instruments      nil}))))
+    (let [email (messages/build-survey-notifications
+                 test-system
+                 "Linus"
+                 {:insurance.policy/policy-id
+                  #uuid "01982163-3da9-7500-953b-d4642732fc3f"}
+                 members
+                 {:closes-at                    (t/instant "2099-09-30T20:00:00Z")
+                  :member-most-instrument-count 0
+                  :member-most-instruments      nil})]
+      (assert-shared-body-batch email)
+      (is (= [["insurance@example.test"]
+              ["insurance@example.test"]]
+             (mapv :reply-to (:email/messages email)))))))
 
 (deftest single-email-builder-creates-one-complete-lettermint-message
   (let [queued-email (messages/build-new-user-invite
@@ -205,6 +209,8 @@
 (deftest queued-email-schema-discriminates-provider-message-shapes
   (is (= {:band-smtp                                true
           :lettermint                               true
+          :lettermint-with-invalid-reply-to         false
+          :lettermint-with-reply-to                 true
           :lettermint-message-with-project-token    false
           :lettermint-with-project-token            false
           :lettermint-with-smtp-shape               false
@@ -214,6 +220,16 @@
                                 valid-band-smtp-email)
           :lettermint (s/valid? email.domain/QueuedEmailMessage
                                 valid-lettermint-email)
+          :lettermint-with-invalid-reply-to
+          (s/valid? email.domain/QueuedEmailMessage
+                    (assoc-in valid-lettermint-email
+                              [:email/messages 0 :reply-to]
+                              ["not-an-email"]))
+          :lettermint-with-reply-to
+          (s/valid? email.domain/QueuedEmailMessage
+                    (assoc-in valid-lettermint-email
+                              [:email/messages 0 :reply-to]
+                              ["insurance@example.test"]))
           :lettermint-message-with-project-token
           (s/valid? email.domain/QueuedEmailMessage
                     (assoc-in valid-lettermint-email

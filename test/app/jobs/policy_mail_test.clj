@@ -24,6 +24,7 @@
             control    (:write-runner runtime)
             system     {:frame-loop runtime
                         :datomic    {:conn conn}
+                        :env        {:insurance {:email-reply-to "insurance@example.test"}}
                         :lettermint {:from                    "sender@example.test"
                                      :project-api-token       "policy-mail-test-token"
                                      :testing-addresses-only? false
@@ -109,10 +110,11 @@
             (is (= true (deref sent 5000 ::timeout)))
             (is (= 3 (count @deliveries)))
             (let [{:keys [message options thread]} (last @deliveries)]
-              (is (= {:from    "sender@example.test"
-                      :to      ["insurance@example.test"]
-                      :subject "Changes"
-                      :text    "Attached"
+              (is (= {:from     "sender@example.test"
+                      :reply-to ["insurance@example.test"]
+                      :to       ["insurance@example.test"]
+                      :subject  "Changes"
+                      :text     "Attached"
                       :attachments
                       [{:filename     "new.xls"
                         :content-type "application/vnd.ms-excel"
@@ -155,6 +157,7 @@
             control     (:write-runner runtime)
             system      {:frame-loop runtime
                          :datomic    {:conn conn}
+                         :env        {:insurance {:email-reply-to "insurance@example.test"}}
                          :lettermint {:from  "frozen@example.test"
                                       :route "policy"}}
             args        (writer/call!
@@ -220,19 +223,23 @@
                              [:app.external-effect/id (:effect-id args)])))
           (let [prepared (:email/prepared @stored)]
             (is (= (:effect-id args) (:email/email-id prepared)))
-            (is (= {:from "frozen@example.test" :route "policy"}
+            (is (= {:from     "frozen@example.test"
+                    :reply-to ["insurance@example.test"]
+                    :route    "policy"}
                    (select-keys (first (:email/messages prepared))
-                                [:from :route])))
+                                [:from :reply-to :route])))
             (is (= ["AQID" "BAUG"]
                    (mapv :content
                          (get-in prepared [:email/messages 0 :attachments]))))
             (with-redefs [exporters/generate-attachments!
                           (fn [& _]
                             (throw (ex-info "payload was regenerated" {})))]
-              (mail/handle! (assoc system
-                                   :lettermint
-                                   {:from  "changed@example.test"
-                                    :route "changed"})
+              (mail/handle! (-> system
+                                (assoc :lettermint
+                                       {:from  "changed@example.test"
+                                        :route "changed"})
+                                (assoc-in [:env :insurance :email-reply-to]
+                                          "changed-reply@example.test"))
                             ::client
                             {:id       job-id
                              :args     args
