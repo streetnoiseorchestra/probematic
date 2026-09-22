@@ -39,6 +39,19 @@
      policy-actions/email-job-kind (partial policy-mail/handle! system)
      "send-email"                  (partial email/job-handler system)}))
 
+(defn- shutdown-failures [workers]
+  (reduce
+   (fn [failures worker]
+     (try
+       (if (true? (drip/stop-worker! worker :drain true))
+         failures
+         (conj failures {:worker worker}))
+       (catch Throwable error
+         (conj failures {:worker worker
+                         :error  error}))))
+   []
+   workers))
+
 (defn start!
   "Starts one serial Dollop worker for each schedule-to-start queue.
 
@@ -55,14 +68,18 @@
       (doseq [queue queues]
         (vswap! started conj (drip/start-worker! (assoc opts :queues [queue]))))
       @started
-      (catch Throwable t
-        (doseq [worker (rseq @started)]
-          (drip/stop-worker! worker :drain true))
-        (throw t)))))
+      (catch Throwable error
+        (let [failures (shutdown-failures (rseq @started))]
+          (if (seq failures)
+            (throw (ex-info "Job workers failed to start and cleanup did not complete"
+                            {:incomplete-worker-shutdowns failures}
+                            error))
+            (throw error)))))))
 
 (defn stop!
   "Drains and stops `workers`, or does nothing when it is absent."
   [workers]
   (when workers
-    (when-not (every? true? (mapv #(drip/stop-worker! % :drain true) workers))
-      (throw (ex-info "Job workers did not stop" {})))))
+    (when-let [failures (not-empty (shutdown-failures workers))]
+      (throw (ex-info "Job workers did not stop"
+                      {:incomplete-worker-shutdowns failures})))))

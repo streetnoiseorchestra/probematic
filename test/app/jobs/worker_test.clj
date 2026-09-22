@@ -147,5 +147,40 @@
                 (deliver release true)
                 (worker/stop! workers)))))))))
 
+(deftest partial-start-cleanup-reports-every-incomplete-worker
+  (let [first-worker  ::first-worker
+        second-worker ::second-worker
+        start-error   (ex-info "start failed" {})
+        stop-error    (ex-info "stop failed" {})
+        start-count   (atom 0)
+        stop-calls    (atom [])]
+    (with-redefs [drip/start-worker!
+                  (fn [_opts]
+                    (condp = (swap! start-count inc)
+                      1 first-worker
+                      2 second-worker
+                      (throw start-error)))
+                  drip/stop-worker!
+                  (fn [candidate & _opts]
+                    (swap! stop-calls conj candidate)
+                    (case candidate
+                      ::second-worker (throw stop-error)
+                      ::first-worker false))]
+      (let [thrown   (try
+                       (worker/start! {:job-queue {:client ::client}})
+                       nil
+                       (catch Throwable error
+                         error))
+            failures (:incomplete-worker-shutdowns (ex-data thrown))]
+        (is (= 3 @start-count))
+        (is (= [second-worker first-worker] @stop-calls))
+        (is (= "Job workers failed to start and cleanup did not complete"
+               (ex-message thrown)))
+        (is (identical? start-error (ex-cause thrown)))
+        (is (= [{:worker second-worker
+                 :error  stop-error}
+                {:worker first-worker}]
+               failures))))))
+
 (deftest absent-worker-group-needs-no-shutdown
   (is (nil? (worker/stop! nil))))
