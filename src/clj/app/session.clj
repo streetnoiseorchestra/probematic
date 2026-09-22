@@ -13,10 +13,11 @@
                    sid (instant/get-epoch-second (t/instant))]))))
 
 (defn- write! [db f]
-  (let [work #(sql/with-write-tx [conn (:writer db)] (f conn))]
-    (if-let [control (:write-runner db)]
-      (writer/call! control work)
-      (work))))
+  (let [control (:write-runner db)
+        work    #(sql/with-write-tx [conn (:writer db)] (f conn))]
+    (when-not control
+      (throw (ex-info "Session writes require the application writer" {})))
+    (writer/call! control work)))
 
 (defn delete-session! [db sid]
   (when sid
@@ -45,14 +46,15 @@
   | Option | Description |
   |--------|-------------|
   | `:expire-secs` | Required positive session lifetime in seconds. |
-  | `:write-runner` | Optional application writer control; routes initialization, writes, and deletion through its queue. |
+  | `:write-runner` | Required application writer control. |
 
   Writes refresh expiry; reads do not. Expired rows are removed at startup and
   on writes. The caller owns the database lifecycle."
   [db {:keys [expire-secs write-runner]}]
   {:pre [(pos-int? expire-secs)]}
-  (let [db (cond-> (assoc db :expire-secs expire-secs)
-             write-runner (assoc :write-runner write-runner))]
+  (when-not write-runner
+    (throw (ex-info "Session initialization requires the application writer" {})))
+  (let [db (assoc db :expire-secs expire-secs :write-runner write-runner)]
     (write! db
             (fn [conn]
               (sql/q conn ["CREATE TABLE IF NOT EXISTS http_sessions (

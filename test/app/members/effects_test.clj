@@ -2,6 +2,7 @@
   (:require
    [app.members.effects :as effects]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d])
   (:import
@@ -43,6 +44,7 @@
 (defn request [conn]
   {:datomic-conn conn
    :system       {:datomic    {:conn conn}
+                  :frame-loop {:write-runner (writer/create)}
                   :job-queue  :fake-job-queue
                   :env        {}
                   :i18n-langs {}}})

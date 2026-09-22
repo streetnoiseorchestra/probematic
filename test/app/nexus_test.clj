@@ -164,7 +164,6 @@
                     :app.datastar/close-form
                     :app.datastar/redirect}))
     (is (contains? (:nexus/effects nexus-config) :app.members/invite-member))
-    (is (contains? (:nexus/effects nexus-config) :app.members/set-keycloak-account-enabled))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/resend-invitation))
     (is (contains? (:nexus/effects nexus-config) :app.members.index/reissue-invitation))
     (is (contains? (:nexus/effects nexus-config)

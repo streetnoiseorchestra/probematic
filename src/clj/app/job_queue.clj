@@ -8,11 +8,13 @@
   (:import [java.util.concurrent ExecutorService Executors RejectedExecutionException]))
 
 (defn start! [{:keys [write-runner] :as config}]
+  (when-not write-runner
+    (throw (ex-info "Job queue writes require the application writer" {})))
   (let [db              (sqlite/start config)
-        opts            (when write-runner {:run-write-transaction! #(writer/call! write-runner %)})
+        opts            {:run-write-transaction! #(writer/call! write-runner %)}
         stream-executor (Executors/newVirtualThreadPerTaskExecutor)]
     (try
-      (let [client (if opts (drip/make-client db opts) (drip/make-client db))]
+      (let [client (drip/make-client db opts)]
         (drip/migrate! client)
         {:db              db
          :client          client
@@ -32,7 +34,7 @@
                                                             (catch RejectedExecutionException e
                                                               (d*/close-sse! sse)
                                                               (throw e))))))))}))})
-      (catch Throwable e
+      (catch Exception e
         (.close stream-executor)
         (sqlite/stop db)
         (throw e)))))

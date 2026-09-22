@@ -51,7 +51,7 @@
    :member/discourse-id (str id)
    :member/nick         username})
 
-(defn sync-avatars! [{:keys [env conn]}]
+(defn sync-avatars! [{:keys [env conn frame-loop]}]
   (let [db                                   (datomic/db conn)
         {:keys [api-key username forum-url]} (:discourse env)
         m                                    (martian-http/bootstrap-openapi url-discourse-open-api {:server-url   forum-url
@@ -64,10 +64,14 @@
                                               (map first)
                                               (map #(update % :member/email str/lower-case)))
         joined                               (set/join user-list members {:email :member/email})
-        txs                                  (map discourse-member-tx joined)]
-    (d/transact conn {:tx-data txs
-                      :audit   {:audit/action ::sync-members
-                                :audit/origin :app.origin/system}})))
+        txs                                  (map discourse-member-tx joined)
+        control                              (:write-runner frame-loop)]
+    (when-not control
+      (throw (ex-info "Discourse member synchronization requires the application writer" {})))
+    (writer/call! control
+                  #(d/transact conn {:tx-data txs
+                                     :audit   {:audit/action ::sync-members
+                                               :audit/origin :app.origin/system}}))))
 (defn wrap-auth [req {:keys [discourse]}]
   (-> req
       (assoc-in [:headers "Api-Key"] (:api-key discourse))
@@ -210,7 +214,7 @@ GO TO SNORGA!!
     (request! env
               {:method :get
                :url    (format "/t/external_id/%s.json" gig-id)})
-    (catch Throwable e
+    (catch Exception e
       (if (= 404 (-> (ex-data e) :resp :status))
         nil
         (throw e)))))
@@ -319,6 +323,7 @@ GO TO SNORGA!!
                                        {:method      :post
                                         :url         "/posts.json"
                                         :form-params (form-params-for-gig env gig)}))))
+         control  (get-in sys [:frame-loop :write-runner])
          persist! (fn []
                     (let [conn       (get-in sys [:datomic :conn])
                           current    (q/retrieve-gig (datomic/db conn) gig-id)
@@ -329,9 +334,9 @@ GO TO SNORGA!!
                                      :audit   (cond-> {:audit/action ::create-topic-for-gig
                                                        :audit/origin :app.origin/job}
                                                 audit-user (assoc :audit/user audit-user))}))))]
-     (if-let [control (get-in sys [:frame-loop :write-runner])]
-       (writer/call! control persist!)
-       (persist!)))))
+     (when-not control
+       (throw (ex-info "Discourse topic persistence requires the application writer" {})))
+     (writer/call! control persist!))))
 
 (defn we-own-topic? [our-username topic]
   (= (-> topic :details :created_by :username) our-username))

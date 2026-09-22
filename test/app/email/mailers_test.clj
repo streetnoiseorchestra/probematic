@@ -11,6 +11,7 @@
    [app.jobs.worker :as jobs-worker]
    [app.nexus :as nexus]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :refer [deftest is use-fixtures]]
@@ -130,7 +131,8 @@
 (deftest prepared-and-deferred-jobs-survive-queue-restart
   (let [dir    (.toFile (java.nio.file.Files/createTempDirectory
                          "deferred-email-restart" (make-array java.nio.file.attribute.FileAttribute 0)))
-        config {:filename (str (io/file dir "jobs.sqlite"))}
+        config {:filename     (str (io/file dir "jobs.sqlite"))
+                :write-runner (writer/create)}
         conn   (seed!)]
     (try
       (let [jobs       (let [queue (job-queue/start! config)]

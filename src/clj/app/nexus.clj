@@ -10,7 +10,6 @@
    [app.gigs.actions]
    [app.gigs.detail.actions :as gig-detail]
    [app.insurance.actions]
-   [app.insurance.effects :as insurance.effects]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.members.actions]
    [app.members.effects :as members.effects]
@@ -238,12 +237,6 @@
 (defn delete-invitation-fx [_ {req :request} invite-code]
   (members.effects/delete-invitation! req invite-code))
 
-(defn update-keycloak-meta-fx [_ {req :request} member-id]
-  (members.effects/update-keycloak-meta! req member-id))
-
-(defn set-keycloak-account-enabled-fx [_ {req :request} member-id enabled?]
-  (members.effects/set-keycloak-account-enabled! req member-id enabled?))
-
 (defn queue-actions!
   "Admits an action request without evaluating Nexus or waiting for a commit."
   [runtime request actions]
@@ -333,11 +326,7 @@
                          :app.datastar/assoc-state                     assoc-page-state-fx
                          :app.datastar/merge-state                     merge-page-state-fx
                          :app.datastar/respond-sse                     (with-meta respond-sse-fx {:nexus/batch true})
-                         :app.insurance/send-payment-notifications     insurance.effects/send-payment-notifications-fx
-                         :app.insurance/send-survey-notifications      insurance.effects/send-survey-notifications-fx
                          :app.members/invite-member                    members.effects/invite-member-fx
-                         :app.members/update-keycloak-meta             update-keycloak-meta-fx
-                         :app.members/set-keycloak-account-enabled     set-keycloak-account-enabled-fx
                          :app.members.index/resend-invitation          resend-invitation-fx
                          :app.members.index/reissue-invitation         reissue-invitation-fx
                          :app.members.index/reissue-revoked-invitation reissue-revoked-invitation-fx

@@ -6,6 +6,7 @@
    [app.members.invite.workflows :as workflows]
    [app.schemas :as s]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [malli.core :as m]
@@ -105,7 +106,10 @@
       invitation)]))
 
 (defn run-workflow [workflow resources input]
-  (myc/run-workflow workflow resources input workflow-options))
+  (myc/run-workflow workflow
+                    (update resources :write-runner #(or % (writer/create)))
+                    input
+                    workflow-options))
 
 (deftest workflow-manifests-have-local-ids-plain-docs-and-inline-schemas-test
   (doseq [workflow all-workflows]
@@ -746,7 +750,8 @@
   {:db           (d/db conn)
    :datomic-conn conn
    :params       {:invite-code invite-code}
-   :system       {:keycloak {:adapter :fake}}})
+   :system       {:frame-loop {:write-runner (writer/create)}
+                  :keycloak   {:adapter :fake}}})
 
 (defn thrown-reason [f]
   (try

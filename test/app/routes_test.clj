@@ -6,6 +6,7 @@
    [app.routes :as routes]
    [app.session :as session]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is use-fixtures]]
    [datomic.api :as d]
    [reitit.core :as r]
@@ -28,6 +29,7 @@
      :i18n-langs   (i18n/read-langs)
      :oauth2       {}
      :datomic      {:conn conn}
+     :frame-loop   {:write-runner (writer/create)}
      :webdav       {}
      :auxiliary    tc/*sqlite-db*
      :filestore    {}
@@ -176,10 +178,11 @@
            statuses))))
 
 (deftest jobs-dashboard-requires-admin-and-protects-mutations
-  (let [queue    (job-queue/start! {:filename ":memory:"})
+  (let [control  (writer/create)
+        queue    (job-queue/start! {:filename ":memory:" :write-runner control})
         system   (assoc (test-system) :job-queue queue)
         handler  (routes/default-handler system)
-        sessions (session/init! tc/*sqlite-db* {:expire-secs 3600})
+        sessions (session/init! tc/*sqlite-db* {:expire-secs 3600 :write-runner control})
         request  (fn [sid method uri site]
                    (handler {:uri     uri                                :request-method method
                              :headers {"cookie"         (str "sid=" sid)

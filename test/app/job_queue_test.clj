@@ -1,5 +1,6 @@
 (ns app.job-queue-test
   (:require [app.ig]
+            [app.write-runner :as writer]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]]
             [integrant.core :as ig]
@@ -9,7 +10,8 @@
   (let [dir      (.toFile (java.nio.file.Files/createTempDirectory
                            "probematic-jobs" (make-array java.nio.file.attribute.FileAttribute 0)))
         filename (str (io/file dir "jobs.sqlite"))
-        config   {:app.ig/job-queue {:filename filename}}]
+        config   {:app.ig/job-queue {:filename     filename
+                                     :write-runner (writer/create)}}]
     (try
       (let [system (ig/init config)]
         (try

@@ -6,6 +6,7 @@
             [app.job-queue :as job-queue]
             [app.jobs.worker :as jobs-worker]
             [app.system :as system]
+            [app.write-runner :as writer]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [integrant.core :as ig]
@@ -14,7 +15,8 @@
 (defn with-queue [f]
   (let [dir   (.toFile (java.nio.file.Files/createTempDirectory
                         "email-jobs" (make-array java.nio.file.attribute.FileAttribute 0)))
-        queue (job-queue/start! {:filename (str (io/file dir "jobs.sqlite"))})]
+        queue (job-queue/start! {:filename     (str (io/file dir "jobs.sqlite"))
+                                 :write-runner (writer/create)})]
     (try
       (f queue)
       (finally

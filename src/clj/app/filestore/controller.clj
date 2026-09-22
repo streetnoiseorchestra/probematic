@@ -217,10 +217,11 @@ So here we provide functions to store the content and generate datoms for use in
                                                                        :audit/user   (when member-id
                                                                                        [:member/member-id member-id])}})]
         (filestore/put-sync! filestore prepared)
-        (let [{:keys [db-after]} (if-let [control (get-in req [:system :frame-loop :write-runner])]
-                                   (writer/call! control persist!)
-                                   (persist!))]
-          (q/retrieve-image db-after rendition-id)))
+        (let [control (get-in req [:system :frame-loop :write-runner])]
+          (when-not control
+            (throw (ex-info "Rendition persistence requires the application writer" {})))
+          (let [{:keys [db-after]} (writer/call! control persist!)]
+            (q/retrieve-image db-after rendition-id))))
       (finally
         (bfs/delete-if-exists out-file)))))
 

@@ -92,6 +92,7 @@
              {:file-name (:filename upload)
               :file      (:tempfile upload)
               :mime-type (:mime-type upload)})
+            control                        (get-in system [:frame-loop :write-runner])
             persist!                       (fn []
                                              (datomic/transact
                                               conn
@@ -104,9 +105,9 @@
                                                :audit
                                                {:audit/action ::cutover-avatar
                                                 :audit/origin :app.origin/system}}))]
-        (if-let [control (get-in system [:frame-loop :write-runner])]
-          (writer/call! control persist!)
-          (persist!)))
+        (when-not control
+          (throw (ex-info "Avatar cutover requires the application writer" {})))
+        (writer/call! control persist!))
       (finally
         (bfs/delete-if-exists (:tempfile upload))))))
 
@@ -132,7 +133,7 @@
        (try
          (migrate-member! system member-id template)
          (update result :migrated inc)
-         (catch Throwable exception
+         (catch Exception exception
            (if (cas-failure? exception)
              (do
                (μ/log ::avatar-cutover-conflict :member-id member-id)

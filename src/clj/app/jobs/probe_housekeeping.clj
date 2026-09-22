@@ -44,7 +44,7 @@
     :gig/end-time  (t/time "22:00")
     :gig/contact   [:member/gigo-key "ag1zfmdpZy1vLW1hdGljchMLEgZNZW1iZXIYgICA6K70hwoM"]}))
 
-(defn create-probes!
+(defn- create-probes!
   [conn probes]
   (let [probe-dates (find-probe-dates (- minimum-gigs (count probes)) probes)
         txs         (take maximum-create (map newprobe-tx probe-dates))]
@@ -52,7 +52,7 @@
                       :audit   {:audit/action ::create-probes
                                 :audit/origin :app.origin/job}})))
 
-(defn assign-rehearsal-leaders!
+(defn- assign-rehearsal-leaders!
   [conn]
   (let [db           (datomic/db conn)
         prev-probe   (q/previous-probe db)
@@ -68,41 +68,45 @@
 (defn- probe-housekeeping-job
   [{:keys [datomic] :as system} _]
   (try
-    (let [maintain! (fn []
+    (let [control   (get-in system [:frame-loop :write-runner])
+          maintain! (fn []
                       (let [conn   (:conn datomic)
                             probes (q/next-probes (datomic/db conn) q/gig-detail-pattern)]
                         (when (< (count probes) minimum-gigs)
                           (create-probes! conn probes))
                         (assign-rehearsal-leaders! conn)
                         :done))]
-      (if-let [control (get-in system [:frame-loop :write-runner])]
-        (writer/call! control maintain!)
-        (maintain!)))
-    (catch Throwable e
+      (when-not control
+        (throw (ex-info "Probe housekeeping requires the application writer" {})))
+      (writer/call! control maintain!))
+    (catch Exception e
       (tap> e)
       (errors/report-error! e))))
 
 (defn notify-rehearsal-leader!
   [{:keys [datomic frame-loop]}]
   (try
-    (writer/call!
-     (:write-runner frame-loop)
-     (fn []
-       (let [conn       (:conn datomic)
-             next-probe (q/next-probe (datomic/db conn))
-             leaders    (distinct (keep #(get next-probe %) [:gig/rehearsal-leader1 :gig/rehearsal-leader2]))]
-         (when-not (= (:gig/date next-probe) (t/date))
-           (throw (ex-info "notify rehearsal leaders condition failed!"
-                           {:probe-date (:gig/date next-probe) :current-date (t/date)})))
-         (when (seq leaders)
-           (let [intents (mapv #(mailers/job {:current-locale :de} ::mailers/rehearsal-leader
-                                             {:gig-id (:gig/gig-id next-probe) :member-id (:member/member-id %)})
-                               leaders)]
-             (d/transact conn
-                         {:tx-data (nexus/batch-transactions [[[] {:jobs intents}]])
-                          :audit   {:audit/action ::notify-rehearsal-leader
-                                    :audit/origin :app.origin/job}}))))))
-    (catch Throwable e
+    (let [control (:write-runner frame-loop)]
+      (when-not control
+        (throw (ex-info "Rehearsal-leader notification requires the application writer" {})))
+      (writer/call!
+       control
+       (fn []
+         (let [conn       (:conn datomic)
+               next-probe (q/next-probe (datomic/db conn))
+               leaders    (distinct (keep #(get next-probe %) [:gig/rehearsal-leader1 :gig/rehearsal-leader2]))]
+           (when-not (= (:gig/date next-probe) (t/date))
+             (throw (ex-info "notify rehearsal leaders condition failed!"
+                             {:probe-date (:gig/date next-probe) :current-date (t/date)})))
+           (when (seq leaders)
+             (let [intents (mapv #(mailers/job {:current-locale :de} ::mailers/rehearsal-leader
+                                               {:gig-id (:gig/gig-id next-probe) :member-id (:member/member-id %)})
+                                 leaders)]
+               (d/transact conn
+                           {:tx-data (nexus/batch-transactions [[[] {:jobs intents}]])
+                            :audit   {:audit/action ::notify-rehearsal-leader
+                                      :audit/origin :app.origin/job}})))))))
+    (catch Exception e
       (errors/report-error! e))))
 
 (defn- start-rehearsal-leader-notify!
@@ -126,22 +130,3 @@
   (fn [{:job/keys [frequency initial-delay]}]
     (start-rehearsal-leader-notify! system)
     (jobs/make-repeating-job (partial probe-housekeeping-job system) frequency initial-delay)))
-
-(comment
-  (do
-    (require '[integrant.repl.state :as state])
-    (def conn (-> state/system :app.ig/datomic-db :conn))
-    (def db  (datomic/db conn))
-    (def system {:datomic    {:conn conn}
-                 :job-queue  (-> state/system :app.ig/job-queue)
-                 :i18n-langs (-> state/system :app.ig/i18n-langs)
-                 :env        (-> state/system :app.ig/env)})) ;; rcf
-
-  (probe-housekeeping-job {:conn conn} nil)
-
-  (email/send-rehearsal-leader-email! system (q/next-probe db) (q/member-by-email db "me@caseylink.com"))
-
-  (assign-rehearsal-leaders! conn)
-  (notify-rehearsal-leader! system)
-  ;;
-  )

@@ -78,9 +78,7 @@
                                                            {:policyId  (str policy-id)
                                                             :memberIds [(str member-id)]}})]
       (is (= support/clear-loading (first effects)))
-      (is (= :error (get-in effects [1 2 :status])))
-      (is (not-any? #(= :app.insurance/send-payment-notifications (first %))
-                    effects))))
+      (is (= :error (get-in effects [1 2 :status])))))
 
   (testing "a forged selection with an unavailable private cost is rejected"
     (let [{:keys [conn member-id policy-id]} (fixture)
@@ -105,5 +103,4 @@
                        :memberIds [(str member-id)]}})]
         (is (= support/clear-loading (first effects)))
         (is (= :app.datastar/assoc-state (first (second effects))))
-        (is (= :error (get-in effects [1 2 :status])))
-        (is (not-any? #(= :app.insurance/send-payment-notifications (first %)) effects))))))
+        (is (= :error (get-in effects [1 2 :status])))))))

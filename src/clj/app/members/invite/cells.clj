@@ -30,14 +30,14 @@
                         (datomic/transact datomic-conn
                                           {:tx-data (:tx-data plan)
                                            :audit   (or audit {})})
-                        (catch Throwable exception
+                        (catch Exception exception
                           (if (conflict-failure? exception)
                             transaction-conflict
                             (throw exception))))
                       transaction-conflict))]
-    (if write-runner
-      (writer/call! write-runner transact!)
-      (transact!))))
+    (when-not write-runner
+      (throw (ex-info "Invitation transactions require the application writer" {})))
+    (writer/call! write-runner transact!)))
 
 (defn- state-after [report member-id]
   (domain/invitation-state (:db-after report) member-id))

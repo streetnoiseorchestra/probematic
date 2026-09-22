@@ -6,11 +6,9 @@
    [app.email.mailers :as mailers]
    [app.jobs.log-dispatch :as log-dispatch]
    [app.write-runner :as writer]
-   [app.keycloak :as keycloak]
    [app.members.invite.cells]
    [app.members.invite.workflows :as invite.workflows]
    [app.members.queries :as members.queries]
-   [app.queries :as q]
    [app.util.crypto :as crypto]
    [com.brunobonacci.mulog :as μ]
    [mycelium.core :as myc]
@@ -155,8 +153,8 @@
   ([req invite-code]
    (resend-invitation! default-invitation-deps req invite-code))
   ([deps req invite-code]
-   (let [deps       (merge default-invitation-deps deps)
-         frame-loop (get-in req [:system :frame-loop])
+   (let [deps    (merge default-invitation-deps deps)
+         control (get-in req [:system :frame-loop :write-runner])
          resend!
          (fn []
            (let [db  (db-from-req req)
@@ -175,9 +173,9 @@
                                          :audit/origin :app.origin/browser
                                          :audit/user   (when-let [actor-id (current-member-id req)]
                                                          [:member/member-id actor-id])}})))))]
-     (if-let [control (:write-runner frame-loop)]
-       (writer/call! control resend!)
-       (resend!)))))
+     (when-not control
+       (throw (ex-info "Invitation resend requires the application writer" {})))
+     (writer/call! control resend!))))
 
 (defn delete-invitation!
   "Revokes the pending invitation currently identified by `invite-code`."
@@ -205,15 +203,3 @@
              {:outcome    :revoked
               :generation (get-in result
                                   [:member-invite/state :generation])})))))))
-
-(defn update-keycloak-meta! [req member-id]
-  (when-let [member (q/retrieve-member (db-from-req req) member-id)]
-    (when (:member/keycloak-id member)
-      (keycloak/update-user-meta! (get-in req [:system :keycloak]) member))))
-
-(defn set-keycloak-account-enabled! [req member-id enabled?]
-  (when-let [member (q/retrieve-member (db-from-req req) member-id)]
-    (when (:member/keycloak-id member)
-      (if enabled?
-        (keycloak/unlock-account! (get-in req [:system :keycloak]) member)
-        (keycloak/lock-account! (get-in req [:system :keycloak]) member)))))

@@ -2,12 +2,17 @@
   (:require
    [app.session :as session]
    [app.sqlite :as sqlite]
+   [app.write-runner :as writer]
    [clojure.java.io :as io]
    [clojure.test :refer [deftest is testing]]
    [sqlite4clj.core :as sql]
    [tick.core :as t])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
+
+(defn- session-options []
+  {:expire-secs  60
+   :write-runner (writer/create)})
 
 (defn- with-filename [f]
   (let [directory (.toFile (Files/createTempDirectory "probematic-sessions-" (make-array FileAttribute 0)))
@@ -29,7 +34,7 @@
 (deftest session-lifecycle
   (with-db
     (fn [db]
-      (let [s    (session/init! db {:expire-secs 60})
+      (let [s    (session/init! db (session-options))
             data {:session/email         "member@example.com"
                   :session/roles         #{:admin :Mitglieder}
                   :session/member-id     (random-uuid)
@@ -54,7 +59,7 @@
 (deftest expiry-is-refreshed-only-by-writes
   (with-db
     (fn [db]
-      (let [s   (session/init! db {:expire-secs 60})
+      (let [s   (session/init! db (session-options))
             key (t/with-clock (t/instant "2026-08-01T00:00:00Z")
                   (session/write-session! s nil {:value :original}))]
         (t/with-clock (t/instant "2026-08-01T00:00:59Z")
@@ -73,13 +78,13 @@
 (deftest startup-removes-expired-sessions
   (with-db
     (fn [db]
-      (let [s       (session/init! db {:expire-secs 60})
+      (let [s       (session/init! db (session-options))
             expired (t/with-clock (t/instant "2026-08-01T00:00:00Z")
                       (session/write-session! s nil {:expired true}))
             live    (t/with-clock (t/instant "2026-08-01T00:00:30Z")
                       (session/write-session! s nil {:live true}))]
         (t/with-clock (t/instant "2026-08-01T00:01:00Z")
-          (let [recreated (session/init! db {:expire-secs 60})]
+          (let [recreated (session/init! db (session-options))]
             (is (= [nil {:live true}]
                    (mapv #(session/read-session recreated %) [expired live])))
             (is (= [live] (sql/q (:reader db) ["SELECT session_key FROM http_sessions"])))))))))
@@ -91,13 +96,13 @@
             data   {:session/roles #{:admin}}
             key    (let [db (sqlite/start config)]
                      (try
-                       (session/write-session! (session/init! db {:expire-secs 60}) nil data)
+                       (session/write-session! (session/init! db (session-options)) nil data)
                        (finally (sqlite/stop db))))]
         (testing "all connections close and SQLite removes the WAL"
           (is (not (.exists (io/file (str filename "-wal"))))))
         (let [db (sqlite/start config)]
           (try
-            (is (= data (session/read-session (session/init! db {:expire-secs 60}) key)))
+            (is (= data (session/read-session (session/init! db (session-options)) key)))
             (finally (sqlite/stop db))))))))
 
 (deftest separate-databases-share-session-updates
@@ -106,11 +111,11 @@
       (let [config {:filename filename :config {:pool-size 1}}
             a      (sqlite/start config)]
         (try
-          (let [sa  (session/init! a {:expire-secs 60})
+          (let [sa  (session/init! a (session-options))
                 key (session/write-session! sa nil {:value 1})
                 b   (sqlite/start config)]
             (try
-              (let [sb (session/init! b {:expire-secs 60})]
+              (let [sb (session/init! b (session-options))]
                 (is (= {:value 1} (session/read-session sb key)))
                 (session/write-session! sb key {:value 2})
                 (is (= {:value 2} (session/read-session sa key)))
@@ -122,7 +127,7 @@
 (deftest in-memory-database-shares-one-pool
   (let [db (sqlite/start {:filename ":memory:"})]
     (try
-      (let [s   (session/init! db {:expire-secs 60})
+      (let [s   (session/init! db (session-options))
             key (session/write-session! s nil {:value 1})]
         (is (identical? (:writer db) (:reader db)))
         (is (= {:value 1} (session/read-session s key))))

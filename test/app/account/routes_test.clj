@@ -6,6 +6,7 @@
    [app.i18n :as i18n]
    [app.routes :as app-routes]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [app.urls]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [reitit.core :as r]
@@ -145,6 +146,7 @@
                                                           :cookie-attrs  {}}}
                             :i18n-langs (i18n/read-langs)
                             :datomic    {:conn conn}
+                            :frame-loop {:write-runner (writer/create)}
                             :filestore  {}
                             :auxiliary  tc/*sqlite-db*
                             :datastar-refresh-mult

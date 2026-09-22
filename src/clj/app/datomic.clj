@@ -69,17 +69,17 @@
    (assert datomic-conn "datomic-conn is required")
    (assert (map? opts) "opts must be a map")
    (let [member-id (some-> (auth/get-current-member req) :member/member-id)
+         control   (get-in req [:system :frame-loop :write-runner])
          tx-data   (audit/with-metadata (:tx-data opts) (or (:audit opts) {}))
          tx-data   (audit/with-metadata
                      tx-data
                      {:audit/comment comment
                       :audit/origin  :app.origin/browser
                       :audit/user    (when member-id [:member/member-id member-id])})
-         opts      (assoc (dissoc opts :audit) :tx-data tx-data)
-         transact! #(transact datomic-conn opts)]
-     (if-let [control (get-in req [:system :frame-loop :write-runner])]
-       (writer/call! control transact!)
-       (transact!)))))
+         opts      (assoc (dissoc opts :audit) :tx-data tx-data)]
+     (when-not control
+       (throw (ex-info "HTTP transactions require the application writer" {})))
+     (writer/call! control #(transact datomic-conn opts)))))
 
 (defn expand-audit-user [db {:audit/keys [user] :as audit}]
   (assoc-in audit [:audit/member] (d/pull db [:member/member-id :member/username :member/name :member/nick] (:db/id user))))

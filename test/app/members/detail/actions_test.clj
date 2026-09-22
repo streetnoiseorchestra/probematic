@@ -4,6 +4,7 @@
    [app.members.invite.cells]
    [app.nexus.actions :as support]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [mycelium.cell :as cell]))
@@ -13,7 +14,9 @@
 
 (defn- claim-invitation! [conn member-id requested-at state]
   ((:handler (cell/get-cell! :member-invite/claim!))
-   {:datomic-conn conn :clock (constantly requested-at)}
+   {:datomic-conn conn
+    :write-runner (writer/create)
+    :clock        (constantly requested-at)}
    {:member/member-id           member-id
     :member-invite/requested-at requested-at
     :member-invite/state        state}))

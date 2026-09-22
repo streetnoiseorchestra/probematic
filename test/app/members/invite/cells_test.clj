@@ -5,6 +5,7 @@
    [app.members.invite.workflows :as workflows]
    [app.schemas :as s]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]
    [malli.core :as m]
@@ -43,7 +44,7 @@
   ([cell-id resources input dispatches expected-dispatch]
    (myc.dev/test-cell
     cell-id
-    (cond-> {:resources      resources
+    (cond-> {:resources      (update resources :write-runner #(or % (writer/create)))
              :input          input
              :malli/registry domain/registry}
       dispatches

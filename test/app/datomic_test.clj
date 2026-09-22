@@ -2,6 +2,7 @@
   (:require
    [app.datomic :as datomic]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [clojure.test :refer [deftest is testing use-fixtures]]
    [datomic.api :as d]))
 
@@ -28,6 +29,7 @@
 
 (defn- authenticated-request [conn member-id]
   {:datomic-conn conn
+   :system       {:frame-loop {:write-runner (writer/create)}}
    :app/session  {:session/member {:member/member-id member-id}}})
 
 (deftest transact-test

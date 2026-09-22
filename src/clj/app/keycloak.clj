@@ -85,14 +85,6 @@
    :matched
    match-txs))
 
-(defn match-members-to-keycloak!
-  "Attaches :member/keycloak-id to all members whose email address matches exactly to a keycloak user.
-  Will also update the :member/username field for matched"
-  [{:keys [datomic-conn] :as sys}]
-  (d/transact datomic-conn {:tx-data (find-members-matches sys)
-                            :audit   {:audit/action ::match-members-to-keycloak
-                                      :audit/origin :app.origin/system}}))
-
 (defn link-user-edit
   "Return a string containing the URL to edit a user in the keycloak admin console."
   [env keycloak-id]
@@ -391,7 +383,6 @@
   ;; rcf
 
   (find-members-matches {:db db :kc kc})
-  (match-members-to-keycloak! {:db db :kc kc :datomic-conn conn})
 
   (get-user! kc "bcaa73f1-e080-420f-ac15-27882dbcb330")
   (get-user! kc "db15536d-9708-42fb-a1e5-61ddf6d7c190")

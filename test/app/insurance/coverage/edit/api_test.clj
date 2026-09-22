@@ -3,6 +3,7 @@
    [app.filestore :as filestore]
    [app.insurance.coverage.edit.api :as api]
    [app.test-common :as tc]
+   [app.write-runner :as writer]
    [babashka.fs :as bfs]
    [clojure.test :refer [deftest is testing]]
    [datomic.api :as d]))
@@ -35,7 +36,8 @@
   {:datomic-conn conn
    :db           (d/db conn)
    :filestore    filestore
-   :system       {:env {:app-base-url "https://example.test"}}
+   :system       {:env        {:app-base-url "https://example.test"}
+                  :frame-loop {:write-runner (writer/create)}}
    :app/session  {:session/member {:member/member-id member-id}}
    :parameters   {:path      {:instrument-id instrument-id}
                   :multipart {:file {:filename     "test upload.jpg"

@@ -278,9 +278,7 @@
                                  (assoc (survey-signals policy-id {})
                                         :targetid (str survey-id)))]
         (is (= support/clear-loading (first effects)))
-        (is (= :error (get-in effects [1 2 :status])))
-        (is (not-any? #(= :app.insurance/send-survey-notifications (first %))
-                      effects))))))
+        (is (= :error (get-in effects [1 2 :status])))))))
 
 (deftest update-closes-at-rejects-invalid-survey-state
   (let [{:keys [conn coverage-id member-id policy-id state]} (fixture)
