@@ -8,7 +8,7 @@ Probematic is a web tool that helps an anarchist band manage itself.
 
 It uses Clojure, Datastar, and Web Awesome.
 
-Canonical repo: https://github.com/Ramblurr/probematic
+Canonical repo: https://github.com/streetnoiseorchestra/probematic
 
 ## Development
 

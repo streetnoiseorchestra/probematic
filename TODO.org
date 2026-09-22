@@ -96,8 +96,25 @@
 ** TODO ensure redis email queue is empty
 ** TODO ensure no active new member invitations
 * 2026 post d* things-todo
+** TODO Audit and replace all =catch Throwable= forms with =catch Exception= per [[file:extra/idiomatic-clojure-errors.md][idiomatic Clojure error guidance]]
 ** TODO hookup lettermint webhooks to catch bounces and surface delivery problems
 ** TODO use lettermint test emails
+** TODO Consider historical Owner values on insurance policies
+   Policy copies share instrument records. Changing Owner in a new Draft also
+   changes the Owner shown when viewing the original Active policy.
+
+   Should an Active policy preserve the responsible member recorded for that
+   policy, or show the instrument's current responsible member?
+
+   This is an open question for future consideration, not a confirmed bug.
+
+** TODO Rework team management
+   Rework the teams feature as a whole, rather than fixing only its insurance
+   permissions. Only one team should have Team Type set to Insurance Team.
+
+   Settings currently permit several insurance teams, and membership in two
+   makes the insurance-team permission check fail.
+
 * 2026 post d* cool new features
 ** TODO full game loop w/ batch renders
 ** TODO cross-store bridge with datomic d/log and d/tx-range
