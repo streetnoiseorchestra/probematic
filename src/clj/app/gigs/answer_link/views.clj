@@ -46,16 +46,18 @@
     [:h1 [:i18n/tr :invitation-expired]]]))
 
 (defn answer-link [req]
-  (try
-    (if-let [{:keys [gig]} (service/submit-answer! req)]
+  (let [{:keys [error gig]} (service/submit-answer! req)]
+    (cond
+      error
+      (invalid-page req)
+
+      gig
       (if (auth/get-current-member req)
         (redirect (urls/link-gig gig))
         (success-page req gig))
-      (invalid-page req))
-    (catch Throwable e
-      (if (#{:answer-link-invalid :code-expired} (-> e ex-data :reason))
-        (invalid-page req)
-        (throw e)))))
+
+      :else
+      (invalid-page req))))
 
 (defn- preview-gig [db]
   (first (or (seq (q/gigs-future db))
